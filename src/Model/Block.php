@@ -4,11 +4,24 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
-class Block implements BlockInterface
+use Sylius\Component\Resource\Model\TranslatableInterface;
+use Sylius\Component\Resource\Model\TranslatableTrait;
+
+class Block implements BlockInterface, TranslatableInterface
 {
+    use TranslatableTrait {
+        __construct as private initializeTranslationsCollection;
+        getTranslation as private doGetTranslation;
+    }
+
     protected ?int $id = null;
 
     protected ?string $code = null;
+
+    public function __construct()
+    {
+        $this->initializeTranslationsCollection();
+    }
 
     public function getId(): ?int
     {
@@ -23,5 +36,10 @@ class Block implements BlockInterface
     public function setCode(?string $code): void
     {
         $this->code = $code;
+    }
+
+    protected function createTranslation(): BlockTranslationInterface
+    {
+        return new BlockTranslation();
     }
 }

@@ -1,2 +1,5 @@
 setono_sylius_cms:
-    option: Option value
+    templates:
+        blank:
+            path: "@SetonoSyliusCMS/template/blank.html.twig"
+            label: blank
