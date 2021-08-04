@@ -3,6 +3,6 @@ imports:
 
 setono_sylius_cms:
     templates:
-        blank:
-            path: "@SetonoSyliusCMS/template/blank.html.twig"
-            label: Blank template with no styling
+        header:
+            path: "@SetonoSyliusCMSPlugin/template/blank.html.twig"
+            label: Header

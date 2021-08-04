@@ -4,6 +4,8 @@
     <imports>
         <import resource="services/form.xml"/>
         <import resource="services/menu.xml"/>
+        <import resource="services/renderer.xml"/>
         <import resource="services/template.xml"/>
+        <import resource="services/twig.xml"/>
     </imports>
 </container>
