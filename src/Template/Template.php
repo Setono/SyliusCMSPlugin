@@ -10,9 +10,9 @@ final class Template
 
     private string $path;
 
-    private ?string $label;
+    private string $label;
 
-    public function __construct(string $key, string $path, string $label = null)
+    public function __construct(string $key, string $path, string $label)
     {
         $this->key = $key;
         $this->path = $path;
@@ -29,7 +29,7 @@ final class Template
         return $this->path;
     }
 
-    public function getLabel(): ?string
+    public function getLabel(): string
     {
         return $this->label;
     }

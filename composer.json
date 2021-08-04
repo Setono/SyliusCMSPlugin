@@ -9,10 +9,16 @@
     "license": "MIT",
     "require": {
         "php": ">=7.4",
+        "doctrine/collections": "^1.6",
+        "knplabs/knp-menu": "^3.2",
         "sylius/admin-api-bundle": "^1.10",
+        "sylius/resource-bundle": "^1.6",
         "symfony/config": "^4.4 || ^5.0",
         "symfony/dependency-injection": "^4.4 || ^5.0",
-        "symfony/http-kernel": "^4.4 || ^5.1.5"
+        "symfony/form": "^4.4 || ^5.0",
+        "symfony/http-kernel": "^4.4 || ^5.1.5",
+        "twig/twig": "^2.14",
+        "webmozart/assert": "^1.10"
     },
     "require-dev": {
         "api-platform/core": "^2.6",

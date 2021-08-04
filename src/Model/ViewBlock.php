@@ -12,7 +12,9 @@ class ViewBlock implements ViewBlockInterface
 
     protected ?BlockInterface $block = null;
 
-    protected ?string $location = null;
+    protected ?string $section = null;
+
+    protected int $priority = 0;
 
     public function getId(): ?int
     {
@@ -39,13 +41,23 @@ class ViewBlock implements ViewBlockInterface
         $this->block = $block;
     }
 
-    public function getLocation(): ?string
+    public function getSection(): ?string
     {
-        return $this->location;
+        return $this->section;
     }
 
-    public function setLocation(?string $location): void
+    public function setSection(?string $section): void
     {
-        $this->location = $location;
+        $this->section = $section;
+    }
+
+    public function getPriority(): int
+    {
+        return $this->priority;
+    }
+
+    public function setPriority(int $priority): void
+    {
+        $this->priority = $priority;
     }
 }

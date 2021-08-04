@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\DependencyInjection\Compiler;
 use Setono\SyliusCMSPlugin\Template\Template;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Webmozart\Assert\Assert;
 
@@ -29,7 +30,7 @@ final class RegisterTemplatesPass implements CompilerPassInterface
          */
         foreach ($templates as $key => $template) {
             $templateId = 'setono_sylius_cms.template.' . $key;
-            $container->set($templateId, new Template($key, $template['path'], $template['label']));
+            $container->setDefinition($templateId, new Definition(Template::class, [$key, $template['path'], $template['label']]));
             $registry->addMethodCall('add', [new Reference($templateId)]);
         }
     }

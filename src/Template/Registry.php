@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Template;
 
-final class TemplateRegistry implements TemplateRegistryInterface
+final class Registry implements RegistryInterface
 {
     /** @var array<string, Template> */
     private array $templates = [];
@@ -28,7 +28,7 @@ final class TemplateRegistry implements TemplateRegistryInterface
         return isset($this->templates[$key]);
     }
 
-    public function get(string $key): object
+    public function get(string $key): Template
     {
         if (!$this->has($key)) {
             throw new \RuntimeException(sprintf('A template with key "%s" does not exist', $key));

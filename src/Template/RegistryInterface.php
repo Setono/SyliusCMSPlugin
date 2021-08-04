@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Template;
 
-interface TemplateRegistryInterface
+interface RegistryInterface
 {
     public function all(): array;
 
@@ -12,5 +12,5 @@ interface TemplateRegistryInterface
 
     public function has(string $key): bool;
 
-    public function get(string $key): object;
+    public function get(string $key): Template;
 }

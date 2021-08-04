@@ -1,9 +1,9 @@
 sylius_grid:
     grids:
-        setono_sylius_cms_admin_block:
+        setono_sylius_cms_admin_view:
             driver:
                 options:
-                    class: "%setono_sylius_cms.model.block.class%"
+                    class: "%setono_sylius_cms.model.view.class%"
             limits: [100, 250, 500, 1000]
             fields:
                 code:

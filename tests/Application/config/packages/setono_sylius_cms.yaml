@@ -5,4 +5,4 @@ setono_sylius_cms:
     templates:
         blank:
             path: "@SetonoSyliusCMS/template/blank.html.twig"
-            label: blank
+            label: Blank template with no styling

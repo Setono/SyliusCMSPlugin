@@ -10,6 +10,11 @@
                    key="setono_sylius_cms.form.type.block_translation.validation_groups">
             <parameter>setono_sylius_cms</parameter>
         </parameter>
+
+        <parameter type="collection"
+                   key="setono_sylius_cms.form.type.view.validation_groups">
+            <parameter>setono_sylius_cms</parameter>
+        </parameter>
     </parameters>
     <services>
         <service id="setono_sylius_cms.form.type.block"
@@ -28,5 +33,13 @@
             <tag name="form.type"/>
         </service>
 
+        <service id="setono_sylius_cms.form.type.view"
+                 class="Setono\SyliusCMSPlugin\Form\Type\ViewType">
+            <argument type="service" id="setono_sylius_cms.template.registry"/>
+            <argument>%setono_sylius_cms.model.view.class%</argument>
+            <argument>%setono_sylius_cms.form.type.view.validation_groups%</argument>
+
+            <tag name="form.type"/>
+        </service>
     </services>
 </container>

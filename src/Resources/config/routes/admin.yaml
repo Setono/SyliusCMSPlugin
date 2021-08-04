@@ -13,3 +13,19 @@ setono_sylius_cms_admin_block:
                 templates:
                     form: "@SetonoSyliusCMSPlugin/admin/block/_form.html.twig"
     type: sylius.resource
+    
+setono_sylius_cms_admin_view:
+    resource: |
+        section: admin
+        alias: setono_sylius_cms.view
+        templates: "@SyliusAdmin\\Crud"
+        redirect: index
+        permission: true
+        grid: setono_sylius_cms_admin_view
+        vars:
+            all:
+                header: setono_sylius_cms.ui.view_header
+                subheader: setono_sylius_cms.ui.view_subheader
+                templates:
+                    form: "@SetonoSyliusCMSPlugin/admin/view/_form.html.twig"
+    type: sylius.resource
