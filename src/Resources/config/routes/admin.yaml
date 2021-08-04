@@ -10,4 +10,6 @@ setono_sylius_cms_admin_block:
             all:
                 header: setono_sylius_cms.ui.block_header
                 subheader: setono_sylius_cms.ui.block_subheader
+                templates:
+                    form: "@SetonoSyliusCMSPlugin/admin/block/_form.html.twig"
     type: sylius.resource
