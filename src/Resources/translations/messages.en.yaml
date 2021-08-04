@@ -1,0 +1,11 @@
+setono_sylius_cms:
+    ui:
+        block_header: Blocks
+        block_subheader: Manage your content blocks
+        blocks: Blocks
+    menu:
+        admin:
+            main:
+                content_management:
+                    blocks: Blocks
+                    header: Content management

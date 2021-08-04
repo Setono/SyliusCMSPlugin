@@ -13,35 +13,35 @@ final class AdminMenuBuilder
     {
         $header = $this->getHeader($event->getMenu());
 
-//        $header
-//            ->addChild('consent_entries', [
-//                'route' => 'setono_sylius_consent_management_admin_consent_entry_index',
-//            ])
-//            ->setLabel('setono_sylius_consent_management.menu.admin.main.consent_management.consent_entries')
-//            ->setLabelAttribute('icon', 'list alternate outline')
-//        ;
+        $header
+            ->addChild('blocks', [
+                'route' => 'setono_sylius_cms_admin_block_index',
+            ])
+            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.blocks')
+            ->setLabelAttribute('icon', 'list alternate outline')
+        ;
 //
 //        $header
 //            ->addChild('services', [
-//                'route' => 'setono_sylius_consent_management_admin_service_index',
+//                'route' => 'setono_sylius_cms_admin_service_index',
 //            ])
-//            ->setLabel('setono_sylius_consent_management.menu.admin.main.consent_management.services')
+//            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.services')
 //            ->setLabelAttribute('icon', 'cogs')
 //        ;
 //
 //        $header
 //            ->addChild('cookies', [
-//                'route' => 'setono_sylius_consent_management_admin_cookie_index',
+//                'route' => 'setono_sylius_cms_admin_cookie_index',
 //            ])
-//            ->setLabel('setono_sylius_consent_management.menu.admin.main.consent_management.cookies')
+//            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.cookies')
 //            ->setLabelAttribute('icon', 'user secret')
 //        ;
 //
 //        $header
 //            ->addChild('widget_config', [
-//                'route' => 'setono_sylius_consent_management_admin_widget_config_index',
+//                'route' => 'setono_sylius_cms_admin_widget_config_index',
 //            ])
-//            ->setLabel('setono_sylius_consent_management.menu.admin.main.consent_management.widget_configuration')
+//            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.widget_configuration')
 //            ->setLabelAttribute('icon', 'cog')
 //        ;
     }
