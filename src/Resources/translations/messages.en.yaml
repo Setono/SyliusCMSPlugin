@@ -1,11 +1,16 @@
 setono_sylius_cms:
-    ui:
-        block_header: Blocks
-        block_subheader: Manage your content blocks
-        blocks: Blocks
+    form:
+        block:
+            code: Code
+            content: Content
     menu:
         admin:
             main:
                 content_management:
                     blocks: Blocks
                     header: Content management
+    ui:
+        block_header: Blocks
+        block_subheader: Manage your content blocks
+        blocks: Blocks
+    

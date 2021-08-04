@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <parameters>
+        <parameter type="collection" key="setono_sylius_cms.form.type.block.validation_groups">
+            <parameter>setono_sylius_cms</parameter>
+        </parameter>
+
+        <parameter type="collection"
+                   key="setono_sylius_cms.form.type.block_translation.validation_groups">
+            <parameter>setono_sylius_cms</parameter>
+        </parameter>
+    </parameters>
+    <services>
+        <service id="setono_sylius_cms.form.type.block"
+                 class="Setono\SyliusCMSPlugin\Form\Type\BlockType">
+            <argument>%setono_sylius_cms.model.block.class%</argument>
+            <argument>%setono_sylius_cms.form.type.block.validation_groups%</argument>
+
+            <tag name="form.type"/>
+        </service>
+
+        <service id="setono_sylius_cms.form.type.block_translation"
+                 class="Setono\SyliusCMSPlugin\Form\Type\BlockTranslationType">
+            <argument>%setono_sylius_cms.model.block_translation.class%</argument>
+            <argument>%setono_sylius_cms.form.type.block_translation.validation_groups%</argument>
+
+            <tag name="form.type"/>
+        </service>
+
+    </services>
+</container>
