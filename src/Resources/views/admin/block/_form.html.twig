@@ -11,3 +11,19 @@
         {{ translationForm(form.translations) }}
     </div>
 </div>
+
+<div id="editorjs"></div>
+
+<script src="{{ asset('bundles/setonosyliuscmsplugin/js/editor.js') }}"></script>
+<script src="{{ asset('bundles/setonosyliuscmsplugin/js/header.js') }}"></script>
+
+<script>
+    const editor = new EditorJS({
+        tools: {
+            header: {
+                class: Header,
+                inlineToolbar : true
+            },
+        },
+    });
+</script>

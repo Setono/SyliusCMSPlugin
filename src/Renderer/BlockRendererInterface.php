@@ -10,4 +10,9 @@ interface BlockRendererInterface
      * @param string $block The code for the block
      */
     public function render(string $block): string;
+
+    /**
+     * @param array<array-key, string> $blocks
+     */
+    public function renderMultiple(array $blocks): string;
 }

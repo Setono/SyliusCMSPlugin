@@ -10,4 +10,8 @@ use Sylius\Component\Resource\Model\ResourceInterface;
 interface BlockInterface extends ResourceInterface, CodeAwareInterface
 {
     public function getId(): ?int;
+
+    public function getContent(): ?string;
+
+    public function setContent(?string $content): void;
 }

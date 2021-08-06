@@ -1,0 +1,5 @@
+<div class="sscms-blocks" style="background-color: rgba(0,202,79,0.25)">
+    {% for block in blocks %}
+        {% include '@SetonoSyliusCMSPlugin/block/block.html.twig' with {'block' : block} %}
+    {% endfor %}
+</div>

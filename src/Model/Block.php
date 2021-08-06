@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Model;
 
 use Sylius\Component\Resource\Model\TranslatableInterface;
 use Sylius\Component\Resource\Model\TranslatableTrait;
+use Sylius\Component\Resource\Model\TranslationInterface;
 
 class Block implements BlockInterface, TranslatableInterface
 {
@@ -36,6 +37,27 @@ class Block implements BlockInterface, TranslatableInterface
     public function setCode(?string $code): void
     {
         $this->code = $code;
+    }
+
+    public function getContent(): ?string
+    {
+        return $this->getTranslation()->getContent();
+    }
+
+    public function setContent(?string $content): void
+    {
+        $this->getTranslation()->setContent($content);
+    }
+
+    /**
+     * @return BlockTranslationInterface
+     */
+    public function getTranslation(?string $locale = null): TranslationInterface
+    {
+        /** @var BlockTranslationInterface $translation */
+        $translation = $this->doGetTranslation($locale);
+
+        return $translation;
     }
 
     protected function createTranslation(): BlockTranslationInterface

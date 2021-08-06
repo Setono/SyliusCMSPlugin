@@ -2,7 +2,10 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="setono_sylius_cms.renderer.block" class="Setono\SyliusCMSPlugin\Renderer\BlockRenderer"/>
+        <service id="setono_sylius_cms.renderer.block" class="Setono\SyliusCMSPlugin\Renderer\BlockRenderer">
+            <argument type="service" id="setono_sylius_cms.repository.block"/>
+            <argument type="service" id="twig"/>
+        </service>
 
         <service id="setono_sylius_cms.renderer.view" class="Setono\SyliusCMSPlugin\Renderer\ViewRenderer">
             <argument type="service" id="setono_sylius_cms.repository.view"/>
