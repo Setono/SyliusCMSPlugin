@@ -3,6 +3,9 @@ setono_sylius_cms:
         block:
             code: Code
             content: Content
+        template:
+            code: Code
+            source: Source
         view:
             code: Code
             template: Template
@@ -13,11 +16,15 @@ setono_sylius_cms:
                 content_management:
                     blocks: Blocks
                     header: Content management
+                    templates: Templates
                     views: Views
     ui:
         block_header: Blocks
         block_subheader: Manage your content blocks
         blocks: Blocks
+        template_header: Templates
+        template_subheader: Manage your templates
+        templates: Templates
         view_header: Views
         view_subheader: Manage your views
         views: Views

@@ -14,6 +14,14 @@ final class AdminMenuBuilder
         $header = $this->getHeader($event->getMenu());
 
         $header
+            ->addChild('templates', [
+                'route' => 'setono_sylius_cms_admin_template_index',
+            ])
+            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.templates')
+            ->setLabelAttribute('icon', 'list alternate outline')
+        ;
+
+        $header
             ->addChild('blocks', [
                 'route' => 'setono_sylius_cms_admin_block_index',
             ])

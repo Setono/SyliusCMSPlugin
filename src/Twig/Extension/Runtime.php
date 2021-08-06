@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Twig;
+namespace Setono\SyliusCMSPlugin\Twig\Extension;
 
 use Setono\SyliusCMSPlugin\Renderer\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;

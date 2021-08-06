@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
 use Setono\SyliusCMSPlugin\Doctrine\ORM\BlockRepository;
+use Setono\SyliusCMSPlugin\Doctrine\ORM\TemplateRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\ViewRepository;
 use Setono\SyliusCMSPlugin\Form\Type\BlockTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\BlockType;
+use Setono\SyliusCMSPlugin\Form\Type\TemplateType;
 use Setono\SyliusCMSPlugin\Form\Type\ViewType;
 use Setono\SyliusCMSPlugin\Model\Block;
 use Setono\SyliusCMSPlugin\Model\BlockTranslation;
+use Setono\SyliusCMSPlugin\Model\Template;
 use Setono\SyliusCMSPlugin\Model\View;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
@@ -37,15 +40,6 @@ final class Configuration implements ConfigurationInterface
             ->children()
                 ->scalarNode('driver')
                     ->defaultValue(SyliusResourceBundle::DRIVER_DOCTRINE_ORM)
-                ->end()
-                ->arrayNode('templates')
-                    ->useAttributeAsKey('name')
-                    ->arrayPrototype()
-                        ->children()
-                            ->scalarNode('path')
-                                ->isRequired()
-                            ->end()
-                            ->scalarNode('label')->end()
         ;
 
         $this->addResourcesSection($rootNode);
@@ -93,6 +87,22 @@ final class Configuration implements ConfigurationInterface
                                                 ->scalarNode('factory')->defaultValue(TranslatableFactory::class)->end()
                                             ->end()
                                         ->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                        ->arrayNode('template')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->variableNode('options')->end()
+                                ->arrayNode('classes')
+                                    ->addDefaultsIfNotSet()
+                                    ->children()
+                                        ->scalarNode('model')->defaultValue(Template::class)->cannotBeEmpty()->end()
+                                        ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
+                                        ->scalarNode('repository')->defaultValue(TemplateRepository::class)->cannotBeEmpty()->end()
+                                        ->scalarNode('form')->defaultValue(TemplateType::class)->end()
+                                        ->scalarNode('factory')->defaultValue(Factory::class)->end()
                                     ->end()
                                 ->end()
                             ->end()

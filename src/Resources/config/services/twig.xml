@@ -2,13 +2,20 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
+        <service id="setono_sylius_cms.twig.loader"
+                 class="Setono\SyliusCMSPlugin\Twig\Loader\DoctrineLoader">
+            <argument type="service" id="setono_sylius_cms.repository.template"/>
+
+            <tag name="twig.loader"/>
+        </service>
+
         <service id="setono_sylius_cms.twig.extension"
-                 class="Setono\SyliusCMSPlugin\Twig\Extension">
+                 class="Setono\SyliusCMSPlugin\Twig\Extension\Extension">
             <tag name="twig.extension"/>
         </service>
 
         <service id="setono_sylius_cms.twig.runtime"
-                 class="Setono\SyliusCMSPlugin\Twig\Runtime">
+                 class="Setono\SyliusCMSPlugin\Twig\Extension\Runtime">
             <argument type="service" id="setono_sylius_cms.renderer.block"/>
             <argument type="service" id="setono_sylius_cms.renderer.view"/>
 
