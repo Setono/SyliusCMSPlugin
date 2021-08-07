@@ -12,6 +12,7 @@ class Block implements BlockInterface, TranslatableInterface
 {
     use TranslatableTrait {
         __construct as private initializeTranslationsCollection;
+
         getTranslation as private doGetTranslation;
     }
 
