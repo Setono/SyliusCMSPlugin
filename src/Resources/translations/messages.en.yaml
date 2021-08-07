@@ -3,6 +3,7 @@ setono_sylius_cms:
         block:
             code: Code
             content: Content
+            default_content: Default content
         template:
             code: Code
             source: Source

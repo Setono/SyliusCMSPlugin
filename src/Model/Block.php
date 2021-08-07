@@ -19,6 +19,8 @@ class Block implements BlockInterface, TranslatableInterface
 
     protected ?string $code = null;
 
+    protected ?string $defaultContent = null;
+
     public function __construct()
     {
         $this->initializeTranslationsCollection();
@@ -39,9 +41,24 @@ class Block implements BlockInterface, TranslatableInterface
         $this->code = $code;
     }
 
+    public function getDefaultContent(): ?string
+    {
+        return $this->defaultContent;
+    }
+
+    public function setDefaultContent(?string $defaultContent): void
+    {
+        $this->defaultContent = $defaultContent;
+    }
+
     public function getContent(): ?string
     {
-        return $this->getTranslation()->getContent();
+        $content = $this->getTranslation()->getContent();
+        if (null === $content || '' === $content) {
+            return $this->getDefaultContent();
+        }
+
+        return $content;
     }
 
     public function setContent(?string $content): void

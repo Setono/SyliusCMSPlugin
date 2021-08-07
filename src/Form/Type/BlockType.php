@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Form\Type;
 
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
 use Sylius\Bundle\ResourceBundle\Form\Type\ResourceTranslationsType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 
@@ -16,6 +17,9 @@ final class BlockType extends AbstractResourceType
         $builder
             ->add('code', TextType::class, [
                 'label' => 'setono_sylius_cms.form.block.code',
+            ])
+            ->add('defaultContent', TextareaType::class, [
+                'label' => 'setono_sylius_cms.form.block.default_content',
             ])
             ->add('translations', ResourceTranslationsType::class, [
                 'entry_type' => BlockTranslationType::class,

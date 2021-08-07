@@ -11,6 +11,10 @@ interface BlockInterface extends ResourceInterface, CodeAwareInterface
 {
     public function getId(): ?int;
 
+    public function getDefaultContent(): ?string;
+
+    public function setDefaultContent(?string $defaultContent): void;
+
     public function getContent(): ?string;
 
     public function setContent(?string $content): void;
