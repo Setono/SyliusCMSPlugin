@@ -40,6 +40,15 @@ final class Configuration implements ConfigurationInterface
             ->children()
                 ->scalarNode('driver')
                     ->defaultValue(SyliusResourceBundle::DRIVER_DOCTRINE_ORM)
+                ->end()
+                ->arrayNode('templates')
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('code')
+                                ->isRequired()
+                            ->end()
+                            ->scalarNode('label')->end()
+                            ->scalarNode('description')->end()
         ;
 
         $this->addResourcesSection($rootNode);

@@ -36,29 +36,29 @@ final class ViewType extends AbstractResourceType
                 'label' => 'setono_sylius_cms.form.view.template',
                 'placeholder' => 'setono_sylius_cms.form.view.template_placeholder',
                 'choices' => $this->templateRegistry->all(),
-                'choice_value' => 'key',
+                'choice_value' => 'code',
                 'choice_label' => 'label'
             ])
         ;
 
         $builder->get('template')->addModelTransformer(new CallbackTransformer(
-            function (?string $key) {
-                if (null === $key) {
+            function (?string $code) {
+                if (null === $code) {
                     return null;
                 }
 
-                if (!$this->templateRegistry->has($key)) {
+                if (!$this->templateRegistry->has($code)) {
                     return null;
                 }
 
-                return $this->templateRegistry->get($key);
+                return $this->templateRegistry->get($code);
             },
             function (?Template $template): ?string {
                 if (null === $template) {
                     return null;
                 }
 
-                return $template->getKey();
+                return $template->getCode();
             }
         ));
     }

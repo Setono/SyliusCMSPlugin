@@ -19,7 +19,7 @@ final class MetadataExtractor
 
     public function extract(Template $template): Metadata
     {
-        $wrapper = $this->twig->load($template->getPath());
+        $wrapper = $this->twig->load($template->getCode());
         $wrapper->getBlockNames();
 
         return new Metadata($wrapper->getBlockNames());

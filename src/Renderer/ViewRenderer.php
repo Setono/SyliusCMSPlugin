@@ -33,17 +33,17 @@ final class ViewRenderer implements ViewRendererInterface
             return '';
         }
 
-        $templateKey = $obj->getTemplate();
-        if (null === $templateKey) {
+        $templateCode = $obj->getTemplate();
+        if (null === $templateCode) {
             return '';
         }
 
-        if (!$this->templateRegistry->has($templateKey)) {
+        if (!$this->templateRegistry->has($templateCode)) {
             return '';
         }
 
-        $template = $this->templateRegistry->get($templateKey);
+        $template = $this->templateRegistry->get($templateCode);
 
-        return $this->twig->render($template->getPath());
+        return $this->twig->render($template->getCode());
     }
 }

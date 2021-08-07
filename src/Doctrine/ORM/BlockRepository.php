@@ -7,13 +7,17 @@ namespace Setono\SyliusCMSPlugin\Doctrine\ORM;
 use Setono\SyliusCMSPlugin\Model\BlockInterface;
 use Setono\SyliusCMSPlugin\Repository\BlockRepositoryInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
+use Webmozart\Assert\Assert;
 
 class BlockRepository extends EntityRepository implements BlockRepositoryInterface
 {
     public function findOneByCode(string $code): ?BlockInterface
     {
-        return $this->findOneBy([
+        $obj = $this->findOneBy([
             'code' => $code
         ]);
+        Assert::nullOrIsInstanceOf($obj, BlockInterface::class);
+
+        return $obj;
     }
 }

@@ -7,14 +7,19 @@ namespace Setono\SyliusCMSPlugin\Doctrine\ORM;
 use Setono\SyliusCMSPlugin\Model\TemplateInterface;
 use Setono\SyliusCMSPlugin\Repository\TemplateRepositoryInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
+use Webmozart\Assert\Assert;
 
 class TemplateRepository extends EntityRepository implements TemplateRepositoryInterface
 {
     public function findOneByCode(string $code): ?TemplateInterface
     {
-        return $this->findOneBy([
+        $obj = $this->findOneBy([
             'code' => $code
         ]);
+
+        Assert::nullOrIsInstanceOf($obj, TemplateInterface::class);
+
+        return $obj;
     }
 
     public function exists(string $code): bool
