@@ -11,6 +11,7 @@
             <argument type="service" id="setono_sylius_cms.repository.view"/>
             <argument type="service" id="twig"/>
             <argument type="service" id="setono_sylius_cms.template.registry"/>
+            <argument type="service" id="setono_sylius_cms.renderer.block"/>
         </service>
     </services>
 </container>

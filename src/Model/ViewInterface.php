@@ -21,7 +21,11 @@ interface ViewInterface extends ResourceInterface, CodeAwareInterface
     public function setTemplate(string $template): void;
 
     /**
-     * @return Collection<array-key, ViewBlockInterface>
+     * Returns a collection of view blocks sorted by ViewBlockInterface::getPriority() descending
+     *
+     * @return Collection|ViewBlockInterface[]
+     *
+     * @psalm-return Collection<array-key, ViewBlockInterface>
      */
     public function getViewBlocks(): Collection;
 }

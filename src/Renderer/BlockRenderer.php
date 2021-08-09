@@ -20,15 +20,17 @@ final class BlockRenderer implements BlockRendererInterface
         $this->twig = $twig;
     }
 
-    public function render(string $block): string
+    public function render($block): string
     {
-        $obj = $this->blockRepository->findOneByCode($block);
-        if (null === $obj) {
-            return '';
+        if (is_string($block)) {
+            $block = $this->blockRepository->findOneByCode($block);
+            if (null === $block) {
+                return '';
+            }
         }
 
-        return $this->twig->render('@SetonoSyliusCMSPlugin/block/block.html.twig', [
-            'block' => Block::createFromEntity($obj),
+        return $this->twig->render('@SetonoSyliusCMSPlugin/block.html.twig', [
+            'block' => Block::createFromEntity($block),
         ]);
     }
 }

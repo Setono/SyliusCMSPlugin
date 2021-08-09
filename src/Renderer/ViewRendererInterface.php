@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Renderer;
 
+use Setono\SyliusCMSPlugin\Model\ViewInterface;
+
 interface ViewRendererInterface
 {
     /**
-     * @param string $view The code for the view
+     * @param ViewInterface|string $view Either the view object or the view code
      */
-    public function render(string $view): string;
+    public function render($view): string;
 }

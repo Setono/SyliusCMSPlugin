@@ -16,24 +16,30 @@ final class ViewRenderer implements ViewRendererInterface
 
     private RegistryInterface $templateRegistry;
 
+    private BlockRendererInterface $blockRenderer;
+
     public function __construct(
         ViewRepositoryInterface $viewRepository,
         Environment $twig,
-        RegistryInterface $templateRegistry
+        RegistryInterface $templateRegistry,
+        BlockRendererInterface $blockRenderer
     ) {
         $this->viewRepository = $viewRepository;
         $this->twig = $twig;
         $this->templateRegistry = $templateRegistry;
+        $this->blockRenderer = $blockRenderer;
     }
 
-    public function render(string $view): string
+    public function render($view): string
     {
-        $obj = $this->viewRepository->findOneByCode($view);
-        if (null === $obj) {
-            return '';
+        if (is_string($view)) {
+            $view = $this->viewRepository->findOneByCode($view);
+            if (null === $view) {
+                return '';
+            }
         }
 
-        $templateCode = $obj->getTemplate();
+        $templateCode = $view->getTemplate();
         if (null === $templateCode) {
             return '';
         }
@@ -44,6 +50,23 @@ final class ViewRenderer implements ViewRendererInterface
 
         $template = $this->templateRegistry->get($templateCode);
 
-        return $this->twig->render($template->getCode());
+        $context = [];
+        foreach ($view->getViewBlocks() as $viewBlock) {
+            $block = $viewBlock->getBlock();
+            if (null === $block) {
+                continue;
+            }
+
+            $key = sprintf('sscms_%s', (string) $viewBlock->getSection());
+            $content = $this->blockRenderer->render($block);
+            $context[$key] = isset($context[$key]) ? $context[$key] . $content : $content;
+        }
+
+        $renderedView = $this->twig->render($template->getCode(), $context);
+
+        return $this->twig->render('@SetonoSyliusCMSPlugin/view.html.twig', [
+            'view' => $view,
+            'rendered_view' => $renderedView,
+        ]);
     }
 }
