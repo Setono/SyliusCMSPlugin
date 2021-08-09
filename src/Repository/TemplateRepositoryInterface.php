@@ -15,7 +15,5 @@ use Sylius\Component\Resource\Repository\RepositoryInterface;
  */
 interface TemplateRepositoryInterface extends RepositoryInterface
 {
-    public function exists(string $code): bool;
-
     public function findOneByCode(string $code): ?TemplateInterface;
 }

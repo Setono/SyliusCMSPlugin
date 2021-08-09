@@ -21,15 +21,4 @@ class TemplateRepository extends EntityRepository implements TemplateRepositoryI
 
         return $obj;
     }
-
-    public function exists(string $code): bool
-    {
-        return (int) $this->createQueryBuilder('o')
-                ->select('COUNT(o)')
-                ->andWhere('o.code = :code')
-                ->setParameter('code', $code)
-                ->getQuery()
-                ->getSingleScalarResult() > 0
-            ;
-    }
 }

@@ -14,6 +14,15 @@
         <field name="enabled" type="boolean"/>
         <field name="template" type="string"/>
 
+        <one-to-many field="viewBlocks" target-entity="Setono\SyliusCMSPlugin\Model\ViewBlockInterface" mapped-by="view" orphan-removal="true" fetch="EAGER">
+            <cascade>
+                <cascade-all/>
+            </cascade>
+            <order-by>
+                <order-by-field name="priority" direction="DESC" />
+            </order-by>
+        </one-to-many>
+
         <unique-constraints>
             <unique-constraint columns="code"/>
         </unique-constraints>

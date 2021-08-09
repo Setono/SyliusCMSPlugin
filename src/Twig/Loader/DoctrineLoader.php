@@ -14,6 +14,9 @@ final class DoctrineLoader implements LoaderInterface
 {
     private TemplateRepositoryInterface $templateRepository;
 
+    /** @var array<string, TemplateInterface|null> */
+    private array $cache = [];
+
     public function __construct(TemplateRepositoryInterface $templateRepository)
     {
         $this->templateRepository = $templateRepository;
@@ -28,7 +31,7 @@ final class DoctrineLoader implements LoaderInterface
 
     public function exists($name): bool
     {
-        return $this->templateRepository->exists($name);
+        return null !== $this->findTemplate($name);
     }
 
     public function getCacheKey($name): string
@@ -47,9 +50,19 @@ final class DoctrineLoader implements LoaderInterface
         return $updatedAt->getTimestamp() <= $time;
     }
 
+    private function findTemplate(string $code): ?TemplateInterface
+    {
+        if (!isset($this->cache[$code])) {
+            $template = $this->templateRepository->findOneByCode($code);
+            $this->cache[$code] = $template;
+        }
+
+        return $this->cache[$code];
+    }
+
     private function getTemplate(string $code): TemplateInterface
     {
-        $template = $this->templateRepository->findOneByCode($code);
+        $template = $this->findTemplate($code);
         if (null === $template) {
             throw new LoaderError(sprintf('Template "%s" does not exist.', $code));
         }

@@ -17,11 +17,12 @@ class View implements ViewInterface
 
     protected ?string $template = null;
 
-    protected Collection $blocks;
+    /** @var Collection<array-key, ViewBlockInterface> */
+    protected Collection $viewBlocks;
 
     public function __construct()
     {
-        $this->blocks = new ArrayCollection();
+        $this->viewBlocks = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -57,5 +58,10 @@ class View implements ViewInterface
     public function setTemplate(string $template): void
     {
         $this->template = $template;
+    }
+
+    public function getViewBlocks(): Collection
+    {
+        return $this->viewBlocks;
     }
 }
