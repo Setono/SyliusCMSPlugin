@@ -1,0 +1,10 @@
+--TEST--
+"sscms_section" tag
+--TEMPLATE(base.twig)--
+{% sscms_section section1 %}
+--TEMPLATE--
+{% extends "base.twig" %}
+--DATA--
+return ['sscms_section1' => 'Content for section 1']
+--EXPECT--
+Content for section 1

@@ -1,0 +1,8 @@
+--TEST--
+"sscms_section" tag
+--TEMPLATE--
+{% sscms_section section1 %}
+--DATA--
+return []
+--EXPECT--
+

@@ -31,13 +31,4 @@ final class BlockRenderer implements BlockRendererInterface
             'block' => Block::createFromEntity($obj),
         ]);
     }
-
-    // todo
-    // todo is it clever to not utilize the render() method above in this method?
-    public function renderMultiple(array $blocks): string
-    {
-        return $this->twig->render('@SetonoSyliusCMSPlugin/block/blocks.html.twig', [
-            'blocks' => [new Block('block1', 'Block 1'), new Block('block2', 'Block 2')],
-        ]);
-    }
 }
