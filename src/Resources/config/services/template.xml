@@ -2,6 +2,10 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
+        <service id="setono_sylius_cms.template.metadata_extractor" class="Setono\SyliusCMSPlugin\Template\MetadataExtractor">
+            <argument type="service" id="twig"/>
+        </service>
+
         <service id="setono_sylius_cms.template.registry_factory" class="Setono\SyliusCMSPlugin\Template\RegistryFactory">
             <argument type="service" id="setono_sylius_cms.repository.template"/>
             <argument>%setono_sylius_cms.templates%</argument>

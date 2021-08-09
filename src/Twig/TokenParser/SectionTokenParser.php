@@ -7,7 +7,7 @@ namespace Setono\SyliusCMSPlugin\Twig\TokenParser;
 use Twig\Token;
 use Twig\TokenParser\AbstractTokenParser;
 
-final class TokenParser extends AbstractTokenParser
+final class SectionTokenParser extends AbstractTokenParser
 {
     public function parse(Token $token): SectionNode
     {
