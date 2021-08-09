@@ -52,7 +52,7 @@ final class DoctrineLoader implements LoaderInterface
 
     private function findTemplate(string $code): ?TemplateInterface
     {
-        if (!isset($this->cache[$code])) {
+        if (!array_key_exists($code, $this->cache)) {
             $template = $this->templateRepository->findOneByCode($code);
             $this->cache[$code] = $template;
         }
