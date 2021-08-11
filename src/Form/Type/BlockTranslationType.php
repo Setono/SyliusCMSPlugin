@@ -20,8 +20,12 @@ final class BlockTranslationType extends AbstractResourceType
     /**
      * @param array<array-key, string> $validationGroups
      */
-    public function __construct(ParserInterface $parser, RendererInterface $renderer, string $dataClass, array $validationGroups = [])
-    {
+    public function __construct(
+        ParserInterface $parser,
+        RendererInterface $renderer,
+        string $dataClass,
+        array $validationGroups = []
+    ) {
         parent::__construct($dataClass, $validationGroups);
 
         $this->parser = $parser;

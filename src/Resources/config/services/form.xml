@@ -24,6 +24,8 @@
     <services>
         <service id="setono_sylius_cms.form.type.block"
                  class="Setono\SyliusCMSPlugin\Form\Type\BlockType">
+            <argument type="service" id="setono_editorjs.parser"/>
+            <argument type="service" id="setono_editorjs.renderer"/>
             <argument>%setono_sylius_cms.model.block.class%</argument>
             <argument>%setono_sylius_cms.form.type.block.validation_groups%</argument>
 
