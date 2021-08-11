@@ -1,11 +1,12 @@
 {% from '@SyliusAdmin/Macro/translationForm.html.twig' import translationForm %}
 
+{% form_theme form '@SetonoSyliusCMSPlugin/form/theme.html.twig' %}
+
 {{ form_errors(form) }}
 <div class="ui two column stackable grid">
     <div class="column">
         <div class="ui segment">
             {{ form_row(form.code) }}
-            {{ form_row(form.defaultContent) }}
             {{ form_row(form.defaultRawContent) }}
         </div>
     </div>
@@ -14,18 +15,32 @@
     </div>
 </div>
 
-<div id="editorjs"></div>
-
 <script src="{{ asset('bundles/setonosyliuscmsplugin/js/editor.js') }}"></script>
 <script src="{{ asset('bundles/setonosyliuscmsplugin/js/header.js') }}"></script>
 
+<button type="button" id="save">Save</button>
+
 <script>
-    const editor = new EditorJS({
-        tools: {
-            header: {
-                class: Header,
-                inlineToolbar : true
-            },
-        },
+    const editors = [];
+    document.querySelectorAll('.editorjs').forEach((editor) => {
+        editors.push(new EditorJS({
+            holder: editor.id,
+            tools: {
+                header: {
+                    class: Header,
+                    inlineToolbar : true
+                }
+            }
+        }));
+    });
+
+    document.querySelector('#save').addEventListener('click', () => {
+        editors.forEach((editor) => {
+            editor.save().then((outputData) => {
+                console.log('Article data: ', outputData)
+            }).catch((error) => {
+                console.log('Saving failed: ', error)
+            });
+        });
     });
 </script>

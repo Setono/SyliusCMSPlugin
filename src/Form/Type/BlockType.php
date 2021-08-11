@@ -9,7 +9,7 @@ use Setono\EditorJS\Renderer\RendererInterface;
 use Setono\SyliusCMSPlugin\Form\EventSubscriber\ConvertRawContentSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
 use Sylius\Bundle\ResourceBundle\Form\Type\ResourceTranslationsType;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 
@@ -40,11 +40,9 @@ final class BlockType extends AbstractResourceType
             ->add('code', TextType::class, [
                 'label' => 'setono_sylius_cms.form.block.code',
             ])
-            ->add('defaultContent', TextareaType::class, [
+            ->add('defaultContent', HiddenType::class)
+            ->add('defaultRawContent', EditorJSType::class, [
                 'label' => 'setono_sylius_cms.form.block.default_content',
-            ])
-            ->add('defaultRawContent', TextareaType::class, [
-                'label' => 'setono_sylius_cms.form.block.default_raw_content',
             ])
             ->add('translations', ResourceTranslationsType::class, [
                 'entry_type' => BlockTranslationType::class,
