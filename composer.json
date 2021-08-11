@@ -11,7 +11,7 @@
         "php": ">=7.4",
         "doctrine/collections": "^1.6",
         "knplabs/knp-menu": "^3.2",
-        "setono/editorjs-bundle": "dev-master",
+        "setono/editorjs-bundle": "^0.1",
         "stof/doctrine-extensions-bundle": "^1.6",
         "sylius/admin-api-bundle": "^1.10",
         "sylius/resource-bundle": "^1.6",
@@ -65,7 +65,6 @@
             "tests/Application/Kernel.php"
         ]
     },
-    "minimum-stability": "dev",
     "prefer-stable": true,
     "scripts": {
         "analyse": [
