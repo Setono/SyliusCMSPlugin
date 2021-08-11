@@ -32,6 +32,8 @@
 
         <service id="setono_sylius_cms.form.type.block_translation"
                  class="Setono\SyliusCMSPlugin\Form\Type\BlockTranslationType">
+            <argument type="service" id="setono_editorjs.parser"/>
+            <argument type="service" id="setono_editorjs.renderer"/>
             <argument>%setono_sylius_cms.model.block_translation.class%</argument>
             <argument>%setono_sylius_cms.form.type.block_translation.validation_groups%</argument>
 
