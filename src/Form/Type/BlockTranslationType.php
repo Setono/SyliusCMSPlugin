@@ -16,6 +16,9 @@ final class BlockTranslationType extends AbstractResourceType
             ->add('content', TextareaType::class, [
                 'label' => 'setono_sylius_cms.form.block.content',
             ])
+            ->add('rawContent', TextareaType::class, [
+                'label' => 'setono_sylius_cms.form.block.raw_content',
+            ])
         ;
     }
 

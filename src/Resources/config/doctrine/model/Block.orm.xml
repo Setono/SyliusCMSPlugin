@@ -12,6 +12,7 @@
 
         <field name="code" column="code" type="string"/>
         <field name="defaultContent" type="text" nullable="true"/>
+        <field name="defaultRawContent" type="text" nullable="true"/>
 
         <unique-constraints>
             <unique-constraint columns="code"/>

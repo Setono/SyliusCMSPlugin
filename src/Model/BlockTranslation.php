@@ -12,6 +12,8 @@ class BlockTranslation extends AbstractTranslation implements BlockTranslationIn
 
     protected ?string $content = null;
 
+    protected ?string $rawContent = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -25,5 +27,15 @@ class BlockTranslation extends AbstractTranslation implements BlockTranslationIn
     public function setContent(?string $content): void
     {
         $this->content = $content;
+    }
+
+    public function getRawContent(): ?string
+    {
+        return $this->rawContent;
+    }
+
+    public function setRawContent(?string $rawContent): void
+    {
+        $this->rawContent = $rawContent;
     }
 }

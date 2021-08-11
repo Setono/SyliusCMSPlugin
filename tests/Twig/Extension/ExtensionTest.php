@@ -25,14 +25,14 @@ final class ExtensionTest extends IntegrationTestCase
                 $blockRenderer = new class() implements BlockRendererInterface {
                     public function render($block): string
                     {
-                        return $block;
+                        return (string) $block;
                     }
                 };
 
                 $viewRenderer = new class() implements ViewRendererInterface {
                     public function render($view): string
                     {
-                        return $view;
+                        return (string) $view;
                     }
                 };
 

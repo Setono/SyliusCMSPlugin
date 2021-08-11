@@ -14,4 +14,8 @@ interface BlockTranslationInterface extends ResourceInterface, TranslationInterf
     public function getContent(): ?string;
 
     public function setContent(?string $content): void;
+
+    public function getRawContent(): ?string;
+
+    public function setRawContent(?string $rawContent): void;
 }
