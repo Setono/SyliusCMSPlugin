@@ -7,4 +7,4 @@ setono_sylius_cms_shop:
 
 setono_sylius_cms_admin:
     resource: "@SetonoSyliusCMSPlugin/Resources/config/routes/admin.yaml"
-    prefix: /admin
+    prefix: /admin/cms

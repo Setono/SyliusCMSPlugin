@@ -26,6 +26,7 @@
                  class="Setono\SyliusCMSPlugin\Form\Type\BlockType">
             <argument type="service" id="setono_editorjs.parser"/>
             <argument type="service" id="setono_editorjs.renderer"/>
+            <argument type="service" id="request_stack"/>
             <argument>%setono_sylius_cms.model.block.class%</argument>
             <argument>%setono_sylius_cms.form.type.block.validation_groups%</argument>
 
@@ -53,6 +54,7 @@
         <service id="setono_sylius_cms.form.type.view"
                  class="Setono\SyliusCMSPlugin\Form\Type\ViewType">
             <argument type="service" id="setono_sylius_cms.template.registry"/>
+            <argument type="service" id="request_stack"/>
             <argument>%setono_sylius_cms.model.view.class%</argument>
             <argument>%setono_sylius_cms.form.type.view.validation_groups%</argument>
 

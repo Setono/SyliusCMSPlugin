@@ -7,11 +7,13 @@ namespace Setono\SyliusCMSPlugin\Form\Type;
 use Setono\EditorJS\Parser\ParserInterface;
 use Setono\EditorJS\Renderer\RendererInterface;
 use Setono\SyliusCMSPlugin\Form\EventSubscriber\ConvertRawContentSubscriber;
+use Setono\SyliusCMSPlugin\Form\EventSubscriber\SetQueryParameterValueOnObjectSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
 use Sylius\Bundle\ResourceBundle\Form\Type\ResourceTranslationsType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 final class BlockType extends AbstractResourceType
 {
@@ -19,12 +21,15 @@ final class BlockType extends AbstractResourceType
 
     private RendererInterface $renderer;
 
+    private RequestStack $requestStack;
+
     /**
      * @param array<array-key, string> $validationGroups
      */
     public function __construct(
         ParserInterface $parser,
         RendererInterface $renderer,
+        RequestStack $requestStack,
         string $dataClass,
         array $validationGroups = []
     ) {
@@ -32,6 +37,7 @@ final class BlockType extends AbstractResourceType
 
         $this->parser = $parser;
         $this->renderer = $renderer;
+        $this->requestStack = $requestStack;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -53,7 +59,9 @@ final class BlockType extends AbstractResourceType
                 $this->renderer,
                 'defaultRawContent',
                 'defaultContent'
-            ));
+            ))
+            ->addEventSubscriber(new SetQueryParameterValueOnObjectSubscriber($this->requestStack))
+        ;
     }
 
     public function getBlockPrefix(): string

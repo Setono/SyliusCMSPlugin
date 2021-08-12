@@ -29,6 +29,8 @@
     {% endblock %}
 
     <div class="ui container">
+        {{ sscms_view('non_existing_view') }}
+        {{ sscms_block('non_existing_block') }}
         {{ sscms_view('header') }}
         {{ sscms_block('logo') }}
         {% block header %}

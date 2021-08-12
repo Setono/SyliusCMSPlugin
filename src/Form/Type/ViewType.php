@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Form\Type;
 
+use Setono\SyliusCMSPlugin\Form\EventSubscriber\SetQueryParameterValueOnObjectSubscriber;
 use Setono\SyliusCMSPlugin\Template\RegistryInterface;
 use Setono\SyliusCMSPlugin\Template\Template;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
@@ -11,19 +12,27 @@ use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 final class ViewType extends AbstractResourceType
 {
     private RegistryInterface $templateRegistry;
 
+    private RequestStack $requestStack;
+
     /**
      * @param array<array-key, string> $validationGroups
      */
-    public function __construct(RegistryInterface $templateRegistry, string $dataClass, array $validationGroups = [])
-    {
+    public function __construct(
+        RegistryInterface $templateRegistry,
+        RequestStack $requestStack,
+        string $dataClass,
+        array $validationGroups = []
+    ) {
         parent::__construct($dataClass, $validationGroups);
 
         $this->templateRegistry = $templateRegistry;
+        $this->requestStack = $requestStack;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -39,6 +48,7 @@ final class ViewType extends AbstractResourceType
                 'choice_value' => 'code',
                 'choice_label' => 'label'
             ])
+            ->addEventSubscriber(new SetQueryParameterValueOnObjectSubscriber($this->requestStack))
         ;
 
         $builder->get('template')->addModelTransformer(new CallbackTransformer(

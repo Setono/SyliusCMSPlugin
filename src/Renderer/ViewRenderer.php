@@ -18,24 +18,29 @@ final class ViewRenderer implements ViewRendererInterface
 
     private BlockRendererInterface $blockRenderer;
 
+    private bool $debug;
+
     public function __construct(
         ViewRepositoryInterface $viewRepository,
         Environment $twig,
         RegistryInterface $templateRegistry,
-        BlockRendererInterface $blockRenderer
+        BlockRendererInterface $blockRenderer,
+        bool $debug = false
     ) {
         $this->viewRepository = $viewRepository;
         $this->twig = $twig;
         $this->templateRegistry = $templateRegistry;
         $this->blockRenderer = $blockRenderer;
+        $this->debug = $debug;
     }
 
     public function render($view): string
     {
         if (is_string($view)) {
-            $view = $this->viewRepository->findOneByCode($view);
+            $code = $view;
+            $view = $this->viewRepository->findOneByCode($code);
             if (null === $view) {
-                return '';
+                return $this->renderNonExistingView($code);
             }
         }
 
@@ -67,6 +72,17 @@ final class ViewRenderer implements ViewRendererInterface
         return $this->twig->render('@SetonoSyliusCMSPlugin/view.html.twig', [
             'view' => $view,
             'rendered_view' => $renderedView,
+        ]);
+    }
+
+    private function renderNonExistingView(string $code): string
+    {
+        if (!$this->debug) {
+            return '';
+        }
+
+        return $this->twig->render('@SetonoSyliusCMSPlugin/view/debug_message.twig', [
+            'code' => $code,
         ]);
     }
 }
