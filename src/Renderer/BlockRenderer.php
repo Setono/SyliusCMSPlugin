@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Renderer;
 
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Setono\SyliusCMSPlugin\DTO\Block\Block;
 use Setono\SyliusCMSPlugin\Repository\BlockRepositoryInterface;
 use Twig\Environment;
 
-final class BlockRenderer implements BlockRendererInterface
+final class BlockRenderer implements BlockRendererInterface, LoggerAwareInterface
 {
+    private LoggerInterface $logger;
+
     private BlockRepositoryInterface $blockRepository;
 
     private Environment $twig;
@@ -18,6 +23,7 @@ final class BlockRenderer implements BlockRendererInterface
 
     public function __construct(BlockRepositoryInterface $blockRepository, Environment $twig, bool $debug = false)
     {
+        $this->logger = new NullLogger();
         $this->blockRepository = $blockRepository;
         $this->twig = $twig;
         $this->debug = $debug;
@@ -29,6 +35,8 @@ final class BlockRenderer implements BlockRendererInterface
             $code = $block;
             $block = $this->blockRepository->findOneByCode($code);
             if (null === $block) {
+                $this->logger->error(sprintf('The block "%s" is not defined', $code));
+
                 return $this->renderNonExistingBlock($code);
             }
         }
@@ -47,5 +55,10 @@ final class BlockRenderer implements BlockRendererInterface
         return $this->twig->render('@SetonoSyliusCMSPlugin/block/debug_message.twig', [
             'code' => $code,
         ]);
+    }
+
+    public function setLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
     }
 }

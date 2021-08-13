@@ -11,6 +11,7 @@
         "php": ">=7.4",
         "doctrine/collections": "^1.6",
         "knplabs/knp-menu": "^3.2",
+        "psr/log": "^1.1",
         "setono/editorjs-bundle": "^0.1",
         "stof/doctrine-extensions-bundle": "^1.6",
         "sylius/admin-api-bundle": "^1.10",

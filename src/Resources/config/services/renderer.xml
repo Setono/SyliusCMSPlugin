@@ -6,6 +6,9 @@
             <argument type="service" id="setono_sylius_cms.repository.block"/>
             <argument type="service" id="twig"/>
             <argument>%kernel.debug%</argument>
+            <call method="setLogger">
+                <argument type="service" id="logger"/>
+            </call>
         </service>
 
         <service id="setono_sylius_cms.renderer.view" class="Setono\SyliusCMSPlugin\Renderer\ViewRenderer">
@@ -14,6 +17,9 @@
             <argument type="service" id="setono_sylius_cms.template.registry"/>
             <argument type="service" id="setono_sylius_cms.renderer.block"/>
             <argument>%kernel.debug%</argument>
+            <call method="setLogger">
+                <argument type="service" id="logger"/>
+            </call>
         </service>
     </services>
 </container>

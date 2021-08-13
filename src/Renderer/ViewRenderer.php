@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Renderer;
 
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Setono\SyliusCMSPlugin\Repository\ViewRepositoryInterface;
 use Setono\SyliusCMSPlugin\Template\RegistryInterface;
 use Twig\Environment;
 
-final class ViewRenderer implements ViewRendererInterface
+final class ViewRenderer implements ViewRendererInterface, LoggerAwareInterface
 {
+    private LoggerInterface $logger;
+
     private ViewRepositoryInterface $viewRepository;
 
     private Environment $twig;
@@ -27,6 +32,7 @@ final class ViewRenderer implements ViewRendererInterface
         BlockRendererInterface $blockRenderer,
         bool $debug = false
     ) {
+        $this->logger = new NullLogger();
         $this->viewRepository = $viewRepository;
         $this->twig = $twig;
         $this->templateRegistry = $templateRegistry;
@@ -40,6 +46,8 @@ final class ViewRenderer implements ViewRendererInterface
             $code = $view;
             $view = $this->viewRepository->findOneByCode($code);
             if (null === $view) {
+                $this->logger->error(sprintf('The view "%s" is not defined', $code));
+
                 return $this->renderNonExistingView($code);
             }
         }
@@ -84,5 +92,10 @@ final class ViewRenderer implements ViewRendererInterface
         return $this->twig->render('@SetonoSyliusCMSPlugin/view/debug_message.twig', [
             'code' => $code,
         ]);
+    }
+
+    public function setLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
     }
 }
