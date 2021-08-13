@@ -6,4 +6,14 @@
             {{ form_row(form.source) }}
         </div>
     </div>
+    <div class="column">
+        <div class="ui segment">
+            <h4 class="ui medium header">How templates work</h4>
+            <p>Templates are written in the template language <a href="https://twig.symfony.com/doc/3.x/templates.html" target="_blank">Twig</a>. It comes with a great deal of power - but remember with great power comes great responsibility ;-)</p>
+            <p>If you don't want to make advanced Twig templates that's completely fine. To use a template, just create everything you want in HTML and then insert 'section tags' where you want content.</p>
+            <p>Here is an example of working (although very simple) template:</p>
+            <pre>{{ '{% sscms_section content %}'|e }}</pre>
+            <p>This creates a section named <code>content</code> and you use this section to input your content when creating views.</p>
+        </div>
+    </div>
 </div>
