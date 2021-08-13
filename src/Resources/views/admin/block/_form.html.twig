@@ -18,26 +18,43 @@
 <script src="{{ asset('bundles/setonosyliuscmsplugin/js/editor.js') }}"></script>
 <script src="{{ asset('bundles/setonosyliuscmsplugin/js/header.js') }}"></script>
 
-<button type="button" id="save">Save</button>
-
 <script>
     const editors = [];
-    document.querySelectorAll('.editorjs').forEach((editor) => {
-        editors.push(new EditorJS({
-            holder: editor.id,
-            tools: {
-                header: {
-                    class: Header,
-                    inlineToolbar : true
+    document.querySelectorAll('.editorjs').forEach((holderElement) => {
+        editors.push({
+            obj: new EditorJS({
+                holder: holderElement.id,
+                tools: {
+                    header: {
+                        class: Header,
+                        inlineToolbar : true
+                    }
+                },
+                data: {
+                    "time" : 1628862398590,
+                    "blocks" : [
+                        {
+                            "id" : "uFDH2xSH2S",
+                            "type" : "paragraph",
+                            "data" : {
+                                "text" : "Hey. Meet the new Editor. On this page you can see it in action — try to edit this text."
+                            }
+                        }
+                    ],
+                    "version" : "2.22.2"
                 }
-            }
-        }));
+            }),
+            source: holderElement.dataset.source
+        });
     });
 
-    document.querySelector('#save').addEventListener('click', () => {
+    document.forms['{{ form.vars.name }}'].addEventListener('submit', (e) => {
         editors.forEach((editor) => {
-            editor.save().then((outputData) => {
-                console.log('Article data: ', outputData)
+            editor.obj.save().then((json) => {
+                const data = JSON.stringify(json);
+                document.getElementById(editor.source).value = data;
+                console.log('Saving to: ', editor.source);
+                console.log('Article data: ', data)
             }).catch((error) => {
                 console.log('Saving failed: ', error)
             });
