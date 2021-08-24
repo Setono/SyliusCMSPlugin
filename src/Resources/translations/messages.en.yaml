@@ -1,7 +1,6 @@
 setono_sylius_cms:
     form:
         block:
-            code: Code
             content: Content
             default_content: Default content
         page:
@@ -11,10 +10,8 @@ setono_sylius_cms:
             title: Title
             view: View
         template:
-            code: Code
             source: Source
         view:
-            code: Code
             template: Template
             template_placeholder: Select template...
     menu:

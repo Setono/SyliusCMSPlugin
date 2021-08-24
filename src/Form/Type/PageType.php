@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Form\Type;
 
+use Sylius\Bundle\ResourceBundle\Form\EventSubscriber\AddCodeFormSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
 use Sylius\Bundle\ResourceBundle\Form\Type\ResourceTranslationsType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
@@ -25,7 +26,7 @@ final class PageType extends AbstractResourceType
                 'entry_type' => PageTranslationType::class,
                 'label' => 'setono_sylius_cms.form.page.translations',
                 'required' => false,
-            ])
+            ])->addEventSubscriber(new AddCodeFormSubscriber())
         ;
     }
 

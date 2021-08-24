@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
+use Sylius\Component\Resource\Model\CodeAwareInterface;
 use Sylius\Component\Resource\Model\ResourceInterface;
 use Sylius\Component\Resource\Model\ToggleableInterface;
 
-// todo add code (can be used in template later to style the page easily
-interface PageInterface extends ResourceInterface, ToggleableInterface
+interface PageInterface extends ResourceInterface, ToggleableInterface, CodeAwareInterface
 {
     public function getId(): ?int;
 

@@ -10,10 +10,15 @@
             <generator strategy="AUTO"/>
         </id>
 
+        <field name="code" column="code" type="string"/>
         <field name="enabled" type="boolean"/>
 
         <many-to-one field="view" target-entity="Setono\SyliusCMSPlugin\Model\ViewInterface" fetch="EAGER">
             <join-column name="view_id" referenced-column-name="id" nullable="false" />
         </many-to-one>
+
+        <unique-constraints>
+            <unique-constraint columns="code"/>
+        </unique-constraints>
     </mapped-superclass>
 </doctrine-mapping>

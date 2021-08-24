@@ -21,6 +21,8 @@ class Page implements PageInterface, TranslatableInterface
 
     protected ?int $id = null;
 
+    protected ?string $code = null;
+
     protected ?ViewInterface $view = null;
 
     public function __construct()
@@ -31,6 +33,16 @@ class Page implements PageInterface, TranslatableInterface
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getCode(): ?string
+    {
+        return $this->code;
+    }
+
+    public function setCode(?string $code): void
+    {
+        $this->code = $code;
     }
 
     public function getView(): ?ViewInterface

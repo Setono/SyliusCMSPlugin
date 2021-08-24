@@ -7,10 +7,10 @@ namespace Setono\SyliusCMSPlugin\Form\Type;
 use Setono\SyliusCMSPlugin\Form\EventSubscriber\SetQueryParameterValueOnObjectSubscriber;
 use Setono\SyliusCMSPlugin\Template\RegistryInterface;
 use Setono\SyliusCMSPlugin\Template\Template;
+use Sylius\Bundle\ResourceBundle\Form\EventSubscriber\AddCodeFormSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
 use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -38,9 +38,6 @@ final class ViewType extends AbstractResourceType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('code', TextType::class, [
-                'label' => 'setono_sylius_cms.form.view.code',
-            ])
             ->add('template', ChoiceType::class, [
                 'label' => 'setono_sylius_cms.form.view.template',
                 'placeholder' => 'setono_sylius_cms.form.view.template_placeholder',
@@ -49,6 +46,7 @@ final class ViewType extends AbstractResourceType
                 'choice_label' => 'label'
             ])
             ->addEventSubscriber(new SetQueryParameterValueOnObjectSubscriber($this->requestStack))
+            ->addEventSubscriber(new AddCodeFormSubscriber())
         ;
 
         $builder->get('template')->addModelTransformer(new CallbackTransformer(

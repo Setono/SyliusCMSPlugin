@@ -8,10 +8,10 @@ use Setono\EditorJS\Parser\ParserInterface;
 use Setono\EditorJS\Renderer\RendererInterface;
 use Setono\SyliusCMSPlugin\Form\EventSubscriber\ConvertRawContentSubscriber;
 use Setono\SyliusCMSPlugin\Form\EventSubscriber\SetQueryParameterValueOnObjectSubscriber;
+use Sylius\Bundle\ResourceBundle\Form\EventSubscriber\AddCodeFormSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
 use Sylius\Bundle\ResourceBundle\Form\Type\ResourceTranslationsType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -43,9 +43,6 @@ final class BlockType extends AbstractResourceType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('code', TextType::class, [
-                'label' => 'setono_sylius_cms.form.block.code',
-            ])
             ->add('defaultContent', HiddenType::class)
             ->add('defaultRawContent', EditorJSType::class, [
                 'label' => 'setono_sylius_cms.form.block.default_content',
@@ -61,6 +58,7 @@ final class BlockType extends AbstractResourceType
                 'defaultContent'
             ))
             ->addEventSubscriber(new SetQueryParameterValueOnObjectSubscriber($this->requestStack))
+            ->addEventSubscriber(new AddCodeFormSubscriber())
         ;
     }
 
