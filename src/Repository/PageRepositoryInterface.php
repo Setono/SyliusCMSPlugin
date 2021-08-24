@@ -15,4 +15,5 @@ use Sylius\Component\Resource\Repository\RepositoryInterface;
  */
 interface PageRepositoryInterface extends RepositoryInterface
 {
+    public function findOneBySlug(string $locale, string $slug): ?PageInterface;
 }

@@ -9,6 +9,7 @@ setono_sylius_cms:
             meta_description: Meta description
             slug: Slug
             title: Title
+            view: View
         template:
             code: Code
             source: Source

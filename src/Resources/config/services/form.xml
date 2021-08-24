@@ -85,5 +85,12 @@
 
             <tag name="form.type"/>
         </service>
+
+        <service id="setono_sylius_cms.form.type.view_choice"
+                 class="Setono\SyliusCMSPlugin\Form\Type\ViewChoiceType">
+            <argument type="service" id="setono_sylius_cms.repository.view"/>
+
+            <tag name="form.type"/>
+        </service>
     </services>
 </container>

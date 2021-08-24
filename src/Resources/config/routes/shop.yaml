@@ -1,1 +1,5 @@
-# TODO Add your shop routes here
+setono_sylius_cms_shop_page_show:
+    path: /{slug}
+    methods: GET
+    defaults:
+        _controller: setono_sylius_cms.controller.action.show_page
