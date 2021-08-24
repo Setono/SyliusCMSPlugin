@@ -40,4 +40,9 @@ class Template implements TemplateInterface
     {
         $this->source = $source;
     }
+
+    public function __toString(): string
+    {
+        return (string) $this->getCode();
+    }
 }

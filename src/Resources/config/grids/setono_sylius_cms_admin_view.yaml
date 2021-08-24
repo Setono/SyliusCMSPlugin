@@ -9,6 +9,9 @@ sylius_grid:
                 code:
                     type: string
                     label: sylius.ui.code
+                template:
+                    type: string
+                    label: setono_sylius_cms.ui.template
             filters:
                 search:
                     type: string

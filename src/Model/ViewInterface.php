@@ -28,4 +28,6 @@ interface ViewInterface extends ResourceInterface, CodeAwareInterface
      * @psalm-return Collection<array-key, ViewBlockInterface>
      */
     public function getViewBlocks(): Collection;
+
+    public function __toString(): string;
 }

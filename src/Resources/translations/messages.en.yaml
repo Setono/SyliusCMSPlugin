@@ -30,9 +30,11 @@ setono_sylius_cms:
         page_header: Pages
         page_subheader: Manage your CMS pages
         pages: Pages
+        template: Template
         template_header: Templates
         template_subheader: Manage your templates
         templates: Templates
+        view: View
         view_header: Views
         view_subheader: Manage your views
         views: Views

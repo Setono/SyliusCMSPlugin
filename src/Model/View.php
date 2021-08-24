@@ -64,4 +64,9 @@ class View implements ViewInterface
     {
         return $this->viewBlocks;
     }
+
+    public function __toString(): string
+    {
+        return (string) $this->getCode();
+    }
 }

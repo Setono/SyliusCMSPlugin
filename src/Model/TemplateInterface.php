@@ -15,4 +15,6 @@ interface TemplateInterface extends ResourceInterface, CodeAwareInterface, Times
     public function getSource(): ?string;
 
     public function setSource(string $source): void;
+
+    public function __toString(): string;
 }
