@@ -19,13 +19,6 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         ];
     }
 
-    protected function getMinimalConfiguration(): array
-    {
-        return [
-            'option' => 'option_value',
-        ];
-    }
-
     /**
      * @test
      */
@@ -33,6 +26,6 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     {
         $this->load();
 
-        $this->assertContainerBuilderHasParameter('setono_sylius_cms.option', 'option_value');
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.templates', []);
     }
 }

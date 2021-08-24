@@ -4,6 +4,11 @@ setono_sylius_cms:
             code: Code
             content: Content
             default_content: Default content
+        page:
+            enabled: Enabled
+            meta_description: Meta description
+            slug: Slug
+            title: Title
         template:
             code: Code
             source: Source
@@ -17,12 +22,16 @@ setono_sylius_cms:
                 content_management:
                     blocks: Blocks
                     header: Content management
+                    pages: Pages
                     templates: Templates
                     views: Views
     ui:
         block_header: Blocks
         block_subheader: Manage your content blocks
         blocks: Blocks
+        page_header: Pages
+        page_subheader: Manage your CMS pages
+        pages: Pages
         template_header: Templates
         template_subheader: Manage your templates
         templates: Templates

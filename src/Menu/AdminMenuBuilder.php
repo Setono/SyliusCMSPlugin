@@ -22,6 +22,14 @@ final class AdminMenuBuilder
         ;
 
         $header
+            ->addChild('pages', [
+                'route' => 'setono_sylius_cms_admin_page_index',
+            ])
+            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.pages')
+            ->setLabelAttribute('icon', 'list alternate outline')
+        ;
+
+        $header
             ->addChild('blocks', [
                 'route' => 'setono_sylius_cms_admin_block_index',
             ])

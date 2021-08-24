@@ -11,6 +11,15 @@
             <parameter>setono_sylius_cms</parameter>
         </parameter>
 
+        <parameter type="collection" key="setono_sylius_cms.form.type.page.validation_groups">
+            <parameter>setono_sylius_cms</parameter>
+        </parameter>
+
+        <parameter type="collection"
+                   key="setono_sylius_cms.form.type.page_translation.validation_groups">
+            <parameter>setono_sylius_cms</parameter>
+        </parameter>
+
         <parameter type="collection"
                    key="setono_sylius_cms.form.type.template.validation_groups">
             <parameter>setono_sylius_cms</parameter>
@@ -39,6 +48,22 @@
             <argument type="service" id="setono_editorjs.renderer"/>
             <argument>%setono_sylius_cms.model.block_translation.class%</argument>
             <argument>%setono_sylius_cms.form.type.block_translation.validation_groups%</argument>
+
+            <tag name="form.type"/>
+        </service>
+
+        <service id="setono_sylius_cms.form.type.page"
+                 class="Setono\SyliusCMSPlugin\Form\Type\PageType">
+            <argument>%setono_sylius_cms.model.page.class%</argument>
+            <argument>%setono_sylius_cms.form.type.page.validation_groups%</argument>
+
+            <tag name="form.type"/>
+        </service>
+
+        <service id="setono_sylius_cms.form.type.page_translation"
+                 class="Setono\SyliusCMSPlugin\Form\Type\PageTranslationType">
+            <argument>%setono_sylius_cms.model.page_translation.class%</argument>
+            <argument>%setono_sylius_cms.form.type.page_translation.validation_groups%</argument>
 
             <tag name="form.type"/>
         </service>

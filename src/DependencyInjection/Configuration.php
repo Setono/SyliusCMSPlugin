@@ -5,14 +5,19 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
 use Setono\SyliusCMSPlugin\Doctrine\ORM\BlockRepository;
+use Setono\SyliusCMSPlugin\Doctrine\ORM\PageRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\TemplateRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\ViewRepository;
 use Setono\SyliusCMSPlugin\Form\Type\BlockTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\BlockType;
+use Setono\SyliusCMSPlugin\Form\Type\PageTranslationType;
+use Setono\SyliusCMSPlugin\Form\Type\PageType;
 use Setono\SyliusCMSPlugin\Form\Type\TemplateType;
 use Setono\SyliusCMSPlugin\Form\Type\ViewType;
 use Setono\SyliusCMSPlugin\Model\Block;
 use Setono\SyliusCMSPlugin\Model\BlockTranslation;
+use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Template;
 use Setono\SyliusCMSPlugin\Model\View;
 use Setono\SyliusCMSPlugin\Model\ViewBlock;
@@ -95,6 +100,38 @@ final class Configuration implements ConfigurationInterface
                                                 ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
                                                 ->scalarNode('repository')->cannotBeEmpty()->end()
                                                 ->scalarNode('form')->defaultValue(BlockTranslationType::class)->cannotBeEmpty()->end()
+                                                ->scalarNode('factory')->defaultValue(TranslatableFactory::class)->end()
+                                            ->end()
+                                        ->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                        ->arrayNode('page')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->variableNode('options')->end()
+                                ->arrayNode('classes')
+                                    ->addDefaultsIfNotSet()
+                                    ->children()
+                                        ->scalarNode('model')->defaultValue(Page::class)->cannotBeEmpty()->end()
+                                        ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
+                                        ->scalarNode('repository')->defaultValue(PageRepository::class)->cannotBeEmpty()->end()
+                                        ->scalarNode('form')->defaultValue(PageType::class)->end()
+                                        ->scalarNode('factory')->defaultValue(Factory::class)->end()
+                                    ->end()
+                                ->end()
+                                ->arrayNode('translation')
+                                    ->addDefaultsIfNotSet()
+                                    ->children()
+                                        ->variableNode('options')->end()
+                                        ->arrayNode('classes')
+                                            ->addDefaultsIfNotSet()
+                                            ->children()
+                                                ->scalarNode('model')->defaultValue(PageTranslation::class)->cannotBeEmpty()->end()
+                                                ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
+                                                ->scalarNode('repository')->cannotBeEmpty()->end()
+                                                ->scalarNode('form')->defaultValue(PageTranslationType::class)->cannotBeEmpty()->end()
                                                 ->scalarNode('factory')->defaultValue(TranslatableFactory::class)->end()
                                             ->end()
                                         ->end()
