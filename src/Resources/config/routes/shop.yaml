@@ -3,3 +3,5 @@ setono_sylius_cms_shop_page_show:
     methods: GET
     defaults:
         _controller: setono_sylius_cms.controller.action.show_page
+    # having a condition here makes sure that the order in which (other) routes are added doesn't matter
+    condition: "pageExists(request)"
