@@ -1,3 +1,4 @@
+{# @var page \Setono\SyliusCMSPlugin\Model\PageInterface #}
 {% from '@SyliusAdmin/Macro/translationForm.html.twig' import translationForm %}
 
 {{ form_errors(form) }}
@@ -7,6 +8,11 @@
             {{ form_row(form.code) }}
             {{ form_row(form.enabled) }}
             {{ form_row(form.view) }}
+            {% if page.view is not null %}
+                <div>
+                    <i class="fitted angle double right icon"></i> <a href="{{ path('setono_sylius_cms_admin_view_update', {id: page.view.id}) }}">Go to '{{ page.view.code }}' view</a>
+                </div>
+            {% endif %}
         </div>
     </div>
     <div class="column">
