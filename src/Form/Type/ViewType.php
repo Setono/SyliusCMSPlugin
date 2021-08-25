@@ -38,12 +38,14 @@ final class ViewType extends AbstractResourceType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
+            // todo create a TemplateChoiceType
             ->add('template', ChoiceType::class, [
                 'label' => 'setono_sylius_cms.form.view.template',
                 'placeholder' => 'setono_sylius_cms.form.view.template_placeholder',
                 'choices' => $this->templateRegistry->all(),
                 'choice_value' => 'code',
-                'choice_label' => 'label'
+                'choice_label' => 'label',
+                'choice_translation_domain' => false,
             ])
             ->addEventSubscriber(new SetQueryParameterValueOnObjectSubscriber($this->requestStack))
             ->addEventSubscriber(new AddCodeFormSubscriber())
