@@ -47,7 +47,7 @@ final class ConvertRawContentSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            FormEvents::PRE_SUBMIT => 'convert'
+            FormEvents::PRE_SUBMIT => 'convert',
         ];
     }
 

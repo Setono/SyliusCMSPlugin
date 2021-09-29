@@ -14,7 +14,7 @@ class ViewRepository extends EntityRepository implements ViewRepositoryInterface
     public function findOneByCode(string $code): ?ViewInterface
     {
         $obj = $this->findOneBy([
-            'code' => $code
+            'code' => $code,
         ]);
 
         Assert::nullOrIsInstanceOf($obj, ViewInterface::class);

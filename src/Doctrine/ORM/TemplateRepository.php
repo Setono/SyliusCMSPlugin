@@ -14,7 +14,7 @@ class TemplateRepository extends EntityRepository implements TemplateRepositoryI
     public function findOneByCode(string $code): ?TemplateInterface
     {
         $obj = $this->findOneBy([
-            'code' => $code
+            'code' => $code,
         ]);
 
         Assert::nullOrIsInstanceOf($obj, TemplateInterface::class);

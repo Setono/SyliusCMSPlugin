@@ -36,7 +36,7 @@ final class SetQueryParameterValueOnObjectSubscriber implements EventSubscriberI
     public static function getSubscribedEvents(): array
     {
         return [
-            FormEvents::PRE_SET_DATA => 'set'
+            FormEvents::PRE_SET_DATA => 'set',
         ];
     }
 

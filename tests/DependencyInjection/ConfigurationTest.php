@@ -66,7 +66,7 @@ final class ConfigurationTest extends TestCase
                             'form' => BlockTranslationType::class,
                             'factory' => TranslatableFactory::class,
                         ],
-                    ]
+                    ],
                 ],
                 'page' => [
                     'classes' => [
@@ -83,7 +83,7 @@ final class ConfigurationTest extends TestCase
                             'form' => PageTranslationType::class,
                             'factory' => TranslatableFactory::class,
                         ],
-                    ]
+                    ],
                 ],
                 'template' => [
                     'classes' => [
@@ -111,7 +111,7 @@ final class ConfigurationTest extends TestCase
                         'factory' => Factory::class,
                     ],
                 ],
-            ]
+            ],
         ]);
     }
 }

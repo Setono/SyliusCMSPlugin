@@ -14,7 +14,7 @@ class BlockRepository extends EntityRepository implements BlockRepositoryInterfa
     public function findOneByCode(string $code): ?BlockInterface
     {
         $obj = $this->findOneBy([
-            'code' => $code
+            'code' => $code,
         ]);
         Assert::nullOrIsInstanceOf($obj, BlockInterface::class);
 
