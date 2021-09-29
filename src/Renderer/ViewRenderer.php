@@ -8,6 +8,7 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Setono\SyliusCMSPlugin\Repository\ViewRepositoryInterface;
+use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
 use Setono\SyliusCMSPlugin\Template\RegistryInterface;
 use Twig\Environment;
 
@@ -23,6 +24,8 @@ final class ViewRenderer implements ViewRendererInterface, LoggerAwareInterface
 
     private BlockRendererInterface $blockRenderer;
 
+    private ElementStackInterface $elementStack;
+
     private bool $debug;
 
     public function __construct(
@@ -30,6 +33,7 @@ final class ViewRenderer implements ViewRendererInterface, LoggerAwareInterface
         Environment $twig,
         RegistryInterface $templateRegistry,
         BlockRendererInterface $blockRenderer,
+        ElementStackInterface $elementStack,
         bool $debug = false
     ) {
         $this->logger = new NullLogger();
@@ -37,6 +41,7 @@ final class ViewRenderer implements ViewRendererInterface, LoggerAwareInterface
         $this->twig = $twig;
         $this->templateRegistry = $templateRegistry;
         $this->blockRenderer = $blockRenderer;
+        $this->elementStack = $elementStack;
         $this->debug = $debug;
     }
 
@@ -76,6 +81,8 @@ final class ViewRenderer implements ViewRendererInterface, LoggerAwareInterface
         }
 
         $renderedView = $this->twig->render($template->getCode(), $context);
+
+        $this->elementStack->push($view);
 
         return $this->twig->render('@SetonoSyliusCMSPlugin/view.html.twig', [
             'view' => $view,

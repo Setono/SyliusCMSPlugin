@@ -7,7 +7,7 @@ namespace Setono\SyliusCMSPlugin\Model;
 use Sylius\Component\Resource\Model\CodeAwareInterface;
 use Sylius\Component\Resource\Model\ResourceInterface;
 
-interface BlockInterface extends ResourceInterface, CodeAwareInterface
+interface BlockInterface extends ResourceInterface, ElementInterface, CodeAwareInterface
 {
     public function getId(): ?int;
 

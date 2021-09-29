@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="setono_sylius_cms.event_subscriber.add_toolbar" class="Setono\SyliusCMSPlugin\EventSubscriber\AddToolbarSubscriber">
+            <argument type="service" id="twig"/>
+            <argument type="service" id="setono_sylius_cms.stack.element"/>
+            <argument type="service" id="sylius.section_resolver.uri_based_section_resolver"/>
+
+            <tag name="kernel.event_subscriber"/>
+        </service>
+    </services>
+</container>

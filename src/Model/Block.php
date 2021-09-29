@@ -34,6 +34,11 @@ class Block implements BlockInterface, TranslatableInterface
         return $this->id;
     }
 
+    public function getIdentifier(): string
+    {
+        return sprintf('sscms-block-%s', (string) $this->getCode());
+    }
+
     public function getCode(): ?string
     {
         return $this->code;
