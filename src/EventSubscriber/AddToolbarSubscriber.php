@@ -10,6 +10,7 @@ use Sylius\Bundle\ShopBundle\SectionResolver\ShopSection;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Twig\Environment;
 
 final class AddToolbarSubscriber implements EventSubscriberInterface
@@ -20,14 +21,18 @@ final class AddToolbarSubscriber implements EventSubscriberInterface
 
     private SectionProviderInterface $sectionProvider;
 
+    private AuthorizationCheckerInterface $authorizationChecker;
+
     public function __construct(
         Environment $twig,
         ElementStackInterface $elementStack,
-        SectionProviderInterface $sectionProvider
+        SectionProviderInterface $sectionProvider,
+        AuthorizationCheckerInterface $authorizationChecker
     ) {
         $this->twig = $twig;
         $this->elementStack = $elementStack;
         $this->sectionProvider = $sectionProvider;
+        $this->authorizationChecker = $authorizationChecker;
     }
 
     public static function getSubscribedEvents(): array
@@ -51,10 +56,9 @@ final class AddToolbarSubscriber implements EventSubscriberInterface
             return;
         }
 
-        // todo we need to fix this. It doesn't work like this because we have multiple firewalls, i.e. multiple contexts
-        //if(!$this->authorizationChecker->isGranted('ROLE_ADMINISTRATION_ACCESS')) {
-        //    return;
-        //}
+        if (!$this->authorizationChecker->isGranted('setono-sylius-cms:toolbar:show')) {
+            return;
+        }
 
         $response = $event->getResponse();
         $content = $response->getContent();
