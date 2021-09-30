@@ -12,6 +12,8 @@ use Webmozart\Assert\Assert;
 
 final class ShowToolbarVoter extends Voter
 {
+    public const ATTRIBUTE = 'setono-sylius-cms:toolbar:show';
+
     private RequestStack $requestStack;
 
     private AccessDecisionManagerInterface $accessDecisionManager;
@@ -24,7 +26,7 @@ final class ShowToolbarVoter extends Voter
 
     protected function supports(string $attribute, $subject): bool
     {
-        return 'setono-sylius-cms:toolbar:show' === $attribute;
+        return self::ATTRIBUTE === $attribute;
     }
 
     protected function voteOnAttribute(string $attribute, $subject, TokenInterface $token): bool

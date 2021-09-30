@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\EventSubscriber;
 
+use Setono\SyliusCMSPlugin\Security\Voter\ShowToolbarVoter;
 use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
 use Sylius\Bundle\CoreBundle\SectionResolver\SectionProviderInterface;
 use Sylius\Bundle\ShopBundle\SectionResolver\ShopSection;
@@ -56,7 +57,7 @@ final class AddToolbarSubscriber implements EventSubscriberInterface
             return;
         }
 
-        if (!$this->authorizationChecker->isGranted('setono-sylius-cms:toolbar:show')) {
+        if (!$this->authorizationChecker->isGranted(ShowToolbarVoter::ATTRIBUTE)) {
             return;
         }
 
