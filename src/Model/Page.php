@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Sylius\Component\Channel\Model\ChannelInterface as BaseChannelInterface;
 use Sylius\Component\Resource\Model\ToggleableTrait;
 use Sylius\Component\Resource\Model\TranslatableInterface;
 use Sylius\Component\Resource\Model\TranslatableTrait;
@@ -11,6 +14,8 @@ use Sylius\Component\Resource\Model\TranslationInterface;
 
 class Page implements PageInterface, TranslatableInterface
 {
+    use EnabledDateIntervalAwareTrait;
+
     use ToggleableTrait;
 
     use TranslatableTrait {
@@ -25,8 +30,16 @@ class Page implements PageInterface, TranslatableInterface
 
     protected ?ViewInterface $view = null;
 
+    /**
+     * @psalm-var Collection<array-key, BaseChannelInterface>
+     *
+     * @var Collection|BaseChannelInterface
+     */
+    protected Collection $channels;
+
     public function __construct()
     {
+        $this->channels = new ArrayCollection();
         $this->initializeTranslationsCollection();
     }
 
@@ -73,6 +86,30 @@ class Page implements PageInterface, TranslatableInterface
     public function setMetaDescription(?string $metaDescription): void
     {
         $this->getTranslation()->setMetaDescription($metaDescription);
+    }
+
+    public function getChannels(): Collection
+    {
+        return $this->channels;
+    }
+
+    public function addChannel(BaseChannelInterface $channel): void
+    {
+        if (!$this->hasChannel($channel)) {
+            $this->channels->add($channel);
+        }
+    }
+
+    public function removeChannel(BaseChannelInterface $channel): void
+    {
+        if ($this->hasChannel($channel)) {
+            $this->channels->removeElement($channel);
+        }
+    }
+
+    public function hasChannel(BaseChannelInterface $channel): bool
+    {
+        return $this->channels->contains($channel);
     }
 
     /**

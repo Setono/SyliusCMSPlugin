@@ -5,6 +5,8 @@ setono_sylius_cms:
             default_content: Default content
         page:
             enabled: Enabled
+            enabled_from: Enabled from
+            enabled_until: Enabled until
             meta_description: Meta description
             slug: Slug
             title: Title
