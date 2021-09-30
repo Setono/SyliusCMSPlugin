@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Stack;
 
+use ArrayIterator;
 use Setono\SyliusCMSPlugin\Model\BlockInterface;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Setono\SyliusCMSPlugin\Model\ViewInterface;
@@ -37,8 +38,8 @@ final class ElementStack implements ElementStackInterface, \IteratorAggregate
         });
     }
 
-    public function getIterator(): \ArrayIterator
+    public function getIterator(): ArrayIterator
     {
-        return new \ArrayIterator($this->elements);
+        return new ArrayIterator($this->elements);
     }
 }
