@@ -17,6 +17,8 @@
         "void",
         "Sylius\\Bundle\\CoreBundle\\Application\\SyliusPluginTrait",
         "Sylius\\Bundle\\UiBundle\\Menu\\Event\\MenuBuilderEvent",
-        "Sylius\\Component\\Locale\\Context\\LocaleContextInterface"
+        "Sylius\\Component\\Locale\\Context\\LocaleContextInterface",
+        "Sylius\\Bundle\\CoreBundle\\SectionResolver\\SectionProviderInterface",
+        "Sylius\\Bundle\\ShopBundle\\SectionResolver\\ShopSection"
     ]
 }
