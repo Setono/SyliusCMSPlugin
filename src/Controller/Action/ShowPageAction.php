@@ -42,7 +42,7 @@ final class ShowPageAction
     public function __invoke(Request $request, string $slug): Response
     {
         $page = $this->pageRepository->findOneBySlug($this->localeContext->getLocaleCode(), $slug);
-        if (null === $page || $this->eligibilityChecker->isEligible($page)) {
+        if (null === $page || !$this->eligibilityChecker->isEligible($page)) {
             throw new NotFoundHttpException(sprintf('The page "%s" does not exist', $slug));
         }
 
