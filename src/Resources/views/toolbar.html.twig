@@ -1,0 +1,112 @@
+<style>
+    #sscms-toolbar {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        width: 200px;
+        min-height: 100px;
+        background-color: #fff;
+        z-index: 999999;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        -webkit-box-shadow: 0 0 20px 1px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 0 20px 1px rgba(0, 0, 0, 0.2);
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    #sscms-toolbar .sscms-header {
+        font-size: 16px;
+        border-bottom: 2px solid lightgray;
+        text-align: center;
+        padding-bottom: 5px;
+    }
+
+    #sscms-toolbar .sscms-subheader {
+        margin-top: 10px;
+    }
+
+    #sscms-toolbar .sscms-header, #sscms-toolbar .sscms-subheader {
+        text-transform: uppercase;
+        font-weight: bold;
+    }
+
+    #sscms-toolbar ul {
+        margin: 0;
+        padding: 0;
+        list-style-position: inside;
+    }
+
+    #sscms-toolbar ul ::marker {
+        color: lightgray;
+    }
+
+    .sscms-hover {
+        background: rgb(92, 99, 171) !important;
+        mix-blend-mode: multiply !important;
+    }
+</style>
+<script>
+    (function (d) {
+        if (d.readyState === "complete" || d.readyState === "interactive") {
+            init();
+        } else {
+            d.addEventListener("DOMContentLoaded", init);
+        }
+
+        function init() {
+            const toolbar = d.getElementById('sscms-toolbar');
+            let identifiers = [];
+            toolbar.querySelectorAll('a').forEach(function(elm) {
+                if('identifier' in elm.dataset) {
+                    identifiers.push(elm.dataset.identifier);
+                }
+            });
+
+            toolbar.addEventListener('mouseover', function (e) {
+                identifiers.forEach(function(identifier) {
+                    d.querySelectorAll(`.${identifier}`).forEach(function (elm) {
+                        elm.classList.remove('sscms-hover');
+                    })
+                });
+
+                const identifier = e.target.dataset.identifier;
+                d.querySelectorAll(`.${identifier}`).forEach(function (elm) {
+                    elm.classList.add('sscms-hover');
+                })
+            }, false);
+
+            toolbar.addEventListener('mouseleave', function (e) {
+                const identifier = e.target.dataset.identifier;
+                d.querySelectorAll(`.${identifier}`).forEach(function (elm) {
+                    elm.classList.remove('sscms-hover');
+                })
+            }, false);
+        }
+    })(document);
+</script>
+<div id="sscms-toolbar">
+    <div class="sscms-header">CMS Toolbar</div>
+    <div class="sscms-subheader">{{ 'setono_sylius_cms.ui.blocks'|trans }}</div>
+    <ul>
+        {% for element in elements.blocks %}
+            <li>
+                <a href="{{ path('setono_sylius_cms_admin_block_update', {'id': element.id}) }}"
+                   data-identifier="{{ element.identifier }}" target="_blank">
+                    {{ element.identifier }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <div class="sscms-subheader">{{ 'setono_sylius_cms.ui.views'|trans }}</div>
+    <ul>
+        {% for element in elements.views %}
+            <li>
+                <a href="{{ path('setono_sylius_cms_admin_view_update', {'id': element.id}) }}"
+                   data-identifier="{{ element.identifier }}" target="_blank">
+                    {{ element.identifier }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>

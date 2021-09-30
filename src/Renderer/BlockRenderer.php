@@ -7,8 +7,8 @@ namespace Setono\SyliusCMSPlugin\Renderer;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Setono\SyliusCMSPlugin\DTO\Block\Block;
 use Setono\SyliusCMSPlugin\Repository\BlockRepositoryInterface;
+use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
 use Twig\Environment;
 
 final class BlockRenderer implements BlockRendererInterface, LoggerAwareInterface
@@ -19,13 +19,20 @@ final class BlockRenderer implements BlockRendererInterface, LoggerAwareInterfac
 
     private Environment $twig;
 
+    private ElementStackInterface $elementStack;
+
     private bool $debug;
 
-    public function __construct(BlockRepositoryInterface $blockRepository, Environment $twig, bool $debug = false)
-    {
+    public function __construct(
+        BlockRepositoryInterface $blockRepository,
+        Environment $twig,
+        ElementStackInterface $elementStack,
+        bool $debug = false
+    ) {
         $this->logger = new NullLogger();
         $this->blockRepository = $blockRepository;
         $this->twig = $twig;
+        $this->elementStack = $elementStack;
         $this->debug = $debug;
     }
 
@@ -41,8 +48,10 @@ final class BlockRenderer implements BlockRendererInterface, LoggerAwareInterfac
             }
         }
 
+        $this->elementStack->push($block);
+
         return $this->twig->render('@SetonoSyliusCMSPlugin/block.html.twig', [
-            'block' => Block::createFromEntity($block),
+            'block' => $block,
         ]);
     }
 

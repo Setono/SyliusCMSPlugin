@@ -30,6 +30,11 @@ class View implements ViewInterface
         return $this->id;
     }
 
+    public function getIdentifier(): string
+    {
+        return sprintf('sscms-view-%s', (string) $this->getCode());
+    }
+
     public function getCode(): ?string
     {
         return $this->code;
