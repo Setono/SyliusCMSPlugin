@@ -1,5 +1,7 @@
 setono_sylius_cms:
     form:
+        asset:
+            file: File
         block:
             content: Content
             default_content: Default content

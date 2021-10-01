@@ -6,6 +6,19 @@ imports:
     - { resource: "@SetonoSyliusCMSPlugin/Resources/config/grids/setono_sylius_cms_admin_template.yaml" }
     - { resource: "@SetonoSyliusCMSPlugin/Resources/config/grids/setono_sylius_cms_admin_view.yaml" }
 
+parameters:
+    setono_sylius_cms.asset_adapter: "setono_sylius_cms_asset"
+
+knp_gaufrette:
+    adapters:
+        setono_sylius_cms_asset:
+            local:
+                directory: "%kernel.project_dir%/public/assets"
+                create: true
+    filesystems:
+        setono_sylius_cms_asset:
+            adapter: "%setono_sylius_cms.asset_adapter%"
+
 sylius_ui:
     events:
         setono_sylius_cms.admin.view.update.javascripts:
