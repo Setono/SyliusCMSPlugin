@@ -33,7 +33,7 @@ class Page implements PageInterface, TranslatableInterface
     /**
      * @psalm-var Collection<array-key, BaseChannelInterface>
      *
-     * @var Collection|BaseChannelInterface
+     * @var Collection|BaseChannelInterface[]
      */
     protected Collection $channels;
 
