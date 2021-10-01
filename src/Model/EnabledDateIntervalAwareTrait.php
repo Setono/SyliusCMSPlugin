@@ -32,25 +32,16 @@ trait EnabledDateIntervalAwareTrait
         $this->enabledUntil = $enabledUntil;
     }
 
-    // todo I am pretty sure this can be simplified
     public function isEnabledOn(DateTimeInterface $dateTime): bool
     {
-        if (null === $this->enabledFrom && null === $this->enabledUntil) {
-            return true;
+        if (null !== $this->enabledUntil && $this->enabledUntil < $dateTime) {
+            return false;
         }
 
-        if (null === $this->enabledFrom && $dateTime <= $this->enabledUntil) {
-            return true;
+        if (null !== $this->enabledFrom && $this->enabledFrom > $dateTime) {
+            return false;
         }
 
-        if (null === $this->enabledUntil && $dateTime >= $this->enabledFrom) {
-            return true;
-        }
-
-        if ($dateTime >= $this->enabledFrom && $dateTime <= $this->enabledUntil) {
-            return true;
-        }
-
-        return false;
+        return true;
     }
 }
