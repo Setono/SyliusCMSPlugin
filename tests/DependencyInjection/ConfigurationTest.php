@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Doctrine\ORM\CarouselRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\PageRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\TemplateRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\ViewRepository;
+use Setono\SyliusCMSPlugin\Form\Type\AssetType;
 use Setono\SyliusCMSPlugin\Form\Type\BlockTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\BlockType;
 use Setono\SyliusCMSPlugin\Form\Type\CarouselBlockType;
@@ -20,6 +21,7 @@ use Setono\SyliusCMSPlugin\Form\Type\PageTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\PageType;
 use Setono\SyliusCMSPlugin\Form\Type\TemplateType;
 use Setono\SyliusCMSPlugin\Form\Type\ViewType;
+use Setono\SyliusCMSPlugin\Model\Asset;
 use Setono\SyliusCMSPlugin\Model\Block;
 use Setono\SyliusCMSPlugin\Model\BlockTranslation;
 use Setono\SyliusCMSPlugin\Model\Carousel;
@@ -56,6 +58,14 @@ final class ConfigurationTest extends TestCase
             'driver' => SyliusResourceBundle::DRIVER_DOCTRINE_ORM,
             'templates' => [],
             'resources' => [
+                'asset' => [
+                    'classes' => [
+                        'model' => Asset::class,
+                        'controller' => ResourceController::class,
+                        'form' => AssetType::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
                 'block' => [
                     'classes' => [
                         'model' => Block::class,
