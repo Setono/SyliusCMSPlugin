@@ -2,6 +2,35 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
+        <!-- Page eligibility checkers -->
+        <service id="setono_sylius_cms.checker.eligibility.page.composite"
+                 class="Setono\SyliusCMSPlugin\Checker\Eligibility\Page\CompositeEligibilityChecker"/>
+
+        <service id="setono_sylius_cms.checker.eligibility.page.preview"
+                 class="Setono\SyliusCMSPlugin\Checker\Eligibility\Page\PreviewEligibilityChecker"
+                 decorates="setono_sylius_cms.checker.eligibility.page.composite" decoration-priority="64">
+            <argument type="service" id="setono_sylius_cms.checker.eligibility.page.preview.inner"/>
+            <argument type="service" id="request_stack"/>
+        </service>
+
+        <service id="setono_sylius_cms.checker.eligibility.page.channel"
+                 class="Setono\SyliusCMSPlugin\Checker\Eligibility\Page\ChannelEligibilityChecker">
+            <argument type="service" id="sylius.context.channel"/>
+
+            <tag name="setono_sylius_cms.page_eligibility_checker"/>
+        </service>
+
+        <service id="setono_sylius_cms.checker.eligibility.page.enabled_date"
+                 class="Setono\SyliusCMSPlugin\Checker\Eligibility\Page\EnabledDateEligibilityChecker">
+            <tag name="setono_sylius_cms.page_eligibility_checker"/>
+        </service>
+
+        <service id="setono_sylius_cms.checker.eligibility.page.enabled"
+                 class="Setono\SyliusCMSPlugin\Checker\Eligibility\Page\EnabledEligibilityChecker">
+            <tag name="setono_sylius_cms.page_eligibility_checker"/>
+        </service>
+
+        <!-- Misc -->
         <service id="setono_sylius_cms.checker.page_exists" class="Setono\SyliusCMSPlugin\Checker\PageExistsChecker">
             <argument type="service" id="sylius.context.locale"/>
             <argument type="service" id="setono_sylius_cms.repository.page"/>

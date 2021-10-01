@@ -17,10 +17,8 @@ class PageRepository extends EntityRepository implements PageRepositoryInterface
             ->addSelect('translation')
             ->innerJoin('o.translations', 'translation', 'WITH', 'translation.locale = :locale')
             ->andWhere('translation.slug = :slug')
-            ->andWhere('o.enabled = :enabled')
             ->setParameter('locale', $locale)
             ->setParameter('slug', $slug)
-            ->setParameter('enabled', true)
             ->getQuery()
             ->getOneOrNullResult()
         ;
@@ -36,10 +34,8 @@ class PageRepository extends EntityRepository implements PageRepositoryInterface
             ->select('COUNT(o)')
             ->innerJoin('o.translations', 'translation', 'WITH', 'translation.locale = :locale')
             ->andWhere('translation.slug = :slug')
-            ->andWhere('o.enabled = :enabled')
             ->setParameter('locale', $locale)
             ->setParameter('slug', $slug)
-            ->setParameter('enabled', true)
             ->getQuery()
             ->getSingleScalarResult() > 0
         ;

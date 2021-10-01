@@ -19,6 +19,10 @@
         "Sylius\\Bundle\\UiBundle\\Menu\\Event\\MenuBuilderEvent",
         "Sylius\\Component\\Locale\\Context\\LocaleContextInterface",
         "Sylius\\Bundle\\CoreBundle\\SectionResolver\\SectionProviderInterface",
-        "Sylius\\Bundle\\ShopBundle\\SectionResolver\\ShopSection"
+        "Sylius\\Bundle\\ShopBundle\\SectionResolver\\ShopSection",
+        "Sylius\\Bundle\\ChannelBundle\\Form\\Type\\ChannelChoiceType",
+        "Sylius\\Component\\Channel\\Context\\ChannelContextInterface",
+        "Sylius\\Component\\Channel\\Model\\ChannelInterface",
+        "Sylius\\Component\\Channel\\Model\\ChannelsAwareInterface"
     ]
 }

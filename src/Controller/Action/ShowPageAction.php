@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Action;
 
+use Setono\SyliusCMSPlugin\Checker\Eligibility\Page\EligibilityCheckerInterface;
 use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
 use Setono\SyliusCMSPlugin\Repository\PageRepositoryInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
@@ -22,22 +23,26 @@ final class ShowPageAction
 
     private ViewRendererInterface $viewRenderer;
 
+    private EligibilityCheckerInterface $eligibilityChecker;
+
     public function __construct(
         LocaleContextInterface $localeContext,
         PageRepositoryInterface $pageRepository,
         Environment $twig,
-        ViewRendererInterface $viewRenderer
+        ViewRendererInterface $viewRenderer,
+        EligibilityCheckerInterface $eligibilityChecker
     ) {
         $this->localeContext = $localeContext;
         $this->pageRepository = $pageRepository;
         $this->twig = $twig;
         $this->viewRenderer = $viewRenderer;
+        $this->eligibilityChecker = $eligibilityChecker;
     }
 
     public function __invoke(Request $request, string $slug): Response
     {
         $page = $this->pageRepository->findOneBySlug($this->localeContext->getLocaleCode(), $slug);
-        if (null === $page) {
+        if (null === $page || !$this->eligibilityChecker->isEligible($page)) {
             throw new NotFoundHttpException(sprintf('The page "%s" does not exist', $slug));
         }
 
