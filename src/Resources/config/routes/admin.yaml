@@ -1,3 +1,17 @@
+setono_sylius_cms_admin_asset:
+    resource: |
+        section: admin
+        alias: setono_sylius_cms.asset
+        templates: "@SyliusAdmin\\Crud"
+        redirect: index
+        permission: true
+        grid: setono_sylius_cms_admin_asset
+        vars:
+            all:
+                header: setono_sylius_cms.ui.asset_header
+                subheader: setono_sylius_cms.ui.asset_subheader
+    type: sylius.resource
+
 setono_sylius_cms_admin_block:
     resource: |
         section: admin

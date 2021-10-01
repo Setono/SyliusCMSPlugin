@@ -28,6 +28,7 @@ setono_sylius_cms:
         admin:
             main:
                 content_management:
+                    assets: Assets
                     blocks: Blocks
                     carousels: Carousels
                     header: Content management
@@ -35,6 +36,9 @@ setono_sylius_cms:
                     templates: Templates
                     views: Views
     ui:
+        asset_header: Assets
+        asset_subheader: Manage all your assets (images, documents, movies, etc)
+        assets: Assets
         block_header: Blocks
         block_subheader: Manage your content blocks
         blocks: Blocks

@@ -1,4 +1,5 @@
 imports:
+    - { resource: "@SetonoSyliusCMSPlugin/Resources/config/grids/setono_sylius_cms_admin_asset.yaml" }
     - { resource: "@SetonoSyliusCMSPlugin/Resources/config/grids/setono_sylius_cms_admin_block.yaml" }
     - { resource: "@SetonoSyliusCMSPlugin/Resources/config/grids/setono_sylius_cms_admin_carousel.yaml" }
     - { resource: "@SetonoSyliusCMSPlugin/Resources/config/grids/setono_sylius_cms_admin_page.yaml" }
