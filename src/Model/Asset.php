@@ -8,11 +8,23 @@ class Asset implements AssetInterface
 {
     protected ?int $id = null;
 
+    protected ?string $name = null;
+
     protected ?string $path = null;
 
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(?string $name): void
+    {
+        $this->name = $name;
     }
 
     public function getPath(): ?string

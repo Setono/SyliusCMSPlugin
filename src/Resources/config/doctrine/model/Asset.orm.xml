@@ -10,6 +10,7 @@
             <generator strategy="AUTO"/>
         </id>
 
+        <field name="name" type="string"/>
         <field name="path" column="path" type="string"/>
 
         <unique-constraints>

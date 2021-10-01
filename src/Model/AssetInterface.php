@@ -10,6 +10,10 @@ interface AssetInterface extends ResourceInterface
 {
     public function getId(): ?int;
 
+    public function getName(): ?string;
+
+    public function setName(string $name): void;
+
     public function getPath(): ?string;
 
     public function setPath(string $path): void;
