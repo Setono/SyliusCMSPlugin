@@ -17,4 +17,8 @@ interface AssetInterface extends ResourceInterface
     public function getPath(): ?string;
 
     public function setPath(string $path): void;
+
+    public function getMimeType(): ?string;
+
+    public function setMimeType(?string $mimeType): void;
 }

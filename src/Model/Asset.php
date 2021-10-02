@@ -12,6 +12,8 @@ class Asset implements AssetInterface
 
     protected ?string $path = null;
 
+    protected ?string $mimeType = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -35,5 +37,15 @@ class Asset implements AssetInterface
     public function setPath(string $path): void
     {
         $this->path = $path;
+    }
+
+    public function getMimeType(): ?string
+    {
+        return $this->mimeType;
+    }
+
+    public function setMimeType(?string $mimeType): void
+    {
+        $this->mimeType = $mimeType;
     }
 }

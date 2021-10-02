@@ -1,0 +1,14 @@
+{# @var resource \Setono\SyliusCMSPlugin\Model\AssetInterface #}
+{{ form_errors(form) }}
+<div class="ui two column stackable grid">
+    <div class="column">
+        {{ form_row(form.name) }}
+        {{ form_row(form.file) }}
+    </div>
+    <div class="column">
+        {% if resource.path is not null %}
+            {{ sscms_preview(resource) }}
+        {% endif %}
+    </div>
+</div>
+{{ form_widget(form.path) }}

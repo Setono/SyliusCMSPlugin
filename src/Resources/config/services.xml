@@ -5,9 +5,11 @@
         <import resource="services/checker.xml"/>
         <import resource="services/controller.xml"/>
         <import resource="services/event_subscriber.xml"/>
+        <import resource="services/filesystem.xml"/>
         <import resource="services/form.xml"/>
         <import resource="services/generator.xml"/>
         <import resource="services/menu.xml"/>
+        <import resource="services/previewer.xml"/>
         <import resource="services/renderer.xml"/>
         <import resource="services/routing.xml"/>
         <import resource="services/security.xml"/>

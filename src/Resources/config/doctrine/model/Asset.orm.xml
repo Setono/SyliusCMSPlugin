@@ -12,6 +12,7 @@
 
         <field name="name" type="string"/>
         <field name="path" column="path" type="string"/>
+        <field name="mimeType" type="string" nullable="true"/>
 
         <unique-constraints>
             <unique-constraint columns="path"/>

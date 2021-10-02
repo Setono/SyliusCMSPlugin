@@ -6,6 +6,9 @@ namespace Setono\SyliusCMSPlugin\Twig\Extension;
 
 use Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Model\AssetInterface;
+use Setono\SyliusCMSPlugin\Previewer\Preview;
+use Setono\SyliusCMSPlugin\Previewer\PreviewerInterface;
 use Setono\SyliusCMSPlugin\Renderer\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Renderer\CarouselRendererInterface;
 use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
@@ -30,13 +33,16 @@ final class Runtime implements RuntimeExtensionInterface
 
     private PreviewLinkGeneratorInterface $previewLinkGenerator;
 
+    private PreviewerInterface $previewer;
+
     public function __construct(
         BlockRendererInterface $blockRenderer,
         ViewRendererInterface $viewRenderer,
         CarouselRendererInterface $carouselRenderer,
         UrlGeneratorInterface $router,
         LocaleContextInterface $localeContext,
-        PreviewLinkGeneratorInterface $previewLinkGenerator
+        PreviewLinkGeneratorInterface $previewLinkGenerator,
+        PreviewerInterface $previewer
     ) {
         $this->blockRenderer = $blockRenderer;
         $this->viewRenderer = $viewRenderer;
@@ -44,6 +50,7 @@ final class Runtime implements RuntimeExtensionInterface
         $this->router = $router;
         $this->localeContext = $localeContext;
         $this->previewLinkGenerator = $previewLinkGenerator;
+        $this->previewer = $previewer;
     }
 
     public function block(string $block): string
@@ -157,5 +164,10 @@ final class Runtime implements RuntimeExtensionInterface
     public function getPagePreviewLinks(PageInterface $page): iterable
     {
         return $this->previewLinkGenerator->generateAll($page);
+    }
+
+    public function preview(AssetInterface $asset): Preview
+    {
+        return $this->previewer->preview($asset);
     }
 }

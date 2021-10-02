@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Tests\Setono\SyliusCMSPlugin\Twig\Extension;
 
 use Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface;
+use Setono\SyliusCMSPlugin\Model\AssetInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Previewer\Preview;
+use Setono\SyliusCMSPlugin\Previewer\PreviewerInterface;
 use Setono\SyliusCMSPlugin\Renderer\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Renderer\CarouselRendererInterface;
 use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
@@ -83,7 +86,19 @@ final class ExtensionTest extends IntegrationTestCase
                     }
                 };
 
-                return new Runtime($blockRenderer, $viewRenderer, $carouselRenderer, $urlGenerator, $localeContext, $previewLinkGenerator);
+                $previewer = new class() implements PreviewerInterface {
+                    public function preview(AssetInterface $asset): Preview
+                    {
+                        return Preview::createUnavailablePreview();
+                    }
+
+                    public function supports(AssetInterface $asset): bool
+                    {
+                        return true;
+                    }
+                };
+
+                return new Runtime($blockRenderer, $viewRenderer, $carouselRenderer, $urlGenerator, $localeContext, $previewLinkGenerator, $previewer);
             }
         };
 

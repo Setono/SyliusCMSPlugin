@@ -32,8 +32,10 @@ final class AssetType extends AbstractResourceType
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        // todo this is a mess, use the same approach as Sylius does
         $builder
             ->add('path', HiddenType::class)
+            ->add('mimeType', HiddenType::class)
             ->add('name', TextType::class, [
                 'label' => 'setono_sylius_cms.form.asset.name',
                 'help' => 'setono_sylius_cms.form.asset.name_help',
@@ -59,9 +61,13 @@ final class AssetType extends AbstractResourceType
                 Assert::keyExists($data, 'file');
                 Assert::keyExists($data, 'name');
 
-                /** @var UploadedFile|mixed $file */
+                /** @var UploadedFile|mixed|null $file */
                 $file = $data['file'];
-                Assert::isInstanceOf($file, UploadedFile::class);
+                Assert::nullOrIsInstanceOf($file, UploadedFile::class);
+
+                if (null === $file) {
+                    return;
+                }
 
                 /** @var string|mixed|null $name */
                 $name = $data['name'];
@@ -72,6 +78,7 @@ final class AssetType extends AbstractResourceType
 
                 $data['name'] = $name;
                 $data['path'] = $this->assetUploader->uploadFile($file);
+                $data['mimeType'] = $file->getMimeType();
                 $event->setData($data);
             })
         ;
