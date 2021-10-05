@@ -4,23 +4,23 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Previewer;
 
-use Setono\SyliusCMSPlugin\Filesystem\FilesystemInterface;
+use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
 
 final class ImagePreviewer implements PreviewerInterface
 {
-    private FilesystemInterface $filesystem;
+    private CacheManager $cacheManager;
 
-    public function __construct(FilesystemInterface $filesystem)
+    public function __construct(CacheManager $cacheManager)
     {
-        $this->filesystem = $filesystem;
+        $this->cacheManager = $cacheManager;
     }
 
     public function preview(AssetInterface $asset): Preview
     {
         return new Preview(sprintf(
             '<img src="%s" alt="%s" style="width: 100%%">',
-            $this->filesystem->resolveUrl((string) $asset->getPath()),
+            $this->cacheManager->getBrowserPath((string) $asset->getPath(), 'setono_sylius_cms_asset', [], 'setono_sylius_cms_asset'),
             (string) $asset->getName()
         ));
     }
