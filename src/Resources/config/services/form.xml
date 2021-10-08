@@ -29,6 +29,10 @@
                    key="setono_sylius_cms.form.type.view.validation_groups">
             <parameter>setono_sylius_cms</parameter>
         </parameter>
+
+        <parameter key="setono_sylius_cms.form.model.cms_view.view.class">Setono\SyliusCMSPlugin\Form\Model\CMSView\CMSViewModel</parameter>
+        <parameter key="setono_sylius_cms.form.model.cms_view.section.class">Setono\SyliusCMSPlugin\Form\Model\CMSView\CMSSectionModel</parameter>
+        <parameter key="setono_sylius_cms.form.model.cms_view.block.class">Setono\SyliusCMSPlugin\Form\Model\CMSView\CMSBlockModel</parameter>
     </parameters>
     <services>
         <service id="setono_sylius_cms.form.type.block"
@@ -49,6 +53,11 @@
             <argument>%setono_sylius_cms.model.block_translation.class%</argument>
             <argument>%setono_sylius_cms.form.type.block_translation.validation_groups%</argument>
 
+            <tag name="form.type"/>
+        </service>
+
+        <service id="setono_sylius_cms_form.type.block_autocomplete_choice"
+                 class="Setono\SyliusCMSPlugin\Form\Type\BlockAutocompleteChoiceType">
             <tag name="form.type"/>
         </service>
 
@@ -76,12 +85,9 @@
             <tag name="form.type"/>
         </service>
 
-        <service id="setono_sylius_cms.form.type.view"
-                 class="Setono\SyliusCMSPlugin\Form\Type\ViewType">
+        <service id="setono_sylius_cms.form.type.template_choice"
+                 class="Setono\SyliusCMSPlugin\Form\Type\TemplateChoiceType">
             <argument type="service" id="setono_sylius_cms.template.registry"/>
-            <argument type="service" id="request_stack"/>
-            <argument>%setono_sylius_cms.model.view.class%</argument>
-            <argument>%setono_sylius_cms.form.type.view.validation_groups%</argument>
 
             <tag name="form.type"/>
         </service>
@@ -89,6 +95,67 @@
         <service id="setono_sylius_cms.form.type.view_choice"
                  class="Setono\SyliusCMSPlugin\Form\Type\ViewChoiceType">
             <argument type="service" id="setono_sylius_cms.repository.view"/>
+
+            <tag name="form.type"/>
+        </service>
+
+        <!-- MODEL FACTORIES -->
+        <service id="setono_sylius_cms.form.model.factory.cms_view.view"
+                 class="Setono\SyliusCMSPlugin\Form\Model\CMSView\CMSViewModelFactory" public="true">
+            <argument>%setono_sylius_cms.form.model.cms_view.view.class%</argument>
+            <argument type="service" id="setono_sylius_cms.template.metadata_extractor" />
+            <argument type="service" id="setono_sylius_cms.repository.template" />
+            <argument type="service" id="setono_sylius_cms.form.model.factory.cms_view.section" />
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Form\Model\CMSView\CMSViewModelFactoryInterface"
+                 alias="setono_sylius_cms.form.model.factory.cms_view.view" />
+
+        <service id="setono_sylius_cms.form.model.factory.cms_view.section"
+                 class="Setono\SyliusCMSPlugin\Form\Model\CMSView\CMSSectionModelFactory">
+            <argument>%setono_sylius_cms.form.model.cms_view.section.class%</argument>
+            <argument type="service" id="setono_sylius_cms.form.model.factory.cms_view.block" />
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Form\Model\CMSView\CMSSectionModelFactoryInterface"
+                 alias="setono_sylius_cms.form.model.factory.cms_view.section" />
+
+        <service id="setono_sylius_cms.form.model.factory.cms_view.block"
+                 class="Setono\SyliusCMSPlugin\Form\Model\CMSView\CMSBlockModelFactory">
+            <argument>%setono_sylius_cms.form.model.cms_view.block.class%</argument>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Form\Model\CMSView\CMSBlockModelFactoryInterface"
+                 alias="setono_sylius_cms.form.model.factory.cms_view.block" />
+
+        <!-- MODEL MAPPERS -->
+        <service id="setono_sylius_cms.form.model.mapper.cms_view.view"
+                 class="Setono\SyliusCMSPlugin\Form\Model\CMSView\CMSViewModelToViewMapper" public="true">
+            <argument type="service" id="setono_sylius_cms.factory.view_block" />
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Form\Model\CMSView\CMSViewModelToViewMapperInterface"
+                 alias="setono_sylius_cms.form.model.mapper.cms_view.view" />
+
+        <!-- MODEL TYPES -->
+        <service id="setono_sylius_cms.form.model.type.cms_view.view"
+                 class="Setono\SyliusCMSPlugin\Form\Type\CMSView\CMSViewModelType">
+            <argument type="service" id="request_stack"/>
+            <argument type="service" id="setono_sylius_cms.template.metadata_extractor"/>
+            <argument type="service" id="setono_sylius_cms.repository.template"/>
+            <argument type="service" id="setono_sylius_cms.form.model.factory.cms_view.section"/>
+            <argument>%setono_sylius_cms.form.model.cms_view.view.class%</argument>
+
+            <tag name="form.type"/>
+        </service>
+
+        <service id="setono_sylius_cms.form.model.type.cms_view.section"
+                 class="Setono\SyliusCMSPlugin\Form\Type\CMSView\CMSSectionModelType">
+            <argument>%setono_sylius_cms.form.model.cms_view.section.class%</argument>
+
+            <tag name="form.type"/>
+        </service>
+
+        <service id="setono_sylius_cms.form.model.type.cms_view.block"
+                 class="Setono\SyliusCMSPlugin\Form\Type\CMSView\CMSBlockModelType">
+            <argument>%setono_sylius_cms.form.model.cms_view.block.class%</argument>
+            <argument>%setono_sylius_cms.model.block.class%</argument>
 
             <tag name="form.type"/>
         </service>

@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Model;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use function in_array;
 
 class View implements ViewInterface
 {
@@ -68,6 +69,49 @@ class View implements ViewInterface
     public function getViewBlocks(): Collection
     {
         return $this->viewBlocks;
+    }
+
+    public function hasViewBlock(ViewBlockInterface $block): bool
+    {
+        return $this->getViewBlocks()->contains($block);
+    }
+
+    public function addViewBlock(ViewBlockInterface $block, ?string $key = null): void
+    {
+        if (!$this->hasViewBlock($block)) {
+            $this->viewBlocks->add($block);
+            $block->setView($this);
+        }
+    }
+
+    public function removeViewBlock(ViewBlockInterface $block): void
+    {
+        if ($this->hasViewBlock($block)) {
+            $this->viewBlocks->removeElement($block);
+        }
+    }
+
+    public function getViewBlocksInSection(string $sectionName): Collection
+    {
+        return $this->getViewBlocks()->filter(function (ViewBlockInterface $viewBlock) use ($sectionName): bool {
+            return $sectionName === $viewBlock->getSection();
+        });
+    }
+
+    public function getSections(): array
+    {
+        $sections = [];
+        foreach ($this->getViewBlocks() as $viewBlock) {
+            $section = $viewBlock->getSection();
+            if (null === $section) {
+                continue;
+            }
+            if (!in_array($sections, $sections)) {
+                $sections[] = $section;
+            }
+        }
+
+        return $sections;
     }
 
     public function __toString(): string

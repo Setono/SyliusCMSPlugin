@@ -29,5 +29,20 @@ interface ViewInterface extends ResourceInterface, ElementInterface, CodeAwareIn
      */
     public function getViewBlocks(): Collection;
 
+    public function hasViewBlock(ViewBlockInterface $block): bool;
+
+    public function addViewBlock(ViewBlockInterface $block): void;
+
+    public function removeViewBlock(ViewBlockInterface $block): void;
+
+    /**
+     * @return Collection|ViewBlockInterface[]
+     *
+     * @psalm-return Collection<array-key, ViewBlockInterface>
+     */
+    public function getViewBlocksInSection(string $sectionName): Collection;
+
+    public function getSections(): array;
+
     public function __toString(): string;
 }

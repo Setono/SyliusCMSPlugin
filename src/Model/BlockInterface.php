@@ -22,4 +22,6 @@ interface BlockInterface extends ResourceInterface, ElementInterface, CodeAwareI
     public function getContent(): ?string;
 
     public function setContent(?string $content): void;
+
+    public function __toString(): string;
 }

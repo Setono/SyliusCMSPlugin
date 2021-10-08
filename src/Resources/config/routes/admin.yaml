@@ -45,12 +45,45 @@ setono_sylius_cms_admin_template:
                 templates:
                     form: "@SetonoSyliusCMSPlugin/admin/template/_form.html.twig"
     type: sylius.resource
-    
+
+setono_sylius_cms_admin_view_update:
+    path: /views/{id}/edit
+    methods: [ GET, PUT ]
+    defaults:
+        _controller: setono_sylius_cms.controller.view::updateWithViewModelAction
+        _sylius:
+            section: admin
+            redirect: setono_sylius_cms_admin_view_update
+            permission: true
+            template: '@SyliusAdmin/Crud/update.html.twig'
+            vars:
+                header: setono_sylius_cms.ui.view_header
+                subheader: setono_sylius_cms.ui.view_subheader
+                templates:
+                    form: '@SetonoSyliusCMSPlugin/admin/view/_form.html.twig'
+
+setono_sylius_cms_admin_view_create:
+    path: /views/new
+    methods: [ GET, POST ]
+    defaults:
+        _controller: setono_sylius_cms.controller.view::createWithViewModelAction
+        _sylius:
+            section: admin
+            redirect: setono_sylius_cms_admin_view_update
+            permission: true
+            template: '@SyliusAdmin/Crud/create.html.twig'
+            vars:
+                header: setono_sylius_cms.ui.view_header
+                subheader: setono_sylius_cms.ui.view_subheader
+                templates:
+                    form: '@SetonoSyliusCMSPlugin/admin/view/_form.html.twig'
+
 setono_sylius_cms_admin_view:
     resource: |
         section: admin
         alias: setono_sylius_cms.view
         templates: "@SyliusAdmin\\Crud"
+        except: [update, create]
         redirect: index
         permission: true
         grid: setono_sylius_cms_admin_view
@@ -61,3 +94,7 @@ setono_sylius_cms_admin_view:
                 templates:
                     form: "@SetonoSyliusCMSPlugin/admin/view/_form.html.twig"
     type: sylius.resource
+
+setono_sylius_cms_admin_ajax_paths:
+    resource: 'admin/ajax.yaml'
+    prefix: /ajax

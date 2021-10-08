@@ -3,7 +3,23 @@
     <div class="column">
         <div class="ui segment">
             {{ form_row(form.code) }}
-            {{ form_row(form.template) }}
+            {% set loadSectionsPath = resource.id is not empty
+                ? path('setono_sylius_cms_admin_view_update', {'id': resource.id, 'getSectionsForm': true})
+                : path('setono_sylius_cms_admin_view_create', {'getSectionsForm': true})
+            %}
+            {% set loadSectionsMethod = resource.id is not empty ? 'PUT' : 'POST' %}
+            {{ form_row(form.template, {'attr': {
+                'class': 'js-setono-sylius-cms-template',
+                'data-sections-container': '.js-setono-sylius-cms-sections-container',
+                'data-load-sections-url': loadSectionsPath,
+                'data-load-sections-methiod': loadSectionsMethod,
+            }}) }}
+        </div>
+    </div>
+
+    <div class="column">
+        <div class="ui segment js-setono-sylius-cms-sections-container">
+            {% include '@SetonoSyliusCMSPlugin/admin/view/_sectionsForm.html.twig' %}
         </div>
     </div>
 </div>

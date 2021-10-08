@@ -1,0 +1,10 @@
+{% if form.sections is defined %}
+    {% form_theme form.sections '@SyliusAdmin/Form/theme.html.twig' %}
+    {{ form_label(form.sections) }}
+    {% for sectionForm in form.sections %}
+        <div class="ui segment">
+            <b>{{ sectionForm.vars.value.name }}</b>
+            {{ form_row(sectionForm.blocks) }}
+        </div>
+    {% endfor %}
+{% endif %}

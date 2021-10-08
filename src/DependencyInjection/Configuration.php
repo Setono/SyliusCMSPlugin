@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
+use Setono\SyliusCMSPlugin\Controller\Sylius\ViewController;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\BlockRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\PageRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\TemplateRepository;
@@ -13,7 +14,6 @@ use Setono\SyliusCMSPlugin\Form\Type\BlockType;
 use Setono\SyliusCMSPlugin\Form\Type\PageTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\PageType;
 use Setono\SyliusCMSPlugin\Form\Type\TemplateType;
-use Setono\SyliusCMSPlugin\Form\Type\ViewType;
 use Setono\SyliusCMSPlugin\Model\Block;
 use Setono\SyliusCMSPlugin\Model\BlockTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -163,9 +163,9 @@ final class Configuration implements ConfigurationInterface
                                     ->addDefaultsIfNotSet()
                                     ->children()
                                         ->scalarNode('model')->defaultValue(View::class)->cannotBeEmpty()->end()
-                                        ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
+                                        ->scalarNode('controller')->defaultValue(ViewController::class)->cannotBeEmpty()->end()
                                         ->scalarNode('repository')->defaultValue(ViewRepository::class)->cannotBeEmpty()->end()
-                                        ->scalarNode('form')->defaultValue(ViewType::class)->end()
+                                        ->scalarNode('form')->defaultValue(DefaultResourceType::class)->end()
                                         ->scalarNode('factory')->defaultValue(Factory::class)->end()
                                     ->end()
                                 ->end()

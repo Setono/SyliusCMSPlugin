@@ -6,6 +6,7 @@ namespace Tests\Setono\SyliusCMSPlugin\DependencyInjection;
 
 use Matthias\SymfonyConfigTest\PhpUnit\ConfigurationTestCaseTrait;
 use PHPUnit\Framework\TestCase;
+use Setono\SyliusCMSPlugin\Controller\Sylius\ViewController;
 use Setono\SyliusCMSPlugin\DependencyInjection\Configuration;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\BlockRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\PageRepository;
@@ -16,7 +17,6 @@ use Setono\SyliusCMSPlugin\Form\Type\BlockType;
 use Setono\SyliusCMSPlugin\Form\Type\PageTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\PageType;
 use Setono\SyliusCMSPlugin\Form\Type\TemplateType;
-use Setono\SyliusCMSPlugin\Form\Type\ViewType;
 use Setono\SyliusCMSPlugin\Model\Block;
 use Setono\SyliusCMSPlugin\Model\BlockTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -97,9 +97,9 @@ final class ConfigurationTest extends TestCase
                 'view' => [
                     'classes' => [
                         'model' => View::class,
-                        'controller' => ResourceController::class,
+                        'controller' => ViewController::class,
                         'repository' => ViewRepository::class,
-                        'form' => ViewType::class,
+                        'form' => DefaultResourceType::class,
                         'factory' => Factory::class,
                     ],
                 ],

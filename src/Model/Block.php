@@ -99,4 +99,9 @@ class Block implements BlockInterface, TranslatableInterface
     {
         return new BlockTranslation();
     }
+
+    public function __toString(): string
+    {
+        return $this->getCode() ?? (string) $this->getId();
+    }
 }
