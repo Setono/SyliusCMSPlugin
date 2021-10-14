@@ -23,11 +23,6 @@ class BlockRepository extends EntityRepository implements BlockRepositoryInterfa
 
     public function findByCodePart(string $phrase, ?int $limit = null): array
     {
-        /**
-         * @psalm-var array<array-key, BlockInterface>
-         *
-         * @var array|BlockInterface[] $blocks
-         */
         $blocks = $this->createQueryBuilder('o')
             ->andWhere('o.code LIKE :code')
             ->setParameter('code', '%' . $phrase . '%')

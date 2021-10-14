@@ -62,6 +62,6 @@ setono_sylius_cms_admin_view:
                     form: "@SetonoSyliusCMSPlugin/admin/view/_form.html.twig"
     type: sylius.resource
 
-setono_sylius_cms_admin_ajax_paths:
+setono_sylius_cms_admin_ajax:
     resource: 'admin/ajax.yaml'
     prefix: /ajax
