@@ -1,0 +1,27 @@
+setono_sylius_cms_admin_ajax_block_by_code:
+    path: /blocks/by-code
+    methods: [GET]
+    defaults:
+        _controller: setono_sylius_cms.controller.block::indexAction
+        _format: json
+        _sylius:
+            serialization_groups: [Autocomplete]
+            permission: true
+            repository:
+                method: findBy
+                arguments: [code: $code]
+
+setono_sylius_cms_admin_ajax_block_by_code_phrase:
+    path: /blocks/by-code-phrase
+    methods: [GET]
+    defaults:
+        _controller: setono_sylius_cms.controller.block::indexAction
+        _format: json
+        _sylius:
+            serialization_groups: [Autocomplete]
+            permission: true
+            repository:
+                method: findByCodePart
+                arguments:
+                    phrase: $phrase
+                    limit: 25
