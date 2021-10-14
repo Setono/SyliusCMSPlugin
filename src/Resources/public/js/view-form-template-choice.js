@@ -30,6 +30,8 @@ $.fn.CMSViewTemplateChoiceForm = function CMSViewTemplateChoiceFormPlugin(option
     });
 };
 
-$.fn.CMSViewTemplateChoiceForm.Constructor = CMSViewTemplateChoiceForm;
+$(function() {
+    $.fn.CMSViewTemplateChoiceForm.Constructor = CMSViewTemplateChoiceForm;
 
-$('.js-setono-sylius-cms-template-choice-input').CMSViewTemplateChoiceForm();
+    $('.js-setono-sylius-cms-template-choice-input').CMSViewTemplateChoiceForm();
+});

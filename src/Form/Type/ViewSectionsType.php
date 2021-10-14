@@ -10,9 +10,11 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class ViewSectionsType extends AbstractType
 {
+    /**
+     * @param array{sections: array<array-key, string>} $options
+     */
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        /** @var string $sectionName */
         foreach ($options['sections'] as $sectionName) {
             $builder->add($sectionName, ViewSectionType::class);
         }

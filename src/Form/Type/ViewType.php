@@ -58,10 +58,11 @@ final class ViewType extends AbstractResourceType
         $builder->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event): void {
             /** @var ViewInterface|null $view */
             $view = $event->getData();
-            if (null === $view || null === $templateName = $view->getTemplate()) {
+            if (null === $view) {
                 $templateName = null;
+            } else {
+                $templateName = $view->getTemplate();
             }
-            Assert::string($templateName);
 
             $form = $event->getForm();
             $this->addViewSectionsFromTemplateName($templateName, $form);

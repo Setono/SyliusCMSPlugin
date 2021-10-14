@@ -26,7 +26,7 @@ final class TemplateChoiceType extends AbstractType
         parent::buildForm($builder, $options);
 
         $builder->addModelTransformer(new CallbackTransformer(
-            function (?string $code) {
+            function (?string $code): ?Template {
                 if (null === $code) {
                     return null;
                 }

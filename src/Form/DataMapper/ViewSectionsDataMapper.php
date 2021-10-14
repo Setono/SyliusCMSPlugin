@@ -14,7 +14,6 @@ use Symfony\Component\Form\Extension\Core\DataAccessor\PropertyPathAccessor;
 use Symfony\Component\Form\Extension\Core\DataMapper\DataMapper;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
-use Traversable;
 use Webmozart\Assert\Assert;
 
 final class ViewSectionsDataMapper extends DataMapper
