@@ -19,7 +19,6 @@ interface BlockRepositoryInterface extends RepositoryInterface
 
     /**
      * @return array<array-key, BlockInterface>
-     *
      */
     public function findByCodePart(string $phrase, ?int $limit = null): array;
 }
