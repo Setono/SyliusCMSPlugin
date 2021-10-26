@@ -16,4 +16,9 @@ use Sylius\Component\Resource\Repository\RepositoryInterface;
 interface BlockRepositoryInterface extends RepositoryInterface
 {
     public function findOneByCode(string $code): ?BlockInterface;
+
+    /**
+     * @return array<array-key, BlockInterface>
+     */
+    public function findByCodePart(string $phrase, ?int $limit = null): array;
 }

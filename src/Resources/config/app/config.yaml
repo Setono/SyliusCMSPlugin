@@ -3,3 +3,14 @@ imports:
     - { resource: "@SetonoSyliusCMSPlugin/Resources/config/grids/setono_sylius_cms_admin_page.yaml" }
     - { resource: "@SetonoSyliusCMSPlugin/Resources/config/grids/setono_sylius_cms_admin_template.yaml" }
     - { resource: "@SetonoSyliusCMSPlugin/Resources/config/grids/setono_sylius_cms_admin_view.yaml" }
+
+sylius_ui:
+    events:
+        setono_sylius_cms.admin.view.update.javascripts:
+            blocks:
+                javascripts:
+                    template: '@SetonoSyliusCMSPlugin/admin/view/_javascripts.html.twig'
+        setono_sylius_cms.admin.view.create.javascripts:
+            blocks:
+                javascripts:
+                    template: '@SetonoSyliusCMSPlugin/admin/view/_javascripts.html.twig'

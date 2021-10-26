@@ -36,7 +36,7 @@ final class MetadataExtractor implements MetadataExtractorInterface
         $nodes = [$moduleNode];
 
         while (count($nodes) > 0) {
-            $nextNode = array_pop($nodes);
+            $nextNode = array_shift($nodes);
 
             /** @var Node $node */
             foreach ($nextNode as $node) {

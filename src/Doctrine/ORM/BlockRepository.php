@@ -20,4 +20,20 @@ class BlockRepository extends EntityRepository implements BlockRepositoryInterfa
 
         return $obj;
     }
+
+    public function findByCodePart(string $phrase, ?int $limit = null): array
+    {
+        $blocks = $this->createQueryBuilder('o')
+            ->andWhere('o.code LIKE :code')
+            ->setParameter('code', '%' . $phrase . '%')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        Assert::isArray($blocks);
+        Assert::allIsInstanceOf($blocks, BlockInterface::class);
+
+        return $blocks;
+    }
 }
