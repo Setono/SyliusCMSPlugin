@@ -50,7 +50,7 @@ final class ShowPageAction
 
         $view = $page->getView();
         if (null !== $view) {
-            $this->viewRenderer->render($view);
+            $content = $this->viewRenderer->render($view);
         }
 
         return new Response($this->twig->render('@SetonoSyliusCMSPlugin/page.html.twig', [
