@@ -11,12 +11,16 @@ use Setono\SyliusCMSPlugin\Model\ViewInterface;
 
 final class ElementStack implements ElementStackInterface, \IteratorAggregate
 {
-    /** @var array<array-key, ElementInterface> */
+    /** @var array<string, ElementInterface> */
     private array $elements = [];
 
     public function push(ElementInterface $element): void
     {
-        $this->elements[] = $element;
+        if (isset($this->elements[$element->getIdentifier()])) {
+            return;
+        }
+
+        $this->elements[$element->getIdentifier()] = $element;
     }
 
     public function hasElements(): bool
