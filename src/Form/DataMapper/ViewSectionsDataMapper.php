@@ -69,15 +69,14 @@ final class ViewSectionsDataMapper extends DataMapper
             $sections[$sectionName]['blocks'] = $data->getBlocksInSection($sectionName);
         }
 
-        /**
-         * @var FormInterface[] $arrayForms
-         * @psalm-suppress PossiblyInvalidArgument
-         */
+        /* @var array<array-key, FormInterface> $arrayForms */
         $arrayForms = iterator_to_array($forms);
         if (!\array_key_exists('sections', $arrayForms)) {
             return;
         }
-        $arrayForms['sections']->setData($sections);
+        /** @var FormInterface $sectionsForm */
+        $sectionsForm = $arrayForms['sections'];
+        $sectionsForm->setData($sections);
     }
 
     /**
