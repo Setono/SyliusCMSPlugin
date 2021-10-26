@@ -33,10 +33,17 @@ final class ViewSectionsDataMapper extends DataMapper
         $this->metadataExtractor = $metadataExtractor;
     }
 
+    /**
+     * @psalm-suppress ParamNameMismatch
+     */
     public function mapDataToForms($data, iterable $forms): void
     {
         // First, map parent so all fields are mapped the basic way
         parent::mapDataToForms($data, $forms);
+
+        if (!$forms instanceof \Traversable) {
+            throw new \LogicException(\sprintf('Expected an instance of %s.', \Traversable::class));
+        }
 
         if (null === $data) {
             return;
@@ -73,17 +80,20 @@ final class ViewSectionsDataMapper extends DataMapper
         $arrayForms['sections']->setData($sections);
     }
 
+    /**
+     * @psalm-suppress ParamNameMismatch
+     */
     public function mapFormsToData(iterable $forms, &$data): void
     {
         parent::mapFormsToData($forms, $data);
 
-        /**
-         * @var FormInterface[] $arrayForms
-         * @psalm-suppress PossiblyInvalidArgument
-         */
+        if (!$forms instanceof \Traversable) {
+            throw new \LogicException(\sprintf('Expected an instance of %s.', \Traversable::class));
+        }
+
+        /** @var FormInterface[] $arrayForms */
         $arrayForms = iterator_to_array($forms);
 
-        /* @psalm-var ViewInterface $data */
         Assert::isInstanceOf($data, ViewInterface::class);
 
         // TODO: merge instead of replacing
