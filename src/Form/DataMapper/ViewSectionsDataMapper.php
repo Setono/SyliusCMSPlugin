@@ -69,7 +69,7 @@ final class ViewSectionsDataMapper extends DataMapper
             $sections[$sectionName]['blocks'] = $data->getBlocksInSection($sectionName);
         }
 
-        /* @var array<array-key, FormInterface> $arrayForms */
+        /** @var array<array-key, FormInterface> $arrayForms */
         $arrayForms = iterator_to_array($forms);
         if (!\array_key_exists('sections', $arrayForms)) {
             return;
