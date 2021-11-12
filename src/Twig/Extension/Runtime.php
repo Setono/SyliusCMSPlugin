@@ -55,7 +55,7 @@ final class Runtime implements RuntimeExtensionInterface
      */
     public function linkToRoute(
         string $name,
-        ?string $displayedValue = null,
+        string $displayedValue = null,
         array $parameters = [],
         int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH
     ): string {
