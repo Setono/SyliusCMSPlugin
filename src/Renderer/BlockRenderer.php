@@ -10,6 +10,7 @@ use Psr\Log\NullLogger;
 use Setono\SyliusCMSPlugin\Repository\BlockRepositoryInterface;
 use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
 use Twig\Environment;
+use Twig\Error\Error;
 
 final class BlockRenderer implements BlockRendererInterface, LoggerAwareInterface
 {
@@ -50,12 +51,22 @@ final class BlockRenderer implements BlockRendererInterface, LoggerAwareInterfac
 
         $this->elementStack->push($block);
 
+
+        try {
+            $renderedBlockContent = $this->renderBlockContent($block->getContent() ?? '');
+        } catch (Error $exception) {
+            $renderedBlockContent = sprintf('<!-- Impossible to render the block "%s" because it contains malformed content. Error: %s -->', $block->getCode(), $exception->getMessage());
+        }
+
         return $this->twig->render('@SetonoSyliusCMSPlugin/block.html.twig', [
             'block' => $block,
-            'renderedBlock' => $this->renderBlockContent($block->getContent() ?? ''),
+            'renderedBlock' => $renderedBlockContent,
         ]);
     }
 
+    /**
+     * @throws Error
+     */
     private function renderBlockContent(string $blockContent): string
     {
         return $this->twig->render($this->twig->createTemplate($blockContent));
