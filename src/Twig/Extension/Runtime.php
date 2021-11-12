@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig\Extension;
 
+use Exception;
 use Setono\SyliusCMSPlugin\Renderer\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
@@ -59,12 +60,16 @@ final class Runtime implements RuntimeExtensionInterface
         array $parameters = [],
         int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH
     ): string {
-        $uri = $this->router->generate($name, $parameters, $referenceType);
-        if (null === $displayedValue) {
-            $displayedValue = $uri;
-        }
+        try {
+            $uri = $this->router->generate($name, $parameters, $referenceType);
+            if (null === $displayedValue) {
+                $displayedValue = $uri;
+            }
 
-        return sprintf('<a href="%s">%s</a>', $uri, $displayedValue);
+            return sprintf('<a href="%s">%s</a>', $uri, $displayedValue);
+        } catch (Exception $exception) {
+            return sprintf('<!-- Tried to generate a link for an unexisting route (%s - %s) -->', $name, $displayedValue);
+        }
     }
 
     public function linkToResource(
