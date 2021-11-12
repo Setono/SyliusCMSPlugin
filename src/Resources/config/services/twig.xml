@@ -18,6 +18,8 @@
                  class="Setono\SyliusCMSPlugin\Twig\Extension\Runtime">
             <argument type="service" id="setono_sylius_cms.renderer.block"/>
             <argument type="service" id="setono_sylius_cms.renderer.view"/>
+            <argument type="service" id="router"/>
+            <argument type="service" id="sylius.context.locale"/>
 
             <tag name="twig.runtime"/>
         </service>
