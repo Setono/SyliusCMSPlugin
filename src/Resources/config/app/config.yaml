@@ -14,8 +14,3 @@ sylius_ui:
             blocks:
                 javascripts:
                     template: '@SetonoSyliusCMSPlugin/admin/view/_javascripts.html.twig'
-
-services:
-    Twig\Extension\StringLoaderExtension:
-        tags:
-            - { name: 'twig.extension' }

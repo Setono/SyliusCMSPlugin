@@ -52,7 +52,13 @@ final class BlockRenderer implements BlockRendererInterface, LoggerAwareInterfac
 
         return $this->twig->render('@SetonoSyliusCMSPlugin/block.html.twig', [
             'block' => $block,
+            'renderedBlock' => $this->renderBlockContent($block->getContent() ?? ''),
         ]);
+    }
+
+    private function renderBlockContent(string $blockContent): string
+    {
+        return $this->twig->render($this->twig->createTemplate($blockContent));
     }
 
     private function renderNonExistingBlock(string $code): string
