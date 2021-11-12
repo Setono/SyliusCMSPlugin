@@ -69,7 +69,7 @@ final class Runtime implements RuntimeExtensionInterface
 
     public function linkToResource(
         string $alias,
-        ?string $displayedValue = null,
+        string $displayedValue = null,
         array $parameters = [],
         int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH,
         string $type = ResourceActions::SHOW,
@@ -85,8 +85,8 @@ final class Runtime implements RuntimeExtensionInterface
 
     public function linkToProduct(
         string $slug,
-        ?string $displayedValue = null,
-        ?string $localeCode = null,
+        string $displayedValue = null,
+        string $localeCode = null,
         int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH
     ): string {
         if (null === $localeCode) {
@@ -103,8 +103,8 @@ final class Runtime implements RuntimeExtensionInterface
 
     public function linkToTaxon(
         string $slug,
-        ?string $displayedValue = null,
-        ?string $localeCode = null,
+        string $displayedValue = null,
+        string $localeCode = null,
         int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH
     ): string {
         if (null === $localeCode) {
@@ -122,8 +122,8 @@ final class Runtime implements RuntimeExtensionInterface
 
     public function linkToPage(
         string $slug,
-        ?string $displayedValue = null,
-        ?string $localeCode = null,
+        string $displayedValue = null,
+        string $localeCode = null,
         int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH
     ): string {
         if (null === $localeCode) {
