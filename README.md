@@ -1,4 +1,4 @@
-# Setono SyliusCMSPlugin
+# Sylius CMS Plugin
 
 [![Build Status][ico-github-actions]][link-github-actions]
 [![Code Coverage][ico-code-coverage]][link-code-coverage]
