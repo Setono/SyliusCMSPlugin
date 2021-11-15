@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig\Extension;
 
-use Exception;
 use Setono\SyliusCMSPlugin\Renderer\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
 use function sprintf;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Component\Resource\ResourceActions;
-use Symfony\Component\Routing\Exception\InvalidParameterException;
-use Symfony\Component\Routing\Exception\MissingMandatoryParametersException;
-use Symfony\Component\Routing\Exception\RouteNotFoundException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Throwable;
 use Twig\Extension\RuntimeExtensionInterface;
 
 final class Runtime implements RuntimeExtensionInterface
@@ -48,12 +45,6 @@ final class Runtime implements RuntimeExtensionInterface
         return $this->viewRenderer->render($view);
     }
 
-    /**
-     * @throws RouteNotFoundException              If the named route doesn't exist
-     * @throws MissingMandatoryParametersException When some parameters are missing that are mandatory for the route
-     * @throws InvalidParameterException           When a parameter value for a placeholder is not correct because
-     *                                             it does not match the requirement
-     */
     public function linkToRoute(
         string $name,
         string $displayedValue = null,
@@ -67,8 +58,12 @@ final class Runtime implements RuntimeExtensionInterface
             }
 
             return sprintf('<a href="%s">%s</a>', $uri, $displayedValue);
-        } catch (Exception $exception) {
-            return sprintf('<!-- Tried to generate a link for an unexisting route (%s - %s) -->', $name, $displayedValue);
+        } catch (Throwable $exception) {
+            return sprintf(
+                '<!-- Tried to generate a link for an non existing route: %s (%s) -->',
+                $name,
+                $displayedValue ?? 'No display value'
+            );
         }
     }
 

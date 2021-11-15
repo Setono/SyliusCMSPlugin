@@ -54,7 +54,7 @@ final class BlockRenderer implements BlockRendererInterface, LoggerAwareInterfac
         try {
             $renderedBlockContent = $this->renderBlockContent($block->getContent() ?? '');
         } catch (Error $exception) {
-            $renderedBlockContent = sprintf('<!-- Impossible to render the block "%s" because it contains malformed content. Error: %s -->', $block->getCode(), $exception->getMessage());
+            $renderedBlockContent = sprintf('<!-- Impossible to render the block "%s" because it contains malformed content. Error: %s -->', (string) $block->getCode(), $exception->getMessage());
         }
 
         return $this->twig->render('@SetonoSyliusCMSPlugin/block.html.twig', [
