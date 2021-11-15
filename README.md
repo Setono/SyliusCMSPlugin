@@ -37,6 +37,7 @@ imports:
 Create the file `config/routes/setono_sylius_cms.yaml` and add the following:
 
 ```yaml
+# config/routes/setono_sylius_cms.yaml
 setono_sylius_cms:
     resource: "@SetonoSyliusCMSPlugin/Resources/config/routes.yaml"
 ```
