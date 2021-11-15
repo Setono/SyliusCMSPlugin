@@ -5,18 +5,14 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Checker;
 
 use Setono\SyliusCMSPlugin\Repository\PageRepositoryInterface;
-use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 final class PageExistsChecker implements PageExistsCheckerInterface
 {
-    private LocaleContextInterface $localeContext;
-
     private PageRepositoryInterface $pageRepository;
 
-    public function __construct(LocaleContextInterface $localeContext, PageRepositoryInterface $pageRepository)
+    public function __construct(PageRepositoryInterface $pageRepository)
     {
-        $this->localeContext = $localeContext;
         $this->pageRepository = $pageRepository;
     }
 
@@ -32,7 +28,10 @@ final class PageExistsChecker implements PageExistsCheckerInterface
             return false;
         }
 
-        return $this->pageRepository->exists($this->localeContext->getLocaleCode(), $slug);
+        // NOTICE: We cannot use the locale to check if the slug exists on the specific locale
+        // because the locale isn't available at this point in time in the request cycle
+
+        return $this->pageRepository->exists($slug);
     }
 
     /**
