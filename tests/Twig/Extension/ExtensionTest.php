@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Setono\SyliusCMSPlugin\Twig\Extension;
 
-use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Renderer\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
 use Setono\SyliusCMSPlugin\Twig\Extension\Extension;
@@ -21,8 +20,6 @@ use Twig\Test\IntegrationTestCase;
  */
 final class ExtensionTest extends IntegrationTestCase
 {
-    use ProphecyTrait;
-
     public function getRuntimeLoaders(): array
     {
         $runtimeLoader = new class() implements RuntimeLoaderInterface {
