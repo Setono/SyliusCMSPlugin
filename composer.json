@@ -1,12 +1,8 @@
 {
     "name": "setono/sylius-cms-plugin",
     "type": "sylius-plugin",
-    "description": "Setono example plugin for Sylius.",
-    "keywords": [
-        "sylius",
-        "sylius-plugin"
-    ],
-    "license": "MIT",
+    "description": "CMS plugin for your Sylius store",
+    "license": "proprietary",
     "require": {
         "php": ">=7.4",
         "doctrine/collections": "^1.6",
