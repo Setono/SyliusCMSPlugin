@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Twig\Extension;
 use Exception;
 use Setono\SyliusCMSPlugin\Renderer\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
+use function sprintf;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Component\Resource\ResourceActions;
 use Symfony\Component\Routing\Exception\InvalidParameterException;
@@ -14,7 +15,6 @@ use Symfony\Component\Routing\Exception\MissingMandatoryParametersException;
 use Symfony\Component\Routing\Exception\RouteNotFoundException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Twig\Extension\RuntimeExtensionInterface;
-use function sprintf;
 
 final class Runtime implements RuntimeExtensionInterface
 {

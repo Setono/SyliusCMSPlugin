@@ -51,7 +51,6 @@ final class BlockRenderer implements BlockRendererInterface, LoggerAwareInterfac
 
         $this->elementStack->push($block);
 
-
         try {
             $renderedBlockContent = $this->renderBlockContent($block->getContent() ?? '');
         } catch (Error $exception) {
