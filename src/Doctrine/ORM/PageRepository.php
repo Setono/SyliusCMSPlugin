@@ -28,13 +28,12 @@ class PageRepository extends EntityRepository implements PageRepositoryInterface
         return $obj;
     }
 
-    public function exists(string $locale, string $slug): bool
+    public function exists(string $slug): bool
     {
         return (int) $this->createQueryBuilder('o')
             ->select('COUNT(o)')
-            ->innerJoin('o.translations', 'translation', 'WITH', 'translation.locale = :locale')
+            ->leftJoin('o.translations', 'translation')
             ->andWhere('translation.slug = :slug')
-            ->setParameter('locale', $locale)
             ->setParameter('slug', $slug)
             ->getQuery()
             ->getSingleScalarResult() > 0

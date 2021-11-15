@@ -17,5 +17,5 @@ interface PageRepositoryInterface extends RepositoryInterface
 {
     public function findOneBySlug(string $locale, string $slug): ?PageInterface;
 
-    public function exists(string $locale, string $slug): bool;
+    public function exists(string $slug): bool;
 }
