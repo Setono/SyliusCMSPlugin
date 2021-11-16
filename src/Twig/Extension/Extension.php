@@ -27,6 +27,7 @@ final class Extension extends AbstractExtension
             new TwigFunction('sscms_link_product', [Runtime::class, 'linkToProduct'], ['is_safe' => ['html']]),
             new TwigFunction('sscms_link_taxon', [Runtime::class, 'linkToTaxon'], ['is_safe' => ['html']]),
             new TwigFunction('sscms_link_page', [Runtime::class, 'linkToPage'], ['is_safe' => ['html']]),
+            new TwigFunction('sscms_page_get_preview_links', [Runtime::class, 'getPagePreviewLinks'], ['is_safe' => ['html']]),
         ];
     }
 }

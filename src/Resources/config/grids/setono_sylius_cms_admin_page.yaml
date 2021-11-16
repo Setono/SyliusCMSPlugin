@@ -25,3 +25,5 @@ sylius_grid:
                 item:
                     update:
                         type: update
+                    preview:
+                        type: setono_cms_preview_page

@@ -12,7 +12,7 @@ use Sylius\Component\Resource\Model\TranslatableInterface;
 use Sylius\Component\Resource\Model\TranslatableTrait;
 use Sylius\Component\Resource\Model\TranslationInterface;
 
-class Page implements PageInterface, TranslatableInterface
+class Page implements PageInterface
 {
     use EnabledDateIntervalAwareTrait;
 
@@ -71,6 +71,16 @@ class Page implements PageInterface, TranslatableInterface
     public function getTitle(): ?string
     {
         return $this->getTranslation()->getMetaDescription();
+    }
+
+    public function setSlug(?string $slug): void
+    {
+        $this->getTranslation()->setSlug($slug);
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->getTranslation()->getSlug();
     }
 
     public function setTitle(?string $title): void

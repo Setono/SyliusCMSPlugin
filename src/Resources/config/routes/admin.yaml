@@ -28,6 +28,10 @@ setono_sylius_cms_admin_page:
                 subheader: setono_sylius_cms.ui.page_subheader
                 templates:
                     form: "@SetonoSyliusCMSPlugin/admin/page/_form.html.twig"
+            update:
+                templates:
+                    form: "@SetonoSyliusCMSPlugin/admin/page/_form.html.twig"
+                    toolbar: "@SetonoSyliusCMSPlugin/admin/page/update/_toolbar.html.twig"
     type: sylius.resource
 
 setono_sylius_cms_admin_template:
