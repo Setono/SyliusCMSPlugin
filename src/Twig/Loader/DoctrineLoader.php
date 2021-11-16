@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig\Loader;
 
+use Doctrine\DBAL\Exception\ConnectionException;
+use Doctrine\DBAL\Exception\TableNotFoundException;
 use Setono\SyliusCMSPlugin\Model\TemplateInterface;
 use Setono\SyliusCMSPlugin\Repository\TemplateRepositoryInterface;
 use Twig\Error\LoaderError;
@@ -53,7 +55,13 @@ final class DoctrineLoader implements LoaderInterface
     private function findTemplate(string $code): ?TemplateInterface
     {
         if (!array_key_exists($code, $this->cache)) {
-            $template = $this->templateRepository->findOneByCode($code);
+            try {
+                $template = $this->templateRepository->findOneByCode($code);
+            } catch (ConnectionException | TableNotFoundException $e) {
+                // these exceptions are thrown either when there's no connection to the database
+                // or when the template table hasn't been created yet
+                return null;
+            }
             $this->cache[$code] = $template;
         }
 
