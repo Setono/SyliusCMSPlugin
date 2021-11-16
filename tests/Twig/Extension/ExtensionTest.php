@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Setono\SyliusCMSPlugin\Twig\Extension;
 
+use Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface;
+use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Renderer\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
 use Setono\SyliusCMSPlugin\Twig\Extension\Extension;
@@ -66,7 +68,14 @@ final class ExtensionTest extends IntegrationTestCase
                     }
                 };
 
-                return new Runtime($blockRenderer, $viewRenderer, $urlGenerator, $localeContext);
+                $previewLinkGenerator = new class() implements PreviewLinkGeneratorInterface {
+                    public function generateAll(PageInterface $page): iterable
+                    {
+                        return [];
+                    }
+                };
+
+                return new Runtime($blockRenderer, $viewRenderer, $urlGenerator, $localeContext, $previewLinkGenerator);
             }
         };
 
