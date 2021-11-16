@@ -1,0 +1,22 @@
+{% if previewLinks|length == 1 %}
+    <a class="ui labeled icon button primary" href="{{ previewLinks[0].url }}" target="_blank">
+        <i class="icon eye"></i>
+        {{ 'setono_sylius_cms.ui.preview_page'|trans }}
+    </a>
+{% elseif previewLinks|length > 1 %}
+    <div class="ui labeled icon floating dropdown primary link button" tabindex="0">
+        <i class="eye icon"></i>
+        <span class="text">{{ 'setono_sylius_cms.ui.preview_page'|trans }}</span>
+        <div class="menu left transition hidden" tabindex="-1">
+            <div class="header">
+                <i class="translate icon"></i>{{ 'sylius.ui.locale'|trans }}
+            </div>
+            <div class="divider"></div>
+            {% for previewLink in previewLinks %}
+                <a class="item" href="{{ previewLink.url }}" target="_blank">
+                    <i class="eye icon"></i> {{ previewLink.channel.name }} - {{ previewLink.locale.code }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}

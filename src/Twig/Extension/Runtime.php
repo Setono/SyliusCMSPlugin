@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig\Extension;
 
+use Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface;
+use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Renderer\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
 use function sprintf;
@@ -23,16 +25,20 @@ final class Runtime implements RuntimeExtensionInterface
 
     private LocaleContextInterface $localeContext;
 
+    private PreviewLinkGeneratorInterface $previewLinkGenerator;
+
     public function __construct(
         BlockRendererInterface $blockRenderer,
         ViewRendererInterface $viewRenderer,
         UrlGeneratorInterface $router,
-        LocaleContextInterface $localeContext
+        LocaleContextInterface $localeContext,
+        PreviewLinkGeneratorInterface $previewLinkGenerator
     ) {
         $this->blockRenderer = $blockRenderer;
         $this->viewRenderer = $viewRenderer;
         $this->router = $router;
         $this->localeContext = $localeContext;
+        $this->previewLinkGenerator = $previewLinkGenerator;
     }
 
     public function block(string $block): string
@@ -136,5 +142,10 @@ final class Runtime implements RuntimeExtensionInterface
             ['slug' => $slug, '_locale' => $localeCode],
             $referenceType
         );
+    }
+
+    public function getPagePreviewLinks(PageInterface $page): iterable
+    {
+        return $this->previewLinkGenerator->generateAll($page);
     }
 }

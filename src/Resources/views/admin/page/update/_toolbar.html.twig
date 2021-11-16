@@ -1,0 +1,7 @@
+<div class="middle aligned column">
+    <div class="ui right floated buttons">
+        {% set previewLinks = sscms_get_page_preview_links(resource) %}
+
+        {% include '@SetonoSyliusCMSPlugin/admin/page/_previewLinks.html.twig' with {previewLinks} only %}
+    </div>
+</div>

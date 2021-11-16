@@ -20,6 +20,7 @@
             <argument type="service" id="setono_sylius_cms.renderer.view"/>
             <argument type="service" id="router"/>
             <argument type="service" id="sylius.context.locale"/>
+            <argument type="service" id="setono_sylius_cms.generator.page.preview_link"/>
 
             <tag name="twig.runtime"/>
         </service>

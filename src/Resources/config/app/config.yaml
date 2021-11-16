@@ -14,3 +14,8 @@ sylius_ui:
             blocks:
                 javascripts:
                     template: '@SetonoSyliusCMSPlugin/admin/view/_javascripts.html.twig'
+
+sylius_grid:
+    templates:
+        action:
+            setono_cms_preview_page: '@SetonoSyliusCMSPlugin/admin/grid/action/page/preview.html.twig' 
