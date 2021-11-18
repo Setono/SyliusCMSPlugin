@@ -1,8 +1,8 @@
 <style>
     #sscms-toolbar {
         position: fixed;
-        top: 50px;
-        left: 0;
+        top: 150px;
+        right: 0;
         max-width: 300px;
         min-height: 100px;
         background-color: #fff;
@@ -12,13 +12,28 @@
         box-shadow: 0 0 20px 1px rgba(0, 0, 0, 0.2);
         padding: 10px;
         font-size: 13px;
+        {% if position is not null %}
+            transform: {{ position }};
+        {% endif %}
     }
 
     #sscms-toolbar .sscms-header {
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
         font-size: 16px;
         border-bottom: 2px solid lightgray;
         text-align: center;
         padding-bottom: 5px;
+    }
+
+    #sscms-toolbar .sscms-header .text {
+        flex-grow: 1;
+    }
+
+    #sscms-toolbar .sscms-header .sscms-move {
+        cursor: move;
     }
 
     #sscms-toolbar .sscms-subheader {
@@ -81,11 +96,83 @@
                     elm.classList.remove('sscms-hover');
                 })
             }, false);
+
+
+            const dragItem = document.querySelector("#sscms-toolbar");
+
+            let active = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            let xOffset = 0;
+            let yOffset = 0;
+
+            d.addEventListener("touchstart", dragStart, false);
+            d.addEventListener("touchend", dragEnd, false);
+            d.addEventListener("touchmove", drag, false);
+
+            d.addEventListener("mousedown", dragStart, false);
+            d.addEventListener("mouseup", dragEnd, false);
+            d.addEventListener("mousemove", drag, false);
+
+            function dragStart(e) {
+                if (e.type === "touchstart") {
+                    initialX = e.touches[0].clientX - xOffset;
+                    initialY = e.touches[0].clientY - yOffset;
+                } else {
+                    initialX = e.clientX - xOffset;
+                    initialY = e.clientY - yOffset;
+                }
+
+                if (e.target.closest('#sscms-toolbar') === dragItem) {
+                    active = true;
+                }
+            }
+
+            function dragEnd(e) {
+                initialX = currentX;
+                initialY = currentY;
+
+                active = false;
+            }
+
+            function drag(e) {
+                if (active) {
+                    e.preventDefault();
+
+                    if (e.type === "touchmove") {
+                        currentX = e.touches[0].clientX - initialX;
+                        currentY = e.touches[0].clientY - initialY;
+                    } else {
+                        currentX = e.clientX - initialX;
+                        currentY = e.clientY - initialY;
+                    }
+
+                    xOffset = currentX;
+                    yOffset = currentY;
+
+                    setTranslate(currentX, currentY, dragItem);
+                }
+            }
+
+            function setTranslate(xPos, yPos, el) {
+                const transform = "translate(" + xPos + "px, " + yPos + "px)";
+                el.style.transform = transform;
+                document.cookie = "sscms_toolbar=" + transform + "; secure;max-age=31536000;path=/;samesite=lax";
+            }
         }
     })(document);
 </script>
 <div id="sscms-toolbar">
-    <div class="sscms-header">CMS Toolbar</div>
+    <div class="sscms-header">
+        <div class="text">CMS Toolbar</div>
+        <div class="sscms-move">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M7.646.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 1.707V5.5a.5.5 0 0 1-1 0V1.707L6.354 2.854a.5.5 0 1 1-.708-.708l2-2zM8 10a.5.5 0 0 1 .5.5v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 14.293V10.5A.5.5 0 0 1 8 10zM.146 8.354a.5.5 0 0 1 0-.708l2-2a.5.5 0 1 1 .708.708L1.707 7.5H5.5a.5.5 0 0 1 0 1H1.707l1.147 1.146a.5.5 0 0 1-.708.708l-2-2zM10 8a.5.5 0 0 1 .5-.5h3.793l-1.147-1.146a.5.5 0 0 1 .708-.708l2 2a.5.5 0 0 1 0 .708l-2 2a.5.5 0 0 1-.708-.708L14.293 8.5H10.5A.5.5 0 0 1 10 8z"/>
+            </svg>
+        </div>
+    </div>
     <div class="sscms-subheader">{{ 'setono_sylius_cms.ui.blocks'|trans }}</div>
     <ul>
         {% for element in elements.blocks %}

@@ -67,8 +67,16 @@ final class AddToolbarSubscriber implements EventSubscriberInterface
             return;
         }
 
+        $request = $event->getRequest();
+
+        $position = null;
+        if ($request->cookies->has('sscms_toolbar')) {
+            $position = $request->cookies->get('sscms_toolbar');
+        }
+
         $toolbar = $this->twig->render('@SetonoSyliusCMSPlugin/toolbar.html.twig', [
             'elements' => $this->elementStack,
+            'position' => $position,
         ]);
 
         $content = str_replace('</body>', $toolbar . '</body>', $content);
