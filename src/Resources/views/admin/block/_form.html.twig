@@ -17,6 +17,7 @@
 
 <script src="{{ asset('bundles/setonosyliuscmsplugin/js/editor.js') }}"></script>
 <script src="{{ asset('bundles/setonosyliuscmsplugin/js/header.js') }}"></script>
+<script src="{{ asset('bundles/setonosyliuscmsplugin/js/raw.js') }}"></script>
 
 <script>
     const editors = [];
@@ -27,7 +28,8 @@
                 header: {
                     class: Header,
                     inlineToolbar : true
-                }
+                },
+                raw: RawTool
             }
         };
 
@@ -53,5 +55,8 @@
                 console.log('Saving failed: ', error)
             });
         });
+
+        // e.preventDefault();
+        // return false;
     });
 </script>
