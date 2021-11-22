@@ -8,9 +8,9 @@ use Sylius\Component\Resource\Model\ResourceInterface;
 
 interface CarouselBlockInterface extends ResourceInterface
 {
-    public function getPriority(): int;
+    public function getPosition(): int;
 
-    public function setPriority(int $priority): void;
+    public function setPosition(int $position): void;
 
     public function getCarousel(): ?CarouselInterface;
 

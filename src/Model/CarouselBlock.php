@@ -10,7 +10,7 @@ class CarouselBlock implements CarouselBlockInterface
 {
     protected ?int $id = null;
 
-    protected int $priority = 0;
+    protected int $position = 0;
 
     protected ?CarouselInterface $carousel = null;
 
@@ -21,14 +21,14 @@ class CarouselBlock implements CarouselBlockInterface
         return $this->id;
     }
 
-    public function getPriority(): int
+    public function getPosition(): int
     {
-        return $this->priority;
+        return $this->position;
     }
 
-    public function setPriority(int $priority): void
+    public function setPosition(int $position): void
     {
-        $this->priority = $priority;
+        $this->position = $position;
     }
 
     public function getCarousel(): ?CarouselInterface

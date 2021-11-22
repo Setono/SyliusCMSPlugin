@@ -18,7 +18,7 @@
                 <cascade-all/>
             </cascade>
             <order-by>
-                <order-by-field name="priority" direction="DESC" />
+                <order-by-field name="position" direction="ASC" />
             </order-by>
         </one-to-many>
 

@@ -6,5 +6,5 @@ namespace Setono\SyliusCMSPlugin\Renderer;
 
 interface CarouselRendererInterface
 {
-
+    public function render($carousel): string;
 }
