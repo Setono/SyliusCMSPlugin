@@ -1,0 +1,32 @@
+<div class="carousel-wrapper">
+    <div class="sscms-carousel-{{ carousel.identifier }}">
+        {% for carouselElement in sscms_carousel_elements %}
+            <div class="carousel-item">
+                {{ carouselElement|raw }}
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="carousel-nav">
+        <button class="sscms-carousel-left-{{ carousel.identifier }} ui huge black icon button">
+            <i class="left arrow icon"></i>
+        </button>
+        <button class="sscms-carousel-right-{{ carousel.identifier }} ui huge black icon button">
+            <i class="right arrow icon"></i>
+        </button>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script defer="defer">
+    $(document).ready(() => {
+        $('.sscms-carousel-{{ carousel.identifier }}').slick({
+            infinite: {{ carousel.configuration.infinite ? 'true' : 'false' }},
+            slidesToShow: {{ carousel.configuration.slidesToShow }},
+            slidesToScroll: {{ carousel.configuration.slidesToScroll }},
+            prevArrow: $('.sscms-carousel-left-{{ carousel.identifier }}'),
+            nextArrow: $('.sscms-carousel-right-{{ carousel.identifier }}'),
+            appendArrows: false
+        });
+    });
+</script>

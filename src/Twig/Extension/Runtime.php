@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Twig\Extension;
 use Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Renderer\BlockRendererInterface;
+use Setono\SyliusCMSPlugin\Renderer\CarouselRendererInterface;
 use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
 use function sprintf;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
@@ -21,6 +22,8 @@ final class Runtime implements RuntimeExtensionInterface
 
     private ViewRendererInterface $viewRenderer;
 
+    private CarouselRendererInterface $carouselRenderer;
+
     private UrlGeneratorInterface $router;
 
     private LocaleContextInterface $localeContext;
@@ -30,12 +33,14 @@ final class Runtime implements RuntimeExtensionInterface
     public function __construct(
         BlockRendererInterface $blockRenderer,
         ViewRendererInterface $viewRenderer,
+        CarouselRendererInterface $carouselRenderer,
         UrlGeneratorInterface $router,
         LocaleContextInterface $localeContext,
         PreviewLinkGeneratorInterface $previewLinkGenerator
     ) {
         $this->blockRenderer = $blockRenderer;
         $this->viewRenderer = $viewRenderer;
+        $this->carouselRenderer = $carouselRenderer;
         $this->router = $router;
         $this->localeContext = $localeContext;
         $this->previewLinkGenerator = $previewLinkGenerator;
@@ -49,6 +54,11 @@ final class Runtime implements RuntimeExtensionInterface
     public function view(string $view): string
     {
         return $this->viewRenderer->render($view);
+    }
+
+    public function carousel(string $view): string
+    {
+        return $this->carouselRenderer->render($view);
     }
 
     public function linkToRoute(

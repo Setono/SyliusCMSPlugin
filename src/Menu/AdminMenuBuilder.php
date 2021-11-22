@@ -44,6 +44,14 @@ final class AdminMenuBuilder
             ->setLabel('setono_sylius_cms.menu.admin.main.content_management.views')
             ->setLabelAttribute('icon', 'list alternate outline')
         ;
+
+        $header
+            ->addChild('carousels', [
+                'route' => 'setono_sylius_cms_admin_carousel_index',
+            ])
+            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.carousels')
+            ->setLabelAttribute('icon', 'list alternate outline')
+        ;
     }
 
     private function getHeader(ItemInterface $menu): ItemInterface

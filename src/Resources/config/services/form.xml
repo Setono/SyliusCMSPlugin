@@ -15,18 +15,23 @@
             <parameter>setono_sylius_cms</parameter>
         </parameter>
 
-        <parameter type="collection"
-                   key="setono_sylius_cms.form.type.page_translation.validation_groups">
+        <parameter type="collection" key="setono_sylius_cms.form.type.page_translation.validation_groups">
             <parameter>setono_sylius_cms</parameter>
         </parameter>
 
-        <parameter type="collection"
-                   key="setono_sylius_cms.form.type.template.validation_groups">
+        <parameter type="collection" key="setono_sylius_cms.form.type.template.validation_groups">
             <parameter>setono_sylius_cms</parameter>
         </parameter>
 
-        <parameter type="collection"
-                   key="setono_sylius_cms.form.type.view.validation_groups">
+        <parameter type="collection" key="setono_sylius_cms.form.type.view.validation_groups">
+            <parameter>setono_sylius_cms</parameter>
+        </parameter>
+
+        <parameter type="collection" key="setono_sylius_cms.form.type.carousel.validation_groups">
+            <parameter>setono_sylius_cms</parameter>
+        </parameter>
+
+        <parameter type="collection" key="setono_sylius_cms.form.type.carousel_block.validation_groups">
             <parameter>setono_sylius_cms</parameter>
         </parameter>
     </parameters>
@@ -114,6 +119,27 @@
                  class="Setono\SyliusCMSPlugin\Form\Type\TemplateChoiceType">
             <argument type="service" id="setono_sylius_cms.template.registry"/>
 
+            <tag name="form.type"/>
+        </service>
+
+        <service id="setono_sylius_cms.form.type.carousel"
+                 class="Setono\SyliusCMSPlugin\Form\Type\CarouselType">
+            <argument>%setono_sylius_cms.model.carousel.class%</argument>
+            <argument>%setono_sylius_cms.form.type.carousel.validation_groups%</argument>
+
+            <tag name="form.type"/>
+        </service>
+
+        <service id="setono_sylius_cms.form.type.carousel_block"
+                 class="Setono\SyliusCMSPlugin\Form\Type\CarouselBlockType">
+            <argument>%setono_sylius_cms.model.carousel_block.class%</argument>
+            <argument>%setono_sylius_cms.form.type.carousel_block.validation_groups%</argument>
+
+            <tag name="form.type"/>
+        </service>
+
+        <service id="setono_sylius_cms.form.type.carousel_configuration"
+                 class="Setono\SyliusCMSPlugin\Form\Type\CarouselConfigurationType">
             <tag name="form.type"/>
         </service>
 

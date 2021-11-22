@@ -18,6 +18,7 @@
                  class="Setono\SyliusCMSPlugin\Twig\Extension\Runtime">
             <argument type="service" id="setono_sylius_cms.renderer.block"/>
             <argument type="service" id="setono_sylius_cms.renderer.view"/>
+            <argument type="service" id="setono_sylius_cms.renderer.carousel"/>
             <argument type="service" id="router"/>
             <argument type="service" id="sylius.context.locale"/>
             <argument type="service" id="setono_sylius_cms.generator.page.preview_link"/>

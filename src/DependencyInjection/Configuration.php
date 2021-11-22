@@ -5,23 +5,29 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
 use Setono\SyliusCMSPlugin\Doctrine\ORM\BlockRepository;
+use Setono\SyliusCMSPlugin\Doctrine\ORM\CarouselRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\PageRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\TemplateRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\ViewRepository;
 use Setono\SyliusCMSPlugin\Form\Type\BlockTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\BlockType;
+use Setono\SyliusCMSPlugin\Form\Type\CarouselBlockType;
+use Setono\SyliusCMSPlugin\Form\Type\CarouselType;
 use Setono\SyliusCMSPlugin\Form\Type\PageTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\PageType;
 use Setono\SyliusCMSPlugin\Form\Type\TemplateType;
 use Setono\SyliusCMSPlugin\Form\Type\ViewType;
 use Setono\SyliusCMSPlugin\Model\Block;
 use Setono\SyliusCMSPlugin\Model\BlockTranslation;
+use Setono\SyliusCMSPlugin\Model\Carousel;
+use Setono\SyliusCMSPlugin\Model\CarouselBlock;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Template;
 use Setono\SyliusCMSPlugin\Model\View;
 use Setono\SyliusCMSPlugin\Model\ViewBlock;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
+use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 use Sylius\Bundle\ResourceBundle\Form\Type\DefaultResourceType;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Sylius\Component\Resource\Factory\Factory;
@@ -103,6 +109,38 @@ final class Configuration implements ConfigurationInterface
                                                 ->scalarNode('factory')->defaultValue(TranslatableFactory::class)->end()
                                             ->end()
                                         ->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                        ->arrayNode('carousel')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->variableNode('options')->end()
+                                ->arrayNode('classes')
+                                    ->addDefaultsIfNotSet()
+                                    ->children()
+                                        ->scalarNode('model')->defaultValue(Carousel::class)->cannotBeEmpty()->end()
+                                        ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
+                                        ->scalarNode('repository')->defaultValue(CarouselRepository::class)->cannotBeEmpty()->end()
+                                        ->scalarNode('form')->defaultValue(CarouselType::class)->end()
+                                        ->scalarNode('factory')->defaultValue(Factory::class)->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                        ->arrayNode('carousel_block')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->variableNode('options')->end()
+                                ->arrayNode('classes')
+                                    ->addDefaultsIfNotSet()
+                                    ->children()
+                                        ->scalarNode('model')->defaultValue(CarouselBlock::class)->cannotBeEmpty()->end()
+                                        ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
+                                        ->scalarNode('repository')->cannotBeEmpty()->end()
+                                        ->scalarNode('form')->defaultValue(CarouselBlockType::class)->end()
+                                        ->scalarNode('factory')->defaultValue(Factory::class)->end()
                                     ->end()
                                 ->end()
                             ->end()
