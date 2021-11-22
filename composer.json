@@ -46,7 +46,7 @@
         "symfony/property-info": "^5.3",
         "symfony/serializer": "^5.3",
         "symfony/web-profiler-bundle": "^5.3",
-        "symfony/webpack-encore-bundle": "^1.12",
+        "symfony/webpack-encore-bundle": "^1.13",
         "weirdan/doctrine-psalm-plugin": "^2.0"
     },
     "config": {
