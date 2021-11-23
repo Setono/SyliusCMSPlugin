@@ -49,9 +49,9 @@ final class CarouselRenderer implements CarouselRendererInterface
             $code = $carousel;
             $carousel = $this->carouselRepository->findOneByCode($code);
             if (null === $carousel) {
-                $this->logger->error(sprintf('The view "%s" is not defined', $code));
+                $this->logger->error(sprintf('The carousel "%s" is not defined', $code));
 
-                return $this->renderNonExistingView($code);
+                return $this->renderNonExistingCarousel($code);
             }
         }
 
@@ -78,7 +78,7 @@ final class CarouselRenderer implements CarouselRendererInterface
         ]);
     }
 
-    private function renderNonExistingView(string $code): string
+    private function renderNonExistingCarousel(string $code): string
     {
         if (!$this->debug) {
             return '';

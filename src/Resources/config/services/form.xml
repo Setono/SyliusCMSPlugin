@@ -124,6 +124,7 @@
 
         <service id="setono_sylius_cms.form.type.carousel"
                  class="Setono\SyliusCMSPlugin\Form\Type\CarouselType">
+            <argument type="service" id="request_stack"/>
             <argument>%setono_sylius_cms.model.carousel.class%</argument>
             <argument>%setono_sylius_cms.form.type.carousel.validation_groups%</argument>
 

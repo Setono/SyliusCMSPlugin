@@ -30,7 +30,7 @@ final class CarouselConfigurationType extends AbstractType
             'label' => 'setono_sylius_cms.form.carousel.configuration.autoplay',
         ]);
         $builder->add('autoplaySpeed', IntegerType::class, [
-            'empty_data' => 1,
+            'empty_data' => 3000,
             'label' => 'setono_sylius_cms.form.carousel.configuration.autoplay_speed',
         ]);
     }
