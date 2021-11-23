@@ -14,6 +14,9 @@ interface CarouselInterface extends ResourceInterface, CodeAwareInterface, Eleme
 
     public function setCode(?string $code): void;
 
+    /**
+     * @return Collection<array-key, CarouselBlockInterface>
+     */
     public function getCarouselBlocks(): Collection;
 
     public function hasCarouselBlocks(): bool;
