@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
-use Sylius\Component\Resource\Model\ResourceInterface;
-
 class CarouselBlock implements CarouselBlockInterface
 {
     protected ?int $id = null;

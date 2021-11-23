@@ -27,7 +27,6 @@ use Setono\SyliusCMSPlugin\Model\Template;
 use Setono\SyliusCMSPlugin\Model\View;
 use Setono\SyliusCMSPlugin\Model\ViewBlock;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
-use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 use Sylius\Bundle\ResourceBundle\Form\Type\DefaultResourceType;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Sylius\Component\Resource\Factory\Factory;
