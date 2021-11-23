@@ -15,13 +15,14 @@ final class CarouselType extends AbstractResourceType
     {
         $builder->addEventSubscriber(new AddCodeFormSubscriber());
         $builder->add('carouselBlocks', CollectionType::class, [
+            'label' => 'setono_sylius_cms.form.carousel.blocks',
             'allow_add' => true,
             'allow_delete' => true,
             'by_reference' => false,
             'entry_type' => CarouselBlockType::class,
         ]);
         $builder->add('configuration', CarouselConfigurationType::class, [
-
+            'label' => 'setono_sylius_cms.form.carousel.configuration',
         ]);
     }
 }

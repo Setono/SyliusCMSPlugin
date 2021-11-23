@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Stack;
 
 use ArrayIterator;
 use Setono\SyliusCMSPlugin\Model\BlockInterface;
+use Setono\SyliusCMSPlugin\Model\CarouselInterface;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Setono\SyliusCMSPlugin\Model\ViewInterface;
 
@@ -32,6 +33,13 @@ final class ElementStack implements ElementStackInterface, \IteratorAggregate
     {
         return array_filter($this->elements, static function (ElementInterface $element): bool {
             return $element instanceof BlockInterface;
+        });
+    }
+
+    public function getCarousels(): array
+    {
+        return array_filter($this->elements, static function (ElementInterface $element): bool {
+            return $element instanceof CarouselInterface;
         });
     }
 

@@ -3,6 +3,14 @@ setono_sylius_cms:
         block:
             content: Content
             default_content: Default content
+        carousel:
+            blocks: Blocks
+            configuration: Configuration
+            configuration.autoplay: Autoplay
+            configuration.autoplay_speed: Autoplay speed
+            configuration.infinite_scroll: Infinite scroll
+            configuration.slides_to_scroll: Slides to scroll
+            configuration.slides_to_show: Slides to show
         page:
             enabled: Enabled
             enabled_from: Enabled from
@@ -21,6 +29,7 @@ setono_sylius_cms:
             main:
                 content_management:
                     blocks: Blocks
+                    carousels: Carousels
                     header: Content management
                     pages: Pages
                     templates: Templates
@@ -29,6 +38,9 @@ setono_sylius_cms:
         block_header: Blocks
         block_subheader: Manage your content blocks
         blocks: Blocks
+        carousel_header: Carousels
+        carousel_subheader: Manage your carousels
+        carousels: Carousels
         page_header: Pages
         page_subheader: Manage your CMS pages
         pages: Pages

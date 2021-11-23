@@ -56,9 +56,9 @@ final class Runtime implements RuntimeExtensionInterface
         return $this->viewRenderer->render($view);
     }
 
-    public function carousel(string $view): string
+    public function carousel(string $carousel): string
     {
-        return $this->carouselRenderer->render($view);
+        return $this->carouselRenderer->render($carousel);
     }
 
     public function linkToRoute(

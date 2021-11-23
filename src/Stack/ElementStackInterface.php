@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Stack;
 
 use Setono\SyliusCMSPlugin\Model\BlockInterface;
+use Setono\SyliusCMSPlugin\Model\CarouselInterface;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Setono\SyliusCMSPlugin\Model\ViewInterface;
 
@@ -24,6 +25,11 @@ interface ElementStackInterface extends \Traversable
      * @return array<array-key, BlockInterface>
      */
     public function getBlocks(): array;
+
+    /**
+     * @return array<array-key, CarouselInterface>
+     */
+    public function getCarousels(): array;
 
     /**
      * @return array<array-key, ViewInterface>

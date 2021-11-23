@@ -26,7 +26,9 @@
             slidesToScroll: {{ carousel.configuration.slidesToScroll }},
             prevArrow: $('.sscms-carousel-left-{{ carousel.identifier }}'),
             nextArrow: $('.sscms-carousel-right-{{ carousel.identifier }}'),
-            appendArrows: false
+            appendArrows: false,
+            autoplay: {{ carousel.configuration.autoplay ? 'true' : 'false' }},
+            autoplaySpeed: {{ carousel.configuration.autoplaySpeed }},
         });
     });
 </script>
