@@ -13,6 +13,7 @@ class Carousel implements CarouselInterface
 
     protected ?string $code = null;
 
+    /** @var Collection<array-key, CarouselBlockInterface> */
     protected Collection $carouselBlocks;
 
     protected array $configuration = [];

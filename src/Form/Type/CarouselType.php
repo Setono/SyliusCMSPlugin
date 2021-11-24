@@ -15,6 +15,9 @@ final class CarouselType extends AbstractResourceType
 {
     private RequestStack $requestStack;
 
+    /**
+     * @param array<array-key, string> $validationGroups
+     */
     public function __construct(
         RequestStack $requestStack,
         string $dataClass,
