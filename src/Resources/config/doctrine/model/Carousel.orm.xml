@@ -13,7 +13,9 @@
         <field name="code" column="code" type="string"/>
         <field name="configuration" column="configuration" type="array"/>
 
-        <one-to-many field="carouselBlocks" target-entity="Setono\SyliusCMSPlugin\Model\CarouselBlockInterface" mapped-by="carousel" orphan-removal="true" fetch="EAGER">
+        <one-to-many field="carouselBlocks" target-entity="Setono\SyliusCMSPlugin\Model\CarouselBlockInterface"
+                     mapped-by="carousel" orphan-removal="true">
+            <!-- There is an issue with fetch eager and orderBy: https://github.com/doctrine/orm/issues/4256 -->
             <cascade>
                 <cascade-all/>
             </cascade>
