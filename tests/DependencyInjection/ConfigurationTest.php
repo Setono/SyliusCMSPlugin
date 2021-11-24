@@ -8,17 +8,22 @@ use Matthias\SymfonyConfigTest\PhpUnit\ConfigurationTestCaseTrait;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\DependencyInjection\Configuration;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\BlockRepository;
+use Setono\SyliusCMSPlugin\Doctrine\ORM\CarouselRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\PageRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\TemplateRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\ViewRepository;
 use Setono\SyliusCMSPlugin\Form\Type\BlockTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\BlockType;
+use Setono\SyliusCMSPlugin\Form\Type\CarouselBlockType;
+use Setono\SyliusCMSPlugin\Form\Type\CarouselType;
 use Setono\SyliusCMSPlugin\Form\Type\PageTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\PageType;
 use Setono\SyliusCMSPlugin\Form\Type\TemplateType;
 use Setono\SyliusCMSPlugin\Form\Type\ViewType;
 use Setono\SyliusCMSPlugin\Model\Block;
 use Setono\SyliusCMSPlugin\Model\BlockTranslation;
+use Setono\SyliusCMSPlugin\Model\Carousel;
+use Setono\SyliusCMSPlugin\Model\CarouselBlock;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Template;
@@ -108,6 +113,23 @@ final class ConfigurationTest extends TestCase
                         'model' => ViewBlock::class,
                         'controller' => ResourceController::class,
                         'form' => DefaultResourceType::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'carousel' => [
+                    'classes' => [
+                        'model' => Carousel::class,
+                        'controller' => ResourceController::class,
+                        'form' => CarouselType::class,
+                        'factory' => Factory::class,
+                        'repository' => CarouselRepository::class,
+                    ],
+                ],
+                'carousel_block' => [
+                    'classes' => [
+                        'model' => CarouselBlock::class,
+                        'controller' => ResourceController::class,
+                        'form' => CarouselBlockType::class,
                         'factory' => Factory::class,
                     ],
                 ],
