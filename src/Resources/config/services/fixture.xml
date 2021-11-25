@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<container xmlns="http://symfony.com/schema/dic/services" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <defaults public="true" />
+
+        <!-- Template -->
+        <service id="setono_sylius_cms.fixture.template"
+                 class="Setono\SyliusCMSPlugin\Fixture\TemplateFixture">
+            <argument type="service" id="setono_sylius_cms.manager.template" />
+            <argument type="service" id="setono_sylius_cms.fixture.example_factory.template" />
+
+            <tag name="sylius_fixtures.fixture" />
+        </service>
+
+        <service id="setono_sylius_cms.fixture.example_factory.template"
+                 class="Setono\SyliusCMSPlugin\Fixture\Factory\TemplateExampleFactory">
+            <argument type="service" id="setono_sylius_cms.factory.template" />
+            <argument type="service" id="setono_sylius_cms.repository.template" />
+        </service>
+
+    </services>
+</container>
