@@ -160,9 +160,10 @@
         <!-- Data mapper -->
         <service id="setono_sylius_cms.form.data_mapper.view_sections"
                  class="Setono\SyliusCMSPlugin\Form\DataMapper\ViewSectionsDataMapper">
+            <argument type="service" id="property_accessor"/>
             <argument type="service" id="setono_sylius_cms.template.registry"/>
             <argument type="service" id="setono_sylius_cms.template.metadata_extractor"/>
-            <argument type="service" id="property_accessor"/>
+            <argument type="service" id="setono_sylius_cms.factory.view_block"/>
         </service>
     </services>
 </container>
