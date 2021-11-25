@@ -20,5 +20,23 @@
             <argument type="service" id="setono_sylius_cms.repository.template" />
         </service>
 
+        <!-- Block -->
+        <service id="setono_sylius_cms.fixture.block"
+                 class="Setono\SyliusCMSPlugin\Fixture\BlockFixture">
+            <argument type="service" id="setono_sylius_cms.manager.block" />
+            <argument type="service" id="setono_sylius_cms.fixture.example_factory.block" />
+
+            <tag name="sylius_fixtures.fixture" />
+        </service>
+
+        <service id="setono_sylius_cms.fixture.example_factory.block"
+                 class="Setono\SyliusCMSPlugin\Fixture\Factory\BlockExampleFactory">
+            <argument type="service" id="setono_sylius_cms.factory.block" />
+            <argument type="service" id="setono_sylius_cms.repository.block" />
+            <argument type="service" id="sylius.repository.locale" />
+            <argument type="service" id="setono_editorjs.parser" />
+            <argument type="service" id="setono_editorjs.renderer" />
+        </service>
+
     </services>
 </container>
