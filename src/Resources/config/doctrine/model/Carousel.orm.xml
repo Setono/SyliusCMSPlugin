@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\Carousel"
+                       table="setono_sylius_cms__carousel">
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="code" column="code" type="string"/>
+        <field name="configuration" column="configuration" type="array"/>
+
+        <one-to-many field="carouselBlocks" target-entity="Setono\SyliusCMSPlugin\Model\CarouselBlockInterface"
+                     mapped-by="carousel" orphan-removal="true">
+            <!-- There is an issue with fetch eager and orderBy: https://github.com/doctrine/orm/issues/4256 -->
+            <cascade>
+                <cascade-all/>
+            </cascade>
+            <order-by>
+                <order-by-field name="position" direction="ASC" />
+            </order-by>
+        </one-to-many>
+
+        <unique-constraints>
+            <unique-constraint columns="code"/>
+        </unique-constraints>
+    </mapped-superclass>
+</doctrine-mapping>

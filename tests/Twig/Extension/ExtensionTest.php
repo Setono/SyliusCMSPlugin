@@ -7,6 +7,7 @@ namespace Tests\Setono\SyliusCMSPlugin\Twig\Extension;
 use Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Renderer\BlockRendererInterface;
+use Setono\SyliusCMSPlugin\Renderer\CarouselRendererInterface;
 use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
 use Setono\SyliusCMSPlugin\Twig\Extension\Extension;
 use Setono\SyliusCMSPlugin\Twig\Extension\Runtime;
@@ -38,6 +39,13 @@ final class ExtensionTest extends IntegrationTestCase
                     public function render($view): string
                     {
                         return 'view';
+                    }
+                };
+
+                $carouselRenderer = new class() implements CarouselRendererInterface {
+                    public function render($carousel): string
+                    {
+                        return 'carousel';
                     }
                 };
 
@@ -75,7 +83,7 @@ final class ExtensionTest extends IntegrationTestCase
                     }
                 };
 
-                return new Runtime($blockRenderer, $viewRenderer, $urlGenerator, $localeContext, $previewLinkGenerator);
+                return new Runtime($blockRenderer, $viewRenderer, $carouselRenderer, $urlGenerator, $localeContext, $previewLinkGenerator);
             }
         };
 

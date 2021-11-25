@@ -14,6 +14,22 @@ setono_sylius_cms_admin_block:
                     form: "@SetonoSyliusCMSPlugin/admin/block/_form.html.twig"
     type: sylius.resource
 
+setono_sylius_cms_admin_carousel:
+    resource: |
+        section: admin
+        alias: setono_sylius_cms.carousel
+        templates: "@SyliusAdmin\\Crud"
+        redirect: index
+        permission: true
+        grid: setono_sylius_cms_admin_carousel
+        vars:
+            all:
+                header: setono_sylius_cms.ui.carousel_header
+                subheader: setono_sylius_cms.ui.carousel_subheader
+                templates:
+                    form: "@SetonoSyliusCMSPlugin/admin/carousel/_form.html.twig"
+    type: sylius.resource
+
 setono_sylius_cms_admin_page:
     resource: |
         section: admin

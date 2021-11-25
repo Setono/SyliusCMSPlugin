@@ -22,6 +22,7 @@ final class Extension extends AbstractExtension
         return [
             new TwigFunction('sscms_block', [Runtime::class, 'block'], ['is_safe' => ['html']]),
             new TwigFunction('sscms_view', [Runtime::class, 'view'], ['is_safe' => ['html']]),
+            new TwigFunction('sscms_carousel', [Runtime::class, 'carousel'], ['is_safe' => ['html']]),
             new TwigFunction('sscms_link_route', [Runtime::class, 'linkToRoute'], ['is_safe' => ['html']]),
             new TwigFunction('sscms_link_resource', [Runtime::class, 'linkToResource'], ['is_safe' => ['html']]),
             new TwigFunction('sscms_link_product', [Runtime::class, 'linkToProduct'], ['is_safe' => ['html']]),

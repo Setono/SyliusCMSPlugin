@@ -173,27 +173,46 @@
             </svg>
         </div>
     </div>
-    <div class="sscms-subheader">{{ 'setono_sylius_cms.ui.blocks'|trans }}</div>
-    <ul>
-        {% for element in elements.blocks %}
-            <li>
-                <a href="{{ path('setono_sylius_cms_admin_block_update', {'id': element.id}) }}"
-                   data-identifier="{{ element.identifier }}" target="_blank">
-                    {{ element.identifier }}
-                </a>
-            </li>
-        {% endfor %}
-    </ul>
 
-    <div class="sscms-subheader">{{ 'setono_sylius_cms.ui.views'|trans }}</div>
-    <ul>
-        {% for element in elements.views %}
-            <li>
-                <a href="{{ path('setono_sylius_cms_admin_view_update', {'id': element.id}) }}"
-                   data-identifier="{{ element.identifier }}" target="_blank">
-                    {{ element.identifier }}
-                </a>
-            </li>
-        {% endfor %}
-    </ul>
+    {% if elements.blocks is not empty %}
+        <div class="sscms-subheader">{{ 'setono_sylius_cms.ui.blocks'|trans }}</div>
+        <ul>
+            {% for element in elements.blocks %}
+                <li>
+                    <a href="{{ path('setono_sylius_cms_admin_block_update', {'id': element.id}) }}"
+                       data-identifier="{{ element.identifier }}" target="_blank">
+                        {{ element.identifier }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if elements.carousels is not empty %}
+        <div class="sscms-subheader">{{ 'setono_sylius_cms.ui.carousels'|trans }}</div>
+        <ul>
+            {% for element in elements.carousels %}
+                <li>
+                    <a href="{{ path('setono_sylius_cms_admin_carousel_update', {'id': element.id}) }}"
+                       data-identifier="{{ element.identifier }}" target="_blank">
+                        {{ element.identifier }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if elements.views is not empty %}
+        <div class="sscms-subheader">{{ 'setono_sylius_cms.ui.views'|trans }}</div>
+        <ul>
+            {% for element in elements.views %}
+                <li>
+                    <a href="{{ path('setono_sylius_cms_admin_view_update', {'id': element.id}) }}"
+                       data-identifier="{{ element.identifier }}" target="_blank">
+                        {{ element.identifier }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 </div>
