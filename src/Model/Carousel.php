@@ -18,7 +18,13 @@ class Carousel implements CarouselInterface
     /** @var Collection<array-key, CarouselBlockInterface> */
     protected Collection $carouselBlocks;
 
-    protected array $configuration = [];
+    protected array $configuration = [
+        'infinite' => false,
+        'slidesToShow' => 1,
+        'slidesToScroll' => 1,
+        'autoplay' => false,
+        'autoplaySpeed' => 3000,
+    ];
 
     public function __construct()
     {
