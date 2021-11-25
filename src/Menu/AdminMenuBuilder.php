@@ -22,14 +22,6 @@ final class AdminMenuBuilder
         ;
 
         $header
-            ->addChild('pages', [
-                'route' => 'setono_sylius_cms_admin_page_index',
-            ])
-            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.pages')
-            ->setLabelAttribute('icon', 'file alternate outline')
-        ;
-
-        $header
             ->addChild('blocks', [
                 'route' => 'setono_sylius_cms_admin_block_index',
             ])
@@ -59,6 +51,14 @@ final class AdminMenuBuilder
             ])
             ->setLabel('setono_sylius_cms.menu.admin.main.content_management.carousels')
             ->setLabelAttribute('icon', 'list alternate outline')
+        ;
+
+        $header
+            ->addChild('pages', [
+                'route' => 'setono_sylius_cms_admin_page_index',
+            ])
+            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.pages')
+            ->setLabelAttribute('icon', 'file alternate outline')
         ;
     }
 
