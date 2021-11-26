@@ -1,0 +1,3 @@
+setono_sylius_cms:
+    resource:
+        delete_error: Resource could not be deleted as it is in use

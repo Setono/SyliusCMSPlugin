@@ -12,7 +12,8 @@
             <tag name="kernel.event_subscriber"/>
         </service>
 
-        <service id="setono_sylius_cms.event_subscriber.remove_asset_file" class="Setono\SyliusCMSPlugin\EventSubscriber\RemoveAssetFileSubscriber">
+        <service id="setono_sylius_cms.event_subscriber.remove_asset_file"
+                 class="Setono\SyliusCMSPlugin\EventSubscriber\RemoveAssetFileSubscriber">
             <argument type="service">
                 <service class="Gaufrette\Filesystem">
                     <argument>%setono_sylius_cms.asset_adapter%</argument>
@@ -22,6 +23,18 @@
             <argument type="service" id="liip_imagine.cache.manager"/>
 
             <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="setono_sylius_cms.event_subscriber.resource_delete"
+                 class="Setono\SyliusCMSPlugin\EventSubscriber\ResourceDeleteSubscriber">
+            <argument type="service" id="router" />
+            <argument type="service" id="session" />
+            <argument type="collection">
+                <argument>setono_sylius_cms_admin_block_bulk_delete</argument>
+                <argument>setono_sylius_cms_admin_block_delete</argument>
+            </argument>
+
+            <tag name="kernel.event_subscriber" event="kernel.exception" />
         </service>
     </services>
 </container>
