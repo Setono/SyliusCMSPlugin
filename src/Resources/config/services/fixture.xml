@@ -38,5 +38,22 @@
             <argument type="service" id="setono_editorjs.renderer" />
         </service>
 
+        <!-- View -->
+        <service id="setono_sylius_cms.fixture.view"
+                 class="Setono\SyliusCMSPlugin\Fixture\ViewFixture">
+            <argument type="service" id="setono_sylius_cms.manager.view" />
+            <argument type="service" id="setono_sylius_cms.fixture.example_factory.view" />
+
+            <tag name="sylius_fixtures.fixture" />
+        </service>
+
+        <service id="setono_sylius_cms.fixture.example_factory.view"
+                 class="Setono\SyliusCMSPlugin\Fixture\Factory\ViewExampleFactory">
+            <argument type="service" id="setono_sylius_cms.factory.view" />
+            <argument type="service" id="setono_sylius_cms.repository.view" />
+            <argument type="service" id="setono_sylius_cms.repository.block" />
+            <argument type="service" id="setono_sylius_cms.factory.view_block" />
+        </service>
+
     </services>
 </container>
