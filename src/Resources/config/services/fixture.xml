@@ -55,5 +55,23 @@
             <argument type="service" id="setono_sylius_cms.factory.view_block" />
         </service>
 
+        <!-- Page -->
+        <service id="setono_sylius_cms.fixture.page"
+                 class="Setono\SyliusCMSPlugin\Fixture\PageFixture">
+            <argument type="service" id="setono_sylius_cms.manager.page" />
+            <argument type="service" id="setono_sylius_cms.fixture.example_factory.page" />
+
+            <tag name="sylius_fixtures.fixture" />
+        </service>
+
+        <service id="setono_sylius_cms.fixture.example_factory.page"
+                 class="Setono\SyliusCMSPlugin\Fixture\Factory\PageExampleFactory">
+            <argument type="service" id="setono_sylius_cms.factory.page" />
+            <argument type="service" id="setono_sylius_cms.repository.page" />
+            <argument type="service" id="setono_sylius_cms.repository.view" />
+            <argument type="service" id="sylius.repository.channel" />
+            <argument type="service" id="sylius.repository.locale" />
+        </service>
+
     </services>
 </container>
