@@ -6,7 +6,8 @@
     </parameters>
 
     <services>
-        <service id="setono_sylius_cms.renderer.block" class="Setono\SyliusCMSPlugin\Renderer\BlockRenderer">
+        <service id="setono_sylius_cms.renderer.block"
+                 class="Setono\SyliusCMSPlugin\Renderer\BlockRenderer">
             <argument type="service" id="setono_sylius_cms.repository.block"/>
             <argument type="service" id="twig"/>
             <argument type="service" id="setono_sylius_cms.stack.element"/>
@@ -16,7 +17,8 @@
             </call>
         </service>
 
-        <service id="setono_sylius_cms.renderer.carousel" class="Setono\SyliusCMSPlugin\Renderer\CarouselRenderer">
+        <service id="setono_sylius_cms.renderer.carousel"
+                 class="Setono\SyliusCMSPlugin\Renderer\CarouselRenderer">
             <argument type="service" id="setono_sylius_cms.repository.carousel"/>
             <argument type="service" id="twig"/>
             <argument type="service" id="setono_sylius_cms.renderer.block"/>
@@ -27,9 +29,11 @@
                 <argument type="service" id="logger"/>
             </call>
         </service>
-        <service id="Setono\SyliusCMSPlugin\Renderer\CarouselRendererInterface" alias="setono_sylius_cms.renderer.carousel"/>
+        <service id="Setono\SyliusCMSPlugin\Renderer\CarouselRendererInterface"
+                 alias="setono_sylius_cms.renderer.carousel"/>
 
-        <service id="setono_sylius_cms.renderer.view" class="Setono\SyliusCMSPlugin\Renderer\ViewRenderer">
+        <service id="setono_sylius_cms.renderer.view"
+                 class="Setono\SyliusCMSPlugin\Renderer\ViewRenderer">
             <argument type="service" id="setono_sylius_cms.repository.view"/>
             <argument type="service" id="twig"/>
             <argument type="service" id="setono_sylius_cms.template.registry"/>
