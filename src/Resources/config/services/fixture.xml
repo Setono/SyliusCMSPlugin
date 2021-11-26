@@ -55,6 +55,23 @@
             <argument type="service" id="setono_sylius_cms.factory.view_block" />
         </service>
 
+        <!-- Carousel -->
+        <service id="setono_sylius_cms.fixture.carousel"
+                 class="Setono\SyliusCMSPlugin\Fixture\CarouselFixture">
+            <argument type="service" id="setono_sylius_cms.manager.carousel" />
+            <argument type="service" id="setono_sylius_cms.fixture.example_factory.carousel" />
+
+            <tag name="sylius_fixtures.fixture" />
+        </service>
+
+        <service id="setono_sylius_cms.fixture.example_factory.carousel"
+                 class="Setono\SyliusCMSPlugin\Fixture\Factory\CarouselExampleFactory">
+            <argument type="service" id="setono_sylius_cms.factory.carousel" />
+            <argument type="service" id="setono_sylius_cms.repository.carousel" />
+            <argument type="service" id="setono_sylius_cms.repository.block" />
+            <argument type="service" id="setono_sylius_cms.factory.carousel_block" />
+        </service>
+
         <!-- Page -->
         <service id="setono_sylius_cms.fixture.page"
                  class="Setono\SyliusCMSPlugin\Fixture\PageFixture">
