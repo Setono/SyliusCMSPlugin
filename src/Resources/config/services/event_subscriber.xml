@@ -32,6 +32,15 @@
             <argument type="collection">
                 <argument>setono_sylius_cms_admin_block_bulk_delete</argument>
                 <argument>setono_sylius_cms_admin_block_delete</argument>
+
+                <argument>setono_sylius_cms_admin_carousel_bulk_delete</argument>
+                <argument>setono_sylius_cms_admin_carousel_delete</argument>
+
+                <argument>setono_sylius_cms_admin_page_bulk_delete</argument>
+                <argument>setono_sylius_cms_admin_page_delete</argument>
+
+                <argument>setono_sylius_cms_admin_view_bulk_delete</argument>
+                <argument>setono_sylius_cms_admin_view_delete</argument>
             </argument>
 
             <tag name="kernel.event_subscriber" event="kernel.exception" />
