@@ -1,2 +1,9 @@
 imports:
     - { resource: "@SetonoSyliusCMSPlugin/Resources/config/app/config.yaml" }
+    - { resource: "@SetonoSyliusCMSPlugin/Resources/config/app/fixtures.yaml" }
+
+setono_sylius_cms:
+    templates:
+        -   code: 'CmsTemplate/pageWithSidebar.html.twig'
+            label: 'tests/Application/templates/CmsTemplate/pageWithSidebar.html.twig'
+            description: 'Page with sidebar template'

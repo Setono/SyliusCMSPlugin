@@ -87,6 +87,7 @@
         "check-style": "ecs check",
         "ensure-test-container-exists": "[[ -f tests/Application/var/cache/test/Tests_Setono_SyliusCMSPlugin_Application_KernelTestDebugContainer.xml ]] || tests/Application/bin/console cache:warmup --env=test",
         "fix-style": "ecs check --fix",
+        "fixtures": "(cd tests/Application && bin/console sylius:fixtures:load default -n -vvv)",
         "phpunit": "phpunit"
     }
 }

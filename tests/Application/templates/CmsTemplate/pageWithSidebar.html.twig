@@ -1,0 +1,18 @@
+<div class="ui breadcrumb">
+    <a href="{{ path('sylius_shop_homepage') }}" class="section">{{ 'sylius.ui.home'|trans }}</a>
+    <div class="divider"> / </div>
+    <div class="active section">CMS Page</div>
+</div>
+<h1 class="ui monster section dividing header">
+    Page example
+    <div class="sub header">CMS page with sidebar example</div>
+</h1>
+
+<div class="ui stackable grid">
+    <div class="four wide column">
+        {% sscms_section section_sidebar %}
+    </div>
+    <div class="twelve wide column">
+        {% sscms_section section_content %}
+    </div>
+</div>

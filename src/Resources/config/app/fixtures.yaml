@@ -1,0 +1,159 @@
+sylius_fixtures:
+    suites:
+        default:
+            fixtures:
+
+                custom_templates:
+                    name: 'setono_sylius_cms_template'
+                    options:
+                        custom:
+                            custom_template_simple_page:
+                                code: 'template_simple_page'
+                                # Remember to quote `%` to omit yaml parsing exception
+                                # Like in this example:
+                                source: |
+                                    {%% sscms_section section_content %%}
+                custom_blocks:
+                    name: 'setono_sylius_cms_block'
+                    options:
+                        custom:
+                            custom_block_carousel_slide_1:
+                                code: 'block_carousel_slide_1'
+                                rawContent:
+                                    time: 1637858216112
+                                    blocks:
+                                        -   id: 'cs1_1'
+                                            type: header
+                                            data:
+                                                text: 'Slide 1'
+                                                level: 2
+                                        -   id: 'cs1_2'
+                                            type: paragraph
+                                            data:
+                                                text: 'Slide 1 text'
+                                    version: 2.22.2
+
+                            custom_block_carousel_slide_2:
+                                code: 'block_carousel_slide_2'
+                                rawContent:
+                                    time: 1637858216112
+                                    blocks:
+                                        -   id: 'cs2_1'
+                                            type: header
+                                            data:
+                                                text: 'Slide 2'
+                                                level: 2
+                                        -   id: 'cs2_2'
+                                            type: paragraph
+                                            data:
+                                                text: 'Slide 2 text'
+                                    version: 2.22.2
+                            custom_block_terms_sidebar:
+                                code: 'block_terms_sidebar'
+                                rawContent:
+                                    time: 1637858216112
+                                    blocks:
+                                        -   id: 'ts1'
+                                            type: header
+                                            data:
+                                                text: 'Navigation'
+                                                level: 2
+                                        -   id: 'ts2'
+                                            type: paragraph
+                                            data:
+                                                text: 'Link number one'
+                                        -   id: 'ts3'
+                                            type: paragraph
+                                            data:
+                                                text: 'Link number two'
+                                        -   id: 'ts4'
+                                            type: paragraph
+                                            data:
+                                                text: 'Link number three'
+                                    version: 2.22.2
+                            custom_block_terms:
+                                code: 'block_terms'
+                                rawContent:
+                                    time: 1637858216112
+                                    blocks:
+                                        -   id: 't1'
+                                            type: header
+                                            data:
+                                                text: 'Terms'
+                                                level: 2
+                                        -   id: 't2'
+                                            type: paragraph
+                                            data:
+                                                text: 'Bla-bla'
+                                        -   id: 't3'
+                                            type: paragraph
+                                            data:
+                                                text: 'The end'
+                                    version: 2.22.2
+                                translations:
+                                    de_DE:
+                                        rawContent:
+                                            time: 1637858216112
+                                            blocks:
+                                                -   id: 'det1'
+                                                    type: header
+                                                    data:
+                                                        text: 'Terms'
+                                                        level: 2
+                                                -   id: 'det2'
+                                                    type: paragraph
+                                                    data:
+                                                        text: 'Müßiges Geschwätz'
+                                            version: 2.22.2
+                custom_views:
+                    name: 'setono_sylius_cms_view'
+                    options:
+                        custom:
+                            custom_view_terms:
+                                code: 'view_terms'
+                                template: 'template_simple_page'
+                                viewBlocks:
+                                    section_content:
+                                        - 'block_terms'
+                            custom_view_terms_with_sidebar:
+                                code: 'view_terms_with_sidebar'
+                                template: 'CmsTemplate/pageWithSidebar.html.twig'
+                                viewBlocks:
+                                    section_sidebar:
+                                        - 'block_terms_sidebar'
+                                    section_content:
+                                        - 'block_terms'
+
+                custom_carousels:
+                    name: 'setono_sylius_cms_carousel'
+                    options:
+                        custom:
+                            custom_view_terms:
+                                code: 'carousel_homepage'
+                                configuration:
+                                    infinite: true
+                                    slidesToShow: 1
+                                    slidesToScroll: 1
+                                    autoplay: true
+                                    autoplaySpeed: 7000
+                                carouselBlocks:
+                                    - 'block_carousel_slide_1'
+                                    - 'block_carousel_slide_2'
+
+                custom_pages:
+                    name: 'setono_sylius_cms_page'
+                    options:
+                        custom:
+                            custom_page_terms:
+                                code: 'page_terms'
+                                view: 'view_terms_with_sidebar' # Or view_terms
+                                title: 'Terms'
+                                slug: 'cms-page-terms'
+                                metaDescription: 'Terms and conditions'
+                                translations:
+                                    de_DE:
+                                        title: 'Bedingungen'
+                                        slug: 'bedingungen'
+                                        metaDescription: 'Geschäftsbedingungen'
+                                channels:
+                                    - 'FASHION_WEB'
