@@ -14,6 +14,11 @@ setono_sylius_cms_admin_asset:
                     form: "@SetonoSyliusCMSPlugin/admin/asset/_form.html.twig"
     type: sylius.resource
 
+setono_sylius_cms_admin_asset_upload_from_editor:
+    path: /assets/upload-from-editor
+    methods: [ POST ]
+    controller: setono_sylius_cms.controller.action.admin.upload_editor_picture
+
 setono_sylius_cms_admin_block:
     resource: |
         section: admin

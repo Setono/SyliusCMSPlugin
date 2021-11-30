@@ -2,6 +2,17 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
+        <service id="setono_sylius_cms.controller.action.admin.upload_editor_picture"
+                 class="Setono\SyliusCMSPlugin\Controller\Action\Admin\UploadEditorPictureAction" public="true">
+            <argument type="service" id="setono_sylius_cms.factory.asset"/>
+            <argument type="service" id="setono_sylius_cms.repository.asset"/>
+            <argument type="service" id="setono_sylius_cms.uploader.asset"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="liip_imagine.cache.manager"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="setono_sylius_cms.controller.action.show_page"
                  class="Setono\SyliusCMSPlugin\Controller\Action\ShowPageAction" public="true">
             <argument type="service" id="sylius.context.locale"/>

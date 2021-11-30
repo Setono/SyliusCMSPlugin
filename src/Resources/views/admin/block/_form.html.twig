@@ -27,6 +27,7 @@
 <script src="{{ asset('bundles/setonosyliuscmsplugin/js/editor.js') }}"></script>
 <script src="{{ asset('bundles/setonosyliuscmsplugin/js/header.js') }}"></script>
 <script src="{{ asset('bundles/setonosyliuscmsplugin/js/raw.js') }}"></script>
+<script src="{{ asset('bundles/setonosyliuscmsplugin/js/imageTool.js') }}"></script>
 
 <script>
     const editors = [];
@@ -38,7 +39,16 @@
                     class: Header,
                     inlineToolbar : true
                 },
-                raw: RawTool
+                raw: RawTool,
+                image: {
+                    class: ImageTool,
+                    config: {
+                        endpoints: {
+                            byFile: '{{ url('setono_sylius_cms_admin_asset_upload_from_editor') }}',
+                            byUrl: 'http://localhost:8000/fetchUrl',
+                        }
+                    }
+                }
             }
         };
 
