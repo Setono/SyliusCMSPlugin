@@ -29,6 +29,25 @@
 <script src="{{ asset('bundles/setonosyliuscmsplugin/js/raw.js') }}"></script>
 <script src="{{ asset('bundles/setonosyliuscmsplugin/js/imageTool.js') }}"></script>
 
+{% set blocks = {} %}
+{% if resource is defined and resource.id is not null %}
+    {% set blocks = resource.defaultRawContent %}
+{% else %}
+    {% set blocks = '{
+        "time" : 1628862398590,
+        "blocks" : [
+            {
+                "id" : "uFDH2xSH2S",
+                "type" : "paragraph",
+                "data" : {
+                    "text" : "Hey. Meet the new Editor. On this page you can see it in action — try to edit this text."
+                }
+            }
+        ],
+        "version" : "2.22.2"
+    }' %}
+{% endif %}
+
 <script>
     const editors = [];
     document.querySelectorAll('.editorjs').forEach((holderElement) => {
@@ -45,7 +64,6 @@
                     config: {
                         endpoints: {
                             byFile: '{{ url('setono_sylius_cms_admin_asset_upload_from_editor') }}',
-                            byUrl: 'http://localhost:8000/fetchUrl',
                         }
                     }
                 }
