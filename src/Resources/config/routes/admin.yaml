@@ -3,7 +3,7 @@ setono_sylius_cms_admin_asset:
         section: admin
         alias: setono_sylius_cms.asset
         templates: "@SyliusAdmin\\Crud"
-        redirect: index
+        redirect: update
         permission: true
         grid: setono_sylius_cms_admin_asset
         vars:
