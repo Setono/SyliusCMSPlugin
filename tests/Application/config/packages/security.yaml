@@ -6,7 +6,7 @@ parameters:
     sylius.security.new_api_regex: "^%sylius.security.new_api_route%"
 
 security:
-    always_authenticate_before_granting: true
+    always_authenticate_before_granting: false #todo change this back to true when 5.4.1 is released. See https://github.com/symfony/symfony/pull/44365
     providers:
         sylius_admin_user_provider:
             id: sylius.admin_user_provider.email_or_name_based
