@@ -20,6 +20,21 @@
             <argument type="service" id="twig"/>
             <argument type="service" id="setono_sylius_cms.renderer.view"/>
             <argument type="service" id="setono_sylius_cms.checker.eligibility.page.composite"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="setono_sylius_cms.controller.action.download_asset"
+                 class="Setono\SyliusCMSPlugin\Controller\Action\DownloadAssetAction" public="true">
+            <argument type="service" id="setono_sylius_cms.repository.asset"/>
+            <argument type="service">
+                <service class="Gaufrette\Filesystem">
+                    <argument>%setono_sylius_cms.asset_adapter%</argument>
+                    <factory service="knp_gaufrette.filesystem_map" method="get" />
+                </service>
+            </argument>
+
+            <tag name="controller.service_arguments"/>
         </service>
     </services>
 </container>
