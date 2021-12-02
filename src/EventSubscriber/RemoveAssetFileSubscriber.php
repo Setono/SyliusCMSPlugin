@@ -45,7 +45,7 @@ final class RemoveAssetFileSubscriber implements EventSubscriberInterface
         }
         try {
             // And remove the original file
-            $this->filesystem->delete($asset->getPath(), true);
+            $this->filesystem->delete($asset->getPath());
         } catch (Exception $exception) {
         }
     }
