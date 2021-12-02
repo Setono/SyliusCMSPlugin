@@ -30,8 +30,6 @@
 
     <div class="ui container">
         {{ sscms_view('non_existing_view') }}
-        {{ sscms_block('non_existing_block') }}
-        {{ sscms_view('header') }}
         {% block header %}
             <header>
                 {{ sylius_template_event('sylius.shop.layout.header') }}
