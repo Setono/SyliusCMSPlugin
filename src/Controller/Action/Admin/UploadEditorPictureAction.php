@@ -6,7 +6,6 @@ namespace Setono\SyliusCMSPlugin\Controller\Action\Admin;
 
 use HttpException;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
-use Liip\ImagineBundle\Imagine\Cache\Resolver\CacheResolver;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
 use Setono\SyliusCMSPlugin\Uploader\AssetUploaderInterface;
 use Sylius\Bundle\ResourceBundle\Event\ResourceControllerEvent;

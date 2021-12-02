@@ -10,5 +10,17 @@
 
             <tag name="kernel.event_subscriber"/>
         </service>
+
+        <service id="setono_sylius_cms.event_subscriber.remove_asset_file" class="Setono\SyliusCMSPlugin\EventSubscriber\RemoveAssetFileSubscriber">
+            <argument type="service">
+                <service class="Gaufrette\Filesystem">
+                    <argument>%setono_sylius_cms.asset_adapter%</argument>
+                    <factory service="knp_gaufrette.filesystem_map" method="get" />
+                </service>
+            </argument>
+            <argument type="service" id="liip_imagine.cache.manager"/>
+
+            <tag name="kernel.event_subscriber"/>
+        </service>
     </services>
 </container>
