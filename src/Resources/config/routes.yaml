@@ -9,7 +9,7 @@ setono_sylius_cms_admin:
     prefix: /admin/cms
 
 setono_sylius_cms_download_asset:
-    path: /cms/asset/{id}-{filename}
+    path: /cms/asset/{id}-{name}
     controller: setono_sylius_cms.controller.action.download_asset
     requirements:
         id: \d+

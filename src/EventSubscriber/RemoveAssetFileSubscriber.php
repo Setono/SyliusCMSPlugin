@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\EventSubscriber;
 
-use Exception;
 use Gaufrette\FilesystemInterface;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\EventDispatcher\GenericEvent;
+use Throwable;
 
 final class RemoveAssetFileSubscriber implements EventSubscriberInterface
 {
@@ -46,13 +46,13 @@ final class RemoveAssetFileSubscriber implements EventSubscriberInterface
         try {
             // Remove all caches for this asset
             $this->cacheManager->remove([$path], ['setono_sylius_cms_asset']);
-        } catch (Exception $exception) {
+        } catch (Throwable $exception) {
         }
 
         try {
             // And remove the original file
             $this->filesystem->delete($path);
-        } catch (Exception $exception) {
+        } catch (Throwable $exception) {
         }
     }
 }
