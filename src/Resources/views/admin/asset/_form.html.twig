@@ -10,8 +10,8 @@
             {{ sscms_preview(resource) }}
 
             <div class="ui segment">
-                <a href="{{ url('setono_sylius_cms_download_asset', {'id': resource.id, 'filename': resource.name}) }}" target="_blank">
-                    {{ url('setono_sylius_cms_download_asset', {'id': resource.id, 'filename': resource.name}) }}
+                <a href="{{ url('setono_sylius_cms_download_asset', {'id': resource.id}) }}" target="_blank">
+                    {{ url('setono_sylius_cms_download_asset', {'id': resource.id}) }}
                 </a>
             </div>
         {% endif %}

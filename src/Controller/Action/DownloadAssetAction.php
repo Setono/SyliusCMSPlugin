@@ -25,7 +25,7 @@ final class DownloadAssetAction
         $this->filesystem = $filesystem;
     }
 
-    public function __invoke(Request $request, int $id, string $name): Response
+    public function __invoke(Request $request, int $id): Response
     {
         /** @var AssetInterface|null $asset */
         $asset = $this->assetRepository->find($id);
@@ -39,7 +39,7 @@ final class DownloadAssetAction
             $response = new Response($file->getContent());
             $disposition = HeaderUtils::makeDisposition(
                 HeaderUtils::DISPOSITION_ATTACHMENT,
-                $name
+                (string) $asset->getName()
             );
 
             $response->headers->set('Content-Disposition', $disposition);
