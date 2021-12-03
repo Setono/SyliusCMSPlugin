@@ -1,0 +1,29 @@
+sylius_grid:
+    grids:
+        setono_sylius_cms_admin_asset:
+            driver:
+                options:
+                    class: "%setono_sylius_cms.model.asset.class%"
+            limits: [100, 250, 500, 1000]
+            fields:
+                name:
+                    type: string
+                    label: setono_sylius_cms.ui.name
+                path:
+                    type: string
+                    label: setono_sylius_cms.ui.path
+            filters:
+                search:
+                    type: string
+                    label: sylius.ui.search
+                    options:
+                        fields: [ name, path ]
+            actions:
+                main:
+                    create:
+                        type: create
+                item:
+                    update:
+                        type: update
+                    delete:
+                        type: delete

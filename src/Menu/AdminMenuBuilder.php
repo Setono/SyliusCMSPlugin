@@ -46,6 +46,14 @@ final class AdminMenuBuilder
         ;
 
         $header
+            ->addChild('assets', [
+                'route' => 'setono_sylius_cms_admin_asset_index',
+            ])
+            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.assets')
+            ->setLabelAttribute('icon', 'list alternate outline')
+        ;
+
+        $header
             ->addChild('carousels', [
                 'route' => 'setono_sylius_cms_admin_carousel_index',
             ])

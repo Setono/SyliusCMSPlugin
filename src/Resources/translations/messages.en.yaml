@@ -1,5 +1,9 @@
 setono_sylius_cms:
     form:
+        asset:
+            file: File
+            name: Name
+            name_help: If you don't supply a name, the filename will be used as a name
         block:
             content: Content
             default_content: Default content
@@ -28,6 +32,7 @@ setono_sylius_cms:
         admin:
             main:
                 content_management:
+                    assets: Assets
                     blocks: Blocks
                     carousels: Carousels
                     header: Content management
@@ -35,15 +40,20 @@ setono_sylius_cms:
                     templates: Templates
                     views: Views
     ui:
+        asset_header: Assets
+        asset_subheader: Manage all your assets (images, documents, movies, etc)
+        assets: Assets
         block_header: Blocks
         block_subheader: Manage your content blocks
         blocks: Blocks
         carousel_header: Carousels
         carousel_subheader: Manage your carousels
         carousels: Carousels
+        name: Name
         page_header: Pages
         page_subheader: Manage your CMS pages
         pages: Pages
+        path: Path
         preview_page: Preview
         template: Template
         template_header: Templates

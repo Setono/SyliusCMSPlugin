@@ -1,3 +1,24 @@
+setono_sylius_cms_admin_asset:
+    resource: |
+        section: admin
+        alias: setono_sylius_cms.asset
+        templates: "@SyliusAdmin\\Crud"
+        redirect: update
+        permission: true
+        grid: setono_sylius_cms_admin_asset
+        vars:
+            all:
+                header: setono_sylius_cms.ui.asset_header
+                subheader: setono_sylius_cms.ui.asset_subheader
+                templates:
+                    form: "@SetonoSyliusCMSPlugin/admin/asset/_form.html.twig"
+    type: sylius.resource
+
+setono_sylius_cms_admin_asset_upload_from_editor:
+    path: /assets/upload-from-editor
+    methods: [ POST ]
+    controller: setono_sylius_cms.controller.action.admin.upload_editor_picture
+
 setono_sylius_cms_admin_block:
     resource: |
         section: admin
