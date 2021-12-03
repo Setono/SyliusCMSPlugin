@@ -23,8 +23,6 @@ final class RegisterPreviewersPass implements CompilerPassInterface
          * @var string $id
          */
         foreach ($container->findTaggedServiceIds('setono_sylius_cms.previewer') as $id => $tags) {
-            Assert::isArray($tags);
-
             /** @var mixed $tag */
             foreach ($tags as $tag) {
                 Assert::isArray($tag);

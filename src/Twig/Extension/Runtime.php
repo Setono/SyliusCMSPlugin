@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Twig\Extension;
 
 use Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface;
-use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
+use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Previewer\Preview;
 use Setono\SyliusCMSPlugin\Previewer\PreviewerInterface;
 use Setono\SyliusCMSPlugin\Renderer\BlockRendererInterface;

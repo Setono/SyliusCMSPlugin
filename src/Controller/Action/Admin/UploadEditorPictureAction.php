@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Action\Admin;
 
-use HttpException;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
 use Setono\SyliusCMSPlugin\Uploader\AssetUploaderInterface;
@@ -16,6 +15,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 final class UploadEditorPictureAction
@@ -59,22 +59,20 @@ final class UploadEditorPictureAction
         $asset->setPath($uploadedFilePath);
         $asset->setMimeType($uploadedFile->getMimeType());
 
-        $event = $this->eventDispatcher->dispatch(new ResourceControllerEvent($asset), 'setono_sylius_cms.asset.pre_create');
+        $event = new ResourceControllerEvent($asset);
+        $this->eventDispatcher->dispatch($event, 'setono_sylius_cms.asset.pre_create');
         if ($event->isStopped()) {
             throw new HttpException($event->getErrorCode(), $event->getMessage());
         }
         $this->assetRepository->add($asset);
 
-        $event = $this->eventDispatcher->dispatch(new ResourceControllerEvent($asset), 'setono_sylius_cms.asset.post_create');
-        $postEventResponse = $event->getResponse();
-        if (null !== $postEventResponse) {
-            return $postEventResponse;
-        }
+        $event = new ResourceControllerEvent($asset);
+        $this->eventDispatcher->dispatch($event, 'setono_sylius_cms.asset.post_create');
 
-        return new JsonResponse([
+        return $event->getResponse() ?? new JsonResponse([
             'success' => 1,
             'file' => [
-                'url' => $this->cacheManager->getBrowserPath($asset->getPath(), 'setono_sylius_cms_asset'),
+                'url' => $this->cacheManager->getBrowserPath((string) $asset->getPath(), 'setono_sylius_cms_asset'),
             ],
         ]);
     }

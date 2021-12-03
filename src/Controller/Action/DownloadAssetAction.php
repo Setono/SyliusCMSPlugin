@@ -8,7 +8,6 @@ use Gaufrette\FilesystemInterface;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
 use Sylius\Component\Resource\Repository\RepositoryInterface;
 use Symfony\Component\HttpFoundation\File\Exception\FileNotFoundException;
-use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -35,12 +34,12 @@ final class DownloadAssetAction
         }
 
         try {
-            $file = $this->filesystem->get($asset->getPath());
+            $file = $this->filesystem->get((string) $asset->getPath());
 
             $response = new Response($file->getContent());
             $disposition = HeaderUtils::makeDisposition(
                 HeaderUtils::DISPOSITION_ATTACHMENT,
-                $asset->getName()
+                (string) $asset->getName()
             );
 
             $response->headers->set('Content-Disposition', $disposition);

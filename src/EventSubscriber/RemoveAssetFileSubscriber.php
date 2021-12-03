@@ -37,15 +37,21 @@ final class RemoveAssetFileSubscriber implements EventSubscriberInterface
             return;
         }
 
+        $path = $asset->getPath();
+        if (null === $path) {
+            return;
+        }
+
         // Note: this will remove the file, but not the folder, as performing all necessary checks would be way too much
         try {
             // Remove all caches for this asset
-            $this->cacheManager->remove([$asset->getPath()], ['setono_sylius_cms_asset']);
+            $this->cacheManager->remove([$path], ['setono_sylius_cms_asset']);
         } catch (Exception $exception) {
         }
+
         try {
             // And remove the original file
-            $this->filesystem->delete($asset->getPath());
+            $this->filesystem->delete($path);
         } catch (Exception $exception) {
         }
     }
