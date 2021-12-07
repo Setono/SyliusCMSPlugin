@@ -10,7 +10,14 @@ use Sylius\Component\Resource\Model\ResourceInterface;
 use Sylius\Component\Resource\Model\ToggleableInterface;
 use Sylius\Component\Resource\Model\TranslatableInterface;
 
-interface PageInterface extends ResourceInterface, ToggleableInterface, CodeAwareInterface, EnabledDateIntervalAwareInterface, ChannelsAwareInterface, TranslatableInterface
+interface PageInterface extends
+    ResourceInterface,
+    ToggleableInterface,
+    CodeAwareInterface,
+    EnabledDateIntervalAwareInterface,
+    ChannelsAwareInterface,
+    TranslatableInterface,
+    InternalDescriptionAwareInterface
 {
     public function getId(): ?int;
 

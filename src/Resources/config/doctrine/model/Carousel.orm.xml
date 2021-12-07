@@ -12,6 +12,7 @@
 
         <field name="code" column="code" type="string"/>
         <field name="configuration" column="configuration" type="array"/>
+        <field name="internalDescription" type="text" nullable="true"/>
 
         <one-to-many field="carouselBlocks" target-entity="Setono\SyliusCMSPlugin\Model\CarouselBlockInterface"
                      mapped-by="carousel" orphan-removal="true">

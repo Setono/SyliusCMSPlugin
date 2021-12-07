@@ -17,6 +17,10 @@ final class TemplateType extends AbstractResourceType
             ->add('source', TextareaType::class, [
                 'label' => 'setono_sylius_cms.form.template.source',
             ])
+            ->add('internalDescription', TextareaType::class, [
+                'label' => 'setono_sylius_cms.form.internal_description',
+                'required' => false,
+            ])
             ->addEventSubscriber(new AddCodeFormSubscriber())
         ;
     }

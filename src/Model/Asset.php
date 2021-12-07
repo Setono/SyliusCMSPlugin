@@ -6,6 +6,8 @@ namespace Setono\SyliusCMSPlugin\Model;
 
 class Asset implements AssetInterface
 {
+    use InternalDescriptionAwareTrait;
+
     protected ?int $id = null;
 
     protected ?string $name = null;

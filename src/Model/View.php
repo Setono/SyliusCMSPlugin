@@ -9,6 +9,8 @@ use Doctrine\Common\Collections\Collection;
 
 class View implements ViewInterface
 {
+    use InternalDescriptionAwareTrait;
+
     protected ?int $id = null;
 
     protected ?string $code = null;

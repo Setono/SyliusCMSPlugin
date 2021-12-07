@@ -8,6 +8,7 @@ use Setono\SyliusCMSPlugin\Form\EventSubscriber\SetQueryParameterValueOnObjectSu
 use Sylius\Bundle\ResourceBundle\Form\EventSubscriber\AddCodeFormSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -41,6 +42,10 @@ final class CarouselType extends AbstractResourceType
         ]);
         $builder->add('configuration', CarouselConfigurationType::class, [
             'label' => 'setono_sylius_cms.form.carousel.configuration',
+        ]);
+        $builder->add('internalDescription', TextareaType::class, [
+            'label' => 'setono_sylius_cms.form.internal_description',
+            'required' => false,
         ]);
     }
 }

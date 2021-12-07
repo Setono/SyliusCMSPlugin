@@ -8,7 +8,11 @@ use Doctrine\Common\Collections\Collection;
 use Sylius\Component\Resource\Model\CodeAwareInterface;
 use Sylius\Component\Resource\Model\ResourceInterface;
 
-interface ViewInterface extends ResourceInterface, ElementInterface, CodeAwareInterface
+interface ViewInterface extends
+    ResourceInterface,
+    ElementInterface,
+    CodeAwareInterface,
+    InternalDescriptionAwareInterface
 {
     public function getId(): ?int;
 

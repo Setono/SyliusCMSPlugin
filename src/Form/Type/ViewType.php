@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Template\RegistryInterface;
 use Sylius\Bundle\ResourceBundle\Form\EventSubscriber\AddCodeFormSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
 use Symfony\Component\Form\DataMapperInterface;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
@@ -51,6 +52,10 @@ final class ViewType extends AbstractResourceType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder->add('template', TemplateChoiceType::class);
+        $builder->add('internalDescription', TextareaType::class, [
+            'label' => 'setono_sylius_cms.form.internal_description',
+            'required' => false,
+        ]);
         $builder->addEventSubscriber(new SetQueryParameterValueOnObjectSubscriber($this->requestStack));
         $builder->addEventSubscriber(new AddCodeFormSubscriber());
         $builder->setDataMapper($this->viewSectionsDataMapper);
