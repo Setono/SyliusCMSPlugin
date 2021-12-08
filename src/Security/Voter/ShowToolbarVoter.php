@@ -24,7 +24,10 @@ final class ShowToolbarVoter extends Voter
         $this->accessDecisionManager = $accessDecisionManager;
     }
 
-    protected function supports(string $attribute, $subject): bool
+    /**
+     * @param string $attribute
+     */
+    protected function supports($attribute, $subject): bool
     {
         return self::ATTRIBUTE === $attribute;
     }
