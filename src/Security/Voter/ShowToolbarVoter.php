@@ -32,7 +32,10 @@ final class ShowToolbarVoter extends Voter
         return self::ATTRIBUTE === $attribute;
     }
 
-    protected function voteOnAttribute(string $attribute, $subject, TokenInterface $token): bool
+    /**
+     * @param string $attribute
+     */
+    protected function voteOnAttribute($attribute, $subject, TokenInterface $token): bool
     {
         $request = $this->requestStack->getMasterRequest();
         if (null === $request) {
