@@ -30,3 +30,8 @@ sylius_grid:
                         type: update
                     preview:
                         type: setono_cms_preview_page
+                    delete:
+                        type: delete
+                bulk:
+                    delete:
+                        type: delete

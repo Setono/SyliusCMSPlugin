@@ -9,6 +9,7 @@
                  class="Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGenerator">
             <argument type="service" id="router"/>
         </service>
-        <service id="Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface" alias="setono_sylius_cms.generator.page.preview_link"/>
+        <service id="Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface"
+                 alias="setono_sylius_cms.generator.page.preview_link"/>
     </services>
 </container>

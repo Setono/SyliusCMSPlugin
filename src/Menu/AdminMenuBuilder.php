@@ -18,7 +18,7 @@ final class AdminMenuBuilder
                 'route' => 'setono_sylius_cms_admin_template_index',
             ])
             ->setLabel('setono_sylius_cms.menu.admin.main.content_management.templates')
-            ->setLabelAttribute('icon', 'list alternate outline')
+            ->setLabelAttribute('icon', 'columns')
         ;
 
         $header
@@ -26,7 +26,7 @@ final class AdminMenuBuilder
                 'route' => 'setono_sylius_cms_admin_page_index',
             ])
             ->setLabel('setono_sylius_cms.menu.admin.main.content_management.pages')
-            ->setLabelAttribute('icon', 'list alternate outline')
+            ->setLabelAttribute('icon', 'file alternate outline')
         ;
 
         $header
@@ -34,7 +34,7 @@ final class AdminMenuBuilder
                 'route' => 'setono_sylius_cms_admin_block_index',
             ])
             ->setLabel('setono_sylius_cms.menu.admin.main.content_management.blocks')
-            ->setLabelAttribute('icon', 'list alternate outline')
+            ->setLabelAttribute('icon', 'clone outline')
         ;
 
         $header
@@ -42,7 +42,7 @@ final class AdminMenuBuilder
                 'route' => 'setono_sylius_cms_admin_view_index',
             ])
             ->setLabel('setono_sylius_cms.menu.admin.main.content_management.views')
-            ->setLabelAttribute('icon', 'list alternate outline')
+            ->setLabelAttribute('icon', 'sliders horizontal')
         ;
 
         $header
