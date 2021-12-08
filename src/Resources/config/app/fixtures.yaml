@@ -124,6 +124,18 @@ sylius_fixtures:
                                     section_content:
                                         - 'block_terms'
 
+                custom_assets:
+                    name: 'setono_sylius_cms_asset'
+                    options:
+                        custom:
+                            custom_asset_johns_photo:
+                                # name: 'john.jpg' # Such name will be taken from filename
+                                path: '@SyliusCoreBundle/Resources/fixtures/adminAvatars/john.jpg'
+                                internalDescription: "John's photo"
+                            custom_asset_lukes_photo:
+                                name: 'Luke'
+                                path: '@SyliusCoreBundle/Resources/fixtures/adminAvatars/luke.jpg'
+
                 custom_carousels:
                     name: 'setono_sylius_cms_carousel'
                     options:

@@ -20,6 +20,22 @@
             <argument type="service" id="setono_sylius_cms.repository.template" />
         </service>
 
+        <!-- Asset -->
+        <service id="setono_sylius_cms.fixture.asset"
+                 class="Setono\SyliusCMSPlugin\Fixture\AssetFixture">
+            <argument type="service" id="setono_sylius_cms.manager.asset" />
+            <argument type="service" id="setono_sylius_cms.fixture.example_factory.asset" />
+
+            <tag name="sylius_fixtures.fixture" />
+        </service>
+
+        <service id="setono_sylius_cms.fixture.example_factory.asset"
+                 class="Setono\SyliusCMSPlugin\Fixture\Factory\AssetExampleFactory">
+            <argument type="service" id="setono_sylius_cms.factory.asset" />
+            <argument type="service" id="file_locator" />
+            <argument type="service" id="setono_sylius_cms.uploader.asset" />
+        </service>
+
         <!-- Block -->
         <service id="setono_sylius_cms.fixture.block"
                  class="Setono\SyliusCMSPlugin\Fixture\BlockFixture">
