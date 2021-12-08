@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Renderer;
 
+use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Setono\SyliusCMSPlugin\Repository\CarouselRepositoryInterface;
 use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
 use Twig\Environment;
 
-final class CarouselRenderer implements CarouselRendererInterface
+final class CarouselRenderer implements CarouselRendererInterface, LoggerAwareInterface
 {
     private LoggerInterface $logger;
 
