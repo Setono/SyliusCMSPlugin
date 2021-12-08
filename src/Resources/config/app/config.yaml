@@ -13,7 +13,7 @@ knp_gaufrette:
     adapters:
         setono_sylius_cms_asset:
             local:
-                directory: "%sylius_core.public_dir%/assets/original"
+                directory: "%sylius_core.public_dir%/media/assets/original"
                 create: true
     filesystems:
         setono_sylius_cms_asset:
@@ -23,12 +23,12 @@ liip_imagine:
     loaders:
         setono_sylius_cms_asset:
             filesystem:
-                data_root: "%sylius_core.public_dir%/assets/original"
+                data_root: "%sylius_core.public_dir%/media/assets/original"
     resolvers:
         setono_sylius_cms_asset:
             web_path:
                 web_root: "%sylius_core.public_dir%"
-                cache_prefix: "assets/cache"
+                cache_prefix: "media/assets/cache"
     filter_sets:
         setono_sylius_cms_asset:
             data_loader: setono_sylius_cms_asset
