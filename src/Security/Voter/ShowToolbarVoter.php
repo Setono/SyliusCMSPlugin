@@ -24,18 +24,12 @@ final class ShowToolbarVoter extends Voter
         $this->accessDecisionManager = $accessDecisionManager;
     }
 
-    /**
-     * @param string $attribute
-     */
-    protected function supports($attribute, $subject): bool
+    protected function supports(string $attribute, $subject): bool
     {
         return self::ATTRIBUTE === $attribute;
     }
 
-    /**
-     * @param string $attribute
-     */
-    protected function voteOnAttribute($attribute, $subject, TokenInterface $token): bool
+    protected function voteOnAttribute(string $attribute, $subject, TokenInterface $token): bool
     {
         $request = $this->requestStack->getMasterRequest();
         if (null === $request) {
