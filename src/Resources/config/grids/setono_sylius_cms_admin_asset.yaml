@@ -6,12 +6,20 @@ sylius_grid:
                     class: "%setono_sylius_cms.model.asset.class%"
             limits: [100, 250, 500, 1000]
             fields:
+                id:
+                    type: string
+                    label: sylius.ui.id
+                preview:
+                    type: twig
+                    label: setono_sylius_cms.ui.preview
+                    path: .
+                    options:
+                        template: "@SetonoSyliusCMSPlugin/admin/grid/field/asset_preview.html.twig"
+                        vars:
+                            filter: 'setono_sylius_cms_admin_asset_thumbnail'
                 name:
                     type: string
                     label: setono_sylius_cms.ui.name
-                path:
-                    type: string
-                    label: setono_sylius_cms.ui.path
                 internalDescription:
                     type: string
                     label: setono_sylius_cms.ui.internal_description
