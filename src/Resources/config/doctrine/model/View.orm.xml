@@ -13,6 +13,7 @@
         <field name="code" column="code" type="string"/>
         <field name="enabled" type="boolean"/>
         <field name="template" type="string"/>
+        <field name="internalDescription" type="text" nullable="true"/>
 
         <one-to-many field="viewBlocks" target-entity="Setono\SyliusCMSPlugin\Model\ViewBlockInterface" mapped-by="view" orphan-removal="true" fetch="EAGER">
             <cascade>

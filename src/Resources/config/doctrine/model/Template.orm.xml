@@ -13,6 +13,7 @@
 
         <field name="code" column="code" type="string"/>
         <field name="source" type="string"/>
+        <field name="internalDescription" type="text" nullable="true"/>
 
         <field name="createdAt" type="datetime">
             <gedmo:timestampable on="create"/>

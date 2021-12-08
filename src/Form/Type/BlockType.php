@@ -12,6 +12,7 @@ use Sylius\Bundle\ResourceBundle\Form\EventSubscriber\AddCodeFormSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
 use Sylius\Bundle\ResourceBundle\Form\Type\ResourceTranslationsType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -50,6 +51,10 @@ final class BlockType extends AbstractResourceType
             ->add('translations', ResourceTranslationsType::class, [
                 'entry_type' => BlockTranslationType::class,
                 'label' => 'setono_sylius_cms.form.block.translations',
+            ])
+            ->add('internalDescription', TextareaType::class, [
+                'label' => 'setono_sylius_cms.form.internal_description',
+                'required' => false,
             ])
             ->addEventSubscriber(new ConvertRawContentSubscriber(
                 $this->parser,

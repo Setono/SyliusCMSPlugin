@@ -15,6 +15,7 @@ setono_sylius_cms:
             configuration.infinite_scroll: Infinite scroll
             configuration.slides_to_scroll: Slides to scroll
             configuration.slides_to_show: Slides to show
+        internal_description: Internal description
         page:
             enabled: Enabled
             enabled_from: Enabled from
@@ -49,6 +50,7 @@ setono_sylius_cms:
         carousel_header: Carousels
         carousel_subheader: Manage your carousels
         carousels: Carousels
+        internal_description: Internal description
         name: Name
         page_header: Pages
         page_subheader: Manage your CMS pages

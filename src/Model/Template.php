@@ -10,6 +10,8 @@ class Template implements TemplateInterface
 {
     use TimestampableTrait;
 
+    use InternalDescriptionAwareTrait;
+
     protected ?int $id = null;
 
     protected ?string $code = null;

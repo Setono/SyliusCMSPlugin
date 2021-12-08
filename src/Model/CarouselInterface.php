@@ -8,7 +8,11 @@ use Doctrine\Common\Collections\Collection;
 use Sylius\Component\Resource\Model\CodeAwareInterface;
 use Sylius\Component\Resource\Model\ResourceInterface;
 
-interface CarouselInterface extends ResourceInterface, CodeAwareInterface, ElementInterface
+interface CarouselInterface extends
+    ResourceInterface,
+    CodeAwareInterface,
+    ElementInterface,
+    InternalDescriptionAwareInterface
 {
     public function getCode(): ?string;
 

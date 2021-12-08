@@ -12,6 +12,9 @@ sylius_grid:
                 path:
                     type: string
                     label: setono_sylius_cms.ui.path
+                internalDescription:
+                    type: string
+                    label: setono_sylius_cms.ui.internal_description
             filters:
                 search:
                     type: string
