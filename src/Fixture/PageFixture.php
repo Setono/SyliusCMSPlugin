@@ -9,6 +9,8 @@ use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 
 /* not final */ class PageFixture extends AbstractResourceFixture
 {
+    use InternalDescriptionAwareFixtureTrait;
+
     public function getName(): string
     {
         return 'setono_sylius_cms_page';
@@ -24,5 +26,7 @@ use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
         $child->scalarNode('metaDescription')->cannotBeEmpty();
         $child->variableNode('translations')->cannotBeEmpty()->defaultValue([]);
         $child->arrayNode('channels')->scalarPrototype();
+
+        $this->configureInternalDescriptionResourceNode($resourceNode);
     }
 }

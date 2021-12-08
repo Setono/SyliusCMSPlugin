@@ -9,6 +9,8 @@ use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 
 /* not final */ class ViewFixture extends AbstractResourceFixture
 {
+    use InternalDescriptionAwareFixtureTrait;
+
     public function getName(): string
     {
         return 'setono_sylius_cms_view';
@@ -20,5 +22,7 @@ use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
         $child->scalarNode('code')->cannotBeEmpty();
         $child->scalarNode('template')->cannotBeEmpty();
         $child->variableNode('viewBlocks')->cannotBeEmpty()->defaultValue([]);
+
+        $this->configureInternalDescriptionResourceNode($resourceNode);
     }
 }

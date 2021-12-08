@@ -9,6 +9,7 @@ sylius_fixtures:
                         custom:
                             custom_template_simple_page:
                                 code: 'template_simple_page'
+                                internalDescription: 'Single page template'
                                 # Remember to quote `%` to omit yaml parsing exception
                                 # Like in this example:
                                 source: |
@@ -19,6 +20,7 @@ sylius_fixtures:
                         custom:
                             custom_block_carousel_slide_1:
                                 code: 'block_carousel_slide_1'
+                                internalDescription: 'Slide 1 of Carousel'
                                 rawContent:
                                     time: 1637858216112
                                     blocks:
@@ -35,6 +37,7 @@ sylius_fixtures:
 
                             custom_block_carousel_slide_2:
                                 code: 'block_carousel_slide_2'
+                                internalDescription: 'Slide 2 of Carousel'
                                 rawContent:
                                     time: 1637858216112
                                     blocks:
@@ -50,6 +53,7 @@ sylius_fixtures:
                                     version: 2.22.2
                             custom_block_terms_sidebar:
                                 code: 'block_terms_sidebar'
+                                internalDescription: 'Terms sidebar'
                                 rawContent:
                                     time: 1637858216112
                                     blocks:
@@ -73,6 +77,7 @@ sylius_fixtures:
                                     version: 2.22.2
                             custom_block_terms:
                                 code: 'block_terms'
+                                internalDescription: 'Terms content'
                                 rawContent:
                                     time: 1637858216112
                                     blocks:
@@ -111,12 +116,14 @@ sylius_fixtures:
                         custom:
                             custom_view_terms:
                                 code: 'view_terms'
+                                internalDescription: 'Terms view'
                                 template: 'template_simple_page'
                                 viewBlocks:
                                     section_content:
                                         - 'block_terms'
                             custom_view_terms_with_sidebar:
                                 code: 'view_terms_with_sidebar'
+                                internalDescription: 'Terms with sidebar view'
                                 template: 'CmsTemplate/pageWithSidebar.html.twig'
                                 viewBlocks:
                                     section_sidebar:
@@ -142,6 +149,7 @@ sylius_fixtures:
                         custom:
                             custom_view_terms:
                                 code: 'carousel_homepage'
+                                internalDescription: 'Homepage carousel'
                                 configuration:
                                     infinite: true
                                     slidesToShow: 1
@@ -158,6 +166,7 @@ sylius_fixtures:
                         custom:
                             custom_page_terms:
                                 code: 'page_terms'
+                                internalDescription: 'Terms page'
                                 view: 'view_terms_with_sidebar' # Or view_terms
                                 title: 'Terms'
                                 slug: 'cms-page-terms'

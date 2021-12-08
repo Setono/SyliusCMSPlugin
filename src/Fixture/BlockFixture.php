@@ -9,6 +9,8 @@ use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 
 /* not final */ class BlockFixture extends AbstractResourceFixture
 {
+    use InternalDescriptionAwareFixtureTrait;
+
     public function getName(): string
     {
         return 'setono_sylius_cms_block';
@@ -20,5 +22,7 @@ use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
         $child->scalarNode('code')->cannotBeEmpty();
         $child->variableNode('rawContent')->cannotBeEmpty()->defaultValue([]);
         $child->variableNode('translations')->cannotBeEmpty()->defaultValue([]);
+
+        $this->configureInternalDescriptionResourceNode($resourceNode);
     }
 }

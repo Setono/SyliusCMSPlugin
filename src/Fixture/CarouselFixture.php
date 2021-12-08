@@ -9,6 +9,8 @@ use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 
 /* not final */ class CarouselFixture extends AbstractResourceFixture
 {
+    use InternalDescriptionAwareFixtureTrait;
+
     public function getName(): string
     {
         return 'setono_sylius_cms_carousel';
@@ -20,5 +22,7 @@ use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
         $child->scalarNode('code')->cannotBeEmpty();
         $child->variableNode('configuration')->cannotBeEmpty()->defaultValue([]);
         $child->variableNode('carouselBlocks')->cannotBeEmpty()->defaultValue([]);
+
+        $this->configureInternalDescriptionResourceNode($resourceNode);
     }
 }

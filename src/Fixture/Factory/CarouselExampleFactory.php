@@ -19,6 +19,8 @@ use Webmozart\Assert\Assert;
 
 /* not final */ class CarouselExampleFactory extends AbstractExampleFactory
 {
+    use InternalDescriptionAwareFactoryTrait;
+
     protected FactoryInterface $carouselFactory;
 
     protected CarouselRepositoryInterface $carouselRepository;
@@ -88,6 +90,8 @@ use Webmozart\Assert\Assert;
             }
         }
 
+        $this->setInternalDescription($carousel, $options);
+
         return $carousel;
     }
 
@@ -106,5 +110,7 @@ use Webmozart\Assert\Assert;
             ->setAllowedTypes('carouselBlocks', 'array')
             ->setNormalizer('carouselBlocks', LazyOption::findBy($this->blockRepository, 'code'))
         ;
+
+        $this->configureInternalDescriptionOptions($resolver);
     }
 }

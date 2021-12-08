@@ -22,6 +22,8 @@ use Webmozart\Assert\Assert;
 
 /* not final */ class PageExampleFactory extends AbstractExampleFactory
 {
+    use InternalDescriptionAwareFactoryTrait;
+
     protected FactoryInterface $pageFactory;
 
     protected PageRepositoryInterface $pageRepository;
@@ -105,6 +107,8 @@ use Webmozart\Assert\Assert;
             }
         }
 
+        $this->setInternalDescription($page, $options);
+
         return $page;
     }
 
@@ -167,6 +171,8 @@ use Webmozart\Assert\Assert;
             ->setAllowedTypes('channels', 'array')
             ->setNormalizer('channels', LazyOption::findBy($this->channelRepository, 'code'))
         ;
+
+        $this->configureInternalDescriptionOptions($resolver);
     }
 
     protected function getLocales(): iterable

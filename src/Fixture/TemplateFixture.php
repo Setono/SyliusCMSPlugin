@@ -9,6 +9,8 @@ use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 
 /* not final */ class TemplateFixture extends AbstractResourceFixture
 {
+    use InternalDescriptionAwareFixtureTrait;
+
     public function getName(): string
     {
         return 'setono_sylius_cms_template';
@@ -19,5 +21,7 @@ use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
         $child = $resourceNode->children();
         $child->scalarNode('code')->cannotBeEmpty();
         $child->scalarNode('source')->cannotBeEmpty();
+
+        $this->configureInternalDescriptionResourceNode($resourceNode);
     }
 }

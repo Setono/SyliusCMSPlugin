@@ -19,6 +19,8 @@ use Webmozart\Assert\Assert;
 
 /* not final */ class ViewExampleFactory extends AbstractExampleFactory
 {
+    use InternalDescriptionAwareFactoryTrait;
+
     protected FactoryInterface $viewFactory;
 
     protected ViewRepositoryInterface $viewRepository;
@@ -93,6 +95,8 @@ use Webmozart\Assert\Assert;
             }
         }
 
+        $this->setInternalDescription($view, $options);
+
         return $view;
     }
 
@@ -113,6 +117,8 @@ use Webmozart\Assert\Assert;
                 return $this->normalizeViewBlocks($sectionedViewBlocks);
             })
         ;
+
+        $this->configureInternalDescriptionOptions($resolver);
     }
 
     protected function normalizeViewBlocks(array $sectionedViewBlocks): array

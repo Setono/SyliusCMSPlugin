@@ -21,6 +21,8 @@ use Webmozart\Assert\Assert;
 
 /* not final */ class BlockExampleFactory extends AbstractExampleFactory
 {
+    use InternalDescriptionAwareFactoryTrait;
+
     protected FactoryInterface $blockFactory;
 
     protected BlockRepositoryInterface $blockRepository;
@@ -94,6 +96,8 @@ use Webmozart\Assert\Assert;
             }
         }
 
+        $this->setInternalDescription($block, $options);
+
         return $block;
     }
 
@@ -144,6 +148,8 @@ use Webmozart\Assert\Assert;
             ->setDefault('translations', [])
             ->setAllowedTypes('translations', ['array'])
         ;
+
+        $this->configureInternalDescriptionOptions($resolver);
     }
 
     protected function getLocales(): iterable

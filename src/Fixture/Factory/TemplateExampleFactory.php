@@ -15,6 +15,8 @@ use Webmozart\Assert\Assert;
 
 /* not final */ class TemplateExampleFactory extends AbstractExampleFactory
 {
+    use InternalDescriptionAwareFactoryTrait;
+
     protected FactoryInterface $templateFactory;
 
     protected TemplateRepositoryInterface $templateRepository;
@@ -56,6 +58,8 @@ use Webmozart\Assert\Assert;
         Assert::string($options['source']);
         $template->setSource($options['source']);
 
+        $this->setInternalDescription($template, $options);
+
         return $template;
     }
 
@@ -69,5 +73,7 @@ use Webmozart\Assert\Assert;
                 return '{% sscms_section content %}';
             })
         ;
+
+        $this->configureInternalDescriptionOptions($resolver);
     }
 }
