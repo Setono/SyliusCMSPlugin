@@ -21,6 +21,7 @@ final class RegisterPreviewersPass implements CompilerPassInterface
 
         /**
          * @var string $id
+         * @var mixed[] $tags
          */
         foreach ($container->findTaggedServiceIds('setono_sylius_cms.previewer') as $id => $tags) {
             /** @var mixed $tag */
