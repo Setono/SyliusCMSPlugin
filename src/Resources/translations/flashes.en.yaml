@@ -1,3 +1,5 @@
 setono_sylius_cms:
     resource:
         delete_error: Resource could not be deleted as it is in use
+    template:
+        delete_error: Template %code% could not be deleted as it is in use at %views% views
