@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
-use Sylius\Component\Resource\Model\TranslatableInterface;
 use Sylius\Component\Resource\Model\TranslatableTrait;
 use Sylius\Component\Resource\Model\TranslationInterface;
 
-class Block implements BlockInterface, TranslatableInterface
+class Block implements BlockInterface
 {
     use TranslatableTrait {
         __construct as private initializeTranslationsCollection;

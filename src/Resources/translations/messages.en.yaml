@@ -55,8 +55,7 @@ setono_sylius_cms:
         page_header: Pages
         page_subheader: Manage your CMS pages
         pages: Pages
-        path: Path
-        preview_page: Preview
+        preview: Preview
         template: Template
         template_header: Templates
         template_subheader: Manage your templates
@@ -65,4 +64,3 @@ setono_sylius_cms:
         view_header: Views
         view_subheader: Manage your views
         views: Views
-    

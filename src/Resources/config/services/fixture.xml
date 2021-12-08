@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<container xmlns="http://symfony.com/schema/dic/services" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <defaults public="true" />
+
+        <!-- Template -->
+        <service id="setono_sylius_cms.fixture.template"
+                 class="Setono\SyliusCMSPlugin\Fixture\TemplateFixture">
+            <argument type="service" id="setono_sylius_cms.manager.template" />
+            <argument type="service" id="setono_sylius_cms.fixture.example_factory.template" />
+
+            <tag name="sylius_fixtures.fixture" />
+        </service>
+
+        <service id="setono_sylius_cms.fixture.example_factory.template"
+                 class="Setono\SyliusCMSPlugin\Fixture\Factory\TemplateExampleFactory">
+            <argument type="service" id="setono_sylius_cms.factory.template" />
+            <argument type="service" id="setono_sylius_cms.repository.template" />
+        </service>
+
+        <!-- Asset -->
+        <service id="setono_sylius_cms.fixture.asset"
+                 class="Setono\SyliusCMSPlugin\Fixture\AssetFixture">
+            <argument type="service" id="setono_sylius_cms.manager.asset" />
+            <argument type="service" id="setono_sylius_cms.fixture.example_factory.asset" />
+
+            <tag name="sylius_fixtures.fixture" />
+        </service>
+
+        <service id="setono_sylius_cms.fixture.example_factory.asset"
+                 class="Setono\SyliusCMSPlugin\Fixture\Factory\AssetExampleFactory">
+            <argument type="service" id="setono_sylius_cms.factory.asset" />
+            <argument type="service" id="file_locator" />
+            <argument type="service" id="setono_sylius_cms.uploader.asset" />
+        </service>
+
+        <!-- Block -->
+        <service id="setono_sylius_cms.fixture.block"
+                 class="Setono\SyliusCMSPlugin\Fixture\BlockFixture">
+            <argument type="service" id="setono_sylius_cms.manager.block" />
+            <argument type="service" id="setono_sylius_cms.fixture.example_factory.block" />
+
+            <tag name="sylius_fixtures.fixture" />
+        </service>
+
+        <service id="setono_sylius_cms.fixture.example_factory.block"
+                 class="Setono\SyliusCMSPlugin\Fixture\Factory\BlockExampleFactory">
+            <argument type="service" id="setono_sylius_cms.factory.block" />
+            <argument type="service" id="setono_sylius_cms.repository.block" />
+            <argument type="service" id="sylius.repository.locale" />
+            <argument type="service" id="setono_editorjs.parser" />
+            <argument type="service" id="setono_editorjs.renderer" />
+        </service>
+
+        <!-- View -->
+        <service id="setono_sylius_cms.fixture.view"
+                 class="Setono\SyliusCMSPlugin\Fixture\ViewFixture">
+            <argument type="service" id="setono_sylius_cms.manager.view" />
+            <argument type="service" id="setono_sylius_cms.fixture.example_factory.view" />
+
+            <tag name="sylius_fixtures.fixture" />
+        </service>
+
+        <service id="setono_sylius_cms.fixture.example_factory.view"
+                 class="Setono\SyliusCMSPlugin\Fixture\Factory\ViewExampleFactory">
+            <argument type="service" id="setono_sylius_cms.factory.view" />
+            <argument type="service" id="setono_sylius_cms.repository.view" />
+            <argument type="service" id="setono_sylius_cms.repository.block" />
+            <argument type="service" id="setono_sylius_cms.factory.view_block" />
+        </service>
+
+        <!-- Carousel -->
+        <service id="setono_sylius_cms.fixture.carousel"
+                 class="Setono\SyliusCMSPlugin\Fixture\CarouselFixture">
+            <argument type="service" id="setono_sylius_cms.manager.carousel" />
+            <argument type="service" id="setono_sylius_cms.fixture.example_factory.carousel" />
+
+            <tag name="sylius_fixtures.fixture" />
+        </service>
+
+        <service id="setono_sylius_cms.fixture.example_factory.carousel"
+                 class="Setono\SyliusCMSPlugin\Fixture\Factory\CarouselExampleFactory">
+            <argument type="service" id="setono_sylius_cms.factory.carousel" />
+            <argument type="service" id="setono_sylius_cms.repository.carousel" />
+            <argument type="service" id="setono_sylius_cms.repository.block" />
+            <argument type="service" id="setono_sylius_cms.factory.carousel_block" />
+        </service>
+
+        <!-- Page -->
+        <service id="setono_sylius_cms.fixture.page"
+                 class="Setono\SyliusCMSPlugin\Fixture\PageFixture">
+            <argument type="service" id="setono_sylius_cms.manager.page" />
+            <argument type="service" id="setono_sylius_cms.fixture.example_factory.page" />
+
+            <tag name="sylius_fixtures.fixture" />
+        </service>
+
+        <service id="setono_sylius_cms.fixture.example_factory.page"
+                 class="Setono\SyliusCMSPlugin\Fixture\Factory\PageExampleFactory">
+            <argument type="service" id="setono_sylius_cms.factory.page" />
+            <argument type="service" id="setono_sylius_cms.repository.page" />
+            <argument type="service" id="setono_sylius_cms.repository.view" />
+            <argument type="service" id="sylius.repository.channel" />
+            <argument type="service" id="sylius.repository.locale" />
+        </service>
+
+    </services>
+</container>

@@ -30,6 +30,9 @@ Create the file `config/packages/setono_sylius_cms.yaml` and add the following:
 # config/packages/setono_sylius_cms.yaml
 imports:
     - { resource: "@SetonoSyliusCMSPlugin/Resources/config/app/config.yaml" }
+
+    # Uncomment next line to add example fixtures to default suite
+    # - { resource: "@SetonoSyliusCMSPlugin/Resources/config/app/fixtures.yaml" }
 ```
 
 ### Import the routes

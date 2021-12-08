@@ -1,0 +1,10 @@
+{# @var \Setono\SyliusCMSPlugin\Model\AssetInterface data #}
+
+{# @todo Improve #}
+{% if data.mimeType in ['image/png', 'image/jpg', 'image/jpeg'] %}
+    {% set path = data.path|imagine_filter(options.vars.filter|default('setono_sylius_cms_admin_asset_thumbnail')) %}
+
+    <img src="{{ path }}" alt="" class="ui bordered image sylius-grid-image" />
+{% else %}
+    {# @todo Display just an icon based on mimeType #}
+{% endif %}

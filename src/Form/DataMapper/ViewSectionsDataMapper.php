@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Form\DataMapper;
 
 use Setono\SyliusCMSPlugin\Model\BlockInterface;
-use Setono\SyliusCMSPlugin\Model\ViewBlock;
+use Setono\SyliusCMSPlugin\Model\ViewBlockInterface;
 use Setono\SyliusCMSPlugin\Model\ViewInterface;
 use Setono\SyliusCMSPlugin\Template\MetadataExtractorInterface;
 use Setono\SyliusCMSPlugin\Template\RegistryInterface;
+use Sylius\Component\Resource\Factory\FactoryInterface;
 use Symfony\Component\Form\Exception\UnexpectedTypeException;
 use Symfony\Component\Form\Extension\Core\DataAccessor\PropertyPathAccessor;
 use Symfony\Component\Form\Extension\Core\DataMapper\DataMapper;
@@ -22,15 +23,19 @@ final class ViewSectionsDataMapper extends DataMapper
 
     private MetadataExtractorInterface $metadataExtractor;
 
+    private FactoryInterface $viewBlockFactory;
+
     public function __construct(
+        PropertyAccessorInterface $propertyAccessor,
         RegistryInterface $templateRegistry,
         MetadataExtractorInterface $metadataExtractor,
-        PropertyAccessorInterface $propertyAccessor
+        FactoryInterface $viewBlockFactory
     ) {
         parent::__construct(new PropertyPathAccessor($propertyAccessor));
 
         $this->templateRegistry = $templateRegistry;
         $this->metadataExtractor = $metadataExtractor;
+        $this->viewBlockFactory = $viewBlockFactory;
     }
 
     /**
@@ -82,7 +87,7 @@ final class ViewSectionsDataMapper extends DataMapper
     /**
      * @psalm-suppress ParamNameMismatch
      */
-    public function mapFormsToData(iterable $forms, & $data): void
+    public function mapFormsToData(iterable $forms, &$data): void
     {
         parent::mapFormsToData($forms, $data);
 
@@ -110,7 +115,8 @@ final class ViewSectionsDataMapper extends DataMapper
              * @var BlockInterface $block
              */
             foreach ($formData['blocks'] as $priority => $block) {
-                $viewBlock = new ViewBlock();
+                /** @var ViewBlockInterface $viewBlock */
+                $viewBlock = $this->viewBlockFactory->createNew();
                 $viewBlock->setSection($viewBlockForm->getName());
                 $viewBlock->setBlock($block);
                 $viewBlock->setPriority($priority);

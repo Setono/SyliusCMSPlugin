@@ -6,11 +6,13 @@ namespace Setono\SyliusCMSPlugin\Model;
 
 use Sylius\Component\Resource\Model\CodeAwareInterface;
 use Sylius\Component\Resource\Model\ResourceInterface;
+use Sylius\Component\Resource\Model\TranslatableInterface;
 
 interface BlockInterface extends
     ResourceInterface,
     ElementInterface,
     CodeAwareInterface,
+    TranslatableInterface,
     InternalDescriptionAwareInterface
 {
     public function getId(): ?int;
