@@ -125,6 +125,7 @@ final class ViewType extends AbstractResourceType
             $sections = $metadata->getSections();
         }
         $form->add('sections', ViewSectionsType::class, [
+            'label' => false,
             'mapped' => false,
             'sections' => $sections,
         ]);

@@ -29,6 +29,7 @@ setono_sylius_cms:
         view:
             template: Template
             template_placeholder: Select template...
+            section_blocks: '%section% section blocks'
     menu:
         admin:
             main:

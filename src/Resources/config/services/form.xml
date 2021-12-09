@@ -31,6 +31,10 @@
             <parameter>setono_sylius_cms</parameter>
         </parameter>
 
+        <parameter type="collection" key="setono_sylius_cms.form.type.view_block.validation_groups">
+            <parameter>setono_sylius_cms</parameter>
+        </parameter>
+
         <parameter type="collection" key="setono_sylius_cms.form.type.carousel.validation_groups">
             <parameter>setono_sylius_cms</parameter>
         </parameter>
@@ -110,6 +114,7 @@
             <tag name="form.type"/>
         </service>
 
+        <!-- View -->
         <service id="setono_sylius_cms.form.type.view"
                  class="Setono\SyliusCMSPlugin\Form\Type\ViewType">
             <argument type="service" id="request_stack"/>
@@ -118,6 +123,14 @@
             <argument type="service" id="setono_sylius_cms.template.metadata_extractor"/>
             <argument>%setono_sylius_cms.model.view.class%</argument>
             <argument>%setono_sylius_cms.form.type.view.validation_groups%</argument>
+
+            <tag name="form.type"/>
+        </service>
+
+        <service id="setono_sylius_cms.form.type.view_block"
+                 class="Setono\SyliusCMSPlugin\Form\Type\ViewBlockType">
+            <argument>%setono_sylius_cms.model.view_block.class%</argument>
+            <argument>%setono_sylius_cms.form.type.view_block.validation_groups%</argument>
 
             <tag name="form.type"/>
         </service>
@@ -168,7 +181,6 @@
             <argument type="service" id="property_accessor"/>
             <argument type="service" id="setono_sylius_cms.template.registry"/>
             <argument type="service" id="setono_sylius_cms.template.metadata_extractor"/>
-            <argument type="service" id="setono_sylius_cms.factory.view_block"/>
         </service>
     </services>
 </container>

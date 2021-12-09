@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Form\DataMapper;
 
-use Setono\SyliusCMSPlugin\Model\BlockInterface;
 use Setono\SyliusCMSPlugin\Model\ViewBlockInterface;
 use Setono\SyliusCMSPlugin\Model\ViewInterface;
 use Setono\SyliusCMSPlugin\Template\MetadataExtractorInterface;
 use Setono\SyliusCMSPlugin\Template\RegistryInterface;
-use Sylius\Component\Resource\Factory\FactoryInterface;
 use Symfony\Component\Form\Exception\UnexpectedTypeException;
 use Symfony\Component\Form\Extension\Core\DataAccessor\PropertyPathAccessor;
 use Symfony\Component\Form\Extension\Core\DataMapper\DataMapper;
@@ -23,19 +21,15 @@ final class ViewSectionsDataMapper extends DataMapper
 
     private MetadataExtractorInterface $metadataExtractor;
 
-    private FactoryInterface $viewBlockFactory;
-
     public function __construct(
         PropertyAccessorInterface $propertyAccessor,
         RegistryInterface $templateRegistry,
-        MetadataExtractorInterface $metadataExtractor,
-        FactoryInterface $viewBlockFactory
+        MetadataExtractorInterface $metadataExtractor
     ) {
         parent::__construct(new PropertyPathAccessor($propertyAccessor));
 
         $this->templateRegistry = $templateRegistry;
         $this->metadataExtractor = $metadataExtractor;
-        $this->viewBlockFactory = $viewBlockFactory;
     }
 
     /**
@@ -71,7 +65,7 @@ final class ViewSectionsDataMapper extends DataMapper
 
         $sections = [];
         foreach ($metadata->getSections() as $sectionName) {
-            $sections[$sectionName]['blocks'] = $data->getBlocksInSection($sectionName);
+            $sections[$sectionName]['viewBlocks'] = $data->getViewBlocksInSection($sectionName);
         }
 
         /** @var array<array-key, FormInterface> $arrayForms */
@@ -109,17 +103,11 @@ final class ViewSectionsDataMapper extends DataMapper
         foreach ($arrayForms['sections'] as $viewBlockForm) {
             /** @var array $formData */
             $formData = $viewBlockForm->getData();
-            Assert::keyExists($formData, 'blocks');
-            /**
-             * @var int $position
-             * @var BlockInterface $block
-             */
-            foreach ($formData['blocks'] as $position => $block) {
-                /** @var ViewBlockInterface $viewBlock */
-                $viewBlock = $this->viewBlockFactory->createNew();
+            Assert::keyExists($formData, 'viewBlocks');
+
+            /** @var ViewBlockInterface $viewBlock */
+            foreach ($formData['viewBlocks'] as $viewBlock) {
                 $viewBlock->setSection($viewBlockForm->getName());
-                $viewBlock->setBlock($block);
-                $viewBlock->setPosition($position);
                 $data->addViewBlock($viewBlock);
             }
         }

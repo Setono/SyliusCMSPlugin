@@ -56,8 +56,8 @@ class ViewBlock implements ViewBlockInterface
         return $this->position;
     }
 
-    public function setPosition(int $position): void
+    public function setPosition(?int $position): void
     {
-        $this->position = $position;
+        $this->position = $position ?? 0;
     }
 }
