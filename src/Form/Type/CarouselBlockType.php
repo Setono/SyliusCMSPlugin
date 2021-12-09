@@ -12,7 +12,17 @@ final class CarouselBlockType extends AbstractResourceType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder->add('block', BlockAutocompleteChoiceType::class, ['label' => false]);
-        $builder->add('position', IntegerType::class, ['label' => 'sylius.ui.position']);
+        $builder
+            ->add('block', BlockAutocompleteChoiceType::class, [
+                'label' => false,
+                'placeholder' => 'setono_sylius_cms.form.carousel.block_placeholder',
+            ])
+            ->add('position', IntegerType::class, [
+                'label' => false,
+                'attr' => [
+                    'placeholder' => 'setono_sylius_cms.form.carousel.position_placeholder',
+                ],
+            ])
+        ;
     }
 }
