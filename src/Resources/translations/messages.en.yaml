@@ -30,6 +30,8 @@ setono_sylius_cms:
             template: Template
             template_placeholder: Select template...
             section_blocks: '%section% section blocks'
+            block_placeholder: Block
+            position_placeholder: Position
     menu:
         admin:
             main:

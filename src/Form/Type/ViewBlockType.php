@@ -15,9 +15,13 @@ final class ViewBlockType extends AbstractResourceType
         $builder
             ->add('block', BlockAutocompleteChoiceType::class, [
                 'label' => false,
+                'placeholder' => 'setono_sylius_cms.form.view.block_placeholder',
             ])
             ->add('position', IntegerType::class, [
-                'label' => 'sylius.ui.position',
+                'label' => false,
+                'attr' => [
+                    'placeholder' => 'setono_sylius_cms.form.view.position_placeholder',
+                ],
             ])
         ;
     }
