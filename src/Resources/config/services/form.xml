@@ -40,6 +40,7 @@
         </parameter>
     </parameters>
     <services>
+        <!-- Asset -->
         <service id="setono_sylius_cms.form.type.asset"
                  class="Setono\SyliusCMSPlugin\Form\Type\AssetType">
             <argument type="service" id="setono_sylius_cms.uploader.asset"/>
@@ -49,6 +50,7 @@
             <tag name="form.type"/>
         </service>
 
+        <!-- Block -->
         <service id="setono_sylius_cms.form.type.block"
                  class="Setono\SyliusCMSPlugin\Form\Type\BlockType">
             <argument type="service" id="setono_editorjs.parser"/>
@@ -75,6 +77,7 @@
             <tag name="form.type"/>
         </service>
 
+        <!-- Page -->
         <service id="setono_sylius_cms.form.type.page"
                  class="Setono\SyliusCMSPlugin\Form\Type\PageType">
             <argument>%setono_sylius_cms.model.page.class%</argument>
@@ -91,10 +94,18 @@
             <tag name="form.type"/>
         </service>
 
+        <!-- Template -->
         <service id="setono_sylius_cms.form.type.template"
                  class="Setono\SyliusCMSPlugin\Form\Type\TemplateType">
             <argument>%setono_sylius_cms.model.template.class%</argument>
             <argument>%setono_sylius_cms.form.type.template.validation_groups%</argument>
+
+            <tag name="form.type"/>
+        </service>
+
+        <service id="setono_sylius_cms.form.type.template_choice"
+                 class="Setono\SyliusCMSPlugin\Form\Type\TemplateChoiceType">
+            <argument type="service" id="setono_sylius_cms.template.registry"/>
 
             <tag name="form.type"/>
         </service>
@@ -128,13 +139,7 @@
             <tag name="form.type"/>
         </service>
 
-        <service id="setono_sylius_cms.form.type.template_choice"
-                 class="Setono\SyliusCMSPlugin\Form\Type\TemplateChoiceType">
-            <argument type="service" id="setono_sylius_cms.template.registry"/>
-
-            <tag name="form.type"/>
-        </service>
-
+        <!-- Carousel -->
         <service id="setono_sylius_cms.form.type.carousel"
                  class="Setono\SyliusCMSPlugin\Form\Type\CarouselType">
             <argument type="service" id="request_stack"/>
