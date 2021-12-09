@@ -111,15 +111,15 @@ final class ViewSectionsDataMapper extends DataMapper
             $formData = $viewBlockForm->getData();
             Assert::keyExists($formData, 'blocks');
             /**
-             * @var int $priority
+             * @var int $position
              * @var BlockInterface $block
              */
-            foreach ($formData['blocks'] as $priority => $block) {
+            foreach ($formData['blocks'] as $position => $block) {
                 /** @var ViewBlockInterface $viewBlock */
                 $viewBlock = $this->viewBlockFactory->createNew();
                 $viewBlock->setSection($viewBlockForm->getName());
                 $viewBlock->setBlock($block);
-                $viewBlock->setPriority($priority);
+                $viewBlock->setPosition($position);
                 $data->addViewBlock($viewBlock);
             }
         }

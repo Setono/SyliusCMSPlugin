@@ -88,7 +88,7 @@ use Webmozart\Assert\Assert;
                     $viewBlock = $this->viewBlockFactory->createNew();
                     $viewBlock->setSection($section);
                     $viewBlock->setBlock($block);
-                    $viewBlock->setPriority($position);
+                    $viewBlock->setPosition($position);
 
                     $view->addViewBlock($viewBlock);
                 }

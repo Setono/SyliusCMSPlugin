@@ -14,7 +14,7 @@ class ViewBlock implements ViewBlockInterface
 
     protected ?string $section = null;
 
-    protected int $priority = 0;
+    protected int $position = 0;
 
     public function getId(): ?int
     {
@@ -51,13 +51,13 @@ class ViewBlock implements ViewBlockInterface
         $this->section = $section;
     }
 
-    public function getPriority(): int
+    public function getPosition(): int
     {
-        return $this->priority;
+        return $this->position;
     }
 
-    public function setPriority(int $priority): void
+    public function setPosition(int $position): void
     {
-        $this->priority = $priority;
+        $this->position = $position;
     }
 }

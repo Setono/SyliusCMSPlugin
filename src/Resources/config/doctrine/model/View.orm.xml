@@ -20,7 +20,7 @@
                 <cascade-all/>
             </cascade>
             <order-by>
-                <order-by-field name="priority" direction="DESC" />
+                <order-by-field name="position" />
             </order-by>
         </one-to-many>
 
