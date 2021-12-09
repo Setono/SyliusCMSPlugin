@@ -17,7 +17,7 @@
         "setono/editorjs-bundle": "^0.1.1",
         "setono/editorjs-php": "^0.1.2",
         "stof/doctrine-extensions-bundle": "^1.6",
-        "sylius/resource-bundle": "^1.6",
+        "sylius/resource-bundle": "^1.8",
         "symfony/config": "^5.0 || ^6.0",
         "symfony/dependency-injection": "^5.0 || ^6.0",
         "symfony/doctrine-bridge": "^5.0 || ^6.0",
