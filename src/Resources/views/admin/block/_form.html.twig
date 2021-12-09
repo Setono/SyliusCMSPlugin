@@ -26,9 +26,10 @@
 </div>
 
 <script src="{{ asset('bundles/setonosyliuscmsplugin/js/editor.js') }}"></script>
-<script src="{{ asset('bundles/setonosyliuscmsplugin/js/header.js') }}"></script>
-<script src="{{ asset('bundles/setonosyliuscmsplugin/js/raw.js') }}"></script>
-<script src="{{ asset('bundles/setonosyliuscmsplugin/js/imageTool.js') }}"></script>
+<script src="{{ asset('bundles/setonosyliuscmsplugin/js/editor-js-plugins/header.js') }}"></script>
+<script src="{{ asset('bundles/setonosyliuscmsplugin/js/editor-js-plugins/raw.js') }}"></script>
+<script src="{{ asset('bundles/setonosyliuscmsplugin/js/editor-js-plugins/imageTool.js') }}"></script>
+<script src="{{ asset('bundles/setonosyliuscmsplugin/js/editor-js-plugins/link-autocomplete.js') }}"></script>
 
 <script>
     const editors = [];
@@ -46,10 +47,14 @@
                     config: {
                         endpoints: {
                             byFile: '{{ url('setono_sylius_cms_admin_asset_upload_from_editor') }}',
-                        }
-                    }
-                }
-            }
+                        },
+                    },
+                },
+                link: {
+                    class: LinkAutocomplete, // We could create the autocomplete part by adding a server endpoint
+                    // See https://github.com/editor-js/link-autocomplete
+                },
+            },
         };
 
         const raw = document.getElementById(holderElement.dataset.source).value;
