@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <parameters>
+        <parameter key="setono_sylius_cms.renderer.carousel_template">@SetonoSyliusCMSPlugin/carousel/template.html.twig</parameter>
+    </parameters>
+
+    <services>
+        <service id="setono_sylius_cms.provider.cms_element_cache_key"
+                 class="Setono\SyliusCMSPlugin\Provider\CmsElementCacheKeyProvider">
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Provider\CmsElementCacheKeyProviderInterface"
+                 alias="setono_sylius_cms.provider.cms_element_cache_key"/>
+    </services>
+</container>

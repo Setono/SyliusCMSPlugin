@@ -21,6 +21,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension
         $config = $this->processConfiguration($this->getConfiguration([], $container), $configs);
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
 
+        $container->setParameter('setono_sylius_cms.cache_ttl', $config['cache_ttl']);
         $container->setParameter('setono_sylius_cms.templates', $config['templates']);
 
         $this->registerResources('setono_sylius_cms', $config['driver'], $config['resources'], $container);

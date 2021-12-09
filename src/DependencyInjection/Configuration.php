@@ -51,6 +51,7 @@ final class Configuration implements ConfigurationInterface
          */
         $rootNode
             ->addDefaultsIfNotSet()
+            ->children()->integerNode('cache_ttl')->defaultValue(60*60*5)->end()->end()
             ->children()
                 ->scalarNode('driver')
                     ->defaultValue(SyliusResourceBundle::DRIVER_DOCTRINE_ORM)
