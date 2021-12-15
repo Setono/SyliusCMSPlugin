@@ -1,8 +1,8 @@
 {
     "name": "setono/sylius-cms-plugin",
-    "type": "sylius-plugin",
     "description": "CMS plugin for your Sylius store",
     "license": "proprietary",
+    "type": "sylius-plugin",
     "require": {
         "php": ">=7.4",
         "ext-json": "*",
@@ -33,9 +33,6 @@
         "twig/twig": "^2.14",
         "webmozart/assert": "^1.10"
     },
-    "conflict": {
-        "symfony/security-bundle": "5.4.0"
-    },
     "require-dev": {
         "api-platform/core": "^2.6",
         "friendsofsymfony/oauth-server-bundle": ">2.0.0-alpha.0 ^2.0@dev",
@@ -58,14 +55,10 @@
         "symfony/webpack-encore-bundle": "^1.13",
         "weirdan/doctrine-psalm-plugin": "^2.0"
     },
-    "config": {
-        "sort-packages": true
+    "conflict": {
+        "symfony/security-bundle": "5.4.0"
     },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "1.0-dev"
-        }
-    },
+    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "Setono\\SyliusCMSPlugin\\": "src/"
@@ -79,7 +72,14 @@
             "tests/Application/Kernel.php"
         ]
     },
-    "prefer-stable": true,
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0-dev"
+        }
+    },
     "scripts": {
         "analyse": [
             "@ensure-test-container-exists",
