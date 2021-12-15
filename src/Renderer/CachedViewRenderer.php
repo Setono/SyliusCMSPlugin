@@ -21,11 +21,11 @@ final class CachedViewRenderer implements ViewRendererInterface
     private string $viewClass;
 
     public function __construct(
-        ViewRendererInterface             $decoratedRenderer,
-        CacheInterface                    $cachePool,
+        ViewRendererInterface $decoratedRenderer,
+        CacheInterface $cachePool,
         ElementCacheKeyGeneratorInterface $cmsElementCacheKeyProvider,
-        int                               $cacheTtl,
-        string                            $viewClass
+        int $cacheTtl,
+        string $viewClass
     ) {
         $this->decoratedRenderer = $decoratedRenderer;
         $this->cachePool = $cachePool;

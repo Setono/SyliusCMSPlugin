@@ -47,6 +47,7 @@ final class ElementCacheInvalidatorListener
     private function invalidateCache(ElementInterface $element): void
     {
         $cacheKey = $this->cmsElementCacheKeyProvider->getCacheKey($element);
+
         try {
             $this->cachePool->delete($cacheKey);
         } catch (InvalidArgumentException $e) {

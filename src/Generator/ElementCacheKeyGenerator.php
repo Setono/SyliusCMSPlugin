@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Generator;
 
+use function get_class;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
+use function sprintf;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Component\Resource\Model\CodeAwareInterface;
-use function get_class;
-use function sprintf;
 
 final class ElementCacheKeyGenerator implements ElementCacheKeyGeneratorInterface
 {

@@ -21,11 +21,11 @@ final class CachedCarouselRenderer implements CarouselRendererInterface
     private string $carouselClass;
 
     public function __construct(
-        CarouselRendererInterface         $decoratedRenderer,
-        CacheInterface                    $cachePool,
+        CarouselRendererInterface $decoratedRenderer,
+        CacheInterface $cachePool,
         ElementCacheKeyGeneratorInterface $cmsElementCacheKeyProvider,
-        int                               $cacheTtl,
-        string                            $carouselClass
+        int $cacheTtl,
+        string $carouselClass
     ) {
         $this->decoratedRenderer = $decoratedRenderer;
         $this->cachePool = $cachePool;

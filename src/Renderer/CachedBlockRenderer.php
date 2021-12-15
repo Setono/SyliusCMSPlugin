@@ -21,11 +21,11 @@ final class CachedBlockRenderer implements BlockRendererInterface
     private string $blockClass;
 
     public function __construct(
-        BlockRendererInterface            $decoratedRenderer,
-        CacheInterface                    $cachePool,
+        BlockRendererInterface $decoratedRenderer,
+        CacheInterface $cachePool,
         ElementCacheKeyGeneratorInterface $cmsElementCacheKeyProvider,
-        int                               $cacheTtl,
-        string                            $blockClass
+        int $cacheTtl,
+        string $blockClass
     ) {
         $this->decoratedRenderer = $decoratedRenderer;
         $this->cachePool = $cachePool;
