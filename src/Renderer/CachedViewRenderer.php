@@ -14,7 +14,7 @@ final class CachedViewRenderer implements ViewRendererInterface
 
     private CacheInterface $cachePool;
 
-    private ElementCacheKeyGeneratorInterface $cmsElementCacheKeyProvider;
+    private ElementCacheKeyGeneratorInterface $elementCacheKeyProvider;
 
     private int $cacheTtl;
 
@@ -23,20 +23,20 @@ final class CachedViewRenderer implements ViewRendererInterface
     public function __construct(
         ViewRendererInterface $decoratedRenderer,
         CacheInterface $cachePool,
-        ElementCacheKeyGeneratorInterface $cmsElementCacheKeyProvider,
+        ElementCacheKeyGeneratorInterface $elementCacheKeyProvider,
         int $cacheTtl,
         string $viewClass
     ) {
         $this->decoratedRenderer = $decoratedRenderer;
         $this->cachePool = $cachePool;
-        $this->cmsElementCacheKeyProvider = $cmsElementCacheKeyProvider;
+        $this->elementCacheKeyProvider = $elementCacheKeyProvider;
         $this->cacheTtl = $cacheTtl;
         $this->viewClass = $viewClass;
     }
 
     public function render($view): string
     {
-        $cacheKey = $this->cmsElementCacheKeyProvider->getCacheKey($view, $this->viewClass);
+        $cacheKey = $this->elementCacheKeyProvider->getCacheKey($view, $this->viewClass);
 
         return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($view): string {
             $item->expiresAfter($this->cacheTtl);

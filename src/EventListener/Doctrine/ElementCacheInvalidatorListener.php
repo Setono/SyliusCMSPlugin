@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Doctrine\EntityListener;
+namespace Setono\SyliusCMSPlugin\EventListener\Doctrine;
 
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Psr\Cache\InvalidArgumentException;
@@ -14,14 +14,14 @@ final class ElementCacheInvalidatorListener
 {
     private CacheInterface $cachePool;
 
-    private ElementCacheKeyGeneratorInterface $cmsElementCacheKeyProvider;
+    private ElementCacheKeyGeneratorInterface $elementCacheKeyProvider;
 
     public function __construct(
         CacheInterface $cachePool,
-        ElementCacheKeyGeneratorInterface $cmsElementCacheKeyProvider
+        ElementCacheKeyGeneratorInterface $elementCacheKeyProvider
     ) {
         $this->cachePool = $cachePool;
-        $this->cmsElementCacheKeyProvider = $cmsElementCacheKeyProvider;
+        $this->elementCacheKeyProvider = $elementCacheKeyProvider;
     }
 
     public function postPersist(LifecycleEventArgs $args): void
@@ -46,7 +46,7 @@ final class ElementCacheInvalidatorListener
 
     private function invalidateCache(ElementInterface $element): void
     {
-        $cacheKey = $this->cmsElementCacheKeyProvider->getCacheKey($element);
+        $cacheKey = $this->elementCacheKeyProvider->getCacheKey($element);
 
         try {
             $this->cachePool->delete($cacheKey);

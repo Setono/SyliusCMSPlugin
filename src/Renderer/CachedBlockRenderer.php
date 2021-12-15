@@ -14,7 +14,7 @@ final class CachedBlockRenderer implements BlockRendererInterface
 
     private CacheInterface $cachePool;
 
-    private ElementCacheKeyGeneratorInterface $cmsElementCacheKeyProvider;
+    private ElementCacheKeyGeneratorInterface $elementCacheKeyProvider;
 
     private int $cacheTtl;
 
@@ -23,20 +23,20 @@ final class CachedBlockRenderer implements BlockRendererInterface
     public function __construct(
         BlockRendererInterface $decoratedRenderer,
         CacheInterface $cachePool,
-        ElementCacheKeyGeneratorInterface $cmsElementCacheKeyProvider,
+        ElementCacheKeyGeneratorInterface $elementCacheKeyProvider,
         int $cacheTtl,
         string $blockClass
     ) {
         $this->decoratedRenderer = $decoratedRenderer;
         $this->cachePool = $cachePool;
-        $this->cmsElementCacheKeyProvider = $cmsElementCacheKeyProvider;
+        $this->elementCacheKeyProvider = $elementCacheKeyProvider;
         $this->cacheTtl = $cacheTtl;
         $this->blockClass = $blockClass;
     }
 
     public function render($block): string
     {
-        $cacheKey = $this->cmsElementCacheKeyProvider->getCacheKey($block, $this->blockClass);
+        $cacheKey = $this->elementCacheKeyProvider->getCacheKey($block, $this->blockClass);
 
         return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($block): string {
             $item->expiresAfter($this->cacheTtl);

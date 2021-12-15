@@ -14,7 +14,7 @@ final class CachedCarouselRenderer implements CarouselRendererInterface
 
     private CacheInterface $cachePool;
 
-    private ElementCacheKeyGeneratorInterface $cmsElementCacheKeyProvider;
+    private ElementCacheKeyGeneratorInterface $elementCacheKeyProvider;
 
     private int $cacheTtl;
 
@@ -23,20 +23,20 @@ final class CachedCarouselRenderer implements CarouselRendererInterface
     public function __construct(
         CarouselRendererInterface $decoratedRenderer,
         CacheInterface $cachePool,
-        ElementCacheKeyGeneratorInterface $cmsElementCacheKeyProvider,
+        ElementCacheKeyGeneratorInterface $elementCacheKeyProvider,
         int $cacheTtl,
         string $carouselClass
     ) {
         $this->decoratedRenderer = $decoratedRenderer;
         $this->cachePool = $cachePool;
-        $this->cmsElementCacheKeyProvider = $cmsElementCacheKeyProvider;
+        $this->elementCacheKeyProvider = $elementCacheKeyProvider;
         $this->cacheTtl = $cacheTtl;
         $this->carouselClass = $carouselClass;
     }
 
     public function render($carousel): string
     {
-        $cacheKey = $this->cmsElementCacheKeyProvider->getCacheKey($carousel, $this->carouselClass);
+        $cacheKey = $this->elementCacheKeyProvider->getCacheKey($carousel, $this->carouselClass);
 
         return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($carousel): string {
             $item->expiresAfter($this->cacheTtl);

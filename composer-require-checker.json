@@ -16,6 +16,8 @@
         "true",
         "void",
         "Stringable",
+        "Doctrine\\Persistence\\Event\\LifecycleEventArgs",
+        "Psr\\Cache\\InvalidArgumentException",
         "Sylius\\Bundle\\CoreBundle\\Application\\SyliusPluginTrait",
         "Sylius\\Bundle\\UiBundle\\Menu\\Event\\MenuBuilderEvent",
         "Sylius\\Component\\Core\\Model\\ChannelInterface",
@@ -30,6 +32,7 @@
         "Sylius\\Component\\Channel\\Context\\ChannelContextInterface",
         "Sylius\\Component\\Channel\\Model\\ChannelInterface",
         "Sylius\\Component\\Channel\\Model\\ChannelsAwareInterface",
-        "Sylius\\Component\\Channel\\Repository\\ChannelRepositoryInterface"
+        "Sylius\\Component\\Channel\\Repository\\ChannelRepositoryInterface",
+        "Symfony\\Contracts\\Cache\\CacheInterface"
     ]
 }

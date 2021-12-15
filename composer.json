@@ -18,6 +18,7 @@
         "setono/editorjs-php": "^0.1.2",
         "stof/doctrine-extensions-bundle": "^1.6",
         "sylius/resource-bundle": "^1.6",
+        "symfony/cache": "^5.0 || ^6.0",
         "symfony/config": "^5.0 || ^6.0",
         "symfony/dependency-injection": "^5.0 || ^6.0",
         "symfony/doctrine-bridge": "^5.0 || ^6.0",
@@ -32,6 +33,9 @@
         "symfony/security-core": "^5.0 || ^6.0",
         "twig/twig": "^2.14",
         "webmozart/assert": "^1.10"
+    },
+    "conflict": {
+        "symfony/security-bundle": "5.4.0"
     },
     "require-dev": {
         "api-platform/core": "^2.6",
@@ -55,8 +59,8 @@
         "symfony/webpack-encore-bundle": "^1.13",
         "weirdan/doctrine-psalm-plugin": "^2.0"
     },
-    "conflict": {
-        "symfony/security-bundle": "5.4.0"
+    "config": {
+        "sort-packages": true
     },
     "prefer-stable": true,
     "autoload": {
