@@ -14,6 +14,28 @@
     </div>
 {% endblock %}
 
+{% block view_block_widget %}
+    <div class="ui grid">
+        <div class="eleven wide column">
+            {{ form_row(form.block) }}
+        </div>
+        <div class="five wide column">
+            {{ form_row(form.position) }}
+        </div>
+    </div>
+{% endblock %}
+
+{% block carousel_block_widget %}
+    <div class="ui grid">
+        <div class="eleven wide column">
+            {{ form_row(form.block) }}
+        </div>
+        <div class="five wide column">
+            {{ form_row(form.position) }}
+        </div>
+    </div>
+{% endblock %}
+
 {% block setono_sylius_cms_block_autocomplete_choice_widget %}
     {{ form_row(form, {
         'remote_url': path('setono_sylius_cms_admin_ajax_block_by_code_phrase'),

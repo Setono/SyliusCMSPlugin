@@ -25,7 +25,7 @@ interface ViewInterface extends
     public function setTemplate(string $template): void;
 
     /**
-     * Returns a collection of view blocks sorted by ViewBlockInterface::getPriority() descending
+     * Returns a collection of view blocks sorted by ViewBlockInterface::getPosition() descending
      *
      * @return Collection|ViewBlockInterface[]
      *

@@ -9,6 +9,8 @@ setono_sylius_cms:
             default_content: Default content
         carousel:
             blocks: Blocks
+            block_placeholder: Block
+            position_placeholder: Position
             configuration: Configuration
             configuration.autoplay: Autoplay
             configuration.autoplay_speed: Autoplay speed
@@ -29,6 +31,9 @@ setono_sylius_cms:
         view:
             template: Template
             template_placeholder: Select template...
+            section_blocks: '%section% section blocks'
+            block_placeholder: Block
+            position_placeholder: Position
     menu:
         admin:
             main:

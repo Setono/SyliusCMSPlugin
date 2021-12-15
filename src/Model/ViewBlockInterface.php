@@ -22,7 +22,7 @@ interface ViewBlockInterface extends ResourceInterface
 
     public function setSection(?string $section): void;
 
-    public function getPriority(): int;
+    public function getPosition(): int;
 
-    public function setPriority(int $priority): void;
+    public function setPosition(int $position): void;
 }

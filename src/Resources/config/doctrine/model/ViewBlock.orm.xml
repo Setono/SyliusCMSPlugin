@@ -19,6 +19,6 @@
         </many-to-one>
 
         <field name="section" type="string"/>
-        <field name="priority" type="integer"/>
+        <field name="position" type="integer"/>
     </mapped-superclass>
 </doctrine-mapping>

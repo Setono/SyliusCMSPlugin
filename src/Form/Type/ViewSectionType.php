@@ -12,13 +12,12 @@ final class ViewSectionType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder->add('blocks', CollectionType::class, [
-            'entry_type' => BlockAutocompleteChoiceType::class,
+        $builder->add('viewBlocks', CollectionType::class, [
+            'label' => false,
             'allow_add' => true,
             'allow_delete' => true,
-            'entry_options' => [
-                'label' => false,
-            ],
+            'by_reference' => false,
+            'entry_type' => ViewBlockType::class,
         ]);
     }
 
