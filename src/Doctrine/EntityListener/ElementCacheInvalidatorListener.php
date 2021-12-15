@@ -6,19 +6,19 @@ namespace Setono\SyliusCMSPlugin\Doctrine\EntityListener;
 
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Psr\Cache\InvalidArgumentException;
+use Setono\SyliusCMSPlugin\Generator\ElementCacheKeyGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
-use Setono\SyliusCMSPlugin\Provider\CmsElementCacheKeyProviderInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 
-final class CmsElementCacheInvalidatorListener
+final class ElementCacheInvalidatorListener
 {
     private CacheInterface $cachePool;
 
-    private CmsElementCacheKeyProviderInterface $cmsElementCacheKeyProvider;
+    private ElementCacheKeyGeneratorInterface $cmsElementCacheKeyProvider;
 
     public function __construct(
         CacheInterface $cachePool,
-        CmsElementCacheKeyProviderInterface $cmsElementCacheKeyProvider
+        ElementCacheKeyGeneratorInterface $cmsElementCacheKeyProvider
     ) {
         $this->cachePool = $cachePool;
         $this->cmsElementCacheKeyProvider = $cmsElementCacheKeyProvider;

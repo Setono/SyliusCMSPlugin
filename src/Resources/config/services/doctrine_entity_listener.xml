@@ -7,16 +7,14 @@
 
     <services>
         <service id="setono_sylius_cms.doctrine.entity_listener.cms_element_cache_invalidator"
-                 class="Setono\SyliusCMSPlugin\Doctrine\EntityListener\CmsElementCacheInvalidatorListener">
+                 class="Setono\SyliusCMSPlugin\Doctrine\EntityListener\ElementCacheInvalidatorListener">
             <argument type="service" id="sscms_elements_cache_pool"/>
-            <argument type="service" id="setono_sylius_cms.provider.cms_element_cache_key"/>
+            <argument type="service" id="setono_sylius_cms.generator.cms_element_cache_key"/>
 
             <tag name="doctrine.event_listener"
                  event="postPersist"/>
             <tag name="doctrine.event_listener"
                  event="postUpdate"/>
         </service>
-        <service id="Setono\SyliusCMSPlugin\Doctrine\EntityListener\CmsElementCacheInvalidatorListener"
-                 alias="setono_sylius_cms.doctrine.entity_listener.cms_element_cache_invalidator"/>
     </services>
 </container>

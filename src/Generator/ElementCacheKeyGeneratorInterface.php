@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Provider;
+namespace Setono\SyliusCMSPlugin\Generator;
 
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Sylius\Component\Channel\Model\ChannelInterface;
 
-interface CmsElementCacheKeyProviderInterface
+interface ElementCacheKeyGeneratorInterface
 {
     /**
      * @param ElementInterface|string $element The element itself or its identifier
@@ -17,8 +17,8 @@ interface CmsElementCacheKeyProviderInterface
      */
     public function getCacheKey(
         $element,
-        ?string $elementType = null,
-        ?ChannelInterface $channel = null,
-        ?string $localeCode = null
+        string $elementType = null,
+        ChannelInterface $channel = null,
+        string $localeCode = null
     ): string;
 }

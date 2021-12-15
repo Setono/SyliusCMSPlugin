@@ -22,7 +22,7 @@
                  decorates="setono_sylius_cms.renderer.block">
             <argument type="service" id=".inner"/>
             <argument type="service" id="sscms_elements_cache_pool"/>
-            <argument type="service" id="setono_sylius_cms.provider.cms_element_cache_key"/>
+            <argument type="service" id="setono_sylius_cms.generator.cms_element_cache_key"/>
             <argument>%setono_sylius_cms.cache_ttl%</argument>
             <argument>%setono_sylius_cms.model.block.class%</argument>
         </service>
@@ -47,7 +47,7 @@
                  decorates="setono_sylius_cms.renderer.carousel">
             <argument type="service" id=".inner"/>
             <argument type="service" id="sscms_elements_cache_pool"/>
-            <argument type="service" id="setono_sylius_cms.provider.cms_element_cache_key"/>
+            <argument type="service" id="setono_sylius_cms.generator.cms_element_cache_key"/>
             <argument>%setono_sylius_cms.cache_ttl%</argument>
             <argument>%setono_sylius_cms.model.carousel.class%</argument>
         </service>
@@ -70,7 +70,7 @@
                  decorates="setono_sylius_cms.renderer.view">
             <argument type="service" id=".inner"/>
             <argument type="service" id="sscms_elements_cache_pool"/>
-            <argument type="service" id="setono_sylius_cms.provider.cms_element_cache_key"/>
+            <argument type="service" id="setono_sylius_cms.generator.cms_element_cache_key"/>
             <argument>%setono_sylius_cms.cache_ttl%</argument>
             <argument>%setono_sylius_cms.model.view.class%</argument>
         </service>

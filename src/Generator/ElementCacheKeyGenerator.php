@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Provider;
+namespace Setono\SyliusCMSPlugin\Generator;
 
-use function get_class;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
-use function sprintf;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Component\Resource\Model\CodeAwareInterface;
+use function get_class;
+use function sprintf;
 
-final class CmsElementCacheKeyProvider implements CmsElementCacheKeyProviderInterface
+final class ElementCacheKeyGenerator implements ElementCacheKeyGeneratorInterface
 {
     private ChannelContextInterface $channelContext;
 
@@ -26,9 +26,9 @@ final class CmsElementCacheKeyProvider implements CmsElementCacheKeyProviderInte
 
     public function getCacheKey(
         $element,
-        ?string $elementType = null,
-        ?ChannelInterface $channel = null,
-        ?string $localeCode = null
+        string $elementType = null,
+        ChannelInterface $channel = null,
+        string $localeCode = null
     ): string {
         $cachePrefix = $element instanceof ElementInterface ? get_class($element) : (string) $elementType;
         $cacheKey = $element instanceof CodeAwareInterface ? $element->getCode() : (string) $element;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Renderer;
 
-use Setono\SyliusCMSPlugin\Provider\CmsElementCacheKeyProviderInterface;
+use Setono\SyliusCMSPlugin\Generator\ElementCacheKeyGeneratorInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
@@ -14,18 +14,18 @@ final class CachedCarouselRenderer implements CarouselRendererInterface
 
     private CacheInterface $cachePool;
 
-    private CmsElementCacheKeyProviderInterface $cmsElementCacheKeyProvider;
+    private ElementCacheKeyGeneratorInterface $cmsElementCacheKeyProvider;
 
     private int $cacheTtl;
 
     private string $carouselClass;
 
     public function __construct(
-        CarouselRendererInterface $decoratedRenderer,
-        CacheInterface $cachePool,
-        CmsElementCacheKeyProviderInterface $cmsElementCacheKeyProvider,
-        int $cacheTtl,
-        string $carouselClass
+        CarouselRendererInterface         $decoratedRenderer,
+        CacheInterface                    $cachePool,
+        ElementCacheKeyGeneratorInterface $cmsElementCacheKeyProvider,
+        int                               $cacheTtl,
+        string                            $carouselClass
     ) {
         $this->decoratedRenderer = $decoratedRenderer;
         $this->cachePool = $cachePool;
