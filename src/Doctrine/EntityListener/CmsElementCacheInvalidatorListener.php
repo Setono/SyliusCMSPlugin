@@ -8,7 +8,6 @@ use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Psr\Cache\InvalidArgumentException;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Setono\SyliusCMSPlugin\Provider\CmsElementCacheKeyProviderInterface;
-use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 use Symfony\Contracts\Cache\CacheInterface;
 
 final class CmsElementCacheInvalidatorListener

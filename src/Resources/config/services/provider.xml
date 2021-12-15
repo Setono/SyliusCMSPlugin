@@ -8,6 +8,8 @@
     <services>
         <service id="setono_sylius_cms.provider.cms_element_cache_key"
                  class="Setono\SyliusCMSPlugin\Provider\CmsElementCacheKeyProvider">
+            <argument type="service" id="sylius.context.channel"/>
+            <argument type="service" id="sylius.context.locale"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Provider\CmsElementCacheKeyProviderInterface"
                  alias="setono_sylius_cms.provider.cms_element_cache_key"/>

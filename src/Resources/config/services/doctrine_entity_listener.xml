@@ -16,7 +16,7 @@
             <tag name="doctrine.event_listener"
                  event="postUpdate"/>
         </service>
-        <service id="Setono\SyliusCMSPlugin\Provider\CmsElementCacheKeyProviderInterface"
-                 alias="setono_sylius_cms.provider.cms_element_cache_key"/>
+        <service id="Setono\SyliusCMSPlugin\Doctrine\EntityListener\CmsElementCacheInvalidatorListener"
+                 alias="setono_sylius_cms.doctrine.entity_listener.cms_element_cache_invalidator"/>
     </services>
 </container>
