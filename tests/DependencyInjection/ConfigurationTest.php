@@ -144,6 +144,7 @@ final class ConfigurationTest extends TestCase
                     ],
                 ],
             ],
+            'cache_ttl' => 18000,
         ]);
     }
 }
