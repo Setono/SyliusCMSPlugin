@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Renderer;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Setono\SyliusCMSPlugin\Element\CarouselElement;
 use Setono\SyliusCMSPlugin\Repository\CarouselRepositoryInterface;
 use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
 use Twig\Environment;
@@ -69,13 +70,10 @@ final class CarouselRenderer implements CarouselRendererInterface, LoggerAwareIn
         }
         $context['carousel'] = $carousel;
 
-        $renderedCarousel = $this->twig->render($this->template, $context);
-
         $this->elementStack->push($carousel);
 
         return $this->twig->render('@SetonoSyliusCMSPlugin/carousel.html.twig', [
-            'carousel' => $carousel,
-            'rendered_carousel' => $renderedCarousel,
+            'carousel' => new CarouselElement($carousel, $this->twig->render($this->template, $context)),
         ]);
     }
 
