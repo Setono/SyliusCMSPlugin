@@ -31,7 +31,7 @@ final class ElementCacheKeyGenerator implements ElementCacheKeyGeneratorInterfac
         string $localeCode = null
     ): string {
         $cachePrefix = $element instanceof ElementInterface ? get_class($element) : (string) $elementType;
-        $cacheKey = $element instanceof CodeAwareInterface ? $element->getCode() : (string) $element;
+        $cacheKey = self::resolveCacheKey($element);
 
         if (null === $channel) {
             $channel = $this->channelContext->getChannel();
@@ -40,6 +40,26 @@ final class ElementCacheKeyGenerator implements ElementCacheKeyGeneratorInterfac
             $localeCode = $this->localeContext->getLocaleCode();
         }
 
-        return sprintf('%s_%s_%s_%s', $cachePrefix, $cacheKey, $channel->getCode(), $localeCode);
+        return sprintf('%s_%s_%s_%s', $cachePrefix, $cacheKey, (string) $channel->getCode(), $localeCode);
+    }
+
+    /**
+     * @param ElementInterface|string|mixed $element
+     */
+    private static function resolveCacheKey($element): string
+    {
+        if ($element instanceof CodeAwareInterface) {
+            return (string) $element->getCode();
+        }
+
+        if ($element instanceof ElementInterface) {
+            return $element->getIdentifier();
+        }
+
+        if (is_string($element)) {
+            return $element;
+        }
+
+        throw new \InvalidArgumentException(sprintf('The element must be either a string or %s', ElementInterface::class));
     }
 }

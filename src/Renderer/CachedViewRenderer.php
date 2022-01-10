@@ -38,6 +38,7 @@ final class CachedViewRenderer implements ViewRendererInterface
     {
         $cacheKey = $this->elementCacheKeyProvider->getCacheKey($view, $this->viewClass);
 
+        /** @psalm-suppress ArgumentTypeCoercion */
         return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($view): string {
             $item->expiresAfter($this->cacheTtl);
 

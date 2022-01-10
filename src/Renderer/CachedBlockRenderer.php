@@ -38,6 +38,7 @@ final class CachedBlockRenderer implements BlockRendererInterface
     {
         $cacheKey = $this->elementCacheKeyProvider->getCacheKey($block, $this->blockClass);
 
+        /** @psalm-suppress ArgumentTypeCoercion */
         return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($block): string {
             $item->expiresAfter($this->cacheTtl);
 

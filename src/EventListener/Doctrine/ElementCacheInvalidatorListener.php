@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\EventListener\Doctrine;
 
 use Doctrine\Persistence\Event\LifecycleEventArgs;
-use Psr\Cache\InvalidArgumentException;
 use Setono\SyliusCMSPlugin\Generator\ElementCacheKeyGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Symfony\Contracts\Cache\CacheInterface;
@@ -50,7 +49,7 @@ final class ElementCacheInvalidatorListener
 
         try {
             $this->cachePool->delete($cacheKey);
-        } catch (InvalidArgumentException $e) {
+        } catch (\Throwable $e) {
             // Ignore because it means the cache does not exist yet
         }
     }

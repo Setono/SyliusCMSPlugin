@@ -16,7 +16,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension
         /**
          * @psalm-suppress PossiblyNullArgument
          *
-         * @var array{driver: string, resources: array<string, mixed>, templates: array} $config
+         * @var array{cache_ttl: int, driver: string, resources: array<string, mixed>, templates: array} $config
          */
         $config = $this->processConfiguration($this->getConfiguration([], $container), $configs);
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));

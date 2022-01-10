@@ -38,6 +38,7 @@ final class CachedCarouselRenderer implements CarouselRendererInterface
     {
         $cacheKey = $this->elementCacheKeyProvider->getCacheKey($carousel, $this->carouselClass);
 
+        /** @psalm-suppress ArgumentTypeCoercion */
         return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($carousel): string {
             $item->expiresAfter($this->cacheTtl);
 
