@@ -7,7 +7,7 @@ namespace Setono\SyliusCMSPlugin\Element;
 use Setono\SyliusCMSPlugin\Model\BlockInterface;
 
 /**
- * @extends  AbstractElement<BlockInterface>
+ * @extends AbstractElement<BlockInterface>
  */
 final class BlockElement extends AbstractElement
 {

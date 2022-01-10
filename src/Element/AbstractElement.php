@@ -7,7 +7,7 @@ namespace Setono\SyliusCMSPlugin\Element;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 
 /**
- * @template T
+ * @template T of ElementInterface
  */
 abstract class AbstractElement
 {
@@ -19,10 +19,10 @@ abstract class AbstractElement
     /**
      * @psalm-param T $resource
      */
-    public function __construct(ElementInterface $resource, string $renderedContent)
+    public function __construct(ElementInterface $resource, string $rendered)
     {
         $this->resource = $resource;
-        $this->rendered = $renderedContent;
+        $this->rendered = $rendered;
     }
 
     /**

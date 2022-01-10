@@ -17,7 +17,8 @@ interface PageInterface extends
     EnabledDateIntervalAwareInterface,
     ChannelsAwareInterface,
     TranslatableInterface,
-    InternalDescriptionAwareInterface
+    InternalDescriptionAwareInterface,
+    ElementInterface
 {
     public function getId(): ?int;
 

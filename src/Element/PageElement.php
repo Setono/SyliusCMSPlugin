@@ -7,7 +7,7 @@ namespace Setono\SyliusCMSPlugin\Element;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 
 /**
- * @extends  AbstractElement<PageInterface>
+ * @extends AbstractElement<PageInterface>
  */
 final class PageElement extends AbstractElement
 {
