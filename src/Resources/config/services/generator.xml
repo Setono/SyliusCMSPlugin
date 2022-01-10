@@ -11,5 +11,13 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface"
                  alias="setono_sylius_cms.generator.page.preview_link"/>
+
+        <service id="setono_sylius_cms.generator.element_cache_key"
+                 class="Setono\SyliusCMSPlugin\Generator\ElementCacheKeyGenerator">
+            <argument type="service" id="sylius.context.channel"/>
+            <argument type="service" id="sylius.context.locale"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Generator\ElementCacheKeyGeneratorInterface"
+                 alias="setono_sylius_cms.generator.element_cache_key"/>
     </services>
 </container>
