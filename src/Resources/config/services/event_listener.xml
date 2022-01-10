@@ -3,7 +3,7 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <service id="setono_sylius_cms.doctrine.entity_listener.cms_element_cache_invalidator"
-                 class="Setono\SyliusCMSPlugin\EventListener\Doctrine\ElementCacheInvalidatorListener">
+                 class="Setono\SyliusCMSPlugin\EventListener\Doctrine\GenericElementCacheInvalidatorListener">
             <argument type="service" id="sscms_elements_cache_pool"/>
             <argument type="service" id="setono_sylius_cms.generator.element_cache_key"/>
 

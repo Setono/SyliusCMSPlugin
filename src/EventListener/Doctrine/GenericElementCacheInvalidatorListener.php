@@ -9,16 +9,14 @@ use Setono\SyliusCMSPlugin\Generator\ElementCacheKeyGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 
-final class ElementCacheInvalidatorListener
+final class GenericElementCacheInvalidatorListener
 {
     private CacheInterface $cachePool;
 
     private ElementCacheKeyGeneratorInterface $elementCacheKeyProvider;
 
-    public function __construct(
-        CacheInterface $cachePool,
-        ElementCacheKeyGeneratorInterface $elementCacheKeyProvider
-    ) {
+    public function __construct(CacheInterface $cachePool, ElementCacheKeyGeneratorInterface $elementCacheKeyProvider)
+    {
         $this->cachePool = $cachePool;
         $this->elementCacheKeyProvider = $elementCacheKeyProvider;
     }
