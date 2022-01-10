@@ -53,8 +53,8 @@ final class Configuration implements ConfigurationInterface
             ->addDefaultsIfNotSet()
             ->children()
                 ->integerNode('cache_ttl')
-                    ->info('The cache TTL')
-                    ->defaultValue(60 * 60 * 5)
+                    ->info('The number of seconds before an element is automatically invalidated in the cache')
+                    ->defaultValue(10_800) // default is three hours
                 ->end()
             ->end()
             ->children()
