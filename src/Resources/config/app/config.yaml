@@ -22,7 +22,7 @@ knp_gaufrette:
 framework:
     cache:
         pools:
-            sscms_elements_cache_pool:
+            sscms.cache_pool.elements:
                 adapter: cache.adapter.filesystem
 
 liip_imagine:
