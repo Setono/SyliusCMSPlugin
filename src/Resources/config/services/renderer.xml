@@ -17,16 +17,6 @@
             </call>
         </service>
 
-        <service id="setono_sylius_cms.cached_renderer.block"
-                 class="Setono\SyliusCMSPlugin\Renderer\CachedBlockRenderer"
-                 decorates="setono_sylius_cms.renderer.block" decoration-priority="64">
-            <argument type="service" id="setono_sylius_cms.cached_renderer.block.inner"/>
-            <argument type="service" id="sscms_elements_cache_pool"/>
-            <argument type="service" id="setono_sylius_cms.generator.element_cache_key"/>
-            <argument>%setono_sylius_cms.cache_ttl%</argument>
-            <argument>%setono_sylius_cms.model.block.class%</argument>
-        </service>
-
         <service id="setono_sylius_cms.renderer.carousel"
                  class="Setono\SyliusCMSPlugin\Renderer\CarouselRenderer">
             <argument type="service" id="setono_sylius_cms.repository.carousel"/>
@@ -42,16 +32,6 @@
         <service id="Setono\SyliusCMSPlugin\Renderer\CarouselRendererInterface"
                  alias="setono_sylius_cms.renderer.carousel"/>
 
-        <service id="setono_sylius_cms.cached_renderer.carousel"
-                 class="Setono\SyliusCMSPlugin\Renderer\CachedCarouselRenderer"
-                 decorates="setono_sylius_cms.renderer.carousel" decoration-priority="64">
-            <argument type="service" id="setono_sylius_cms.cached_renderer.carousel.inner"/>
-            <argument type="service" id="sscms_elements_cache_pool"/>
-            <argument type="service" id="setono_sylius_cms.generator.element_cache_key"/>
-            <argument>%setono_sylius_cms.cache_ttl%</argument>
-            <argument>%setono_sylius_cms.model.carousel.class%</argument>
-        </service>
-
         <service id="setono_sylius_cms.renderer.view"
                  class="Setono\SyliusCMSPlugin\Renderer\ViewRenderer">
             <argument type="service" id="setono_sylius_cms.repository.view"/>
@@ -63,16 +43,6 @@
             <call method="setLogger">
                 <argument type="service" id="logger"/>
             </call>
-        </service>
-
-        <service id="setono_sylius_cms.cached_renderer.view"
-                 class="Setono\SyliusCMSPlugin\Renderer\CachedViewRenderer"
-                 decorates="setono_sylius_cms.renderer.view" decoration-priority="64">
-            <argument type="service" id="setono_sylius_cms.cached_renderer.view.inner"/>
-            <argument type="service" id="sscms_elements_cache_pool"/>
-            <argument type="service" id="setono_sylius_cms.generator.element_cache_key"/>
-            <argument>%setono_sylius_cms.cache_ttl%</argument>
-            <argument>%setono_sylius_cms.model.view.class%</argument>
         </service>
     </services>
 </container>

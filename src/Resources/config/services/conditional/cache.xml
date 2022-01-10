@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="setono_sylius_cms.cached_renderer.block"
+                 class="Setono\SyliusCMSPlugin\Renderer\CachedBlockRenderer"
+                 decorates="setono_sylius_cms.renderer.block" decoration-priority="64">
+            <argument type="service" id="setono_sylius_cms.cached_renderer.block.inner"/>
+            <argument type="service" id="sscms_elements_cache_pool"/>
+            <argument type="service" id="setono_sylius_cms.generator.element_cache_key"/>
+            <argument>%setono_sylius_cms.cache.ttl%</argument>
+            <argument>%setono_sylius_cms.model.block.class%</argument>
+        </service>
+
+        <service id="setono_sylius_cms.cached_renderer.carousel"
+                 class="Setono\SyliusCMSPlugin\Renderer\CachedCarouselRenderer"
+                 decorates="setono_sylius_cms.renderer.carousel" decoration-priority="64">
+            <argument type="service" id="setono_sylius_cms.cached_renderer.carousel.inner"/>
+            <argument type="service" id="sscms_elements_cache_pool"/>
+            <argument type="service" id="setono_sylius_cms.generator.element_cache_key"/>
+            <argument>%setono_sylius_cms.cache.ttl%</argument>
+            <argument>%setono_sylius_cms.model.carousel.class%</argument>
+        </service>
+
+        <service id="setono_sylius_cms.cached_renderer.view"
+                 class="Setono\SyliusCMSPlugin\Renderer\CachedViewRenderer"
+                 decorates="setono_sylius_cms.renderer.view" decoration-priority="64">
+            <argument type="service" id="setono_sylius_cms.cached_renderer.view.inner"/>
+            <argument type="service" id="sscms_elements_cache_pool"/>
+            <argument type="service" id="setono_sylius_cms.generator.element_cache_key"/>
+            <argument>%setono_sylius_cms.cache.ttl%</argument>
+            <argument>%setono_sylius_cms.model.view.class%</argument>
+        </service>
+    </services>
+</container>
