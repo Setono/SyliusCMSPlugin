@@ -11,6 +11,7 @@ use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Component\Resource\Model\CodeAwareInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 final class ElementCacheKeyGenerator implements ElementCacheKeyGeneratorInterface
 {
@@ -36,11 +37,18 @@ final class ElementCacheKeyGenerator implements ElementCacheKeyGeneratorInterfac
         if (null === $channel) {
             $channel = $this->channelContext->getChannel();
         }
+
         if (null === $localeCode) {
             $localeCode = $this->localeContext->getLocaleCode();
         }
 
-        return sprintf('%s_%s_%s_%s', $cachePrefix, $cacheKey, (string) $channel->getCode(), $localeCode);
+        $cacheKey = sprintf('%s_%s_%s_%s', $cachePrefix, $cacheKey, (string) $channel->getCode(), $localeCode);
+
+        return preg_replace(
+            sprintf('/[%s]+/', preg_quote(ItemInterface::RESERVED_CHARACTERS, '/')),
+            '_',
+            $cacheKey
+        );
     }
 
     /**
