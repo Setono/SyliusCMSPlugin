@@ -19,8 +19,8 @@
 
         <service id="setono_sylius_cms.cached_renderer.block"
                  class="Setono\SyliusCMSPlugin\Renderer\CachedBlockRenderer"
-                 decorates="setono_sylius_cms.renderer.block">
-            <argument type="service" id=".inner"/>
+                 decorates="setono_sylius_cms.renderer.block" decoration-priority="64">
+            <argument type="service" id="setono_sylius_cms.cached_renderer.block.inner"/>
             <argument type="service" id="sscms_elements_cache_pool"/>
             <argument type="service" id="setono_sylius_cms.generator.element_cache_key"/>
             <argument>%setono_sylius_cms.cache_ttl%</argument>
@@ -44,8 +44,8 @@
 
         <service id="setono_sylius_cms.cached_renderer.carousel"
                  class="Setono\SyliusCMSPlugin\Renderer\CachedCarouselRenderer"
-                 decorates="setono_sylius_cms.renderer.carousel">
-            <argument type="service" id=".inner"/>
+                 decorates="setono_sylius_cms.renderer.carousel" decoration-priority="64">
+            <argument type="service" id="setono_sylius_cms.cached_renderer.carousel.inner"/>
             <argument type="service" id="sscms_elements_cache_pool"/>
             <argument type="service" id="setono_sylius_cms.generator.element_cache_key"/>
             <argument>%setono_sylius_cms.cache_ttl%</argument>
@@ -67,8 +67,8 @@
 
         <service id="setono_sylius_cms.cached_renderer.view"
                  class="Setono\SyliusCMSPlugin\Renderer\CachedViewRenderer"
-                 decorates="setono_sylius_cms.renderer.view">
-            <argument type="service" id=".inner"/>
+                 decorates="setono_sylius_cms.renderer.view" decoration-priority="64">
+            <argument type="service" id="setono_sylius_cms.cached_renderer.view.inner"/>
             <argument type="service" id="sscms_elements_cache_pool"/>
             <argument type="service" id="setono_sylius_cms.generator.element_cache_key"/>
             <argument>%setono_sylius_cms.cache_ttl%</argument>
