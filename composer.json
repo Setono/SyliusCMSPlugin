@@ -9,7 +9,7 @@
         "doctrine/collections": "^1.6",
         "doctrine/dbal": "^2.13",
         "doctrine/persistence": "^2.2",
-        "fakerphp/faker": "^1.9",
+        "fakerphp/faker": "^1.17",
         "knplabs/gaufrette": "^0.8",
         "knplabs/knp-gaufrette-bundle": "^0.7",
         "knplabs/knp-menu": "^3.3",
