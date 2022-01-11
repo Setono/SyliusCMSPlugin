@@ -9,9 +9,8 @@ use Setono\SyliusCMSPlugin\Model\AssetInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Previewer\Preview;
 use Setono\SyliusCMSPlugin\Previewer\PreviewerInterface;
-use Setono\SyliusCMSPlugin\Renderer\BlockRendererInterface;
-use Setono\SyliusCMSPlugin\Renderer\CarouselRendererInterface;
-use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
+use Setono\SyliusCMSPlugin\Renderer\RendererInterface;
+use Setono\SyliusCMSPlugin\Renderer\Response;
 use Setono\SyliusCMSPlugin\Twig\Extension\Extension;
 use Setono\SyliusCMSPlugin\Twig\Extension\Runtime;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
@@ -31,24 +30,24 @@ final class ExtensionTest extends IntegrationTestCase
         $runtimeLoader = new class() implements RuntimeLoaderInterface {
             public function load($class): Runtime
             {
-                $blockRenderer = new class() implements BlockRendererInterface {
-                    public function render($block): string
+                $blockRenderer = new class() implements RendererInterface {
+                    public function render($element): Response
                     {
-                        return 'block';
+                        return new Response('block');
                     }
                 };
 
-                $viewRenderer = new class() implements ViewRendererInterface {
-                    public function render($view): string
+                $viewRenderer = new class() implements RendererInterface {
+                    public function render($element): Response
                     {
-                        return 'view';
+                        return new Response('view');
                     }
                 };
 
-                $carouselRenderer = new class() implements CarouselRendererInterface {
-                    public function render($carousel): string
+                $carouselRenderer = new class() implements RendererInterface {
+                    public function render($element): Response
                     {
-                        return 'carousel';
+                        return new Response('carousel');
                     }
                 };
 
