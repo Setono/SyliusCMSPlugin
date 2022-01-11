@@ -5,17 +5,13 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Stack;
 
 use ArrayIterator;
-use Setono\SyliusCMSPlugin\Model\BlockInterface;
-use Setono\SyliusCMSPlugin\Model\CarouselInterface;
-use Setono\SyliusCMSPlugin\Model\ElementInterface;
-use Setono\SyliusCMSPlugin\Model\ViewInterface;
 
 final class ElementStack implements ElementStackInterface, \IteratorAggregate
 {
-    /** @var array<string, ElementInterface> */
+    /** @var array<string, Element> */
     private array $elements = [];
 
-    public function push(ElementInterface $element): void
+    public function push(Element $element): void
     {
         if (isset($this->elements[$element->getIdentifier()])) {
             return;
@@ -31,22 +27,22 @@ final class ElementStack implements ElementStackInterface, \IteratorAggregate
 
     public function getBlocks(): array
     {
-        return array_filter($this->elements, static function (ElementInterface $element): bool {
-            return $element instanceof BlockInterface;
+        return array_filter($this->elements, static function (Element $element): bool {
+            return $element->isBlock();
         });
     }
 
     public function getCarousels(): array
     {
-        return array_filter($this->elements, static function (ElementInterface $element): bool {
-            return $element instanceof CarouselInterface;
+        return array_filter($this->elements, static function (Element $element): bool {
+            return $element->isCarousel();
         });
     }
 
     public function getViews(): array
     {
-        return array_filter($this->elements, static function (ElementInterface $element): bool {
-            return $element instanceof ViewInterface;
+        return array_filter($this->elements, static function (Element $element): bool {
+            return $element->isView();
         });
     }
 

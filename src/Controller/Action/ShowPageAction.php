@@ -6,7 +6,7 @@ namespace Setono\SyliusCMSPlugin\Controller\Action;
 
 use Setono\SyliusCMSPlugin\Checker\Eligibility\Page\EligibilityCheckerInterface;
 use Setono\SyliusCMSPlugin\Element\PageElement;
-use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
+use Setono\SyliusCMSPlugin\Renderer\RendererInterface;
 use Setono\SyliusCMSPlugin\Repository\PageRepositoryInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,7 +22,7 @@ final class ShowPageAction
 
     private Environment $twig;
 
-    private ViewRendererInterface $viewRenderer;
+    private RendererInterface $viewRenderer;
 
     private EligibilityCheckerInterface $eligibilityChecker;
 
@@ -30,7 +30,7 @@ final class ShowPageAction
         LocaleContextInterface $localeContext,
         PageRepositoryInterface $pageRepository,
         Environment $twig,
-        ViewRendererInterface $viewRenderer,
+        RendererInterface $viewRenderer,
         EligibilityCheckerInterface $eligibilityChecker
     ) {
         $this->localeContext = $localeContext;
@@ -51,7 +51,7 @@ final class ShowPageAction
 
         $view = $page->getView();
         if (null !== $view) {
-            $content = $this->viewRenderer->render($view);
+            $content = (string) $this->viewRenderer->render($view);
         }
 
         return new Response($this->twig->render('@SetonoSyliusCMSPlugin/page.html.twig', [

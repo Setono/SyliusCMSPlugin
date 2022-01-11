@@ -8,12 +8,17 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Setono\SyliusCMSPlugin\Element\ViewElement;
+use Setono\SyliusCMSPlugin\Model\BlockInterface;
+use Setono\SyliusCMSPlugin\Model\ViewInterface;
 use Setono\SyliusCMSPlugin\Repository\ViewRepositoryInterface;
-use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
 use Setono\SyliusCMSPlugin\Template\RegistryInterface;
 use Twig\Environment;
+use Webmozart\Assert\Assert;
 
-final class ViewRenderer implements ViewRendererInterface, LoggerAwareInterface
+/**
+ * @implements RendererInterface<ViewInterface>
+ */
+final class ViewRenderer implements RendererInterface, LoggerAwareInterface
 {
     private LoggerInterface $logger;
 
@@ -23,18 +28,19 @@ final class ViewRenderer implements ViewRendererInterface, LoggerAwareInterface
 
     private RegistryInterface $templateRegistry;
 
-    private BlockRendererInterface $blockRenderer;
-
-    private ElementStackInterface $elementStack;
+    /** @var RendererInterface<BlockInterface> */
+    private RendererInterface $blockRenderer;
 
     private bool $debug;
 
+    /**
+     * @param RendererInterface<BlockInterface> $blockRenderer
+     */
     public function __construct(
         ViewRepositoryInterface $viewRepository,
         Environment $twig,
         RegistryInterface $templateRegistry,
-        BlockRendererInterface $blockRenderer,
-        ElementStackInterface $elementStack,
+        RendererInterface $blockRenderer,
         bool $debug = false
     ) {
         $this->logger = new NullLogger();
@@ -42,35 +48,35 @@ final class ViewRenderer implements ViewRendererInterface, LoggerAwareInterface
         $this->twig = $twig;
         $this->templateRegistry = $templateRegistry;
         $this->blockRenderer = $blockRenderer;
-        $this->elementStack = $elementStack;
         $this->debug = $debug;
     }
 
-    public function render($view): string
+    public function render($element): Response
     {
-        if (is_string($view)) {
-            $code = $view;
-            $view = $this->viewRepository->findOneByCode($code);
-            if (null === $view) {
+        if (is_string($element)) {
+            $code = $element;
+            $element = $this->viewRepository->findOneByCode($code);
+            if (null === $element) {
                 $this->logger->error(sprintf('The view "%s" is not defined', $code));
 
                 return $this->renderNonExistingView($code);
             }
         }
+        Assert::isInstanceOf($element, ViewInterface::class);
 
-        $templateCode = $view->getTemplate();
-        if (null === $templateCode) {
-            return '';
-        }
+        $templateCode = $element->getTemplate();
+        Assert::notNull($templateCode);
 
         if (!$this->templateRegistry->has($templateCode)) {
-            return '';
+            $this->logger->error(sprintf('The template "%s" is not defined', $templateCode));
+
+            return $this->renderNonExistingTemplate($templateCode);
         }
 
         $template = $this->templateRegistry->get($templateCode);
 
         $context = [];
-        foreach ($view->getViewBlocks() as $viewBlock) {
+        foreach ($element->getViewBlocks() as $viewBlock) {
             $block = $viewBlock->getBlock();
             if (null === $block) {
                 continue;
@@ -81,22 +87,31 @@ final class ViewRenderer implements ViewRendererInterface, LoggerAwareInterface
             $context[$key] = isset($context[$key]) ? $context[$key] . $content : $content;
         }
 
-        $this->elementStack->push($view);
-
-        return $this->twig->render('@SetonoSyliusCMSPlugin/view.html.twig', [
-            'view' => new ViewElement($view, $this->twig->render($template->getCode(), $context)),
-        ]);
+        return SuccessfulResponse::fromElement($element, $this->twig->render('@SetonoSyliusCMSPlugin/view.html.twig', [
+            'view' => new ViewElement($element, $this->twig->render($template->getCode(), $context)),
+        ]));
     }
 
-    private function renderNonExistingView(string $code): string
+    private function renderNonExistingView(string $code): Response
     {
         if (!$this->debug) {
-            return '';
+            return Response::empty();
         }
 
-        return $this->twig->render('@SetonoSyliusCMSPlugin/view/non_existing.html.twig', [
+        return new Response($this->twig->render('@SetonoSyliusCMSPlugin/view/non_existing.html.twig', [
             'code' => $code,
-        ]);
+        ]));
+    }
+
+    private function renderNonExistingTemplate(string $templateCode): Response
+    {
+        if (!$this->debug) {
+            return Response::empty();
+        }
+
+        return new Response($this->twig->render('@SetonoSyliusCMSPlugin/view/non_existing_template.html.twig', [
+            'code' => $templateCode,
+        ]));
     }
 
     public function setLogger(LoggerInterface $logger): void

@@ -8,11 +8,16 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Setono\SyliusCMSPlugin\Element\CarouselElement;
+use Setono\SyliusCMSPlugin\Model\BlockInterface;
+use Setono\SyliusCMSPlugin\Model\CarouselInterface;
 use Setono\SyliusCMSPlugin\Repository\CarouselRepositoryInterface;
-use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
 use Twig\Environment;
+use Webmozart\Assert\Assert;
 
-final class CarouselRenderer implements CarouselRendererInterface, LoggerAwareInterface
+/**
+ * @implements RendererInterface<CarouselInterface>
+ */
+final class CarouselRenderer implements RendererInterface, LoggerAwareInterface
 {
     private LoggerInterface $logger;
 
@@ -20,19 +25,20 @@ final class CarouselRenderer implements CarouselRendererInterface, LoggerAwareIn
 
     private Environment $twig;
 
-    private BlockRendererInterface $blockRenderer;
-
-    private ElementStackInterface $elementStack;
+    /** @var RendererInterface<BlockInterface> */
+    private RendererInterface $blockRenderer;
 
     private string $template;
 
     private bool $debug;
 
+    /**
+     * @param RendererInterface<BlockInterface> $blockRenderer
+     */
     public function __construct(
         CarouselRepositoryInterface $carouselRepository,
         Environment $twig,
-        BlockRendererInterface $blockRenderer,
-        ElementStackInterface $elementStack,
+        RendererInterface $blockRenderer,
         string $template,
         bool $debug
     ) {
@@ -40,26 +46,26 @@ final class CarouselRenderer implements CarouselRendererInterface, LoggerAwareIn
         $this->carouselRepository = $carouselRepository;
         $this->twig = $twig;
         $this->blockRenderer = $blockRenderer;
-        $this->elementStack = $elementStack;
         $this->template = $template;
         $this->debug = $debug;
     }
 
-    public function render($carousel): string
+    public function render($element): Response
     {
-        if (is_string($carousel)) {
-            $code = $carousel;
-            $carousel = $this->carouselRepository->findOneByCode($code);
-            if (null === $carousel) {
+        if (is_string($element)) {
+            $code = $element;
+            $element = $this->carouselRepository->findOneByCode($code);
+            if (null === $element) {
                 $this->logger->error(sprintf('The carousel "%s" is not defined', $code));
 
                 return $this->renderNonExistingCarousel($code);
             }
         }
+        Assert::isInstanceOf($element, CarouselInterface::class);
 
         $key = 'sscms_carousel_elements';
         $context = [];
-        foreach ($carousel->getCarouselBlocks() as $carouselBlock) {
+        foreach ($element->getCarouselBlocks() as $carouselBlock) {
             $block = $carouselBlock->getBlock();
             if (null === $block) {
                 continue;
@@ -68,24 +74,22 @@ final class CarouselRenderer implements CarouselRendererInterface, LoggerAwareIn
             $content = $this->blockRenderer->render($block);
             $context[$key][] = $content;
         }
-        $context['carousel'] = $carousel;
+        $context['carousel'] = $element;
 
-        $this->elementStack->push($carousel);
-
-        return $this->twig->render('@SetonoSyliusCMSPlugin/carousel.html.twig', [
-            'carousel' => new CarouselElement($carousel, $this->twig->render($this->template, $context)),
-        ]);
+        return SuccessfulResponse::fromElement($element, $this->twig->render('@SetonoSyliusCMSPlugin/carousel.html.twig', [
+            'carousel' => new CarouselElement($element, $this->twig->render($this->template, $context)),
+        ]));
     }
 
-    private function renderNonExistingCarousel(string $code): string
+    private function renderNonExistingCarousel(string $code): Response
     {
         if (!$this->debug) {
-            return '';
+            return Response::empty();
         }
 
-        return $this->twig->render('@SetonoSyliusCMSPlugin/carousel/non_existing.html.twig', [
+        return new Response($this->twig->render('@SetonoSyliusCMSPlugin/carousel/non_existing.html.twig', [
             'code' => $code,
-        ]);
+        ]));
     }
 
     public function setLogger(LoggerInterface $logger): void

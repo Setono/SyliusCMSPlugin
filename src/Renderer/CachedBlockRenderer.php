@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Renderer;
 
 use Setono\SyliusCMSPlugin\Generator\ElementCacheKeyGeneratorInterface;
+use Setono\SyliusCMSPlugin\Model\BlockInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
-final class CachedBlockRenderer implements BlockRendererInterface
+/**
+ * @implements RendererInterface<BlockInterface>
+ */
+final class CachedBlockRenderer implements RendererInterface
 {
-    private BlockRendererInterface $decoratedRenderer;
+    /** @var RendererInterface<BlockInterface> */
+    private RendererInterface $decoratedRenderer;
 
     private CacheInterface $cachePool;
 
@@ -22,10 +27,11 @@ final class CachedBlockRenderer implements BlockRendererInterface
     private string $blockClass;
 
     /**
+     * @param RendererInterface<BlockInterface> $decoratedRenderer
      * @param class-string $blockClass
      */
     public function __construct(
-        BlockRendererInterface $decoratedRenderer,
+        RendererInterface $decoratedRenderer,
         CacheInterface $cachePool,
         ElementCacheKeyGeneratorInterface $elementCacheKeyGenerator,
         int $cacheTtl,
@@ -38,15 +44,15 @@ final class CachedBlockRenderer implements BlockRendererInterface
         $this->blockClass = $blockClass;
     }
 
-    public function render($block): string
+    public function render($element): Response
     {
-        $cacheKey = $this->elementCacheKeyGenerator->generateCacheKey($block, $this->blockClass);
+        $cacheKey = $this->elementCacheKeyGenerator->generateCacheKey($element, $this->blockClass);
 
         /** @psalm-suppress ArgumentTypeCoercion */
-        return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($block): string {
+        return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($element): Response {
             $item->expiresAfter($this->cacheTtl);
 
-            return $this->decoratedRenderer->render($block);
+            return $this->decoratedRenderer->render($element);
         });
     }
 }

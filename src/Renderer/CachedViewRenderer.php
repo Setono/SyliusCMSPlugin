@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Renderer;
 
 use Setono\SyliusCMSPlugin\Generator\ElementCacheKeyGeneratorInterface;
+use Setono\SyliusCMSPlugin\Model\ViewInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
-final class CachedViewRenderer implements ViewRendererInterface
+/**
+ * @implements RendererInterface<ViewInterface>
+ */
+final class CachedViewRenderer implements RendererInterface
 {
-    private ViewRendererInterface $decoratedRenderer;
+    /** @var RendererInterface<ViewInterface> */
+    private RendererInterface $decoratedRenderer;
 
     private CacheInterface $cachePool;
 
@@ -22,10 +27,11 @@ final class CachedViewRenderer implements ViewRendererInterface
     private string $viewClass;
 
     /**
+     * @param RendererInterface<ViewInterface> $decoratedRenderer
      * @param class-string $viewClass
      */
     public function __construct(
-        ViewRendererInterface $decoratedRenderer,
+        RendererInterface $decoratedRenderer,
         CacheInterface $cachePool,
         ElementCacheKeyGeneratorInterface $elementCacheKeyGenerator,
         int $cacheTtl,
@@ -38,15 +44,15 @@ final class CachedViewRenderer implements ViewRendererInterface
         $this->viewClass = $viewClass;
     }
 
-    public function render($view): string
+    public function render($element): Response
     {
-        $cacheKey = $this->elementCacheKeyGenerator->generateCacheKey($view, $this->viewClass);
+        $cacheKey = $this->elementCacheKeyGenerator->generateCacheKey($element, $this->viewClass);
 
         /** @psalm-suppress ArgumentTypeCoercion */
-        return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($view): string {
+        return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($element): Response {
             $item->expiresAfter($this->cacheTtl);
 
-            return $this->decoratedRenderer->render($view);
+            return $this->decoratedRenderer->render($element);
         });
     }
 }
