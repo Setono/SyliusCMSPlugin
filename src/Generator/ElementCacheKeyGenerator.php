@@ -27,7 +27,7 @@ final class ElementCacheKeyGenerator implements ElementCacheKeyGeneratorInterfac
 
     public function generateCacheKey(
         $element,
-        string $elementType = null,
+        string $elementClass = null,
         ChannelInterface $channel = null,
         string $localeCode = null
     ): string {
@@ -41,7 +41,7 @@ final class ElementCacheKeyGenerator implements ElementCacheKeyGeneratorInterfac
 
         $cacheKey = sprintf(
             '%s_%s_%s_%s',
-            self::resolvePrefix($element, $elementType),
+            self::resolvePrefix($element, $elementClass),
             self::resolveIdentifier($element),
             (string) $channel->getCode(),
             $localeCode
