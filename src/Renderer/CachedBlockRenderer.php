@@ -18,8 +18,12 @@ final class CachedBlockRenderer implements BlockRendererInterface
 
     private int $cacheTtl;
 
+    /** @var class-string */
     private string $blockClass;
 
+    /**
+     * @param class-string $blockClass
+     */
     public function __construct(
         BlockRendererInterface $decoratedRenderer,
         CacheInterface $cachePool,
@@ -36,7 +40,7 @@ final class CachedBlockRenderer implements BlockRendererInterface
 
     public function render($block): string
     {
-        $cacheKey = $this->elementCacheKeyProvider->getCacheKey($block, $this->blockClass);
+        $cacheKey = $this->elementCacheKeyProvider->generateCacheKey($block, $this->blockClass);
 
         /** @psalm-suppress ArgumentTypeCoercion */
         return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($block): string {

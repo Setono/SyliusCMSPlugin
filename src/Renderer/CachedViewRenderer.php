@@ -18,8 +18,12 @@ final class CachedViewRenderer implements ViewRendererInterface
 
     private int $cacheTtl;
 
+    /** @var class-string */
     private string $viewClass;
 
+    /**
+     * @param class-string $viewClass
+     */
     public function __construct(
         ViewRendererInterface $decoratedRenderer,
         CacheInterface $cachePool,
@@ -36,7 +40,7 @@ final class CachedViewRenderer implements ViewRendererInterface
 
     public function render($view): string
     {
-        $cacheKey = $this->elementCacheKeyProvider->getCacheKey($view, $this->viewClass);
+        $cacheKey = $this->elementCacheKeyProvider->generateCacheKey($view, $this->viewClass);
 
         /** @psalm-suppress ArgumentTypeCoercion */
         return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($view): string {
