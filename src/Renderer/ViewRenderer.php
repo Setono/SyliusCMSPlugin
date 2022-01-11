@@ -94,7 +94,7 @@ final class ViewRenderer implements ViewRendererInterface, LoggerAwareInterface
             return '';
         }
 
-        return $this->twig->render('@SetonoSyliusCMSPlugin/view/debug_message.twig', [
+        return $this->twig->render('@SetonoSyliusCMSPlugin/view/non_existing.html.twig', [
             'code' => $code,
         ]);
     }
