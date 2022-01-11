@@ -43,7 +43,7 @@ final class GenericElementCacheInvalidatorListener
 
     private function invalidateCache(ElementInterface $element): void
     {
-        $cacheKey = $this->elementCacheKeyProvider->getCacheKey($element);
+        $cacheKey = $this->elementCacheKeyProvider->generateCacheKey($element);
 
         try {
             $this->cachePool->delete($cacheKey);

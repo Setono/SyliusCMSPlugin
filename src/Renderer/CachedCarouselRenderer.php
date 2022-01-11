@@ -18,8 +18,12 @@ final class CachedCarouselRenderer implements CarouselRendererInterface
 
     private int $cacheTtl;
 
+    /** @var class-string */
     private string $carouselClass;
 
+    /**
+     * @param class-string $carouselClass
+     */
     public function __construct(
         CarouselRendererInterface $decoratedRenderer,
         CacheInterface $cachePool,
@@ -36,7 +40,7 @@ final class CachedCarouselRenderer implements CarouselRendererInterface
 
     public function render($carousel): string
     {
-        $cacheKey = $this->elementCacheKeyProvider->getCacheKey($carousel, $this->carouselClass);
+        $cacheKey = $this->elementCacheKeyProvider->generateCacheKey($carousel, $this->carouselClass);
 
         /** @psalm-suppress ArgumentTypeCoercion */
         return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($carousel): string {

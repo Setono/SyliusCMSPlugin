@@ -25,15 +25,12 @@ final class ElementCacheKeyGenerator implements ElementCacheKeyGeneratorInterfac
         $this->localeContext = $localeContext;
     }
 
-    public function getCacheKey(
+    public function generateCacheKey(
         $element,
         string $elementType = null,
         ChannelInterface $channel = null,
         string $localeCode = null
     ): string {
-        $cachePrefix = $element instanceof ElementInterface ? get_class($element) : (string) $elementType;
-        $cacheKey = self::resolveCacheKey($element);
-
         if (null === $channel) {
             $channel = $this->channelContext->getChannel();
         }
@@ -42,7 +39,13 @@ final class ElementCacheKeyGenerator implements ElementCacheKeyGeneratorInterfac
             $localeCode = $this->localeContext->getLocaleCode();
         }
 
-        $cacheKey = sprintf('%s_%s_%s_%s', $cachePrefix, $cacheKey, (string) $channel->getCode(), $localeCode);
+        $cacheKey = sprintf(
+            '%s_%s_%s_%s',
+            self::resolvePrefix($element, $elementType),
+            self::resolveIdentifier($element),
+            (string) $channel->getCode(),
+            $localeCode
+        );
 
         return preg_replace(
             sprintf('/[%s]+/', preg_quote(ItemInterface::RESERVED_CHARACTERS, '/')),
@@ -52,9 +55,25 @@ final class ElementCacheKeyGenerator implements ElementCacheKeyGeneratorInterfac
     }
 
     /**
+     * @param ElementInterface|string $element
+     */
+    private static function resolvePrefix($element, string $elementType = null): string
+    {
+        if ($element instanceof ElementInterface) {
+            return get_class($element);
+        }
+
+        if (null !== $elementType) {
+            return $elementType;
+        }
+
+        throw new \InvalidArgumentException('If the $element is not an object you should provide the $elementType');
+    }
+
+    /**
      * @param ElementInterface|string|mixed $element
      */
-    private static function resolveCacheKey($element): string
+    private static function resolveIdentifier($element): string
     {
         if ($element instanceof CodeAwareInterface) {
             return (string) $element->getCode();
