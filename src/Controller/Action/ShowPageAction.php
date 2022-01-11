@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Controller\Action;
 
 use Setono\SyliusCMSPlugin\Checker\Eligibility\Page\EligibilityCheckerInterface;
+use Setono\SyliusCMSPlugin\Element\PageElement;
 use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
 use Setono\SyliusCMSPlugin\Repository\PageRepositoryInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
@@ -54,7 +55,7 @@ final class ShowPageAction
         }
 
         return new Response($this->twig->render('@SetonoSyliusCMSPlugin/page.html.twig', [
-            'content' => $content,
+            'page' => new PageElement($page, $content),
         ]));
     }
 }

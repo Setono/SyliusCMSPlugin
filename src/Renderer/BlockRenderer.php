@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Renderer;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Setono\SyliusCMSPlugin\Element\BlockElement;
 use Setono\SyliusCMSPlugin\Repository\BlockRepositoryInterface;
 use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
 use Twig\Environment;
@@ -58,8 +59,7 @@ final class BlockRenderer implements BlockRendererInterface, LoggerAwareInterfac
         }
 
         return $this->twig->render('@SetonoSyliusCMSPlugin/block.html.twig', [
-            'block' => $block,
-            'renderedBlock' => $renderedBlockContent,
+            'block' => new BlockElement($block, $renderedBlockContent),
         ]);
     }
 

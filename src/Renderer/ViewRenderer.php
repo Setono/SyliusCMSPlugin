@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Renderer;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Setono\SyliusCMSPlugin\Element\ViewElement;
 use Setono\SyliusCMSPlugin\Repository\ViewRepositoryInterface;
 use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
 use Setono\SyliusCMSPlugin\Template\RegistryInterface;
@@ -80,13 +81,10 @@ final class ViewRenderer implements ViewRendererInterface, LoggerAwareInterface
             $context[$key] = isset($context[$key]) ? $context[$key] . $content : $content;
         }
 
-        $renderedView = $this->twig->render($template->getCode(), $context);
-
         $this->elementStack->push($view);
 
         return $this->twig->render('@SetonoSyliusCMSPlugin/view.html.twig', [
-            'view' => $view,
-            'rendered_view' => $renderedView,
+            'view' => new ViewElement($view, $this->twig->render($template->getCode(), $context)),
         ]);
     }
 

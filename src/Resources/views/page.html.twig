@@ -1,6 +1,5 @@
 {% extends '@SyliusShop/layout.html.twig' %}
 
 {% block content %}
-    {# todo add code #}
-    <div class="sscms-page">{{ content|raw }}</div>
+    <div class="sscms-page {{ page.resource.identifier }}">{{ page.rendered|raw }}</div>
 {% endblock %}
