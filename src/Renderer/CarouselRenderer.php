@@ -83,7 +83,7 @@ final class CarouselRenderer implements CarouselRendererInterface, LoggerAwareIn
             return '';
         }
 
-        return $this->twig->render('@SetonoSyliusCMSPlugin/carousel/debug_message.twig', [
+        return $this->twig->render('@SetonoSyliusCMSPlugin/carousel/non_existing.html.twig', [
             'code' => $code,
         ]);
     }

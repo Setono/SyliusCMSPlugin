@@ -77,7 +77,7 @@ final class BlockRenderer implements BlockRendererInterface, LoggerAwareInterfac
             return '';
         }
 
-        return $this->twig->render('@SetonoSyliusCMSPlugin/block/debug_message.twig', [
+        return $this->twig->render('@SetonoSyliusCMSPlugin/block/non_existing.html.twig', [
             'code' => $code,
         ]);
     }
