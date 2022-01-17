@@ -14,7 +14,7 @@
         "knplabs/knp-gaufrette-bundle": "^0.7",
         "knplabs/knp-menu": "^3.3",
         "liip/imagine-bundle": "^2.6",
-        "psr/cache": "^1.0 || ^2.0",
+        "psr/cache": "^1.0.1",
         "psr/log": "^1.1",
         "setono/editorjs-bundle": "^0.1.1",
         "setono/editorjs-php": "^0.1.2",
