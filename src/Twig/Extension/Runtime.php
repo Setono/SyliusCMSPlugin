@@ -6,7 +6,10 @@ namespace Setono\SyliusCMSPlugin\Twig\Extension;
 
 use Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
+use Setono\SyliusCMSPlugin\Model\BlockInterface;
+use Setono\SyliusCMSPlugin\Model\CarouselInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Model\ViewInterface;
 use Setono\SyliusCMSPlugin\Previewer\Preview;
 use Setono\SyliusCMSPlugin\Previewer\PreviewerInterface;
 use Setono\SyliusCMSPlugin\Renderer\RendererInterface;
@@ -19,10 +22,13 @@ use Twig\Extension\RuntimeExtensionInterface;
 
 final class Runtime implements RuntimeExtensionInterface
 {
+    /** @var RendererInterface<BlockInterface> */
     private RendererInterface $blockRenderer;
 
+    /** @var RendererInterface<ViewInterface> */
     private RendererInterface $viewRenderer;
 
+    /** @var RendererInterface<CarouselInterface> */
     private RendererInterface $carouselRenderer;
 
     private UrlGeneratorInterface $router;
@@ -33,6 +39,11 @@ final class Runtime implements RuntimeExtensionInterface
 
     private PreviewerInterface $previewer;
 
+    /**
+     * @param RendererInterface<BlockInterface> $blockRenderer
+     * @param RendererInterface<ViewInterface> $viewRenderer
+     * @param RendererInterface<CarouselInterface> $carouselRenderer
+     */
     public function __construct(
         RendererInterface $blockRenderer,
         RendererInterface $viewRenderer,
