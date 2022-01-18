@@ -5,19 +5,26 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Stack;
 
 use ArrayIterator;
+use Setono\SyliusCMSPlugin\Renderer\ElementId;
 
 final class ElementStack implements ElementStackInterface, \IteratorAggregate
 {
-    /** @var array<string, Element> */
+    /** @var array<string, ElementId> */
     private array $elements = [];
 
-    public function push(Element $element): void
+    public function push($elements): void
     {
-        if (isset($this->elements[$element->getIdentifier()])) {
-            return;
+        if (!is_array($elements)) {
+            $elements = [$elements];
         }
 
-        $this->elements[$element->getIdentifier()] = $element;
+        foreach ($elements as $element) {
+            if (isset($this->elements[$element->getIdentifier()])) {
+                continue;
+            }
+
+            $this->elements[$element->getIdentifier()] = $element;
+        }
     }
 
     public function hasElements(): bool
@@ -27,21 +34,21 @@ final class ElementStack implements ElementStackInterface, \IteratorAggregate
 
     public function getBlocks(): array
     {
-        return array_filter($this->elements, static function (Element $element): bool {
+        return array_filter($this->elements, static function (ElementId $element): bool {
             return $element->isBlock();
         });
     }
 
     public function getCarousels(): array
     {
-        return array_filter($this->elements, static function (Element $element): bool {
+        return array_filter($this->elements, static function (ElementId $element): bool {
             return $element->isCarousel();
         });
     }
 
     public function getViews(): array
     {
-        return array_filter($this->elements, static function (Element $element): bool {
+        return array_filter($this->elements, static function (ElementId $element): bool {
             return $element->isView();
         });
     }

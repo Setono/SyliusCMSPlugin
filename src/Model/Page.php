@@ -54,6 +54,11 @@ class Page implements PageInterface
         return sprintf('sscms-page-%s', (string) $this->getCode());
     }
 
+    public function getType(): string
+    {
+        return 'page';
+    }
+
     public function getCode(): ?string
     {
         return $this->code;

@@ -21,7 +21,6 @@
                  decorates="setono_sylius_cms.renderer.block" decoration-priority="32">
             <argument type="service" id="setono_sylius_cms.stack.element"/>
             <argument type="service" id="setono_sylius_cms.renderer.block_element_stack_renderer.inner"/>
-            <argument>block</argument>
         </service>
 
         <service id="setono_sylius_cms.renderer.carousel"
@@ -41,7 +40,6 @@
                  decorates="setono_sylius_cms.renderer.carousel" decoration-priority="32">
             <argument type="service" id="setono_sylius_cms.stack.element"/>
             <argument type="service" id="setono_sylius_cms.renderer.carousel_element_stack_renderer.inner"/>
-            <argument>carousel</argument>
         </service>
 
         <service id="setono_sylius_cms.renderer.view"
@@ -61,7 +59,6 @@
                  decorates="setono_sylius_cms.renderer.view" decoration-priority="32">
             <argument type="service" id="setono_sylius_cms.stack.element"/>
             <argument type="service" id="setono_sylius_cms.renderer.view_element_stack_renderer.inner"/>
-            <argument>carousel</argument>
         </service>
     </services>
 </container>

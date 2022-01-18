@@ -63,6 +63,8 @@ final class CarouselRenderer implements RendererInterface, LoggerAwareInterface
         }
         Assert::isInstanceOf($element, CarouselInterface::class);
 
+        $elementIds = [];
+
         $key = 'sscms_carousel_elements';
         $context = [];
         foreach ($element->getCarouselBlocks() as $carouselBlock) {
@@ -71,14 +73,19 @@ final class CarouselRenderer implements RendererInterface, LoggerAwareInterface
                 continue;
             }
 
-            $content = $this->blockRenderer->render($block);
-            $context[$key][] = $content;
+            $response = $this->blockRenderer->render($block);
+            $context[$key][] = $response->getContent();
+
+            $elementIds = array_merge($elementIds, $response->getElementIds());
         }
         $context['carousel'] = $element;
 
-        return SuccessfulResponse::fromElement($element, $this->twig->render('@SetonoSyliusCMSPlugin/carousel.html.twig', [
+        $response = new Response($this->twig->render('@SetonoSyliusCMSPlugin/carousel.html.twig', [
             'carousel' => new CarouselElement($element, $this->twig->render($this->template, $context)),
-        ]));
+        ]), $elementIds);
+        $response->addElementId(ElementId::fromResource($element));
+
+        return $response;
     }
 
     private function renderNonExistingCarousel(string $code): Response

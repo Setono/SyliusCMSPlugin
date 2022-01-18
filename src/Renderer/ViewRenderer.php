@@ -75,6 +75,8 @@ final class ViewRenderer implements RendererInterface, LoggerAwareInterface
 
         $template = $this->templateRegistry->get($templateCode);
 
+        $elementIds = [];
+
         $context = [];
         foreach ($element->getViewBlocks() as $viewBlock) {
             $block = $viewBlock->getBlock();
@@ -83,13 +85,18 @@ final class ViewRenderer implements RendererInterface, LoggerAwareInterface
             }
 
             $key = sprintf('sscms_%s', (string) $viewBlock->getSection());
-            $content = $this->blockRenderer->render($block);
-            $context[$key] = isset($context[$key]) ? $context[$key] . $content : $content;
+            $response = $this->blockRenderer->render($block);
+            $context[$key] = isset($context[$key]) ? $context[$key] . $response->getContent() : $response->getContent();
+
+            $elementIds = array_merge($response->getElementIds(), $elementIds);
         }
 
-        return SuccessfulResponse::fromElement($element, $this->twig->render('@SetonoSyliusCMSPlugin/view.html.twig', [
+        $response = new Response($this->twig->render('@SetonoSyliusCMSPlugin/view.html.twig', [
             'view' => new ViewElement($element, $this->twig->render($template->getCode(), $context)),
-        ]));
+        ]), $elementIds);
+        $response->addElementId(ElementId::fromResource($element));
+
+        return $response;
     }
 
     private function renderNonExistingView(string $code): Response

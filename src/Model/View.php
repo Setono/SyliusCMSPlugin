@@ -37,6 +37,11 @@ class View implements ViewInterface
         return sprintf('sscms-view-%s', (string) $this->getCode());
     }
 
+    public function getType(): string
+    {
+        return 'view';
+    }
+
     public function getCode(): ?string
     {
         return $this->code;

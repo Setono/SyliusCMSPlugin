@@ -2,18 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Stack;
+namespace Setono\SyliusCMSPlugin\Renderer;
 
-use Setono\SyliusCMSPlugin\Renderer\SuccessfulResponse;
+use Setono\SyliusCMSPlugin\Model\ElementInterface;
 
-final class Element
+final class ElementId
 {
-    public const TYPE_BLOCK = 'block';
-
-    public const TYPE_CAROUSEL = 'carousel';
-
-    public const TYPE_VIEW = 'view';
-
     private int $id;
 
     private string $identifier;
@@ -27,9 +21,9 @@ final class Element
         $this->type = $type;
     }
 
-    public static function fromSuccessfulResponse(SuccessfulResponse $response, string $type): self
+    public static function fromResource(ElementInterface $element): self
     {
-        return new self($response->getId(), $response->getIdentifier(), $type);
+        return new self((int) $element->getId(), $element->getIdentifier(), $element->getType());
     }
 
     public function getId(): int
@@ -49,16 +43,16 @@ final class Element
 
     public function isBlock(): bool
     {
-        return self::TYPE_BLOCK === $this->type;
+        return ElementInterface::TYPE_BLOCK === $this->type;
     }
 
     public function isCarousel(): bool
     {
-        return self::TYPE_CAROUSEL === $this->type;
+        return ElementInterface::TYPE_CAROUSEL === $this->type;
     }
 
     public function isView(): bool
     {
-        return self::TYPE_VIEW === $this->type;
+        return ElementInterface::TYPE_VIEW === $this->type;
     }
 }

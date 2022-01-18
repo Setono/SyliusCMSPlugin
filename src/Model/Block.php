@@ -40,6 +40,11 @@ class Block implements BlockInterface
         return sprintf('sscms-block-%s', (string) $this->getCode());
     }
 
+    public function getType(): string
+    {
+        return 'block';
+    }
+
     public function getCode(): ?string
     {
         return $this->code;
