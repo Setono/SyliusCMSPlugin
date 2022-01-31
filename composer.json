@@ -73,7 +73,12 @@
         ]
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": false,
+            "ergebnis/composer-normalize": true,
+            "symfony/thanks": true
+        }
     },
     "extra": {
         "branch-alias": {
