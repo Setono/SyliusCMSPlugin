@@ -53,7 +53,7 @@ class Page implements PageInterface
 
     public function getType(): string
     {
-        return 'page';
+        return ElementInterface::TYPE_PAGE;
     }
 
     public function getCode(): ?string
