@@ -15,7 +15,7 @@
         "knplabs/knp-menu": "^3.3",
         "liip/imagine-bundle": "^2.6",
         "psr/cache": "^1.0 || ^2.0",
-        "psr/log": "^1.1",
+        "psr/log": "3.0.0",
         "setono/editorjs-bundle": "^0.1.1",
         "setono/editorjs-php": "^0.1.2",
         "stof/doctrine-extensions-bundle": "^1.7",
