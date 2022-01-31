@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Renderer;
 
 use Setono\SyliusCMSPlugin\Generator\ElementCacheKeyGeneratorInterface;
+use Setono\SyliusCMSPlugin\Model\CarouselInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
-final class CachedCarouselRenderer implements CarouselRendererInterface
+/**
+ * @implements RendererInterface<CarouselInterface>
+ */
+final class CachedCarouselRenderer implements RendererInterface
 {
-    private CarouselRendererInterface $decoratedRenderer;
+    /** @var RendererInterface<CarouselInterface> */
+    private RendererInterface $decoratedRenderer;
 
     private CacheInterface $cachePool;
 
@@ -22,10 +27,11 @@ final class CachedCarouselRenderer implements CarouselRendererInterface
     private string $carouselClass;
 
     /**
+     * @param RendererInterface<CarouselInterface> $decoratedRenderer
      * @param class-string $carouselClass
      */
     public function __construct(
-        CarouselRendererInterface $decoratedRenderer,
+        RendererInterface $decoratedRenderer,
         CacheInterface $cachePool,
         ElementCacheKeyGeneratorInterface $elementCacheKeyGenerator,
         int $cacheTtl,
@@ -38,15 +44,15 @@ final class CachedCarouselRenderer implements CarouselRendererInterface
         $this->carouselClass = $carouselClass;
     }
 
-    public function render($carousel): string
+    public function render($element): Response
     {
-        $cacheKey = $this->elementCacheKeyGenerator->generateCacheKey($carousel, $this->carouselClass);
+        $cacheKey = $this->elementCacheKeyGenerator->generateCacheKey($element, $this->carouselClass);
 
         /** @psalm-suppress ArgumentTypeCoercion */
-        return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($carousel): string {
+        return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($element): Response {
             $item->expiresAfter($this->cacheTtl);
 
-            return $this->decoratedRenderer->render($carousel);
+            return $this->decoratedRenderer->render($element);
         });
     }
 }

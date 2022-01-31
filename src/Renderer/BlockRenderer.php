@@ -8,12 +8,16 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Setono\SyliusCMSPlugin\Element\BlockElement;
+use Setono\SyliusCMSPlugin\Model\BlockInterface;
 use Setono\SyliusCMSPlugin\Repository\BlockRepositoryInterface;
-use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
 use Twig\Environment;
 use Twig\Error\Error;
+use Webmozart\Assert\Assert;
 
-final class BlockRenderer implements BlockRendererInterface, LoggerAwareInterface
+/**
+ * @implements RendererInterface<BlockInterface>
+ */
+final class BlockRenderer implements RendererInterface, LoggerAwareInterface
 {
     private LoggerInterface $logger;
 
@@ -21,46 +25,42 @@ final class BlockRenderer implements BlockRendererInterface, LoggerAwareInterfac
 
     private Environment $twig;
 
-    private ElementStackInterface $elementStack;
-
     private bool $debug;
 
     public function __construct(
         BlockRepositoryInterface $blockRepository,
         Environment $twig,
-        ElementStackInterface $elementStack,
         bool $debug = false
     ) {
         $this->logger = new NullLogger();
         $this->blockRepository = $blockRepository;
         $this->twig = $twig;
-        $this->elementStack = $elementStack;
         $this->debug = $debug;
     }
 
-    public function render($block): string
+    public function render($element): Response
     {
-        if (is_string($block)) {
-            $code = $block;
-            $block = $this->blockRepository->findOneByCode($code);
-            if (null === $block) {
+        if (is_string($element)) {
+            $code = $element;
+            $element = $this->blockRepository->findOneByCode($code);
+            if (null === $element) {
                 $this->logger->error(sprintf('The block "%s" is not defined', $code));
 
                 return $this->renderNonExistingBlock($code);
             }
         }
 
-        $this->elementStack->push($block);
+        Assert::isInstanceOf($element, BlockInterface::class);
 
         try {
-            $renderedBlockContent = $this->renderBlockContent($block->getContent() ?? '');
+            $renderedBlockContent = $this->renderBlockContent($element->getContent() ?? '');
         } catch (Error $exception) {
-            $renderedBlockContent = sprintf('<!-- Impossible to render the block "%s" because it contains malformed content. Error: %s -->', (string) $block->getCode(), $exception->getMessage());
+            $renderedBlockContent = sprintf('<!-- Impossible to render the block "%s" because it contains malformed content. Error: %s -->', (string) $element->getCode(), $exception->getMessage());
         }
 
-        return $this->twig->render('@SetonoSyliusCMSPlugin/block.html.twig', [
-            'block' => new BlockElement($block, $renderedBlockContent),
-        ]);
+        return new Response($this->twig->render('@SetonoSyliusCMSPlugin/block.html.twig', [
+            'block' => new BlockElement($element, $renderedBlockContent),
+        ]), ElementId::fromResource($element));
     }
 
     /**
@@ -71,15 +71,15 @@ final class BlockRenderer implements BlockRendererInterface, LoggerAwareInterfac
         return $this->twig->render($this->twig->createTemplate($blockContent));
     }
 
-    private function renderNonExistingBlock(string $code): string
+    private function renderNonExistingBlock(string $code): Response
     {
         if (!$this->debug) {
-            return '';
+            return Response::empty();
         }
 
-        return $this->twig->render('@SetonoSyliusCMSPlugin/block/non_existing.html.twig', [
+        return new Response($this->twig->render('@SetonoSyliusCMSPlugin/block/non_existing.html.twig', [
             'code' => $code,
-        ]);
+        ]));
     }
 
     public function setLogger(LoggerInterface $logger): void

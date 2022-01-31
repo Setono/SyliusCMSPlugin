@@ -5,23 +5,26 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Stack;
 
 use ArrayIterator;
-use Setono\SyliusCMSPlugin\Model\BlockInterface;
-use Setono\SyliusCMSPlugin\Model\CarouselInterface;
-use Setono\SyliusCMSPlugin\Model\ElementInterface;
-use Setono\SyliusCMSPlugin\Model\ViewInterface;
+use Setono\SyliusCMSPlugin\Renderer\ElementId;
 
 final class ElementStack implements ElementStackInterface, \IteratorAggregate
 {
-    /** @var array<string, ElementInterface> */
+    /** @var array<string, ElementId> */
     private array $elements = [];
 
-    public function push(ElementInterface $element): void
+    public function push($elements): void
     {
-        if (isset($this->elements[$element->getIdentifier()])) {
-            return;
+        if (!is_array($elements)) {
+            $elements = [$elements];
         }
 
-        $this->elements[$element->getIdentifier()] = $element;
+        foreach ($elements as $element) {
+            if (isset($this->elements[$element->getIdentifier()])) {
+                continue;
+            }
+
+            $this->elements[$element->getIdentifier()] = $element;
+        }
     }
 
     public function hasElements(): bool
@@ -31,22 +34,22 @@ final class ElementStack implements ElementStackInterface, \IteratorAggregate
 
     public function getBlocks(): array
     {
-        return array_filter($this->elements, static function (ElementInterface $element): bool {
-            return $element instanceof BlockInterface;
+        return array_filter($this->elements, static function (ElementId $element): bool {
+            return $element->isBlock();
         });
     }
 
     public function getCarousels(): array
     {
-        return array_filter($this->elements, static function (ElementInterface $element): bool {
-            return $element instanceof CarouselInterface;
+        return array_filter($this->elements, static function (ElementId $element): bool {
+            return $element->isCarousel();
         });
     }
 
     public function getViews(): array
     {
-        return array_filter($this->elements, static function (ElementInterface $element): bool {
-            return $element instanceof ViewInterface;
+        return array_filter($this->elements, static function (ElementId $element): bool {
+            return $element->isView();
         });
     }
 

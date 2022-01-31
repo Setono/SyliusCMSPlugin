@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Stack;
 
-use Setono\SyliusCMSPlugin\Model\BlockInterface;
-use Setono\SyliusCMSPlugin\Model\CarouselInterface;
-use Setono\SyliusCMSPlugin\Model\ElementInterface;
-use Setono\SyliusCMSPlugin\Model\ViewInterface;
+use Setono\SyliusCMSPlugin\Renderer\ElementId;
 
 interface ElementStackInterface extends \Traversable
 {
     /**
      * Pushes an element onto the stack
+     *
+     * @param ElementId|array<array-key, ElementId> $elements
      */
-    public function push(ElementInterface $element): void;
+    public function push($elements): void;
 
     /**
      * Returns true if the stack has any views OR blocks
@@ -22,17 +21,17 @@ interface ElementStackInterface extends \Traversable
     public function hasElements(): bool;
 
     /**
-     * @return array<array-key, BlockInterface>
+     * @return array<array-key, ElementId>
      */
     public function getBlocks(): array;
 
     /**
-     * @return array<array-key, CarouselInterface>
+     * @return array<array-key, ElementId>
      */
     public function getCarousels(): array;
 
     /**
-     * @return array<array-key, ViewInterface>
+     * @return array<array-key, ElementId>
      */
     public function getViews(): array;
 }

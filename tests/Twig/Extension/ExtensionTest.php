@@ -6,12 +6,14 @@ namespace Tests\Setono\SyliusCMSPlugin\Twig\Extension;
 
 use Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
+use Setono\SyliusCMSPlugin\Model\BlockInterface;
+use Setono\SyliusCMSPlugin\Model\CarouselInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Model\ViewInterface;
 use Setono\SyliusCMSPlugin\Previewer\Preview;
 use Setono\SyliusCMSPlugin\Previewer\PreviewerInterface;
-use Setono\SyliusCMSPlugin\Renderer\BlockRendererInterface;
-use Setono\SyliusCMSPlugin\Renderer\CarouselRendererInterface;
-use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
+use Setono\SyliusCMSPlugin\Renderer\RendererInterface;
+use Setono\SyliusCMSPlugin\Renderer\Response;
 use Setono\SyliusCMSPlugin\Twig\Extension\Extension;
 use Setono\SyliusCMSPlugin\Twig\Extension\Runtime;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
@@ -31,24 +33,27 @@ final class ExtensionTest extends IntegrationTestCase
         $runtimeLoader = new class() implements RuntimeLoaderInterface {
             public function load($class): Runtime
             {
-                $blockRenderer = new class() implements BlockRendererInterface {
-                    public function render($block): string
+                /** @var RendererInterface<BlockInterface> $blockRenderer */
+                $blockRenderer = new class() implements RendererInterface {
+                    public function render($element): Response
                     {
-                        return 'block';
+                        return new Response('block');
                     }
                 };
 
-                $viewRenderer = new class() implements ViewRendererInterface {
-                    public function render($view): string
+                /** @var RendererInterface<ViewInterface> $viewRenderer */
+                $viewRenderer = new class() implements RendererInterface {
+                    public function render($element): Response
                     {
-                        return 'view';
+                        return new Response('view');
                     }
                 };
 
-                $carouselRenderer = new class() implements CarouselRendererInterface {
-                    public function render($carousel): string
+                /** @var RendererInterface<CarouselInterface> $carouselRenderer */
+                $carouselRenderer = new class() implements RendererInterface {
+                    public function render($element): Response
                     {
-                        return 'carousel';
+                        return new Response('carousel');
                     }
                 };
 

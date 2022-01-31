@@ -41,6 +41,11 @@ class Carousel implements CarouselInterface
         return $this->id;
     }
 
+    public function getType(): string
+    {
+        return ElementInterface::TYPE_CAROUSEL;
+    }
+
     public function getCode(): ?string
     {
         return $this->code;

@@ -14,7 +14,6 @@ class Block implements BlockInterface
 
         getTranslation as private doGetTranslation;
     }
-
     use InternalDescriptionAwareTrait;
 
     protected ?int $id = null;
@@ -38,6 +37,11 @@ class Block implements BlockInterface
     public function getIdentifier(): string
     {
         return sprintf('sscms-block-%s', (string) $this->getCode());
+    }
+
+    public function getType(): string
+    {
+        return ElementInterface::TYPE_BLOCK;
     }
 
     public function getCode(): ?string

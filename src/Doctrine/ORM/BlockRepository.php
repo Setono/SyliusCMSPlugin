@@ -31,7 +31,6 @@ class BlockRepository extends EntityRepository implements BlockRepositoryInterfa
             ->getResult()
         ;
 
-        Assert::isArray($blocks);
         Assert::allIsInstanceOf($blocks, BlockInterface::class);
 
         return $blocks;

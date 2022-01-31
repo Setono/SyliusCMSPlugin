@@ -6,12 +6,13 @@ namespace Setono\SyliusCMSPlugin\Twig\Extension;
 
 use Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
+use Setono\SyliusCMSPlugin\Model\BlockInterface;
+use Setono\SyliusCMSPlugin\Model\CarouselInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Model\ViewInterface;
 use Setono\SyliusCMSPlugin\Previewer\Preview;
 use Setono\SyliusCMSPlugin\Previewer\PreviewerInterface;
-use Setono\SyliusCMSPlugin\Renderer\BlockRendererInterface;
-use Setono\SyliusCMSPlugin\Renderer\CarouselRendererInterface;
-use Setono\SyliusCMSPlugin\Renderer\ViewRendererInterface;
+use Setono\SyliusCMSPlugin\Renderer\RendererInterface;
 use function sprintf;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Component\Resource\ResourceActions;
@@ -21,11 +22,14 @@ use Twig\Extension\RuntimeExtensionInterface;
 
 final class Runtime implements RuntimeExtensionInterface
 {
-    private BlockRendererInterface $blockRenderer;
+    /** @var RendererInterface<BlockInterface> */
+    private RendererInterface $blockRenderer;
 
-    private ViewRendererInterface $viewRenderer;
+    /** @var RendererInterface<ViewInterface> */
+    private RendererInterface $viewRenderer;
 
-    private CarouselRendererInterface $carouselRenderer;
+    /** @var RendererInterface<CarouselInterface> */
+    private RendererInterface $carouselRenderer;
 
     private UrlGeneratorInterface $router;
 
@@ -35,10 +39,15 @@ final class Runtime implements RuntimeExtensionInterface
 
     private PreviewerInterface $previewer;
 
+    /**
+     * @param RendererInterface<BlockInterface> $blockRenderer
+     * @param RendererInterface<ViewInterface> $viewRenderer
+     * @param RendererInterface<CarouselInterface> $carouselRenderer
+     */
     public function __construct(
-        BlockRendererInterface $blockRenderer,
-        ViewRendererInterface $viewRenderer,
-        CarouselRendererInterface $carouselRenderer,
+        RendererInterface $blockRenderer,
+        RendererInterface $viewRenderer,
+        RendererInterface $carouselRenderer,
         UrlGeneratorInterface $router,
         LocaleContextInterface $localeContext,
         PreviewLinkGeneratorInterface $previewLinkGenerator,
@@ -55,17 +64,17 @@ final class Runtime implements RuntimeExtensionInterface
 
     public function block(string $block): string
     {
-        return $this->blockRenderer->render($block);
+        return (string) $this->blockRenderer->render($block);
     }
 
     public function view(string $view): string
     {
-        return $this->viewRenderer->render($view);
+        return (string) $this->viewRenderer->render($view);
     }
 
     public function carousel(string $carousel): string
     {
-        return $this->carouselRenderer->render($carousel);
+        return (string) $this->carouselRenderer->render($carousel);
     }
 
     public function linkToRoute(

@@ -14,15 +14,12 @@ use Sylius\Component\Resource\Model\TranslationInterface;
 class Page implements PageInterface
 {
     use EnabledDateIntervalAwareTrait;
-
     use ToggleableTrait;
-
     use TranslatableTrait {
         __construct as private initializeTranslationsCollection;
 
         getTranslation as private doGetTranslation;
     }
-
     use InternalDescriptionAwareTrait;
 
     protected ?int $id = null;
@@ -52,6 +49,11 @@ class Page implements PageInterface
     public function getIdentifier(): string
     {
         return sprintf('sscms-page-%s', (string) $this->getCode());
+    }
+
+    public function getType(): string
+    {
+        return ElementInterface::TYPE_PAGE;
     }
 
     public function getCode(): ?string

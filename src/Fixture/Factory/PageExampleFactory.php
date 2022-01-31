@@ -142,7 +142,7 @@ use Webmozart\Assert\Assert;
     {
         $resolver
             ->setDefault('code', function (): string {
-                return $this->faker->uuid();
+                return $this->faker->uuid3();
             })
 
             ->setDefined('view')
@@ -157,7 +157,7 @@ use Webmozart\Assert\Assert;
             })
 
             ->setDefault('slug', function (): string {
-                return $this->faker->uuid();
+                return $this->faker->uuid3();
             })
 
             ->setDefault('metaDescription', function (): string {
