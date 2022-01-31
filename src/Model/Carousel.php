@@ -43,7 +43,7 @@ class Carousel implements CarouselInterface
 
     public function getType(): string
     {
-        return 'carousel';
+        return ElementInterface::TYPE_CAROUSEL;
     }
 
     public function getCode(): ?string

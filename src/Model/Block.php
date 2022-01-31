@@ -42,7 +42,7 @@ class Block implements BlockInterface
 
     public function getType(): string
     {
-        return 'block';
+        return ElementInterface::TYPE_BLOCK;
     }
 
     public function getCode(): ?string

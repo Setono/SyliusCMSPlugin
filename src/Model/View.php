@@ -39,7 +39,7 @@ class View implements ViewInterface
 
     public function getType(): string
     {
-        return 'view';
+        return ElementInterface::TYPE_VIEW;
     }
 
     public function getCode(): ?string
