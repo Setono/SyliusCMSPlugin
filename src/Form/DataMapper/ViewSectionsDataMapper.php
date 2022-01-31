@@ -81,7 +81,7 @@ final class ViewSectionsDataMapper extends DataMapper
     /**
      * @psalm-suppress ParamNameMismatch
      */
-    public function mapFormsToData(iterable $forms, & $data): void
+    public function mapFormsToData(iterable $forms, &$data): void
     {
         parent::mapFormsToData($forms, $data);
 

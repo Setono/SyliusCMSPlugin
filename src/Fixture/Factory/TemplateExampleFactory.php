@@ -67,7 +67,7 @@ use Webmozart\Assert\Assert;
     {
         $resolver
             ->setDefault('code', function (): string {
-                return $this->faker->uuid();
+                return $this->faker->uuid3();
             })
             ->setDefault('source', function (): string {
                 return '{% sscms_section content %}';
