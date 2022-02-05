@@ -7,7 +7,7 @@
         "php": ">=7.4",
         "ext-json": "*",
         "doctrine/collections": "^1.6",
-        "doctrine/dbal": "^2.13",
+        "doctrine/dbal": "3.3.2",
         "doctrine/persistence": "^2.2",
         "fakerphp/faker": "^1.17",
         "knplabs/gaufrette": "^0.8",
