@@ -9,7 +9,7 @@
         "doctrine/collections": "^1.6",
         "doctrine/dbal": "^2.13",
         "doctrine/persistence": "^2.2",
-        "fakerphp/faker": "^1.17",
+        "fakerphp/faker": "^1.19",
         "knplabs/gaufrette": "^0.8",
         "knplabs/knp-gaufrette-bundle": "^0.7",
         "knplabs/knp-menu": "^3.3",
@@ -56,7 +56,7 @@
         "symfony/serializer": "^5.0 || ^6.0",
         "symfony/web-profiler-bundle": "^5.0 || ^6.0",
         "symfony/webpack-encore-bundle": "^1.13",
-        "weirdan/doctrine-psalm-plugin": "^2.0"
+        "weirdan/doctrine-psalm-plugin": "^2.2"
     },
     "prefer-stable": true,
     "autoload": {
