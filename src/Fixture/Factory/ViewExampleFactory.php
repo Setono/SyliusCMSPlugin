@@ -105,7 +105,7 @@ use Webmozart\Assert\Assert;
         /** @psalm-suppress UnusedClosureParam, MissingClosureParamType */
         $resolver
             ->setDefault('code', function (): string {
-                return $this->faker->uuid3();
+                return $this->faker->uuid();
             })
             ->setAllowedTypes('code', 'string')
 

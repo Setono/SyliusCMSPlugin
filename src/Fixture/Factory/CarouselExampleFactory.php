@@ -99,7 +99,7 @@ use Webmozart\Assert\Assert;
     {
         $resolver
             ->setDefault('code', function (): string {
-                return $this->faker->uuid3();
+                return $this->faker->uuid();
             })
             ->setAllowedTypes('code', 'string')
 

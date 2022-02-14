@@ -14,12 +14,15 @@ use Sylius\Component\Resource\Model\TranslationInterface;
 class Page implements PageInterface
 {
     use EnabledDateIntervalAwareTrait;
+
     use ToggleableTrait;
+
     use TranslatableTrait {
         __construct as private initializeTranslationsCollection;
 
         getTranslation as private doGetTranslation;
     }
+
     use InternalDescriptionAwareTrait;
 
     protected ?int $id = null;
