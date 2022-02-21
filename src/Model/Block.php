@@ -14,7 +14,6 @@ class Block implements BlockInterface
 
         getTranslation as private doGetTranslation;
     }
-
     use InternalDescriptionAwareTrait;
 
     protected ?int $id = null;

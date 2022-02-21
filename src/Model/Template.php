@@ -9,7 +9,6 @@ use Sylius\Component\Resource\Model\TimestampableTrait;
 class Template implements TemplateInterface
 {
     use TimestampableTrait;
-
     use InternalDescriptionAwareTrait;
 
     protected ?int $id = null;
