@@ -69,3 +69,4 @@ setono_sylius_cms:
         view_header: Views
         view_subheader: Manage your views
         views: Views
+        duplicate_block: Duplicate block

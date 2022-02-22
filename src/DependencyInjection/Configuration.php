@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
+use Setono\SyliusCMSPlugin\BlockFactory;
+use Setono\SyliusCMSPlugin\Controller\Action\Admin\BlockController;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\BlockRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\CarouselRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\PageRepository;
@@ -122,7 +124,7 @@ final class Configuration implements ConfigurationInterface
                                         ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
                                         ->scalarNode('repository')->defaultValue(BlockRepository::class)->cannotBeEmpty()->end()
                                         ->scalarNode('form')->defaultValue(BlockType::class)->end()
-                                        ->scalarNode('factory')->defaultValue(Factory::class)->end()
+                                        ->scalarNode('factory')->defaultValue(BlockFactory::class)->end()
                                     ->end()
                                 ->end()
                                 ->arrayNode('translation')

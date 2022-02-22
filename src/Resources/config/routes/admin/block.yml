@@ -1,0 +1,32 @@
+setono_sylius_cms_admin_block:
+    resource: |
+        section: admin
+        alias: setono_sylius_cms.block
+        templates: "@SyliusAdmin\\Crud"
+        redirect: index
+        permission: true
+        grid: setono_sylius_cms_admin_block
+        vars:
+            all:
+                header: setono_sylius_cms.ui.block_header
+                subheader: setono_sylius_cms.ui.block_subheader
+                templates:
+                    form: "@SetonoSyliusCMSPlugin/admin/block/_form.html.twig"
+            index:
+                icon: clone outline
+    type: sylius.resource
+
+setono_sylius_cms_admin_block_duplicate:
+    path: /blocks/{id}/duplicate
+    methods: [GET, POST]
+    defaults:
+        _controller: setono_sylius_cms.controller.block::createAction
+        _sylius:
+            section: admin
+            factory:
+                method: createNewFromResource
+                arguments: [$id]
+            template: "@SyliusAdmin\\Crud\\create.html.twig"
+            vars:
+                templates:
+                    form: "@SetonoSyliusCMSPlugin/admin/block/_form.html.twig"

@@ -60,4 +60,5 @@ sylius_ui:
 sylius_grid:
     templates:
         action:
-            setono_cms_preview_page: '@SetonoSyliusCMSPlugin/admin/grid/action/page/preview.html.twig' 
+            setono_cms_preview_page: '@SetonoSyliusCMSPlugin/admin/grid/action/page/preview.html.twig'
+            setono_cms_duplicate_block: '@SetonoSyliusCMSPlugin/admin/grid/action/block/duplicate.html.twig'
