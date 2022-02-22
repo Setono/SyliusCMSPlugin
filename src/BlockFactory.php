@@ -10,13 +10,11 @@ use Sylius\Component\Resource\Factory\FactoryInterface;
 
 final class BlockFactory implements FactoryInterface
 {
-
     private BlockRepository $repository;
 
     public function __construct(
         BlockRepository $repository
-    )
-    {
+    ) {
         $this->repository = $repository;
     }
 
