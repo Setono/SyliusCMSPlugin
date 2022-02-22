@@ -73,3 +73,14 @@ ci: validate ecs psalm phpspec phpunit behat ## Execute github actions tasks
 
 help: ## Show all make tasks (default)
 	@grep -E '(^[a-zA-Z_-]+:.*?##.*$$)|(^##)' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[32m%-30s\033[0m %s\n", $$1, $$2}' | sed -e 's/\[32m##/[33m/'
+
+
+ssh: ## SSH shortcut
+	docker-compose exec php sh
+
+cache-pool-clear: ## Clear just the caching pools for each enviroment
+	docker-compose exec php rm -Rf tests/Application/var/cache/*/pools/*
+
+cache-clear: ## Nuke all cache and warm it up
+	docker-compose exec php rm -Rf tests/Application/var/cache/*
+	docker-compose exec php php -d memory_limit=256M tests/Application/bin/console cache:warmup --env=test
