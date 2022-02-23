@@ -17,7 +17,7 @@ setono_sylius_cms_admin_block:
     type: sylius.resource
 
 setono_sylius_cms_admin_block_duplicate:
-    path: /blocks/{id}/duplicate
+    path: /blocks/{id<\d+>}/duplicate
     methods: [GET, POST]
     defaults:
         _controller: setono_sylius_cms.controller.block::createAction
