@@ -27,6 +27,14 @@ sylius_grid:
                         type: update
                     delete:
                         type: delete
+                    duplicate:
+                        type: setono_cms_duplicate_block
+                        label: setono_sylius_cms.ui.duplicate_block
+                        options:
+                            link:
+                                route: setono_sylius_cms_admin_block_duplicate
+                                parameters:
+                                    id: resource.id
                 bulk:
                     delete:
                         type: delete

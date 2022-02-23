@@ -19,12 +19,12 @@ start: ## Start the project
 	docker-compose up -d
 
 stop: ## Stop and clean
-	docker-compose kill
-	docker-compose rm -v --force
+	docker-compose down
 
 clean: stop ## Clean plugin
 	docker-compose down -v
-	sudo rm -Rf node_modules vendor .phpunit.result.cache composer.lock
+	sudo rm -Rf node_modules/* vendor/* .phpunit.result.cache composer.lock
+	docker-compose rm -v --force
 
 ##
 ## Assets
@@ -40,24 +40,31 @@ assets-watch: ## Watch asset during development
 ##
 ## QA
 ##---------------------------------------------------------------------------
-.PHONY: validate phpstan psalm phpspec phpunit behat
+.PHONY: validate ecs psalm phpspec phpunit behat
 
 validate: ## Validate composer.json
 	docker-compose exec php composer validate --ansi --strict
 
 psalm: ## psalm
-	docker-compose exec php vendor/bin/psalm
+	docker-compose exec php php -d memory_limit=-1  vendor/bin/psalm
 
 phpspec: ## phpspec
-	docker-compose exec php vendor/bin/phpspec run --ansi -f progress --no-interaction
+	docker-compose exec php php -d memory_limit=-1 vendor/bin/phpspec run --ansi -f progress --no-interaction
 
 phpunit: ## phpunit
-	docker-compose exec php vendor/bin/phpunit --colors=always
+	docker-compose exec php php -d memory_limit=-1 vendor/bin/phpunit --colors=always
 
 behat: ## Run behat
-	docker-compose exec php vendor/bin/behat --profile docker --colors --strict -vvv --no-interaction
+	docker-compose exec php php -d memory_limit=-1 vendor/bin/behat --profile docker --colors --strict -vvv --no-interaction
 
-ci: validate psalm phpspec phpunit behat ## Execute github actions tasks
+ecs: ## Run ECS coding standards
+	docker-compose exec php php -d memory_limit=-1 vendor/bin/ecs
+
+ecs-fix: ## Run ECS coding standards fix
+	vendor/bin/ecs --fix
+
+
+ci: validate ecs psalm phpspec phpunit behat ## Execute github actions tasks
 
 ##
 ## Utilities

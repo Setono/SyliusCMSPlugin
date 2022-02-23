@@ -1,3 +1,6 @@
+setono_sylius_cms_admin_block:
+    resource: admin/block.yml
+
 setono_sylius_cms_admin_asset:
     resource: |
         section: admin
@@ -18,24 +21,6 @@ setono_sylius_cms_admin_asset_upload_from_editor:
     path: /assets/upload-from-editor
     methods: [ POST ]
     controller: setono_sylius_cms.controller.action.admin.upload_editor_picture
-
-setono_sylius_cms_admin_block:
-    resource: |
-        section: admin
-        alias: setono_sylius_cms.block
-        templates: "@SyliusAdmin\\Crud"
-        redirect: index
-        permission: true
-        grid: setono_sylius_cms_admin_block
-        vars:
-            all:
-                header: setono_sylius_cms.ui.block_header
-                subheader: setono_sylius_cms.ui.block_subheader
-                templates:
-                    form: "@SetonoSyliusCMSPlugin/admin/block/_form.html.twig"
-            index:
-                icon: clone outline
-    type: sylius.resource
 
 setono_sylius_cms_admin_carousel:
     resource: |

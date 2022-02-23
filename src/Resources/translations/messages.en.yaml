@@ -55,6 +55,7 @@ setono_sylius_cms:
         carousel_header: Carousels
         carousel_subheader: Manage your carousels
         carousels: Carousels
+        duplicate_block: Duplicate block
         internal_description: Internal description
         name: Name
         page_header: Pages

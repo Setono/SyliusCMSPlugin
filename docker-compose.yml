@@ -8,7 +8,7 @@ services:
             - .:/srv/sylius:rw
         environment:
             - COMPOSER_HOME=/tmp/composer
-            - APP_ENV=test
+            - APP_ENV=dev
             - APP_SECRET=EDITME
             - DATABASE_URL=mysql://sylius:nopassword@mysql/sylius
             - MAILER_URL=smtp://mailhog:1025
