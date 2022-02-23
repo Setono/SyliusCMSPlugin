@@ -4,9 +4,11 @@ services:
     php:
         build:
             context: .
+        user: "${UID}:${GID}"
         volumes:
             - .:/srv/sylius:rw
         environment:
+            - HOME=/srv/sylius
             - COMPOSER_HOME=/tmp/composer
             - APP_ENV=dev
             - APP_SECRET=EDITME

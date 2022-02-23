@@ -62,11 +62,20 @@ RUN set -eux; \
 	)"; \
 	apk add --no-cache --virtual .sylius-phpexts-rundeps $runDeps; \
 	\
-	apk del .build-deps
+	apk del .build-deps; \
+    \
+    cp /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini; \
+    \
+    cp /usr/local/etc/php/php.ini-development /usr/local/etc/php/php-cli.ini; \
+    \
+    sed -i 's/memory_limit = .*/memory_limit = 256M/' /usr/local/etc/php/php.ini; \
+    \
+    sed -i 's/memory_limit = .*/memory_limit = -1/' /usr/local/etc/php/php-cli.ini;
+
 
 EXPOSE 8080
 WORKDIR /srv/sylius
 
 ARG APP_ENV=test
 
-CMD ["symfony", "server:start", "--dir=tests/Application/public", "--port=8080", "--no-tls"]
+CMD ["symfony", "server:start", "--dir=tests/Application/public", "--port=8080", "--no-tls" ]
