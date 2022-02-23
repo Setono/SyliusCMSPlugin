@@ -3,17 +3,20 @@
 ##
 ## Project setup
 ##---------------------------------------------------------------------------
-.PHONY: install start stop
+.PHONY: install build start stop clean
 
-install: start ## Install requirements for tests
-	docker-compose exec php php -d memory_limit=-1 /usr/bin/composer install
+install: build ## Install requirements for tests
+	docker-compose exec php /usr/bin/composer install
 	docker-compose exec nodejs yarn --cwd tests/Application install
 	docker-compose exec php tests/Application/bin/console doctrine:database:create --if-not-exists -vvv
 	docker-compose exec php tests/Application/bin/console doctrine:schema:create -vvv
 	docker-compose exec php tests/Application/bin/console assets:install tests/Application/public -vvv --symlink --relative
 	docker-compose exec nodejs yarn --cwd tests/Application build
-	docker-compose exec php php -d memory_limit=-1 tests/Application/bin/console cache:warmup -vvv
+	docker-compose exec php tests/Application/bin/console cache:warmup -vvv
 	docker-compose exec php tests/Application/bin/console sylius:fixtures:load -n
+
+build:
+	docker-compose up -d --build
 
 start: ## Start the project
 	docker-compose up -d
@@ -40,36 +43,41 @@ assets-watch: ## Watch asset during development
 ##
 ## QA
 ##---------------------------------------------------------------------------
-.PHONY: validate ecs psalm phpspec phpunit behat
+.PHONY: validate ecs psalm phpunit ecs ecs-fix
 
 validate: ## Validate composer.json
 	docker-compose exec php composer validate --ansi --strict
 
 psalm: ## psalm
-	docker-compose exec php php -d memory_limit=-1  vendor/bin/psalm
-
-phpspec: ## phpspec
-	docker-compose exec php php -d memory_limit=-1 vendor/bin/phpspec run --ansi -f progress --no-interaction
+	docker-compose exec php vendor/bin/psalm
 
 phpunit: ## phpunit
-	docker-compose exec php php -d memory_limit=-1 vendor/bin/phpunit --colors=always
-
-behat: ## Run behat
-	docker-compose exec php php -d memory_limit=-1 vendor/bin/behat --profile docker --colors --strict -vvv --no-interaction
+	docker-compose exec php vendor/bin/phpunit --colors=always
 
 ecs: ## Run ECS coding standards
-	docker-compose exec php php -d memory_limit=-1 vendor/bin/ecs
+	docker-compose exec php vendor/bin/ecs
 
 ecs-fix: ## Run ECS coding standards fix
-	vendor/bin/ecs --fix
+	docker-compose exec php vendor/bin/ecs --fix
 
 
-ci: validate ecs psalm phpspec phpunit behat ## Execute github actions tasks
+ci: validate ecs psalm phpunit ## Execute github actions tasks
 
 ##
 ## Utilities
 ##---------------------------------------------------------------------------
-.PHONY: help
+.PHONY: help ssh cache-pool-clear cache-clear
 
 help: ## Show all make tasks (default)
 	@grep -E '(^[a-zA-Z_-]+:.*?##.*$$)|(^##)' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[32m%-30s\033[0m %s\n", $$1, $$2}' | sed -e 's/\[32m##/[33m/'
+
+ssh: ## SSH shortcut
+	docker-compose exec php sh
+
+cache-pool-clear: ## Clear just the caching pools for each enviroment
+	docker-compose exec php rm -Rf tests/Application/var/cache/*/pools/*
+
+cache-clear: ## Nuke all cache and warm it up
+	docker-compose exec php rm -Rf tests/Application/var/cache/*
+	docker-compose exec php tests/Application/bin/console cache:warmup --env=test
+	docker-compose exec php tests/Application/bin/console cache:warmup --env=dev
