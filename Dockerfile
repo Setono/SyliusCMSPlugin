@@ -76,6 +76,6 @@ RUN set -eux; \
 EXPOSE 8080
 WORKDIR /srv/sylius
 
-ARG APP_ENV=test
+ARG APP_ENV=dev
 
 CMD ["symfony", "server:start", "--dir=tests/Application/public", "--port=8080", "--no-tls" ]
