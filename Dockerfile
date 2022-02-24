@@ -36,6 +36,7 @@ RUN set -eux; \
 		zlib-dev \
 	; \
 	\
+	pecl install xdebug; \
 	docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype; \
 	docker-php-ext-configure zip --with-zip; \
 	docker-php-ext-install -j$(nproc) \
@@ -51,6 +52,7 @@ RUN set -eux; \
 	pecl clear-cache; \
 	docker-php-ext-enable \
 		apcu \
+		xdebug \
 		opcache \
 	; \
 	\
@@ -70,7 +72,13 @@ RUN set -eux; \
     \
     sed -i 's/memory_limit = .*/memory_limit = 256M/' /usr/local/etc/php/php.ini; \
     \
-    sed -i 's/memory_limit = .*/memory_limit = -1/' /usr/local/etc/php/php-cli.ini;
+    sed -i 's/memory_limit = .*/memory_limit = -1/' /usr/local/etc/php/php-cli.ini; \
+    \
+    echo "xdebug.mode=debug,trace" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini; \
+    \
+    echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini; \
+    \
+    echo "xdebug.idekey=PHPSTORM" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini;
 
 
 EXPOSE 8080
