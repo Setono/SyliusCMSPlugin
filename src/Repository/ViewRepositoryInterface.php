@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Repository;
 
+use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Setono\SyliusCMSPlugin\Model\TemplateInterface;
+use Setono\SyliusCMSPlugin\Model\View;
 use Setono\SyliusCMSPlugin\Model\ViewInterface;
 use Sylius\Component\Resource\Repository\RepositoryInterface;
 
@@ -22,4 +24,8 @@ interface ViewRepositoryInterface extends RepositoryInterface
      * @return ViewInterface[]
      */
     public function findByTemplate(TemplateInterface $template): array;
+
+
+    /** @return list<int, View> */
+    public function findByBlock(ElementInterface $element): array;
 }

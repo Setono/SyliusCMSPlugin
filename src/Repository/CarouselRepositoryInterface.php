@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Repository;
 
+use Setono\SyliusCMSPlugin\Model\Carousel;
 use Setono\SyliusCMSPlugin\Model\CarouselInterface;
+use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Sylius\Component\Resource\Repository\RepositoryInterface;
 
 /**
@@ -16,4 +18,7 @@ use Sylius\Component\Resource\Repository\RepositoryInterface;
 interface CarouselRepositoryInterface extends RepositoryInterface
 {
     public function findOneByCode(string $code): ?CarouselInterface;
+
+    /** @return list<int, Carousel> */
+    public function findByBlock(ElementInterface $element): array;
 }

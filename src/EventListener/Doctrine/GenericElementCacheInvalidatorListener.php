@@ -7,6 +7,8 @@ namespace Setono\SyliusCMSPlugin\EventListener\Doctrine;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Setono\SyliusCMSPlugin\Generator\ElementCacheKeyGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\GenericEvent;
 use Symfony\Contracts\Cache\CacheInterface;
 
 final class GenericElementCacheInvalidatorListener
@@ -14,11 +16,16 @@ final class GenericElementCacheInvalidatorListener
     private CacheInterface $cachePool;
 
     private ElementCacheKeyGeneratorInterface $elementCacheKeyProvider;
+    private EventDispatcherInterface $eventDispatcher;
 
-    public function __construct(CacheInterface $cachePool, ElementCacheKeyGeneratorInterface $elementCacheKeyProvider)
-    {
+    public function __construct(
+        CacheInterface $cachePool,
+        ElementCacheKeyGeneratorInterface $elementCacheKeyProvider,
+        EventDispatcherInterface $eventDispatcher
+    ) {
         $this->cachePool = $cachePool;
         $this->elementCacheKeyProvider = $elementCacheKeyProvider;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     public function postPersist(LifecycleEventArgs $args): void
@@ -50,5 +57,7 @@ final class GenericElementCacheInvalidatorListener
         } catch (\Throwable $e) {
             // Ignore because it means the cache does not exist yet
         }
+
+        $this->eventDispatcher->dispatch(new GenericEvent($element), 'setono_sylius_cms.block.cache_invalidated');
     }
 }
