@@ -56,7 +56,7 @@
         "symfony/serializer": "^5.0 || ^6.0",
         "symfony/web-profiler-bundle": "^5.0 || ^6.0",
         "symfony/webpack-encore-bundle": "^1.13",
-        "weirdan/doctrine-psalm-plugin": "^2.2"
+        "weirdan/doctrine-psalm-plugin": "^2.3"
     },
     "prefer-stable": true,
     "autoload": {
