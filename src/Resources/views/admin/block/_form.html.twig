@@ -2,12 +2,14 @@
 
 {% form_theme form '@SetonoSyliusCMSPlugin/form/theme.html.twig' %}
 
-<!-- todo should go in a separate css file -->
 <style>
-    .codex-editor {
-        border: 1px solid rgba(34, 36, 38, 0.1);
-        box-shadow: 0 2px 4px 0 rgb(34 36 38 / 3%);
-        border-radius: 5px;
+    .editorjs {
+        background-color: #f3f3f3;
+        padding: 20px 0;
+    }
+    .ce-block__content {
+        padding: 0 20px;
+        background-color: #fff;
     }
 </style>
 
@@ -25,22 +27,32 @@
     </div>
 </div>
 
-<script src="{{ asset('bundles/setonosyliuscmsplugin/js/editor.js') }}"></script>
-<script src="{{ asset('bundles/setonosyliuscmsplugin/js/header.js') }}"></script>
-<script src="{{ asset('bundles/setonosyliuscmsplugin/js/raw.js') }}"></script>
-<script src="{{ asset('bundles/setonosyliuscmsplugin/js/imageTool.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.23.2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/embed@2.5.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.2.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.7.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.6.2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/raw@2.3.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.6.2"></script>
 
 <script>
     const editors = [];
     document.querySelectorAll('.editorjs').forEach((holderElement) => {
         let editorOptions = {
             holder: holderElement.id,
+            placeholder: '{{ 'setono_sylius_cms.form.block.content_placeholder'|trans }}',
+            logLevel: 'ERROR',
             tools: {
+                embed: {
+                    class: Embed,
+                    inlineToolbar : true
+                },
+                delimiter: Delimiter,
                 header: {
                     class: Header,
                     inlineToolbar : true
                 },
-                raw: RawTool,
+                list: List,
                 image: {
                     class: ImageTool,
                     config: {
@@ -48,7 +60,8 @@
                             byFile: '{{ url('setono_sylius_cms_admin_asset_upload_from_editor') }}',
                         }
                     }
-                }
+                },
+                raw: RawTool
             }
         };
 
@@ -66,16 +79,10 @@
     document.forms['{{ form.vars.name }}'].addEventListener('submit', (e) => {
         editors.forEach((editor) => {
             editor.obj.save().then((json) => {
-                const data = JSON.stringify(json);
-                document.getElementById(editor.source).value = data;
-                console.log('Saving to: ', editor.source);
-                console.log('Article data: ', data)
+                document.getElementById(editor.source).value = JSON.stringify(json);
             }).catch((error) => {
                 console.log('Saving failed: ', error)
             });
         });
-
-        // e.preventDefault();
-        // return false;
     });
 </script>
