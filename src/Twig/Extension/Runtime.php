@@ -179,4 +179,80 @@ final class Runtime implements RuntimeExtensionInterface
     {
         return $this->previewer->preview($asset);
     }
+
+    /**
+     * Returns the allowed upload size in bytes
+     */
+    public function maxUploadSize(): int
+    {
+        $convert = static function (string $size): int {
+            if (is_numeric($size)) {
+                return (int) $size;
+            }
+
+            if (preg_match('/^(\d+)([A-Z]+)?$/', $size, $matches) !== 1) {
+                return 0;
+            }
+
+            // this means that the value is given in bytes directly
+            if (!isset($matches[2])) {
+                return (int) $matches[1];
+            }
+
+            [, $numeral, $unit] = $matches;
+
+            $units = ['K' => 1024, 'M' => 1_048_576, 'G' => 1_073_741_824];
+
+            if (!isset($units[$unit])) {
+                return 0;
+            }
+
+            return (int) round($units[$unit] * (int) $numeral);
+        };
+
+        $postMaxSize = ini_get('post_max_size');
+        switch ($postMaxSize) {
+            case 0:
+                $postMaxSize = \PHP_INT_MAX; // see https://www.php.net/manual/en/ini.core.php#ini.post-max-size
+
+                break;
+            case false:
+                $postMaxSize = 0;
+
+                break;
+            default:
+                $postMaxSize = $convert($postMaxSize);
+
+                break;
+        }
+
+        $uploadMaxSize = ini_get('upload_max_filesize');
+        $uploadMaxSize = $uploadMaxSize === false ? 0 : $convert($uploadMaxSize);
+
+        // Read here why we also need the memory_limit: https://www.php.net/manual/en/ini.core.php#ini.post-max-size
+        $memoryLimit = ini_get('memory_limit');
+        switch ($memoryLimit) {
+            case -1:
+                $memoryLimit = \PHP_INT_MAX;
+
+                break;
+            case false:
+                $memoryLimit = 0;
+
+                break;
+            default:
+                $memoryLimit = $convert($memoryLimit);
+        }
+
+        return min($postMaxSize, $uploadMaxSize, $memoryLimit);
+    }
+
+    public function readableBytes(int $bytes): string
+    {
+        $i = (int) floor(log($bytes) / log(1024));
+
+        $sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+        return sprintf('%.02F %s', $bytes / (1024 ** $i), $sizes[$i]);
+    }
 }

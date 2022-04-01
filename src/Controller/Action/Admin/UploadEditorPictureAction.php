@@ -14,7 +14,6 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -49,7 +48,18 @@ final class UploadEditorPictureAction
         /** @var UploadedFile|null $uploadedFile */
         $uploadedFile = $request->files->get('image');
         if (null === $uploadedFile) {
-            throw new BadRequestHttpException('Expected an image');
+            return new JsonResponse([
+                'success' => 0,
+                'message' => 'An unknown error occurred when trying to upload the image. Please try again.',
+            ]);
+        }
+
+        // this happens when an uploaded file is larger than the upload_max_filesize ini setting
+        if ($uploadedFile->getPathname() === '') {
+            return new JsonResponse([
+                'success' => 0,
+                'message' => sprintf('The uploaded file is larger than %s', ini_get('upload_max_filesize')),
+            ]);
         }
 
         $uploadedFilePath = $this->assetUploader->uploadFile($uploadedFile);
