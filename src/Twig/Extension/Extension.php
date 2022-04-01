@@ -30,6 +30,8 @@ final class Extension extends AbstractExtension
             new TwigFunction('sscms_link_page', [Runtime::class, 'linkToPage'], ['is_safe' => ['html']]),
             new TwigFunction('sscms_get_page_preview_links', [Runtime::class, 'getPagePreviewLinks'], ['is_safe' => ['html']]),
             new TwigFunction('sscms_preview', [Runtime::class, 'preview'], ['is_safe' => ['html']]),
+            new TwigFunction('sscms_max_upload_size', [Runtime::class, 'maxUploadSize']),
+            new TwigFunction('sscms_readable_bytes', [Runtime::class, 'readableBytes']),
         ];
     }
 }

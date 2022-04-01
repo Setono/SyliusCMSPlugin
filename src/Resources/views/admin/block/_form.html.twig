@@ -19,6 +19,12 @@
         <div class="ui segment">
             {{ form_row(form.code) }}
             {{ form_row(form.internalDescription) }}
+            {% set max_upload_size = sscms_max_upload_size() %}
+            {% if max_upload_size <= 100 * 1024 * 1024 %}
+                <div class="ui info message">
+                    {{ 'setono_sylius_cms.form.block.max_upload_size'|trans({'%max_upload_size%': sscms_readable_bytes(max_upload_size) }) }}
+                </div>
+            {% endif %}
             {{ form_row(form.defaultRawContent) }}
         </div>
     </div>
