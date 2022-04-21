@@ -8,3 +8,10 @@ setono_sylius_cms_shop:
 setono_sylius_cms_admin:
     resource: "@SetonoSyliusCMSPlugin/Resources/config/routes/admin.yaml"
     prefix: /admin/cms
+
+# todo could this be moved to shop.yaml?
+setono_sylius_cms_download_asset:
+    path: /cms/asset/{id}
+    controller: setono_sylius_cms.controller.action.download_asset
+    requirements:
+        id: \d+
