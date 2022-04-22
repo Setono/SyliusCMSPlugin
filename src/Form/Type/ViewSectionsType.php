@@ -16,7 +16,7 @@ final class ViewSectionsType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         foreach ($options['sections'] as $sectionName) {
-            $humanizedSectionName = ucfirst(substr($sectionName, strlen('section_')));
+            $humanizedSectionName = ucfirst($sectionName);
             $builder->add($sectionName, ViewSectionType::class, [
                 'label' => 'setono_sylius_cms.form.view.section_blocks',
                 'label_translation_parameters' => [
