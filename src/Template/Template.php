@@ -15,16 +15,28 @@ final class Template
 
     private ?string $description;
 
-    public function __construct(string $code, string $label = null, string $description = null)
+    /** @var list<string> */
+    private array $sections;
+
+    /**
+     * @param list<string> $sections
+     */
+    public function __construct(string $code, string $label = null, string $description = null, array $sections = [])
     {
         $this->code = $code;
         $this->label = $label;
         $this->description = $description;
+        $this->sections = $sections;
     }
 
     public static function createFromEntity(TemplateInterface $template): self
     {
-        return new self((string) $template->getCode());
+        return new self(
+            (string) $template->getCode(),
+            null,
+            $template->getInternalDescription(),
+            $template->getSections()
+        );
     }
 
     /**
@@ -72,5 +84,13 @@ final class Template
     public function getDescription(): ?string
     {
         return $this->description;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getSections(): array
+    {
+        return $this->sections;
     }
 }
