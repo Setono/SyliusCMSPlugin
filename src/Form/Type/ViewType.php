@@ -6,7 +6,6 @@ namespace Setono\SyliusCMSPlugin\Form\Type;
 
 use Setono\SyliusCMSPlugin\Form\EventSubscriber\SetQueryParameterValueOnObjectSubscriber;
 use Setono\SyliusCMSPlugin\Model\ViewInterface;
-use Setono\SyliusCMSPlugin\Template\MetadataExtractorInterface;
 use Setono\SyliusCMSPlugin\Template\RegistryInterface;
 use Sylius\Bundle\ResourceBundle\Form\EventSubscriber\AddCodeFormSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
@@ -28,8 +27,6 @@ final class ViewType extends AbstractResourceType
 
     private RegistryInterface $templateRegistry;
 
-    private MetadataExtractorInterface $metadataExtractor;
-
     /**
      * @param array<array-key, string> $validationGroups
      */
@@ -37,7 +34,6 @@ final class ViewType extends AbstractResourceType
         RequestStack $requestStack,
         DataMapperInterface $viewSectionsDataMapper,
         RegistryInterface $templateRegistry,
-        MetadataExtractorInterface $metadataExtractor,
         string $dataClass,
         array $validationGroups = []
     ) {
@@ -46,7 +42,6 @@ final class ViewType extends AbstractResourceType
         $this->requestStack = $requestStack;
         $this->viewSectionsDataMapper = $viewSectionsDataMapper;
         $this->templateRegistry = $templateRegistry;
-        $this->metadataExtractor = $metadataExtractor;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -91,9 +86,8 @@ final class ViewType extends AbstractResourceType
 
         $sectionsPrototypes = [];
         foreach ($templates as $template) {
-            $metadata = $this->metadataExtractor->extract($template);
             $sectionsPrototypes[$template->getCode()] = $builder->create('sections', ViewSectionsType::class, [
-                'sections' => $metadata->getSections(),
+                'sections' => $template->getSections(),
             ])->getForm();
         }
 
@@ -121,8 +115,7 @@ final class ViewType extends AbstractResourceType
         $sections = [];
         if (null !== $templateName) {
             $template = $this->templateRegistry->get($templateName);
-            $metadata = $this->metadataExtractor->extract($template);
-            $sections = $metadata->getSections();
+            $sections = $template->getSections();
         }
         $form->add('sections', ViewSectionsType::class, [
             'label' => false,

@@ -6,7 +6,6 @@ namespace Setono\SyliusCMSPlugin\Form\DataMapper;
 
 use Setono\SyliusCMSPlugin\Model\ViewBlockInterface;
 use Setono\SyliusCMSPlugin\Model\ViewInterface;
-use Setono\SyliusCMSPlugin\Template\MetadataExtractorInterface;
 use Setono\SyliusCMSPlugin\Template\RegistryInterface;
 use Symfony\Component\Form\Exception\UnexpectedTypeException;
 use Symfony\Component\Form\Extension\Core\DataAccessor\PropertyPathAccessor;
@@ -19,17 +18,11 @@ final class ViewSectionsDataMapper extends DataMapper
 {
     private RegistryInterface $templateRegistry;
 
-    private MetadataExtractorInterface $metadataExtractor;
-
-    public function __construct(
-        PropertyAccessorInterface $propertyAccessor,
-        RegistryInterface $templateRegistry,
-        MetadataExtractorInterface $metadataExtractor
-    ) {
+    public function __construct(PropertyAccessorInterface $propertyAccessor, RegistryInterface $templateRegistry)
+    {
         parent::__construct(new PropertyPathAccessor($propertyAccessor));
 
         $this->templateRegistry = $templateRegistry;
-        $this->metadataExtractor = $metadataExtractor;
     }
 
     /**
@@ -61,10 +54,9 @@ final class ViewSectionsDataMapper extends DataMapper
         }
 
         $template = $this->templateRegistry->get($templateName);
-        $metadata = $this->metadataExtractor->extract($template);
 
         $sections = [];
-        foreach ($metadata->getSections() as $sectionName) {
+        foreach ($template->getSections() as $sectionName) {
             $sections[$sectionName]['viewBlocks'] = $data->getViewBlocksInSection($sectionName);
         }
 

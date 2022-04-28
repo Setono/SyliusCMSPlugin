@@ -18,6 +18,9 @@ class Template implements TemplateInterface
 
     protected ?string $source = null;
 
+    /** @var list<string> */
+    protected array $sections = [];
+
     public function getId(): ?int
     {
         return $this->id;
@@ -41,6 +44,27 @@ class Template implements TemplateInterface
     public function setSource(string $source): void
     {
         $this->source = $source;
+    }
+
+    public function getSections(): array
+    {
+        return $this->sections;
+    }
+
+    /**
+     * @param list<string> $sections
+     */
+    public function setSections(array $sections): void
+    {
+        $this->sections = [];
+        foreach ($sections as $section) {
+            $this->addSection($section);
+        }
+    }
+
+    public function addSection(string $section): void
+    {
+        $this->sections[] = $section;
     }
 
     public function __toString(): string

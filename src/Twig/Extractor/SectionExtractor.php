@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Template;
+namespace Setono\SyliusCMSPlugin\Twig\Extractor;
 
 use Setono\SyliusCMSPlugin\Twig\TokenParser\SectionNode;
 use Twig\Environment;
 use Twig\Node\Node;
 
-final class MetadataExtractor implements MetadataExtractorInterface
+final class SectionExtractor implements SectionExtractorInterface
 {
     private Environment $twig;
 
@@ -17,17 +17,10 @@ final class MetadataExtractor implements MetadataExtractorInterface
         $this->twig = $twig;
     }
 
-    public function extract(Template $template): Metadata
+    public function extract(string $source): array
     {
-        /**
-         * The method \Twig\Template::getSourceContext() is marked internal in newer versions of twig,
-         * but _also_ in newer versions of Twig, the \Twig\Template class isn't returned from the \Twig\Environment::resolveTemplate method,
-         * but instead the \Twig\TemplateWrapper is returned and here the getSourceContext() isn't marked as internal
-         *
-         * @psalm-suppress InternalMethod
-         */
-        $source = $this->twig->resolveTemplate($template->getCode())->getSourceContext();
-        $tokenStream = $this->twig->tokenize($source);
+        $templateWrapper = $this->twig->createTemplate($source);
+        $tokenStream = $this->twig->tokenize($templateWrapper->getSourceContext());
         $moduleNode = $this->twig->parse($tokenStream);
 
         $sections = [];
@@ -48,6 +41,6 @@ final class MetadataExtractor implements MetadataExtractorInterface
             }
         }
 
-        return new Metadata($sections);
+        return $sections;
     }
 }
