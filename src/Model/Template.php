@@ -9,7 +9,6 @@ use Sylius\Component\Resource\Model\TimestampableTrait;
 class Template implements TemplateInterface
 {
     use TimestampableTrait;
-
     use InternalDescriptionAwareTrait;
 
     protected ?int $id = null;
@@ -44,27 +43,6 @@ class Template implements TemplateInterface
     public function setSource(string $source): void
     {
         $this->source = $source;
-    }
-
-    public function getSections(): array
-    {
-        return $this->sections;
-    }
-
-    /**
-     * @param list<string> $sections
-     */
-    public function setSections(array $sections): void
-    {
-        $this->sections = [];
-        foreach ($sections as $section) {
-            $this->addSection($section);
-        }
-    }
-
-    public function addSection(string $section): void
-    {
-        $this->sections[] = $section;
     }
 
     public function __toString(): string

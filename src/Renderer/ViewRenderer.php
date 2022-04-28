@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Model\BlockInterface;
 use Setono\SyliusCMSPlugin\Model\ViewInterface;
 use Setono\SyliusCMSPlugin\Repository\ViewRepositoryInterface;
 use Setono\SyliusCMSPlugin\Template\RegistryInterface;
+use Setono\SyliusCMSPlugin\Twig\Extractor\SectionExtractorInterface;
 use Twig\Environment;
 use Webmozart\Assert\Assert;
 
@@ -73,26 +74,29 @@ final class ViewRenderer implements RendererInterface, LoggerAwareInterface
             return $this->renderNonExistingTemplate($templateCode);
         }
 
-        $template = $this->templateRegistry->get($templateCode);
-
         $elementIds = [];
 
-        $context = [];
+        $blocks = [];
         foreach ($element->getViewBlocks() as $viewBlock) {
             $block = $viewBlock->getBlock();
             if (null === $block) {
                 continue;
             }
 
-            $key = sprintf('sscms_%s', (string) $viewBlock->getSection());
             $response = $this->blockRenderer->render($block);
-            $context[$key] = isset($context[$key]) ? $context[$key] . $response->getContent() : $response->getContent();
-
+            $blocks[(string) $viewBlock->getSection()][] = $response->getContent();
             $elementIds = array_merge($response->getElementIds(), $elementIds);
         }
 
+        $temporaryTemplateString = sprintf('{%% extends "%s" %%}', $templateCode);
+        foreach ($blocks as $section => $block) {
+            $temporaryTemplateString .= sprintf('{%% block %s %%}%s{%% endblock %%}', SectionExtractorInterface::SECTION_PREFIX . $section, implode("\n", $block));
+        }
+
+        $temporaryTemplate = $this->twig->createTemplate($temporaryTemplateString);
+
         $response = new Response($this->twig->render('@SetonoSyliusCMSPlugin/view.html.twig', [
-            'view' => new ViewElement($element, $this->twig->render($template->getCode(), $context)),
+            'view' => new ViewElement($element, $this->twig->render($temporaryTemplate)),
         ]), $elementIds);
         $response->addElementId(ElementId::fromResource($element));
 

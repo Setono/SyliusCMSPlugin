@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig\Extractor;
 
-use Setono\SyliusCMSPlugin\Twig\TokenParser\SectionNode;
 use Twig\Environment;
-use Twig\Node\Node;
+use Twig\Template;
+use Twig\TemplateWrapper;
+use Webmozart\Assert\Assert;
 
 final class SectionExtractor implements SectionExtractorInterface
 {
@@ -17,27 +18,29 @@ final class SectionExtractor implements SectionExtractorInterface
         $this->twig = $twig;
     }
 
-    public function extract(string $source): array
+    public function extract($template): array
     {
-        $templateWrapper = $this->twig->createTemplate($source);
-        $tokenStream = $this->twig->tokenize($templateWrapper->getSourceContext());
-        $moduleNode = $this->twig->parse($tokenStream);
+        if (is_string($template)) {
+            $template = $this->twig->load($template);
+        }
+
+        if (!$template instanceof Template && !$template instanceof TemplateWrapper) {
+            throw new \InvalidArgumentException(sprintf(
+                'The given template must be either a %s, %s, or a string representing an existing template',
+                Template::class,
+                TemplateWrapper::class
+            ));
+        }
 
         $sections = [];
 
-        /** @var array<array-key, Node> $nodes */
-        $nodes = [$moduleNode];
+        /** @psalm-suppress InternalMethod */
+        foreach ($template->getBlockNames([]) as $blockName) {
+            Assert::string($blockName);
 
-        while (count($nodes) > 0) {
-            $nextNode = array_shift($nodes);
-
-            /** @var Node $node */
-            foreach ($nextNode as $node) {
-                $nodes[] = $node;
-            }
-
-            if ($nextNode instanceof SectionNode) {
-                $sections[] = (string) $nextNode->getAttribute('name');
+            $pos = stripos($blockName, self::SECTION_PREFIX);
+            if (0 === $pos) {
+                $sections[] = substr($blockName, strlen(self::SECTION_PREFIX));
             }
         }
 
