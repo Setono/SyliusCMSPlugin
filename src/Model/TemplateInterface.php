@@ -20,17 +20,5 @@ interface TemplateInterface extends
 
     public function setSource(string $source): void;
 
-    /**
-     * @return list<string>
-     */
-    public function getSections(): array;
-
-    /**
-     * @param list<string> $sections
-     */
-    public function setSections(array $sections): void;
-
-    public function addSection(string $section): void;
-
     public function __toString(): string;
 }

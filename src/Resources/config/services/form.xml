@@ -101,7 +101,6 @@
         <!-- Template -->
         <service id="setono_sylius_cms.form.type.template"
                  class="Setono\SyliusCMSPlugin\Form\Type\TemplateType">
-            <argument type="service" id="setono_sylius_cms.twig.extractor.section"/>
             <argument>%setono_sylius_cms.model.template.class%</argument>
             <argument>%setono_sylius_cms.form.type.template.validation_groups%</argument>
 

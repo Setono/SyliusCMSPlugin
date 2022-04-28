@@ -29,20 +29,24 @@ final class Template
         $this->sections = $sections;
     }
 
-    public static function createFromEntity(TemplateInterface $template): self
+    /**
+     * @param list<string> $sections
+     */
+    public static function createFromEntity(TemplateInterface $template, array $sections = []): self
     {
         return new self(
             (string) $template->getCode(),
             null,
             $template->getInternalDescription(),
-            $template->getSections()
+            $sections
         );
     }
 
     /**
      * @param array<string, string|null> $template
+     * @param list<string> $sections
      */
-    public static function createFromArray(array $template): self
+    public static function createFromArray(array $template, array $sections = []): self
     {
         Assert::keyExists($template, 'code');
         Assert::string($template['code']);
@@ -53,7 +57,7 @@ final class Template
         Assert::nullOrString($template['label']);
         Assert::nullOrString($template['description']);
 
-        return new self($template['code'], $template['label'], $template['description']);
+        return new self($template['code'], $template['label'], $template['description'], $sections);
     }
 
     /**

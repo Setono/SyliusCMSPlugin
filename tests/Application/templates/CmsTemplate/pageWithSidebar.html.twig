@@ -10,9 +10,9 @@
 
 <div class="ui stackable grid">
     <div class="four wide column">
-        {% sscms_section section_sidebar %}
+        {% block sscms_section_sidebar %}{% endblock %}
     </div>
     <div class="twelve wide column">
-        {% sscms_section section_content %}
+        {% block sscms_section_content %}{% endblock %}
     </div>
 </div>
