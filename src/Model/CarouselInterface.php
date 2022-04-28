@@ -5,19 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Model;
 
 use Doctrine\Common\Collections\Collection;
-use Sylius\Component\Resource\Model\CodeAwareInterface;
-use Sylius\Component\Resource\Model\ResourceInterface;
 
-interface CarouselInterface extends
-    ResourceInterface,
-    CodeAwareInterface,
-    ElementInterface,
-    InternalDescriptionAwareInterface
+interface CarouselInterface extends ElementInterface
 {
-    public function getCode(): ?string;
-
-    public function setCode(?string $code): void;
-
     /**
      * @return Collection<array-key, CarouselBlockInterface>
      */

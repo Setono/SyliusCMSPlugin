@@ -17,7 +17,7 @@ final class ElementCacheInvalidatorListener
 {
     private CacheInterface $cachePool;
 
-    private ElementCacheKeyGeneratorInterface $elementCacheKeyProvider;
+    private ElementCacheKeyGeneratorInterface $elementCacheKeyGenerator;
 
     private ChannelRepositoryInterface $channelRepository;
 
@@ -25,12 +25,12 @@ final class ElementCacheInvalidatorListener
 
     public function __construct(
         CacheInterface $cachePool,
-        ElementCacheKeyGeneratorInterface $elementCacheKeyProvider,
+        ElementCacheKeyGeneratorInterface $elementCacheKeyGenerator,
         ChannelRepositoryInterface $channelRepository,
         EventDispatcherInterface $eventDispatcher
     ) {
         $this->cachePool = $cachePool;
-        $this->elementCacheKeyProvider = $elementCacheKeyProvider;
+        $this->elementCacheKeyGenerator = $elementCacheKeyGenerator;
         $this->channelRepository = $channelRepository;
         $this->eventDispatcher = $eventDispatcher;
     }
@@ -60,7 +60,7 @@ final class ElementCacheInvalidatorListener
         /** @var ChannelInterface $channel */
         foreach ($this->channelRepository->findAll() as $channel) {
             foreach ($channel->getLocales() as $locale) {
-                $cacheKey = $this->elementCacheKeyProvider->generateCacheKey(
+                $cacheKey = $this->elementCacheKeyGenerator->generateCacheKey(
                     $element,
                     null,
                     $channel,

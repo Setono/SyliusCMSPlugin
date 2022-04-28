@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Renderer;
 
 use Setono\SyliusCMSPlugin\Generator\ElementCacheKeyGeneratorInterface;
+use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Setono\SyliusCMSPlugin\Model\ViewInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -23,30 +24,24 @@ final class CachedViewRenderer implements RendererInterface
 
     private int $cacheTtl;
 
-    /** @var class-string */
-    private string $viewClass;
-
     /**
      * @param RendererInterface<ViewInterface> $decoratedRenderer
-     * @param class-string $viewClass
      */
     public function __construct(
         RendererInterface $decoratedRenderer,
         CacheInterface $cachePool,
         ElementCacheKeyGeneratorInterface $elementCacheKeyGenerator,
-        int $cacheTtl,
-        string $viewClass
+        int $cacheTtl
     ) {
         $this->decoratedRenderer = $decoratedRenderer;
         $this->cachePool = $cachePool;
         $this->elementCacheKeyGenerator = $elementCacheKeyGenerator;
         $this->cacheTtl = $cacheTtl;
-        $this->viewClass = $viewClass;
     }
 
     public function render($element): Response
     {
-        $cacheKey = $this->elementCacheKeyGenerator->generateCacheKey($element, $this->viewClass);
+        $cacheKey = $this->elementCacheKeyGenerator->generateCacheKey($element, ElementInterface::TYPE_VIEW);
 
         /** @psalm-suppress ArgumentTypeCoercion */
         return $this->cachePool->get($cacheKey, function (ItemInterface $item) use ($element): Response {

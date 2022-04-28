@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Event;
 
-use Setono\SyliusCMSPlugin\Model\ElementInterface;
+use Sylius\Component\Resource\Model\ResourceInterface;
 
 final class CacheInvalidatedEvent
 {
     /** @readonly */
-    public ElementInterface $element;
+    public ResourceInterface $resource;
 
-    public function __construct(ElementInterface $element)
+    public function __construct(ResourceInterface $resource)
     {
-        $this->element = $element;
+        $this->resource = $resource;
     }
 }

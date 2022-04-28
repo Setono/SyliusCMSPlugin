@@ -11,7 +11,7 @@ use Sylius\Component\Resource\Model\ToggleableTrait;
 use Sylius\Component\Resource\Model\TranslatableTrait;
 use Sylius\Component\Resource\Model\TranslationInterface;
 
-class Page implements PageInterface
+class Page extends Element implements PageInterface
 {
     use EnabledDateIntervalAwareTrait;
     use ToggleableTrait;
@@ -20,11 +20,6 @@ class Page implements PageInterface
 
         getTranslation as private doGetTranslation;
     }
-    use InternalDescriptionAwareTrait;
-
-    protected ?int $id = null;
-
-    protected ?string $code = null;
 
     protected ?ViewInterface $view = null;
 
@@ -41,11 +36,6 @@ class Page implements PageInterface
         $this->initializeTranslationsCollection();
     }
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
-
     public function getIdentifier(): string
     {
         return sprintf('sscms-page-%s', (string) $this->getCode());
@@ -54,16 +44,6 @@ class Page implements PageInterface
     public function getType(): string
     {
         return ElementInterface::TYPE_PAGE;
-    }
-
-    public function getCode(): ?string
-    {
-        return $this->code;
-    }
-
-    public function setCode(?string $code): void
-    {
-        $this->code = $code;
     }
 
     public function getView(): ?ViewInterface

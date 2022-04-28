@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Generator;
 
-use function get_class;
+use Setono\SyliusCMSPlugin\Model\Element;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use function sprintf;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
@@ -12,6 +12,7 @@ use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Component\Resource\Model\CodeAwareInterface;
 use Symfony\Contracts\Cache\ItemInterface;
+use Webmozart\Assert\Assert;
 
 final class ElementCacheKeyGenerator implements ElementCacheKeyGeneratorInterface
 {
@@ -27,7 +28,7 @@ final class ElementCacheKeyGenerator implements ElementCacheKeyGeneratorInterfac
 
     public function generateCacheKey(
         $element,
-        string $elementClass = null,
+        string $elementType = null,
         ChannelInterface $channel = null,
         string $localeCode = null
     ): string {
@@ -41,7 +42,7 @@ final class ElementCacheKeyGenerator implements ElementCacheKeyGeneratorInterfac
 
         $cacheKey = sprintf(
             '%s_%s_%s_%s',
-            self::resolvePrefix($element, $elementClass),
+            self::resolvePrefix($element, $elementType),
             self::resolveIdentifier($element),
             (string) $channel->getCode(),
             $localeCode
@@ -60,27 +61,25 @@ final class ElementCacheKeyGenerator implements ElementCacheKeyGeneratorInterfac
     private static function resolvePrefix($element, string $elementType = null): string
     {
         if ($element instanceof ElementInterface) {
-            return get_class($element);
+            $elementType = $element->getType();
         }
 
-        if (null !== $elementType) {
-            return $elementType;
-        }
+        Assert::notNull($elementType, sprintf(
+            'If the $element is not an instance of %s you should provide the $elementType',
+            ElementInterface::class
+        ));
+        Assert::oneOf($elementType, Element::getTypes());
 
-        throw new \InvalidArgumentException('If the $element is not an object you should provide the $elementType');
+        return $elementType;
     }
 
     /**
-     * @param ElementInterface|string|mixed $element
+     * @param CodeAwareInterface|string|mixed $element
      */
     private static function resolveIdentifier($element): string
     {
         if ($element instanceof CodeAwareInterface) {
             return (string) $element->getCode();
-        }
-
-        if ($element instanceof ElementInterface) {
-            return $element->getIdentifier();
         }
 
         if (is_string($element)) {
