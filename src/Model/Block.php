@@ -7,18 +7,13 @@ namespace Setono\SyliusCMSPlugin\Model;
 use Sylius\Component\Resource\Model\TranslatableTrait;
 use Sylius\Component\Resource\Model\TranslationInterface;
 
-class Block implements BlockInterface
+class Block extends Element implements BlockInterface
 {
     use TranslatableTrait {
         __construct as private initializeTranslationsCollection;
 
         getTranslation as private doGetTranslation;
     }
-    use InternalDescriptionAwareTrait;
-
-    protected ?int $id = null;
-
-    protected ?string $code = null;
 
     protected ?string $defaultContent = null;
 
@@ -29,11 +24,6 @@ class Block implements BlockInterface
         $this->initializeTranslationsCollection();
     }
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
-
     public function getIdentifier(): string
     {
         return sprintf('sscms-block-%s', (string) $this->getCode());
@@ -42,16 +32,6 @@ class Block implements BlockInterface
     public function getType(): string
     {
         return ElementInterface::TYPE_BLOCK;
-    }
-
-    public function getCode(): ?string
-    {
-        return $this->code;
-    }
-
-    public function setCode(?string $code): void
-    {
-        $this->code = $code;
     }
 
     public function getDefaultContent(): ?string

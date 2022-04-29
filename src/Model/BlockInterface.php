@@ -4,19 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
-use Sylius\Component\Resource\Model\CodeAwareInterface;
-use Sylius\Component\Resource\Model\ResourceInterface;
 use Sylius\Component\Resource\Model\TranslatableInterface;
 
-interface BlockInterface extends
-    ResourceInterface,
-    ElementInterface,
-    CodeAwareInterface,
-    TranslatableInterface,
-    InternalDescriptionAwareInterface
+interface BlockInterface extends ElementInterface, TranslatableInterface
 {
-    public function getId(): ?int;
-
     public function getDefaultContent(): ?string;
 
     public function setDefaultContent(?string $defaultContent): void;

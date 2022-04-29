@@ -7,14 +7,8 @@ namespace Setono\SyliusCMSPlugin\Model;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
-class View implements ViewInterface
+class View extends Element implements ViewInterface
 {
-    use InternalDescriptionAwareTrait;
-
-    protected ?int $id = null;
-
-    protected ?string $code = null;
-
     protected bool $enabled = true;
 
     protected ?string $template = null;
@@ -27,11 +21,6 @@ class View implements ViewInterface
         $this->viewBlocks = new ArrayCollection();
     }
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
-
     public function getIdentifier(): string
     {
         return sprintf('sscms-view-%s', (string) $this->getCode());
@@ -40,16 +29,6 @@ class View implements ViewInterface
     public function getType(): string
     {
         return ElementInterface::TYPE_VIEW;
-    }
-
-    public function getCode(): ?string
-    {
-        return $this->code;
-    }
-
-    public function setCode(?string $code): void
-    {
-        $this->code = $code;
     }
 
     public function isEnabled(): bool

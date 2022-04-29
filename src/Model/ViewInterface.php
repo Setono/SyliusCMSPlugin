@@ -5,17 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Model;
 
 use Doctrine\Common\Collections\Collection;
-use Sylius\Component\Resource\Model\CodeAwareInterface;
-use Sylius\Component\Resource\Model\ResourceInterface;
 
-interface ViewInterface extends
-    ResourceInterface,
-    ElementInterface,
-    CodeAwareInterface,
-    InternalDescriptionAwareInterface
+interface ViewInterface extends ElementInterface
 {
-    public function getId(): ?int;
-
     public function isEnabled(): bool;
 
     public function setEnabled(bool $enabled): void;

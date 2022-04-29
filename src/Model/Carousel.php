@@ -7,14 +7,8 @@ namespace Setono\SyliusCMSPlugin\Model;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
-class Carousel implements CarouselInterface
+class Carousel extends Element implements CarouselInterface
 {
-    use InternalDescriptionAwareTrait;
-
-    protected ?int $id = null;
-
-    protected ?string $code = null;
-
     /** @var Collection<array-key, CarouselBlockInterface> */
     protected Collection $carouselBlocks;
 
@@ -36,24 +30,9 @@ class Carousel implements CarouselInterface
         return sprintf('sscms-carousel-%s', (string) $this->getCode());
     }
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
-
     public function getType(): string
     {
         return ElementInterface::TYPE_CAROUSEL;
-    }
-
-    public function getCode(): ?string
-    {
-        return $this->code;
-    }
-
-    public function setCode(?string $code): void
-    {
-        $this->code = $code;
     }
 
     public function getCarouselBlocks(): Collection

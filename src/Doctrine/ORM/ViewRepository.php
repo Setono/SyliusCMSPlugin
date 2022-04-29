@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Doctrine\ORM;
 
+use Doctrine\ORM\Query\Expr\Join;
+use Setono\SyliusCMSPlugin\Model\BlockInterface;
 use Setono\SyliusCMSPlugin\Model\TemplateInterface;
 use Setono\SyliusCMSPlugin\Model\ViewInterface;
 use Setono\SyliusCMSPlugin\Repository\ViewRepositoryInterface;
@@ -31,6 +33,22 @@ class ViewRepository extends EntityRepository implements ViewRepositoryInterface
         $views = $this->findBy([
             'template' => $code,
         ]);
+
+        Assert::allIsInstanceOf($views, ViewInterface::class);
+
+        return $views;
+    }
+
+    public function findByBlock(BlockInterface $block): array
+    {
+        $views = $this->createQueryBuilder('o')
+            ->distinct()
+            ->join('o.viewBlocks', 'vb')
+            ->join('vb.block', 'b', Join::WITH, 'b.code = :blockCode')
+            ->setParameter('blockCode', $block->getCode())
+            ->getQuery()
+            ->getResult()
+        ;
 
         Assert::allIsInstanceOf($views, ViewInterface::class);
 
