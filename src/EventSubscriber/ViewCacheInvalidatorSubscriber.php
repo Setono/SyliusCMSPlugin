@@ -58,6 +58,8 @@ final class ViewCacheInvalidatorSubscriber implements EventSubscriberInterface
     {
         if ($event->resource instanceof TemplateInterface) {
             $this->invalidateViews($this->viewRepository->findByTemplate($event->resource));
+
+            return;
         }
 
         if ($event->resource instanceof BlockInterface) {
