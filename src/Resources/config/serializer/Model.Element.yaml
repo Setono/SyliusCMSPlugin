@@ -1,4 +1,4 @@
-Setono\SyliusCMSPlugin\Model\Block:
+Setono\SyliusCMSPlugin\Model\Element:
     exclusion_policy: ALL
     xml_root_name: block
     properties:
