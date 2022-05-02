@@ -8,7 +8,7 @@
         "ext-json": "*",
         "doctrine/collections": "^1.6",
         "doctrine/dbal": "^2.13",
-        "doctrine/orm": "^2.7",
+        "doctrine/orm": "^2.12",
         "doctrine/persistence": "^2.2",
         "fakerphp/faker": "^1.19",
         "knplabs/gaufrette": "^0.8",
