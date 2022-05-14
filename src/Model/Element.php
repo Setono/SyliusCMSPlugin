@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
+use Sylius\Component\Resource\Model\TimestampableTrait;
+
 abstract class Element implements ElementInterface
 {
     use InternalDescriptionAwareTrait;
+    use TimestampableTrait;
 
     protected ?int $id = null;
 
@@ -38,5 +41,10 @@ abstract class Element implements ElementInterface
     public function setCode(?string $code): void
     {
         $this->code = $code;
+    }
+
+    public function getIdentifier(): string
+    {
+        return sprintf('sscms-%s-%s', $this->getType(), (string) $this->getCode());
     }
 }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <doctrine-mapping xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:gedmo="http://gediminasm.org/schemas/orm/doctrine-extensions-mapping"
                   xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
                   xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
                                       http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
@@ -16,17 +17,25 @@
         <field name="enabledUntil" type="datetime" nullable="true"/>
         <field name="internalDescription" type="text" nullable="true"/>
 
+        <field name="createdAt" type="datetime" nullable="true"> <!-- todo remove nullable in v0.7 -->
+            <gedmo:timestampable on="create"/>
+        </field>
+
+        <field name="updatedAt" type="datetime" nullable="true">
+            <gedmo:timestampable on="update"/>
+        </field>
+
         <many-to-one field="view" target-entity="Setono\SyliusCMSPlugin\Model\ViewInterface" fetch="EAGER">
-            <join-column name="view_id" referenced-column-name="id" nullable="false" />
+            <join-column name="view_id" referenced-column-name="id" nullable="false"/>
         </many-to-one>
 
         <many-to-many field="channels" target-entity="Sylius\Component\Channel\Model\ChannelInterface">
             <join-table name="setono_sylius_cms__page_channels">
                 <join-columns>
-                    <join-column name="page_id" referenced-column-name="id" nullable="false" on-delete="CASCADE" />
+                    <join-column name="page_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
                 </join-columns>
                 <inverse-join-columns>
-                    <join-column name="channel_id" referenced-column-name="id" nullable="false" on-delete="CASCADE" />
+                    <join-column name="channel_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
                 </inverse-join-columns>
             </join-table>
         </many-to-many>

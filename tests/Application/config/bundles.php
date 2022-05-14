@@ -60,4 +60,5 @@ return [
     SyliusLabs\Polyfill\Symfony\Security\Bundle\SyliusLabsPolyfillSymfonySecurityBundle::class => ['all' => true],
     Symfony\WebpackEncoreBundle\WebpackEncoreBundle::class => ['all' => true],
     Setono\EditorJSBundle\SetonoEditorJSBundle::class => ['all' => true],
+    Setono\TwigCachePurgerBundle\SetonoTwigCachePurgerBundle::class => ['all' => true],
 ];

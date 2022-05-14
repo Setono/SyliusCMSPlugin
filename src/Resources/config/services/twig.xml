@@ -7,8 +7,8 @@
             <argument type="service" id="twig"/>
         </service>
 
-        <service id="setono_sylius_cms.twig.doctrine_loader"
-                 class="Setono\SyliusCMSPlugin\Twig\Loader\DoctrineLoader">
+        <service id="setono_sylius_cms.twig.loader.template"
+                 class="Setono\SyliusCMSPlugin\Twig\Loader\TemplateLoader">
             <argument type="service" id="setono_sylius_cms.repository.template"/>
 
             <tag name="twig.loader"/>
@@ -21,15 +21,46 @@
 
         <service id="setono_sylius_cms.twig.runtime"
                  class="Setono\SyliusCMSPlugin\Twig\Extension\Runtime">
-            <argument type="service" id="setono_sylius_cms.renderer.block"/>
-            <argument type="service" id="setono_sylius_cms.renderer.view"/>
-            <argument type="service" id="setono_sylius_cms.renderer.carousel"/>
             <argument type="service" id="router"/>
-            <argument type="service" id="sylius.context.locale"/>
             <argument type="service" id="setono_sylius_cms.generator.page.preview_link"/>
             <argument type="service" id="setono_sylius_cms.previewer.composite"/>
+            <argument type="service" id="sylius.context.channel"/>
+            <argument type="service" id="sylius.context.locale"/>
+            <argument type="service" id="setono_sylius_cms.stack.element"/>
+
+            <call method="setLogger">
+                <argument type="service" id="logger"/>
+            </call>
 
             <tag name="twig.runtime"/>
+        </service>
+
+        <!-- Element loaders -->
+        <service id="setono_sylius_cms.twig.loader.element_loader.block"
+                 class="Setono\SyliusCMSPlugin\Twig\Loader\GenericElementLoader">
+            <argument type="service" id="setono_sylius_cms.repository.block"/>
+            <argument type="service" id="setono_sylius_cms.generator.twig.block"/>
+            <argument>block</argument>
+
+            <tag name="twig.loader"/>
+        </service>
+
+        <service id="setono_sylius_cms.twig.loader.element_loader.carousel"
+                 class="Setono\SyliusCMSPlugin\Twig\Loader\GenericElementLoader">
+            <argument type="service" id="setono_sylius_cms.repository.carousel"/>
+            <argument type="service" id="setono_sylius_cms.generator.twig.carousel"/>
+            <argument>carousel</argument>
+
+            <tag name="twig.loader"/>
+        </service>
+
+        <service id="setono_sylius_cms.twig.loader.element_loader.view"
+                 class="Setono\SyliusCMSPlugin\Twig\Loader\GenericElementLoader">
+            <argument type="service" id="setono_sylius_cms.repository.view"/>
+            <argument type="service" id="setono_sylius_cms.generator.twig.view"/>
+            <argument>view</argument>
+
+            <tag name="twig.loader"/>
         </service>
     </services>
 </container>

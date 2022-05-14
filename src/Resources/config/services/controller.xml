@@ -20,7 +20,6 @@
             <argument type="service" id="sylius.context.locale"/>
             <argument type="service" id="setono_sylius_cms.repository.page"/>
             <argument type="service" id="twig"/>
-            <argument type="service" id="setono_sylius_cms.renderer.view"/>
             <argument type="service" id="setono_sylius_cms.checker.eligibility.page.composite"/>
 
             <tag name="controller.service_arguments"/>

@@ -24,11 +24,6 @@ class Block extends Element implements BlockInterface
         $this->initializeTranslationsCollection();
     }
 
-    public function getIdentifier(): string
-    {
-        return sprintf('sscms-block-%s', (string) $this->getCode());
-    }
-
     public function getType(): string
     {
         return ElementInterface::TYPE_BLOCK;

@@ -4,77 +4,75 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig\Extension;
 
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
-use Setono\SyliusCMSPlugin\Model\BlockInterface;
-use Setono\SyliusCMSPlugin\Model\CarouselInterface;
+use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Model\ViewInterface;
 use Setono\SyliusCMSPlugin\Previewer\Preview;
 use Setono\SyliusCMSPlugin\Previewer\PreviewerInterface;
-use Setono\SyliusCMSPlugin\Renderer\RendererInterface;
+use Setono\SyliusCMSPlugin\Stack\ElementId;
+use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
+use Setono\SyliusCMSPlugin\Twig\Loader\LogicalTemplateName;
 use function sprintf;
+use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Component\Resource\ResourceActions;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Throwable;
+use Twig\Environment;
+use Twig\Error\LoaderError;
 use Twig\Extension\RuntimeExtensionInterface;
+use Webmozart\Assert\Assert;
 
-final class Runtime implements RuntimeExtensionInterface
+final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
 {
-    /** @var RendererInterface<BlockInterface> */
-    private RendererInterface $blockRenderer;
-
-    /** @var RendererInterface<ViewInterface> */
-    private RendererInterface $viewRenderer;
-
-    /** @var RendererInterface<CarouselInterface> */
-    private RendererInterface $carouselRenderer;
+    private LoggerInterface $logger;
 
     private UrlGeneratorInterface $router;
-
-    private LocaleContextInterface $localeContext;
 
     private PreviewLinkGeneratorInterface $previewLinkGenerator;
 
     private PreviewerInterface $previewer;
 
-    /**
-     * @param RendererInterface<BlockInterface> $blockRenderer
-     * @param RendererInterface<ViewInterface> $viewRenderer
-     * @param RendererInterface<CarouselInterface> $carouselRenderer
-     */
+    private ChannelContextInterface $channelContext;
+
+    private LocaleContextInterface $localeContext;
+
+    private ElementStackInterface $elementStack;
+
     public function __construct(
-        RendererInterface $blockRenderer,
-        RendererInterface $viewRenderer,
-        RendererInterface $carouselRenderer,
         UrlGeneratorInterface $router,
-        LocaleContextInterface $localeContext,
         PreviewLinkGeneratorInterface $previewLinkGenerator,
-        PreviewerInterface $previewer
+        PreviewerInterface $previewer,
+        ChannelContextInterface $channelContext,
+        LocaleContextInterface $localeContext,
+        ElementStackInterface $elementStack
     ) {
-        $this->blockRenderer = $blockRenderer;
-        $this->viewRenderer = $viewRenderer;
-        $this->carouselRenderer = $carouselRenderer;
+        $this->logger = new NullLogger();
         $this->router = $router;
-        $this->localeContext = $localeContext;
         $this->previewLinkGenerator = $previewLinkGenerator;
         $this->previewer = $previewer;
+        $this->channelContext = $channelContext;
+        $this->localeContext = $localeContext;
+        $this->elementStack = $elementStack;
     }
 
-    public function block(string $block): string
+    public function block(Environment $env, array $context, ?string $block, array $variables = []): string
     {
-        return (string) $this->blockRenderer->render($block);
+        return $this->renderElement($env, $context, $block, ElementInterface::TYPE_BLOCK, $variables);
     }
 
-    public function view(string $view): string
+    public function view(Environment $env, array $context, ?string $view, array $variables = []): string
     {
-        return (string) $this->viewRenderer->render($view);
+        return $this->renderElement($env, $context, $view, ElementInterface::TYPE_VIEW, $variables);
     }
 
-    public function carousel(string $carousel): string
+    public function carousel(Environment $env, array $context, ?string $carousel, array $variables = []): string
     {
-        return (string) $this->carouselRenderer->render($carousel);
+        return $this->renderElement($env, $context, $carousel, ElementInterface::TYPE_CAROUSEL, $variables);
     }
 
     public function linkToRoute(
@@ -254,5 +252,69 @@ final class Runtime implements RuntimeExtensionInterface
         $sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
         return sprintf('%.02F %s', $bytes / (1024 ** $i), $sizes[$i]);
+    }
+
+    /**
+     * @internal
+     */
+    public function pushToElementStack(int $id, string $code, string $identifier, string $type): void
+    {
+        $this->elementStack->push(new ElementId($id, $code, $identifier, $type));
+    }
+
+    public function setLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
+    }
+
+    private function renderElement(
+        Environment $env,
+        array $context,
+        ?string $code,
+        string $type,
+        array $variables = []
+    ): string {
+        if (null === $code) {
+            return '';
+        }
+
+        $channelCode = $this->channelContext->getChannel()->getCode();
+        Assert::notNull($channelCode);
+
+        $logicalTemplateName = new LogicalTemplateName(
+            $type,
+            $channelCode,
+            $this->localeContext->getLocaleCode(),
+            $code
+        );
+
+        try {
+            /**
+             * @psalm-suppress InternalMethod
+             *
+             * @var mixed $res
+             */
+            $res = $env->resolveTemplate((string) $logicalTemplateName)->render(array_merge($context, $variables));
+
+            return is_string($res) ? $res : '';
+        } catch (LoaderError $e) {
+            $this->logger->error(sprintf(
+                'An error occurred loading the %s "%s" (logical name: %s): %s',
+                $type,
+                $code,
+                (string) $logicalTemplateName,
+                $e->getMessage()
+            ));
+        } catch (Throwable $e) {
+            $this->logger->error(sprintf(
+                'An error occurred trying to render %s "%s" (logical name: %s): %s',
+                $type,
+                $code,
+                (string) $logicalTemplateName,
+                $e->getMessage()
+            ));
+        }
+
+        return '';
     }
 }

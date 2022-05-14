@@ -6,10 +6,9 @@ namespace Setono\SyliusCMSPlugin\Doctrine\ORM;
 
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Repository\PageRepositoryInterface;
-use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 use Webmozart\Assert\Assert;
 
-class PageRepository extends EntityRepository implements PageRepositoryInterface
+class PageRepository extends ElementRepository implements PageRepositoryInterface
 {
     public function findOneBySlug(string $locale, string $slug): ?PageInterface
     {

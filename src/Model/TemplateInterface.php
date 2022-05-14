@@ -9,13 +9,16 @@ use Sylius\Component\Resource\Model\ResourceInterface;
 use Sylius\Component\Resource\Model\TimestampableInterface;
 
 interface TemplateInterface extends
-    ResourceInterface,
     CodeAwareInterface,
-    TimestampableInterface,
-    InternalDescriptionAwareInterface
+    InternalDescriptionAwareInterface,
+    ResourceInterface,
+    TimestampableInterface
 {
     public function getId(): ?int;
 
+    /**
+     * This is the Twig source code of the template
+     */
     public function getSource(): ?string;
 
     public function setSource(string $source): void;

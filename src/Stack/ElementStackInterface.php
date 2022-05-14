@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Stack;
 
-use Setono\SyliusCMSPlugin\Renderer\ElementId;
-
-interface ElementStackInterface extends \Traversable
+interface ElementStackInterface extends \Traversable, \Countable
 {
     /**
      * Pushes an element onto the stack
@@ -14,6 +12,8 @@ interface ElementStackInterface extends \Traversable
      * @param ElementId|array<array-key, ElementId> $elements
      */
     public function push($elements): void;
+
+    public function isEmpty(): bool;
 
     /**
      * Returns true if the stack has any views OR blocks

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <doctrine-mapping xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:gedmo="http://gediminasm.org/schemas/orm/doctrine-extensions-mapping"
                   xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
                   xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
                                       http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
@@ -15,12 +16,21 @@
         <field name="template" type="string"/>
         <field name="internalDescription" type="text" nullable="true"/>
 
-        <one-to-many field="viewBlocks" target-entity="Setono\SyliusCMSPlugin\Model\ViewBlockInterface" mapped-by="view" orphan-removal="true" fetch="EAGER">
+        <field name="createdAt" type="datetime" nullable="true"> <!-- todo remove nullable in v0.7 -->
+            <gedmo:timestampable on="create"/>
+        </field>
+
+        <field name="updatedAt" type="datetime" nullable="true">
+            <gedmo:timestampable on="update"/>
+        </field>
+
+        <one-to-many field="viewBlocks" target-entity="Setono\SyliusCMSPlugin\Model\ViewBlockInterface" mapped-by="view"
+                     orphan-removal="true" fetch="EAGER">
             <cascade>
                 <cascade-all/>
             </cascade>
             <order-by>
-                <order-by-field name="position" />
+                <order-by-field name="position"/>
             </order-by>
         </one-to-many>
 

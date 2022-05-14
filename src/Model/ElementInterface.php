@@ -6,8 +6,9 @@ namespace Setono\SyliusCMSPlugin\Model;
 
 use Sylius\Component\Resource\Model\CodeAwareInterface;
 use Sylius\Component\Resource\Model\ResourceInterface;
+use Sylius\Component\Resource\Model\TimestampableInterface;
 
-interface ElementInterface extends ResourceInterface, CodeAwareInterface, InternalDescriptionAwareInterface
+interface ElementInterface extends CodeAwareInterface, InternalDescriptionAwareInterface, ResourceInterface, TimestampableInterface
 {
     public const TYPE_BLOCK = 'block';
 
@@ -21,5 +22,8 @@ interface ElementInterface extends ResourceInterface, CodeAwareInterface, Intern
 
     public function getType(): string;
 
+    /**
+     * The identifier MUST be unique across ALL classes implementing this interface
+     */
     public function getIdentifier(): string;
 }
