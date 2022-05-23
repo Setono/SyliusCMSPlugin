@@ -16,6 +16,7 @@
         <import resource="services/security.xml"/>
         <import resource="services/stack.xml"/>
         <import resource="services/template.xml"/>
+        <import resource="services/transpiler.xml"/>
         <import resource="services/twig.xml"/>
         <import resource="services/uploader.xml"/>
     </imports>

@@ -12,7 +12,7 @@ final class LogicalTemplateName
     public const TEMPLATE_NAME_PREFIX = '__sscms';
 
     /** @readonly */
-    public string $code;
+    public string $type;
 
     /** @readonly */
     public string $channelCode;
@@ -21,14 +21,14 @@ final class LogicalTemplateName
     public string $localeCode;
 
     /** @readonly */
-    public string $type;
+    public string $code;
 
-    public function __construct(string $code, string $channelCode, string $localeCode, string $type)
+    public function __construct(string $type, string $channelCode, string $localeCode, string $code)
     {
-        $this->code = $code;
+        $this->type = $type;
         $this->channelCode = $channelCode;
         $this->localeCode = $localeCode;
-        $this->type = $type;
+        $this->code = $code;
     }
 
     /**
@@ -36,16 +36,16 @@ final class LogicalTemplateName
      */
     public static function createFromString(string $logicalName): self
     {
-        Assert::true(self::isElementTemplate($logicalName));
+        Assert::true(self::isElementTemplate($logicalName), sprintf('The given template name "%s" is not a valid Setono Sylius CMS logical template name', $logicalName));
 
-        [$code, $channelCode, $localeCode, $type] = explode('/', $logicalName);
+        [, $type, $channelCode, $localeCode, $code] = explode('/', $logicalName);
 
-        return new self($code, $channelCode, $localeCode, $type);
+        return new self($type, $channelCode, $localeCode, $code);
     }
 
-    public static function createBlockTyped(string $code, string $channelCode, string $localeCode): self
+    public static function createBlockTyped(string $channelCode, string $localeCode, string $code): self
     {
-        return new self($code, $channelCode, $localeCode, ElementInterface::TYPE_BLOCK);
+        return new self(ElementInterface::TYPE_BLOCK, $channelCode, $localeCode, $code);
     }
 
     /**
@@ -53,12 +53,22 @@ final class LogicalTemplateName
      */
     public static function isElementTemplate(string $name): bool
     {
-        return strpos($name, self::TEMPLATE_NAME_PREFIX) === 0;
+        return strpos($name, self::TEMPLATE_NAME_PREFIX . '/') === 0;
     }
 
+    /**
+     * Returns the string representation of a logical template name, here is an example:
+     * __sscms/block/FASHION_WEB/en_US/block1
+     */
     public function __toString(): string
     {
-        return sprintf('%s/%s/%s/%s/%s',
-            self::TEMPLATE_NAME_PREFIX, $this->code, $this->channelCode, $this->localeCode, $this->type);
+        return sprintf(
+            '%s/%s/%s/%s/%s',
+            self::TEMPLATE_NAME_PREFIX,
+            $this->type,
+            $this->channelCode,
+            $this->localeCode,
+            $this->code
+        );
     }
 }
