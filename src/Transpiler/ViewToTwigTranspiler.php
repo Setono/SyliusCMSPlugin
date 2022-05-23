@@ -26,6 +26,8 @@ final class ViewToTwigTranspiler implements ElementToTwigTranspilerInterface
 
         $twig = '{% extends "@SetonoSyliusCMSPlugin/view.html.twig" %}';
 
+        $twig .= sprintf('{%% block identifier %%}%s{%% endblock %%}', $element->getIdentifier());
+
         /** @var array<string, array<int, string>> $blocks */
         $blocks = [];
 
