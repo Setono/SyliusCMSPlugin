@@ -12,7 +12,7 @@ use Webmozart\Assert\Assert;
 /**
  * @implements ElementToTwigTranspilerInterface<ViewInterface>
  */
-final class ViewToTwigTranspilerInterface implements ElementToTwigTranspilerInterface
+final class ViewToTwigTranspiler implements ElementToTwigTranspilerInterface
 {
     /**
      * @param ViewInterface $element

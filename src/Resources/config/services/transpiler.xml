@@ -6,6 +6,6 @@
                  class="Setono\SyliusCMSPlugin\Transpiler\BlockToTwigTranspiler"/>
 
         <service id="setono_sylius_cms.transpiler.view"
-                 class="Setono\SyliusCMSPlugin\Transpiler\ViewToTwigTranspilerInterface"/>
+                 class="Setono\SyliusCMSPlugin\Transpiler\ViewToTwigTranspiler"/>
     </services>
 </container>
