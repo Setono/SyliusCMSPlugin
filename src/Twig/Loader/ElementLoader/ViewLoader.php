@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig\Loader\ElementLoader;
 
-use Setono\SyliusCMSPlugin\Generator\Twig\ElementBasedTwigGeneratorInterface;
+use Setono\SyliusCMSPlugin\Generator\Twig\TwigGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Setono\SyliusCMSPlugin\Model\ViewInterface;
 use Setono\SyliusCMSPlugin\Repository\ViewRepositoryInterface;
@@ -14,13 +14,13 @@ final class ViewLoader implements ElementLoaderInterface
 {
     private ViewRepositoryInterface $viewRepository;
 
-    /** @var ElementBasedTwigGeneratorInterface<ViewInterface> */
-    private ElementBasedTwigGeneratorInterface $twigGenerator;
+    /** @var TwigGeneratorInterface<ViewInterface> */
+    private TwigGeneratorInterface $twigGenerator;
 
     /**
-     * @param ElementBasedTwigGeneratorInterface<ViewInterface> $twigGenerator
+     * @param TwigGeneratorInterface<ViewInterface> $twigGenerator
      */
-    public function __construct(ViewRepositoryInterface $viewRepository, ElementBasedTwigGeneratorInterface $twigGenerator)
+    public function __construct(ViewRepositoryInterface $viewRepository, TwigGeneratorInterface $twigGenerator)
     {
         $this->viewRepository = $viewRepository;
         $this->twigGenerator = $twigGenerator;

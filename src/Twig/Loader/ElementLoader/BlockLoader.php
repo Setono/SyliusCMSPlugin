@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig\Loader\ElementLoader;
 
-use Setono\SyliusCMSPlugin\Generator\Twig\StringBasedTwigGeneratorInterface;
+use Setono\SyliusCMSPlugin\Generator\Twig\TwigGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Setono\SyliusCMSPlugin\Repository\BlockRepositoryInterface;
 use Twig\Error\LoaderError;
@@ -13,11 +13,11 @@ final class BlockLoader implements ElementLoaderInterface
 {
     private BlockRepositoryInterface $blockRepository;
 
-    private StringBasedTwigGeneratorInterface $twigGenerator;
+    private TwigGeneratorInterface $twigGenerator;
 
     public function __construct(
         BlockRepositoryInterface $blockRepository,
-        StringBasedTwigGeneratorInterface $twigGenerator
+        TwigGeneratorInterface $twigGenerator
     ) {
         $this->blockRepository = $blockRepository;
         $this->twigGenerator = $twigGenerator;
@@ -35,9 +35,9 @@ final class BlockLoader implements ElementLoaderInterface
             )); // todo should another exception (from this plugin) be thrown instead and then handled in the composite loader?
         }
 
-        $block->setCurrentLocale($logicalTemplateName->localeCode);
-
-        return $this->twigGenerator->generate($block->getContent());
+        return $this->twigGenerator->generate($block, [
+            'localeCode' => $logicalTemplateName->localeCode,
+        ]);
     }
 
     public function exists(LogicalTemplateName $logicalTemplateName): bool

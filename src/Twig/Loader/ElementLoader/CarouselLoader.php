@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig\Loader\ElementLoader;
 
-use Setono\SyliusCMSPlugin\Generator\Twig\ElementBasedTwigGeneratorInterface;
+use Setono\SyliusCMSPlugin\Generator\Twig\TwigGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\CarouselInterface;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Setono\SyliusCMSPlugin\Repository\CarouselRepositoryInterface;
@@ -14,13 +14,13 @@ final class CarouselLoader implements ElementLoaderInterface
 {
     private CarouselRepositoryInterface $carouselRepository;
 
-    /** @var ElementBasedTwigGeneratorInterface<CarouselInterface> */
-    private ElementBasedTwigGeneratorInterface $twigGenerator;
+    /** @var TwigGeneratorInterface<CarouselInterface> */
+    private TwigGeneratorInterface $twigGenerator;
 
     /**
-     * @param ElementBasedTwigGeneratorInterface<CarouselInterface> $twigGenerator
+     * @param TwigGeneratorInterface<CarouselInterface> $twigGenerator
      */
-    public function __construct(CarouselRepositoryInterface $carouselRepository, ElementBasedTwigGeneratorInterface $twigGenerator)
+    public function __construct(CarouselRepositoryInterface $carouselRepository, TwigGeneratorInterface $twigGenerator)
     {
         $this->carouselRepository = $carouselRepository;
         $this->twigGenerator = $twigGenerator;

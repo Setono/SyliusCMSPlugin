@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Twig\Loader\ElementLoader;
+namespace Setono\SyliusCMSPlugin\Twig\Loader;
 
+use Setono\SyliusCMSPlugin\Twig\Loader\ElementLoader\ElementLoaderInterface;
+use Setono\SyliusCMSPlugin\Twig\Loader\ElementLoader\LogicalTemplateName;
 use Twig\Error\LoaderError;
 use Twig\Loader\LoaderInterface;
 use Twig\Source;
 
-final class CompositeLoader implements LoaderInterface
+final class ElementLoader implements LoaderInterface
 {
     /** @var list<ElementLoaderInterface> */
     private array $elementLoaders = [];
@@ -46,6 +48,7 @@ final class CompositeLoader implements LoaderInterface
     }
 
     /**
+     * @param callable(LogicalTemplateName, ElementLoaderInterface): mixed $callable
      * @return mixed
      */
     private function delegate(string $name, callable $callable)
