@@ -13,11 +13,11 @@ final class RegisterElementLoadersPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        if (!$container->has('setono_sylius_cms.twig.loader.element')) {
+        if (!$container->has('setono_sylius_cms.twig.loader.composite_element')) {
             return;
         }
 
-        $definition = $container->getDefinition('setono_sylius_cms.twig.loader.element');
+        $definition = $container->getDefinition('setono_sylius_cms.twig.loader.composite_element');
 
         /** @var string $id */
         foreach (array_keys($container->findTaggedServiceIds('setono_sylius_cms.element_loader')) as $id) {

@@ -11,7 +11,7 @@ use Twig\Error\LoaderError;
 use Twig\Loader\LoaderInterface;
 use Twig\Source;
 
-final class ElementLoader implements LoaderInterface
+final class CompositeElementLoader implements LoaderInterface
 {
     /** @var list<ElementLoaderInterface> */
     private array $elementLoaders = [];
@@ -22,7 +22,7 @@ final class ElementLoader implements LoaderInterface
     }
 
     /**
-     * This method is always called before any of the other methods in the LoaderInterface.
+     * This method is always called before any of the other methods in the LoaderInterface (see \Twig\Loader\ChainLoader)
      * This implies that we can expect the $name to be valid in all other methods in this class
      *
      * NOTICE
@@ -53,7 +53,6 @@ final class ElementLoader implements LoaderInterface
         );
     }
 
-    // todo should throw LoaderError if $name does not exist - at least according to the interface docs
     public function getCacheKey($name): string
     {
         return (string) LogicalTemplateName::createFromString($name);
