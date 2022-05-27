@@ -24,17 +24,23 @@ final class ElementLoader implements LoaderInterface
     /**
      * This method is always called before any of the other methods in the LoaderInterface.
      * This implies that we can expect the $name to be valid in all other methods in this class
+     *
+     * NOTICE
+     * The interface states that this method should throw a LoaderError if the $name does not exist.
+     * We only do this in subsequent methods (i.e. getSourceContext and isFresh). This is because Twig
+     * will call this method everytime Twig needs a cache key and to load a template (also existing compiled ones)
+     * Twig needs the cache key, hence exists is called EVERY time a template is loaded and with our approach this
+     * would mean we needed to hit the database for EVERY cms element referenced throughout the application
      */
     public function exists($name): bool
     {
         try {
-            $logicalTemplateName = LogicalTemplateName::createFromString($name);
-            $elementLoader = $this->getElementLoader($logicalTemplateName);
-        } catch (InvalidArgumentException | LoaderError $e) {
+            LogicalTemplateName::createFromString($name);
+        } catch (InvalidArgumentException $e) {
             return false;
         }
 
-        return $elementLoader->exists($logicalTemplateName);
+        return true;
     }
 
     public function getSourceContext($name): Source
