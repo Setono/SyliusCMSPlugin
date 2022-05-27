@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin;
 
-use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterElementLoadersPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterPageEligibilityCheckersPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterPreviewersPass;
 use Sylius\Bundle\CoreBundle\Application\SyliusPluginTrait;
@@ -27,7 +26,6 @@ final class SetonoSyliusCMSPlugin extends AbstractResourceBundle
     {
         parent::build($container);
 
-        $container->addCompilerPass(new RegisterElementLoadersPass());
         $container->addCompilerPass(new RegisterPageEligibilityCheckersPass());
         $container->addCompilerPass(new RegisterPreviewersPass());
     }

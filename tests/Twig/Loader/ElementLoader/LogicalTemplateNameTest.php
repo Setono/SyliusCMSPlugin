@@ -6,7 +6,7 @@ namespace Tests\Setono\SyliusCMSPlugin\Twig\Loader\ElementLoader;
 
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
-use Setono\SyliusCMSPlugin\Twig\Loader\ElementLoader\LogicalTemplateName;
+use Setono\SyliusCMSPlugin\Twig\Loader\LogicalTemplateName;
 
 /**
  * @covers \Setono\SyliusCMSPlugin\Twig\Loader\ElementLoader\LogicalTemplateName
