@@ -27,7 +27,7 @@ interface ElementLoaderInterface
     public function exists(LogicalTemplateName $logicalTemplateName): bool;
 
     /**
-     * Returns true if this element loader supports the template (most likely the type)
+     * Returns true if this element loader supports the logical template name (most likely the type)
      */
     public function supports(LogicalTemplateName $logicalTemplateName): bool;
 }

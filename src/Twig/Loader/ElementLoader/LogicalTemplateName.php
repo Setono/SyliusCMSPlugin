@@ -36,9 +36,13 @@ final class LogicalTemplateName
      */
     public static function createFromString(string $logicalName): self
     {
-        Assert::true(self::isElementTemplate($logicalName), sprintf('The given template name "%s" is not a valid Setono Sylius CMS logical template name', $logicalName));
+        $parts = explode('/', $logicalName);
+        Assert::count($parts, 5, sprintf('The logical template name MUST contain 5 parts (namespace, type, channelCode, localeCode, and code). The given template name "%s" did not resolve to 5 parts.', $logicalName));
+        Assert::allStringNotEmpty($parts, sprintf('The 5 parts of the logical template name MUST all be non empty strings. Given input was: "%s".', $logicalName));
 
-        [, $type, $channelCode, $localeCode, $code] = explode('/', $logicalName);
+        [$namespace, $type, $channelCode, $localeCode, $code] = $parts;
+
+        Assert::same($namespace, self::TEMPLATE_NAME_PREFIX, sprintf('The first part of the logical template name is the namespace and has to be exactly "%s". Given namespace was: %s', self::TEMPLATE_NAME_PREFIX, $namespace));
 
         return new self($type, $channelCode, $localeCode, $code);
     }
@@ -46,14 +50,6 @@ final class LogicalTemplateName
     public static function createBlockTyped(string $channelCode, string $localeCode, string $code): self
     {
         return new self(ElementInterface::TYPE_BLOCK, $channelCode, $localeCode, $code);
-    }
-
-    /**
-     * Returns true if the given template name is an CMS element template name
-     */
-    public static function isElementTemplate(string $name): bool
-    {
-        return strpos($name, self::TEMPLATE_NAME_PREFIX . '/') === 0;
     }
 
     /**
