@@ -12,19 +12,23 @@ namespace Setono\SyliusCMSPlugin\Twig\Loader\ElementLoader;
 interface ElementLoaderInterface
 {
     /**
+     * Check if we have the source code of a template, given its name.
+     */
+    public function exists(LogicalTemplateName $logicalTemplateName): bool;
+
+    /**
      * Returns the Twig source for the given template name
+     *
+     * @throws \InvalidArgumentException if the logical template name does not exist
      */
     public function getSource(LogicalTemplateName $logicalTemplateName): string;
 
     /**
      * Returns true if the template is still fresh
+     *
+     * @throws \InvalidArgumentException if the logical template name does not exist
      */
     public function isFresh(LogicalTemplateName $logicalTemplateName, int $time): bool;
-
-    /**
-     * Check if we have the source code of a template, given its name.
-     */
-    public function exists(LogicalTemplateName $logicalTemplateName): bool;
 
     /**
      * Returns true if this element loader supports the logical template name (most likely the type)
