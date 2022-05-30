@@ -5,3 +5,4 @@
 ## Getting started
 
 * [Installation](installation.md)
+* [Your first page](your-first-page.md)
