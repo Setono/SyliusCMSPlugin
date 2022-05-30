@@ -43,7 +43,7 @@ If not you should manually add them:
 ```
 
 {% hint style="info" %}
-**NOTICE: ** It's important that you add the plugin _before_ the `SyliusGridBundle`.
+**NOTICE:** It's important that you add the plugin _before_ the `SyliusGridBundle`.
 {% endhint %}
 
 ## Add configuration file
