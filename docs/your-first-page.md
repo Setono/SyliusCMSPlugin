@@ -10,7 +10,7 @@ When a page is requested, the CMS will go through this _flow_:
 ## Creating your first template
 
 From this short description, you can deduce that the basis for our page is the template, so let's create a template.
-Click on `Templates` in the menu and click `Create`. Input `first_page` in the `Code` field and 
+Click on `Templates` in the menu and click `Create`. Input `first_template` in the `Code` field and 
 `\{% block sscms_section_content %\}\{% endblock %\}` in the `Source` field.
 The internal description field is used for your internal usage to better identify templates later on.
 Here is a screenshot of what you should have now:
@@ -37,3 +37,23 @@ Hit `Create`.
 
 Now we have to tie the blocks to the section we defined in the template. We do this in a view. Click on `Views` and
 then `Create`.
+
+Now, in the `Code` your input `first_view` and for the template you choose `first_template`. When you select the template
+the available sections for the template appears on the right. Now you select `first_block` and you should have something
+like the following image:
+
+![First block](images/first_view.png)
+
+Remember to hit `Create`
+
+## Creating your first page
+
+Last step! We will now create our page. Go to `Pages` and click `Create`. Input `first_page` in the `Code` field and
+select the view we just created, namely `first_view`, and input `first-page` in the `Slug` field. Again, here is an
+image showing what it could look like:
+
+![First block](images/first_view.png)
+
+Click `Create`.
+
+You're done! Go to `/en_US/first-page` to see your new page!
