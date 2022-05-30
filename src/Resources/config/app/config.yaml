@@ -19,12 +19,6 @@ knp_gaufrette:
         setono_sylius_cms_asset:
             adapter: "%setono_sylius_cms.asset_adapter%"
 
-framework:
-    cache:
-        pools:
-            sscms.cache_pool.elements:
-                adapter: cache.adapter.filesystem
-
 liip_imagine:
     loaders:
         setono_sylius_cms_asset:

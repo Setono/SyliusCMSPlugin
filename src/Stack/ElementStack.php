@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Stack;
 
 use ArrayIterator;
-use Setono\SyliusCMSPlugin\Renderer\ElementId;
 
 final class ElementStack implements ElementStackInterface, \IteratorAggregate
 {
@@ -19,17 +18,22 @@ final class ElementStack implements ElementStackInterface, \IteratorAggregate
         }
 
         foreach ($elements as $element) {
-            if (isset($this->elements[$element->getIdentifier()])) {
+            if (isset($this->elements[$element->identifier])) {
                 continue;
             }
 
-            $this->elements[$element->getIdentifier()] = $element;
+            $this->elements[$element->identifier] = $element;
         }
+    }
+
+    public function isEmpty(): bool
+    {
+        return [] === $this->elements;
     }
 
     public function hasElements(): bool
     {
-        return count($this->elements) > 0;
+        return !$this->isEmpty();
     }
 
     public function getBlocks(): array
@@ -56,5 +60,10 @@ final class ElementStack implements ElementStackInterface, \IteratorAggregate
     public function getIterator(): ArrayIterator
     {
         return new ArrayIterator($this->elements);
+    }
+
+    public function count(): int
+    {
+        return count($this->elements);
     }
 }

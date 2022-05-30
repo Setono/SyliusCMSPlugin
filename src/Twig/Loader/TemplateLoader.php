@@ -12,7 +12,7 @@ use Twig\Error\LoaderError;
 use Twig\Loader\LoaderInterface;
 use Twig\Source;
 
-final class DoctrineLoader implements LoaderInterface
+final class TemplateLoader implements LoaderInterface
 {
     private TemplateRepositoryInterface $templateRepository;
 

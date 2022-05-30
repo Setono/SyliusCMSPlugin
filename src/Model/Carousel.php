@@ -25,11 +25,6 @@ class Carousel extends Element implements CarouselInterface
         $this->carouselBlocks = new ArrayCollection();
     }
 
-    public function getIdentifier(): string
-    {
-        return sprintf('sscms-carousel-%s', (string) $this->getCode());
-    }
-
     public function getType(): string
     {
         return ElementInterface::TYPE_CAROUSEL;

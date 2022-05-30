@@ -4,10 +4,8 @@
     <services>
         <service id="setono_sylius_cms.doctrine.entity_listener.cms_element_cache_invalidator"
                  class="Setono\SyliusCMSPlugin\EventListener\Doctrine\ElementCacheInvalidatorListener">
-            <argument type="service" id="sscms.cache_pool.elements"/>
-            <argument type="service" id="setono_sylius_cms.generator.element_cache_key"/>
             <argument type="service" id="sylius.repository.channel"/>
-            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="setono_twig_cache_purger.purger.default"/>
 
             <tag name="doctrine.event_listener" event="postPersist"/>
             <tag name="doctrine.event_listener" event="postUpdate"/>

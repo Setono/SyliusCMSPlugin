@@ -36,11 +36,6 @@ class Page extends Element implements PageInterface
         $this->initializeTranslationsCollection();
     }
 
-    public function getIdentifier(): string
-    {
-        return sprintf('sscms-page-%s', (string) $this->getCode());
-    }
-
     public function getType(): string
     {
         return ElementInterface::TYPE_PAGE;

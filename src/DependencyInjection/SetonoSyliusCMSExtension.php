@@ -16,7 +16,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension
         /**
          * @psalm-suppress PossiblyNullArgument
          *
-         * @var array{cache: array{enabled: bool, ttl: int}, driver: string, resources: array<string, mixed>, templates: array} $config
+         * @var array{driver: string, resources: array<string, mixed>, templates: array} $config
          */
         $config = $this->processConfiguration($this->getConfiguration([], $container), $configs);
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
@@ -26,10 +26,5 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension
         $this->registerResources('setono_sylius_cms', $config['driver'], $config['resources'], $container);
 
         $loader->load('services.xml');
-
-        if ($config['cache']['enabled']) {
-            $container->setParameter('setono_sylius_cms.cache.ttl', $config['cache']['ttl']);
-            $loader->load('services/conditional/cache.xml');
-        }
     }
 }

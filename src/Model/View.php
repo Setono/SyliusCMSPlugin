@@ -21,11 +21,6 @@ class View extends Element implements ViewInterface
         $this->viewBlocks = new ArrayCollection();
     }
 
-    public function getIdentifier(): string
-    {
-        return sprintf('sscms-view-%s', (string) $this->getCode());
-    }
-
     public function getType(): string
     {
         return ElementInterface::TYPE_VIEW;

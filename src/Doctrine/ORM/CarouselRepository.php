@@ -6,16 +6,13 @@ namespace Setono\SyliusCMSPlugin\Doctrine\ORM;
 
 use Setono\SyliusCMSPlugin\Model\CarouselInterface;
 use Setono\SyliusCMSPlugin\Repository\CarouselRepositoryInterface;
-use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 use Webmozart\Assert\Assert;
 
-class CarouselRepository extends EntityRepository implements CarouselRepositoryInterface
+class CarouselRepository extends ElementRepository implements CarouselRepositoryInterface
 {
     public function findOneByCode(string $code): ?CarouselInterface
     {
-        $obj = $this->findOneBy([
-            'code' => $code,
-        ]);
+        $obj = parent::findOneByCode($code);
 
         Assert::nullOrIsInstanceOf($obj, CarouselInterface::class);
 

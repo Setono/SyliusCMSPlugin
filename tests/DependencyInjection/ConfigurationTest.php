@@ -56,10 +56,6 @@ final class ConfigurationTest extends TestCase
     {
         $this->assertProcessedConfigurationEquals([], [
             'driver' => SyliusResourceBundle::DRIVER_DOCTRINE_ORM,
-            'cache' => [
-                'enabled' => true,
-                'ttl' => 10_800,
-            ],
             'templates' => [],
             'resources' => [
                 'asset' => [

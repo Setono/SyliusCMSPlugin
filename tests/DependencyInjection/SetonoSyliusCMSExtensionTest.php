@@ -6,7 +6,6 @@ namespace Tests\Setono\SyliusCMSPlugin\DependencyInjection;
 
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
-use Setono\SyliusCMSPlugin\Renderer\BlockRenderer;
 
 /**
  * See examples of tests and configuration options here: https://github.com/SymfonyTest/SymfonyDependencyInjectionTest
@@ -28,7 +27,5 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->load();
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.templates', []);
-
-        $this->assertContainerBuilderHasService('setono_sylius_cms.renderer.block', BlockRenderer::class);
     }
 }
