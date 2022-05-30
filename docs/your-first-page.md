@@ -8,9 +8,9 @@ When a page is requested, the CMS will
 3. The view in turn renders the blocks and the blocks are rendered in places determined by the template
 
 From this short description, you can deduce that the basis for our page is the template, so let's create a template.
-Click on `Templates` in the menu click `Create`. Input `first_page` in the `Code` field and
-`{% block sscms_section_content %}{% endblock %}` in the `Source` field. The internal description field is used for
-your internal usage to better identify templates later on. Here is a screenshot of what you should have now:
+Click on `Templates` in the menu click `Create`. Input `first_page` in the `Code` field and `{% block sscms_section_content %}{% endblock %}`
+in the `Source` field. The internal description field is used for your internal usage to better identify templates later on.
+Here is a screenshot of what you should have now:
 
 ![First page template](images/first_page_template.png)
 
