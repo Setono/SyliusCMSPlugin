@@ -25,6 +25,13 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <service id="setono_sylius_cms.controller.action.show_tree"
+                 class="Setono\SyliusCMSPlugin\Controller\Action\ShowTreeAction">
+            <argument type="service" id="setono_sylius_cms.manager.navigation_item"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="setono_sylius_cms.controller.action.download_asset"
                  class="Setono\SyliusCMSPlugin\Controller\Action\DownloadAssetAction">
             <argument type="service" id="setono_sylius_cms.repository.asset"/>

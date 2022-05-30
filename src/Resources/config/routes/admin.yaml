@@ -38,6 +38,22 @@ setono_sylius_cms_admin_carousel:
                     form: "@SetonoSyliusCMSPlugin/admin/carousel/_form.html.twig"
     type: sylius.resource
 
+setono_sylius_cms_admin_navigation:
+    resource: |
+        section: admin
+        alias: setono_sylius_cms.navigation
+        templates: "@SyliusAdmin\\Crud"
+        redirect: index
+        permission: true
+        grid: setono_sylius_cms_admin_navigation
+        vars:
+            all:
+                header: setono_sylius_cms.ui.navigation_header
+                subheader: setono_sylius_cms.ui.navigation_subheader
+                templates:
+                    form: "@SetonoSyliusCMSPlugin/admin/navigation/_form.html.twig"
+    type: sylius.resource
+
 setono_sylius_cms_admin_page:
     resource: |
         section: admin

@@ -14,6 +14,8 @@ interface ElementInterface extends CodeAwareInterface, InternalDescriptionAwareI
 
     public const TYPE_CAROUSEL = 'carousel';
 
+    public const TYPE_NAVIGATION = 'navigation';
+
     public const TYPE_PAGE = 'page';
 
     public const TYPE_VIEW = 'view';

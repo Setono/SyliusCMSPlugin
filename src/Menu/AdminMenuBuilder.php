@@ -60,6 +60,14 @@ final class AdminMenuBuilder
             ->setLabel('setono_sylius_cms.menu.admin.main.content_management.pages')
             ->setLabelAttribute('icon', 'file alternate outline')
         ;
+
+        $header
+            ->addChild('navigation', [
+                'route' => 'setono_sylius_cms_admin_navigation_index',
+            ])
+            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.navigation')
+            ->setLabelAttribute('icon', 'tree')
+        ;
     }
 
     private function getHeader(ItemInterface $menu): ItemInterface

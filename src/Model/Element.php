@@ -23,6 +23,7 @@ abstract class Element implements ElementInterface
         return [
             self::TYPE_BLOCK,
             self::TYPE_CAROUSEL,
+            self::TYPE_NAVIGATION,
             self::TYPE_PAGE,
             self::TYPE_VIEW,
         ];

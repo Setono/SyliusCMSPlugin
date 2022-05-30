@@ -44,6 +44,7 @@ setono_sylius_cms:
                     blocks: Blocks
                     carousels: Carousels
                     header: Content management
+                    navigation: Navigation
                     pages: Pages
                     templates: Templates
                     views: Views
@@ -60,6 +61,9 @@ setono_sylius_cms:
         duplicate_block: Duplicate block
         internal_description: Internal description
         name: Name
+        navigation_header: Navigation
+        navigation_subheader: Manage all your navigation bars, menus etc. in one place
+        navigations: Navigations
         page_header: Pages
         page_subheader: Manage your CMS pages
         pages: Pages
