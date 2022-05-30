@@ -10,13 +10,9 @@ When a page is requested, the CMS will go through this _flow_:
 ## Creating your first template
 
 From this short description, you can deduce that the basis for our page is the template, so let's create a template.
-Click on `Templates` in the menu and click `Create`. Input `first_page` in the `Code` field and
-
-```twig
-{% block sscms_section_content %}{% endblock %}
-```
-
-in the `Source` field. The internal description field is used for your internal usage to better identify templates later on.
+Click on `Templates` in the menu and click `Create`. Input `first_page` in the `Code` field and 
+{% block sscms_section_content %}{% endblock %} in the `Source` field.
+The internal description field is used for your internal usage to better identify templates later on.
 Here is a screenshot of what you should have now:
 
 ![First template](images/first_template.png)
