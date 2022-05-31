@@ -16,35 +16,32 @@ final class PageExistsChecker implements PageExistsCheckerInterface
         $this->pageRepository = $pageRepository;
     }
 
-    /**
-     * Returns true if a page exists given the URL
-     */
     public function checkUrl(Request $request): bool
     {
-        $url = $request->getPathInfo();
+        $path = $request->getPathInfo();
 
-        $slug = self::getSlugFromUrl($url);
-        if (null === $slug || '' === $slug) {
-            return false;
+        foreach (self::getSlugsFromUrl($path) as $slug) {
+            // NOTICE: We cannot use the locale to check if the slug exists on the specific locale
+            // because the locale isn't available at this point in time in the request cycle
+            if ($this->pageRepository->exists($slug)) {
+                return true;
+            }
         }
 
-        // NOTICE: We cannot use the locale to check if the slug exists on the specific locale
-        // because the locale isn't available at this point in time in the request cycle
-
-        return $this->pageRepository->exists($slug);
+        return false;
     }
 
     /**
-     * NOTICE that we presume that slugs cannot contain a slash (/)
-     * todo add this to validation rules for PageTranslation entity
+     * @return \Generator<string>
      */
-    private static function getSlugFromUrl(string $url): ?string
+    private static function getSlugsFromUrl(string $path): \Generator
     {
-        $pos = strrpos($url, '/');
-        if ($pos === false) { // note: three equal signs
-            return null;
-        }
+        $parts = explode('/', trim($path, '/'));
 
-        return substr($url, $pos + 1);
+        do {
+            yield implode('/', $parts);
+
+            array_shift($parts);
+        } while ([] !== $parts);
     }
 }
