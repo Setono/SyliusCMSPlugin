@@ -6,7 +6,7 @@
 Read the documentation here: [docs.sylius-cms.com](https://docs.sylius-cms.com/)
 
 [ico-github-actions]: https://github.com/Setono/SyliusCMSPlugin/workflows/build/badge.svg
-[ico-code-coverage]: https://codecov.io/gh/Setono/SyliusCMSPlugin/branch/master/graph/badge.svg
+[ico-code-coverage]: https://codecov.io/gh/Setono/SyliusCMSPlugin/branch/master/graph/badge.svg?token=W7st3gOB4I
 
 [link-github-actions]: https://github.com/Setono/SyliusCMSPlugin/actions
 [link-code-coverage]: https://codecov.io/gh/Setono/SyliusCMSPlugin
