@@ -2,9 +2,17 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="setono_sylius_cms.doctrine.entity_listener.cms_element_cache_invalidator"
+        <service id="setono_sylius_cms.event_listener.doctrine.element_cache_invalidator"
                  class="Setono\SyliusCMSPlugin\EventListener\Doctrine\ElementCacheInvalidatorListener">
             <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="setono_twig_cache_purger.purger.default"/>
+
+            <tag name="doctrine.event_listener" event="postPersist"/>
+            <tag name="doctrine.event_listener" event="postUpdate"/>
+        </service>
+
+        <service id="setono_sylius_cms.event_listener.doctrine.template_cache_invalidator"
+                 class="Setono\SyliusCMSPlugin\EventListener\Doctrine\TemplateCacheInvalidatorListener">
             <argument type="service" id="setono_twig_cache_purger.purger.default"/>
 
             <tag name="doctrine.event_listener" event="postPersist"/>
