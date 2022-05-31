@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Checker;
+namespace Setono\SyliusCMSPlugin\Routing;
 
 use Setono\SyliusCMSPlugin\Repository\PageRepositoryInterface;
 use Symfony\Component\HttpFoundation\Request;

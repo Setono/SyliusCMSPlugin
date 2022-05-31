@@ -29,11 +29,5 @@
                  class="Setono\SyliusCMSPlugin\Checker\Eligibility\Page\EnabledEligibilityChecker">
             <tag name="setono_sylius_cms.page_eligibility_checker"/>
         </service>
-
-        <!-- Misc -->
-        <service id="setono_sylius_cms.checker.page_exists"
-                 class="Setono\SyliusCMSPlugin\Checker\PageExistsChecker">
-            <argument type="service" id="setono_sylius_cms.repository.page"/>
-        </service>
     </services>
 </container>
