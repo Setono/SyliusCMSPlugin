@@ -1,3 +1,5 @@
+name: "Backwards Compatibility Check"
+
 on:
     push:
         branches:
@@ -11,8 +13,6 @@ on:
 
 jobs:
     backwards-compatibility-check:
-        name: "Backwards Compatibility Check"
-    
         runs-on: "ubuntu-latest"
         
         steps:
