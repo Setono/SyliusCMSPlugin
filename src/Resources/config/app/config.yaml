@@ -24,6 +24,7 @@ liip_imagine:
         setono_sylius_cms_asset:
             filesystem:
                 data_root: "%sylius_core.public_dir%/media/assets/original"
+                allow_unresolvable_data_roots: true # The Gaufrette library will create the path when needed, hence the directory will be available when we need it for LiipImagineBundle
     resolvers:
         setono_sylius_cms_asset:
             web_path:
