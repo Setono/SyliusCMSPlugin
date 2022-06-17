@@ -9,6 +9,7 @@ use Sylius\Component\Resource\Model\TimestampableTrait;
 abstract class Element implements ElementInterface
 {
     use InternalDescriptionAwareTrait;
+
     use TimestampableTrait;
 
     protected ?int $id = null;
