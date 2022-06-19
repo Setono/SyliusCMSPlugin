@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Checker\Eligibility\Page;
 
+use Setono\MainRequestTrait\MainRequestTrait;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -12,6 +13,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 final class PreviewEligibilityChecker implements EligibilityCheckerInterface
 {
+    use MainRequestTrait;
+
     private EligibilityCheckerInterface $eligibilityChecker;
 
     private RequestStack $requestStack;
@@ -24,7 +27,7 @@ final class PreviewEligibilityChecker implements EligibilityCheckerInterface
 
     public function isEligible(PageInterface $page): bool
     {
-        $request = $this->requestStack->getMasterRequest();
+        $request = $this->getMainRequestFromRequestStack($this->requestStack);
         if (null === $request) {
             return $this->eligibilityChecker->isEligible($page);
         }

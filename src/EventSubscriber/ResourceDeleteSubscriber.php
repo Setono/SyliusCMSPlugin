@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\EventSubscriber;
 
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
+use Setono\MainRequestTrait\MainRequestTrait;
 use Sylius\Component\Resource\ResourceActions;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -17,6 +18,8 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final class ResourceDeleteSubscriber implements EventSubscriberInterface
 {
+    use MainRequestTrait;
+
     private UrlGeneratorInterface $router;
 
     private SessionInterface $session;
@@ -44,7 +47,7 @@ final class ResourceDeleteSubscriber implements EventSubscriberInterface
             return;
         }
 
-        if (!$event->isMasterRequest() || 'html' !== $event->getRequest()->getRequestFormat()) {
+        if (!$this->isMainRequest($event) || 'html' !== $event->getRequest()->getRequestFormat()) {
             return;
         }
 

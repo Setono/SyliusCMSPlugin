@@ -22,12 +22,6 @@
         <pluginClass class="Weirdan\DoctrinePsalmPlugin\Plugin"/>
     </plugins>
     <issueHandlers>
-        <DeprecatedMethod>
-            <errorLevel type="suppress">
-                <referencedMethod name="Symfony\Component\HttpFoundation\RequestStack::getMasterRequest"/>
-                <referencedMethod name="Symfony\Component\HttpKernel\Event\KernelEvent::isMasterRequest"/>
-            </errorLevel>
-        </DeprecatedMethod>
         <UnnecessaryVarAnnotation errorLevel="suppress"/> <!-- We only use var annotations when PhpStorm doesn't understand types -->
     </issueHandlers>
 </psalm>

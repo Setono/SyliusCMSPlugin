@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Form\EventSubscriber;
 
+use Setono\MainRequestTrait\MainRequestTrait;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
@@ -13,6 +14,8 @@ use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
 final class SetQueryParameterValueOnObjectSubscriber implements EventSubscriberInterface
 {
+    use MainRequestTrait;
+
     private RequestStack $requestStack;
 
     private string $queryParameter;
@@ -47,7 +50,7 @@ final class SetQueryParameterValueOnObjectSubscriber implements EventSubscriberI
             return;
         }
 
-        $request = $this->requestStack->getMasterRequest();
+        $request = $this->getMainRequestFromRequestStack($this->requestStack);
         if (null === $request) {
             return;
         }
