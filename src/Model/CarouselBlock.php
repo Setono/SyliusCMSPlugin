@@ -6,18 +6,13 @@ namespace Setono\SyliusCMSPlugin\Model;
 
 class CarouselBlock implements CarouselBlockInterface
 {
-    protected ?int $id = null;
+    use IdAwareTrait;
 
     protected int $position = 0;
 
     protected ?CarouselInterface $carousel = null;
 
     protected ?BlockInterface $block = null;
-
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
 
     public function getPosition(): int
     {

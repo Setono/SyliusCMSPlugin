@@ -18,6 +18,8 @@ class View extends Element implements ViewInterface
 
     public function __construct()
     {
+        parent::__construct();
+
         $this->viewBlocks = new ArrayCollection();
     }
 

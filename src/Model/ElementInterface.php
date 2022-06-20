@@ -8,7 +8,13 @@ use Sylius\Component\Resource\Model\CodeAwareInterface;
 use Sylius\Component\Resource\Model\ResourceInterface;
 use Sylius\Component\Resource\Model\TimestampableInterface;
 
-interface ElementInterface extends CodeAwareInterface, InternalDescriptionAwareInterface, ResourceInterface, TimestampableInterface
+interface ElementInterface extends
+    CodeAwareInterface,
+    IdAwareInterface,
+    InternalDescriptionAwareInterface,
+    ResourceInterface,
+    TagsAwareInterface,
+    TimestampableInterface
 {
     public const TYPE_BLOCK = 'block';
 
@@ -17,8 +23,6 @@ interface ElementInterface extends CodeAwareInterface, InternalDescriptionAwareI
     public const TYPE_PAGE = 'page';
 
     public const TYPE_VIEW = 'view';
-
-    public function getId(): ?int;
 
     public function getType(): string;
 

@@ -1,0 +1,14 @@
+Setono\SyliusCMSPlugin\Model\Tag:
+    exclusion_policy: ALL
+    xml_root_name: tag
+    properties:
+        id:
+            expose: true
+            type: integer
+            xml_attribute: true
+            groups: [Default, Autocomplete]
+        code:
+            expose: true
+            type: string
+            xml_attribute: true
+            groups: [Default, Autocomplete]

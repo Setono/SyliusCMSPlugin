@@ -6,10 +6,8 @@ namespace Setono\SyliusCMSPlugin\Model;
 
 use Sylius\Component\Resource\Model\ResourceInterface;
 
-interface ViewBlockInterface extends ResourceInterface
+interface ViewBlockInterface extends IdAwareInterface, ResourceInterface
 {
-    public function getId(): ?int;
-
     public function getView(): ?ViewInterface;
 
     public function setView(?ViewInterface $view): void;

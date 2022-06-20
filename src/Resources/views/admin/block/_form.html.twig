@@ -19,6 +19,7 @@
         <div class="ui segment">
             {{ form_row(form.code) }}
             {{ form_row(form.internalDescription) }}
+            {{ form_row(form.tags) }}
             {% set max_upload_size = sscms_max_upload_size() %}
             {% if max_upload_size <= 100 * 1024 * 1024 %}
                 <div class="ui info message">

@@ -8,18 +8,13 @@ use Sylius\Component\Resource\Model\AbstractTranslation;
 
 class PageTranslation extends AbstractTranslation implements PageTranslationInterface
 {
-    protected ?int $id = null;
+    use IdAwareTrait;
 
     protected ?string $slug = null;
 
     protected ?string $title = null;
 
     protected ?string $metaDescription = null;
-
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
 
     public function getSlug(): ?string
     {

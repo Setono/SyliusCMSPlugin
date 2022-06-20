@@ -21,6 +21,8 @@ class Block extends Element implements BlockInterface
 
     public function __construct()
     {
+        parent::__construct();
+
         $this->initializeTranslationsCollection();
     }
 

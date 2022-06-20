@@ -6,7 +6,7 @@ namespace Setono\SyliusCMSPlugin\Model;
 
 class ViewBlock implements ViewBlockInterface
 {
-    protected ?int $id = null;
+    use IdAwareTrait;
 
     protected ?ViewInterface $view = null;
 
@@ -15,11 +15,6 @@ class ViewBlock implements ViewBlockInterface
     protected ?string $section = null;
 
     protected int $position = 0;
-
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
 
     public function getView(): ?ViewInterface
     {

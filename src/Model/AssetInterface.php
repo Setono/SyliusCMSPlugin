@@ -6,10 +6,8 @@ namespace Setono\SyliusCMSPlugin\Model;
 
 use Sylius\Component\Resource\Model\ResourceInterface;
 
-interface AssetInterface extends ResourceInterface, InternalDescriptionAwareInterface
+interface AssetInterface extends IdAwareInterface, ResourceInterface, InternalDescriptionAwareInterface
 {
-    public function getId(): ?int;
-
     public function getName(): ?string;
 
     public function setName(string $name): void;

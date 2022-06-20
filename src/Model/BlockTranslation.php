@@ -8,16 +8,11 @@ use Sylius\Component\Resource\Model\AbstractTranslation;
 
 class BlockTranslation extends AbstractTranslation implements BlockTranslationInterface
 {
-    protected ?int $id = null;
+    use IdAwareTrait;
 
     protected ?string $content = null;
 
     protected ?string $rawContent = null;
-
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
 
     public function getContent(): ?string
     {

@@ -6,20 +6,15 @@ namespace Setono\SyliusCMSPlugin\Model;
 
 class Asset implements AssetInterface
 {
-    use InternalDescriptionAwareTrait;
+    use IdAwareTrait;
 
-    protected ?int $id = null;
+    use InternalDescriptionAwareTrait;
 
     protected ?string $name = null;
 
     protected ?string $path = null;
 
     protected ?string $mimeType = null;
-
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
 
     public function getName(): ?string
     {

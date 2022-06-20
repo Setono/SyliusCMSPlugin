@@ -8,11 +8,13 @@ use Sylius\Component\Resource\Model\TimestampableTrait;
 
 class Template implements TemplateInterface
 {
-    use TimestampableTrait;
+    use CodeAwareTrait;
+
+    use IdAwareTrait;
 
     use InternalDescriptionAwareTrait;
 
-    protected ?int $id = null;
+    use TimestampableTrait;
 
     protected ?string $code = null;
 
@@ -20,21 +22,6 @@ class Template implements TemplateInterface
 
     /** @var list<string> */
     protected array $sections = [];
-
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
-
-    public function getCode(): ?string
-    {
-        return $this->code;
-    }
-
-    public function setCode(?string $code): void
-    {
-        $this->code = $code;
-    }
 
     public function getSource(): ?string
     {

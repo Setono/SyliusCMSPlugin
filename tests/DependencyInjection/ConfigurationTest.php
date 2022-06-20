@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\DependencyInjection\Configuration;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\BlockRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\CarouselRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\PageRepository;
+use Setono\SyliusCMSPlugin\Doctrine\ORM\TagRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\TemplateRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\ViewRepository;
 use Setono\SyliusCMSPlugin\Form\Type\AssetType;
@@ -28,6 +29,7 @@ use Setono\SyliusCMSPlugin\Model\Carousel;
 use Setono\SyliusCMSPlugin\Model\CarouselBlock;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Tag;
 use Setono\SyliusCMSPlugin\Model\Template;
 use Setono\SyliusCMSPlugin\Model\View;
 use Setono\SyliusCMSPlugin\Model\ViewBlock;
@@ -98,6 +100,15 @@ final class ConfigurationTest extends TestCase
                             'form' => PageTranslationType::class,
                             'factory' => TranslatableFactory::class,
                         ],
+                    ],
+                ],
+                'tag' => [
+                    'classes' => [
+                        'model' => Tag::class,
+                        'controller' => ResourceController::class,
+                        'repository' => TagRepository::class,
+                        'form' => DefaultResourceType::class,
+                        'factory' => Factory::class,
                     ],
                 ],
                 'template' => [

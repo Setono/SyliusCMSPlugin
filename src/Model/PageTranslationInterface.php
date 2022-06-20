@@ -8,10 +8,8 @@ use Sylius\Component\Resource\Model\ResourceInterface;
 use Sylius\Component\Resource\Model\SlugAwareInterface;
 use Sylius\Component\Resource\Model\TranslationInterface;
 
-interface PageTranslationInterface extends ResourceInterface, TranslationInterface, SlugAwareInterface
+interface PageTranslationInterface extends IdAwareInterface, ResourceInterface, TranslationInterface, SlugAwareInterface
 {
-    public function getId(): ?int;
-
     public function getSlug(): ?string;
 
     public function setSlug(?string $slug): void;

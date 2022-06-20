@@ -64,6 +64,7 @@ setono_sylius_cms:
         page_subheader: Manage your CMS pages
         pages: Pages
         preview: Preview
+        tags: Tags
         template: Template
         template_header: Templates
         template_subheader: Manage your templates

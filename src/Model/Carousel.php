@@ -22,6 +22,8 @@ class Carousel extends Element implements CarouselInterface
 
     public function __construct()
     {
+        parent::__construct();
+
         $this->carouselBlocks = new ArrayCollection();
     }
 

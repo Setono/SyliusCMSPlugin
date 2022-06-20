@@ -40,6 +40,17 @@
             </join-table>
         </many-to-many>
 
+        <many-to-many field="tags" target-entity="Setono\SyliusCMSPlugin\Model\TagInterface" fetch="EXTRA_LAZY">
+            <join-table name="setono_sylius_cms__page_tags">
+                <join-columns>
+                    <join-column name="page_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
+                </join-columns>
+                <inverse-join-columns>
+                    <join-column name="tag_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
+                </inverse-join-columns>
+            </join-table>
+        </many-to-many>
+
         <unique-constraints>
             <unique-constraint columns="code"/>
         </unique-constraints>

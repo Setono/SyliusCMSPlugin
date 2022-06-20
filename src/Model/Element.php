@@ -8,13 +8,22 @@ use Sylius\Component\Resource\Model\TimestampableTrait;
 
 abstract class Element implements ElementInterface
 {
+    use CodeAwareTrait;
+
+    use IdAwareTrait;
+
     use InternalDescriptionAwareTrait;
+
+    use TagsAwareTrait {
+        __construct as private initializeTagsCollection;
+    }
 
     use TimestampableTrait;
 
-    protected ?int $id = null;
-
-    protected ?string $code = null;
+    public function __construct()
+    {
+        $this->initializeTagsCollection();
+    }
 
     /**
      * @return list<string>
@@ -27,21 +36,6 @@ abstract class Element implements ElementInterface
             self::TYPE_PAGE,
             self::TYPE_VIEW,
         ];
-    }
-
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
-
-    public function getCode(): ?string
-    {
-        return $this->code;
-    }
-
-    public function setCode(?string $code): void
-    {
-        $this->code = $code;
     }
 
     public function getIdentifier(): string

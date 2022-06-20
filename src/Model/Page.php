@@ -34,6 +34,8 @@ class Page extends Element implements PageInterface
 
     public function __construct()
     {
+        parent::__construct();
+
         $this->channels = new ArrayCollection();
         $this->initializeTranslationsCollection();
     }

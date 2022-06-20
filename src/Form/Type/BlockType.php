@@ -56,6 +56,10 @@ final class BlockType extends AbstractResourceType
                 'label' => 'setono_sylius_cms.form.internal_description',
                 'required' => false,
             ])
+            ->add('tags', TagAutocompleteChoiceType::class, [
+                'label' => 'setono_sylius_cms.ui.tags',
+                'multiple' => true,
+            ])
             ->addEventSubscriber(new ConvertRawContentSubscriber(
                 $this->parser,
                 $this->renderer,

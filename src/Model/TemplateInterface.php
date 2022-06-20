@@ -10,12 +10,11 @@ use Sylius\Component\Resource\Model\TimestampableInterface;
 
 interface TemplateInterface extends
     CodeAwareInterface,
+    IdAwareInterface,
     InternalDescriptionAwareInterface,
     ResourceInterface,
     TimestampableInterface
 {
-    public function getId(): ?int;
-
     /**
      * This is the Twig source code of the template
      */
