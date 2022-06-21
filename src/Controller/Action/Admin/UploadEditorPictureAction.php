@@ -29,18 +29,22 @@ final class UploadEditorPictureAction
 
     private CacheManager $cacheManager;
 
+    private string $filter;
+
     public function __construct(
         FactoryInterface $assetFactory,
         RepositoryInterface $assetRepository,
         AssetUploaderInterface $assetUploader,
         EventDispatcherInterface $eventDispatcher,
-        CacheManager $cacheManager
+        CacheManager $cacheManager,
+        string $filter = 'setono_sylius_cms_asset'
     ) {
         $this->assetFactory = $assetFactory;
         $this->assetRepository = $assetRepository;
         $this->assetUploader = $assetUploader;
         $this->eventDispatcher = $eventDispatcher;
         $this->cacheManager = $cacheManager;
+        $this->filter = $filter;
     }
 
     public function __invoke(Request $request): Response
@@ -82,7 +86,7 @@ final class UploadEditorPictureAction
         return $event->getResponse() ?? new JsonResponse([
             'success' => 1,
             'file' => [
-                'url' => $this->cacheManager->getBrowserPath((string) $asset->getPath(), 'setono_sylius_cms_asset'),
+                'url' => $this->cacheManager->getBrowserPath((string) $asset->getPath(), $this->filter),
             ],
         ]);
     }
