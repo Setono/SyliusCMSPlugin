@@ -27,7 +27,7 @@ Here is a screenshot of what you should have now:
 ![First template](images/first_template.png)
 
 {% hint style="info" %}
-The prefix `sscms_section_` is how you denote sections inside templates. Hence we have just created a section inside
+The prefix `sscms_section_` is how you denote sections inside templates. Hence, we have just created a section inside
 our template named `content`.
 {% endhint %}
 
