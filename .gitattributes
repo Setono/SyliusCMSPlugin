@@ -1,11 +1,17 @@
 /.github                        export-ignore
+/docs                           export-ignore
 /node_modules                   export-ignore
 /tests                          export-ignore
 /.editorconfig                  export-ignore
 /.gitattributes                 export-ignore
+/.gitbook.yaml                  export-ignore
 /.gitignore                     export-ignore
 /composer-require-checker.json  export-ignore
+/composer-unused.php            export-ignore
+/docker-compose.yml             export-ignore
+/Dockerfile                     export-ignore
 /ecs.php                        export-ignore
+/Makefile                       export-ignore
 /phpunit.xml.dist               export-ignore
 /psalm.xml                      export-ignore
 /psalm-baseline.xml             export-ignore
