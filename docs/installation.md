@@ -74,3 +74,20 @@ The plugin also provides a routes file for non localized stores. All you do is t
 `@SetonoSyliusCMSPlugin/Resources/config/routes_no_locale.yaml` instead of
 `@SetonoSyliusCMSPlugin/Resources/config/routes.yaml`
 {% endhint %}
+
+## Update your database
+
+Run the two following commands to create the tables needed for the CMS plugin:
+
+```bash
+php bin/console doctrine:migrations:diff
+php bin/console doctrine:migrations:migrate
+```
+
+## Install assets
+
+````bash
+php bin/console assets:install
+````
+
+**You're good to go!**
