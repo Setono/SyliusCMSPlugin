@@ -14,11 +14,11 @@ Click on `Templates` in the menu and click `Create`. Input `first_template` in t
 `Source` field:
 
 ```twig
-{% raw %}
+{%- raw -%}
 {% block sscms_section_content %}
     Default content for this section
 {% endblock %}
-{% endraw %}
+{%- endraw -%}
 ```
 
 The internal description field is used for your internal usage to better identify templates later on.
