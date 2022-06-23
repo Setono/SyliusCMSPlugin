@@ -12,3 +12,8 @@
 * [Templates](concepts/templates.md)
 * [Blocks](concepts/blocks.md)
 * [Views](concepts/views.md)
+
+## Support & feedback
+
+* [Contact](support/contact.md)
+* [Feedback](support/feedback.md)
