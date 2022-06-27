@@ -10,6 +10,8 @@ use Sylius\Component\Resource\Model\TimestampableInterface;
 
 interface ElementInterface extends CodeAwareInterface, InternalDescriptionAwareInterface, ResourceInterface, TimestampableInterface
 {
+    public const TYPE_ASSET = 'asset';
+
     public const TYPE_BLOCK = 'block';
 
     public const TYPE_CAROUSEL = 'carousel';

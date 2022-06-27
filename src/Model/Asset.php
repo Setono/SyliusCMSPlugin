@@ -4,21 +4,17 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
-class Asset implements AssetInterface
+class Asset extends Element implements AssetInterface
 {
-    use InternalDescriptionAwareTrait;
-
-    protected ?int $id = null;
-
     protected ?string $name = null;
 
     protected ?string $path = null;
 
     protected ?string $mimeType = null;
 
-    public function getId(): ?int
+    public function getType(): string
     {
-        return $this->id;
+        return self::TYPE_ASSET;
     }
 
     public function getName(): ?string

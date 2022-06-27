@@ -22,6 +22,7 @@ abstract class Element implements ElementInterface
     public static function getTypes(): array
     {
         return [
+            self::TYPE_ASSET,
             self::TYPE_BLOCK,
             self::TYPE_CAROUSEL,
             self::TYPE_PAGE,

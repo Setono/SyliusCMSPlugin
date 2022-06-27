@@ -2,8 +2,14 @@
 {{ form_errors(form) }}
 <div class="ui two column stackable grid">
     <div class="column">
-        {{ form_row(form.name) }}
         {{ form_row(form.file) }}
+        {% if resource.id is null %}
+            <div class="ui info message">{{ 'setono_sylius_cms.form.asset.code_and_name_information'|trans }}</div>
+        {% endif %}
+        <div class="ui two fields">
+            {{ form_row(form.code) }}
+            {{ form_row(form.name) }}
+        </div>
         {{ form_row(form.internalDescription) }}
     </div>
     <div class="column">

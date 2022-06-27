@@ -39,7 +39,10 @@ final class AssetType extends AbstractResourceType
             ->add('mimeType', HiddenType::class)
             ->add('name', TextType::class, [
                 'label' => 'setono_sylius_cms.form.asset.name',
-                'help' => 'setono_sylius_cms.form.asset.name_help',
+                'required' => false,
+            ])
+            ->add('code', TextType::class, [
+                'label' => 'setono_sylius_cms.form.asset.code',
                 'required' => false,
             ])
             ->add('internalDescription', TextareaType::class, [
