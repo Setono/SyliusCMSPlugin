@@ -13,6 +13,11 @@
                  alias="setono_sylius_cms.generator.page.preview_link"/>
 
         <!-- Twig generators -->
+        <service id="setono_sylius_cms.generator.twig.asset"
+                 class="Setono\SyliusCMSPlugin\Generator\Twig\AssetTwigGenerator">
+            <argument type="service" id="router"/>
+        </service>
+
         <service id="setono_sylius_cms.generator.twig.block"
                  class="Setono\SyliusCMSPlugin\Generator\Twig\BlockTwigGenerator"/>
 

@@ -60,19 +60,24 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
         $this->elementStack = $elementStack;
     }
 
+    public function asset(Environment $env, array $context, ?string $block, array $variables = []): string
+    {
+        return $this->renderElement($env, $context, $block, ElementInterface::TYPE_ASSET, $variables);
+    }
+
     public function block(Environment $env, array $context, ?string $block, array $variables = []): string
     {
         return $this->renderElement($env, $context, $block, ElementInterface::TYPE_BLOCK, $variables);
     }
 
-    public function view(Environment $env, array $context, ?string $view, array $variables = []): string
-    {
-        return $this->renderElement($env, $context, $view, ElementInterface::TYPE_VIEW, $variables);
-    }
-
     public function carousel(Environment $env, array $context, ?string $carousel, array $variables = []): string
     {
         return $this->renderElement($env, $context, $carousel, ElementInterface::TYPE_CAROUSEL, $variables);
+    }
+
+    public function view(Environment $env, array $context, ?string $view, array $variables = []): string
+    {
+        return $this->renderElement($env, $context, $view, ElementInterface::TYPE_VIEW, $variables);
     }
 
     public function linkToRoute(

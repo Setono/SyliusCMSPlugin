@@ -23,6 +23,11 @@ interface ElementStackInterface extends \Traversable, \Countable
     /**
      * @return array<array-key, ElementId>
      */
+    public function getAssets(): array;
+
+    /**
+     * @return array<array-key, ElementId>
+     */
     public function getBlocks(): array;
 
     /**

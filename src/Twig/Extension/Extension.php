@@ -12,9 +12,10 @@ final class Extension extends AbstractExtension
     public function getFunctions(): array
     {
         return [
+            new TwigFunction('sscms_asset', [Runtime::class, 'asset'], ['needs_environment' => true, 'needs_context' => true, 'is_safe' => ['all']]),
             new TwigFunction('sscms_block', [Runtime::class, 'block'], ['needs_environment' => true, 'needs_context' => true, 'is_safe' => ['all']]),
-            new TwigFunction('sscms_view', [Runtime::class, 'view'], ['needs_environment' => true, 'needs_context' => true, 'is_safe' => ['all']]),
             new TwigFunction('sscms_carousel', [Runtime::class, 'carousel'], ['needs_environment' => true, 'needs_context' => true, 'is_safe' => ['all']]),
+            new TwigFunction('sscms_view', [Runtime::class, 'view'], ['needs_environment' => true, 'needs_context' => true, 'is_safe' => ['all']]),
 
             new TwigFunction('sscms_link_route', [Runtime::class, 'linkToRoute'], ['is_safe' => ['html']]),
             new TwigFunction('sscms_link_resource', [Runtime::class, 'linkToResource'], ['is_safe' => ['html']]),
