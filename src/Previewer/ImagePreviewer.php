@@ -4,23 +4,23 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Previewer;
 
-use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final class ImagePreviewer implements PreviewerInterface
 {
-    private CacheManager $cacheManager;
+    private UrlGeneratorInterface $urlGenerator;
 
-    public function __construct(CacheManager $cacheManager)
+    public function __construct(UrlGeneratorInterface $urlGenerator)
     {
-        $this->cacheManager = $cacheManager;
+        $this->urlGenerator = $urlGenerator;
     }
 
     public function preview(AssetInterface $asset): Preview
     {
         return new Preview(sprintf(
             '<img src="%s" alt="%s" style="width: 100%%">',
-            $this->cacheManager->getBrowserPath((string) $asset->getPath(), 'setono_sylius_cms_asset', [], 'setono_sylius_cms_asset'),
+            $this->urlGenerator->generate('setono_sylius_cms_view_asset', ['id' => $asset->getId()]),
             (string) $asset->getName()
         ));
     }

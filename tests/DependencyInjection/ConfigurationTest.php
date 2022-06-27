@@ -7,6 +7,7 @@ namespace Tests\Setono\SyliusCMSPlugin\DependencyInjection;
 use Matthias\SymfonyConfigTest\PhpUnit\ConfigurationTestCaseTrait;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\DependencyInjection\Configuration;
+use Setono\SyliusCMSPlugin\Doctrine\ORM\AssetRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\BlockRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\CarouselRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\PageRepository;
@@ -62,6 +63,7 @@ final class ConfigurationTest extends TestCase
                     'classes' => [
                         'model' => Asset::class,
                         'controller' => ResourceController::class,
+                        'repository' => AssetRepository::class,
                         'form' => AssetType::class,
                         'factory' => Factory::class,
                     ],

@@ -1,9 +1,10 @@
 setono_sylius_cms:
     form:
         asset:
+            code: Code
+            code_and_name_information: You don't have to supply neither the code or name. If you don't fill in these fields, they will be generated based on the filename.
             file: File
             name: Name
-            name_help: If you don't supply a name, the filename will be used as a name
         block:
             content: Content
             default_content: Default content

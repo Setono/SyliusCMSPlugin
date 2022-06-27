@@ -13,6 +13,10 @@
 * [Blocks](concepts/blocks.md)
 * [Views](concepts/views.md)
 
+## Upgrade
+
+* [To v0.6](upgrade/to-0.6.md)
+
 ## Support & feedback
 
 * [Contact](support/contact.md)

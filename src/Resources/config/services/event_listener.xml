@@ -11,6 +11,14 @@
             <tag name="doctrine.event_listener" event="postUpdate"/>
         </service>
 
+        <service id="setono_sylius_cms.event_listener.doctrine.set_asset_code"
+                 class="Setono\SyliusCMSPlugin\EventListener\Doctrine\SetAssetCodeListener">
+            <argument type="service" id="setono_sylius_cms.repository.asset"/>
+
+            <tag name="doctrine.event_listener" event="prePersist"/>
+            <tag name="doctrine.event_listener" event="preUpdate"/>
+        </service>
+
         <service id="setono_sylius_cms.event_listener.doctrine.template_cache_invalidator"
                  class="Setono\SyliusCMSPlugin\EventListener\Doctrine\TemplateCacheInvalidatorListener">
             <argument type="service" id="setono_twig_cache_purger.purger.default"/>

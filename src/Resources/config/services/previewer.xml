@@ -5,7 +5,7 @@
         <service id="setono_sylius_cms.previewer.composite" class="Setono\SyliusCMSPlugin\Previewer\CompositePreviewer"/>
 
         <service id="setono_sylius_cms.previewer.image" class="Setono\SyliusCMSPlugin\Previewer\ImagePreviewer">
-            <argument type="service" id="liip_imagine.cache.manager"/>
+            <argument type="service" id="router"/>
 
             <tag name="setono_sylius_cms.previewer"/>
         </service>
