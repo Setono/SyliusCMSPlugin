@@ -36,6 +36,13 @@ final class ElementStack implements ElementStackInterface, \IteratorAggregate
         return !$this->isEmpty();
     }
 
+    public function getAssets(): array
+    {
+        return array_filter($this->elements, static function (ElementId $element): bool {
+            return $element->isAsset();
+        });
+    }
+
     public function getBlocks(): array
     {
         return array_filter($this->elements, static function (ElementId $element): bool {

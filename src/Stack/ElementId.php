@@ -28,6 +28,11 @@ final class ElementId
         $this->type = $type;
     }
 
+    public function isAsset(): bool
+    {
+        return ElementInterface::TYPE_ASSET === $this->type;
+    }
+
     public function isBlock(): bool
     {
         return ElementInterface::TYPE_BLOCK === $this->type;

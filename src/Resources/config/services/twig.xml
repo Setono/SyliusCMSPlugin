@@ -36,6 +36,15 @@
         </service>
 
         <!-- Element loaders -->
+        <service id="setono_sylius_cms.twig.loader.element_loader.asset"
+                 class="Setono\SyliusCMSPlugin\Twig\Loader\GenericElementLoader">
+            <argument type="service" id="setono_sylius_cms.repository.asset"/>
+            <argument type="service" id="setono_sylius_cms.generator.twig.asset"/>
+            <argument>asset</argument>
+
+            <tag name="twig.loader"/>
+        </service>
+
         <service id="setono_sylius_cms.twig.loader.element_loader.block"
                  class="Setono\SyliusCMSPlugin\Twig\Loader\GenericElementLoader">
             <argument type="service" id="setono_sylius_cms.repository.block"/>
