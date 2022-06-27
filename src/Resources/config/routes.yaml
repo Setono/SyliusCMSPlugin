@@ -1,16 +1,13 @@
+setono_sylius_cms_admin:
+    resource: "@SetonoSyliusCMSPlugin/Resources/config/routes/admin.yaml"
+    prefix: /admin/cms
+
+setono_sylius_cms_global:
+    resource: "@SetonoSyliusCMSPlugin/Resources/config/routes/global.yaml"
+    prefix: /cms
+
 setono_sylius_cms_shop:
     resource: "@SetonoSyliusCMSPlugin/Resources/config/routes/shop.yaml"
     prefix: /{_locale}
     requirements:
         _locale: ^[A-Za-z]{2,4}(_([A-Za-z]{4}|[0-9]{3}))?(_([A-Za-z]{2}|[0-9]{3}))?$
-
-setono_sylius_cms_admin:
-    resource: "@SetonoSyliusCMSPlugin/Resources/config/routes/admin.yaml"
-    prefix: /admin/cms
-
-# todo could this be moved to shop.yaml?
-setono_sylius_cms_download_asset:
-    path: /cms/asset/{id}
-    controller: setono_sylius_cms.controller.action.download_asset
-    requirements:
-        id: \d+

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Action\Admin;
 
-use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
 use Setono\SyliusCMSPlugin\Uploader\AssetUploaderInterface;
 use Sylius\Bundle\ResourceBundle\Event\ResourceControllerEvent;
@@ -15,6 +14,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 final class UploadEditorPictureAction
@@ -27,24 +27,20 @@ final class UploadEditorPictureAction
 
     private EventDispatcherInterface $eventDispatcher;
 
-    private CacheManager $cacheManager;
-
-    private string $filter;
+    private UrlGeneratorInterface $urlGenerator;
 
     public function __construct(
         FactoryInterface $assetFactory,
         RepositoryInterface $assetRepository,
         AssetUploaderInterface $assetUploader,
         EventDispatcherInterface $eventDispatcher,
-        CacheManager $cacheManager,
-        string $filter = 'setono_sylius_cms_asset'
+        UrlGeneratorInterface $urlGenerator
     ) {
         $this->assetFactory = $assetFactory;
         $this->assetRepository = $assetRepository;
         $this->assetUploader = $assetUploader;
         $this->eventDispatcher = $eventDispatcher;
-        $this->cacheManager = $cacheManager;
-        $this->filter = $filter;
+        $this->urlGenerator = $urlGenerator;
     }
 
     public function __invoke(Request $request): Response
@@ -86,7 +82,7 @@ final class UploadEditorPictureAction
         return $event->getResponse() ?? new JsonResponse([
             'success' => 1,
             'file' => [
-                'url' => $this->cacheManager->getBrowserPath((string) $asset->getPath(), $this->filter),
+                'url' => $this->urlGenerator->generate('setono_sylius_cms_view_asset', ['id' => $asset->getId()]),
             ],
         ]);
     }
