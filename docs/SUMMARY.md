@@ -15,7 +15,7 @@
 
 ## Upgrade
 
-* [To v0.6](upgrade/to-0.6.md)
+* [Upgrade to v0.6](upgrade/to-0.6.md)
 
 ## Support & feedback
 
