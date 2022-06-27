@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
-    <parameters>
-        <parameter key="setono_sylius_cms.upload_editor_picture_filter">setono_sylius_cms_asset</parameter>
-    </parameters>
     <services>
         <defaults public="true" />
 
@@ -13,8 +10,7 @@
             <argument type="service" id="setono_sylius_cms.repository.asset"/>
             <argument type="service" id="setono_sylius_cms.uploader.asset"/>
             <argument type="service" id="event_dispatcher"/>
-            <argument type="service" id="liip_imagine.cache.manager"/>
-            <argument>%setono_sylius_cms.upload_editor_picture_filter%</argument>
+            <argument type="service" id="router"/>
 
             <tag name="controller.service_arguments"/>
         </service>
@@ -31,6 +27,19 @@
 
         <service id="setono_sylius_cms.controller.action.download_asset"
                  class="Setono\SyliusCMSPlugin\Controller\Action\DownloadAssetAction">
+            <argument type="service" id="setono_sylius_cms.repository.asset"/>
+            <argument type="service">
+                <service class="Gaufrette\Filesystem">
+                    <argument>%setono_sylius_cms.asset_adapter%</argument>
+                    <factory service="knp_gaufrette.filesystem_map" method="get" />
+                </service>
+            </argument>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="setono_sylius_cms.controller.action.view_asset"
+                 class="Setono\SyliusCMSPlugin\Controller\Action\ViewAssetAction">
             <argument type="service" id="setono_sylius_cms.repository.asset"/>
             <argument type="service">
                 <service class="Gaufrette\Filesystem">

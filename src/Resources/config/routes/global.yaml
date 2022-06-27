@@ -1,0 +1,11 @@
+setono_sylius_cms_download_asset:
+    path: /asset/{id}/download
+    controller: setono_sylius_cms.controller.action.download_asset
+    requirements:
+        id: \d+
+
+setono_sylius_cms_view_asset:
+    path: /asset/{id}
+    controller: setono_sylius_cms.controller.action.view_asset
+    requirements:
+        id: \d+

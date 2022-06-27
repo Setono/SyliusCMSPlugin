@@ -31,14 +31,10 @@ liip_imagine:
                 web_root: "%sylius_core.public_dir%"
                 cache_prefix: "media/assets/cache"
     filter_sets:
-        setono_sylius_cms_asset:
-            data_loader: setono_sylius_cms_asset
-            cache: setono_sylius_cms_asset
-            filters:
-                relative_resize: { widen: 1000 }
         setono_sylius_cms_admin_asset_thumbnail:
             data_loader: setono_sylius_cms_asset
             cache: setono_sylius_cms_asset
+            quality: 80
             filters:
                 thumbnail: { size: [75, 75], mode: outbound }
 sylius_ui:
