@@ -10,11 +10,17 @@
     <div class="column">
         <div class="ui segment">
             <h4 class="ui medium header">How templates work</h4>
-            <p>Templates are written in the template language <a href="https://twig.symfony.com/doc/3.x/templates.html" target="_blank">Twig</a>. It comes with a great deal of power - but remember with great power comes great responsibility ;-)</p>
-            <p>If you don't want to make advanced Twig templates that's completely fine. To use a template, just create everything you want in HTML and then insert 'section tags' where you want content.</p>
-            <p>Here is an example of a working (although very simple) template:</p>
+            <p>Templates are written in the template language <a href="https://twig.symfony.com/doc/2.x/templates.html" target="_blank">Twig</a>. You can read about the advantages of that in the <a href="https://docs.sylius-cms.com/concepts/templates" target="_blank">docs</a>.</p>
+            <p>To use a template, create everything you want in HTML and then insert 'section tags' where you want dynamic content, i.e. editable blocks.</p>
+            <p>Here is an example of a working template:</p>
             <pre>{{ '{% block ' ~ constant('Setono\\SyliusCMSPlugin\\Twig\\Extractor\\SectionExtractorInterface::SECTION_PREFIX')  ~ 'content %}Default section content{% endblock %}'|e }}</pre>
-            <p>This creates a section named <code>content</code> and you use this section to input your content when creating views.</p>
+            <p>This creates a section named <code>content</code> (the part after <code>{{ constant('Setono\\SyliusCMSPlugin\\Twig\\Extractor\\SectionExtractorInterface::SECTION_PREFIX') }}</code>. When creating a view and you select this template, you will be able to add blocks of content to the <code>content</code> section.</p>
+        </div>
+    </div>
+    <div class="sixteen wide column">
+        <h4 class="ui top attached large header">{{ form.source.vars.label|trans }}</h4>
+        <div class="ui attached segment">
+            <iframe src="{{ url('setono_sylius_cms_admin_template_editor', {'id': resource.id, 'formElement': form.source.vars.id}) }}" style="width: 100%; height: 600px; border: 0; overflow: hidden" allow="fullscreen" scrolling="no"></iframe>
         </div>
     </div>
 </div>
