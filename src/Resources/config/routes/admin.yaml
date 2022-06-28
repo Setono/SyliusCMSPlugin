@@ -60,6 +60,14 @@ setono_sylius_cms_admin_page:
                     toolbar: "@SetonoSyliusCMSPlugin/admin/page/update/_toolbar.html.twig"
     type: sylius.resource
 
+# This route must be defined before the 'setono_sylius_cms_admin_template' resource below
+setono_sylius_cms_admin_template_editor:
+    path: /templates/editor/{id}
+    methods: [GET]
+    defaults:
+        id: null
+        _controller: setono_sylius_cms.controller.action.admin.template_editor
+
 setono_sylius_cms_admin_template:
     resource: |
         section: admin

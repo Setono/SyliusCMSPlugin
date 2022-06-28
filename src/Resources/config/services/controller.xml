@@ -50,5 +50,13 @@
 
             <tag name="controller.service_arguments"/>
         </service>
+
+        <service id="setono_sylius_cms.controller.action.admin.template_editor"
+                 class="Setono\SyliusCMSPlugin\Controller\Action\Admin\TemplateEditorAction">
+            <argument type="service" id="setono_sylius_cms.repository.template"/>
+            <argument type="service" id="twig"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
     </services>
 </container>
