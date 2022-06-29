@@ -1,5 +1,7 @@
 The name _blocks_ gives the concept away. These are the building blocks of anything else. This is what everything else
-is made up of. If you don't add blocks, you will not have any content.
+is made up of.
+
+To render a block in a template you write `{{ sscms_block('your block code') }}`.
 
 Though simple, we have added a few things to make it shine. The interface looks like this:
 
@@ -24,4 +26,4 @@ specific to your business have your developer create a plugin for the editor (it
 Woohooo! If you read the [templates](templates.md) page you know the power of Twig. Instead of just outputting the
 HTML generated, we generate Twig and when blocks are rendered, they are rendered in the Twig engine. This means you
 can for example output/use global Twig variables directly in your blocks. I.e. `{{ sylius.channel.code }}` would output
-the `code` value for the current channel.
+the `code` for the current channel.
