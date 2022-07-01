@@ -22,6 +22,7 @@
         <pluginClass class="Weirdan\DoctrinePsalmPlugin\Plugin"/>
     </plugins>
     <issueHandlers>
-        <UnnecessaryVarAnnotation errorLevel="suppress"/> <!-- We only use var annotations when PhpStorm doesn't understand types -->
+        <!-- We only use var annotations when PhpStorm doesn't understand types -->
+        <UnnecessaryVarAnnotation errorLevel="suppress"/>
     </issueHandlers>
 </psalm>
