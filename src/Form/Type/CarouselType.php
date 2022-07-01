@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Form\Type;
 
+use Setono\SyliusCMSPlugin\Form\EventSubscriber\AddInternalDescriptionSubscriber;
 use Setono\SyliusCMSPlugin\Form\EventSubscriber\SetQueryParameterValueOnObjectSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\EventSubscriber\AddCodeFormSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
@@ -31,21 +32,24 @@ final class CarouselType extends AbstractResourceType
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder->addEventSubscriber(new SetQueryParameterValueOnObjectSubscriber($this->requestStack));
-        $builder->addEventSubscriber(new AddCodeFormSubscriber());
-        $builder->add('carouselBlocks', CollectionType::class, [
-            'label' => 'setono_sylius_cms.form.carousel.blocks',
-            'allow_add' => true,
-            'allow_delete' => true,
-            'by_reference' => false,
-            'entry_type' => CarouselBlockType::class,
-        ]);
-        $builder->add('configuration', CarouselConfigurationType::class, [
-            'label' => 'setono_sylius_cms.form.carousel.configuration',
-        ]);
-        $builder->add('internalDescription', TextareaType::class, [
-            'label' => 'setono_sylius_cms.form.internal_description',
-            'required' => false,
-        ]);
+        $builder
+            ->add('carouselBlocks', CollectionType::class, [
+                'label' => 'setono_sylius_cms.form.carousel.blocks',
+                'allow_add' => true,
+                'allow_delete' => true,
+                'by_reference' => false,
+                'entry_type' => CarouselBlockType::class,
+            ])
+            ->add('configuration', CarouselConfigurationType::class, [
+                'label' => 'setono_sylius_cms.form.carousel.configuration',
+            ])
+            ->add('internalDescription', TextareaType::class, [
+                'label' => 'setono_sylius_cms.form.internal_description',
+                'required' => false,
+            ])
+            ->addEventSubscriber(new SetQueryParameterValueOnObjectSubscriber($this->requestStack))
+            ->addEventSubscriber(new AddCodeFormSubscriber())
+            ->addEventSubscriber(new AddInternalDescriptionSubscriber())
+        ;
     }
 }

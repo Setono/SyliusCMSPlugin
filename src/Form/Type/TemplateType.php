@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Form\Type;
 
+use Setono\SyliusCMSPlugin\Form\EventSubscriber\AddInternalDescriptionSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\EventSubscriber\AddCodeFormSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 
 final class TemplateType extends AbstractResourceType
@@ -18,11 +18,8 @@ final class TemplateType extends AbstractResourceType
             ->add('source', HiddenType::class, [
                 'label' => 'setono_sylius_cms.form.template.source',
             ])
-            ->add('internalDescription', TextareaType::class, [
-                'label' => 'setono_sylius_cms.form.internal_description',
-                'required' => false,
-            ])
             ->addEventSubscriber(new AddCodeFormSubscriber())
+            ->addEventSubscriber(new AddInternalDescriptionSubscriber())
         ;
     }
 

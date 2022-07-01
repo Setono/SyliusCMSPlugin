@@ -21,6 +21,7 @@ setono_sylius_cms:
             configuration.slides_to_scroll: Slides to scroll
             configuration.slides_to_show: Slides to show
         internal_description: Internal description
+        internal_description_placeholder: Use this internally to describe your element and make it easier for your colleagues to know the purpose of it...
         page:
             enabled: Enabled
             enabled_from: Enabled from

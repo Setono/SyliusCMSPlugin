@@ -6,13 +6,13 @@ namespace Setono\SyliusCMSPlugin\Form\Type;
 
 use Setono\EditorJS\Parser\ParserInterface;
 use Setono\EditorJS\Renderer\RendererInterface;
+use Setono\SyliusCMSPlugin\Form\EventSubscriber\AddInternalDescriptionSubscriber;
 use Setono\SyliusCMSPlugin\Form\EventSubscriber\ConvertRawContentSubscriber;
 use Setono\SyliusCMSPlugin\Form\EventSubscriber\SetQueryParameterValueOnObjectSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\EventSubscriber\AddCodeFormSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
 use Sylius\Bundle\ResourceBundle\Form\Type\ResourceTranslationsType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -52,10 +52,6 @@ final class BlockType extends AbstractResourceType
                 'entry_type' => BlockTranslationType::class,
                 'label' => 'setono_sylius_cms.form.block.translations',
             ])
-            ->add('internalDescription', TextareaType::class, [
-                'label' => 'setono_sylius_cms.form.internal_description',
-                'required' => false,
-            ])
             ->addEventSubscriber(new ConvertRawContentSubscriber(
                 $this->parser,
                 $this->renderer,
@@ -64,6 +60,7 @@ final class BlockType extends AbstractResourceType
             ))
             ->addEventSubscriber(new SetQueryParameterValueOnObjectSubscriber($this->requestStack))
             ->addEventSubscriber(new AddCodeFormSubscriber())
+            ->addEventSubscriber(new AddInternalDescriptionSubscriber())
         ;
     }
 

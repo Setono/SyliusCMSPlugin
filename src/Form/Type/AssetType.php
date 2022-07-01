@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Form\Type;
 
+use Setono\SyliusCMSPlugin\Form\EventSubscriber\AddInternalDescriptionSubscriber;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
 use Setono\SyliusCMSPlugin\Uploader\AssetUploaderInterface;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
@@ -43,10 +43,6 @@ final class AssetType extends AbstractResourceType
             ])
             ->add('code', TextType::class, [
                 'label' => 'setono_sylius_cms.form.asset.code',
-                'required' => false,
-            ])
-            ->add('internalDescription', TextareaType::class, [
-                'label' => 'setono_sylius_cms.form.internal_description',
                 'required' => false,
             ])
             ->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event): void {
@@ -89,6 +85,7 @@ final class AssetType extends AbstractResourceType
                 $data['mimeType'] = $file->getMimeType();
                 $event->setData($data);
             })
+            ->addEventSubscriber(new AddInternalDescriptionSubscriber())
         ;
     }
 
