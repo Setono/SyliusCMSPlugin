@@ -60,7 +60,7 @@ Last step! We will now create our page. Go to `Pages` and click `Create`. Input 
 select the view we just created, namely `first_view`, and input `first-page` in the `Slug` field. Again, here is an
 image showing what it could look like:
 
-![First block](images/first_view.png)
+![First block](images/first_page.png)
 
 Click `Create`.
 
