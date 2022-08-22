@@ -6,7 +6,7 @@
     "require": {
         "php": ">=7.4",
         "ext-json": "*",
-        "doctrine/collections": "^1.6",
+        "doctrine/collections": "^1.7",
         "doctrine/dbal": "^2.13",
         "doctrine/persistence": "^2.2",
         "fakerphp/faker": "^1.19",
