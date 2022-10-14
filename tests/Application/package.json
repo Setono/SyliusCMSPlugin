@@ -21,10 +21,6 @@
     "build": "encore production",
     "watch": "encore dev --watch"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Sylius/Sylius.git"
-  },
-  "author": "Paweł Jędrzejewski",
-  "license": "MIT"
+  "author": "Setono",
+  "license": "UNLICENSED"
 }
