@@ -22,8 +22,12 @@ final class EnabledDateIntervalAwareTraitTest extends TestCase
 
         self::assertTrue($this->getObjectWithEnabledDates()->isEnabledOn($now));
         self::assertTrue($this->getObjectWithEnabledDates($now, $now)->isEnabledOn($now));
+
+        /** @psalm-suppress PossiblyFalseArgument */
         self::assertTrue($this->getObjectWithEnabledDates($now->sub(new \DateInterval('PT1S')), $now)->isEnabledOn($now));
         self::assertTrue($this->getObjectWithEnabledDates($now, $now->add(new \DateInterval('PT1S')))->isEnabledOn($now));
+
+        /** @psalm-suppress PossiblyFalseArgument */
         self::assertFalse($this->getObjectWithEnabledDates($now, $now->sub(new \DateInterval('PT1S')))->isEnabledOn($now));
         self::assertFalse($this->getObjectWithEnabledDates($now->add(new \DateInterval('PT1S')), $now)->isEnabledOn($now));
     }
