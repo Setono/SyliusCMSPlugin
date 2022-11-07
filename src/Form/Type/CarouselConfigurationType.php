@@ -13,22 +13,22 @@ final class CarouselConfigurationType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder->add('infinite', CheckboxType::class, [
-            'required' => false,
-            'label' => 'setono_sylius_cms.form.carousel.configuration.infinite_scroll',
-        ]);
-        $builder->add('slidesToShow', IntegerType::class, [
-            'label' => 'setono_sylius_cms.form.carousel.configuration.slides_to_show',
-        ]);
-        $builder->add('slidesToScroll', IntegerType::class, [
-            'label' => 'setono_sylius_cms.form.carousel.configuration.slides_to_scroll',
-        ]);
-        $builder->add('autoplay', CheckboxType::class, [
-            'required' => false,
-            'label' => 'setono_sylius_cms.form.carousel.configuration.autoplay',
-        ]);
-        $builder->add('autoplaySpeed', IntegerType::class, [
-            'label' => 'setono_sylius_cms.form.carousel.configuration.autoplay_speed',
-        ]);
+        $builder
+            ->add('infinite', CheckboxType::class, [
+                'required' => false,
+                'label' => 'setono_sylius_cms.form.carousel.configuration.infinite_scroll',
+            ])->add('slidesToShow', IntegerType::class, [
+                'label' => 'setono_sylius_cms.form.carousel.configuration.slides_to_show',
+            ])->add('slidesToScroll', IntegerType::class, [
+                'label' => 'setono_sylius_cms.form.carousel.configuration.slides_to_scroll',
+            ])->add('autoplay', CheckboxType::class, [
+                'required' => false,
+                'label' => 'setono_sylius_cms.form.carousel.configuration.autoplay',
+            ])->add('autoplaySpeed', IntegerType::class, [
+                'label' => 'setono_sylius_cms.form.carousel.configuration.autoplay_speed',
+            ])->add('showControls', CheckboxType::class, [
+                'label' => 'setono_sylius_cms.form.carousel.configuration.show_controls',
+            ])
+        ;
     }
 }
