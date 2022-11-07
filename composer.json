@@ -40,14 +40,14 @@
         "webmozart/assert": "^1.11"
     },
     "require-dev": {
-        "api-platform/core": "^2.6",
+        "api-platform/core": "^2.7",
         "friendsofsymfony/oauth-server-bundle": ">2.0.0-alpha.0 ^2.0@dev",
         "lexik/jwt-authentication-bundle": "^2.16",
         "matthiasnoback/symfony-config-test": "^4.3",
         "matthiasnoback/symfony-dependency-injection-test": "^4.3",
         "phpspec/prophecy-phpunit": "^2.0",
         "phpunit/phpunit": "^9.5",
-        "psalm/plugin-phpunit": "^0.17",
+        "psalm/plugin-phpunit": "^0.18",
         "psalm/plugin-symfony": "^3.1",
         "roave/security-advisories": "dev-latest",
         "setono/code-quality-pack": "^2.2",
@@ -59,8 +59,8 @@
         "symfony/property-info": "^5.4 || ^6.0",
         "symfony/serializer": "^5.4 || ^6.0",
         "symfony/web-profiler-bundle": "^5.4 || ^6.0",
-        "symfony/webpack-encore-bundle": "^1.14",
-        "weirdan/doctrine-psalm-plugin": "^2.3"
+        "symfony/webpack-encore-bundle": "^1.16",
+        "weirdan/doctrine-psalm-plugin": "^2.5"
     },
     "prefer-stable": true,
     "autoload": {
