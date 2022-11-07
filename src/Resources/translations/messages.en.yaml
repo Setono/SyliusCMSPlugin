@@ -18,6 +18,7 @@ setono_sylius_cms:
             configuration.autoplay: Autoplay
             configuration.autoplay_speed: Autoplay speed
             configuration.infinite_scroll: Infinite scroll
+            configuration.show_controls: Show controls
             configuration.slides_to_scroll: Slides to scroll
             configuration.slides_to_show: Slides to show
         internal_description: Internal description

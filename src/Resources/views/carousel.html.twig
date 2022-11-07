@@ -6,7 +6,9 @@
             {% endfor %}
         </div>
 
-        {{ block('navigation') }}
+        {% if configuration.showControls %}
+            {{ block('navigation') }}
+        {% endif %}
         {{ block('script') }}
     </div>
 {% endblock %}
