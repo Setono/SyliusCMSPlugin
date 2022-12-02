@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\EventListener\Doctrine;
+namespace Setono\SyliusCMSPlugin\EventListener;
 
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Setono\SyliusCMSPlugin\Twig\Loader\LogicalTemplateName;
 use Setono\TwigCachePurgerBundle\Purger\PurgerInterface;
+use Sylius\Bundle\ResourceBundle\Event\ResourceControllerEvent;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
 
@@ -28,14 +29,36 @@ final class ElementCacheInvalidatorListener
         $this->invalidateCache($args);
     }
 
-    public function postUpdate(LifecycleEventArgs $args): void
+    /**
+     * @param mixed $args
+     */
+    public function postUpdate($args): void
     {
         $this->invalidateCache($args);
     }
 
-    private function invalidateCache(LifecycleEventArgs $args): void
+    /**
+     * @param mixed $args
+     */
+    public function postRemove($args): void
     {
-        $entity = $args->getObject();
+        $this->invalidateCache($args);
+    }
+
+    /**
+     * @param mixed $args
+     */
+    private function invalidateCache($args): void
+    {
+        $entity = null;
+
+        if ($args instanceof LifecycleEventArgs) {
+            $entity = $args->getObject();
+        } elseif ($args instanceof ResourceControllerEvent) {
+            /** @var mixed $entity */
+            $entity = $args->getSubject();
+        }
+
         if (!$entity instanceof ElementInterface) {
             return;
         }
