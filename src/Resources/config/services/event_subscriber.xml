@@ -29,6 +29,7 @@
                  class="Setono\SyliusCMSPlugin\EventSubscriber\ResourceDeleteSubscriber">
             <argument type="service" id="router" />
             <argument type="service" id="session" />
+            <!-- todo this collection should be added as a compiler pass -->
             <argument type="collection">
                 <argument>setono_sylius_cms_admin_block_bulk_delete</argument>
                 <argument>setono_sylius_cms_admin_block_delete</argument>
