@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Stack;
 
+/**
+ * @extends \Traversable<array-key, ElementId>
+ */
 interface ElementStackInterface extends \Traversable, \Countable
 {
     /**

@@ -24,5 +24,10 @@
     <issueHandlers>
         <!-- We only use var annotations when PhpStorm doesn't understand types -->
         <UnnecessaryVarAnnotation errorLevel="suppress"/>
+        <MissingTemplateParam>
+            <errorLevel type="suppress">
+                <directory name="src/Form/Type"/>
+            </errorLevel>
+        </MissingTemplateParam>
     </issueHandlers>
 </psalm>

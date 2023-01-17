@@ -25,6 +25,7 @@ class ViewRepository extends ElementRepository implements ViewRepositoryInterfac
         $code = $template->getCode();
         Assert::notNull($code);
 
+        /** @var ViewInterface[] $views */
         $views = $this->findBy([
             'template' => $code,
         ]);

@@ -6,6 +6,9 @@ namespace Setono\SyliusCMSPlugin\Stack;
 
 use ArrayIterator;
 
+/**
+ * @implements  \IteratorAggregate<array-key, ElementId>
+ */
 final class ElementStack implements ElementStackInterface, \IteratorAggregate
 {
     /** @var array<string, ElementId> */
