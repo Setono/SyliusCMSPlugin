@@ -10,8 +10,7 @@ use Sylius\Component\Resource\ResourceActions;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -22,14 +21,11 @@ final class ResourceDeleteSubscriber implements EventSubscriberInterface
 
     private UrlGeneratorInterface $router;
 
-    private SessionInterface $session;
-
     private array $routes;
 
-    public function __construct(UrlGeneratorInterface $router, SessionInterface $session, array $routes)
+    public function __construct(UrlGeneratorInterface $router, array $routes)
     {
         $this->router = $router;
-        $this->session = $session;
         $this->routes = $routes;
     }
 
@@ -51,25 +47,27 @@ final class ResourceDeleteSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $eventRequest = $event->getRequest();
-        $requestAttributes = $eventRequest->attributes;
+        $request = $event->getRequest();
 
-        /** @var string $originalRoute */
-        $originalRoute = $requestAttributes->get('_route');
-
-        if (!$this->isMethodDelete($eventRequest) || !$this->isExpectedRoute($originalRoute)) {
+        $originalRoute = $request->attributes->get('_route');
+        if (!is_string($originalRoute)) {
             return;
         }
 
-        if (null === $requestAttributes->get('_controller')) {
+        if (Request::METHOD_DELETE !== $request->getMethod() || !in_array($originalRoute, $this->routes, true)) {
             return;
         }
 
-        /** @var FlashBagInterface $flashBag */
-        $flashBag = $this->session->getBag('flashes');
-        $flashBag->add('error', 'setono_sylius_cms.resource.delete_error');
+        if (null === $request->attributes->get('_controller')) {
+            return;
+        }
 
-        $referrer = $eventRequest->headers->get('referer');
+        $session = $request->getSession();
+        if ($session instanceof Session) {
+            $session->getFlashBag()->add('error', 'setono_sylius_cms.resource.delete_error');
+        }
+
+        $referrer = $request->headers->get('referer');
         if (null !== $referrer) {
             $event->setResponse(new RedirectResponse($referrer));
 
@@ -84,15 +82,5 @@ final class ResourceDeleteSubscriber implements EventSubscriberInterface
         $redirectRoute = str_replace(ResourceActions::DELETE, $targetAction, $originalRoute);
 
         return new RedirectResponse($this->router->generate($redirectRoute));
-    }
-
-    private function isMethodDelete(Request $request): bool
-    {
-        return Request::METHOD_DELETE === $request->getMethod();
-    }
-
-    private function isExpectedRoute(string $route): bool
-    {
-        return in_array($route, $this->routes, true);
     }
 }
