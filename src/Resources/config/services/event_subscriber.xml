@@ -49,8 +49,6 @@
         <service id="setono_sylius_cms.event_subscriber.template_delete"
                  class="Setono\SyliusCMSPlugin\EventSubscriber\TemplateDeleteSubscriber">
             <argument type="service" id="setono_sylius_cms.repository.view" />
-            <argument type="service" id="session" />
-            <argument type="service" id="router" />
 
             <tag name="kernel.event_subscriber" />
         </service>
