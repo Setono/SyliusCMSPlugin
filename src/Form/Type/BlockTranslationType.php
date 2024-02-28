@@ -24,7 +24,7 @@ final class BlockTranslationType extends AbstractResourceType
         ParserInterface $parser,
         RendererInterface $renderer,
         string $dataClass,
-        array $validationGroups = []
+        array $validationGroups = [],
     ) {
         parent::__construct($dataClass, $validationGroups);
 

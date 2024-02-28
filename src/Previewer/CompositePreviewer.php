@@ -12,7 +12,6 @@ final class CompositePreviewer implements PreviewerInterface
 {
     /**
      * @psalm-var SplPriorityQueue<array-key, PreviewerInterface>
-     *
      * @var SplPriorityQueue|PreviewerInterface[]
      */
     private SplPriorityQueue $previewers;

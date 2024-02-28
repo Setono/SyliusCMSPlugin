@@ -1,9 +1,13 @@
 <?xml version="1.0"?>
 <psalm
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    errorLevel="1"
     xmlns="https://getpsalm.org/schema/config"
     xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+    findUnusedBaselineEntry="false"
+    findUnusedPsalmSuppress="false"
+    findUnusedCode="false"
+    findUnusedVariablesAndParams="false"
+    errorLevel="1"
     errorBaseline="psalm-baseline.xml"
 >
     <projectFiles>

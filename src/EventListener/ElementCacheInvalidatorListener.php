@@ -70,7 +70,7 @@ final class ElementCacheInvalidatorListener
                     $entity->getType(),
                     (string) $channel->getCode(),
                     (string) $locale->getCode(),
-                    (string) $entity->getCode()
+                    (string) $entity->getCode(),
                 )));
             }
         }

@@ -33,7 +33,7 @@ final class ConvertRawContentSubscriber implements EventSubscriberInterface
         RendererInterface $renderer,
         string $sourceProperty = 'rawContent',
         string $targetProperty = 'content',
-        PropertyAccessorInterface $propertyAccessor = null
+        PropertyAccessorInterface $propertyAccessor = null,
     ) {
         $this->parser = $parser;
         $this->renderer = $renderer;

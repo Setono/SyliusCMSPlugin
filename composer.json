@@ -4,7 +4,7 @@
     "license": "proprietary",
     "type": "sylius-plugin",
     "require": {
-        "php": ">=7.4",
+        "php": ">=8.1",
         "ext-json": "*",
         "doctrine/collections": "^1.6",
         "doctrine/dbal": "^2.13",
@@ -43,10 +43,11 @@
         "api-platform/core": "^2.7",
         "friendsofsymfony/oauth-server-bundle": ">2.0.0-alpha.0 ^2.0@dev",
         "lexik/jwt-authentication-bundle": "^2.16",
-        "matthiasnoback/symfony-config-test": "^4.3",
-        "matthiasnoback/symfony-dependency-injection-test": "^4.3",
-        "phpspec/prophecy-phpunit": "^2.0",
-        "phpunit/phpunit": "^9.5",
+        "matthiasnoback/symfony-config-test": "^4.3 || ^5.1",
+        "matthiasnoback/symfony-dependency-injection-test": "^4.3 || ^5.1",
+        "php-http/message-factory": "^1.1",
+        "phpspec/prophecy-phpunit": "^2.1",
+        "phpunit/phpunit": "^9.6",
         "psalm/plugin-phpunit": "^0.18",
         "psalm/plugin-symfony": "^5.0",
         "setono/code-quality-pack": "^2.3",
@@ -84,12 +85,8 @@
         "sort-packages": true
     },
     "scripts": {
-        "analyse": [
-            "@ensure-test-container-exists",
-            "psalm --threads=8"
-        ],
+        "analyse": "psalm",
         "check-style": "ecs check",
-        "ensure-test-container-exists": "[[ -f tests/Application/var/cache/test/Tests_Setono_SyliusCMSPlugin_Application_KernelTestDebugContainer.xml ]] || tests/Application/bin/console cache:warmup --env=test",
         "fix-style": "ecs check --fix",
         "fixtures": "(cd tests/Application && bin/console sylius:fixtures:load default -n -vvv)",
         "phpunit": "phpunit"

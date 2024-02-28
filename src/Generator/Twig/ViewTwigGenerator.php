@@ -26,7 +26,7 @@ final class ViewTwigGenerator implements TwigGeneratorInterface
 
         $twig = sprintf(
             '{%% set identifier = "%s" %%}{%% extends "@SetonoSyliusCMSPlugin/view.html.twig" %%}',
-            $element->getIdentifier()
+            $element->getIdentifier(),
         );
 
         /** @var array<string, array<int, string>> $blocks */
@@ -57,7 +57,7 @@ final class ViewTwigGenerator implements TwigGeneratorInterface
             (int) $element->getId(),
             (string) $element->getCode(),
             $element->getIdentifier(),
-            $element->getType()
+            $element->getType(),
         );
 
         return $twig;

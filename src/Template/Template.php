@@ -38,7 +38,7 @@ final class Template
             (string) $template->getCode(),
             null,
             $template->getInternalDescription(),
-            $sections
+            $sections,
         );
     }
 

@@ -43,7 +43,7 @@ final class TemplateChoiceType extends AbstractType
                 }
 
                 return $template->getCode();
-            }
+            },
         ));
     }
 

@@ -43,7 +43,7 @@ use Webmozart\Assert\Assert;
         PageRepositoryInterface $pageRepository,
         ViewRepositoryInterface $viewRepository,
         ChannelRepositoryInterface $channelRepository,
-        RepositoryInterface $localeRepository
+        RepositoryInterface $localeRepository,
     ) {
         $this->pageFactory = $pageFactory;
         $this->pageRepository = $pageRepository;

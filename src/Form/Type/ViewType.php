@@ -35,7 +35,7 @@ final class ViewType extends AbstractResourceType
         DataMapperInterface $viewSectionsDataMapper,
         RegistryInterface $templateRegistry,
         string $dataClass,
-        array $validationGroups = []
+        array $validationGroups = [],
     ) {
         parent::__construct($dataClass, $validationGroups);
 

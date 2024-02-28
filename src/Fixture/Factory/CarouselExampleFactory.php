@@ -37,7 +37,7 @@ use Webmozart\Assert\Assert;
         FactoryInterface $carouselFactory,
         CarouselRepositoryInterface $carouselRepository,
         BlockRepositoryInterface $blockRepository,
-        FactoryInterface $carouselBlockFactory
+        FactoryInterface $carouselBlockFactory,
     ) {
         $this->carouselFactory = $carouselFactory;
         $this->carouselRepository = $carouselRepository;

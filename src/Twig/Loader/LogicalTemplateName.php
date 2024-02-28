@@ -64,7 +64,7 @@ final class LogicalTemplateName
             $this->type,
             $this->channelCode,
             $this->localeCode,
-            $this->code
+            $this->code,
         );
     }
 }

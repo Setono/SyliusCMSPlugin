@@ -32,7 +32,7 @@ use Webmozart\Assert\Assert;
     public function __construct(
         FactoryInterface $assetFactory,
         FileLocatorInterface $fileLocator,
-        AssetUploaderInterface $assetUploader
+        AssetUploaderInterface $assetUploader,
     ) {
         $this->assetFactory = $assetFactory;
         $this->fileLocator = $fileLocator;
