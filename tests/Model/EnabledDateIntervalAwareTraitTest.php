@@ -34,14 +34,14 @@ final class EnabledDateIntervalAwareTraitTest extends TestCase
 
     private function getObjectWithEnabledDates(
         \DateTimeInterface $enabledFrom = null,
-        \DateTimeInterface $enabledUntil = null
+        \DateTimeInterface $enabledUntil = null,
     ): EnabledDateIntervalAwareInterface {
         return new class($enabledFrom, $enabledUntil) implements EnabledDateIntervalAwareInterface {
             use EnabledDateIntervalAwareTrait;
 
             public function __construct(
                 \DateTimeInterface $enabledFrom = null,
-                \DateTimeInterface $enabledUntil = null
+                \DateTimeInterface $enabledUntil = null,
             ) {
                 $this->enabledFrom = $enabledFrom;
                 $this->enabledUntil = $enabledUntil;

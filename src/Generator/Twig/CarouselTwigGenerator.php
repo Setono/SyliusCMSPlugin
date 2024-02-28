@@ -48,7 +48,7 @@ final class CarouselTwigGenerator implements TwigGeneratorInterface
             (int) $element->getId(),
             (string) $element->getCode(),
             $element->getIdentifier(),
-            $element->getType()
+            $element->getType(),
         );
     }
 }

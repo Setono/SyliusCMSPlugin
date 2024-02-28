@@ -37,7 +37,7 @@ use Webmozart\Assert\Assert;
         FactoryInterface $viewFactory,
         ViewRepositoryInterface $viewRepository,
         BlockRepositoryInterface $blockRepository,
-        FactoryInterface $viewBlockFactory
+        FactoryInterface $viewBlockFactory,
     ) {
         $this->viewFactory = $viewFactory;
         $this->viewRepository = $viewRepository;

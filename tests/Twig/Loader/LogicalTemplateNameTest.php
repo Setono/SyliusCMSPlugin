@@ -15,6 +15,7 @@ final class LogicalTemplateNameTest extends TestCase
 {
     /**
      * @test
+     *
      * @dataProvider getValidLogicalTemplateNames
      */
     public function it_creates_from_string(
@@ -22,7 +23,7 @@ final class LogicalTemplateNameTest extends TestCase
         string $expectedType,
         string $expectedChannelCode,
         string $expectedLocaleCode,
-        string $expectedCode
+        string $expectedCode,
     ): void {
         $logicalTemplateName = LogicalTemplateName::createFromString($logicalTemplateName);
 
@@ -57,6 +58,7 @@ final class LogicalTemplateNameTest extends TestCase
 
     /**
      * @test
+     *
      * @dataProvider getInvalidLogicalTemplateNames
      */
     public function it_throws_if_template_name_is_malformed(string $logicalTemplateName): void

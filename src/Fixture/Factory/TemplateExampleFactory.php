@@ -27,7 +27,7 @@ use Webmozart\Assert\Assert;
 
     public function __construct(
         FactoryInterface $templateFactory,
-        TemplateRepositoryInterface $templateRepository
+        TemplateRepositoryInterface $templateRepository,
     ) {
         $this->templateFactory = $templateFactory;
         $this->templateRepository = $templateRepository;

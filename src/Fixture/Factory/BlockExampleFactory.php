@@ -42,7 +42,7 @@ use Webmozart\Assert\Assert;
         BlockRepositoryInterface $blockRepository,
         RepositoryInterface $localeRepository,
         ParserInterface $parser,
-        RendererInterface $renderer
+        RendererInterface $renderer,
     ) {
         $this->blockFactory = $blockFactory;
         $this->blockRepository = $blockRepository;
@@ -79,7 +79,7 @@ use Webmozart\Assert\Assert;
             $block->setDefaultRawContent($rawContent);
 
             $html = $this->renderer->render(
-                $this->parser->parse($rawContent)
+                $this->parser->parse($rawContent),
             );
 
             $block->setDefaultContent($html);
@@ -115,7 +115,7 @@ use Webmozart\Assert\Assert;
             $translation->setRawContent($rawContent);
 
             $html = $this->renderer->render(
-                $this->parser->parse($rawContent)
+                $this->parser->parse($rawContent),
             );
 
             $translation->setContent($html);

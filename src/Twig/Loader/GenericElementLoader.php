@@ -29,7 +29,7 @@ final class GenericElementLoader implements LoaderInterface
     public function __construct(
         ElementRepositoryInterface $blockRepository,
         TwigGeneratorInterface $twigGenerator,
-        string $supportsType
+        string $supportsType,
     ) {
         Assert::oneOf($supportsType, Element::getTypes());
 
@@ -116,7 +116,7 @@ final class GenericElementLoader implements LoaderInterface
             if (null === $element) {
                 throw new LoaderError(sprintf(
                     'The logical template name "%s" does not exist',
-                    (string) $logicalTemplateName
+                    (string) $logicalTemplateName,
                 ));
             }
 

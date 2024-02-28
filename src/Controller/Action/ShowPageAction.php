@@ -26,7 +26,7 @@ final class ShowPageAction
         LocaleContextInterface $localeContext,
         PageRepositoryInterface $pageRepository,
         Environment $twig,
-        EligibilityCheckerInterface $eligibilityChecker
+        EligibilityCheckerInterface $eligibilityChecker,
     ) {
         $this->localeContext = $localeContext;
         $this->pageRepository = $pageRepository;

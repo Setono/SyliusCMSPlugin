@@ -34,7 +34,7 @@ final class UploadEditorPictureAction
         RepositoryInterface $assetRepository,
         AssetUploaderInterface $assetUploader,
         EventDispatcherInterface $eventDispatcher,
-        UrlGeneratorInterface $urlGenerator
+        UrlGeneratorInterface $urlGenerator,
     ) {
         $this->assetFactory = $assetFactory;
         $this->assetRepository = $assetRepository;

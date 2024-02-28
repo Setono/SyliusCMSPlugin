@@ -45,7 +45,7 @@ final class ExtensionTest extends IntegrationTestCase
                     public function generate(
                         string $name,
                         array $parameters = [],
-                        int $referenceType = self::ABSOLUTE_PATH
+                        int $referenceType = self::ABSOLUTE_PATH,
                     ): string {
                         return 'route';
                     }
@@ -93,7 +93,7 @@ final class ExtensionTest extends IntegrationTestCase
                     $previewer,
                     $channelContext,
                     $localeContext,
-                    new ElementStack()
+                    new ElementStack(),
                 );
             }
         };

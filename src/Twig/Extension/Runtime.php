@@ -49,7 +49,7 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
         PreviewerInterface $previewer,
         ChannelContextInterface $channelContext,
         LocaleContextInterface $localeContext,
-        ElementStackInterface $elementStack
+        ElementStackInterface $elementStack,
     ) {
         $this->logger = new NullLogger();
         $this->router = $router;
@@ -84,7 +84,7 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
         string $name,
         string $displayedValue = null,
         array $parameters = [],
-        int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH
+        int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH,
     ): string {
         try {
             $uri = $this->router->generate($name, $parameters, $referenceType);
@@ -97,7 +97,7 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
             return sprintf(
                 '<!-- Tried to generate a link for an non existing route: %s (%s) -->',
                 $name,
-                $displayedValue ?? 'No display value'
+                $displayedValue ?? 'No display value',
             );
         }
     }
@@ -108,9 +108,9 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
         array $parameters = [],
         int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH,
         string $type = ResourceActions::SHOW,
-        ?string $section = 'shop'
+        ?string $section = 'shop',
     ): string {
-        $sectionPrefix = $section ? $section . '_' : '';
+        $sectionPrefix = null === $section ? '' : ($section . '_');
 
         [$applicationName, $resourceName] = explode('.', $alias);
         $routeName = sprintf('%s_%s%s_%s', $applicationName, $sectionPrefix, $resourceName, $type);
@@ -122,25 +122,7 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
         string $slug,
         string $displayedValue = null,
         string $localeCode = null,
-        int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH
-    ): string {
-        if (null === $localeCode) {
-            $localeCode = $this->localeContext->getLocaleCode();
-        }
-
-        return $this->linkToResource(
-            'sylius.product',
-            $displayedValue,
-            ['slug' => $slug, '_locale' => $localeCode],
-            $referenceType
-        );
-    }
-
-    public function linkToTaxon(
-        string $slug,
-        string $displayedValue = null,
-        string $localeCode = null,
-        int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH
+        int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH,
     ): string {
         if (null === $localeCode) {
             $localeCode = $this->localeContext->getLocaleCode();
@@ -151,7 +133,25 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
             $displayedValue,
             ['slug' => $slug, '_locale' => $localeCode],
             $referenceType,
-            ResourceActions::INDEX
+        );
+    }
+
+    public function linkToTaxon(
+        string $slug,
+        string $displayedValue = null,
+        string $localeCode = null,
+        int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH,
+    ): string {
+        if (null === $localeCode) {
+            $localeCode = $this->localeContext->getLocaleCode();
+        }
+
+        return $this->linkToResource(
+            'sylius.product',
+            $displayedValue,
+            ['slug' => $slug, '_locale' => $localeCode],
+            $referenceType,
+            ResourceActions::INDEX,
         );
     }
 
@@ -159,7 +159,7 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
         string $slug,
         string $displayedValue = null,
         string $localeCode = null,
-        int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH
+        int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH,
     ): string {
         if (null === $localeCode) {
             $localeCode = $this->localeContext->getLocaleCode();
@@ -169,7 +169,7 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
             'setono_sylius_cms.page',
             $displayedValue,
             ['slug' => $slug, '_locale' => $localeCode],
-            $referenceType
+            $referenceType,
         );
     }
 
@@ -277,7 +277,7 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
         array $context,
         ?string $code,
         string $type,
-        array $variables = []
+        array $variables = [],
     ): string {
         if (null === $code) {
             return '';
@@ -290,7 +290,7 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
             $type,
             $channelCode,
             $this->localeContext->getLocaleCode(),
-            $code
+            $code,
         );
 
         try {
@@ -308,7 +308,7 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
                 $type,
                 $code,
                 (string) $logicalTemplateName,
-                $e->getMessage()
+                $e->getMessage(),
             ));
         } catch (Throwable $e) {
             $this->logger->error(sprintf(
@@ -316,7 +316,7 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
                 $type,
                 $code,
                 (string) $logicalTemplateName,
-                $e->getMessage()
+                $e->getMessage(),
             ));
         }
 

@@ -31,7 +31,7 @@ final class AddToolbarSubscriber implements EventSubscriberInterface
         Environment $twig,
         ElementStackInterface $elementStack,
         SectionProviderInterface $sectionProvider,
-        AuthorizationCheckerInterface $authorizationChecker
+        AuthorizationCheckerInterface $authorizationChecker,
     ) {
         $this->twig = $twig;
         $this->elementStack = $elementStack;

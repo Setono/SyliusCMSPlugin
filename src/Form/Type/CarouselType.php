@@ -22,7 +22,7 @@ final class CarouselType extends AbstractResourceType
     public function __construct(
         RequestStack $requestStack,
         string $dataClass,
-        array $validationGroups = []
+        array $validationGroups = [],
     ) {
         parent::__construct($dataClass, $validationGroups);
 

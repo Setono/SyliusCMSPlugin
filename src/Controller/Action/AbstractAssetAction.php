@@ -45,7 +45,7 @@ abstract class AbstractAssetAction
             if ($attachment) {
                 $disposition = HeaderUtils::makeDisposition(
                     HeaderUtils::DISPOSITION_ATTACHMENT,
-                    (string) $asset->getName()
+                    (string) $asset->getName(),
                 );
 
                 $response->headers->set('Content-Disposition', $disposition);

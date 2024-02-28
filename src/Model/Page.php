@@ -14,9 +14,7 @@ use Sylius\Component\Resource\Model\TranslationInterface;
 class Page extends Element implements PageInterface
 {
     use EnabledDateIntervalAwareTrait;
-
     use ToggleableTrait;
-
     use TranslatableTrait {
         __construct as private initializeTranslationsCollection;
 
@@ -27,7 +25,6 @@ class Page extends Element implements PageInterface
 
     /**
      * @psalm-var Collection<array-key, BaseChannelInterface>
-     *
      * @var Collection|BaseChannelInterface[]
      */
     protected Collection $channels;

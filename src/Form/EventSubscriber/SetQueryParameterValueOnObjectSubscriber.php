@@ -28,7 +28,7 @@ final class SetQueryParameterValueOnObjectSubscriber implements EventSubscriberI
         RequestStack $requestStack,
         string $queryParameter = 'code',
         string $targetProperty = 'code',
-        PropertyAccessorInterface $propertyAccessor = null
+        PropertyAccessorInterface $propertyAccessor = null,
     ) {
         $this->requestStack = $requestStack;
         $this->queryParameter = $queryParameter;

@@ -22,7 +22,7 @@ final class RegistryFactory implements RegistryFactoryInterface
     public function __construct(
         SectionExtractorInterface $sectionExtractor,
         TemplateRepositoryInterface $templateRepository,
-        array $templates = []
+        array $templates = [],
     ) {
         $this->sectionExtractor = $sectionExtractor;
         $this->templateRepository = $templateRepository;

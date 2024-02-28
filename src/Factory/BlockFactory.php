@@ -17,7 +17,7 @@ final class BlockFactory implements BlockFactoryInterface
 
     public function __construct(
         FactoryInterface $decoratedFactory,
-        BlockRepositoryInterface $repository
+        BlockRepositoryInterface $repository,
     ) {
         $this->decoratedFactory = $decoratedFactory;
         $this->repository = $repository;

@@ -28,7 +28,7 @@ final class SectionExtractor implements SectionExtractorInterface
             throw new \InvalidArgumentException(sprintf(
                 'The given template must be either a %s, %s, or a string representing an existing template',
                 Template::class,
-                TemplateWrapper::class
+                TemplateWrapper::class,
             ));
         }
 

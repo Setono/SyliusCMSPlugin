@@ -2,7 +2,7 @@ name: "build"
 on:
     push:
         branches:
-            - "master"
+            - "0.*.x"
         paths-ignore:
             - "**/*.md"
     pull_request:
@@ -24,7 +24,7 @@ jobs:
         strategy:
             matrix:
                 php-version:
-                    - "7.4"
+                    - "8.1"
 
                 dependencies:
                     - "highest"
@@ -68,15 +68,13 @@ jobs:
         strategy:
             matrix:
                 php-version:
-                    - "7.4"
-                    - "8.0"
                     - "8.1"
 
                 dependencies:
                     - "highest"
 
                 symfony:
-                    - "^5.0"
+                    - "^5.4"
 
         steps:
             -   name: "Checkout"
@@ -111,15 +109,13 @@ jobs:
         strategy:
             matrix:
                 php-version:
-                    - "7.4"
-                    - "8.0"
                     - "8.1"
 
                 dependencies:
                     - "highest"
 
                 symfony:
-                    - "^5.0"
+                    - "^5.4"
 
         steps:
             -   name: "Checkout"
@@ -154,15 +150,13 @@ jobs:
         strategy:
             matrix:
                 php-version:
-                    - "7.4"
-                    - "8.0"
                     - "8.1"
 
                 dependencies:
                     - "highest"
 
                 symfony:
-                    - "^5.0"
+                    - "^5.4"
 
         steps:
             -   name: "Checkout"
@@ -194,8 +188,6 @@ jobs:
         strategy:
             matrix:
                 php-version:
-                    - "7.4"
-                    - "8.0"
                     - "8.1"
 
                 dependencies:

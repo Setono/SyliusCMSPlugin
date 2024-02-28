@@ -21,7 +21,7 @@ final class ImagePreviewer implements PreviewerInterface
         return new Preview(sprintf(
             '<img src="%s" alt="%s" style="width: 100%%">',
             $this->urlGenerator->generate('setono_sylius_cms_view_asset', ['id' => $asset->getId()]),
-            (string) $asset->getName()
+            (string) $asset->getName(),
         ));
     }
 

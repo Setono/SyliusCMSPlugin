@@ -20,7 +20,6 @@ interface ViewInterface extends ElementInterface
      * Returns a collection of view blocks sorted by ViewBlockInterface::getPosition() descending
      *
      * @return Collection|ViewBlockInterface[]
-     *
      * @psalm-return Collection<array-key, ViewBlockInterface>
      */
     public function getViewBlocks(): Collection;
@@ -33,14 +32,12 @@ interface ViewInterface extends ElementInterface
 
     /**
      * @return Collection|ViewBlockInterface[]
-     *
      * @psalm-return Collection<array-key, ViewBlockInterface>
      */
     public function getViewBlocksInSection(string $sectionName): Collection;
 
     /**
      * @return Collection|BlockInterface[]
-     *
      * @psalm-return Collection<array-key, BlockInterface|null>
      */
     public function getBlocksInSection(string $sectionName): Collection;

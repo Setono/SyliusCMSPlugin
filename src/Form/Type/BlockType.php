@@ -32,7 +32,7 @@ final class BlockType extends AbstractResourceType
         RendererInterface $renderer,
         RequestStack $requestStack,
         string $dataClass,
-        array $validationGroups = []
+        array $validationGroups = [],
     ) {
         parent::__construct($dataClass, $validationGroups);
 
@@ -56,7 +56,7 @@ final class BlockType extends AbstractResourceType
                 $this->parser,
                 $this->renderer,
                 'defaultRawContent',
-                'defaultContent'
+                'defaultContent',
             ))
             ->addEventSubscriber(new SetQueryParameterValueOnObjectSubscriber($this->requestStack))
             ->addEventSubscriber(new AddCodeFormSubscriber())
