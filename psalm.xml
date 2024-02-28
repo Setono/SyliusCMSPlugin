@@ -33,6 +33,7 @@
                 <directory name="src/Security/Voter"/>
             </errorLevel>
         </MissingTemplateParam>
+        <RedundantConditionGivenDocblockType errorLevel="suppress"/>
     </issueHandlers>
     <forbiddenFunctions>
         <function name="dd"/>
