@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Security\Voter;
 
-use Setono\MainRequestTrait\MainRequestTrait;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\AccessDecisionManagerInterface;
@@ -13,8 +12,6 @@ use Webmozart\Assert\Assert;
 
 final class ShowToolbarVoter extends Voter
 {
-    use MainRequestTrait;
-
     public const ATTRIBUTE = 'setono-sylius-cms:toolbar:show';
 
     private RequestStack $requestStack;
@@ -34,7 +31,7 @@ final class ShowToolbarVoter extends Voter
 
     protected function voteOnAttribute(string $attribute, $subject, TokenInterface $token): bool
     {
-        $request = $this->getMainRequestFromRequestStack($this->requestStack);
+        $request = $this->requestStack->getMainRequest();
         if (null === $request) {
             return false;
         }

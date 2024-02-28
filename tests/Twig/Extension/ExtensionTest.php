@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Tests\Setono\SyliusCMSPlugin\Twig\Extension;
+namespace Setono\SyliusCMSPlugin\Tests\Twig\Extension;
 
+use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
@@ -14,10 +16,8 @@ use Setono\SyliusCMSPlugin\Twig\Extension\Extension;
 use Setono\SyliusCMSPlugin\Twig\Extension\Runtime;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Channel\Model\Channel;
-use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Routing\RequestContext;
 use Twig\RuntimeLoader\RuntimeLoaderInterface;
 use Twig\Test\IntegrationTestCase;
 
@@ -27,47 +27,31 @@ use Twig\Test\IntegrationTestCase;
  */
 final class ExtensionTest extends IntegrationTestCase
 {
+    use ProphecyTrait;
+
     public function getRuntimeLoaders(): array
     {
-        $runtimeLoader = new class() implements RuntimeLoaderInterface {
-            public function load($class): Runtime
+        $urlGenerator = $this->prophesize(UrlGeneratorInterface::class);
+        $urlGenerator->generate(Argument::type('string'))->willReturn('route');
+
+        $channel = new Channel();
+        $channel->setCode('FASHION_WEB');
+        $channelContext = $this->prophesize(ChannelContextInterface::class);
+        $channelContext->getChannel()->willReturn($channel);
+
+        $localeContext = $this->prophesize(LocaleContextInterface::class);
+        $localeContext->getLocaleCode()->willReturn('en_US');
+
+        $runtimeLoader = new class($urlGenerator->reveal(), $channelContext->reveal(), $localeContext->reveal()) implements RuntimeLoaderInterface {
+            public function __construct(
+                private readonly UrlGeneratorInterface $urlGenerator,
+                private readonly ChannelContextInterface $channelContext,
+                private readonly LocaleContextInterface $localeContext,
+            ) {
+            }
+
+            public function load(string $class): Runtime
             {
-                $urlGenerator = new class() implements UrlGeneratorInterface {
-                    public function setContext(RequestContext $context): void
-                    {
-                    }
-
-                    public function getContext()
-                    {
-                        return new RequestContext();
-                    }
-
-                    public function generate(
-                        string $name,
-                        array $parameters = [],
-                        int $referenceType = self::ABSOLUTE_PATH,
-                    ): string {
-                        return 'route';
-                    }
-                };
-
-                $channelContext = new class() implements ChannelContextInterface {
-                    public function getChannel(): ChannelInterface
-                    {
-                        $channel = new Channel();
-                        $channel->setCode('FASHION_WEB');
-
-                        return $channel;
-                    }
-                };
-
-                $localeContext = new class() implements LocaleContextInterface {
-                    public function getLocaleCode(): string
-                    {
-                        return 'en_US';
-                    }
-                };
-
                 $previewLinkGenerator = new class() implements PreviewLinkGeneratorInterface {
                     public function generateAll(PageInterface $page): iterable
                     {
@@ -88,11 +72,11 @@ final class ExtensionTest extends IntegrationTestCase
                 };
 
                 return new Runtime(
-                    $urlGenerator,
+                    $this->urlGenerator,
                     $previewLinkGenerator,
                     $previewer,
-                    $channelContext,
-                    $localeContext,
+                    $this->channelContext,
+                    $this->localeContext,
                     new ElementStack(),
                 );
             }

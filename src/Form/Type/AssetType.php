@@ -8,11 +8,12 @@ use Setono\SyliusCMSPlugin\Form\EventSubscriber\AddInternalDescriptionSubscriber
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
 use Setono\SyliusCMSPlugin\Uploader\AssetUploaderInterface;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
+use Symfony\Component\Form\Event\PreSetDataEvent;
+use Symfony\Component\Form\Event\PreSubmitEvent;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Webmozart\Assert\Assert;
@@ -45,7 +46,7 @@ final class AssetType extends AbstractResourceType
                 'label' => 'setono_sylius_cms.form.asset.code',
                 'required' => false,
             ])
-            ->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event): void {
+            ->addEventListener(FormEvents::PRE_SET_DATA, function (PreSetDataEvent $event): void {
                 /** @var AssetInterface|mixed $asset */
                 $asset = $event->getData();
                 Assert::isInstanceOf($asset, AssetInterface::class);
@@ -59,7 +60,7 @@ final class AssetType extends AbstractResourceType
                 ;
             })
             // PRE_SUBMIT is where we have the unmapped fields, i.e. the 'file' above
-            ->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event): void {
+            ->addEventListener(FormEvents::PRE_SUBMIT, function (PreSubmitEvent $event): void {
                 $data = $event->getData();
                 Assert::isArray($data);
                 Assert::keyExists($data, 'file');

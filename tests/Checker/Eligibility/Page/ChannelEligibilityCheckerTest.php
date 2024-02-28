@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Setono\SyliusCMSPlugin\Checker\Eligibility\Page;
+namespace Setono\SyliusCMSPlugin\Tests\Checker\Eligibility\Page;
 
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\EventSubscriber;
 
-use Setono\MainRequestTrait\MainRequestTrait;
 use Setono\SyliusCMSPlugin\Security\Voter\ShowToolbarVoter;
 use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
 use Sylius\Bundle\CoreBundle\SectionResolver\SectionProviderInterface;
@@ -17,8 +16,6 @@ use Twig\Environment;
 
 final class AddToolbarSubscriber implements EventSubscriberInterface
 {
-    use MainRequestTrait;
-
     private Environment $twig;
 
     private ElementStackInterface $elementStack;
@@ -48,7 +45,7 @@ final class AddToolbarSubscriber implements EventSubscriberInterface
 
     public function add(ResponseEvent $event): void
     {
-        if (!$this->isMainRequest($event)) {
+        if (!$event->isMainRequest()) {
             return;
         }
 

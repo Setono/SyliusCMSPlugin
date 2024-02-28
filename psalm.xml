@@ -8,7 +8,6 @@
     findUnusedCode="false"
     findUnusedVariablesAndParams="false"
     errorLevel="1"
-    errorBaseline="psalm-baseline.xml"
 >
     <projectFiles>
         <directory name="src"/>
@@ -28,8 +27,18 @@
         <UnnecessaryVarAnnotation errorLevel="suppress"/>
         <MissingTemplateParam>
             <errorLevel type="suppress">
+                <directory name="src/Factory"/>
                 <directory name="src/Form/Type"/>
+                <directory name="src/Repository"/>
+                <directory name="src/Security/Voter"/>
             </errorLevel>
         </MissingTemplateParam>
     </issueHandlers>
+    <forbiddenFunctions>
+        <function name="dd"/>
+        <function name="dump"/>
+        <function name="exit"/>
+        <function name="var_dump"/>
+        <function name="print_r"/>
+    </forbiddenFunctions>
 </psalm>
