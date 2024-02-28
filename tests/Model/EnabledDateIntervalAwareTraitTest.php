@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Setono\SyliusCMSPlugin\Model;
+namespace Setono\SyliusCMSPlugin\Tests\Model;
 
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Model\EnabledDateIntervalAwareInterface;

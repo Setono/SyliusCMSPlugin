@@ -26,16 +26,49 @@ final class ViewSectionsDataMapper extends DataMapper
     }
 
     /**
-     * @psalm-suppress ParamNameMismatch
+     * @param mixed $data
+     * @param \Traversable<mixed, FormInterface> $forms
+     *
+     * @psalm-suppress ParamNameMismatch,MoreSpecificImplementedParamType
+     */
+    public function mapFormsToData(iterable $forms, &$data): void
+    {
+        parent::mapFormsToData($forms, $data);
+
+        /** @var FormInterface[] $arrayForms */
+        $arrayForms = iterator_to_array($forms);
+
+        Assert::isInstanceOf($data, ViewInterface::class);
+
+        // TODO: merge instead of replacing
+        foreach ($data->getViewBlocks() as $viewBlock) {
+            $data->removeViewBlock($viewBlock);
+        }
+
+        /** @var FormInterface $viewBlockForm */
+        foreach ($arrayForms['sections'] as $viewBlockForm) {
+            /** @var array $formData */
+            $formData = $viewBlockForm->getData();
+            Assert::keyExists($formData, 'viewBlocks');
+
+            /** @var ViewBlockInterface $viewBlock */
+            foreach ($formData['viewBlocks'] as $viewBlock) {
+                $viewBlock->setSection($viewBlockForm->getName());
+                $data->addViewBlock($viewBlock);
+            }
+        }
+    }
+
+    /**
+     * @param \Traversable<mixed, FormInterface> $forms
+     * @param mixed $data
+     *
+     * @psalm-suppress ParamNameMismatch,MoreSpecificImplementedParamType
      */
     public function mapDataToForms($data, iterable $forms): void
     {
         // First, map parent so all fields are mapped the basic way
         parent::mapDataToForms($data, $forms);
-
-        if (!$forms instanceof \Traversable) {
-            throw new \LogicException(\sprintf('Expected an instance of %s.', \Traversable::class));
-        }
 
         if (null === $data) {
             return;
@@ -68,40 +101,5 @@ final class ViewSectionsDataMapper extends DataMapper
         /** @var FormInterface $sectionsForm */
         $sectionsForm = $arrayForms['sections'];
         $sectionsForm->setData($sections);
-    }
-
-    /**
-     * @psalm-suppress ParamNameMismatch
-     */
-    public function mapFormsToData(iterable $forms, &$data): void
-    {
-        parent::mapFormsToData($forms, $data);
-
-        if (!$forms instanceof \Traversable) {
-            throw new \LogicException(\sprintf('Expected an instance of %s.', \Traversable::class));
-        }
-
-        /** @var FormInterface[] $arrayForms */
-        $arrayForms = iterator_to_array($forms);
-
-        Assert::isInstanceOf($data, ViewInterface::class);
-
-        // TODO: merge instead of replacing
-        foreach ($data->getViewBlocks() as $viewBlock) {
-            $data->removeViewBlock($viewBlock);
-        }
-
-        /** @var FormInterface $viewBlockForm */
-        foreach ($arrayForms['sections'] as $viewBlockForm) {
-            /** @var array $formData */
-            $formData = $viewBlockForm->getData();
-            Assert::keyExists($formData, 'viewBlocks');
-
-            /** @var ViewBlockInterface $viewBlock */
-            foreach ($formData['viewBlocks'] as $viewBlock) {
-                $viewBlock->setSection($viewBlockForm->getName());
-                $data->addViewBlock($viewBlock);
-            }
-        }
     }
 }

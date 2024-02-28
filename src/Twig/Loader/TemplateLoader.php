@@ -23,6 +23,9 @@ final class TemplateLoader implements LoaderInterface
         $this->templateRepository = $templateRepository;
     }
 
+    /**
+     * @param string $name
+     */
     public function getSourceContext($name): Source
     {
         $template = $this->getTemplate($name);
@@ -30,16 +33,26 @@ final class TemplateLoader implements LoaderInterface
         return new Source((string) $template->getSource(), $name);
     }
 
+    /**
+     * @param string $name
+     */
     public function exists($name): bool
     {
         return null !== $this->findTemplate($name);
     }
 
+    /**
+     * @param string $name
+     */
     public function getCacheKey($name): string
     {
         return $name;
     }
 
+    /**
+     * @param string $name
+     * @param int $time
+     */
     public function isFresh($name, $time): bool
     {
         $template = $this->getTemplate($name);

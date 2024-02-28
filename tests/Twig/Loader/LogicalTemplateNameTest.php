@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Setono\SyliusCMSPlugin\Twig\Loader;
+namespace Setono\SyliusCMSPlugin\Tests\Twig\Loader;
 
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;

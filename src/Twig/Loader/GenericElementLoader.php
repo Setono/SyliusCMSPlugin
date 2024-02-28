@@ -48,6 +48,8 @@ final class GenericElementLoader implements LoaderInterface
      * will call this method everytime Twig needs a cache key and to load a template (also existing compiled ones)
      * Twig needs the cache key, hence exists() is called EVERY time a template is loaded and with our approach this
      * would mean we needed to hit the database for EVERY CMS element referenced throughout the application
+     *
+     * @param string $name
      */
     public function exists($name): bool
     {
@@ -60,11 +62,17 @@ final class GenericElementLoader implements LoaderInterface
         return $logicalTemplateName->type === $this->supportsType;
     }
 
+    /**
+     * @param string $name
+     */
     public function getCacheKey($name): string
     {
         return (string) LogicalTemplateName::createFromString($name);
     }
 
+    /**
+     * @param string $name
+     */
     public function getSourceContext($name): Source
     {
         $logicalTemplateName = LogicalTemplateName::createFromString($name);
@@ -79,6 +87,10 @@ final class GenericElementLoader implements LoaderInterface
         ]), (string) $logicalTemplateName);
     }
 
+    /**
+     * @param string $name
+     * @param int $time
+     */
     public function isFresh($name, $time): bool
     {
         $logicalTemplateName = LogicalTemplateName::createFromString($name);
@@ -96,8 +108,7 @@ final class GenericElementLoader implements LoaderInterface
     }
 
     /**
-     * @throws LoaderError when the logical template name does not exist, the database connection isn't there or
-     * the respective tables hasn't been created yet
+     * @throws LoaderError when the logical template name does not exist, the database connection isn't there or the respective tables hasn't been created yet
      */
     private function getElement(LogicalTemplateName $logicalTemplateName): ElementInterface
     {
