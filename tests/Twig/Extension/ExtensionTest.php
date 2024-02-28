@@ -50,7 +50,10 @@ final class ExtensionTest extends IntegrationTestCase
             ) {
             }
 
-            public function load(string $class): Runtime
+            /**
+             * @param string $class
+             */
+            public function load($class): Runtime
             {
                 $previewLinkGenerator = new class() implements PreviewLinkGeneratorInterface {
                     public function generateAll(PageInterface $page): iterable
