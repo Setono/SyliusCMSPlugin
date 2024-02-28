@@ -46,6 +46,7 @@
     },
     "require-dev": {
         "api-platform/core": "^2.7.16",
+        "azjezz/psl": "^2.9",
         "babdev/pagerfanta-bundle": "^3.8",
         "behat/behat": "^3.14",
         "doctrine/doctrine-bundle": "^2.11",
