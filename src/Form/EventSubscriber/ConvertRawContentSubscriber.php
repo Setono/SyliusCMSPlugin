@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Form\EventSubscriber;
 
-use Setono\EditorJS\Exception\ParserException;
-use Setono\EditorJS\Exception\RendererException;
+use Setono\EditorJS\Exception\ParserExceptionInterface;
+use Setono\EditorJS\Exception\RendererExceptionInterface;
 use Setono\EditorJS\Parser\ParserInterface;
 use Setono\EditorJS\Renderer\RendererInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -37,7 +37,7 @@ final class ConvertRawContentSubscriber implements EventSubscriberInterface
     ) {
         $this->parser = $parser;
         $this->renderer = $renderer;
-        // we work on array so we use index notation
+        // we work on array, so we use index notation
         // see https://symfony.com/doc/current/components/property_access.html#reading-from-arrays
         $this->sourceProperty = sprintf('[%s]', $sourceProperty);
         $this->targetProperty = sprintf('[%s]', $targetProperty);
@@ -77,9 +77,9 @@ final class ConvertRawContentSubscriber implements EventSubscriberInterface
 
         try {
             $html = $this->renderer->render($this->parser->parse($rawContent));
-        } catch (ParserException $e) {
+        } catch (ParserExceptionInterface $e) {
             throw new TransformationFailedException('Transforming EditorJS JSON into HTML failed', 0, $e, $e->getMessage());
-        } catch (RendererException $e) {
+        } catch (RendererExceptionInterface $e) {
             throw new TransformationFailedException('Rendering parsing result failed', 0, $e, $e->getMessage());
         } catch (\Throwable $e) {
             throw new TransformationFailedException('Something went wrong trying to either parse or render the EditorJS content', 0, $e, 'Something went wrong trying to either parse or render the EditorJS content. ' . $e->getMessage());
