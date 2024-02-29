@@ -24,6 +24,7 @@ setono_sylius_cms:
         internal_description: Internal description
         internal_description_placeholder: Use this internally to describe your element and make it easier for your colleagues to know the purpose of it...
         page:
+            content: Content
             enabled: Enabled
             enabled_from: Enabled from
             enabled_until: Enabled until

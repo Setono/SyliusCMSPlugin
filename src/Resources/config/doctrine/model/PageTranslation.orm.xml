@@ -10,12 +10,13 @@
             <generator strategy="AUTO"/>
         </id>
 
-        <field name="slug" type="string" />
-        <field name="title" type="string" nullable="true" />
-        <field name="metaDescription" type="text" nullable="true" />
+        <field name="slug" type="string"/>
+        <field name="title" type="string" nullable="true"/>
+        <field name="metaDescription" type="text" nullable="true"/>
+        <field name="content" type="text" nullable="true"/>
 
         <unique-constraints>
-            <unique-constraint columns="locale,slug" />
+            <unique-constraint columns="locale,slug"/>
         </unique-constraints>
     </mapped-superclass>
 </doctrine-mapping>

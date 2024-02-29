@@ -63,6 +63,15 @@
             <tag name="twig.loader"/>
         </service>
 
+        <service id="setono_sylius_cms.twig.loader.element_loader.page"
+                 class="Setono\SyliusCMSPlugin\Twig\Loader\GenericElementLoader">
+            <argument type="service" id="setono_sylius_cms.repository.page"/>
+            <argument type="service" id="setono_sylius_cms.generator.twig.page"/>
+            <argument>page</argument>
+
+            <tag name="twig.loader"/>
+        </service>
+
         <service id="setono_sylius_cms.twig.loader.element_loader.view"
                  class="Setono\SyliusCMSPlugin\Twig\Loader\GenericElementLoader">
             <argument type="service" id="setono_sylius_cms.repository.view"/>

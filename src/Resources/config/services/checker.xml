@@ -13,13 +13,6 @@
             <argument type="service" id="request_stack"/>
         </service>
 
-        <service id="setono_sylius_cms.checker.eligibility.page.channel"
-                 class="Setono\SyliusCMSPlugin\Checker\Eligibility\Page\ChannelEligibilityChecker">
-            <argument type="service" id="sylius.context.channel"/>
-
-            <tag name="setono_sylius_cms.page_eligibility_checker"/>
-        </service>
-
         <service id="setono_sylius_cms.checker.eligibility.page.enabled_date"
                  class="Setono\SyliusCMSPlugin\Checker\Eligibility\Page\EnabledDateEligibilityChecker">
             <tag name="setono_sylius_cms.page_eligibility_checker"/>

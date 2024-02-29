@@ -23,6 +23,9 @@ final class PageTranslationType extends AbstractResourceType
             ->add('metaDescription', TextareaType::class, [
                 'label' => 'setono_sylius_cms.form.page.meta_description',
             ])
+            ->add('content', EditorJSType::class, [
+                'label' => 'setono_sylius_cms.form.page.content',
+            ])
         ;
     }
 

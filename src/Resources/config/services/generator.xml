@@ -24,6 +24,12 @@
         <service id="setono_sylius_cms.generator.twig.carousel"
                  class="Setono\SyliusCMSPlugin\Generator\Twig\CarouselTwigGenerator"/>
 
+        <service id="setono_sylius_cms.generator.twig.page"
+                 class="Setono\SyliusCMSPlugin\Generator\Twig\PageTwigGenerator">
+            <argument type="service" id="setono_editorjs.parser"/>
+            <argument type="service" id="setono_editorjs.renderer"/>
+        </service>
+
         <service id="setono_sylius_cms.generator.twig.view"
                  class="Setono\SyliusCMSPlugin\Generator\Twig\ViewTwigGenerator"/>
     </services>

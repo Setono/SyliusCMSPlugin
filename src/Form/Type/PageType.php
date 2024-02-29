@@ -40,9 +40,6 @@ final class PageType extends AbstractResourceType
                 'label' => 'sylius.ui.channels',
                 'required' => false,
             ])
-            ->add('view', ViewChoiceType::class, [
-                'label' => 'setono_sylius_cms.form.page.view',
-            ])
             ->add('translations', ResourceTranslationsType::class, [
                 'entry_type' => PageTranslationType::class,
                 'label' => 'setono_sylius_cms.form.page.translations',

@@ -75,6 +75,11 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
         return $this->renderElement($env, $context, $carousel, ElementInterface::TYPE_CAROUSEL, $variables);
     }
 
+    public function page(Environment $env, array $context, ?string $page, array $variables = []): string
+    {
+        return $this->renderElement($env, $context, $page, ElementInterface::TYPE_PAGE, $variables);
+    }
+
     public function view(Environment $env, array $context, ?string $view, array $variables = []): string
     {
         return $this->renderElement($env, $context, $view, ElementInterface::TYPE_VIEW, $variables);

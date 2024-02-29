@@ -1,17 +1,24 @@
 {# @var page \Setono\SyliusCMSPlugin\Model\PageInterface #}
 {% from '@SyliusAdmin/Macro/translationForm.html.twig' import translationForm %}
 
+{% form_theme form '@SetonoSyliusCMSPlugin/form/theme.html.twig' %}
+
+<style>
+    .editorjs {
+        background-color: #f3f3f3;
+        padding: 20px 0;
+    }
+    .ce-block__content {
+        padding: 0 20px;
+        background-color: #fff;
+    }
+</style>
+
 {{ form_errors(form) }}
 <div class="ui two column stackable grid">
     <div class="column">
         <div class="ui segment">
             {{ form_row(form.code) }}
-            {{ form_row(form.view) }}
-            {% if page.view is not null %}
-                <div>
-                    <i class="fitted angle double right icon"></i> <a href="{{ path('setono_sylius_cms_admin_view_update', {id: page.view.id}) }}">Go to '{{ page.view.code }}' view</a>
-                </div>
-            {% endif %}
         </div>
         <div class="ui segment">
             <div class="two fields">
@@ -29,3 +36,63 @@
         {{ translationForm(form.translations) }}
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.23.2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/embed@2.5.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.2.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.7.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.6.2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/raw@2.3.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.6.2"></script>
+
+<script>
+    const editors = [];
+    document.querySelectorAll('.editorjs').forEach((holderElement) => {
+        let editorOptions = {
+            holder: holderElement.id,
+            placeholder: '{{ 'setono_sylius_cms.form.block.content_placeholder'|trans }}',
+            logLevel: 'ERROR',
+            tools: {
+                embed: {
+                    class: Embed,
+                    inlineToolbar : true
+                },
+                delimiter: Delimiter,
+                header: {
+                    class: Header,
+                    inlineToolbar : true
+                },
+                list: List,
+                image: {
+                    class: ImageTool,
+                    config: {
+                        endpoints: {
+                            byFile: '{{ url('setono_sylius_cms_admin_asset_upload_from_editor') }}',
+                        }
+                    }
+                },
+                raw: RawTool
+            }
+        };
+
+        const raw = document.getElementById(holderElement.dataset.source).value;
+        if (null !== raw && '' !== raw) {
+            editorOptions.data = JSON.parse(raw);
+        }
+
+        editors.push({
+            obj: new EditorJS(editorOptions),
+            source: holderElement.dataset.source
+        });
+    });
+
+    document.forms['{{ form.vars.name }}'].addEventListener('submit', (e) => {
+        editors.forEach((editor) => {
+            editor.obj.save().then((json) => {
+                document.getElementById(editor.source).value = JSON.stringify(json);
+            }).catch((error) => {
+                console.log('Saving failed: ', error)
+            });
+        });
+    });
+</script>

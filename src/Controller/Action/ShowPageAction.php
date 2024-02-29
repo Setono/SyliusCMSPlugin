@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Controller\Action;
 
 use Setono\SyliusCMSPlugin\Checker\Eligibility\Page\EligibilityCheckerInterface;
 use Setono\SyliusCMSPlugin\Repository\PageRepositoryInterface;
+use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,38 +15,31 @@ use Twig\Environment;
 
 final class ShowPageAction
 {
-    private LocaleContextInterface $localeContext;
-
-    private PageRepositoryInterface $pageRepository;
-
-    private Environment $twig;
-
-    private EligibilityCheckerInterface $eligibilityChecker;
-
     public function __construct(
-        LocaleContextInterface $localeContext,
-        PageRepositoryInterface $pageRepository,
-        Environment $twig,
-        EligibilityCheckerInterface $eligibilityChecker,
+        private readonly ChannelContextInterface $channelContext,
+        private readonly LocaleContextInterface $localeContext,
+        private readonly PageRepositoryInterface $pageRepository,
+        private readonly Environment $twig,
+        private readonly EligibilityCheckerInterface $eligibilityChecker,
     ) {
-        $this->localeContext = $localeContext;
-        $this->pageRepository = $pageRepository;
-        $this->twig = $twig;
-        $this->eligibilityChecker = $eligibilityChecker;
     }
 
     public function __invoke(Request $request, string $slug): Response
     {
-        $page = $this->pageRepository->findOneBySlug($this->localeContext->getLocaleCode(), $slug);
+        $page = $this->pageRepository->findOneBySlug(
+            $this->channelContext->getChannel(),
+            $this->localeContext->getLocaleCode(),
+            $slug,
+        );
+
+        // todo we need better preview handling. Right now if you preview a page that isn't enabled on the respective channel or hasn't got a translation for the respective locale the $page will be null. We should tell this to the user somehow
+
         if (null === $page || !$this->eligibilityChecker->isEligible($page)) {
             throw new NotFoundHttpException(sprintf('The page "%s" does not exist', $slug));
         }
 
-        $view = $page->getView();
-
         return new Response($this->twig->render('@SetonoSyliusCMSPlugin/page.html.twig', [
             'page' => $page,
-            'view' => $view ? $view->getCode() : null,
         ]));
     }
 }

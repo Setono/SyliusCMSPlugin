@@ -11,6 +11,7 @@ use Setono\TwigCachePurgerBundle\Purger\PurgerInterface;
 use Sylius\Bundle\ResourceBundle\Event\ResourceControllerEvent;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
+use Sylius\Component\Resource\Model\TranslationInterface;
 
 final class ElementCacheInvalidatorListener
 {
@@ -57,6 +58,10 @@ final class ElementCacheInvalidatorListener
         } elseif ($args instanceof ResourceControllerEvent) {
             /** @var mixed $entity */
             $entity = $args->getSubject();
+        }
+
+        if ($entity instanceof TranslationInterface) {
+            $entity = $entity->getTranslatable();
         }
 
         if (!$entity instanceof ElementInterface) {

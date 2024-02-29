@@ -6,18 +6,20 @@ namespace Setono\SyliusCMSPlugin\Doctrine\ORM;
 
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Repository\PageRepositoryInterface;
+use Sylius\Component\Channel\Model\ChannelInterface;
 use Webmozart\Assert\Assert;
 
 class PageRepository extends ElementRepository implements PageRepositoryInterface
 {
-    public function findOneBySlug(string $locale, string $slug): ?PageInterface
+    public function findOneBySlug(ChannelInterface $channel, string $locale, string $slug): ?PageInterface
     {
         $obj = $this->createQueryBuilder('o')
             ->addSelect('translation')
-            ->innerJoin('o.translations', 'translation', 'WITH', 'translation.locale = :locale')
-            ->andWhere('translation.slug = :slug')
+            ->innerJoin('o.translations', 'translation', 'WITH', 'translation.locale = :locale AND translation.slug = :slug')
+            ->andWhere(':channel MEMBER OF o.channels')
             ->setParameter('locale', $locale)
             ->setParameter('slug', $slug)
+            ->setParameter('channel', $channel)
             ->getQuery()
             ->getOneOrNullResult()
         ;

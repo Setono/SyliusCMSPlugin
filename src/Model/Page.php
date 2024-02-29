@@ -21,12 +21,7 @@ class Page extends Element implements PageInterface
         getTranslation as private doGetTranslation;
     }
 
-    protected ?ViewInterface $view = null;
-
-    /**
-     * @psalm-var Collection<array-key, BaseChannelInterface>
-     * @var Collection|BaseChannelInterface[]
-     */
+    /** @var Collection<array-key, BaseChannelInterface> */
     protected Collection $channels;
 
     public function __construct()
@@ -38,16 +33,6 @@ class Page extends Element implements PageInterface
     public function getType(): string
     {
         return ElementInterface::TYPE_PAGE;
-    }
-
-    public function getView(): ?ViewInterface
-    {
-        return $this->view;
-    }
-
-    public function setView(?ViewInterface $view): void
-    {
-        $this->view = $view;
     }
 
     public function getTitle(): ?string
@@ -78,6 +63,16 @@ class Page extends Element implements PageInterface
     public function setMetaDescription(?string $metaDescription): void
     {
         $this->getTranslation()->setMetaDescription($metaDescription);
+    }
+
+    public function getContent(): ?string
+    {
+        return $this->getTranslation()->getContent();
+    }
+
+    public function setContent(?string $content): void
+    {
+        $this->getTranslation()->setContent($content);
     }
 
     public function getChannels(): Collection
