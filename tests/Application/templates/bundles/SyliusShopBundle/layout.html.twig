@@ -42,6 +42,8 @@
 
         {{ sylius_template_event('sylius.shop.layout.before_content') }}
 
+        {{ include('before_content', ignoreMissing=true) }}
+
         {% block content %}
         {% endblock %}
 
