@@ -215,18 +215,4 @@
             {% endfor %}
         </ul>
     {% endif %}
-
-    {% if elements.views is not empty %}
-        <div class="sscms-subheader">{{ 'setono_sylius_cms.ui.views'|trans }}</div>
-        <ul>
-            {% for element in elements.views %}
-                <li>
-                    <a href="{{ path('setono_sylius_cms_admin_view_update', {'id': element.id}) }}"
-                       data-identifier="{{ element.identifier }}" target="_blank">
-                        {{ element.code }}
-                    </a>
-                </li>
-            {% endfor %}
-        </ul>
-    {% endif %}
 </div>
