@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Model;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Webmozart\Assert\Assert;
 
 class Carousel extends Element implements CarouselInterface
 {
@@ -28,6 +29,16 @@ class Carousel extends Element implements CarouselInterface
     public function getType(): string
     {
         return ElementInterface::TYPE_CAROUSEL;
+    }
+
+    public function getBlocks(): Collection
+    {
+        return $this->carouselBlocks->map(function (CarouselBlockInterface $carouselBlock): BlockInterface {
+            $block = $carouselBlock->getBlock();
+            Assert::notNull($block);
+
+            return $block;
+        });
     }
 
     public function getCarouselBlocks(): Collection

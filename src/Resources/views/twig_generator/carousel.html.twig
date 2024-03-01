@@ -1,0 +1,36 @@
+{# @var element \Setono\SyliusCMSPlugin\Model\CarouselInterface #}
+<div class="sscms-carousel {{ element.identifier }}">
+    <div class="items">
+        {% for item in element.blocks %}
+            <div class="item">
+                {{ ('{{ sscms_block("' ~ item.code ~ '") }}')|raw }}
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if element.configuration.showControls is defined and element.configuration.showControls %}
+        <div class="navigation">
+            <button class="left ui huge black icon button">
+                <i class="left arrow icon"></i>
+            </button>
+            <button class="right ui huge black icon button">
+                <i class="right arrow icon"></i>
+            </button>
+        </div>
+    {% endif %}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script>
+        $(document).ready(() => {
+            $('.{{ element.identifier }} .items').slick({
+                infinite: {{ element.configuration.infinite ? 'true' : 'false' }},
+                slidesToShow: {{ element.configuration.slidesToShow }},
+                slidesToScroll: {{ element.configuration.slidesToScroll }},
+                prevArrow: $('.{{ element.identifier }} button.left'),
+                nextArrow: $('.{{ element.identifier }} button.right'),
+                appendArrows: false,
+                autoplay: {{ element.configuration.autoplay ? 'true' : 'false' }},
+                autoplaySpeed: {{ element.configuration.autoplaySpeed }},
+            });
+        });
+    </script>
+</div>

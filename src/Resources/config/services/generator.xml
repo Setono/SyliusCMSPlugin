@@ -13,21 +13,44 @@
                  alias="setono_sylius_cms.generator.page.preview_link"/>
 
         <!-- Twig generators -->
+        <service id="setono_sylius_cms.generator.twig.composite"
+                 class="Setono\SyliusCMSPlugin\Generator\Twig\CompositeTwigGenerator"/>
+
+        <service id="setono_sylius_cms.generator.twig.abstract"
+                 class="Setono\SyliusCMSPlugin\Generator\Twig\AbstractTwigGenerator" abstract="true">
+            <argument type="service" id="twig"/>
+        </service>
+
         <service id="setono_sylius_cms.generator.twig.asset"
-                 class="Setono\SyliusCMSPlugin\Generator\Twig\AssetTwigGenerator">
-            <argument type="service" id="router"/>
+                 class="Setono\SyliusCMSPlugin\Generator\Twig\AssetTwigGenerator"
+                 parent="setono_sylius_cms.generator.twig.abstract">
+            <argument>asset</argument>
+
+            <tag name="setono_sylius_cms.twig_generator"/>
         </service>
 
         <service id="setono_sylius_cms.generator.twig.block"
-                 class="Setono\SyliusCMSPlugin\Generator\Twig\BlockTwigGenerator"/>
+                 class="Setono\SyliusCMSPlugin\Generator\Twig\BlockTwigGenerator"
+                 parent="setono_sylius_cms.generator.twig.abstract">
+            <argument>block</argument>
+
+            <tag name="setono_sylius_cms.twig_generator"/>
+        </service>
 
         <service id="setono_sylius_cms.generator.twig.carousel"
-                 class="Setono\SyliusCMSPlugin\Generator\Twig\CarouselTwigGenerator"/>
+                 class="Setono\SyliusCMSPlugin\Generator\Twig\CarouselTwigGenerator"
+                 parent="setono_sylius_cms.generator.twig.abstract">
+            <argument>carousel</argument>
+
+            <tag name="setono_sylius_cms.twig_generator"/>
+        </service>
 
         <service id="setono_sylius_cms.generator.twig.page"
                  class="Setono\SyliusCMSPlugin\Generator\Twig\PageTwigGenerator">
             <argument type="service" id="setono_editorjs.parser"/>
             <argument type="service" id="setono_editorjs.renderer"/>
+
+            <tag name="setono_sylius_cms.twig_generator"/>
         </service>
     </services>
 </container>

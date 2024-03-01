@@ -30,4 +30,9 @@ final class PageTwigGenerator implements TwigGeneratorInterface
 
         return $this->renderer->render($this->parser->parse((string) $element->getContent()));
     }
+
+    public function supports(ElementInterface $element, array $context = []): bool
+    {
+        return $element instanceof PageInterface;
+    }
 }

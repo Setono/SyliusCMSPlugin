@@ -18,4 +18,11 @@ interface TwigGeneratorInterface
      * @param array<string, mixed> $context
      */
     public function generate(ElementInterface $element, array $context = []): string;
+
+    /**
+     * Returns true if the generator supports the given element
+     *
+     * @param T $element
+     */
+    public function supports(ElementInterface $element, array $context = []): bool;
 }
