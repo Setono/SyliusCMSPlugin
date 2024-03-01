@@ -18,27 +18,17 @@ use Symfony\Component\HttpFoundation\RequestStack;
 
 final class BlockType extends AbstractResourceType
 {
-    private ParserInterface $parser;
-
-    private RendererInterface $renderer;
-
-    private RequestStack $requestStack;
-
     /**
      * @param array<array-key, string> $validationGroups
      */
     public function __construct(
-        ParserInterface $parser,
-        RendererInterface $renderer,
-        RequestStack $requestStack,
+        private readonly ParserInterface $parser,
+        private readonly RendererInterface $renderer,
+        private readonly RequestStack $requestStack,
         string $dataClass,
         array $validationGroups = [],
     ) {
         parent::__construct($dataClass, $validationGroups);
-
-        $this->parser = $parser;
-        $this->renderer = $renderer;
-        $this->requestStack = $requestStack;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void

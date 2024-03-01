@@ -116,9 +116,7 @@ class PageExampleFactory extends AbstractExampleFactory
     protected function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
-            ->setDefault('code', function (): string {
-                return $this->faker->uuid();
-            })
+            ->setDefault('code', fn (): string => $this->faker->uuid())
 
             ->setDefault('title', function (): string {
                 $title = $this->faker->words(4, true);
@@ -127,13 +125,9 @@ class PageExampleFactory extends AbstractExampleFactory
                 return $title;
             })
 
-            ->setDefault('slug', function (): string {
-                return $this->faker->uuid();
-            })
+            ->setDefault('slug', fn (): string => $this->faker->uuid())
 
-            ->setDefault('metaDescription', function (): string {
-                return $this->faker->paragraph(1);
-            })
+            ->setDefault('metaDescription', fn (): string => $this->faker->paragraph(1))
 
             ->setDefault('translations', [])
             ->setAllowedTypes('translations', ['array'])

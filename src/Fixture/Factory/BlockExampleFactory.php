@@ -19,37 +19,21 @@ use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Webmozart\Assert\Assert;
 
-/* not final */ class BlockExampleFactory extends AbstractExampleFactory
+class BlockExampleFactory extends AbstractExampleFactory
 {
     use InternalDescriptionAwareFactoryTrait;
-
-    protected FactoryInterface $blockFactory;
-
-    protected BlockRepositoryInterface $blockRepository;
-
-    protected RepositoryInterface $localeRepository;
-
-    protected ParserInterface $parser;
-
-    protected RendererInterface $renderer;
 
     protected Generator $faker;
 
     protected OptionsResolver $optionsResolver;
 
     public function __construct(
-        FactoryInterface $blockFactory,
-        BlockRepositoryInterface $blockRepository,
-        RepositoryInterface $localeRepository,
-        ParserInterface $parser,
-        RendererInterface $renderer,
+        protected readonly FactoryInterface $blockFactory,
+        protected readonly BlockRepositoryInterface $blockRepository,
+        protected readonly RepositoryInterface $localeRepository,
+        protected readonly ParserInterface $parser,
+        protected readonly RendererInterface $renderer,
     ) {
-        $this->blockFactory = $blockFactory;
-        $this->blockRepository = $blockRepository;
-        $this->localeRepository = $localeRepository;
-        $this->parser = $parser;
-        $this->renderer = $renderer;
-
         $this->faker = Factory::create();
         $this->optionsResolver = new OptionsResolver();
 
@@ -126,16 +110,12 @@ use Webmozart\Assert\Assert;
     {
         /** @psalm-suppress UnusedClosureParam, MissingClosureParamType */
         $resolver
-            ->setDefault('code', function (): string {
-                return $this->faker->uuid();
-            })
-            ->setDefault('rawContent', function (): array {
-                return [
-                    'time' => 1637858216112,
-                    'blocks' => [],
-                    'version' => '2.22.2',
-                ];
-            })
+            ->setDefault('code', fn (): string => $this->faker->uuid())
+            ->setDefault('rawContent', fn (): array => [
+                'time' => 1637858216112,
+                'blocks' => [],
+                'version' => '2.22.2',
+            ])
             ->setNormalizer('rawContent', function (Options $options, $rawContent): string {
                 if (is_array($rawContent)) {
                     $rawContent = json_encode($rawContent);

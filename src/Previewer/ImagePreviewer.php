@@ -9,11 +9,8 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final class ImagePreviewer implements PreviewerInterface
 {
-    private UrlGeneratorInterface $urlGenerator;
-
-    public function __construct(UrlGeneratorInterface $urlGenerator)
+    public function __construct(private readonly UrlGeneratorInterface $urlGenerator)
     {
-        $this->urlGenerator = $urlGenerator;
     }
 
     public function preview(AssetInterface $asset): Preview
@@ -32,6 +29,6 @@ final class ImagePreviewer implements PreviewerInterface
             return false;
         }
 
-        return strpos($mimeType, 'image') !== false;
+        return str_contains($mimeType, 'image');
     }
 }

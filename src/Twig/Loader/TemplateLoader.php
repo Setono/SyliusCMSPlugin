@@ -13,14 +13,11 @@ use Twig\Source;
 
 final class TemplateLoader implements LoaderInterface
 {
-    private TemplateRepositoryInterface $templateRepository;
-
     /** @var array<string, TemplateInterface|null> */
     private array $cache = [];
 
-    public function __construct(TemplateRepositoryInterface $templateRepository)
+    public function __construct(private readonly TemplateRepositoryInterface $templateRepository)
     {
-        $this->templateRepository = $templateRepository;
     }
 
     /**

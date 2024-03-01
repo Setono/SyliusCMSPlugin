@@ -41,30 +41,22 @@ final class ElementStack implements ElementStackInterface, \IteratorAggregate
 
     public function getAssets(): array
     {
-        return array_filter($this->elements, static function (ElementId $element): bool {
-            return $element->isAsset();
-        });
+        return array_filter($this->elements, static fn (ElementId $element): bool => $element->isAsset());
     }
 
     public function getBlocks(): array
     {
-        return array_filter($this->elements, static function (ElementId $element): bool {
-            return $element->isBlock();
-        });
+        return array_filter($this->elements, static fn (ElementId $element): bool => $element->isBlock());
     }
 
     public function getCarousels(): array
     {
-        return array_filter($this->elements, static function (ElementId $element): bool {
-            return $element->isCarousel();
-        });
+        return array_filter($this->elements, static fn (ElementId $element): bool => $element->isCarousel());
     }
 
     public function getPages(): array
     {
-        return array_filter($this->elements, static function (ElementId $element): bool {
-            return $element->isPage();
-        });
+        return array_filter($this->elements, static fn (ElementId $element): bool => $element->isPage());
     }
 
     public function getIterator(): ArrayIterator

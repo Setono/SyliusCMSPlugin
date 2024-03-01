@@ -24,7 +24,7 @@ final class PathGenerator implements PathGeneratorInterface
     {
         do {
             $hash = bin2hex(random_bytes(16));
-        } while (strpos($hash, 'ad') !== false);
+        } while (str_contains($hash, 'ad'));
 
         return $hash;
     }

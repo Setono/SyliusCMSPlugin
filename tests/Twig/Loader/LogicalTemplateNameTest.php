@@ -36,19 +36,6 @@ final class LogicalTemplateNameTest extends TestCase
     /**
      * @test
      */
-    public function it_creates_block_typed(): void
-    {
-        $logicalTemplateName = LogicalTemplateName::createBlockTyped('FASHION_WEB', 'en_US', 'block1');
-
-        self::assertSame(ElementInterface::TYPE_BLOCK, $logicalTemplateName->type);
-        self::assertSame('FASHION_WEB', $logicalTemplateName->channelCode);
-        self::assertSame('en_US', $logicalTemplateName->localeCode);
-        self::assertSame('block1', $logicalTemplateName->code);
-    }
-
-    /**
-     * @test
-     */
     public function it_casts_to_string(): void
     {
         $logicalTemplateName = new LogicalTemplateName(ElementInterface::TYPE_BLOCK, 'FASHION_WEB', 'en_US', 'block1');

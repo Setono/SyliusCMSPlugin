@@ -10,14 +10,8 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final class AssetUploader implements AssetUploaderInterface
 {
-    private FilesystemInterface $filesystem;
-
-    private PathGeneratorInterface $pathGenerator;
-
-    public function __construct(FilesystemInterface $filesystem, PathGeneratorInterface $pathGenerator)
+    public function __construct(private readonly FilesystemInterface $filesystem, private readonly PathGeneratorInterface $pathGenerator)
     {
-        $this->filesystem = $filesystem;
-        $this->pathGenerator = $pathGenerator;
     }
 
     public function uploadFile(UploadedFile $uploadedFile): string

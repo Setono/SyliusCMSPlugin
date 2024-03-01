@@ -15,8 +15,10 @@ use Webmozart\Assert\Assert;
  */
 final class PageTwigGenerator implements TwigGeneratorInterface
 {
-    public function __construct(private readonly ParserInterface $parser, private readonly RendererInterface $renderer)
-    {
+    public function __construct(
+        private readonly ParserInterface $parser,
+        private readonly RendererInterface $renderer,
+    ) {
     }
 
     /**

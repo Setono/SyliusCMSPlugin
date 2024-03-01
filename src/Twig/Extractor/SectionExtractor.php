@@ -11,11 +11,8 @@ use Webmozart\Assert\Assert;
 
 final class SectionExtractor implements SectionExtractorInterface
 {
-    private Environment $twig;
-
-    public function __construct(Environment $twig)
+    public function __construct(private readonly Environment $twig)
     {
-        $this->twig = $twig;
     }
 
     public function extract($template): array

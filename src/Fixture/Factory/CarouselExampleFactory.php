@@ -17,33 +17,20 @@ use Sylius\Component\Resource\Factory\FactoryInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Webmozart\Assert\Assert;
 
-/* not final */ class CarouselExampleFactory extends AbstractExampleFactory
+class CarouselExampleFactory extends AbstractExampleFactory
 {
     use InternalDescriptionAwareFactoryTrait;
-
-    protected FactoryInterface $carouselFactory;
-
-    protected CarouselRepositoryInterface $carouselRepository;
-
-    protected BlockRepositoryInterface $blockRepository;
-
-    protected FactoryInterface $carouselBlockFactory;
 
     protected Generator $faker;
 
     protected OptionsResolver $optionsResolver;
 
     public function __construct(
-        FactoryInterface $carouselFactory,
-        CarouselRepositoryInterface $carouselRepository,
-        BlockRepositoryInterface $blockRepository,
-        FactoryInterface $carouselBlockFactory,
+        protected readonly FactoryInterface $carouselFactory,
+        protected readonly CarouselRepositoryInterface $carouselRepository,
+        protected readonly BlockRepositoryInterface $blockRepository,
+        protected readonly FactoryInterface $carouselBlockFactory,
     ) {
-        $this->carouselFactory = $carouselFactory;
-        $this->carouselRepository = $carouselRepository;
-        $this->blockRepository = $blockRepository;
-        $this->carouselBlockFactory = $carouselBlockFactory;
-
         $this->faker = Factory::create();
         $this->optionsResolver = new OptionsResolver();
 
@@ -98,9 +85,7 @@ use Webmozart\Assert\Assert;
     protected function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
-            ->setDefault('code', function (): string {
-                return $this->faker->uuid();
-            })
+            ->setDefault('code', fn (): string => $this->faker->uuid())
             ->setAllowedTypes('code', 'string')
 
             ->setDefined('configuration')

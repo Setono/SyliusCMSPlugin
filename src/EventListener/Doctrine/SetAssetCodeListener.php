@@ -11,11 +11,8 @@ use Symfony\Component\Uid\Uuid;
 
 final class SetAssetCodeListener
 {
-    private AssetRepositoryInterface $assetRepository;
-
-    public function __construct(AssetRepositoryInterface $assetRepository)
+    public function __construct(private readonly AssetRepositoryInterface $assetRepository)
     {
-        $this->assetRepository = $assetRepository;
     }
 
     public function prePersist(LifecycleEventArgs $args): void
@@ -60,6 +57,6 @@ final class SetAssetCodeListener
     {
         $name = pathinfo($name, \PATHINFO_FILENAME);
 
-        return trim(preg_replace('/[_]+/', '_', preg_replace('/\W+/', '_', $name)), '_');
+        return trim((string) preg_replace('/[_]+/', '_', (string) preg_replace('/\W+/', '_', $name)), '_');
     }
 }

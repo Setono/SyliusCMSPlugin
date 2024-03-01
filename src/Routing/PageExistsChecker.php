@@ -9,11 +9,8 @@ use Symfony\Component\HttpFoundation\Request;
 
 final class PageExistsChecker implements PageExistsCheckerInterface
 {
-    private PageRepositoryInterface $pageRepository;
-
-    public function __construct(PageRepositoryInterface $pageRepository)
+    public function __construct(private readonly PageRepositoryInterface $pageRepository)
     {
-        $this->pageRepository = $pageRepository;
     }
 
     public function checkUrl(Request $request): bool

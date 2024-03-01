@@ -14,11 +14,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class TemplateChoiceType extends AbstractType
 {
-    private RegistryInterface $templateRegistry;
-
-    public function __construct(RegistryInterface $templateRegistry)
+    public function __construct(private readonly RegistryInterface $templateRegistry)
     {
-        $this->templateRegistry = $templateRegistry;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void

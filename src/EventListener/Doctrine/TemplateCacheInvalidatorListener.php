@@ -10,11 +10,8 @@ use Setono\TwigCachePurgerBundle\Purger\PurgerInterface;
 
 final class TemplateCacheInvalidatorListener
 {
-    private PurgerInterface $purger;
-
-    public function __construct(PurgerInterface $purger)
+    public function __construct(private readonly PurgerInterface $purger)
     {
-        $this->purger = $purger;
     }
 
     public function postPersist(LifecycleEventArgs $args): void

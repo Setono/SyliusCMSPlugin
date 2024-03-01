@@ -13,14 +13,10 @@ use Throwable;
 
 final class RemoveAssetFileSubscriber implements EventSubscriberInterface
 {
-    private FilesystemInterface $filesystem;
-
-    private CacheManager $cacheManager;
-
-    public function __construct(FilesystemInterface $filesystem, CacheManager $cacheManager)
-    {
-        $this->filesystem = $filesystem;
-        $this->cacheManager = $cacheManager;
+    public function __construct(
+        private readonly FilesystemInterface $filesystem,
+        private readonly CacheManager $cacheManager,
+    ) {
     }
 
     public static function getSubscribedEvents(): array
@@ -52,7 +48,7 @@ final class RemoveAssetFileSubscriber implements EventSubscriberInterface
         try {
             // And remove the original file
             $this->filesystem->delete($path);
-        } catch (Throwable $exception) {
+        } catch (Throwable) {
         }
     }
 }

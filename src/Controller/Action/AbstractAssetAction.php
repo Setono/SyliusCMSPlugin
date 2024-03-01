@@ -15,14 +15,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 abstract class AbstractAssetAction
 {
-    private RepositoryInterface $assetRepository;
-
-    private FilesystemInterface $filesystem;
-
-    public function __construct(RepositoryInterface $assetRepository, FilesystemInterface $filesystem)
-    {
-        $this->assetRepository = $assetRepository;
-        $this->filesystem = $filesystem;
+    public function __construct(
+        private readonly RepositoryInterface $assetRepository,
+        private readonly FilesystemInterface $filesystem,
+    ) {
     }
 
     /**
@@ -52,7 +48,7 @@ abstract class AbstractAssetAction
             }
 
             return $response;
-        } catch (FileNotFoundException $exception) {
+        } catch (FileNotFoundException) {
             throw new NotFoundHttpException(sprintf('Asset with id %d does not exist', $id));
         }
     }

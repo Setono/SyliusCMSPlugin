@@ -11,11 +11,8 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final class PreviewLinkGenerator implements PreviewLinkGeneratorInterface
 {
-    private UrlGeneratorInterface $router;
-
-    public function __construct(UrlGeneratorInterface $router)
+    public function __construct(private readonly UrlGeneratorInterface $router)
     {
-        $this->router = $router;
     }
 
     public function generateAll(PageInterface $page): iterable

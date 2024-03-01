@@ -16,24 +16,12 @@ use Twig\Environment;
 
 final class AddToolbarSubscriber implements EventSubscriberInterface
 {
-    private Environment $twig;
-
-    private ElementStackInterface $elementStack;
-
-    private SectionProviderInterface $sectionProvider;
-
-    private AuthorizationCheckerInterface $authorizationChecker;
-
     public function __construct(
-        Environment $twig,
-        ElementStackInterface $elementStack,
-        SectionProviderInterface $sectionProvider,
-        AuthorizationCheckerInterface $authorizationChecker,
+        private readonly Environment $twig,
+        private readonly ElementStackInterface $elementStack,
+        private readonly SectionProviderInterface $sectionProvider,
+        private readonly AuthorizationCheckerInterface $authorizationChecker,
     ) {
-        $this->twig = $twig;
-        $this->elementStack = $elementStack;
-        $this->sectionProvider = $sectionProvider;
-        $this->authorizationChecker = $authorizationChecker;
     }
 
     public static function getSubscribedEvents(): array

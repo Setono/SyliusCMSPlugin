@@ -15,29 +15,19 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Webmozart\Assert\Assert;
 
-/* not final */ class AssetExampleFactory extends AbstractExampleFactory
+class AssetExampleFactory extends AbstractExampleFactory
 {
     use InternalDescriptionAwareFactoryTrait;
-
-    protected FactoryInterface $assetFactory;
-
-    protected FileLocatorInterface $fileLocator;
-
-    protected AssetUploaderInterface $assetUploader;
 
     protected Generator $faker;
 
     protected OptionsResolver $optionsResolver;
 
     public function __construct(
-        FactoryInterface $assetFactory,
-        FileLocatorInterface $fileLocator,
-        AssetUploaderInterface $assetUploader,
+        protected readonly FactoryInterface $assetFactory,
+        protected readonly FileLocatorInterface $fileLocator,
+        protected readonly AssetUploaderInterface $assetUploader,
     ) {
-        $this->assetFactory = $assetFactory;
-        $this->fileLocator = $fileLocator;
-        $this->assetUploader = $assetUploader;
-
         $this->faker = Factory::create();
         $this->optionsResolver = new OptionsResolver();
 
