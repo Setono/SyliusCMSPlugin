@@ -48,7 +48,7 @@ final class LogicalTemplateName implements \Stringable
      * Returns the string representation of a logical template name, here is an example:
      * __sscms/block/FASHION_WEB/en_US/block1
      */
-    public function __toString(): string
+    public function toString(): string
     {
         return sprintf(
             '%s/%s/%s/%s/%s',
@@ -58,5 +58,10 @@ final class LogicalTemplateName implements \Stringable
             $this->localeCode,
             $this->code,
         );
+    }
+
+    public function __toString(): string
+    {
+        return $this->toString();
     }
 }
