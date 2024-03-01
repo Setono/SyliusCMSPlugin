@@ -60,10 +60,10 @@ final class ElementStack implements ElementStackInterface, \IteratorAggregate
         });
     }
 
-    public function getViews(): array
+    public function getPages(): array
     {
         return array_filter($this->elements, static function (ElementId $element): bool {
-            return $element->isView();
+            return $element->isPage();
         });
     }
 

@@ -12,7 +12,6 @@ use Setono\SyliusCMSPlugin\Doctrine\ORM\BlockRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\CarouselRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\PageRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\TemplateRepository;
-use Setono\SyliusCMSPlugin\Doctrine\ORM\ViewRepository;
 use Setono\SyliusCMSPlugin\Form\Type\AssetType;
 use Setono\SyliusCMSPlugin\Form\Type\BlockTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\BlockType;
@@ -21,7 +20,6 @@ use Setono\SyliusCMSPlugin\Form\Type\CarouselType;
 use Setono\SyliusCMSPlugin\Form\Type\PageTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\PageType;
 use Setono\SyliusCMSPlugin\Form\Type\TemplateType;
-use Setono\SyliusCMSPlugin\Form\Type\ViewType;
 use Setono\SyliusCMSPlugin\Model\Asset;
 use Setono\SyliusCMSPlugin\Model\Block;
 use Setono\SyliusCMSPlugin\Model\BlockTranslation;
@@ -30,10 +28,7 @@ use Setono\SyliusCMSPlugin\Model\CarouselBlock;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Template;
-use Setono\SyliusCMSPlugin\Model\View;
-use Setono\SyliusCMSPlugin\Model\ViewBlock;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
-use Sylius\Bundle\ResourceBundle\Form\Type\DefaultResourceType;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Sylius\Component\Resource\Factory\Factory;
 use Sylius\Component\Resource\Factory\TranslatableFactory;
@@ -108,23 +103,6 @@ final class ConfigurationTest extends TestCase
                         'controller' => ResourceController::class,
                         'repository' => TemplateRepository::class,
                         'form' => TemplateType::class,
-                        'factory' => Factory::class,
-                    ],
-                ],
-                'view' => [
-                    'classes' => [
-                        'model' => View::class,
-                        'controller' => ResourceController::class,
-                        'repository' => ViewRepository::class,
-                        'form' => ViewType::class,
-                        'factory' => Factory::class,
-                    ],
-                ],
-                'view_block' => [
-                    'classes' => [
-                        'model' => ViewBlock::class,
-                        'controller' => ResourceController::class,
-                        'form' => DefaultResourceType::class,
                         'factory' => Factory::class,
                     ],
                 ],

@@ -14,7 +14,7 @@
             <p>To use a template, create everything you want in HTML and then insert 'section tags' where you want dynamic content, i.e. editable blocks.</p>
             <p>Here is an example of a working template:</p>
             <pre>{{ '{% block ' ~ constant('Setono\\SyliusCMSPlugin\\Twig\\Extractor\\SectionExtractorInterface::SECTION_PREFIX')  ~ 'content %}Default section content{% endblock %}'|e }}</pre>
-            <p>This creates a section named <code>content</code> (the part after <code>{{ constant('Setono\\SyliusCMSPlugin\\Twig\\Extractor\\SectionExtractorInterface::SECTION_PREFIX') }}</code>. When creating a view and you select this template, you will be able to add blocks of content to the <code>content</code> section.</p>
+            <p>This creates a section named <code>content</code> (the part after <code>{{ constant('Setono\\SyliusCMSPlugin\\Twig\\Extractor\\SectionExtractorInterface::SECTION_PREFIX') }}</code>.</p>
         </div>
     </div>
     <div class="sixteen wide column">

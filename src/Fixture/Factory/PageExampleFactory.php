@@ -7,9 +7,7 @@ namespace Setono\SyliusCMSPlugin\Fixture\Factory;
 use Faker\Factory;
 use Faker\Generator;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Model\ViewInterface;
 use Setono\SyliusCMSPlugin\Repository\PageRepositoryInterface;
-use Setono\SyliusCMSPlugin\Repository\ViewRepositoryInterface;
 use Sylius\Bundle\CoreBundle\Fixture\Factory\AbstractExampleFactory;
 use Sylius\Bundle\CoreBundle\Fixture\OptionsResolver\LazyOption;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
@@ -20,37 +18,20 @@ use Sylius\Component\Resource\Repository\RepositoryInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Webmozart\Assert\Assert;
 
-/* not final */ class PageExampleFactory extends AbstractExampleFactory
+class PageExampleFactory extends AbstractExampleFactory
 {
     use InternalDescriptionAwareFactoryTrait;
-
-    protected FactoryInterface $pageFactory;
-
-    protected PageRepositoryInterface $pageRepository;
-
-    protected ViewRepositoryInterface $viewRepository;
-
-    protected ChannelRepositoryInterface $channelRepository;
-
-    protected RepositoryInterface $localeRepository;
 
     protected Generator $faker;
 
     protected OptionsResolver $optionsResolver;
 
     public function __construct(
-        FactoryInterface $pageFactory,
-        PageRepositoryInterface $pageRepository,
-        ViewRepositoryInterface $viewRepository,
-        ChannelRepositoryInterface $channelRepository,
-        RepositoryInterface $localeRepository,
+        protected readonly FactoryInterface $pageFactory,
+        protected readonly PageRepositoryInterface $pageRepository,
+        protected readonly ChannelRepositoryInterface $channelRepository,
+        protected readonly RepositoryInterface $localeRepository,
     ) {
-        $this->pageFactory = $pageFactory;
-        $this->pageRepository = $pageRepository;
-        $this->viewRepository = $viewRepository;
-        $this->channelRepository = $channelRepository;
-        $this->localeRepository = $localeRepository;
-
         $this->faker = Factory::create();
         $this->optionsResolver = new OptionsResolver();
 
@@ -138,10 +119,6 @@ use Webmozart\Assert\Assert;
             ->setDefault('code', function (): string {
                 return $this->faker->uuid();
             })
-
-            ->setDefined('view')
-            ->setAllowedTypes('view', ['string', ViewInterface::class])
-            ->setNormalizer('view', LazyOption::findOneBy($this->viewRepository, 'code'))
 
             ->setDefault('title', function (): string {
                 $title = $this->faker->words(4, true);

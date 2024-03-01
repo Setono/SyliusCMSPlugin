@@ -9,7 +9,6 @@ use Setono\SyliusCMSPlugin\Doctrine\ORM\BlockRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\CarouselRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\PageRepository;
 use Setono\SyliusCMSPlugin\Doctrine\ORM\TemplateRepository;
-use Setono\SyliusCMSPlugin\Doctrine\ORM\ViewRepository;
 use Setono\SyliusCMSPlugin\Form\Type\AssetType;
 use Setono\SyliusCMSPlugin\Form\Type\BlockTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\BlockType;
@@ -18,7 +17,6 @@ use Setono\SyliusCMSPlugin\Form\Type\CarouselType;
 use Setono\SyliusCMSPlugin\Form\Type\PageTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\PageType;
 use Setono\SyliusCMSPlugin\Form\Type\TemplateType;
-use Setono\SyliusCMSPlugin\Form\Type\ViewType;
 use Setono\SyliusCMSPlugin\Model\Asset;
 use Setono\SyliusCMSPlugin\Model\Block;
 use Setono\SyliusCMSPlugin\Model\BlockTranslation;
@@ -27,10 +25,7 @@ use Setono\SyliusCMSPlugin\Model\CarouselBlock;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Template;
-use Setono\SyliusCMSPlugin\Model\View;
-use Setono\SyliusCMSPlugin\Model\ViewBlock;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
-use Sylius\Bundle\ResourceBundle\Form\Type\DefaultResourceType;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Sylius\Component\Resource\Factory\Factory;
 use Sylius\Component\Resource\Factory\TranslatableFactory;
@@ -203,45 +198,6 @@ final class Configuration implements ConfigurationInterface
                                         ->scalarNode('repository')->defaultValue(TemplateRepository::class)->cannotBeEmpty()->end()
                                         ->scalarNode('form')->defaultValue(TemplateType::class)->end()
                                         ->scalarNode('factory')->defaultValue(Factory::class)->end()
-                                    ->end()
-                                ->end()
-                            ->end()
-                        ->end()
-                        ->arrayNode('view')
-                            ->addDefaultsIfNotSet()
-                            ->children()
-                                ->variableNode('options')->end()
-                                ->arrayNode('classes')
-                                    ->addDefaultsIfNotSet()
-                                    ->children()
-                                        ->scalarNode('model')->defaultValue(View::class)->cannotBeEmpty()->end()
-                                        ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
-                                        ->scalarNode('repository')->defaultValue(ViewRepository::class)->cannotBeEmpty()->end()
-                                        ->scalarNode('form')->defaultValue(ViewType::class)->end()
-                                        ->scalarNode('factory')->defaultValue(Factory::class)->end()
-                                    ->end()
-                                ->end()
-                            ->end()
-                        ->end()
-                        ->arrayNode('view_block')
-                            ->addDefaultsIfNotSet()
-                            ->children()
-                                ->variableNode('options')->end()
-                                ->arrayNode('classes')
-                                    ->addDefaultsIfNotSet()
-                                    ->children()
-                                        ->scalarNode('model')->defaultValue(ViewBlock::class)->cannotBeEmpty()->end()
-                                        ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
-                                        ->scalarNode('repository')->cannotBeEmpty()->end()
-                                        ->scalarNode('form')->defaultValue(DefaultResourceType::class)->end()
-                                        ->scalarNode('factory')->defaultValue(Factory::class)->end()
-                                    ->end()
-                                ->end()
-                            ->end()
-                        ->end()
-                    ->end()
-                ->end()
-            ->end()
         ;
     }
 }

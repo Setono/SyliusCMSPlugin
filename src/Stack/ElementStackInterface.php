@@ -41,5 +41,5 @@ interface ElementStackInterface extends \Traversable, \Countable
     /**
      * @return array<array-key, ElementId>
      */
-    public function getViews(): array;
+    public function getPages(): array;
 }

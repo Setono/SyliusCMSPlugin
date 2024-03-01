@@ -71,14 +71,5 @@
 
             <tag name="twig.loader"/>
         </service>
-
-        <service id="setono_sylius_cms.twig.loader.element_loader.view"
-                 class="Setono\SyliusCMSPlugin\Twig\Loader\GenericElementLoader">
-            <argument type="service" id="setono_sylius_cms.repository.view"/>
-            <argument type="service" id="setono_sylius_cms.generator.twig.view"/>
-            <argument>view</argument>
-
-            <tag name="twig.loader"/>
-        </service>
     </services>
 </container>

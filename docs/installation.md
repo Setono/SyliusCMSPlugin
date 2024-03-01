@@ -84,10 +84,4 @@ php bin/console doctrine:migrations:diff
 php bin/console doctrine:migrations:migrate
 ```
 
-## Install assets
-
-````bash
-php bin/console assets:install
-````
-
 **You're good to go!**

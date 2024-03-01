@@ -9,47 +9,33 @@ use Sylius\Bundle\UiBundle\Menu\Event\MenuBuilderEvent;
 
 final class AdminMenuBuilder
 {
+    public const MENU_ITEM_KEY = 'setono_sylius_cms';
+
     public function addSection(MenuBuilderEvent $event): void
     {
         $header = $this->getHeader($event->getMenu());
 
         $header
-            ->addChild('templates', [
-                'route' => 'setono_sylius_cms_admin_template_index',
+            ->addChild('assets', [
+                'route' => 'setono_sylius_cms_admin_asset_index',
             ])
-            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.templates')
-            ->setLabelAttribute('icon', 'columns')
+            ->setLabel('setono_sylius_cms.menu.admin.main.cms.assets')
+            ->setLabelAttribute('icon', 'list alternate outline')
         ;
 
         $header
             ->addChild('blocks', [
                 'route' => 'setono_sylius_cms_admin_block_index',
             ])
-            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.blocks')
+            ->setLabel('setono_sylius_cms.menu.admin.main.cms.blocks')
             ->setLabelAttribute('icon', 'clone outline')
-        ;
-
-        $header
-            ->addChild('views', [
-                'route' => 'setono_sylius_cms_admin_view_index',
-            ])
-            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.views')
-            ->setLabelAttribute('icon', 'sliders horizontal')
-        ;
-
-        $header
-            ->addChild('assets', [
-                'route' => 'setono_sylius_cms_admin_asset_index',
-            ])
-            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.assets')
-            ->setLabelAttribute('icon', 'list alternate outline')
         ;
 
         $header
             ->addChild('carousels', [
                 'route' => 'setono_sylius_cms_admin_carousel_index',
             ])
-            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.carousels')
+            ->setLabel('setono_sylius_cms.menu.admin.main.cms.carousels')
             ->setLabelAttribute('icon', 'list alternate outline')
         ;
 
@@ -57,22 +43,27 @@ final class AdminMenuBuilder
             ->addChild('pages', [
                 'route' => 'setono_sylius_cms_admin_page_index',
             ])
-            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.pages')
+            ->setLabel('setono_sylius_cms.menu.admin.main.cms.pages')
             ->setLabelAttribute('icon', 'file alternate outline')
+        ;
+
+        $header
+            ->addChild('templates', [
+                'route' => 'setono_sylius_cms_admin_template_index',
+            ])
+            ->setLabel('setono_sylius_cms.menu.admin.main.cms.templates')
+            ->setLabelAttribute('icon', 'columns')
         ;
     }
 
     private function getHeader(ItemInterface $menu): ItemInterface
     {
-        $header = $menu->getChild('content_management');
+        $header = $menu->getChild(self::MENU_ITEM_KEY);
         if (null !== $header) {
             return $header;
         }
 
-        $header = $menu->addChild('content_management')
-            ->setLabel('setono_sylius_cms.menu.admin.main.content_management.header')
-        ;
-
-        return $header;
+        return $menu->addChild(self::MENU_ITEM_KEY)
+            ->setLabel('setono_sylius_cms.menu.admin.main.cms.header');
     }
 }

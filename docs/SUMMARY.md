@@ -11,7 +11,6 @@
 
 * [Templates](concepts/templates.md)
 * [Blocks](concepts/blocks.md)
-* [Views](concepts/views.md)
 * [Pages](concepts/pages.md)
 * [Assets](concepts/assets.md)
 

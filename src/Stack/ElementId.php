@@ -8,24 +8,12 @@ use Setono\SyliusCMSPlugin\Model\ElementInterface;
 
 final class ElementId
 {
-    /** @readonly  */
-    public int $id;
-
-    /** @readonly  */
-    public string $code;
-
-    /** @readonly  */
-    public string $identifier;
-
-    /** @readonly  */
-    public string $type;
-
-    public function __construct(int $id, string $code, string $identifier, string $type)
-    {
-        $this->id = $id;
-        $this->code = $code;
-        $this->identifier = $identifier;
-        $this->type = $type;
+    public function __construct(
+        public readonly int $id,
+        public readonly string $code,
+        public readonly string $identifier,
+        public readonly string $type,
+    ) {
     }
 
     public function isAsset(): bool
@@ -43,8 +31,8 @@ final class ElementId
         return ElementInterface::TYPE_CAROUSEL === $this->type;
     }
 
-    public function isView(): bool
+    public function isPage(): bool
     {
-        return ElementInterface::TYPE_VIEW === $this->type;
+        return ElementInterface::TYPE_PAGE === $this->type;
     }
 }

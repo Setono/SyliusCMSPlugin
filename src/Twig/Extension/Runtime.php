@@ -31,33 +31,15 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
 {
     private LoggerInterface $logger;
 
-    private UrlGeneratorInterface $router;
-
-    private PreviewLinkGeneratorInterface $previewLinkGenerator;
-
-    private PreviewerInterface $previewer;
-
-    private ChannelContextInterface $channelContext;
-
-    private LocaleContextInterface $localeContext;
-
-    private ElementStackInterface $elementStack;
-
     public function __construct(
-        UrlGeneratorInterface $router,
-        PreviewLinkGeneratorInterface $previewLinkGenerator,
-        PreviewerInterface $previewer,
-        ChannelContextInterface $channelContext,
-        LocaleContextInterface $localeContext,
-        ElementStackInterface $elementStack,
+        private readonly UrlGeneratorInterface $router,
+        private readonly PreviewLinkGeneratorInterface $previewLinkGenerator,
+        private readonly PreviewerInterface $previewer,
+        private readonly ChannelContextInterface $channelContext,
+        private readonly LocaleContextInterface $localeContext,
+        private readonly ElementStackInterface $elementStack,
     ) {
         $this->logger = new NullLogger();
-        $this->router = $router;
-        $this->previewLinkGenerator = $previewLinkGenerator;
-        $this->previewer = $previewer;
-        $this->channelContext = $channelContext;
-        $this->localeContext = $localeContext;
-        $this->elementStack = $elementStack;
     }
 
     public function asset(Environment $env, array $context, ?string $block, array $variables = []): string
@@ -78,11 +60,6 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
     public function page(Environment $env, array $context, ?string $page, array $variables = []): string
     {
         return $this->renderElement($env, $context, $page, ElementInterface::TYPE_PAGE, $variables);
-    }
-
-    public function view(Environment $env, array $context, ?string $view, array $variables = []): string
-    {
-        return $this->renderElement($env, $context, $view, ElementInterface::TYPE_VIEW, $variables);
     }
 
     public function linkToRoute(
