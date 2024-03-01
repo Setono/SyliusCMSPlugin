@@ -29,7 +29,6 @@ use Setono\SyliusCMSPlugin\Repository\CarouselRepository;
 use Setono\SyliusCMSPlugin\Repository\PageRepository;
 use Setono\SyliusCMSPlugin\Repository\TemplateRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
-use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Sylius\Component\Resource\Factory\Factory;
 use Sylius\Component\Resource\Factory\TranslatableFactory;
 
@@ -51,7 +50,6 @@ final class ConfigurationTest extends TestCase
     public function processed_value_contains_required_value(): void
     {
         $this->assertProcessedConfigurationEquals([], [
-            'driver' => SyliusResourceBundle::DRIVER_DOCTRINE_ORM,
             'templates' => [],
             'resources' => [
                 'asset' => [
