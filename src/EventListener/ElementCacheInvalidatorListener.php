@@ -6,7 +6,7 @@ namespace Setono\SyliusCMSPlugin\EventListener;
 
 use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
-use Setono\SyliusCMSPlugin\Twig\Loader\LogicalTemplateName;
+use Setono\SyliusCMSPlugin\Twig\LogicalTemplateName;
 use Setono\TwigCachePurgerBundle\Purger\PurgerInterface;
 use Sylius\Bundle\ResourceBundle\Event\ResourceControllerEvent;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;

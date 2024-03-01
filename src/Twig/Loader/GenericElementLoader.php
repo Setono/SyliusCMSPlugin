@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Generator\Twig\TwigGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\Element;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Setono\SyliusCMSPlugin\Repository\ElementRepositoryInterface;
+use Setono\SyliusCMSPlugin\Twig\LogicalTemplateName;
 use Twig\Error\LoaderError;
 use Twig\Loader\LoaderInterface;
 use Twig\Source;

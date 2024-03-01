@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Tests\Twig\Loader;
+namespace Setono\SyliusCMSPlugin\Tests\Twig;
 
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
-use Setono\SyliusCMSPlugin\Twig\Loader\LogicalTemplateName;
+use Setono\SyliusCMSPlugin\Twig\LogicalTemplateName;
 
 /**
- * @covers \Setono\SyliusCMSPlugin\Twig\Loader\LogicalTemplateName
+ * @covers \Setono\SyliusCMSPlugin\Twig\LogicalTemplateName
  */
 final class LogicalTemplateNameTest extends TestCase
 {

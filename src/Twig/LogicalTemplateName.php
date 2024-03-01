@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Twig\Loader;
+namespace Setono\SyliusCMSPlugin\Twig;
 
 use Webmozart\Assert\Assert;
 

@@ -15,7 +15,7 @@ use Setono\SyliusCMSPlugin\Previewer\Preview;
 use Setono\SyliusCMSPlugin\Previewer\PreviewerInterface;
 use Setono\SyliusCMSPlugin\Stack\ElementId;
 use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
-use Setono\SyliusCMSPlugin\Twig\Loader\LogicalTemplateName;
+use Setono\SyliusCMSPlugin\Twig\LogicalTemplateName;
 use function sprintf;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
