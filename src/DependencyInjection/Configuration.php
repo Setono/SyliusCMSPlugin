@@ -26,7 +26,6 @@ use Setono\SyliusCMSPlugin\Repository\CarouselRepository;
 use Setono\SyliusCMSPlugin\Repository\PageRepository;
 use Setono\SyliusCMSPlugin\Repository\TemplateRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
-use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Sylius\Component\Resource\Factory\Factory;
 use Sylius\Component\Resource\Factory\TranslatableFactory;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
@@ -46,9 +45,6 @@ final class Configuration implements ConfigurationInterface
         $rootNode
             ->addDefaultsIfNotSet()
             ->children()
-                ->scalarNode('driver')
-                    ->defaultValue(SyliusResourceBundle::DRIVER_DOCTRINE_ORM)
-                ->end()
                 ->arrayNode('templates')
                     ->arrayPrototype()
                         ->children()
