@@ -21,10 +21,7 @@ final class TemplateEditorAction
     {
         $content = null;
         if (null !== $id) {
-            $template = $this->templateRepository->find($id);
-            if (null !== $template) {
-                $content = $template->getSource();
-            }
+            $content = $this->templateRepository->find($id)?->getSource();
         }
 
         return new Response($this->twig->render('@SetonoSyliusCMSPlugin/admin/template/editor.html.twig', [
