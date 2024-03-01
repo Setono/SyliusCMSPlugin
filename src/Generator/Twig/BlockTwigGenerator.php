@@ -9,12 +9,13 @@ use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Webmozart\Assert\Assert;
 
 /**
- * @implements TwigGeneratorInterface<BlockInterface>
+ * @extends AbstractTwigGenerator<BlockInterface>
  */
-final class BlockTwigGenerator implements TwigGeneratorInterface
+final class BlockTwigGenerator extends AbstractTwigGenerator
 {
     /**
      * @param BlockInterface $element
+     * @param array<string, mixed> $context
      */
     public function generate(ElementInterface $element, array $context = []): string
     {
@@ -23,14 +24,6 @@ final class BlockTwigGenerator implements TwigGeneratorInterface
 
         $element->setCurrentLocale($context['localeCode']);
 
-        return sprintf(
-            '{%% set identifier = "%s" %%}{%% extends "@SetonoSyliusCMSPlugin/block.html.twig" %%}{%% block content %%}%s{%% endblock %%}{%% do sscms_push_to_element_stack(%d, "%s", "%s", "%s") %%}',
-            $element->getIdentifier(),
-            (string) $element->getContent(),
-            (int) $element->getId(),
-            (string) $element->getCode(),
-            $element->getIdentifier(),
-            $element->getType(),
-        );
+        return parent::generate($element, $context);
     }
 }

@@ -18,7 +18,7 @@
         "psr/event-dispatcher": "^1.0",
         "psr/log": "^1.1 || ^2.0 || ^3.0",
         "setono/composite-compiler-pass": "^1.1",
-        "setono/editorjs-bundle": "^1.1",
+        "setono/editorjs-bundle": "^1.2",
         "setono/editorjs-php": "^1.2",
         "setono/twig-cache-purger-bundle": "^1.0",
         "stof/doctrine-extensions-bundle": "^1.7",

@@ -74,7 +74,6 @@ final class GenericElementLoader implements LoaderInterface
         // todo should this take the channel and locale into consideration?
         $element = $this->getElement($logicalTemplateName);
 
-        /** @psalm-suppress PossiblyNullArgument */
         return new Source($this->twigGenerator->generate($element, [
             'channelCode' => $logicalTemplateName->channelCode,
             'localeCode' => $logicalTemplateName->localeCode,

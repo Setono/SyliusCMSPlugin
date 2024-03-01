@@ -9,6 +9,13 @@ use Doctrine\Common\Collections\Collection;
 interface CarouselInterface extends ElementInterface
 {
     /**
+     * Will return the underlying blocks sorted by position
+     *
+     * @return Collection<array-key, BlockInterface>
+     */
+    public function getBlocks(): Collection;
+
+    /**
      * @return Collection<array-key, CarouselBlockInterface>
      */
     public function getCarouselBlocks(): Collection;

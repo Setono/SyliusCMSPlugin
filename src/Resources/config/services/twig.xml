@@ -39,7 +39,7 @@
         <service id="setono_sylius_cms.twig.loader.element_loader.asset"
                  class="Setono\SyliusCMSPlugin\Twig\Loader\GenericElementLoader">
             <argument type="service" id="setono_sylius_cms.repository.asset"/>
-            <argument type="service" id="setono_sylius_cms.generator.twig.asset"/>
+            <argument type="service" id="setono_sylius_cms.generator.twig.composite"/>
             <argument>asset</argument>
 
             <tag name="twig.loader"/>
@@ -48,7 +48,7 @@
         <service id="setono_sylius_cms.twig.loader.element_loader.block"
                  class="Setono\SyliusCMSPlugin\Twig\Loader\GenericElementLoader">
             <argument type="service" id="setono_sylius_cms.repository.block"/>
-            <argument type="service" id="setono_sylius_cms.generator.twig.block"/>
+            <argument type="service" id="setono_sylius_cms.generator.twig.composite"/>
             <argument>block</argument>
 
             <tag name="twig.loader"/>
@@ -57,7 +57,7 @@
         <service id="setono_sylius_cms.twig.loader.element_loader.carousel"
                  class="Setono\SyliusCMSPlugin\Twig\Loader\GenericElementLoader">
             <argument type="service" id="setono_sylius_cms.repository.carousel"/>
-            <argument type="service" id="setono_sylius_cms.generator.twig.carousel"/>
+            <argument type="service" id="setono_sylius_cms.generator.twig.composite"/>
             <argument>carousel</argument>
 
             <tag name="twig.loader"/>
@@ -66,7 +66,7 @@
         <service id="setono_sylius_cms.twig.loader.element_loader.page"
                  class="Setono\SyliusCMSPlugin\Twig\Loader\GenericElementLoader">
             <argument type="service" id="setono_sylius_cms.repository.page"/>
-            <argument type="service" id="setono_sylius_cms.generator.twig.page"/>
+            <argument type="service" id="setono_sylius_cms.generator.twig.composite"/>
             <argument>page</argument>
 
             <tag name="twig.loader"/>

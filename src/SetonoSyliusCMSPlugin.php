@@ -37,5 +37,10 @@ final class SetonoSyliusCMSPlugin extends AbstractResourceBundle
             'setono_sylius_cms.checker.eligibility.page.composite',
             'setono_sylius_cms.page_eligibility_checker',
         ));
+
+        $container->addCompilerPass(new CompositeCompilerPass(
+            'setono_sylius_cms.generator.twig.composite',
+            'setono_sylius_cms.twig_generator',
+        ));
     }
 }
