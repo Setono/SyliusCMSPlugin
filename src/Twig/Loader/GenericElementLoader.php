@@ -20,21 +20,14 @@ final class GenericElementLoader implements LoaderInterface
     /** @var array<string, ElementInterface> */
     private array $cache = [];
 
-    private ElementRepositoryInterface $elementRepository;
-
-    private TwigGeneratorInterface $twigGenerator;
-
-    private string $supportsType;
+    private readonly string $supportsType;
 
     public function __construct(
-        ElementRepositoryInterface $blockRepository,
-        TwigGeneratorInterface $twigGenerator,
+        private readonly ElementRepositoryInterface $elementRepository,
+        private readonly TwigGeneratorInterface $twigGenerator,
         string $supportsType,
     ) {
         Assert::oneOf($supportsType, Element::getTypes());
-
-        $this->elementRepository = $blockRepository;
-        $this->twigGenerator = $twigGenerator;
         $this->supportsType = $supportsType;
     }
 
@@ -55,7 +48,7 @@ final class GenericElementLoader implements LoaderInterface
     {
         try {
             $logicalTemplateName = LogicalTemplateName::createFromString($name);
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException) {
             return false;
         }
 

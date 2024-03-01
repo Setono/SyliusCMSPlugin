@@ -13,23 +13,14 @@ use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
 final class SetQueryParameterValueOnObjectSubscriber implements EventSubscriberInterface
 {
-    private RequestStack $requestStack;
-
-    private string $queryParameter;
-
-    private string $targetProperty;
-
-    private PropertyAccessorInterface $propertyAccessor;
+    private readonly PropertyAccessorInterface $propertyAccessor;
 
     public function __construct(
-        RequestStack $requestStack,
-        string $queryParameter = 'code',
-        string $targetProperty = 'code',
+        private readonly RequestStack $requestStack,
+        private readonly string $queryParameter = 'code',
+        private readonly string $targetProperty = 'code',
         PropertyAccessorInterface $propertyAccessor = null,
     ) {
-        $this->requestStack = $requestStack;
-        $this->queryParameter = $queryParameter;
-        $this->targetProperty = $targetProperty;
         $this->propertyAccessor = $propertyAccessor ?? PropertyAccess::createPropertyAccessor();
     }
 

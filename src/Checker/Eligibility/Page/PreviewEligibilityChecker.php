@@ -12,14 +12,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 final class PreviewEligibilityChecker implements EligibilityCheckerInterface
 {
-    private EligibilityCheckerInterface $eligibilityChecker;
-
-    private RequestStack $requestStack;
-
-    public function __construct(EligibilityCheckerInterface $eligibilityChecker, RequestStack $requestStack)
+    public function __construct(private readonly EligibilityCheckerInterface $eligibilityChecker, private readonly RequestStack $requestStack)
     {
-        $this->eligibilityChecker = $eligibilityChecker;
-        $this->requestStack = $requestStack;
     }
 
     public function isEligible(PageInterface $page): bool

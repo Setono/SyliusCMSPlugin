@@ -19,28 +19,13 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 final class UploadEditorPictureAction
 {
-    private FactoryInterface $assetFactory;
-
-    private RepositoryInterface $assetRepository;
-
-    private AssetUploaderInterface $assetUploader;
-
-    private EventDispatcherInterface $eventDispatcher;
-
-    private UrlGeneratorInterface $urlGenerator;
-
     public function __construct(
-        FactoryInterface $assetFactory,
-        RepositoryInterface $assetRepository,
-        AssetUploaderInterface $assetUploader,
-        EventDispatcherInterface $eventDispatcher,
-        UrlGeneratorInterface $urlGenerator,
+        private readonly FactoryInterface $assetFactory,
+        private readonly RepositoryInterface $assetRepository,
+        private readonly AssetUploaderInterface $assetUploader,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly UrlGeneratorInterface $urlGenerator,
     ) {
-        $this->assetFactory = $assetFactory;
-        $this->assetRepository = $assetRepository;
-        $this->assetUploader = $assetUploader;
-        $this->eventDispatcher = $eventDispatcher;
-        $this->urlGenerator = $urlGenerator;
     }
 
     public function __invoke(Request $request): Response

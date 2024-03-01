@@ -14,19 +14,15 @@ use Symfony\Component\HttpFoundation\RequestStack;
 
 final class CarouselType extends AbstractResourceType
 {
-    private RequestStack $requestStack;
-
     /**
      * @param array<array-key, string> $validationGroups
      */
     public function __construct(
-        RequestStack $requestStack,
+        private readonly RequestStack $requestStack,
         string $dataClass,
         array $validationGroups = [],
     ) {
         parent::__construct($dataClass, $validationGroups);
-
-        $this->requestStack = $requestStack;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void

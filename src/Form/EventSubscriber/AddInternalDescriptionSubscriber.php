@@ -12,18 +12,13 @@ use Symfony\Component\Form\FormTypeInterface;
 
 final class AddInternalDescriptionSubscriber implements EventSubscriberInterface
 {
-    /** @var class-string<FormTypeInterface> */
-    private string $type;
-
-    private array $options;
-
     /**
      * @param class-string<FormTypeInterface> $type
      */
-    public function __construct(string $type = TextareaType::class, array $options = [])
-    {
-        $this->type = $type;
-        $this->options = $options;
+    public function __construct(
+        private readonly string $type = TextareaType::class,
+        private readonly array $options = [],
+    ) {
     }
 
     public static function getSubscribedEvents(): array

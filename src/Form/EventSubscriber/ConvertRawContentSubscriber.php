@@ -18,25 +18,19 @@ use Webmozart\Assert\Assert;
 
 final class ConvertRawContentSubscriber implements EventSubscriberInterface
 {
-    private ParserInterface $parser;
+    private readonly string $sourceProperty;
 
-    private RendererInterface $renderer;
+    private readonly string $targetProperty;
 
-    private string $sourceProperty;
-
-    private string $targetProperty;
-
-    private PropertyAccessorInterface $propertyAccessor;
+    private readonly PropertyAccessorInterface $propertyAccessor;
 
     public function __construct(
-        ParserInterface $parser,
-        RendererInterface $renderer,
+        private readonly ParserInterface $parser,
+        private readonly RendererInterface $renderer,
         string $sourceProperty = 'rawContent',
         string $targetProperty = 'content',
         PropertyAccessorInterface $propertyAccessor = null,
     ) {
-        $this->parser = $parser;
-        $this->renderer = $renderer;
         // we work on array, so we use index notation
         // see https://symfony.com/doc/current/components/property_access.html#reading-from-arrays
         $this->sourceProperty = sprintf('[%s]', $sourceProperty);

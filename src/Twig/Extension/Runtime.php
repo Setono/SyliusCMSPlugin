@@ -75,7 +75,7 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
             }
 
             return sprintf('<a href="%s">%s</a>', $uri, $displayedValue);
-        } catch (Throwable $exception) {
+        } catch (Throwable) {
             return sprintf(
                 '<!-- Tried to generate a link for an non existing route: %s (%s) -->',
                 $name,

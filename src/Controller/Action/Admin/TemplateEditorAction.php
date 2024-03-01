@@ -11,14 +11,10 @@ use Twig\Environment;
 
 final class TemplateEditorAction
 {
-    private TemplateRepositoryInterface $templateRepository;
-
-    private Environment $twig;
-
-    public function __construct(TemplateRepositoryInterface $templateRepository, Environment $twig)
-    {
-        $this->templateRepository = $templateRepository;
-        $this->twig = $twig;
+    public function __construct(
+        private readonly TemplateRepositoryInterface $templateRepository,
+        private readonly Environment $twig,
+    ) {
     }
 
     public function __invoke(Request $request, int $id = null): Response

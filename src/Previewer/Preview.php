@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Previewer;
 
-final class Preview
+final class Preview implements \Stringable
 {
-    /**
-     * The HTML - ready to output
-     */
-    private string $content;
-
-    public function __construct(string $content)
-    {
-        $this->content = $content;
+    public function __construct(
+        /**
+         * The HTML - ready to output
+         */
+        private readonly string $content,
+    ) {
     }
 
     public static function createUnavailablePreview(): self

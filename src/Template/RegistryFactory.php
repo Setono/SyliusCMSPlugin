@@ -9,24 +9,14 @@ use Setono\SyliusCMSPlugin\Twig\Extractor\SectionExtractorInterface;
 
 final class RegistryFactory implements RegistryFactoryInterface
 {
-    private SectionExtractorInterface $sectionExtractor;
-
-    private TemplateRepositoryInterface $templateRepository;
-
-    /** @var list<array{code: string, label: string, description: string}> */
-    private array $templates;
-
     /**
      * @param list<array{code: string, label: string, description: string}> $templates
      */
     public function __construct(
-        SectionExtractorInterface $sectionExtractor,
-        TemplateRepositoryInterface $templateRepository,
-        array $templates = [],
+        private readonly SectionExtractorInterface $sectionExtractor,
+        private readonly TemplateRepositoryInterface $templateRepository,
+        private readonly array $templates = [],
     ) {
-        $this->sectionExtractor = $sectionExtractor;
-        $this->templateRepository = $templateRepository;
-        $this->templates = $templates;
     }
 
     public function create(): RegistryInterface
@@ -38,7 +28,10 @@ final class RegistryFactory implements RegistryFactoryInterface
         }
 
         foreach ($this->templateRepository->findAll() as $template) {
-            $registry->add(Template::createFromEntity($template, $this->sectionExtractor->extract((string) $template->getCode())));
+            $registry->add(Template::createFromEntity(
+                $template,
+                $this->sectionExtractor->extract((string) $template->getCode()),
+            ));
         }
 
         return $registry;

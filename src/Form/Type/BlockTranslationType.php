@@ -13,23 +13,16 @@ use Symfony\Component\Form\FormBuilderInterface;
 
 final class BlockTranslationType extends AbstractResourceType
 {
-    private ParserInterface $parser;
-
-    private RendererInterface $renderer;
-
     /**
      * @param array<array-key, string> $validationGroups
      */
     public function __construct(
-        ParserInterface $parser,
-        RendererInterface $renderer,
+        private readonly ParserInterface $parser,
+        private readonly RendererInterface $renderer,
         string $dataClass,
         array $validationGroups = [],
     ) {
         parent::__construct($dataClass, $validationGroups);
-
-        $this->parser = $parser;
-        $this->renderer = $renderer;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void

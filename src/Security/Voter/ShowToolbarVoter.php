@@ -14,14 +14,10 @@ final class ShowToolbarVoter extends Voter
 {
     public const ATTRIBUTE = 'setono-sylius-cms:toolbar:show';
 
-    private RequestStack $requestStack;
-
-    private AccessDecisionManagerInterface $accessDecisionManager;
-
-    public function __construct(RequestStack $requestStack, AccessDecisionManagerInterface $accessDecisionManager)
-    {
-        $this->requestStack = $requestStack;
-        $this->accessDecisionManager = $accessDecisionManager;
+    public function __construct(
+        private readonly RequestStack $requestStack,
+        private readonly AccessDecisionManagerInterface $accessDecisionManager,
+    ) {
     }
 
     protected function supports(string $attribute, $subject): bool

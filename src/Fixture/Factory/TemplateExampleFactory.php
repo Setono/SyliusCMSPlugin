@@ -13,25 +13,18 @@ use Sylius\Component\Resource\Factory\FactoryInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Webmozart\Assert\Assert;
 
-/* not final */ class TemplateExampleFactory extends AbstractExampleFactory
+class TemplateExampleFactory extends AbstractExampleFactory
 {
     use InternalDescriptionAwareFactoryTrait;
-
-    protected FactoryInterface $templateFactory;
-
-    protected TemplateRepositoryInterface $templateRepository;
 
     protected Generator $faker;
 
     protected OptionsResolver $optionsResolver;
 
     public function __construct(
-        FactoryInterface $templateFactory,
-        TemplateRepositoryInterface $templateRepository,
+        protected readonly FactoryInterface $templateFactory,
+        protected readonly TemplateRepositoryInterface $templateRepository,
     ) {
-        $this->templateFactory = $templateFactory;
-        $this->templateRepository = $templateRepository;
-
         $this->faker = Factory::create();
         $this->optionsResolver = new OptionsResolver();
 
@@ -66,12 +59,8 @@ use Webmozart\Assert\Assert;
     protected function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
-            ->setDefault('code', function (): string {
-                return $this->faker->uuid();
-            })
-            ->setDefault('source', function (): string {
-                return '{% sscms_section content %}';
-            })
+            ->setDefault('code', fn (): string => $this->faker->uuid())
+            ->setDefault('source', fn (): string => '{% sscms_section content %}')
         ;
 
         $this->configureInternalDescriptionOptions($resolver);

@@ -9,24 +9,15 @@ use Webmozart\Assert\Assert;
 
 final class Template
 {
-    private string $code;
-
-    private ?string $label;
-
-    private ?string $description;
-
-    /** @var list<string> */
-    private array $sections;
-
     /**
      * @param list<string> $sections
      */
-    public function __construct(string $code, string $label = null, string $description = null, array $sections = [])
-    {
-        $this->code = $code;
-        $this->label = $label;
-        $this->description = $description;
-        $this->sections = $sections;
+    public function __construct(
+        private readonly string $code,
+        private readonly ?string $label = null,
+        private readonly ?string $description = null,
+        private readonly array $sections = [],
+    ) {
     }
 
     /**
@@ -51,8 +42,8 @@ final class Template
         Assert::keyExists($template, 'code');
         Assert::string($template['code']);
 
-        $template['label'] = $template['label'] ?? null;
-        $template['description'] = $template['description'] ?? null;
+        $template['label'] ??= null;
+        $template['description'] ??= null;
 
         Assert::nullOrString($template['label']);
         Assert::nullOrString($template['description']);

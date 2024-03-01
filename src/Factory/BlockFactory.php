@@ -11,16 +11,10 @@ use Webmozart\Assert\Assert;
 
 final class BlockFactory implements BlockFactoryInterface
 {
-    private BlockRepositoryInterface $repository;
-
-    private FactoryInterface $decoratedFactory;
-
     public function __construct(
-        FactoryInterface $decoratedFactory,
-        BlockRepositoryInterface $repository,
+        private readonly FactoryInterface $decoratedFactory,
+        private readonly BlockRepositoryInterface $repository,
     ) {
-        $this->decoratedFactory = $decoratedFactory;
-        $this->repository = $repository;
     }
 
     public function createNew(): BlockInterface

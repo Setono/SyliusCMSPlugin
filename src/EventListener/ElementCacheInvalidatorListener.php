@@ -15,14 +15,10 @@ use Sylius\Component\Resource\Model\TranslationInterface;
 
 final class ElementCacheInvalidatorListener
 {
-    private ChannelRepositoryInterface $channelRepository;
-
-    private PurgerInterface $purger;
-
-    public function __construct(ChannelRepositoryInterface $channelRepository, PurgerInterface $purger)
-    {
-        $this->channelRepository = $channelRepository;
-        $this->purger = $purger;
+    public function __construct(
+        private readonly ChannelRepositoryInterface $channelRepository,
+        private readonly PurgerInterface $purger,
+    ) {
     }
 
     public function postPersist(LifecycleEventArgs $args): void
@@ -30,26 +26,17 @@ final class ElementCacheInvalidatorListener
         $this->invalidateCache($args);
     }
 
-    /**
-     * @param mixed $args
-     */
-    public function postUpdate($args): void
+    public function postUpdate(mixed $args): void
     {
         $this->invalidateCache($args);
     }
 
-    /**
-     * @param mixed $args
-     */
-    public function postRemove($args): void
+    public function postRemove(mixed $args): void
     {
         $this->invalidateCache($args);
     }
 
-    /**
-     * @param mixed $args
-     */
-    private function invalidateCache($args): void
+    private function invalidateCache(mixed $args): void
     {
         $entity = null;
 

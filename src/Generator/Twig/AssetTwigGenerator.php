@@ -13,11 +13,8 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  */
 final class AssetTwigGenerator implements TwigGeneratorInterface
 {
-    private UrlGeneratorInterface $urlGenerator;
-
-    public function __construct(UrlGeneratorInterface $urlGenerator)
+    public function __construct(private readonly UrlGeneratorInterface $urlGenerator)
     {
-        $this->urlGenerator = $urlGenerator;
     }
 
     /**
@@ -25,7 +22,7 @@ final class AssetTwigGenerator implements TwigGeneratorInterface
      */
     public function generate(ElementInterface $element, array $context = []): string
     {
-        if (strpos((string) $element->getMimeType(), 'image') !== 0) {
+        if (!str_starts_with((string) $element->getMimeType(), 'image')) {
             return '';
         }
 

@@ -20,16 +20,15 @@ use Webmozart\Assert\Assert;
 
 final class AssetType extends AbstractResourceType
 {
-    private AssetUploaderInterface $assetUploader;
-
     /**
      * @param array<array-key, string> $validationGroups
      */
-    public function __construct(AssetUploaderInterface $assetUploader, string $dataClass, array $validationGroups = [])
-    {
+    public function __construct(
+        private readonly AssetUploaderInterface $assetUploader,
+        string $dataClass,
+        array $validationGroups = [],
+    ) {
         parent::__construct($dataClass, $validationGroups);
-
-        $this->assetUploader = $assetUploader;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -56,8 +55,7 @@ final class AssetType extends AbstractResourceType
                         'label' => 'setono_sylius_cms.form.asset.file',
                         'mapped' => false,
                         'required' => $asset->getId() === null,
-                    ])
-                ;
+                    ]);
             })
             // PRE_SUBMIT is where we have the unmapped fields, i.e. the 'file' above
             ->addEventListener(FormEvents::PRE_SUBMIT, function (PreSubmitEvent $event): void {
@@ -86,8 +84,7 @@ final class AssetType extends AbstractResourceType
                 $data['mimeType'] = $file->getMimeType();
                 $event->setData($data);
             })
-            ->addEventSubscriber(new AddInternalDescriptionSubscriber())
-        ;
+            ->addEventSubscriber(new AddInternalDescriptionSubscriber());
     }
 
     public function getBlockPrefix(): string
