@@ -34,6 +34,7 @@
             </errorLevel>
         </MissingTemplateParam>
         <RedundantConditionGivenDocblockType errorLevel="suppress"/>
+        <PluginIssue name="QueryBuilderSetParameter" errorLevel="suppress"/>
     </issueHandlers>
     <forbiddenFunctions>
         <function name="dd"/>

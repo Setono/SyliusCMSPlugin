@@ -73,12 +73,6 @@ use Webmozart\Assert\Assert;
             $page->setCode($code);
         }
 
-        if (array_key_exists('view', $options)) {
-            $view = $options['view'];
-            Assert::isInstanceOf($view, ViewInterface::class);
-            $page->setView($view);
-        }
-
         if (array_key_exists('channels', $options)) {
             $channels = $options['channels'];
             Assert::allIsInstanceOf($channels, ChannelInterface::class);

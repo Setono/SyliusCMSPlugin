@@ -23,4 +23,8 @@ interface PageTranslationInterface extends ResourceInterface, TranslationInterfa
     public function getMetaDescription(): ?string;
 
     public function setMetaDescription(?string $metaDescription): void;
+
+    public function getContent(): ?string;
+
+    public function setContent(?string $content): void;
 }

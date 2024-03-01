@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Repository;
 
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Sylius\Component\Channel\Model\ChannelInterface;
 
 /**
  * @method PageInterface|null find($id, $lockMode = null, $lockVersion = null)
@@ -14,7 +15,7 @@ use Setono\SyliusCMSPlugin\Model\PageInterface;
  */
 interface PageRepositoryInterface extends ElementRepositoryInterface
 {
-    public function findOneBySlug(string $locale, string $slug): ?PageInterface;
+    public function findOneBySlug(ChannelInterface $channel, string $locale, string $slug): ?PageInterface;
 
     public function exists(string $slug): bool;
 }

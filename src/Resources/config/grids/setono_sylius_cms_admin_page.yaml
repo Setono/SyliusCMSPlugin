@@ -9,9 +9,6 @@ sylius_grid:
                 code:
                     type: string
                     label: sylius.ui.code
-                view:
-                    type: string
-                    label: setono_sylius_cms.ui.view
                 internalDescription:
                     type: string
                     label: setono_sylius_cms.ui.internal_description

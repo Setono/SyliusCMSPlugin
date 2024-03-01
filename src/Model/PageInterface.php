@@ -15,10 +15,6 @@ interface PageInterface extends
     TranslatableInterface,
     ElementInterface
 {
-    public function getView(): ?ViewInterface;
-
-    public function setView(?ViewInterface $view): void;
-
     public function getSlug(): ?string;
 
     public function setSlug(?string $slug): void;
@@ -30,4 +26,8 @@ interface PageInterface extends
     public function getMetaDescription(): ?string;
 
     public function setMetaDescription(?string $metaDescription): void;
+
+    public function getContent(): ?string;
+
+    public function setContent(?string $content): void;
 }

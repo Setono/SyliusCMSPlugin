@@ -17,6 +17,7 @@
 
         <service id="setono_sylius_cms.controller.action.show_page"
                  class="Setono\SyliusCMSPlugin\Controller\Action\ShowPageAction">
+            <argument type="service" id="sylius.context.channel"/>
             <argument type="service" id="sylius.context.locale"/>
             <argument type="service" id="setono_sylius_cms.repository.page"/>
             <argument type="service" id="twig"/>
