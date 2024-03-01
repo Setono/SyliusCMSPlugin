@@ -41,19 +41,6 @@ Input `first_block` in the `Code` field and add your content to the content fiel
 
 Hit `Create`.
 
-## Creating your first view
-
-Now we have to tie the blocks to the section we defined in the template. We do this in a view. Click on `Views` and
-then `Create`.
-
-Now, in the `Code` your input `first_view` and for the template you choose `first_template`. When you select the template
-the available sections for the template appears on the right. Now you select `first_block` and you should have something
-like the following image:
-
-![First block](images/first_view.png)
-
-Remember to hit `Create`
-
 ## Creating your first page
 
 Last step! We will now create our page. Go to `Pages` and click `Create`. Input `first_page` in the `Code` field and

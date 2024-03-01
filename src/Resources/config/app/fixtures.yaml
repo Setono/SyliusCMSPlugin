@@ -13,7 +13,7 @@ sylius_fixtures:
                                 # Remember to quote `%` to omit yaml parsing exception
                                 # Like in this example:
                                 source: |
-                                    {%% sscms_section section_content %%}
+                                    {%% block sscms_section_content %%}{%% endblock %%}
                 custom_blocks:
                     name: 'setono_sylius_cms_block'
                     options:
@@ -110,26 +110,6 @@ sylius_fixtures:
                                                     data:
                                                         text: 'Müßiges Geschwätz'
                                             version: 2.22.2
-                custom_views:
-                    name: 'setono_sylius_cms_view'
-                    options:
-                        custom:
-                            custom_view_terms:
-                                code: 'view_terms'
-                                internalDescription: 'Terms view'
-                                template: 'template_simple_page'
-                                viewBlocks:
-                                    section_content:
-                                        - 'block_terms'
-                            custom_view_terms_with_sidebar:
-                                code: 'view_terms_with_sidebar'
-                                internalDescription: 'Terms with sidebar view'
-                                template: 'CmsTemplate/pageWithSidebar.html.twig'
-                                viewBlocks:
-                                    section_sidebar:
-                                        - 'block_terms_sidebar'
-                                    section_content:
-                                        - 'block_terms'
 
                 custom_assets:
                     name: 'setono_sylius_cms_asset'
@@ -147,7 +127,7 @@ sylius_fixtures:
                     name: 'setono_sylius_cms_carousel'
                     options:
                         custom:
-                            custom_view_terms:
+                            custom_carousel_homepage:
                                 code: 'carousel_homepage'
                                 internalDescription: 'Homepage carousel'
                                 configuration:
@@ -167,7 +147,6 @@ sylius_fixtures:
                             custom_page_terms:
                                 code: 'page_terms'
                                 internalDescription: 'Terms page'
-                                view: 'view_terms_with_sidebar' # Or view_terms
                                 title: 'Terms'
                                 slug: 'cms-page-terms'
                                 metaDescription: 'Terms and conditions'

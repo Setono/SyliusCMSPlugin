@@ -74,7 +74,6 @@ final class LogicalTemplateNameTest extends TestCase
     public function getValidLogicalTemplateNames(): \Generator
     {
         yield ['__sscms/block/FASHION_WEB/en_US/block1', 'block', 'FASHION_WEB', 'en_US', 'block1'];
-        yield ['__sscms/view/FASHION_WEB/en_US/email/send_order', 'view', 'FASHION_WEB', 'en_US', 'email/send_order'];
     }
 
     /**

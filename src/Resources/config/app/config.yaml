@@ -4,7 +4,6 @@ imports:
     - { resource: "@SetonoSyliusCMSPlugin/Resources/config/grids/setono_sylius_cms_admin_carousel.yaml" }
     - { resource: "@SetonoSyliusCMSPlugin/Resources/config/grids/setono_sylius_cms_admin_page.yaml" }
     - { resource: "@SetonoSyliusCMSPlugin/Resources/config/grids/setono_sylius_cms_admin_template.yaml" }
-    - { resource: "@SetonoSyliusCMSPlugin/Resources/config/grids/setono_sylius_cms_admin_view.yaml" }
 
 parameters:
     setono_sylius_cms.asset_adapter: "setono_sylius_cms_asset"
@@ -37,16 +36,6 @@ liip_imagine:
             quality: 80
             filters:
                 thumbnail: { size: [75, 75], mode: outbound }
-sylius_ui:
-    events:
-        setono_sylius_cms.admin.view.update.javascripts:
-            blocks:
-                javascripts:
-                    template: '@SetonoSyliusCMSPlugin/admin/view/_javascripts.html.twig'
-        setono_sylius_cms.admin.view.create.javascripts:
-            blocks:
-                javascripts:
-                    template: '@SetonoSyliusCMSPlugin/admin/view/_javascripts.html.twig'
 
 sylius_grid:
     templates:

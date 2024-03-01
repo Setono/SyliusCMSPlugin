@@ -3,7 +3,7 @@ a page, and we will go through the different features here.
 
 ![Edit page interface](../images/edit_page.png)
 
-1. Notice that the content of your page is determined by the associated view (see [views](views.md)). This has the (great)
+1. Notice that the content of your page is determined by the associated view. This has the (great)
 side effect that if you have some content (an example could be terms and conditions) that you want in multiple places,
 but also on a separate page, you create that content as a view, and then you can use that view for outputting directly
 in templates, but also associating that view with a page (i.e. a URL).
