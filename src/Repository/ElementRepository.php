@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Doctrine\ORM;
+namespace Setono\SyliusCMSPlugin\Repository;
 
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;

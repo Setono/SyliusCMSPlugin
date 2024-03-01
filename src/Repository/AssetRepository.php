@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Doctrine\ORM;
-
-use Setono\SyliusCMSPlugin\Repository\AssetRepositoryInterface;
+namespace Setono\SyliusCMSPlugin\Repository;
 
 class AssetRepository extends ElementRepository implements AssetRepositoryInterface
 {

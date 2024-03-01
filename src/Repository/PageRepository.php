@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Doctrine\ORM;
+namespace Setono\SyliusCMSPlugin\Repository;
 
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Repository\PageRepositoryInterface;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Webmozart\Assert\Assert;
 

@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Doctrine\ORM;
+namespace Setono\SyliusCMSPlugin\Repository;
 
 use Setono\SyliusCMSPlugin\Model\CarouselInterface;
-use Setono\SyliusCMSPlugin\Repository\CarouselRepositoryInterface;
 use Webmozart\Assert\Assert;
 
 class CarouselRepository extends ElementRepository implements CarouselRepositoryInterface

@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Doctrine\ORM;
+namespace Setono\SyliusCMSPlugin\Repository;
 
 use Setono\SyliusCMSPlugin\Model\TemplateInterface;
-use Setono\SyliusCMSPlugin\Repository\TemplateRepositoryInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 use Webmozart\Assert\Assert;
 

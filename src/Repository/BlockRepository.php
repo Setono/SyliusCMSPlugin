@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Doctrine\ORM;
+namespace Setono\SyliusCMSPlugin\Repository;
 
 use Setono\SyliusCMSPlugin\Model\BlockInterface;
-use Setono\SyliusCMSPlugin\Repository\BlockRepositoryInterface;
 use Webmozart\Assert\Assert;
 
 class BlockRepository extends ElementRepository implements BlockRepositoryInterface

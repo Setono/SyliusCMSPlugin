@@ -4,11 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
-use Setono\SyliusCMSPlugin\Doctrine\ORM\AssetRepository;
-use Setono\SyliusCMSPlugin\Doctrine\ORM\BlockRepository;
-use Setono\SyliusCMSPlugin\Doctrine\ORM\CarouselRepository;
-use Setono\SyliusCMSPlugin\Doctrine\ORM\PageRepository;
-use Setono\SyliusCMSPlugin\Doctrine\ORM\TemplateRepository;
 use Setono\SyliusCMSPlugin\Form\Type\AssetType;
 use Setono\SyliusCMSPlugin\Form\Type\BlockTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\BlockType;
@@ -25,6 +20,11 @@ use Setono\SyliusCMSPlugin\Model\CarouselBlock;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Template;
+use Setono\SyliusCMSPlugin\Repository\AssetRepository;
+use Setono\SyliusCMSPlugin\Repository\BlockRepository;
+use Setono\SyliusCMSPlugin\Repository\CarouselRepository;
+use Setono\SyliusCMSPlugin\Repository\PageRepository;
+use Setono\SyliusCMSPlugin\Repository\TemplateRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Sylius\Component\Resource\Factory\Factory;
