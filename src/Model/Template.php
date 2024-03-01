@@ -17,9 +17,6 @@ class Template implements TemplateInterface
 
     protected ?string $source = null;
 
-    /** @var list<string> */
-    protected array $sections = [];
-
     public function getId(): ?int
     {
         return $this->id;
