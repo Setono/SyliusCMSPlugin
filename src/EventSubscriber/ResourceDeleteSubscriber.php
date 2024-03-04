@@ -16,10 +16,11 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final class ResourceDeleteSubscriber implements EventSubscriberInterface
 {
-    public function __construct(
-        private readonly UrlGeneratorInterface $router,
-        private readonly array $routes,
-    ) {
+    /** @var list<string> */
+    private array $routes = [];
+
+    public function __construct(private readonly UrlGeneratorInterface $router)
+    {
     }
 
     public static function getSubscribedEvents(): array
@@ -27,6 +28,11 @@ final class ResourceDeleteSubscriber implements EventSubscriberInterface
         return [
             KernelEvents::EXCEPTION => 'onResourceDelete',
         ];
+    }
+
+    public function addRoute(string $route): void
+    {
+        $this->routes[] = $route;
     }
 
     public function onResourceDelete(ExceptionEvent $event): void
