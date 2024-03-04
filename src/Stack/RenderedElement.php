@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Stack;
 
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
+use Setono\SyliusCMSPlugin\Twig\LogicalTemplateName;
 
-final class ElementId
+final class RenderedElement
 {
     public function __construct(
-        public readonly int $id,
-        public readonly string $code,
-        public readonly string $identifier,
         public readonly string $type,
+        public readonly string $code,
     ) {
+    }
+
+    public static function fromLogicalTemplateName(LogicalTemplateName $logicalTemplateName): self
+    {
+        return new self($logicalTemplateName->type, $logicalTemplateName->code);
     }
 
     public function isAsset(): bool

@@ -1,5 +1,5 @@
 {# @var element \Setono\SyliusCMSPlugin\Model\CarouselInterface #}
-<div class="sscms-carousel {{ element.identifier }}">
+<div class="sscms-carousel {{ sscms_element_identifier(element) }}">
     <div class="items">
         {% for item in element.blocks %}
             <div class="item">
@@ -21,12 +21,12 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <script>
         $(document).ready(() => {
-            $('.{{ element.identifier }} .items').slick({
+            $('.{{ sscms_element_identifier(element) }} .items').slick({
                 infinite: {{ element.configuration.infinite ? 'true' : 'false' }},
                 slidesToShow: {{ element.configuration.slidesToShow }},
                 slidesToScroll: {{ element.configuration.slidesToScroll }},
-                prevArrow: $('.{{ element.identifier }} button.left'),
-                nextArrow: $('.{{ element.identifier }} button.right'),
+                prevArrow: $('.{{ sscms_element_identifier(element) }} button.left'),
+                nextArrow: $('.{{ sscms_element_identifier(element) }} button.right'),
                 appendArrows: false,
                 autoplay: {{ element.configuration.autoplay ? 'true' : 'false' }},
                 autoplaySpeed: {{ element.configuration.autoplaySpeed }},

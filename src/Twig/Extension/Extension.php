@@ -28,12 +28,7 @@ final class Extension extends AbstractExtension
             new TwigFunction('sscms_max_upload_size', [Runtime::class, 'maxUploadSize']),
             new TwigFunction('sscms_readable_bytes', [Runtime::class, 'readableBytes']),
 
-            /**
-             * This function is used internally to push elements onto the element stack which is then used to display the toolbar when logged in
-             *
-             * @internal
-             */
-            new TwigFunction('sscms_push_to_element_stack', [Runtime::class, 'pushToElementStack']),
+            new TwigFunction('sscms_element_identifier', [Runtime::class, 'elementIdentifier']),
         ];
     }
 }

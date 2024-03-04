@@ -1,3 +1,7 @@
+setono_sylius_cms_admin_ajax:
+    resource: 'admin/ajax.yaml'
+    prefix: /ajax
+
 setono_sylius_cms_admin_block:
     resource: admin/block.yml
 
@@ -85,7 +89,9 @@ setono_sylius_cms_admin_template:
             index:
                 icon: columns
     type: sylius.resource
-    
-setono_sylius_cms_admin_ajax:
-    resource: 'admin/ajax.yaml'
-    prefix: /ajax
+
+setono_sylius_cms_admin_update_element_redirect:
+    path: /element/update/{type}/{code}
+    methods: [GET]
+    defaults:
+        _controller: setono_sylius_cms.controller.action.admin.update_element_redirect

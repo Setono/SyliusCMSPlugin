@@ -5,7 +5,7 @@
         <service id="setono_sylius_cms.event_subscriber.add_toolbar"
                  class="Setono\SyliusCMSPlugin\EventSubscriber\AddToolbarSubscriber">
             <argument type="service" id="twig"/>
-            <argument type="service" id="setono_sylius_cms.stack.element"/>
+            <argument type="service" id="setono_sylius_cms.stack.rendered_element"/>
             <argument type="service" id="sylius.section_resolver.uri_based_section_resolver"/>
             <argument type="service" id="security.authorization_checker"/>
 

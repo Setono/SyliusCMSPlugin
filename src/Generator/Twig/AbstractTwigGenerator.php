@@ -24,18 +24,9 @@ abstract class AbstractTwigGenerator implements TwigGeneratorInterface
      */
     public function generate(ElementInterface $element, array $context = []): string
     {
-        $twig = $this->twig->render(sprintf('@SetonoSyliusCMSPlugin/twig_generator/%s.html.twig', $element->getType()), [
+        return $this->twig->render(sprintf('@SetonoSyliusCMSPlugin/twig_generator/%s.html.twig', $element->getType()), [
             'element' => $element,
         ]);
-        $twig .= sprintf(
-            '{%% do sscms_push_to_element_stack(%d, "%s", "%s", "%s") %%}',
-            (int) $element->getId(),
-            (string) $element->getCode(),
-            $element->getIdentifier(),
-            $element->getType(),
-        );
-
-        return $twig;
     }
 
     public function supports(ElementInterface $element, array $context = []): bool

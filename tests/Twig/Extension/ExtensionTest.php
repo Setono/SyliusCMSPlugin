@@ -6,12 +6,13 @@ namespace Setono\SyliusCMSPlugin\Tests\Twig\Extension;
 
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use Setono\SyliusCMSPlugin\Generator\ElementIdentifierGenerator;
 use Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Previewer\Preview;
 use Setono\SyliusCMSPlugin\Previewer\PreviewerInterface;
-use Setono\SyliusCMSPlugin\Stack\ElementStack;
 use Setono\SyliusCMSPlugin\Twig\Extension\Extension;
 use Setono\SyliusCMSPlugin\Twig\Extension\Runtime;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
@@ -42,11 +43,14 @@ final class ExtensionTest extends IntegrationTestCase
         $localeContext = $this->prophesize(LocaleContextInterface::class);
         $localeContext->getLocaleCode()->willReturn('en_US');
 
-        $runtimeLoader = new class($urlGenerator->reveal(), $channelContext->reveal(), $localeContext->reveal()) implements RuntimeLoaderInterface {
+        $eventDispatcher = $this->prophesize(EventDispatcherInterface::class);
+
+        $runtimeLoader = new class($urlGenerator->reveal(), $channelContext->reveal(), $localeContext->reveal(), $eventDispatcher->reveal()) implements RuntimeLoaderInterface {
             public function __construct(
                 private readonly UrlGeneratorInterface $urlGenerator,
                 private readonly ChannelContextInterface $channelContext,
                 private readonly LocaleContextInterface $localeContext,
+                private readonly EventDispatcherInterface $eventDispatcher,
             ) {
             }
 
@@ -80,7 +84,8 @@ final class ExtensionTest extends IntegrationTestCase
                     $previewer,
                     $this->channelContext,
                     $this->localeContext,
-                    new ElementStack(),
+                    new ElementIdentifierGenerator(),
+                    $this->eventDispatcher,
                 );
             }
         };

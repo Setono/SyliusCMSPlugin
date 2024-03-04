@@ -42,9 +42,4 @@ abstract class Element implements ElementInterface
     {
         $this->code = $code;
     }
-
-    public function getIdentifier(): string
-    {
-        return sprintf('sscms-%s-%s', $this->getType(), (string) $this->getCode());
-    }
 }
