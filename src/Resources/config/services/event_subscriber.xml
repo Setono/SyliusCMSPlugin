@@ -12,6 +12,7 @@
             <tag name="kernel.event_subscriber"/>
         </service>
 
+        <!-- todo use flysystem instead -->
         <service id="setono_sylius_cms.event_subscriber.remove_asset_file"
                  class="Setono\SyliusCMSPlugin\EventSubscriber\RemoveAssetFileSubscriber">
             <argument type="service">
