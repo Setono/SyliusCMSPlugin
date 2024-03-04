@@ -40,10 +40,10 @@ final class TagElementCacheInvalidatorListenerPass implements CompilerPassInterf
 
         foreach ($aliasesToTag as $alias) {
             $elementCacheInvalidator->addTag('kernel.event_listener', [
-                'event' => sprintf('%s.block.post_update', $alias),
+                'event' => sprintf('%s.post_update', $alias),
                 'method' => 'postUpdate',
             ])->addTag('kernel.event_listener', [
-                'event' => sprintf('%s.block.post_delete', $alias),
+                'event' => sprintf('%s.post_delete', $alias),
                 'method' => 'postRemove',
             ]);
         }
