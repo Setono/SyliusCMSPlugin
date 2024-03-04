@@ -5,26 +5,13 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Form\Type;
 
 use Setono\SyliusCMSPlugin\Form\EventSubscriber\AddInternalDescriptionSubscriber;
-use Setono\SyliusCMSPlugin\Form\EventSubscriber\SetQueryParameterValueOnObjectSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\EventSubscriber\AddCodeFormSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
 use Sylius\Bundle\ResourceBundle\Form\Type\ResourceTranslationsType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
 
 final class BlockType extends AbstractResourceType
 {
-    /**
-     * @param array<array-key, string> $validationGroups
-     */
-    public function __construct(
-        private readonly RequestStack $requestStack,
-        string $dataClass,
-        array $validationGroups = [],
-    ) {
-        parent::__construct($dataClass, $validationGroups);
-    }
-
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
@@ -35,7 +22,6 @@ final class BlockType extends AbstractResourceType
                 'entry_type' => BlockTranslationType::class,
                 'label' => 'setono_sylius_cms.form.block.translations',
             ])
-            ->addEventSubscriber(new SetQueryParameterValueOnObjectSubscriber($this->requestStack))
             ->addEventSubscriber(new AddCodeFormSubscriber())
             ->addEventSubscriber(new AddInternalDescriptionSubscriber())
         ;

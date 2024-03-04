@@ -49,7 +49,6 @@
         <!-- Block -->
         <service id="setono_sylius_cms.form.type.block"
                  class="Setono\SyliusCMSPlugin\Form\Type\BlockType">
-            <argument type="service" id="request_stack"/>
             <argument>%setono_sylius_cms.model.block.class%</argument>
             <argument>%setono_sylius_cms.form.type.block.validation_groups%</argument>
 
@@ -86,26 +85,9 @@
             <tag name="form.type"/>
         </service>
 
-        <!-- Template -->
-        <service id="setono_sylius_cms.form.type.template"
-                 class="Setono\SyliusCMSPlugin\Form\Type\TemplateType">
-            <argument>%setono_sylius_cms.model.template.class%</argument>
-            <argument>%setono_sylius_cms.form.type.template.validation_groups%</argument>
-
-            <tag name="form.type"/>
-        </service>
-
-        <service id="setono_sylius_cms.form.type.template_choice"
-                 class="Setono\SyliusCMSPlugin\Form\Type\TemplateChoiceType">
-            <argument type="service" id="setono_sylius_cms.template.registry"/>
-
-            <tag name="form.type"/>
-        </service>
-
         <!-- Carousel -->
         <service id="setono_sylius_cms.form.type.carousel"
                  class="Setono\SyliusCMSPlugin\Form\Type\CarouselType">
-            <argument type="service" id="request_stack"/>
             <argument>%setono_sylius_cms.model.carousel.class%</argument>
             <argument>%setono_sylius_cms.form.type.carousel.validation_groups%</argument>
 
@@ -122,6 +104,22 @@
 
         <service id="setono_sylius_cms.form.type.carousel_configuration"
                  class="Setono\SyliusCMSPlugin\Form\Type\CarouselConfigurationType">
+            <tag name="form.type"/>
+        </service>
+
+        <!-- Template -->
+        <service id="setono_sylius_cms.form.type.template"
+                 class="Setono\SyliusCMSPlugin\Form\Type\TemplateType">
+            <argument>%setono_sylius_cms.model.template.class%</argument>
+            <argument>%setono_sylius_cms.form.type.template.validation_groups%</argument>
+
+            <tag name="form.type"/>
+        </service>
+
+        <service id="setono_sylius_cms.form.type.template_choice"
+                 class="Setono\SyliusCMSPlugin\Form\Type\TemplateChoiceType">
+            <argument type="service" id="setono_sylius_cms.template.registry"/>
+
             <tag name="form.type"/>
         </service>
     </services>
