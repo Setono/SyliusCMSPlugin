@@ -14,5 +14,4 @@ use Setono\SyliusCMSPlugin\Model\CarouselInterface;
  */
 interface CarouselRepositoryInterface extends ElementRepositoryInterface
 {
-    public function findOneByCode(string $code): ?CarouselInterface;
 }
