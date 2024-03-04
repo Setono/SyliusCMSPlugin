@@ -15,5 +15,9 @@ use Sylius\Component\Resource\Repository\RepositoryInterface;
  */
 interface ElementRepositoryInterface extends RepositoryInterface
 {
-    public function findOneByCode(string $code): ?ElementInterface;
+    /**
+     * @param string|null $channel if not null, the element will be checked if it is available in the given channel
+     * @param string|null $locale if not null, the element will have its translations joined based on the given locale, but will still return the element if no translation is found
+     */
+    public function findOneByCode(string $code, string $channel = null, string $locale = null): ?ElementInterface;
 }

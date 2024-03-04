@@ -10,12 +10,29 @@ final class LogicalTemplateName implements \Stringable
 {
     public const TEMPLATE_NAME_PREFIX = '__sscms';
 
+    /**
+     * Holds the string representation of the logical template name, here is an example:
+     *
+     * __sscms/block/FASHION_WEB/en_US/block1
+     *    ^      ^       ^       ^       ^
+     * prefix  type   channel  locale   code
+     */
+    public readonly string $value;
+
     public function __construct(
         public readonly string $type,
         public readonly string $channelCode,
         public readonly string $localeCode,
         public readonly string $code,
     ) {
+        $this->value = sprintf(
+            '%s/%s/%s/%s/%s',
+            self::TEMPLATE_NAME_PREFIX,
+            $this->type,
+            $this->channelCode,
+            $this->localeCode,
+            $this->code,
+        );
     }
 
     /**
@@ -44,24 +61,8 @@ final class LogicalTemplateName implements \Stringable
         return new self($type, $channelCode, $localeCode, $code);
     }
 
-    /**
-     * Returns the string representation of a logical template name, here is an example:
-     * __sscms/block/FASHION_WEB/en_US/block1
-     */
-    public function toString(): string
-    {
-        return sprintf(
-            '%s/%s/%s/%s/%s',
-            self::TEMPLATE_NAME_PREFIX,
-            $this->type,
-            $this->channelCode,
-            $this->localeCode,
-            $this->code,
-        );
-    }
-
     public function __toString(): string
     {
-        return $this->toString();
+        return $this->value;
     }
 }

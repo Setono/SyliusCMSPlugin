@@ -278,7 +278,7 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
             $context = array_merge($context, $variables);
 
             /** @var string $res */
-            $res = $env->load($logicalTemplateName->toString())->render($context);
+            $res = $env->load($logicalTemplateName->value)->render($context);
 
             $this->eventDispatcher->dispatch(new ElementRenderedEvent(
                 RenderedElement::fromLogicalTemplateName($logicalTemplateName),

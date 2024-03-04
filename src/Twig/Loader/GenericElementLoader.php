@@ -71,7 +71,6 @@ final class GenericElementLoader implements LoaderInterface
     {
         $logicalTemplateName = LogicalTemplateName::createFromString($name);
 
-        // todo should this take the channel and locale into consideration?
         $element = $this->getElement($logicalTemplateName);
 
         return new Source($this->twigGenerator->generate($element, [
@@ -88,7 +87,6 @@ final class GenericElementLoader implements LoaderInterface
     {
         $logicalTemplateName = LogicalTemplateName::createFromString($name);
 
-        // todo should this take the channel and locale into consideration?
         $element = $this->getElement($logicalTemplateName);
 
         /** @psalm-suppress PossiblyNullReference */
@@ -105,9 +103,13 @@ final class GenericElementLoader implements LoaderInterface
      */
     private function getElement(LogicalTemplateName $logicalTemplateName): ElementInterface
     {
-        if (!array_key_exists($logicalTemplateName->code, $this->cache)) {
+        if (!array_key_exists($logicalTemplateName->value, $this->cache)) {
             try {
-                $element = $this->elementRepository->findOneByCode($logicalTemplateName->code);
+                $element = $this->elementRepository->findOneByCode(
+                    $logicalTemplateName->code,
+                    $logicalTemplateName->channelCode,
+                    $logicalTemplateName->localeCode,
+                );
             } catch (Exception $e) {
                 // exceptions can be thrown here when:
                 // 1. there's no connection to the database
@@ -124,9 +126,9 @@ final class GenericElementLoader implements LoaderInterface
                 ));
             }
 
-            $this->cache[$logicalTemplateName->code] = $element;
+            $this->cache[$logicalTemplateName->value] = $element;
         }
 
-        return $this->cache[$logicalTemplateName->code];
+        return $this->cache[$logicalTemplateName->value];
     }
 }
