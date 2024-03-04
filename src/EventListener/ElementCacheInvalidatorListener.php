@@ -12,9 +12,13 @@ use Sylius\Bundle\ResourceBundle\Event\ResourceControllerEvent;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Resource\Model\TranslationInterface;
+use Webmozart\Assert\Assert;
 
 final class ElementCacheInvalidatorListener
 {
+    /** @var array<array-key, ChannelInterface>|null */
+    private ?array $channels = null;
+
     public function __construct(
         private readonly ChannelRepositoryInterface $channelRepository,
         private readonly PurgerInterface $purger,
@@ -55,8 +59,7 @@ final class ElementCacheInvalidatorListener
             return;
         }
 
-        /** @var ChannelInterface $channel */
-        foreach ($this->channelRepository->findAll() as $channel) {
+        foreach ($this->getChannels() as $channel) {
             foreach ($channel->getLocales() as $locale) {
                 $this->purger->purge((string) (new LogicalTemplateName(
                     $entity->getType(),
@@ -66,5 +69,20 @@ final class ElementCacheInvalidatorListener
                 )));
             }
         }
+    }
+
+    /**
+     * @return array<array-key, ChannelInterface>
+     */
+    private function getChannels(): array
+    {
+        if (null === $this->channels) {
+            $channels = $this->channelRepository->findAll();
+            Assert::allIsInstanceOf($channels, ChannelInterface::class);
+
+            $this->channels = $channels;
+        }
+
+        return $this->channels;
     }
 }

@@ -24,6 +24,11 @@ final class TemplateCacheInvalidatorListener
         $this->invalidateCache($args);
     }
 
+    public function postRemove(LifecycleEventArgs $args): void
+    {
+        $this->invalidateCache($args);
+    }
+
     private function invalidateCache(LifecycleEventArgs $args): void
     {
         $entity = $args->getObject();
