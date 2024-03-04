@@ -28,7 +28,7 @@ sylius_grid:
                     type: string
                     label: sylius.ui.search
                     options:
-                        fields: [ name, path ]
+                        fields: [ name, path, internalDescription ]
             actions:
                 main:
                     create:

@@ -6,6 +6,9 @@ sylius_grid:
                     class: "%setono_sylius_cms.model.page.class%"
             limits: [100, 250, 500, 1000]
             fields:
+                title:
+                    type: string
+                    label: setono_sylius_cms.ui.title
                 code:
                     type: string
                     label: sylius.ui.code
@@ -17,7 +20,7 @@ sylius_grid:
                     type: string
                     label: sylius.ui.search
                     options:
-                        fields: [ id ] # todo update
+                        fields: [ code, internalDescription, translations.title ]
             actions:
                 main:
                     create:
