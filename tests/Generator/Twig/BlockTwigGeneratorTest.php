@@ -24,7 +24,7 @@ final class BlockTwigGeneratorTest extends AbstractTwigGeneratorTest
     {
         $block = $this->prophesize(BlockInterface::class);
         $block->setCurrentLocale('en_US')->shouldBeCalled();
-        $block->getContent()->willReturn('content');
+        $block->getContent()->willReturn('{"time":1709547935581,"blocks":[{"id":"cs1_2","type":"paragraph","data":{"text":"Content"}}],"version":"2.23.2"}');
         $block->getId()->willReturn(1);
         $block->getCode()->willReturn('code');
         $block->getType()->willReturn('block');
@@ -40,7 +40,8 @@ final class BlockTwigGeneratorTest extends AbstractTwigGeneratorTest
     protected function getExpectedTwig(): string
     {
         return <<<TWIG
-<div class="sscms-block sscms-block-code">content</div>
+<div class="sscms-block sscms-block-code"><p>Content</p>
+</div>
 
 TWIG;
     }

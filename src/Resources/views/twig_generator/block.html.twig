@@ -1,3 +1,2 @@
 {# @var element \Setono\SyliusCMSPlugin\Model\BlockInterface #}
-{# todo use editorjs_render filter instead #}
-<div class="sscms-block {{ sscms_element_identifier(element) }}">{{ element.content|raw }}</div>
+<div class="sscms-block {{ sscms_element_identifier(element) }}">{{ element.content|editorjs_render }}</div>

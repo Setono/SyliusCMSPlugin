@@ -20,7 +20,7 @@ use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
     {
         $child = $resourceNode->children();
         $child->scalarNode('code')->cannotBeEmpty();
-        $child->variableNode('rawContent')->cannotBeEmpty()->defaultValue([]);
+        $child->variableNode('content')->cannotBeEmpty()->defaultValue([]);
         $child->variableNode('translations')->cannotBeEmpty()->defaultValue([]);
 
         $this->configureInternalDescriptionResourceNode($resourceNode);
