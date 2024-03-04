@@ -17,7 +17,7 @@
         <field name="mimeType" type="string" nullable="true"/>
         <field name="internalDescription" type="text" nullable="true"/>
 
-        <field name="createdAt" type="datetime" nullable="true"> <!-- todo remove nullable in v0.7 -->
+        <field name="createdAt" type="datetime">
             <gedmo:timestampable on="create"/>
         </field>
 
