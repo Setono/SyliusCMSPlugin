@@ -179,8 +179,8 @@
         <ul>
             {% for element in elements.assets %}
                 <li>
-                    <a href="{{ path('setono_sylius_cms_admin_asset_update', {'id': element.id}) }}"
-                       data-identifier="{{ element.identifier }}" target="_blank">
+                    <a href="{{ path('setono_sylius_cms_admin_update_element_redirect', {'type': element.type, 'code': element.code}) }}"
+                       data-identifier="{{ sscms_element_identifier(element) }}" target="_blank">
                         {{ element.code }}
                     </a>
                 </li>
@@ -193,8 +193,8 @@
         <ul>
             {% for element in elements.blocks %}
                 <li>
-                    <a href="{{ path('setono_sylius_cms_admin_block_update', {'id': element.id}) }}"
-                       data-identifier="{{ element.identifier }}" target="_blank">
+                    <a href="{{ path('setono_sylius_cms_admin_update_element_redirect', {'type': element.type, 'code': element.code}) }}"
+                       data-identifier="{{ sscms_element_identifier(element) }}" target="_blank">
                         {{ element.code }}
                     </a>
                 </li>
@@ -207,8 +207,8 @@
         <ul>
             {% for element in elements.carousels %}
                 <li>
-                    <a href="{{ path('setono_sylius_cms_admin_carousel_update', {'id': element.id}) }}"
-                       data-identifier="{{ element.identifier }}" target="_blank">
+                    <a href="{{ path('setono_sylius_cms_admin_update_element_redirect', {'type': element.type, 'code': element.code}) }}"
+                       data-identifier="{{ sscms_element_identifier(element) }}" target="_blank">
                         {{ element.code }}
                     </a>
                 </li>

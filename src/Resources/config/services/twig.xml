@@ -26,7 +26,8 @@
             <argument type="service" id="setono_sylius_cms.previewer.composite"/>
             <argument type="service" id="sylius.context.channel"/>
             <argument type="service" id="sylius.context.locale"/>
-            <argument type="service" id="setono_sylius_cms.stack.element"/>
+            <argument type="service" id="setono_sylius_cms.generator.element_identifier"/>
+            <argument type="service" id="event_dispatcher"/>
 
             <call method="setLogger">
                 <argument type="service" id="logger"/>

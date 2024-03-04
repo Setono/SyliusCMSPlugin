@@ -26,7 +26,6 @@ final class CarouselTwigGeneratorTest extends AbstractTwigGeneratorTest
         $block2->setcode('block2_code');
 
         $carousel = $this->prophesize(CarouselInterface::class);
-        $carousel->getIdentifier()->willReturn('identifier');
         $carousel->getId()->willReturn(1);
         $carousel->getCode()->willReturn('code');
         $carousel->getType()->willReturn('carousel');
@@ -51,7 +50,7 @@ final class CarouselTwigGeneratorTest extends AbstractTwigGeneratorTest
     protected function getExpectedTwig(): string
     {
         return <<<TWIG
-<div class="sscms-carousel identifier">
+<div class="sscms-carousel sscms-carousel-code">
     <div class="items">
                     <div class="item">
                 {{ sscms_block("block1_code") }}
@@ -72,12 +71,12 @@ final class CarouselTwigGeneratorTest extends AbstractTwigGeneratorTest
         <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <script>
         $(document).ready(() => {
-            $('.identifier .items').slick({
+            $('.sscms-carousel-code .items').slick({
                 infinite: true,
                 slidesToShow: 1,
                 slidesToScroll: 1,
-                prevArrow: $('.identifier button.left'),
-                nextArrow: $('.identifier button.right'),
+                prevArrow: $('.sscms-carousel-code button.left'),
+                nextArrow: $('.sscms-carousel-code button.right'),
                 appendArrows: false,
                 autoplay: true,
                 autoplaySpeed: 2000,
@@ -85,7 +84,7 @@ final class CarouselTwigGeneratorTest extends AbstractTwigGeneratorTest
         });
     </script>
 </div>
-{% do sscms_push_to_element_stack(1, "code", "identifier", "carousel") %}
+
 TWIG;
     }
 }

@@ -59,5 +59,14 @@
 
             <tag name="controller.service_arguments"/>
         </service>
+
+        <service id="setono_sylius_cms.controller.action.admin.update_element_redirect"
+                 class="Setono\SyliusCMSPlugin\Controller\Action\Admin\UpdateElementRedirectAction">
+            <argument type="service" id="router"/>
+            <argument type="service" id="doctrine"/>
+            <argument>%sylius.resources%</argument>
+
+            <tag name="controller.service_arguments"/>
+        </service>
     </services>
 </container>

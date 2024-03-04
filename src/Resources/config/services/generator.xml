@@ -2,9 +2,6 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="setono_sylius_cms.generator.path"
-                 class="Setono\SyliusCMSPlugin\Generator\PathGenerator"/>
-
         <service id="setono_sylius_cms.generator.page.preview_link"
                  class="Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGenerator">
             <argument type="service" id="router"/>
@@ -52,5 +49,12 @@
 
             <tag name="setono_sylius_cms.twig_generator"/>
         </service>
+
+        <!-- Misc -->
+        <service id="setono_sylius_cms.generator.path"
+                 class="Setono\SyliusCMSPlugin\Generator\PathGenerator"/>
+
+        <service id="setono_sylius_cms.generator.element_identifier"
+                 class="Setono\SyliusCMSPlugin\Generator\ElementIdentifierGenerator"/>
     </services>
 </container>

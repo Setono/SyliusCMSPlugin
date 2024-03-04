@@ -20,7 +20,6 @@ final class AssetTwigGeneratorTest extends AbstractTwigGeneratorTest
         $asset = $this->prophesize(AssetInterface::class);
         $asset->getMimeType()->willReturn('image/png');
         $asset->getId()->willReturn(1);
-        $asset->getIdentifier()->willReturn('identifier');
         $asset->getCode()->willReturn('code');
         $asset->getType()->willReturn('asset');
         $asset->getName()->willReturn('name');
@@ -36,8 +35,8 @@ final class AssetTwigGeneratorTest extends AbstractTwigGeneratorTest
     protected function getExpectedTwig(): string
     {
         return <<<TWIG
-<img src="/cms/asset/1" alt="name" class="sscms-asset identifier">
-{% do sscms_push_to_element_stack(1, "code", "identifier", "asset") %}
+<img src="/cms/asset/1" alt="name" class="sscms-asset sscms-asset-code">
+
 TWIG;
     }
 }

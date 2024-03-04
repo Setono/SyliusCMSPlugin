@@ -24,7 +24,6 @@ final class BlockTwigGeneratorTest extends AbstractTwigGeneratorTest
     {
         $block = $this->prophesize(BlockInterface::class);
         $block->setCurrentLocale('en_US')->shouldBeCalled();
-        $block->getIdentifier()->willReturn('identifier');
         $block->getContent()->willReturn('content');
         $block->getId()->willReturn(1);
         $block->getCode()->willReturn('code');
@@ -41,8 +40,8 @@ final class BlockTwigGeneratorTest extends AbstractTwigGeneratorTest
     protected function getExpectedTwig(): string
     {
         return <<<TWIG
-<div class="sscms-block identifier">content</div>
-{% do sscms_push_to_element_stack(1, "code", "identifier", "block") %}
+<div class="sscms-block sscms-block-code">content</div>
+
 TWIG;
     }
 }

@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig\Extension;
 
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Setono\SyliusCMSPlugin\Event\ElementRenderedEvent;
+use Setono\SyliusCMSPlugin\Generator\ElementIdentifierGeneratorInterface;
 use Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Previewer\Preview;
 use Setono\SyliusCMSPlugin\Previewer\PreviewerInterface;
-use Setono\SyliusCMSPlugin\Stack\ElementId;
-use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
+use Setono\SyliusCMSPlugin\Stack\RenderedElement;
 use Setono\SyliusCMSPlugin\Twig\LogicalTemplateName;
-use function sprintf;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Component\Resource\ResourceActions;
@@ -37,7 +38,8 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
         private readonly PreviewerInterface $previewer,
         private readonly ChannelContextInterface $channelContext,
         private readonly LocaleContextInterface $localeContext,
-        private readonly ElementStackInterface $elementStack,
+        private readonly ElementIdentifierGeneratorInterface $elementIdentifierGenerator,
+        private readonly EventDispatcherInterface $eventDispatcher,
     ) {
         $this->logger = new NullLogger();
     }
@@ -241,12 +243,9 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
         return sprintf('%.02F %s', $bytes / (1024 ** $i), $sizes[$i]);
     }
 
-    /**
-     * @internal
-     */
-    public function pushToElementStack(int $id, string $code, string $identifier, string $type): void
+    public function elementIdentifier(ElementInterface|RenderedElement $element): string
     {
-        $this->elementStack->push(new ElementId($id, $code, $identifier, $type));
+        return $this->elementIdentifierGenerator->generate($element);
     }
 
     public function setLogger(LoggerInterface $logger): void
@@ -276,14 +275,18 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
         );
 
         try {
-            /**
-             * @psalm-suppress InternalMethod
-             *
-             * @var mixed $res
-             */
-            $res = $env->resolveTemplate((string) $logicalTemplateName)->render(array_merge($context, $variables));
+            $context = array_merge($context, $variables);
 
-            return is_string($res) ? $res : '';
+            /** @var string $res */
+            $res = $env->load($logicalTemplateName->toString())->render($context);
+
+            $this->eventDispatcher->dispatch(new ElementRenderedEvent(
+                RenderedElement::fromLogicalTemplateName($logicalTemplateName),
+                $logicalTemplateName,
+                $context,
+            ));
+
+            return $res;
         } catch (LoaderError $e) {
             $this->logger->error(sprintf(
                 'An error occurred loading the %s "%s" (logical name: %s): %s',

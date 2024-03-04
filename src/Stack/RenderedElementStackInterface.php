@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Stack;
 
 /**
- * @extends \Traversable<array-key, ElementId>
+ * @extends \Traversable<array-key, RenderedElement>
  */
-interface ElementStackInterface extends \Traversable, \Countable
+interface RenderedElementStackInterface extends \Traversable, \Countable
 {
     /**
      * Pushes an element onto the stack
      *
-     * @param ElementId|array<array-key, ElementId> $elements
+     * @param RenderedElement|array<array-key, RenderedElement> $elements
      */
-    public function push($elements): void;
+    public function push(array|RenderedElement $elements): void;
 
     public function isEmpty(): bool;
 
@@ -24,22 +24,22 @@ interface ElementStackInterface extends \Traversable, \Countable
     public function hasElements(): bool;
 
     /**
-     * @return array<array-key, ElementId>
+     * @return array<array-key, RenderedElement>
      */
     public function getAssets(): array;
 
     /**
-     * @return array<array-key, ElementId>
+     * @return array<array-key, RenderedElement>
      */
     public function getBlocks(): array;
 
     /**
-     * @return array<array-key, ElementId>
+     * @return array<array-key, RenderedElement>
      */
     public function getCarousels(): array;
 
     /**
-     * @return array<array-key, ElementId>
+     * @return array<array-key, RenderedElement>
      */
     public function getPages(): array;
 }

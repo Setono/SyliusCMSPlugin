@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\EventSubscriber;
 
+use Setono\SyliusCMSPlugin\Event\ElementRenderedEvent;
 use Setono\SyliusCMSPlugin\Security\Voter\ShowToolbarVoter;
-use Setono\SyliusCMSPlugin\Stack\ElementStackInterface;
+use Setono\SyliusCMSPlugin\Stack\RenderedElementStackInterface;
 use Sylius\Bundle\CoreBundle\SectionResolver\SectionProviderInterface;
 use Sylius\Bundle\ShopBundle\SectionResolver\ShopSection;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -18,7 +19,7 @@ final class AddToolbarSubscriber implements EventSubscriberInterface
 {
     public function __construct(
         private readonly Environment $twig,
-        private readonly ElementStackInterface $elementStack,
+        private readonly RenderedElementStackInterface $elementStack,
         private readonly SectionProviderInterface $sectionProvider,
         private readonly AuthorizationCheckerInterface $authorizationChecker,
     ) {
@@ -27,6 +28,7 @@ final class AddToolbarSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
+            ElementRenderedEvent::class => 'addToStack',
             KernelEvents::RESPONSE => ['add', -1000],
         ];
     }
@@ -70,5 +72,10 @@ final class AddToolbarSubscriber implements EventSubscriberInterface
         $content = str_replace('</body>', $toolbar . '</body>', $content);
 
         $response->setContent($content);
+    }
+
+    public function addToStack(ElementRenderedEvent $event): void
+    {
+        $this->elementStack->push($event->element);
     }
 }

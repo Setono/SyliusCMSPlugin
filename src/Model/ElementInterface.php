@@ -21,9 +21,4 @@ interface ElementInterface extends CodeAwareInterface, InternalDescriptionAwareI
     public function getId(): ?int;
 
     public function getType(): string;
-
-    /**
-     * The identifier MUST be unique across ALL classes implementing this interface
-     */
-    public function getIdentifier(): string;
 }
