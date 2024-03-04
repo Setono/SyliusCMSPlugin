@@ -215,4 +215,18 @@
             {% endfor %}
         </ul>
     {% endif %}
+
+    {% if elements.pages is not empty %}
+        <div class="sscms-subheader">{{ 'setono_sylius_cms.ui.pages'|trans }}</div>
+        <ul>
+            {% for element in elements.pages %}
+                <li>
+                    <a href="{{ path('setono_sylius_cms_admin_update_element_redirect', {'type': element.type, 'code': element.code}) }}"
+                       data-identifier="{{ sscms_element_identifier(element) }}" target="_blank">
+                        {{ element.code }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 </div>
