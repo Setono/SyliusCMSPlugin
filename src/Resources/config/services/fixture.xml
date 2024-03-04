@@ -50,8 +50,6 @@
             <argument type="service" id="setono_sylius_cms.factory.block" />
             <argument type="service" id="setono_sylius_cms.repository.block" />
             <argument type="service" id="sylius.repository.locale" />
-            <argument type="service" id="setono_editorjs.parser" />
-            <argument type="service" id="setono_editorjs.renderer" />
         </service>
 
         <!-- Carousel -->

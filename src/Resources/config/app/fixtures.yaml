@@ -21,7 +21,7 @@ sylius_fixtures:
                             custom_block_carousel_slide_1:
                                 code: 'block_carousel_slide_1'
                                 internalDescription: 'Slide 1 of Carousel'
-                                rawContent:
+                                content:
                                     time: 1637858216112
                                     blocks:
                                         -   id: 'cs1_1'
@@ -38,7 +38,7 @@ sylius_fixtures:
                             custom_block_carousel_slide_2:
                                 code: 'block_carousel_slide_2'
                                 internalDescription: 'Slide 2 of Carousel'
-                                rawContent:
+                                content:
                                     time: 1637858216112
                                     blocks:
                                         -   id: 'cs2_1'
@@ -54,7 +54,7 @@ sylius_fixtures:
                             custom_block_terms_sidebar:
                                 code: 'block_terms_sidebar'
                                 internalDescription: 'Terms sidebar'
-                                rawContent:
+                                content:
                                     time: 1637858216112
                                     blocks:
                                         -   id: 'ts1'
@@ -78,7 +78,7 @@ sylius_fixtures:
                             custom_block_terms:
                                 code: 'block_terms'
                                 internalDescription: 'Terms content'
-                                rawContent:
+                                content:
                                     time: 1637858216112
                                     blocks:
                                         -   id: 't1'
@@ -97,7 +97,7 @@ sylius_fixtures:
                                     version: 2.22.2
                                 translations:
                                     de_DE:
-                                        rawContent:
+                                        content:
                                             time: 1637858216112
                                             blocks:
                                                 -   id: 'det1'

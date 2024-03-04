@@ -11,6 +11,5 @@
         </id>
 
         <field name="content" type="text" nullable="true" />
-        <field name="rawContent" type="text" nullable="true" />
     </mapped-superclass>
 </doctrine-mapping>

@@ -6,8 +6,6 @@ namespace Setono\SyliusCMSPlugin\Fixture\Factory;
 
 use Faker\Factory;
 use Faker\Generator;
-use Setono\EditorJS\Parser\ParserInterface;
-use Setono\EditorJS\Renderer\RendererInterface;
 use Setono\SyliusCMSPlugin\Model\BlockInterface;
 use Setono\SyliusCMSPlugin\Model\BlockTranslation;
 use Setono\SyliusCMSPlugin\Repository\BlockRepositoryInterface;
@@ -31,8 +29,6 @@ class BlockExampleFactory extends AbstractExampleFactory
         protected readonly FactoryInterface $blockFactory,
         protected readonly BlockRepositoryInterface $blockRepository,
         protected readonly RepositoryInterface $localeRepository,
-        protected readonly ParserInterface $parser,
-        protected readonly RendererInterface $renderer,
     ) {
         $this->faker = Factory::create();
         $this->optionsResolver = new OptionsResolver();
@@ -56,17 +52,11 @@ class BlockExampleFactory extends AbstractExampleFactory
             $block->setCode($code);
         }
 
-        if (array_key_exists('rawContent', $options)) {
-            $rawContent = $options['rawContent'];
-            Assert::string($rawContent);
+        if (array_key_exists('content', $options)) {
+            $content = $options['content'];
+            Assert::string($content);
 
-            $block->setDefaultRawContent($rawContent);
-
-            $html = $this->renderer->render(
-                $this->parser->parse($rawContent),
-            );
-
-            $block->setDefaultContent($html);
+            $block->setDefaultContent($content);
         }
 
         if (array_key_exists('translations', $options)) {
@@ -92,17 +82,11 @@ class BlockExampleFactory extends AbstractExampleFactory
         /** @var BlockTranslation $translation */
         $translation = $block->getTranslation($localeCode);
 
-        if (array_key_exists('rawContent', $options)) {
-            $rawContent = $options['rawContent'];
-            Assert::string($rawContent);
+        if (array_key_exists('content', $options)) {
+            $content = $options['content'];
+            Assert::string($content);
 
-            $translation->setRawContent($rawContent);
-
-            $html = $this->renderer->render(
-                $this->parser->parse($rawContent),
-            );
-
-            $translation->setContent($html);
+            $translation->setContent($content);
         }
     }
 
@@ -111,19 +95,19 @@ class BlockExampleFactory extends AbstractExampleFactory
         /** @psalm-suppress UnusedClosureParam, MissingClosureParamType */
         $resolver
             ->setDefault('code', fn (): string => $this->faker->uuid())
-            ->setDefault('rawContent', fn (): array => [
+            ->setDefault('content', fn (): array => [
                 'time' => 1637858216112,
                 'blocks' => [],
                 'version' => '2.22.2',
             ])
-            ->setNormalizer('rawContent', function (Options $options, $rawContent): string {
-                if (is_array($rawContent)) {
-                    $rawContent = json_encode($rawContent);
+            ->setNormalizer('content', function (Options $options, $content): string {
+                if (is_array($content)) {
+                    $content = json_encode($content);
                 }
 
-                Assert::string($rawContent);
+                Assert::string($content);
 
-                return $rawContent;
+                return $content;
             })
             ->setDefault('translations', [])
             ->setAllowedTypes('translations', ['array'])

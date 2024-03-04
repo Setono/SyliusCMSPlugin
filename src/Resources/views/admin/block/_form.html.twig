@@ -25,7 +25,7 @@
                     {{ 'setono_sylius_cms.form.block.max_upload_size'|trans({'%max_upload_size%': sscms_readable_bytes(max_upload_size) }) }}
                 </div>
             {% endif %}
-            {{ form_row(form.defaultRawContent) }}
+            {{ form_row(form.defaultContent) }}
         </div>
     </div>
     <div class="column">
@@ -33,6 +33,7 @@
     </div>
 </div>
 
+{# import as module and distribute these together with plugin? #}
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.23.2"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/embed@2.5.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.2.0"></script>
@@ -85,7 +86,10 @@
     document.forms['{{ form.vars.name }}'].addEventListener('submit', (e) => {
         editors.forEach((editor) => {
             editor.obj.save().then((json) => {
-                document.getElementById(editor.source).value = JSON.stringify(json);
+                document.getElementById(editor.source).value = '';
+                if(json.blocks.length > 0) {
+                    document.getElementById(editor.source).value = JSON.stringify(json);
+                }
             }).catch((error) => {
                 console.log('Saving failed: ', error)
             });

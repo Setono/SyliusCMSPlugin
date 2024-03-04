@@ -89,7 +89,10 @@
     document.forms['{{ form.vars.name }}'].addEventListener('submit', (e) => {
         editors.forEach((editor) => {
             editor.obj.save().then((json) => {
-                document.getElementById(editor.source).value = JSON.stringify(json);
+                document.getElementById(editor.source).value = '';
+                if(json.blocks.length > 0) {
+                    document.getElementById(editor.source).value = JSON.stringify(json);
+                }
             }).catch((error) => {
                 console.log('Saving failed: ', error)
             });

@@ -49,8 +49,6 @@
         <!-- Block -->
         <service id="setono_sylius_cms.form.type.block"
                  class="Setono\SyliusCMSPlugin\Form\Type\BlockType">
-            <argument type="service" id="setono_editorjs.parser"/>
-            <argument type="service" id="setono_editorjs.renderer"/>
             <argument type="service" id="request_stack"/>
             <argument>%setono_sylius_cms.model.block.class%</argument>
             <argument>%setono_sylius_cms.form.type.block.validation_groups%</argument>
@@ -65,8 +63,6 @@
 
         <service id="setono_sylius_cms.form.type.block_translation"
                  class="Setono\SyliusCMSPlugin\Form\Type\BlockTranslationType">
-            <argument type="service" id="setono_editorjs.parser"/>
-            <argument type="service" id="setono_editorjs.renderer"/>
             <argument>%setono_sylius_cms.model.block_translation.class%</argument>
             <argument>%setono_sylius_cms.form.type.block_translation.validation_groups%</argument>
 

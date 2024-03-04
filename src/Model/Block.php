@@ -17,8 +17,6 @@ class Block extends Element implements BlockInterface
 
     protected ?string $defaultContent = null;
 
-    protected ?string $defaultRawContent = null;
-
     public function __construct()
     {
         $this->initializeTranslationsCollection();
@@ -37,16 +35,6 @@ class Block extends Element implements BlockInterface
     public function setDefaultContent(?string $defaultContent): void
     {
         $this->defaultContent = $defaultContent;
-    }
-
-    public function getDefaultRawContent(): ?string
-    {
-        return $this->defaultRawContent;
-    }
-
-    public function setDefaultRawContent(?string $defaultRawContent): void
-    {
-        $this->defaultRawContent = $defaultRawContent;
     }
 
     public function getContent(): ?string
