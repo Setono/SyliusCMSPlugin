@@ -11,10 +11,6 @@
         <div class="ui segment">
             <h4 class="ui medium header">How templates work</h4>
             <p>Templates are written in the template language <a href="https://twig.symfony.com/doc/2.x/templates.html" target="_blank">Twig</a>. You can read about the advantages of that in the <a href="https://docs.sylius-cms.com/concepts/templates" target="_blank">docs</a>.</p>
-            <p>To use a template, create everything you want in HTML and then insert 'section tags' where you want dynamic content, i.e. editable blocks.</p>
-            <p>Here is an example of a working template:</p>
-            <pre>{{ '{% block ' ~ constant('Setono\\SyliusCMSPlugin\\Twig\\Extractor\\SectionExtractorInterface::SECTION_PREFIX')  ~ 'content %}Default section content{% endblock %}'|e }}</pre>
-            <p>This creates a section named <code>content</code> (the part after <code>{{ constant('Setono\\SyliusCMSPlugin\\Twig\\Extractor\\SectionExtractorInterface::SECTION_PREFIX') }}</code>.</p>
         </div>
     </div>
     <div class="sixteen wide column">
