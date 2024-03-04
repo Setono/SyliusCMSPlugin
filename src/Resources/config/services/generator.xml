@@ -43,9 +43,9 @@
         </service>
 
         <service id="setono_sylius_cms.generator.twig.page"
-                 class="Setono\SyliusCMSPlugin\Generator\Twig\PageTwigGenerator">
-            <argument type="service" id="setono_editorjs.parser"/>
-            <argument type="service" id="setono_editorjs.renderer"/>
+                 class="Setono\SyliusCMSPlugin\Generator\Twig\PageTwigGenerator"
+                 parent="setono_sylius_cms.generator.twig.abstract">
+            <argument>page</argument>
 
             <tag name="setono_sylius_cms.twig_generator"/>
         </service>

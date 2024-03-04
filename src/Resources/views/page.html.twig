@@ -3,5 +3,5 @@
 {% block title %}{{ page.title }}{% endblock %}
 
 {% block content %}
-    <div class="sscms-page {{ sscms_element_identifier(page) }}">{{ sscms_page(page.code) }}</div>
+   {{ sscms_page(page.code) }}
 {% endblock %}
