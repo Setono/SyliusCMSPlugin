@@ -17,11 +17,12 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension
         /**
          * @psalm-suppress PossiblyNullArgument
          *
-         * @var array{resources: array<string, mixed>, templates: array} $config
+         * @var array{resources: array<string, mixed>, routing: array{pages_path_prefix: string}, templates: array} $config
          */
         $config = $this->processConfiguration($this->getConfiguration([], $container), $configs);
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
 
+        $container->setParameter('setono_sylius_cms.routing.pages_path_prefix', $config['routing']['pages_path_prefix']);
         $container->setParameter('setono_sylius_cms.templates', $config['templates']);
 
         $this->registerResources('setono_sylius_cms', SyliusResourceBundle::DRIVER_DOCTRINE_ORM, $config['resources'], $container);

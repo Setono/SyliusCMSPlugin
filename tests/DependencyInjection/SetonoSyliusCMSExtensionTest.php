@@ -26,6 +26,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     {
         $this->load();
 
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.routing.pages_path_prefix', 'pages');
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.templates', []);
     }
 }

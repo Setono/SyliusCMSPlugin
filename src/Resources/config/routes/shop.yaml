@@ -1,5 +1,5 @@
 setono_sylius_cms_shop_page_show:
-    path: /pages/{slug}
+    path: /%setono_sylius_cms.routing.pages_path_prefix%/{slug}
     methods: GET
     defaults:
         _controller: setono_sylius_cms.controller.action.show_page
