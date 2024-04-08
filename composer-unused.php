@@ -8,6 +8,7 @@ use ComposerUnused\ComposerUnused\Configuration\NamedFilter;
 return static function (Configuration $config): Configuration {
     return $config
         ->addNamedFilter(NamedFilter::fromString('setono/editorjs-bundle'))
+        ->addNamedFilter(NamedFilter::fromString('setono/editorjs-php'))
         ->addNamedFilter(NamedFilter::fromString('stof/doctrine-extensions-bundle'))
     ;
 };
