@@ -50,6 +50,9 @@ final class ConfigurationTest extends TestCase
     public function processed_value_contains_required_value(): void
     {
         $this->assertProcessedConfigurationEquals([], [
+            'routing' => [
+                'pages_path_prefix' => 'pages',
+            ],
             'templates' => [],
             'resources' => [
                 'asset' => [
