@@ -37,12 +37,12 @@ class Page extends Element implements PageInterface
 
     public function getTitle(): ?string
     {
-        return $this->getTranslation()->getMetaDescription();
+        return $this->getTranslation()->getTitle();
     }
 
-    public function setSlug(?string $slug): void
+    public function setTitle(?string $title): void
     {
-        $this->getTranslation()->setSlug($slug);
+        $this->getTranslation()->setTitle($title);
     }
 
     public function getSlug(): ?string
@@ -50,9 +50,9 @@ class Page extends Element implements PageInterface
         return $this->getTranslation()->getSlug();
     }
 
-    public function setTitle(?string $title): void
+    public function setSlug(?string $slug): void
     {
-        $this->getTranslation()->setTitle($title);
+        $this->getTranslation()->setSlug($slug);
     }
 
     public function getMetaDescription(): ?string
