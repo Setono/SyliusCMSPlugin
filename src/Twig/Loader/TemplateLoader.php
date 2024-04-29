@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Twig\Loader;
 use Exception;
 use Setono\SyliusCMSPlugin\Model\TemplateInterface;
 use Setono\SyliusCMSPlugin\Repository\TemplateRepositoryInterface;
+use Setono\SyliusCMSPlugin\Twig\LogicalTemplateName;
 use Twig\Error\LoaderError;
 use Twig\Loader\LoaderInterface;
 use Twig\Source;
@@ -35,7 +36,13 @@ final class TemplateLoader implements LoaderInterface
      */
     public function exists($name): bool
     {
-        return null !== $this->findTemplate($name);
+        try {
+            LogicalTemplateName::createFromString($name);
+
+            return false;
+        } catch (\InvalidArgumentException) {
+            return null !== $this->findTemplate($name);
+        }
     }
 
     /**
