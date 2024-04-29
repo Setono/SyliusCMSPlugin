@@ -11,7 +11,7 @@
                  class="Setono\SyliusCMSPlugin\Twig\Loader\TemplateLoader">
             <argument type="service" id="setono_sylius_cms.repository.template"/>
 
-            <tag name="twig.loader"/>
+            <tag name="twig.loader" priority="-100"/>
         </service>
 
         <service id="setono_sylius_cms.twig.extension"
@@ -43,7 +43,11 @@
             <argument type="service" id="setono_sylius_cms.generator.twig.composite"/>
             <argument>asset</argument>
 
-            <tag name="twig.loader"/>
+            <call method="setLogger">
+                <argument type="service" id="logger"/>
+            </call>
+
+            <tag name="twig.loader" priority="-70"/>
         </service>
 
         <service id="setono_sylius_cms.twig.loader.element_loader.block"
@@ -52,7 +56,11 @@
             <argument type="service" id="setono_sylius_cms.generator.twig.composite"/>
             <argument>block</argument>
 
-            <tag name="twig.loader"/>
+            <call method="setLogger">
+                <argument type="service" id="logger"/>
+            </call>
+
+            <tag name="twig.loader" priority="-60"/>
         </service>
 
         <service id="setono_sylius_cms.twig.loader.element_loader.carousel"
@@ -61,7 +69,11 @@
             <argument type="service" id="setono_sylius_cms.generator.twig.composite"/>
             <argument>carousel</argument>
 
-            <tag name="twig.loader"/>
+            <call method="setLogger">
+                <argument type="service" id="logger"/>
+            </call>
+
+            <tag name="twig.loader" priority="-80"/>
         </service>
 
         <service id="setono_sylius_cms.twig.loader.element_loader.page"
@@ -70,7 +82,11 @@
             <argument type="service" id="setono_sylius_cms.generator.twig.composite"/>
             <argument>page</argument>
 
-            <tag name="twig.loader"/>
+            <call method="setLogger">
+                <argument type="service" id="logger"/>
+            </call>
+
+            <tag name="twig.loader" priority="-90"/>
         </service>
     </services>
 </container>

@@ -6,6 +6,10 @@ namespace Setono\SyliusCMSPlugin\Twig\Loader;
 
 use Exception;
 use InvalidArgumentException;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+use Setono\SyliusCMSPlugin\Exception\NonExistingElementException;
 use Setono\SyliusCMSPlugin\Generator\Twig\TwigGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\Element;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
@@ -16,8 +20,10 @@ use Twig\Loader\LoaderInterface;
 use Twig\Source;
 use Webmozart\Assert\Assert;
 
-final class GenericElementLoader implements LoaderInterface
+final class GenericElementLoader implements LoaderInterface, LoggerAwareInterface
 {
+    private LoggerInterface $logger;
+
     /** @var array<string, ElementInterface> */
     private array $cache = [];
 
@@ -30,6 +36,7 @@ final class GenericElementLoader implements LoaderInterface
     ) {
         Assert::oneOf($supportsType, Element::getTypes());
         $this->supportsType = $supportsType;
+        $this->logger = new NullLogger();
     }
 
     /**
@@ -71,7 +78,17 @@ final class GenericElementLoader implements LoaderInterface
     {
         $logicalTemplateName = LogicalTemplateName::createFromString($name);
 
-        $element = $this->getElement($logicalTemplateName);
+        try {
+            $element = $this->getElement($logicalTemplateName);
+        } catch (NonExistingElementException) {
+            $this->logger->error(sprintf(
+                'Element with type "%s" and code "%s" does not exist',
+                $logicalTemplateName->type,
+                $logicalTemplateName->code,
+            ));
+
+            return new Source('', (string) $logicalTemplateName);
+        }
 
         return new Source($this->twigGenerator->generate($element, [
             'channelCode' => $logicalTemplateName->channelCode,
@@ -80,6 +97,8 @@ final class GenericElementLoader implements LoaderInterface
     }
 
     /**
+     * todo shouldn't this method just return true always?
+     *
      * @param string $name
      * @param int $time
      */
@@ -89,7 +108,6 @@ final class GenericElementLoader implements LoaderInterface
 
         $element = $this->getElement($logicalTemplateName);
 
-        /** @psalm-suppress PossiblyNullReference */
         $updatedAt = $element->getUpdatedAt();
         if (null === $updatedAt) {
             return false;
@@ -99,7 +117,8 @@ final class GenericElementLoader implements LoaderInterface
     }
 
     /**
-     * @throws LoaderError when the logical template name does not exist, the database connection isn't there or the respective tables hasn't been created yet
+     * @throws NonExistingElementException when the logical template name does not exist
+     * @throws LoaderError when the database connection isn't there or the respective tables hasn't been created yet
      */
     private function getElement(LogicalTemplateName $logicalTemplateName): ElementInterface
     {
@@ -120,15 +139,17 @@ final class GenericElementLoader implements LoaderInterface
             }
 
             if (null === $element) {
-                throw new LoaderError(sprintf(
-                    'The logical template name "%s" does not exist',
-                    (string) $logicalTemplateName,
-                ));
+                throw NonExistingElementException::fromLogicalTemplateName($logicalTemplateName);
             }
 
             $this->cache[$logicalTemplateName->value] = $element;
         }
 
         return $this->cache[$logicalTemplateName->value];
+    }
+
+    public function setLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
     }
 }
