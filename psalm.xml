@@ -35,6 +35,11 @@
         </MissingTemplateParam>
         <RedundantConditionGivenDocblockType errorLevel="suppress"/>
         <PluginIssue name="QueryBuilderSetParameter" errorLevel="suppress"/>
+        <PropertyNotSetInConstructor errorLevel="suppress">
+            <errorLevel type="suppress">
+                <directory name="src/Entity"/>
+            </errorLevel>
+        </PropertyNotSetInConstructor>
     </issueHandlers>
     <forbiddenFunctions>
         <function name="dd"/>

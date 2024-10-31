@@ -9,7 +9,6 @@ use Setono\SyliusCMSPlugin\Model\ElementInterface;
 
 /**
  * @extends CompositeService<TwigGeneratorInterface>
- *
  * @implements TwigGeneratorInterface<ElementInterface>
  */
 final class CompositeTwigGenerator extends CompositeService implements TwigGeneratorInterface

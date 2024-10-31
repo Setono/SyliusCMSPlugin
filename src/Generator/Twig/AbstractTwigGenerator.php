@@ -9,7 +9,6 @@ use Twig\Environment;
 
 /**
  * @template T of ElementInterface
- *
  * @implements TwigGeneratorInterface<T>
  */
 abstract class AbstractTwigGenerator implements TwigGeneratorInterface
