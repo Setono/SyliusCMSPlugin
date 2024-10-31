@@ -5,13 +5,12 @@
         right: 0;
         max-width: 300px;
         min-height: 100px;
-        background-color: #fff;
+        background-color: #fff !important;
         z-index: 999999;
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        -webkit-box-shadow: 0 0 20px 1px rgba(0, 0, 0, 0.2);
-        box-shadow: 0 0 20px 1px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 0 20px 1px rgba(0, 0, 0, 0.2) !important;
         padding: 10px;
-        font-size: 13px;
+        font-size: 13px !important;
         {% if position is not null %}
             transform: {{ position }};
         {% endif %}
@@ -22,8 +21,8 @@
         flex-wrap: nowrap;
         justify-content: center;
         align-items: center;
-        font-size: 16px;
-        border-bottom: 2px solid lightgray;
+        font-size: 16px !important;
+        border-bottom: 2px solid lightgray !important;
         text-align: center;
         padding-bottom: 5px;
     }
@@ -42,17 +41,17 @@
 
     #sscms-toolbar .sscms-header, #sscms-toolbar .sscms-subheader {
         text-transform: uppercase;
-        font-weight: bold;
+        font-weight: bold !important;
     }
 
     #sscms-toolbar ul {
         margin: 0;
         padding: 0;
-        list-style-position: inside;
+        list-style-position: inside !important;
     }
 
     #sscms-toolbar ul ::marker {
-        color: lightgray;
+        color: lightgray !important;
     }
 
     .sscms-hover {
