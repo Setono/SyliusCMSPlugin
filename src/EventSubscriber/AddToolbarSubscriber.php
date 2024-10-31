@@ -35,38 +35,35 @@ final class AddToolbarSubscriber implements EventSubscriberInterface
 
     public function add(ResponseEvent $event): void
     {
-        if (!$event->isMainRequest()) {
-            return;
-        }
-
-        if (!$this->sectionProvider->getSection() instanceof ShopSection) {
-            return;
-        }
-
-        if (!$this->elementStack->hasElements()) {
-            return;
-        }
-
-        if (!$this->authorizationChecker->isGranted(ShowToolbarVoter::ATTRIBUTE)) {
+        if (!$event->isMainRequest() ||
+            !$this->elementStack->hasElements() ||
+            !$this->sectionProvider->getSection() instanceof ShopSection ||
+            !$this->authorizationChecker->isGranted(ShowToolbarVoter::ATTRIBUTE)
+        ) {
             return;
         }
 
         $response = $event->getResponse();
+        $request = $event->getRequest();
+
+        // This is taken from \Symfony\Bundle\WebProfilerBundle\EventListener\WebDebugToolbarListener
+        if ($response->isRedirection() ||
+            $request->isXmlHttpRequest() ||
+            'html' !== $request->getRequestFormat() ||
+            str_contains($response->headers->get('Content-Disposition', ''), 'attachment;') ||
+            ($response->headers->has('Content-Type') && !str_contains($response->headers->get('Content-Type') ?? '', 'html'))
+        ) {
+            return;
+        }
+
         $content = $response->getContent();
         if (false === $content) {
             return;
         }
 
-        $request = $event->getRequest();
-
-        $position = null;
-        if ($request->cookies->has('sscms_toolbar')) {
-            $position = $request->cookies->get('sscms_toolbar');
-        }
-
         $toolbar = $this->twig->render('@SetonoSyliusCMSPlugin/toolbar.html.twig', [
             'elements' => $this->elementStack,
-            'position' => $position,
+            'position' => $request->cookies->get('sscms_toolbar'),
         ]);
 
         $content = str_replace('</body>', $toolbar . '</body>', $content);
