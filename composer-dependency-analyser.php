@@ -2,6 +2,7 @@
 
 use ShipMonk\ComposerDependencyAnalyser\Config\Configuration;
 use ShipMonk\ComposerDependencyAnalyser\Config\ErrorType;
+use Sylius\Bundle\ShopBundle\SectionResolver\ShopSection;
 
 return (new Configuration())
     ->addPathToExclude(__DIR__ . '/tests')
@@ -11,4 +12,5 @@ return (new Configuration())
     ->ignoreErrorsOnPackage('setono/editorjs-php', [ErrorType::UNUSED_DEPENDENCY])
     ->ignoreErrorsOnPackage('stof/doctrine-extensions-bundle', [ErrorType::UNUSED_DEPENDENCY])
     ->ignoreErrorsOnPackage('symfony/property-access', [ErrorType::UNUSED_DEPENDENCY])
+    ->ignoreUnknownClasses([ShopSection::class])
 ;
