@@ -37,7 +37,7 @@
         <PluginIssue name="QueryBuilderSetParameter" errorLevel="suppress"/>
         <PropertyNotSetInConstructor errorLevel="suppress">
             <errorLevel type="suppress">
-                <directory name="src/Entity"/>
+                <directory name="src/Model"/>
             </errorLevel>
         </PropertyNotSetInConstructor>
     </issueHandlers>
