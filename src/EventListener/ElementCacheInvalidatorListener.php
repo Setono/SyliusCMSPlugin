@@ -63,7 +63,7 @@ final class ElementCacheInvalidatorListener
         foreach ($this->getChannels() as $channel) {
             foreach ($channel->getLocales() as $locale) {
                 $this->purger->purge((string) (new LogicalTemplateName(
-                    Element::getElementType($entity),
+                    Element::getType($entity),
                     (string) $channel->getCode(),
                     (string) $locale->getCode(),
                     (string) $entity->getCode(),

@@ -20,8 +20,8 @@ final class ElementTest extends TestCase
      */
     public function it_returns_element_type(ElementInterface|string $element, string $expected): void
     {
-        self::assertSame($expected, Element::getElementType($element));
-        self::assertSame(str_replace('_', '-', $expected), Element::getElementType($element, '-'));
+        self::assertSame($expected, Element::getType($element));
+        self::assertSame(str_replace('_', '-', $expected), Element::getType($element, '-'));
     }
 
     /**

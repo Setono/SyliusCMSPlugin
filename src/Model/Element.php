@@ -34,8 +34,12 @@ abstract class Element implements ElementInterface
     /**
      * @param ElementInterface|class-string<ElementInterface> $element
      */
-    public static function getElementType(ElementInterface|string $element, string $separator = '_'): string
+    public static function getType(ElementInterface|string $element = null, string $separator = '_'): string
     {
+        if (null === $element) {
+            $element = static::class;
+        }
+
         $type = u((new \ReflectionClass($element))->getShortName())->snake();
 
         if ('_' !== $separator) {

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Stack;
 
-use Setono\SyliusCMSPlugin\Model\ElementInterface;
+use Setono\SyliusCMSPlugin\Model\Asset;
+use Setono\SyliusCMSPlugin\Model\Block;
+use Setono\SyliusCMSPlugin\Model\Carousel;
+use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Twig\LogicalTemplateName;
 
 final class RenderedElement
@@ -22,21 +25,21 @@ final class RenderedElement
 
     public function isAsset(): bool
     {
-        return ElementInterface::TYPE_ASSET === $this->type;
+        return Asset::getType() === $this->type;
     }
 
     public function isBlock(): bool
     {
-        return ElementInterface::TYPE_BLOCK === $this->type;
+        return Block::getType() === $this->type;
     }
 
     public function isCarousel(): bool
     {
-        return ElementInterface::TYPE_CAROUSEL === $this->type;
+        return Carousel::getType() === $this->type;
     }
 
     public function isPage(): bool
     {
-        return ElementInterface::TYPE_PAGE === $this->type;
+        return Page::getType() === $this->type;
     }
 }
