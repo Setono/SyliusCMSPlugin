@@ -11,8 +11,12 @@ use Psr\Log\NullLogger;
 use Setono\SyliusCMSPlugin\Event\ElementRenderedEvent;
 use Setono\SyliusCMSPlugin\Generator\ElementIdentifierGeneratorInterface;
 use Setono\SyliusCMSPlugin\Generator\Page\PreviewLinkGeneratorInterface;
+use Setono\SyliusCMSPlugin\Model\Asset;
 use Setono\SyliusCMSPlugin\Model\AssetInterface;
+use Setono\SyliusCMSPlugin\Model\Block;
+use Setono\SyliusCMSPlugin\Model\Carousel;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
+use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Previewer\Preview;
 use Setono\SyliusCMSPlugin\Previewer\PreviewerInterface;
@@ -46,22 +50,22 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
 
     public function asset(Environment $env, array $context, ?string $asset, array $variables = []): string
     {
-        return $this->renderElement($env, $context, $asset, ElementInterface::TYPE_ASSET, $variables);
+        return $this->renderElement($env, $context, $asset, Asset::getType(), $variables);
     }
 
     public function block(Environment $env, array $context, ?string $block, array $variables = []): string
     {
-        return $this->renderElement($env, $context, $block, ElementInterface::TYPE_BLOCK, $variables);
+        return $this->renderElement($env, $context, $block, Block::getType(), $variables);
     }
 
     public function carousel(Environment $env, array $context, ?string $carousel, array $variables = []): string
     {
-        return $this->renderElement($env, $context, $carousel, ElementInterface::TYPE_CAROUSEL, $variables);
+        return $this->renderElement($env, $context, $carousel, Carousel::getType(), $variables);
     }
 
     public function page(Environment $env, array $context, ?string $page, array $variables = []): string
     {
-        return $this->renderElement($env, $context, $page, ElementInterface::TYPE_PAGE, $variables);
+        return $this->renderElement($env, $context, $page, Page::getType(), $variables);
     }
 
     public function linkToRoute(

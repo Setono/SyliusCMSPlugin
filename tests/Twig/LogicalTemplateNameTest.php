@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Twig;
 
 use PHPUnit\Framework\TestCase;
-use Setono\SyliusCMSPlugin\Model\ElementInterface;
+use Setono\SyliusCMSPlugin\Model\Block;
 use Setono\SyliusCMSPlugin\Twig\LogicalTemplateName;
 
 /**
@@ -38,7 +38,7 @@ final class LogicalTemplateNameTest extends TestCase
      */
     public function it_casts_to_string(): void
     {
-        $logicalTemplateName = new LogicalTemplateName(ElementInterface::TYPE_BLOCK, 'FASHION_WEB', 'en_US', 'block1');
+        $logicalTemplateName = new LogicalTemplateName(Block::getType(), 'FASHION_WEB', 'en_US', 'block1');
 
         self::assertSame('__sscms/block/FASHION_WEB/en_US/block1', (string) $logicalTemplateName);
     }

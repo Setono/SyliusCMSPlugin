@@ -13,7 +13,7 @@ final class ElementIdentifierGenerator implements ElementIdentifierGeneratorInte
     public function generate(ElementInterface|RenderedElement $element): string
     {
         if ($element instanceof ElementInterface) {
-            return sprintf('sscms-%s-%s', Element::getElementType($element, '-'), (string) $element->getCode());
+            return sprintf('sscms-%s-%s', Element::getType($element, '-'), (string) $element->getCode());
         }
 
         return sprintf('sscms-%s-%s', $element->type, $element->code);
