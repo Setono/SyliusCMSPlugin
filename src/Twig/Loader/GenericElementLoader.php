@@ -85,7 +85,7 @@ final class GenericElementLoader implements LoaderInterface, LoggerAwareInterfac
             return new Source('', (string) $logicalTemplateName);
         }
 
-        return new Source($this->twigGenerator->generate($element, [
+        return new Source($this->twigGenerator->generate($element, $logicalTemplateName->channelCode, $logicalTemplateName->localeCode, [
             'channelCode' => $logicalTemplateName->channelCode,
             'localeCode' => $logicalTemplateName->localeCode,
         ]), (string) $logicalTemplateName);

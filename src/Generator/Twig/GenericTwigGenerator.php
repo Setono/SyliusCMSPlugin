@@ -26,10 +26,10 @@ class GenericTwigGenerator implements TwigGeneratorInterface
      * @param T $element
      * @param array<string, mixed> $context
      */
-    public function generate(ElementInterface $element, array $context = []): string
+    public function generate(ElementInterface $element, string $channelCode, string $localeCode, array $context = []): string
     {
-        if ($element instanceof TranslatableInterface && isset($context['localeCode']) && is_string($context['localeCode'])) {
-            $element->setCurrentLocale($context['localeCode']);
+        if ($element instanceof TranslatableInterface) {
+            $element->setCurrentLocale($localeCode);
         }
 
         return $this->twig->render($this->template, [
@@ -37,7 +37,7 @@ class GenericTwigGenerator implements TwigGeneratorInterface
         ]);
     }
 
-    public function supports(ElementInterface $element, array $context = []): bool
+    public function supports(ElementInterface $element, string $channelCode, string $localeCode, array $context = []): bool
     {
         return $element instanceof $this->supports;
     }

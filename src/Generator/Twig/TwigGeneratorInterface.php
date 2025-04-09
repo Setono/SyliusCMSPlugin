@@ -17,12 +17,12 @@ interface TwigGeneratorInterface
      * @param T $element
      * @param array<string, mixed> $context
      */
-    public function generate(ElementInterface $element, array $context = []): string;
+    public function generate(ElementInterface $element, string $channelCode, string $localeCode, array $context = []): string;
 
     /**
      * Returns true if the generator supports the given element
      *
      * @param T $element
      */
-    public function supports(ElementInterface $element, array $context = []): bool;
+    public function supports(ElementInterface $element, string $channelCode, string $localeCode, array $context = []): bool;
 }

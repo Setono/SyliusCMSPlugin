@@ -26,7 +26,7 @@ final class GenericTwigGeneratorTest extends TestCase
 
         $generator = new GenericTwigGenerator($environment, ConcreteElement::class, 'template.html.twig');
 
-        $twig = $generator->generate($element);
+        $twig = $generator->generate($element, 'FASHION_WEB', 'en_US');
 
         $this->assertSame('foo', $twig);
     }
