@@ -8,9 +8,9 @@ use Setono\SyliusCMSPlugin\Model\AssetInterface;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 
 /**
- * @extends  AbstractTwigGenerator<AssetInterface>
+ * @extends  GenericTwigGenerator<AssetInterface>
  */
-final class AssetTwigGenerator extends AbstractTwigGenerator
+final class AssetTwigGenerator extends GenericTwigGenerator
 {
     /**
      * @param AssetInterface $element
@@ -23,5 +23,10 @@ final class AssetTwigGenerator extends AbstractTwigGenerator
         }
 
         return parent::generate($element, $context);
+    }
+
+    public function supports(ElementInterface $element, array $context = []): bool
+    {
+        return $element instanceof AssetInterface;
     }
 }

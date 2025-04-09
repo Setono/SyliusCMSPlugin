@@ -44,9 +44,9 @@ final class Runtime implements RuntimeExtensionInterface, LoggerAwareInterface
         $this->logger = new NullLogger();
     }
 
-    public function asset(Environment $env, array $context, ?string $block, array $variables = []): string
+    public function asset(Environment $env, array $context, ?string $asset, array $variables = []): string
     {
-        return $this->renderElement($env, $context, $block, ElementInterface::TYPE_ASSET, $variables);
+        return $this->renderElement($env, $context, $asset, ElementInterface::TYPE_ASSET, $variables);
     }
 
     public function block(Environment $env, array $context, ?string $block, array $variables = []): string

@@ -26,11 +26,6 @@ class Carousel extends Element implements CarouselInterface
         $this->carouselBlocks = new ArrayCollection();
     }
 
-    public function getType(): string
-    {
-        return ElementInterface::TYPE_CAROUSEL;
-    }
-
     public function getBlocks(): Collection
     {
         return $this->carouselBlocks->map(function (CarouselBlockInterface $carouselBlock): BlockInterface {

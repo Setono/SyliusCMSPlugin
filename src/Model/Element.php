@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Model;
 
 use Sylius\Component\Resource\Model\TimestampableTrait;
+use function Symfony\Component\String\u;
 
 abstract class Element implements ElementInterface
 {
@@ -14,19 +15,6 @@ abstract class Element implements ElementInterface
     protected ?int $id = null;
 
     protected ?string $code = null;
-
-    /**
-     * @return list<string>
-     */
-    public static function getTypes(): array
-    {
-        return [
-            self::TYPE_ASSET,
-            self::TYPE_BLOCK,
-            self::TYPE_CAROUSEL,
-            self::TYPE_PAGE,
-        ];
-    }
 
     public function getId(): ?int
     {
@@ -41,5 +29,19 @@ abstract class Element implements ElementInterface
     public function setCode(?string $code): void
     {
         $this->code = $code;
+    }
+
+    /**
+     * @param ElementInterface|class-string<ElementInterface> $element
+     */
+    public static function getElementType(ElementInterface|string $element, string $separator = '_'): string
+    {
+        $type = u((new \ReflectionClass($element))->getShortName())->snake();
+
+        if ('_' !== $separator) {
+            $type = $type->replace('_', $separator);
+        }
+
+        return $type->toString();
     }
 }

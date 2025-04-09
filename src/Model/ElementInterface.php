@@ -19,6 +19,4 @@ interface ElementInterface extends CodeAwareInterface, InternalDescriptionAwareI
     public const TYPE_PAGE = 'page';
 
     public function getId(): ?int;
-
-    public function getType(): string;
 }

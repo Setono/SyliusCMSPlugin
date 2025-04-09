@@ -30,11 +30,6 @@ class Page extends Element implements PageInterface
         $this->initializeTranslationsCollection();
     }
 
-    public function getType(): string
-    {
-        return ElementInterface::TYPE_PAGE;
-    }
-
     public function getTitle(): ?string
     {
         return $this->getTranslation()->getTitle();

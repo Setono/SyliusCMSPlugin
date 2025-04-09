@@ -13,39 +13,37 @@
         <service id="setono_sylius_cms.generator.twig.composite"
                  class="Setono\SyliusCMSPlugin\Generator\Twig\CompositeTwigGenerator"/>
 
-        <service id="setono_sylius_cms.generator.twig.abstract"
-                 class="Setono\SyliusCMSPlugin\Generator\Twig\AbstractTwigGenerator" abstract="true">
+        <service id="Setono\SyliusCMSPlugin\Generator\Twig\AssetTwigGenerator">
             <argument type="service" id="twig"/>
-        </service>
-
-        <service id="setono_sylius_cms.generator.twig.asset"
-                 class="Setono\SyliusCMSPlugin\Generator\Twig\AssetTwigGenerator"
-                 parent="setono_sylius_cms.generator.twig.abstract">
-            <argument>asset</argument>
+            <argument>%setono_sylius_cms.model.asset.class%</argument>
+            <argument>@SetonoSyliusCMSPlugin/twig_generator/asset.html.twig</argument>
 
             <tag name="setono_sylius_cms.twig_generator"/>
         </service>
 
         <service id="setono_sylius_cms.generator.twig.block"
-                 class="Setono\SyliusCMSPlugin\Generator\Twig\BlockTwigGenerator"
-                 parent="setono_sylius_cms.generator.twig.abstract">
-            <argument>block</argument>
+                 class="Setono\SyliusCMSPlugin\Generator\Twig\GenericTwigGenerator">
+            <argument type="service" id="twig"/>
+            <argument>%setono_sylius_cms.model.block.class%</argument>
+            <argument>@SetonoSyliusCMSPlugin/twig_generator/block.html.twig</argument>
 
             <tag name="setono_sylius_cms.twig_generator"/>
         </service>
 
         <service id="setono_sylius_cms.generator.twig.carousel"
-                 class="Setono\SyliusCMSPlugin\Generator\Twig\CarouselTwigGenerator"
-                 parent="setono_sylius_cms.generator.twig.abstract">
-            <argument>carousel</argument>
+                 class="Setono\SyliusCMSPlugin\Generator\Twig\GenericTwigGenerator">
+            <argument type="service" id="twig"/>
+            <argument>%setono_sylius_cms.model.carousel.class%</argument>
+            <argument>@SetonoSyliusCMSPlugin/twig_generator/carousel.html.twig</argument>
 
             <tag name="setono_sylius_cms.twig_generator"/>
         </service>
 
         <service id="setono_sylius_cms.generator.twig.page"
-                 class="Setono\SyliusCMSPlugin\Generator\Twig\PageTwigGenerator"
-                 parent="setono_sylius_cms.generator.twig.abstract">
-            <argument>page</argument>
+                 class="Setono\SyliusCMSPlugin\Generator\Twig\GenericTwigGenerator">
+            <argument type="service" id="twig"/>
+            <argument>%setono_sylius_cms.model.page.class%</argument>
+            <argument>@SetonoSyliusCMSPlugin/twig_generator/page.html.twig</argument>
 
             <tag name="setono_sylius_cms.twig_generator"/>
         </service>

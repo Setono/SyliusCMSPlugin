@@ -22,11 +22,6 @@ class Block extends Element implements BlockInterface
         $this->initializeTranslationsCollection();
     }
 
-    public function getType(): string
-    {
-        return ElementInterface::TYPE_BLOCK;
-    }
-
     public function getDefaultContent(): ?string
     {
         return $this->defaultContent;
