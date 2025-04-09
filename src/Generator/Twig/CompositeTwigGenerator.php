@@ -21,10 +21,7 @@ final class CompositeTwigGenerator extends CompositeService implements TwigGener
             }
         }
 
-        throw new \RuntimeException(sprintf(
-            'No twig generator found for element with type %s',
-            $element->getType(),
-        ));
+        throw new \RuntimeException(sprintf('No twig generator found for element %s', $element::class));
     }
 
     public function supports(ElementInterface $element, array $context = []): bool

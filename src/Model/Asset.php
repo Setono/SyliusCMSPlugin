@@ -12,11 +12,6 @@ class Asset extends Element implements AssetInterface
 
     protected ?string $mimeType = null;
 
-    public function getType(): string
-    {
-        return self::TYPE_ASSET;
-    }
-
     public function getName(): ?string
     {
         return $this->name;

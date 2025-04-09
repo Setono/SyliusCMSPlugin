@@ -18,7 +18,6 @@ use Setono\SyliusCMSPlugin\Twig\LogicalTemplateName;
 use Twig\Error\LoaderError;
 use Twig\Loader\LoaderInterface;
 use Twig\Source;
-use Webmozart\Assert\Assert;
 
 final class GenericElementLoader implements LoaderInterface, LoggerAwareInterface
 {
@@ -27,15 +26,11 @@ final class GenericElementLoader implements LoaderInterface, LoggerAwareInterfac
     /** @var array<string, ElementInterface> */
     private array $cache = [];
 
-    private readonly string $supportsType;
-
     public function __construct(
         private readonly ElementRepositoryInterface $elementRepository,
         private readonly TwigGeneratorInterface $twigGenerator,
-        string $supportsType,
+        private readonly string $supportsType,
     ) {
-        Assert::oneOf($supportsType, Element::getTypes());
-        $this->supportsType = $supportsType;
         $this->logger = new NullLogger();
     }
 

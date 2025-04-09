@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\EventListener;
 
 use Doctrine\Persistence\Event\LifecycleEventArgs;
+use Setono\SyliusCMSPlugin\Model\Element;
 use Setono\SyliusCMSPlugin\Model\ElementInterface;
 use Setono\SyliusCMSPlugin\Twig\LogicalTemplateName;
 use Setono\TwigCachePurgerBundle\Purger\PurgerInterface;
@@ -62,7 +63,7 @@ final class ElementCacheInvalidatorListener
         foreach ($this->getChannels() as $channel) {
             foreach ($channel->getLocales() as $locale) {
                 $this->purger->purge((string) (new LogicalTemplateName(
-                    $entity->getType(),
+                    Element::getElementType($entity),
                     (string) $channel->getCode(),
                     (string) $locale->getCode(),
                     (string) $entity->getCode(),
