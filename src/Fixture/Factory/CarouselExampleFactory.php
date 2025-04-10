@@ -6,13 +6,10 @@ namespace Setono\SyliusCMSPlugin\Fixture\Factory;
 
 use Faker\Factory;
 use Faker\Generator;
-use Setono\SyliusCMSPlugin\Model\BlockInterface;
-use Setono\SyliusCMSPlugin\Model\CarouselBlockInterface;
 use Setono\SyliusCMSPlugin\Model\CarouselInterface;
 use Setono\SyliusCMSPlugin\Repository\BlockRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\CarouselRepositoryInterface;
 use Sylius\Bundle\CoreBundle\Fixture\Factory\AbstractExampleFactory;
-use Sylius\Bundle\CoreBundle\Fixture\OptionsResolver\LazyOption;
 use Sylius\Component\Resource\Factory\FactoryInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Webmozart\Assert\Assert;
@@ -29,7 +26,6 @@ class CarouselExampleFactory extends AbstractExampleFactory
         protected readonly FactoryInterface $carouselFactory,
         protected readonly CarouselRepositoryInterface $carouselRepository,
         protected readonly BlockRepositoryInterface $blockRepository,
-        protected readonly FactoryInterface $carouselBlockFactory,
     ) {
         $this->faker = Factory::create();
         $this->optionsResolver = new OptionsResolver();
@@ -60,23 +56,6 @@ class CarouselExampleFactory extends AbstractExampleFactory
             $carousel->setConfiguration($configuration);
         }
 
-        if (array_key_exists('carouselBlocks', $options)) {
-            $blocks = $options['carouselBlocks'];
-            Assert::isArray($blocks);
-            Assert::allIsInstanceOf($blocks, BlockInterface::class);
-
-            foreach ($blocks as $position => $block) {
-                Assert::integer($position);
-
-                /** @var CarouselBlockInterface $carouselBlock */
-                $carouselBlock = $this->carouselBlockFactory->createNew();
-                $carouselBlock->setBlock($block);
-                $carouselBlock->setPosition($position);
-
-                $carousel->addCarouselBlock($carouselBlock);
-            }
-        }
-
         $this->setInternalDescription($carousel, $options);
 
         return $carousel;
@@ -90,10 +69,6 @@ class CarouselExampleFactory extends AbstractExampleFactory
 
             ->setDefined('configuration')
             ->setAllowedTypes('configuration', 'array')
-
-            ->setDefined('carouselBlocks')
-            ->setAllowedTypes('carouselBlocks', 'array')
-            ->setNormalizer('carouselBlocks', LazyOption::findBy($this->blockRepository, 'code'))
         ;
 
         $this->configureInternalDescriptionOptions($resolver);

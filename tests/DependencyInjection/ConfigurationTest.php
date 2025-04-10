@@ -10,7 +10,6 @@ use Setono\SyliusCMSPlugin\DependencyInjection\Configuration;
 use Setono\SyliusCMSPlugin\Form\Type\AssetType;
 use Setono\SyliusCMSPlugin\Form\Type\BlockTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\BlockType;
-use Setono\SyliusCMSPlugin\Form\Type\CarouselBlockType;
 use Setono\SyliusCMSPlugin\Form\Type\CarouselType;
 use Setono\SyliusCMSPlugin\Form\Type\PageTranslationType;
 use Setono\SyliusCMSPlugin\Form\Type\PageType;
@@ -19,9 +18,9 @@ use Setono\SyliusCMSPlugin\Model\Asset;
 use Setono\SyliusCMSPlugin\Model\Block;
 use Setono\SyliusCMSPlugin\Model\BlockTranslation;
 use Setono\SyliusCMSPlugin\Model\Carousel;
-use Setono\SyliusCMSPlugin\Model\CarouselBlock;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Slide;
 use Setono\SyliusCMSPlugin\Model\Template;
 use Setono\SyliusCMSPlugin\Repository\AssetRepository;
 use Setono\SyliusCMSPlugin\Repository\BlockRepository;
@@ -29,6 +28,7 @@ use Setono\SyliusCMSPlugin\Repository\CarouselRepository;
 use Setono\SyliusCMSPlugin\Repository\PageRepository;
 use Setono\SyliusCMSPlugin\Repository\TemplateRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
+use Sylius\Bundle\ResourceBundle\Form\Type\DefaultResourceType;
 use Sylius\Component\Resource\Factory\Factory;
 use Sylius\Component\Resource\Factory\TranslatableFactory;
 
@@ -116,11 +116,11 @@ final class ConfigurationTest extends TestCase
                         'repository' => CarouselRepository::class,
                     ],
                 ],
-                'carousel_block' => [
+                'slide' => [
                     'classes' => [
-                        'model' => CarouselBlock::class,
+                        'model' => Slide::class,
                         'controller' => ResourceController::class,
-                        'form' => CarouselBlockType::class,
+                        'form' => DefaultResourceType::class,
                         'factory' => Factory::class,
                     ],
                 ],

@@ -66,7 +66,6 @@
             <argument type="service" id="setono_sylius_cms.factory.carousel" />
             <argument type="service" id="setono_sylius_cms.repository.carousel" />
             <argument type="service" id="setono_sylius_cms.repository.block" />
-            <argument type="service" id="setono_sylius_cms.factory.carousel_block" />
         </service>
 
         <!-- Page -->

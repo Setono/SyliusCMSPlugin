@@ -31,7 +31,7 @@
             <parameter>setono_sylius_cms</parameter>
         </parameter>
 
-        <parameter type="collection" key="setono_sylius_cms.form.type.carousel_block.validation_groups">
+        <parameter type="collection" key="setono_sylius_cms.form.type.slide.validation_groups">
             <parameter>setono_sylius_cms</parameter>
         </parameter>
     </parameters>
@@ -94,16 +94,15 @@
             <tag name="form.type"/>
         </service>
 
-        <service id="setono_sylius_cms.form.type.carousel_block"
-                 class="Setono\SyliusCMSPlugin\Form\Type\CarouselBlockType">
-            <argument>%setono_sylius_cms.model.carousel_block.class%</argument>
-            <argument>%setono_sylius_cms.form.type.carousel_block.validation_groups%</argument>
-
+        <service id="setono_sylius_cms.form.type.carousel_configuration"
+                 class="Setono\SyliusCMSPlugin\Form\Type\CarouselConfigurationType">
             <tag name="form.type"/>
         </service>
 
-        <service id="setono_sylius_cms.form.type.carousel_configuration"
-                 class="Setono\SyliusCMSPlugin\Form\Type\CarouselConfigurationType">
+        <service id="Setono\SyliusCMSPlugin\Form\Type\SlideType">
+            <argument>%setono_sylius_cms.model.slide.class%</argument>
+            <argument>%setono_sylius_cms.form.type.slide.validation_groups%</argument>
+
             <tag name="form.type"/>
         </service>
 

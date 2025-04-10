@@ -11,7 +11,7 @@
             <generator strategy="AUTO"/>
         </id>
 
-        <field name="code" column="code" type="string"/>
+        <field name="code" column="code" type="string" unique="true"/>
         <field name="configuration" column="configuration" type="array"/>
         <field name="internalDescription" type="text" nullable="true"/>
 
@@ -23,7 +23,7 @@
             <gedmo:timestampable on="update"/>
         </field>
 
-        <one-to-many field="carouselBlocks" target-entity="Setono\SyliusCMSPlugin\Model\CarouselBlockInterface"
+        <one-to-many field="slides" target-entity="Setono\SyliusCMSPlugin\Model\SlideInterface"
                      mapped-by="carousel" orphan-removal="true">
             <!-- There is an issue with fetch eager and orderBy: https://github.com/doctrine/orm/issues/4256 -->
             <cascade>
@@ -33,9 +33,5 @@
                 <order-by-field name="position" direction="ASC"/>
             </order-by>
         </one-to-many>
-
-        <unique-constraints>
-            <unique-constraint columns="code"/>
-        </unique-constraints>
     </mapped-superclass>
 </doctrine-mapping>

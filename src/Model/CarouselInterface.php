@@ -9,24 +9,15 @@ use Doctrine\Common\Collections\Collection;
 interface CarouselInterface extends ElementInterface
 {
     /**
-     * Will return the underlying blocks sorted by position
-     *
-     * @return Collection<array-key, BlockInterface>
+     * @return Collection<array-key, SlideInterface>
      */
-    public function getBlocks(): Collection;
+    public function getSlides(): Collection;
 
-    /**
-     * @return Collection<array-key, CarouselBlockInterface>
-     */
-    public function getCarouselBlocks(): Collection;
+    public function hasSlide(SlideInterface $slide): bool;
 
-    public function hasCarouselBlocks(): bool;
+    public function addSlide(SlideInterface $slide): void;
 
-    public function hasCarouselBlock(CarouselBlockInterface $carouselBlock): bool;
-
-    public function addCarouselBlock(CarouselBlockInterface $carouselBlock): void;
-
-    public function removeCarouselBlock(CarouselBlockInterface $carouselBlock): void;
+    public function removeSlide(SlideInterface $slide): void;
 
     public function getConfiguration(): array;
 

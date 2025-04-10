@@ -28,5 +28,11 @@
             <tag name="doctrine.event_listener" event="postUpdate"/>
             <tag name="doctrine.event_listener" event="postRemove"/>
         </service>
+
+        <service id="Setono\SyliusCMSPlugin\EventListener\Doctrine\SlideDiscriminatorMapListener">
+            <argument>%sylius.resources%</argument>
+
+            <tag name="doctrine.event_listener" event="loadClassMetadata"/>
+        </service>
     </services>
 </container>
