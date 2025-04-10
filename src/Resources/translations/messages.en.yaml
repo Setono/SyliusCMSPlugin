@@ -11,8 +11,7 @@ setono_sylius_cms:
             content_placeholder: This is the content part of your block. Set your cursor here and click the plus sign to add content...
             max_upload_size: Please note that your web server configuration only allows %max_upload_size% to be uploaded. If you need to upload larger files, please contact your developer or server administrator and ask them to increase the limits.
         carousel:
-            blocks: Blocks
-            block_placeholder: Block
+            slides: Slides
             position_placeholder: Position
             configuration: Configuration
             configuration.autoplay: Autoplay
@@ -32,6 +31,8 @@ setono_sylius_cms:
             slug: Slug
             title: Title
             view: View
+        slide:
+            position: Position
         template:
             source: Source
         view:

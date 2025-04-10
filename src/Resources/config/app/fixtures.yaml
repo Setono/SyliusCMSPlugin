@@ -136,9 +136,6 @@ sylius_fixtures:
                                     slidesToScroll: 1
                                     autoplay: true
                                     autoplaySpeed: 7000
-                                carouselBlocks:
-                                    - 'block_carousel_slide_1'
-                                    - 'block_carousel_slide_2'
 
                 custom_pages:
                     name: 'setono_sylius_cms_page'

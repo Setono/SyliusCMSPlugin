@@ -21,7 +21,6 @@ use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
         $child = $resourceNode->children();
         $child->scalarNode('code')->cannotBeEmpty();
         $child->variableNode('configuration')->cannotBeEmpty()->defaultValue([]);
-        $child->variableNode('carouselBlocks')->cannotBeEmpty()->defaultValue([]);
 
         $this->configureInternalDescriptionResourceNode($resourceNode);
     }

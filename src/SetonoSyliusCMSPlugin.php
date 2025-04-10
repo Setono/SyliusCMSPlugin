@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin;
 
 use Setono\CompositeCompilerPass\CompositeCompilerPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\AddResourceDeleteRoutesPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\ResolveTargetEntitiesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\TagElementCacheInvalidatorListenerPass;
 use Sylius\Bundle\CoreBundle\Application\SyliusPluginTrait;
 use Sylius\Bundle\ResourceBundle\AbstractResourceBundle;
@@ -29,6 +30,7 @@ final class SetonoSyliusCMSPlugin extends AbstractResourceBundle
 
         $container->addCompilerPass(new TagElementCacheInvalidatorListenerPass());
         $container->addCompilerPass(new AddResourceDeleteRoutesPass());
+        $container->addCompilerPass(new ResolveTargetEntitiesPass());
 
         $container->addCompilerPass(new CompositeCompilerPass(
             'setono_sylius_cms.previewer.composite',

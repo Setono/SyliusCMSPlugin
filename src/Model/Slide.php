@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
-class CarouselBlock implements CarouselBlockInterface
+class Slide implements SlideInterface
 {
     protected ?int $id = null;
 
     protected int $position = 0;
 
     protected ?CarouselInterface $carousel = null;
-
-    protected ?BlockInterface $block = null;
 
     public function getId(): ?int
     {
@@ -24,9 +22,9 @@ class CarouselBlock implements CarouselBlockInterface
         return $this->position;
     }
 
-    public function setPosition(int $position): void
+    public function setPosition(?int $position): void
     {
-        $this->position = $position;
+        $this->position = (int) $position;
     }
 
     public function getCarousel(): ?CarouselInterface
@@ -37,15 +35,5 @@ class CarouselBlock implements CarouselBlockInterface
     public function setCarousel(?CarouselInterface $carousel): void
     {
         $this->carousel = $carousel;
-    }
-
-    public function getBlock(): ?BlockInterface
-    {
-        return $this->block;
-    }
-
-    public function setBlock(?BlockInterface $block): void
-    {
-        $this->block = $block;
     }
 }

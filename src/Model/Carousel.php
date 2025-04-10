@@ -6,12 +6,11 @@ namespace Setono\SyliusCMSPlugin\Model;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Webmozart\Assert\Assert;
 
 class Carousel extends Element implements CarouselInterface
 {
-    /** @var Collection<array-key, CarouselBlockInterface> */
-    protected Collection $carouselBlocks;
+    /** @var Collection<array-key, SlideInterface> */
+    protected Collection $slides;
 
     protected array $configuration = [
         'infinite' => false,
@@ -23,47 +22,32 @@ class Carousel extends Element implements CarouselInterface
 
     public function __construct()
     {
-        $this->carouselBlocks = new ArrayCollection();
+        $this->slides = new ArrayCollection();
     }
 
-    public function getBlocks(): Collection
+    public function getSlides(): Collection
     {
-        return $this->carouselBlocks->map(function (CarouselBlockInterface $carouselBlock): BlockInterface {
-            $block = $carouselBlock->getBlock();
-            Assert::notNull($block);
-
-            return $block;
-        });
+        return $this->slides;
     }
 
-    public function getCarouselBlocks(): Collection
+    public function hasSlide(SlideInterface $slide): bool
     {
-        return $this->carouselBlocks;
+        return $this->slides->contains($slide);
     }
 
-    public function hasCarouselBlocks(): bool
+    public function addSlide(SlideInterface $slide): void
     {
-        return !$this->getCarouselBlocks()->isEmpty();
-    }
-
-    public function hasCarouselBlock(CarouselBlockInterface $carouselBlock): bool
-    {
-        return $this->getCarouselBlocks()->contains($carouselBlock);
-    }
-
-    public function addCarouselBlock(CarouselBlockInterface $carouselBlock): void
-    {
-        if (!$this->hasCarouselBlock($carouselBlock)) {
-            $this->carouselBlocks->add($carouselBlock);
-            $carouselBlock->setCarousel($this);
+        if (!$this->hasSlide($slide)) {
+            $this->slides->add($slide);
+            $slide->setCarousel($this);
         }
     }
 
-    public function removeCarouselBlock(CarouselBlockInterface $carouselBlock): void
+    public function removeSlide(SlideInterface $slide): void
     {
-        if ($this->hasCarouselBlock($carouselBlock)) {
-            $this->carouselBlocks->removeElement($carouselBlock);
-            $carouselBlock->setCarousel(null);
+        if ($this->hasSlide($slide)) {
+            $this->slides->removeElement($slide);
+            $slide->setCarousel(null);
         }
     }
 
