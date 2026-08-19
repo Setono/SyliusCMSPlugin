@@ -1,0 +1,79 @@
+setono_sylius_cms:
+    form:
+        asset:
+            code: Kode
+            code_and_name_information: Du trenger ikke å oppgi verken kode eller navn. Hvis du lar feltene stå tomme, blir de generert ut fra filnavnet.
+            file: Fil
+            name: Navn
+        block:
+            content: Innhold
+            default_content: Standardinnhold
+            content_placeholder: Dette er innholdsdelen av blokken din. Plasser markøren her og klikk på plusstegnet for å legge til innhold...
+            max_upload_size: Merk at webserverkonfigurasjonen bare tillater opplasting av %max_upload_size%. Hvis du trenger å laste opp større filer, kontakt utvikleren eller serveradministratoren din og be om å få økt grensene.
+        carousel:
+            blocks: Blokker
+            block_placeholder: Blokk
+            position_placeholder: Posisjon
+            configuration: Konfigurasjon
+            configuration.autoplay: Autoavspilling
+            configuration.autoplay_speed: Hastighet for autoavspilling
+            configuration.infinite_scroll: Uendelig rulling
+            configuration.show_controls: Vis kontroller
+            configuration.slides_to_scroll: Antall lysbilder å rulle
+            configuration.slides_to_show: Antall lysbilder å vise
+        internal_description: Intern beskrivelse
+        internal_description_placeholder: Bruk dette internt til å beskrive elementet, så det blir lettere for kollegene dine å forstå hva det brukes til...
+        page:
+            content: Innhold
+            enabled: Aktivert
+            enabled_from: Aktivert fra
+            enabled_until: Aktivert til
+            meta_description: Metabeskrivelse
+            slug: Slug
+            title: Tittel
+            view: Visning
+        template:
+            source: Kilde
+        view:
+            template: Mal
+            template_placeholder: Velg mal...
+            section_blocks: 'Blokker i seksjonen %section%'
+            block_placeholder: Blokk
+            position_placeholder: Posisjon
+    menu:
+        admin:
+            main:
+                cms:
+                    assets: Mediefiler
+                    blocks: Blokker
+                    carousels: Karuseller
+                    header: Innholdsstyring
+                    pages: Sider
+                    templates: Maler
+                    views: Visninger
+    ui:
+        asset_header: Mediefiler
+        asset_subheader: Administrer alle mediefilene dine (bilder, dokumenter, filmer osv.)
+        assets: Mediefiler
+        block_header: Blokker
+        block_subheader: Administrer innholdsblokkene dine
+        blocks: Blokker
+        carousel_header: Karuseller
+        carousel_subheader: Administrer karusellene dine
+        carousels: Karuseller
+        duplicate_block: Dupliser blokk
+        internal_description: Intern beskrivelse
+        name: Navn
+        page_header: Sider
+        page_subheader: Administrer CMS-sidene dine
+        pages: Sider
+        preview: Forhåndsvisning
+        template: Mal
+        template_header: Maler
+        template_subheader: Administrer malene dine
+        templates: Maler
+        title: Tittel
+        view: Visning
+        view_header: Visninger
+        view_subheader: Administrer visningene dine
+        views: Visninger
