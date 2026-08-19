@@ -1,0 +1,3 @@
+setono_sylius_cms:
+    resource:
+        delete_error: Elementet kunne ikke slettes fordi det er i bruk
