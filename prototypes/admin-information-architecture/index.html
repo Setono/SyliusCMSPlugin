@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROTOTYPE · Admin information architecture</title>
+<!--
+  PROTOTYPE, throwaway. Never merge, never ship.
+  Question: how are pages, collections, snippets, slots, media and presets organised and navigated in the
+  Sylius 1.14 admin, and how do editors get into and out of the full-screen builder? (Setono/SyliusCMSPlugin#210)
+  Plan: three structurally different information architectures in the Sylius admin chrome, switchable via
+  ?variant=A|B|C and the floating bar (arrow keys work too), over the same store's content.
+  Nothing is persisted; a reload resets. Open this file in a browser. No build step.
+-->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
+<link rel="stylesheet" href="prototype.css">
+</head>
+<body>
+<div id="app"></div>
+<div id="overlay"></div>
+<div id="modal"></div>
+<div id="protobar"></div>
+<script src="fixtures.js"></script>
+<script src="shared.js"></script>
+<script src="variants.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
