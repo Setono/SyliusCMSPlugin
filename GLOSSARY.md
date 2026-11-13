@@ -19,11 +19,11 @@ The ordered, nested blocks that make up the body of an entry.
 _Avoid_: content, page builder data
 
 **Preset**:
-A saved block tree, or part of one, that is copied when inserted and never kept in sync with where it came from. Developers ship presets, and editors save their own.
-_Avoid_: layout preset, pattern, template
+One or more saved blocks, with everything in them, that are copied when inserted and never kept in sync with where they came from. Developers ship presets and editors save their own, and a preset can be a starting point for new entries of one content type.
+_Avoid_: layout preset, pattern, template, entry template
 
 **Field**:
-A named, typed value on a block or an entry, such as a heading, an image, a link or a list of products. A field is either translatable, with a value per translation, or shared by all translations.
+A named, typed value on a block, an entry or a layout, such as a heading, an image, a link or a list of products. A field is either translatable, with a value per translation, or shared by all translations.
 _Avoid_: property, attribute, setting
 
 **Field type**:
@@ -37,7 +37,7 @@ _Avoid_: provider, data source, feed
 ### Entries
 
 **Content type**:
-A developer-defined kind of entry. It sets which fields the entry has, whether it has a block tree, and whether it has its own URL.
+A developer-defined kind of entry. It sets which fields the entry has, whether it has a block tree and which block types its top level may hold, and whether it has its own URL.
 _Avoid_: model, schema, collection type
 
 **Entry**:
@@ -73,7 +73,7 @@ An entry of the built-in content type for navigation, whose block tree holds lin
 _Avoid_: navigation, menu tree
 
 **Layout**:
-A developer-defined frame around an entry's block tree that shows the entry's fields and can contain slots. Each content type offers one or more layouts.
+A developer-defined frame around the block tree of an entry shown at its own URL. It shows the entry's fields and its own, and can contain slots. Each content type with its own URL has one or more layouts of its own.
 _Avoid_: developer layout, page template, theme
 
 ### Shop pages
