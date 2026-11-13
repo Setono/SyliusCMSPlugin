@@ -45,7 +45,7 @@ A single piece of content of one content type, such as a page, a blog post or a 
 _Avoid_: document, item, record, node
 
 **Translation**:
-An entry's content in one locale. An entry has one block tree shared by all its translations, and shoppers see it only in locales it has a translation for.
+An entry's content in one locale. An entry has one block tree shared by all its translations, and shoppers see it only in locales where it has a translation that isn't held back.
 _Avoid_: localization, language version, locale variant
 
 **Fallback chain**:
@@ -103,3 +103,29 @@ _Avoid_: dynamic source, merge tag, placeholder, variable
 **Builder**:
 The full-screen editor where an entry is composed, with its block tree, a live preview of the shop page and the fields of what's selected.
 _Avoid_: page builder, visual editor, designer, editor (an editor is a person)
+
+### Publishing
+
+**Draft**:
+An entry's saved changes, which shoppers don't see until they're published. An entry has at most one draft, shared by everyone who edits it.
+_Avoid_: pending changes, unpublished version
+
+**Publish**:
+To make an entry's draft the content shoppers see, either now or as a scheduled publish. Placements, an entry's date window and whether it's enabled don't wait for it: they take effect on save.
+_Avoid_: release, go live, deploy
+
+**Scheduled publish**:
+A publish of an entry's draft set for a chosen time. The draft can't be edited until the publish happens or is cancelled.
+_Avoid_: scheduled draft, release
+
+**Date window**:
+The span from an optional start to an optional end in which an entry or a block shows. It decides only when published content shows, never what's published.
+_Avoid_: schedule, publish window, publish date
+
+**Revision**:
+An entry's published content as it was at one publish, kept so editors can preview it and restore it into the draft.
+_Avoid_: version, snapshot, history entry
+
+**Share link**:
+A revocable link that shows one entry's draft in the shop, in one channel and locale, to anyone who has it.
+_Avoid_: preview link, public preview, preview token
