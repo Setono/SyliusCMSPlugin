@@ -79,7 +79,7 @@ _Avoid_: developer layout, page template, theme
 ### Shop pages
 
 **Slot**:
-A developer-defined, named place in a shop page or a layout where editors show snippets.
+A developer-defined, named place in a shop page or a layout where editors show snippets. It shows every placement that matches, in the order editors set, unless it's capped, and then only the first ones that match show.
 _Avoid_: zone, area, region, block position, template event, hook
 
 **Placement**:
@@ -97,6 +97,16 @@ _Avoid_: page variables, template context
 **Binding**:
 A field value, or a token inside rich text, that shows a property of the host-page context instead of a fixed value, such as the current product's name.
 _Avoid_: dynamic source, merge tag, placeholder, variable
+
+### Visibility
+
+**Visibility condition**:
+A rule on a block that hides it unless the shopper or the page matches, such as "customer group is Wholesale", "locale is not German" or "product is in the Shoes taxon". A hidden block hides its children. A page scope is made of the same kinds of conditions.
+_Avoid_: targeting rule, display rule, filter
+
+**Audience**:
+The customers an entry shows to: everyone, only some customer groups, or everyone except some. Guests, and signed-in customers without a group, count as groups of their own here.
+_Avoid_: target group, segment, permissions
 
 ### Editing
 
