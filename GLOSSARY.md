@@ -111,7 +111,7 @@ The page-specific objects a shop page or an entry makes available to the content
 _Avoid_: page variables, template context
 
 **Binding**:
-A field value, or a token inside rich text, that shows a property of the host-page context instead of a fixed value, such as the current product's name.
+A field value, or a token inside rich text, that shows a property of the host-page context, the channel or the customer instead of a fixed value, such as the current product's name or the customer's first name.
 _Avoid_: dynamic source, merge tag, placeholder, variable
 
 ### Visibility
