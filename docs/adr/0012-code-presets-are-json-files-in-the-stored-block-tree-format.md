@@ -15,3 +15,4 @@ We chose this because a preset is data: often a deep tree with many field values
 - The stored block-tree format becomes a contract, because projects and plugins commit files in it. Upgraders handle changes to block fields, but a change to the format itself is a breaking change.
 - Code presets are read-only in the admin. To change one, a developer inserts it, edits it, and exports it again.
 - Editor presets use the same format, which makes it the natural candidate when presets are moved between environments.
+- Exporting a preset to a file leaves its media fields empty, because media items exist only in one environment's library. Block templates render a neutral placeholder for an empty image in the builder and the preset browser. Editor presets, which stay in the store, keep their media references.

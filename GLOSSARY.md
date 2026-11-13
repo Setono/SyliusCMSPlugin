@@ -104,6 +104,20 @@ _Avoid_: targeting rule, display rule, filter
 The customers an entry shows to: everyone, only some customer groups, or everyone except some. Guests, and signed-in customers without a group, count as groups of their own here.
 _Avoid_: target group, segment, permissions
 
+### Media
+
+**Media library**:
+All the media items a store has, shared by every channel.
+_Avoid_: asset manager, file manager, DAM
+
+**Media item**:
+One uploaded file in the media library, an image, a video or a document, with its metadata. Product and taxon images aren't media items.
+_Avoid_: asset, file, attachment, upload, media (for a single item)
+
+**Focal point**:
+The point of an image that must stay in view wherever the image is cropped. It belongs to the media item, so every use of the image crops around the same point.
+_Avoid_: hotspot, crop center
+
 ### Editing
 
 **Builder**:
