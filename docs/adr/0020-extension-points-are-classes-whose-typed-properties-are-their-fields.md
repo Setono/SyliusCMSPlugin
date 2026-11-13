@@ -22,4 +22,5 @@ We chose this because it is how modern Symfony declares data: Doctrine, Validato
 - A content type's code can never change, because it names both its discriminator value and its column prefix.
 - `#[AsResource]` has no translation option, so a content type with a translation subclass registers through `sylius_resource.resources`.
 - Hydrated values that refer to other records, such as a product list filled by a source, are resolved lazily when a template reads them.
+- A source's `resolve` returns a Pagerfanta adapter that the caller pages, so the block holding the list, not the source, decides how many items show (ADR 0022).
 - Slots and context keys are pure data, so they're declared in bundle config, not as classes. Context resolvers are classes registered per context key.
