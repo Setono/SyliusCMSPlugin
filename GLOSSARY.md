@@ -67,9 +67,21 @@ _Avoid_: developer layout, page template, theme
 ### Shop pages
 
 **Slot**:
-A named place in a shop page or a layout where editors show snippets.
-_Avoid_: zone, area, region, block position
+A developer-defined, named place in a shop page or a layout where editors show snippets.
+_Avoid_: zone, area, region, block position, template event, hook
+
+**Placement**:
+The showing of one snippet in one slot, limited by a page scope.
+_Avoid_: assignment, slot item
+
+**Page scope**:
+The conditions on host-page context that decide which shop pages a placement shows on, such as products in one taxon or a single product.
+_Avoid_: page rule, display rule, targeting
 
 **Host-page context**:
-The objects a shop page makes available to the content shown in it, such as the current product on a product page.
+The page-specific objects a shop page or an entry makes available to the content shown in it, such as the current product on a product page. The channel, locale and customer are available everywhere and aren't part of it.
 _Avoid_: page variables, template context
+
+**Binding**:
+A field value, or a token inside rich text, that shows a property of the host-page context instead of a fixed value, such as the current product's name.
+_Avoid_: dynamic source, merge tag, placeholder, variable
