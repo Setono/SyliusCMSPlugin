@@ -157,3 +157,17 @@ _Avoid_: version, snapshot, history entry
 **Share link**:
 A revocable link that shows one entry's draft in the shop, in one channel and locale, to anyone who has it.
 _Avoid_: preview link, public preview, preview token
+
+### Transfer
+
+**Transfer**:
+Moving content from one environment of a store to another, such as from staging to production, by exporting it from one and importing it into the other. A transfer creates and updates content, but never deletes it.
+_Avoid_: sync, migration, deployment
+
+**Export**:
+The files a transfer carries: the entries, editor presets and media items someone picked, plus the snippets and media items they use.
+_Avoid_: dump, backup, package
+
+**Import**:
+The step of a transfer that brings an export into a store. Imported content goes into each entry's draft, and shows only once it's published.
+_Avoid_: restore, load
