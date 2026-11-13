@@ -151,7 +151,7 @@ An entry's saved changes, which shoppers don't see until they're published. An e
 _Avoid_: pending changes, unpublished version
 
 **Publish**:
-To make an entry's draft the content shoppers see, either now or as a scheduled publish. Placements, an entry's date window and whether it's enabled don't wait for it: they take effect on save.
+To make an entry's draft the content shoppers see, either now or as a scheduled publish. Placements, and an entry's enabled switch, date window, channels and audience, don't wait for it: they take effect on save.
 _Avoid_: release, go live, deploy
 
 **Scheduled publish**:

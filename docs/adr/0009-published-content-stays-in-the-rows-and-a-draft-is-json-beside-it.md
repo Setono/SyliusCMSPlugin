@@ -2,7 +2,7 @@
 
 An entry has at most one draft, shared by everyone who edits it. The entry's row, its translation rows and its block tree column always hold the published content. A draft of a published entry is the whole entry (its fields, translations and block tree) as one JSON document in a table of its own, and publishing copies it onto the rows. An entry that has never been published has no draft: saving writes straight to its rows, which no shopper can see yet. Every publish stores a revision in the same JSON format, and restoring a revision copies it into the draft, never straight to the rows.
 
-Whether an entry is enabled, and its date window, take effect on save, outside the draft, the way placements do (ADR 0005). They decide whether and when the published content shows, so taking a page down never publishes someone's unfinished draft. Holding back a translation is different: that switch is part of the draft, so a translation goes live together with its finished text.
+Whether an entry is enabled, its date window, its channels and its audience take effect on save, outside the draft, the way placements do (ADR 0005). They decide whether, when, where and to whom the published content shows, so taking a page down never publishes someone's unfinished draft. Holding back a translation is different: that switch is part of the draft, so a translation goes live together with its finished text.
 
 We chose this so that every shop query (collection listings, sources, menus, URL lookup) only ever sees published content. No query has to filter on a stage, and the single table from ADR 0001 stays as it is. One JSON format then serves drafts, revisions, share links and content transfer.
 

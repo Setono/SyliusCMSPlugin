@@ -2,13 +2,13 @@
 
 Content moves from one environment to another, such as from staging to production, as files. An export is a folder, or a zip of it, that holds:
 
-- each entry as one JSON document, in the format drafts and revisions use (ADR 0009), together with its enabled switch, date window, placements and "Homepage of" channels
+- each entry as one JSON document, in the format drafts and revisions use (ADR 0009), together with its enabled switch, date window, channels, audience, placements and "Homepage of" channels
 - editor presets, in the preset file format (ADR 0012)
 - media items, with their metadata and original files
 
 Console commands and the admin both export and import, and the same folder loads as a Sylius fixture. Records match by UUID only (ADR 0002).
 
-An export takes the published content of the entries someone picked, plus the snippets their block trees reference and the media items they use. Entries that are only linked to, or hand-picked in a list, aren't pulled in. An import never deletes anything. It saves each entry's content as the entry's draft, so imported content goes live only through a publish, either with an import option or by an editor in the target. That publish validates, records old slugs, stores a revision and expires caches like any other. What takes effect on save (the enabled switch, the date window, placements and homepage settings) applies as soon as the import saves.
+An export takes the published content of the entries someone picked, plus the snippets their block trees reference and the media items they use. Entries that are only linked to, or hand-picked in a list, aren't pulled in. An import never deletes anything. It saves each entry's content as the entry's draft, so imported content goes live only through a publish, either with an import option or by an editor in the target. That publish validates, records old slugs, stores a revision and expires caches like any other. What takes effect on save (the enabled switch, the date window, channels, the audience, placements and homepage settings) applies as soon as the import saves.
 
 Picked records follow "source wins", unless the target's copy is newer. Snippets and media items that come along only as dependencies are created when the target lacks them, and otherwise left as they are. An import first builds a plan, which a dry run shows, and then applies it all or nothing. Three things are conflicts:
 
