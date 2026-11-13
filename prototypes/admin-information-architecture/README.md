@@ -22,6 +22,10 @@ All three use the same store: two channels, three locales, the built-in Page and
 
 Every variant shares the create dialog (layout picker and starting points), the builder stub, the media library (folders, filters, "used in", replace, duplicate prompt, picker), presets, and transfer (export picker with dependencies, import dry run with conflicts).
 
+## Verdict (2026-11-13)
+
+**B · Content hub**, as built, with nothing borrowed from A or C. The decision and its detail are recorded on the ticket.
+
 ## Files
 
 - `fixtures.js`: content types, entries with their states, slots, placements, media, presets, revisions and share links. It stands in for code-defined types and the server.
