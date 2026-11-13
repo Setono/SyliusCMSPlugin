@@ -10,7 +10,13 @@ Console commands and the admin both export and import, and the same folder loads
 
 An export takes the published content of the entries someone picked, plus the snippets their block trees reference and the media items they use. Entries that are only linked to, or hand-picked in a list, aren't pulled in. An import never deletes anything. It saves each entry's content as the entry's draft, so imported content goes live only through a publish, either with an import option or by an editor in the target. That publish validates, records old slugs, stores a revision and expires caches like any other. What takes effect on save (the enabled switch, the date window, placements and homepage settings) applies as soon as the import saves.
 
-Picked records follow "source wins". Snippets and media items that come along only as dependencies are created when the target lacks them, and otherwise left as they are. An import first builds a plan, which a dry run shows, and then applies it all or nothing. A picked entry with a draft or a scheduled publish in the target is a conflict, and so is a URL that clashes with another entry. Either stops the import until the operator chooses to discard those drafts or fixes the clash.
+Picked records follow "source wins", unless the target's copy is newer. Snippets and media items that come along only as dependencies are created when the target lacks them, and otherwise left as they are. An import first builds a plan, which a dry run shows, and then applies it all or nothing. Three things are conflicts:
+
+- a picked entry with a draft or a scheduled publish in the target
+- a picked record that changed in the target after the time the export records for it, such as a replaced file, moved placements, a page switched off or newer published content
+- a URL that clashes with another entry
+
+A conflict stops the import until the operator chooses to overwrite those records, which discards their drafts, or fixes the clash. This matters because picking everything from an older copy of production would otherwise roll back production's newer media files and on-save settings at once, and neither keeps a history.
 
 We chose this because files work with no network route between environments, and the format already exists for drafts, revisions and presets. Going through the draft means there's still only one way to go live, so an import gets publishing's checks, its revisions and its cache expiry for free.
 
@@ -21,6 +27,7 @@ We chose this because files work with no network route between environments, and
 - **Writing imports straight to the published rows.** It's faster, but it's a second way to go live that has to repeat everything a publish does.
 - **Updating dependencies too.** The target would match the source, but importing one page would overwrite production's own edits to a shared snippet, or a logo replaced there.
 - **Sylius fixture YAML as the format.** It would be a second way of writing down a block tree.
+- **Only adding missing media items when everything is picked.** It protects files, but a stale import could still roll back placements and settings.
 
 ## Consequences
 
@@ -31,3 +38,4 @@ We chose this because files work with no network route between environments, and
 - References that don't resolve in the target import unchanged, and the import reports them. The admin flags them as broken references, as ADR 0002 accepts for a deleted product.
 - An import started in the admin runs on the Messenger worker that scheduled publishing already needs.
 - Without a shared UUID, an entry created separately in each environment is two entries. Environments cloned from each other share UUIDs.
+- Every record keeps the time it last changed, including its on-save settings, and an export records that time. Imported content keeps the source's time until someone changes it in the target, so a later export of the same record isn't mistaken for a stale one. The check relies on the environments' clocks roughly agreeing.
