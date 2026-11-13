@@ -26,6 +26,10 @@ _Avoid_: layout preset, pattern, template
 A named, typed value on a block or an entry, such as a heading, an image, a link or a list of products. A field is either translatable, with a value per translation, or shared by all translations.
 _Avoid_: property, attribute, setting
 
+**Field type**:
+A kind of field, such as text, rich text, an image, a link or a list of products, which sets what a field holds and how editors enter it. The plugin ships field types, and developers can add their own.
+_Avoid_: input type, widget, form type
+
 **Source**:
 A developer-defined way to fill a field with a list of items of one kind when the content is shown, such as the products in a taxon or the current product's associations.
 _Avoid_: provider, data source, feed
@@ -93,3 +97,9 @@ _Avoid_: page variables, template context
 **Binding**:
 A field value, or a token inside rich text, that shows a property of the host-page context instead of a fixed value, such as the current product's name.
 _Avoid_: dynamic source, merge tag, placeholder, variable
+
+### Editing
+
+**Builder**:
+The full-screen editor where an entry is composed, with its block tree, a live preview of the shop page and the fields of what's selected.
+_Avoid_: page builder, visual editor, designer, editor (an editor is a person)
