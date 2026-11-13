@@ -23,7 +23,7 @@ A saved block tree, or part of one, that is copied when inserted and never kept 
 _Avoid_: layout preset, pattern, template
 
 **Field**:
-A named, typed value on a block or an entry, such as a heading, an image, a link or a list of products.
+A named, typed value on a block or an entry, such as a heading, an image, a link or a list of products. A field is either translatable, with a value per translation, or shared by all translations.
 _Avoid_: property, attribute, setting
 
 **Source**:
@@ -39,6 +39,14 @@ _Avoid_: model, schema, collection type
 **Entry**:
 A single piece of content of one content type, such as a page, a blog post or a store location.
 _Avoid_: document, item, record, node
+
+**Translation**:
+An entry's content in one locale. An entry has one block tree shared by all its translations, and shoppers see it only in locales it has a translation for.
+_Avoid_: localization, language version, locale variant
+
+**Fallback chain**:
+The locales a translatable field falls back through, in order, when it's empty in the current locale. It ends at the store's fallback locale. A binding's fallback is a different thing.
+_Avoid_: default locale, locale fallback
 
 **Page**:
 An entry of the built-in content type for standalone pages with their own URL and a block tree.
