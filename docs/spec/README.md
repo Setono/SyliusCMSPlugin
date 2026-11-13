@@ -9,7 +9,7 @@ This specification is the source of truth for building v2. It was assembled from
 
 ## How to read it
 
-**Public contracts are spelled out exactly.** These are the PHP attributes and their options, the PHP interfaces, the event classes, the bundle config keys, the console commands, the routes, the Twig functions, the CSS class names, and the JSON formats of the stored block tree, drafts, presets and exports. After 2.0 they fall under the backward-compatibility promise, and a change to one of them is a breaking change.
+**Public contracts are spelled out exactly.** These are the PHP attributes and their options, the PHP interfaces, the event classes, the bundle config keys, the console commands, the route files an app imports and the routes it links to or generates (not the builder's internal JSON endpoints), the Twig functions, the CSS class names and custom properties, the request attribute `_cms_preview_mode`, and the JSON formats of the stored block tree, drafts, presets and exports, including the [canonical JSON](content-model.md#canonical-json) rules. After 2.0 they fall under the backward-compatibility promise, and a change to one of them is a breaking change.
 
 **Internals are left to the builder of the plugin.** That covers services, class layout and database columns, unless an ADR fixes them. Where the spec names a class that isn't listed in [Extending](extending.md), the name is a suggestion.
 

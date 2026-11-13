@@ -16,6 +16,7 @@ A media item is one of three kinds:
 | `document` | a configurable allowlist, PDF by default | as uploaded |
 
 - The allowed MIME types per kind and the maximum upload size are config: `media.types` and `media.max_upload_size` ([Extending](extending.md#configuration)).
+- **The upload limit** defaults to PHP's effective limit (`UploadedFile::getMaxFilesize()`, the smaller of `upload_max_filesize` and `post_max_size`). A configured `media.max_upload_size` above it is lowered to it, because PHP refuses a bigger file before the plugin sees it. The builder gets the effective limit with its registry and checks a file before uploading it.
 - **YouTube and Vimeo videos aren't media items.** The Video block holds their URL in a field ([Blocks](blocks.md)).
 - **Product and taxon images stay out.** They remain Sylius's own. Content shows them through block types that read products or taxons, such as product cards and taxon tiles. There are no image bindings in v2.0.
 
@@ -37,7 +38,8 @@ A media item is one of three kinds:
 - Editors upload in the library and in the builder's media picker, which is the same library opened as a picker ([Admin](admin.md#media-library)).
 - They drag and drop many files at once, and each goes into the open folder.
 - **Duplicates.** When an uploaded file's content matches an existing media item's current file, the editor is offered that media item instead. They can still upload a copy, which becomes a new media item.
-- A file over `media.max_upload_size`, or of a type that `media.types` doesn't allow, is refused with a message naming the limit.
+- A file over the upload limit, or of a type that `media.types` doesn't allow, is refused with a message naming the limit.
+- **Every file is checked the same way**, whether it's uploaded, replaced or imported ([Transfer](transfer.md#media-files)): its type against `media.types`, its size against the upload limit, its MIME type, dimensions and checksum read from the file itself, and SVG sanitised. Nothing is trusted from the file's name or from metadata that came with it.
 
 ### EXIF
 
@@ -72,9 +74,9 @@ Media items aren't entries, so they have no drafts or revisions ([ADR 0013](../a
 
 - **The UUID stays.** Content that refers to the media item shows the new file without being edited or published again.
 - **The editor sees the "used in" list first.** The replace dialog lists every use and says that the change takes effect at once. Alt text and the focal point are kept.
-- **A replaced file is checked like an upload**, against `media.types` and `media.max_upload_size`, and must be of the same kind.
+- **A replaced file is checked like an upload**, and must be of the same kind.
 - **New storage paths.** A replaced file gets a new storage path, and so does every image variant generated from it. Moving the focal point gives every variant a new URL too. Caches and CDNs therefore never serve an old file under the current URL.
-- **Old files are deleted later.** A delayed Messenger message on Sylius's `main` transport deletes the old file and its variants after `media.grace_period`, one day by default, so pages cached before the replace don't show broken images in the meantime.
+- **Old files are deleted later.** A delayed Messenger message on Sylius's `main` transport deletes the old file and its variants after `media.grace_period`, one day by default, so pages cached before the replace don't show broken images in the meantime. The message is dispatched after the database transaction commits, so a replace that rolls back never deletes the file still in use.
 
 ### Events
 
@@ -94,7 +96,7 @@ Documents and videos have a permanent URL, so links outside the shop, such as in
 /media/{uuid}/{filename}
 ```
 
-- The route is `setono_sylius_cms_media` ([Extending](extending.md#routes)). It sits outside the locale prefix and is the same in every channel, because media items are shared and public.
+- The route is `setono_sylius_cms_media` ([Extending](extending.md#routes)). It sits outside the locale prefix and is the same in every channel, because media items are shared and public. `{uuid}` must be a UUID, so the route never catches other files under `/media`, such as Sylius's `/media/image` and Liip's `/media/cache`.
 - Only the UUID is looked up. The filename is cosmetic: the plugin generates it from the original filename, and any filename answers.
 - It answers with a `302` temporary redirect to the current file, because a replace changes the target. An unknown UUID answers 404.
 - Images have no permanent URL, because templates always render their current path.
@@ -123,7 +125,7 @@ The index drives:
 
 ## Image processing
 
-- **Storage.** Media items are stored in the plugin's own Flysystem storage, `media.storage`, which is a local public directory by default. Gaufrette isn't supported, and Sylius's `sylius.storage` isn't reused ([ADR 0014](../adr/0014-images-are-processed-by-liip-behind-an-image-provider.md)).
+- **Storage.** Media items are stored in the plugin's own Flysystem storage, `media.storage`, which is a local public directory by default: `%kernel.project_dir%/public/media/cms`. Like Sylius's own `public/media/image`, it holds the only copy of every file, so a project must keep it across deploys, such as on a shared or persistent volume. Gaufrette isn't supported, and Sylius's `sylius.storage` isn't reused ([ADR 0014](../adr/0014-images-are-processed-by-liip-behind-an-image-provider.md)).
 - **LiipImagine** generates image variants on first request, with the plugin's own loader and resolver, both named `setono_sylius_cms` by default (`media.liip.loader` and `media.liip.resolver`). It caches them in the plugin's storage.
 - **Cropping.** A variant with an aspect ratio that differs from the source is cropped around the media item's focal point.
 - **Formats.** Variants are output as WebP, and as AVIF where the server's image library supports it. SVG and animated GIF are served as uploaded, at every width.

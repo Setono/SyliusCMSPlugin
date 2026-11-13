@@ -11,7 +11,7 @@ A [layout](../../GLOSSARY.md#entries) is declared in code with `#[Layout]` ([Ext
 
 - **Only content types with their own URL have layouts**: Page, Blog post, Blog category, and any project content type with a prefix. Snippets and entries without a URL, such as FAQ items, render their block tree with no frame wherever they're shown. A snippet that needs a frame uses a wrapper block, such as a Group.
 - **Each layout belongs to one content type**, so its fields can be checked against that type. Layouts share markup through Twig includes and PHP inheritance. Projects can add layouts to any content type with a URL, including the shipped ones.
-- **Exactly one layout per content type is its default** (`default: true`).
+- **Each content type has one default layout**, marked `#[Layout(default: true)]`. A project changes it, including for a shipped content type, with `content_types.<code>.default_layout`, and hides layouts it doesn't want with `disabled.layouts` ([Configuration](extending.md#configuration)). The default can't be disabled.
 - **A layout sets no rules on blocks.** The content type decides what the top level of the tree may hold, so every layout of a content type accepts any tree of that type, and switching layout never touches the tree.
 - **A layout extends the shop layout** through `@SetonoSyliusCMSPlugin/layout/base.html.twig`, which prints the head tags ([Layout templates](extending.md#layout-templates)).
 - **A layout can contain slots.** Its template renders them with `cms_slot(id, {entry: entry})`. They're declared in config like any slot, with no template event, and provide `entry` ([Slots](slots.md#rendering-a-slot)).
@@ -41,7 +41,7 @@ A layout declares which entry fields its template prints, in `#[Layout(shows: [�
 
 ### A removed layout
 
-When a layout is removed from code, its entries keep its code in their tree.
+When a layout is removed from code, or disabled with `disabled.layouts`, its entries keep its code in their tree.
 
 - They render with the content type's default layout, ignoring the stored layout field values.
 - The admin flags them as a warning, in the builder's entry settings and on the entry's overview page ([Admin](admin.md#problems)).
@@ -51,12 +51,12 @@ When a layout is removed from code, its entries keep its code in their tree.
 
 | Content type | Code | Label | Fields | Shows | What it renders |
 | --- | --- | --- | --- | --- | --- |
-| Page | `default` | Default | `showTitle` (Toggle, on by default) | `title` | The title, when `showTitle` is on, then the tree edge to edge, with no container of its own. |
+| Page | `standard` | Standard | `showTitle` (Toggle, on by default) | `title` | The title, when `showTitle` is on, then the tree edge to edge, with no container of its own. |
 | Blog post | `article` | Article | none | `title`, `publishedAt`, `categories`, `featuredImage` | Contained width: the title, the date, links to the post's categories and the featured image above the tree. |
-| Blog category | `default` | Default | none | `title`, `description` | The title and the description above the tree. |
+| Blog category | `standard` | Standard | none | `title`, `description` | The title and the description above the tree. |
 
-- Their templates are `@SetonoSyliusCMSPlugin/layout/<content type code>/<layout code>.html.twig`.
-- **Contained and full width on the default Page layout.** The tree sits in `cms-tree`, which contains each top-level block to the shop's content width. A Group or a Banner with `fullWidth` on reaches the edges, so a page can mix full-width and contained blocks without a second layout ([Blocks](blocks.md#class-names)). Shop pages have their own containers, so a full-width block only reaches the edges where its surroundings allow.
+- Each is its content type's default. Their templates are `@SetonoSyliusCMSPlugin/layout/<content type code>/<layout code>.html.twig`, such as `layout/page/standard.html.twig`.
+- **Contained and full width on Page's standard layout.** The tree sits in `cms-tree`, inside the shop layout's own container, which keeps each top-level block to the shop's content width. A Group or a Banner with `fullWidth` on breaks out of that container to the edges of the viewport, so a page can mix full-width and contained blocks without a second layout ([Blocks](blocks.md#class-names)). In a slot on a Sylius page, a full-width block only reaches the edges of its surroundings.
 - The shipped layouts have no slots of their own. Agencies add layouts with slots.
 
 ## Presets
@@ -98,7 +98,7 @@ A preset can be a **starting point** for one content type. It then also remember
 - **Creating an entry** offers Blank plus the content type's starting points, shipped and saved by editors ([Admin](admin.md#create-dialog)).
 - **The default.** A developer can mark one code preset as the content type's default starting point (`"default": true`), which the create dialog preselects. Without one, Blank is preselected. Editors can't change the default in v2.0, and editor presets are never the default.
 - **Entry fields start empty**, such as the title, the slug and the SEO fields. The entry's channels, audience and other settings start as for any new entry.
-- **The layout** from the starting point is used, with its field values. When that layout no longer exists, the content type's default layout is used and the layout field values are dropped.
+- **The layout** from the starting point is used, with its field values. When that layout no longer exists or is disabled, the content type's default layout is used and the layout field values are dropped.
 
 A starting point is a role a preset plays, not a term of its own.
 
@@ -121,8 +121,8 @@ Code presets and editor presets use one format, built on the [stored block tree 
             "version": 1,
             "style": null,
             "fields": {
-                "heading": {"$trans": "setono_sylius_cms.preset.hero.heading"},
-                "fullWidth": true
+                "fullWidth": true,
+                "heading": {"$trans": "setono_sylius_cms.preset.hero.heading"}
             },
             "translated": {},
             "conditions": [],
@@ -140,7 +140,7 @@ Code presets and editor presets use one format, built on the [stored block tree 
 | `name` | A string, or a translation key as `{"$trans": …, "$domain": …}`. Required. |
 | `category` | A string, a translation key, or `null`. |
 | `description` | A string, a translation key, or `null`. |
-| `thumbnail` | A public path to an image, or `null`. Used for starting points in the create dialog. Code presets only. |
+| `thumbnail` | Code presets only, and always present in them: a public path to an image, or `null`. Used for starting points in the create dialog. |
 | `startingPoint` | `null` for a block preset, or the object below. |
 | `blocks` | The preset's top-level blocks, in order, in the [stored block format](content-model.md#a-block). |
 
@@ -149,10 +149,12 @@ Code presets and editor presets use one format, built on the [stored block tree 
 ```json
 {
     "contentType": "page",
-    "layout": "default",
-    "layoutVersion": 1,
-    "layoutFields": {"showTitle": false},
-    "layoutTranslated": {},
+    "layout": {
+        "code": "standard",
+        "version": 1,
+        "fields": {"showTitle": false},
+        "translated": {}
+    },
     "default": false
 }
 ```
@@ -160,10 +162,8 @@ Code presets and editor presets use one format, built on the [stored block tree 
 | Key | Value |
 | --- | --- |
 | `contentType` | The content type's code. |
-| `layout`, `layoutVersion` | The layout's code and the version its fields were saved with, or `null` for a content type without layouts. |
-| `layoutFields` | The layout's field values, in the [field value](content-model.md#field-values) encoding. `{}` when there are none. |
-| `layoutTranslated` | Their [translation state](content-model.md#translation-state), as in the tree's `layout.translated`. `{}` when there's none. |
-| `default` | `true` for the content type's default starting point. Code presets only. |
+| `layout` | The layout exactly as the tree stores it: its code, the version its fields were saved with, its field values and their translation state ([The tree](content-model.md#the-tree)). `null` for a content type without layouts. Layout upgraders run on it as they do on a tree. |
+| `default` | Code presets only: `true` for the content type's default starting point. |
 
 ## Code presets
 
@@ -207,10 +207,10 @@ All text in the shipped presets is translation keys. No starting point for Page 
 
 | Code | Kind | Category | Holds |
 | --- | --- | --- | --- |
-| `landing_page` | Page starting point, `default` layout | Pages | a Banner carousel, a Bestsellers carousel, Three USPs and a Rich text |
-| `content_page` | Page starting point, `default` layout | Pages | a Heading and a Rich text |
-| `blog_page` | Page starting point, `default` layout | Pages | see [Collections](collections.md#shipped-layouts-starting-points-and-presets) |
-| `faq_page` | Page starting point, `default` layout | Pages | see [Collections](collections.md#shipped-layouts-starting-points-and-presets) |
+| `landing_page` | Page starting point, `standard` layout | Pages | a Banner carousel, a Bestsellers carousel, Three USPs and a Rich text |
+| `content_page` | Page starting point, `standard` layout | Pages | a Heading and a Rich text |
+| `blog_page` | Page starting point, `standard` layout | Pages | see [Collections](collections.md#shipped-layouts-starting-points-and-presets) |
+| `faq_page` | Page starting point, `standard` layout | Pages | see [Collections](collections.md#shipped-layouts-starting-points-and-presets) |
 | `blog_category_archive` | Blog category starting point, the default | Blog | see [Collections](collections.md#shipped-layouts-starting-points-and-presets) |
 | `banner_carousel` | block preset | Banners | a Carousel of three Banners |
 | `hero` | block preset | Banners | a full-width Banner with two Buttons, primary and secondary |

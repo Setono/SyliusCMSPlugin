@@ -81,11 +81,10 @@ media/<uuid>/<filename>
                 {
                     "kind": "product_in_taxon",
                     "negate": false,
-                    "params": { "taxons": ["t_shirts"], "includeChildren": true }
+                    "params": { "includeChildren": true, "taxons": ["t_shirts"] }
                 }
             ],
-            "preceding": ["0193a5be-7301-7c2d-9e3f-4a5b6c7d8e9f"],
-            "changedAt": "2026-11-12T10:15:00Z"
+            "preceding": ["0193a5be-7301-7c2d-9e3f-4a5b6c7d8e9f"]
         }
     ],
     "entry": {}
@@ -102,7 +101,7 @@ media/<uuid>/<filename>
 | `settings.audience.groups` | Customer group codes, plus `@guest` and `@no_group` ([Content model](content-model.md#reserved-customer-group-values)). Empty for `everyone`. |
 | `settings.homepageOf` | Channel codes. Empty for every content type but Page. |
 | `settings.position` | An integer for a content type ordered by position, otherwise `null`. |
-| `placements` | A snippet's placements, in no particular slot. Empty for every other content type. Each has its `uuid`, its `slot` identifier, its page `scope` as a list of [conditions](content-model.md#visibility-conditions), its `preceding` placements in the source slot (nearest first) and its own `changedAt`. |
+| `placements` | A snippet's placements, in no particular slot. Empty for every other content type. Each has its `uuid`, its `slot` identifier, its page `scope` as a list of [conditions](content-model.md#visibility-conditions), and its `preceding` placements in the source slot (nearest first). A placement has no `changedAt` of its own: changing one bumps its snippet's. |
 | `entry` | The entry in the [entry format](content-model.md#entry-format). |
 
 ### presets/&lt;uuid&gt;.json
@@ -117,13 +116,12 @@ An editor preset, in the preset file format code presets use ([Layouts and prese
     "name": "Autumn hero",
     "category": "Campaigns",
     "description": null,
-    "thumbnail": null,
     "startingPoint": null,
     "blocks": []
 }
 ```
 
-`startingPoint` is `null` for a block preset. For a starting point it's `{"contentType", "layout", "layoutVersion", "layoutFields", "layoutTranslated", "default"}` ([Layouts and presets](layouts-and-presets.md#preset-file-format)). Editor presets keep their media references, so the media items they use are dependencies.
+Editor presets have no `thumbnail` and no `default`, which are for code presets only. `startingPoint` is `null` for a block preset. For a starting point it's `{"contentType", "layout"}`, where `layout` is the tree's [layout object](content-model.md#the-tree) or `null` ([Layouts and presets](layouts-and-presets.md#preset-file-format)). Editor presets keep their media references, so the media items they use are dependencies.
 
 ### media/folders.json
 
@@ -178,13 +176,15 @@ The original file sits beside it at `media/<uuid>/<filename>`.
 
 - **The CLI.** `setono:cms:export` and `setono:cms:import` run in the foreground, for developers and deploys ([Commands](#commands)).
 - **The admin.** Export downloads a zip. Import uploads one, shows the dry-run plan and asks for confirmation ([Admin](admin.md#transfer)). An import started in the admin runs on the Messenger worker that scheduled publishing already needs, and the admin shows its progress and result. Any admin user can import, because v2 has no editor roles.
+  - **The uploaded zip is kept in the plugin's Flysystem storage** (`media.storage`), not in a temporary file, so a worker on another server can read it. It's deleted when the import finishes or is abandoned.
+  - **A refused import is a result, not an error.** The handler records the refusal and its reasons for the admin and returns, so Messenger doesn't retry it. Only an unexpected error throws.
 - **The Sylius fixture** `setono_cms_import` loads an export folder, then publishes everything it imported, for demo and test data ([Extending](extending.md#fixture)).
 
 ## What an import does
 
-1. **It reads and upgrades.** Content type, layout and block type upgraders run on the export's entries and presets as they're read ([Content model](content-model.md#schema-changes)).
-2. **It plans.** It works out what's created, updated, unchanged or left alone, the conflicts, the homepage changes and the unresolved references. A dry run shows the plan and stops.
-3. **It applies the plan all or nothing**, in one database transaction. Any conflict or error means nothing changes.
+1. **It reads, checks and upgrades.** It checks the zip and every media file ([Media files](#media-files)). Content type, layout and block type upgraders run on the export's entries and presets as they're read ([Content model](content-model.md#schema-changes)).
+2. **It plans.** It works out what's created, updated, unchanged or left alone, the conflicts, the homepage changes and the unresolved references. A record identical to the target's is marked unchanged first, before the [stale check](#stale-records), so it's never a conflict. With `--publish`, the plan also runs publish validation on every entry it would publish. A dry run shows the plan and stops.
+3. **It applies the plan all or nothing**, in one database transaction. Any conflict or error means nothing changes. Files are written to storage only after the plan is complete, and the delayed delete of a replaced file is dispatched after the transaction commits ([Media](media.md#replacing-a-file)).
 
 What applying does to each record:
 
@@ -194,9 +194,20 @@ What applying does to each record:
 - **A dependency** (a snippet or media item that came along) is created when the target lacks it, and otherwise left as it is, so the target's own edits to a shared snippet, or a logo replaced there, survive.
 - **On-save settings and placements** of the records it writes apply at once.
 - **An unchanged record**, identical to the target's, is skipped: no draft and no revision.
-- **Imported records keep the source's `changedAt`** until someone changes them in the target ([Stale records](#stale-records)).
+- **Every write an import makes sets `changedAt` to the export's value**: the draft or rows it saves, the on-save settings and placements it applies, and the publish that `--publish` or the fixture runs. A record keeps it until someone changes it in the target ([Stale records](#stale-records)).
 
 When it's done, the import dispatches `ImportFinished` ([Extending](extending.md#events)).
+
+### Media files
+
+An export is untrusted input: any admin user can import one. So every file in it goes through the same checks as an upload ([Media](media.md#uploading)), whether its media item is picked, a dependency, or new in the target:
+
+- **The zip.** Every entry must resolve inside the export's root. An absolute path, a `..` segment or a link refuses the import.
+- **The filename.** `filename` must be a plain basename: no `/`, `\`, `..` or control characters. Anything else refuses the import.
+- **The checksum.** The file's SHA-256 must match `checksum`. A mismatch refuses the import.
+- **The file itself.** Its type is checked against `media.types` and its size against the upload limit. Its MIME type, size and dimensions are read from the file, and the values in the JSON are ignored. SVG is sanitised.
+
+A file that fails a check refuses the whole import, with the media item named.
 
 ## Conflicts
 
@@ -216,7 +227,7 @@ Every entry, media item and editor preset keeps a `changedAt`: when its publishe
 
 A picked record whose `changedAt` in the target is later than in the export is a conflict. Picking everything from an older copy of production would otherwise roll back production's newer media files and on-save settings at once, and neither keeps a history.
 
-Imported records keep the source's `changedAt` until someone changes them in the target, so a later export of the same record isn't mistaken for a stale one. The check relies on the environments' clocks roughly agreeing.
+Every write an import makes, including its publish, sets the source's `changedAt`, and the record keeps it until someone changes it in the target, so a later export of the same record isn't mistaken for a stale one. A record identical to the target's is never stale, because the unchanged check runs first. The check relies on the environments' clocks roughly agreeing.
 
 An entry created separately in each environment has two UUIDs, so it's two entries. Environments cloned from each other share UUIDs.
 
@@ -231,7 +242,8 @@ The target's code must know everything the export uses:
 - **A content type, layout or block type the target doesn't know** makes the import refuse. A version newer than the target's code refuses too. Deploy the code first.
 - **Older versions** are upgraded on import.
 - **A layout or slot the target's code no longer declares** is kept as it is and flagged, as everywhere else ([Admin](admin.md#problems)).
-- **A disabled content type or block type** imports like any other. Disabling only hides it from editors.
+- **A disabled content type, block type or layout** imports like any other. Disabling only hides it from editors.
+- **The Embed code block is the exception.** While `embed_code` is off, an import refuses an `embed_code` block that isn't already in the entry's published tree in the target, with the same key ([ADR 0018](../adr/0018-raw-html-is-an-opt-in-embed-code-block.md), [Blocks](blocks.md#embed-code)).
 
 ## Commands
 
@@ -249,7 +261,16 @@ setono:cms:import <path> [--dry-run] [--publish] [--overwrite]
 ```
 
 - `<path>` is an export folder or zip.
-- `--dry-run` prints the plan and changes nothing.
+- `--dry-run` prints the plan and changes nothing. It checks everything the real run would, so it exits with the code the real run would, and works as a gate in CI and deploys.
 - `--publish` publishes every imported entry as part of the import.
 - `--overwrite` overwrites the records the plan lists as conflicts, discarding their drafts. It doesn't resolve URL clashes.
-- **Exit codes:** `0` when the import applied, or the dry run found no conflicts. `1` when it refused because of conflicts, unknown code or a failed publish, with the reasons printed. Unresolved references are reported and don't fail the import.
+- **Exit codes**, with the reasons printed:
+
+  | Code | Meaning |
+  | --- | --- |
+  | `0` | It applied, or the dry run would. |
+  | `1` | It refused for a reason `--overwrite` doesn't fix: unknown code, a URL clash, a failed publish, a file that fails its checks, or an `embed_code` block while it's off. |
+  | `2` (`Command::INVALID`) | `<path>` isn't a readable export folder or zip, or its `format` is unknown. |
+  | `3` | It refused only because of conflicts that `--overwrite` would resolve. |
+
+  Unresolved references are reported and don't fail the import.

@@ -38,7 +38,7 @@ The identifier is what placements store. On Sylius 1.14, the plugin adds one blo
 
 **Slots don't limit block types.** Any snippet whose context fits can be placed in any slot. The builder's preview shows when something doesn't fit the space.
 
-**An empty slot prints nothing**, not even a wrapper ([Rendering](rendering.md)).
+**An empty slot prints nothing**, not even a wrapper ([Rendering](rendering.md)). A slot with something to show prints `<div class="cms-slot cms-slot--<identifier>">` around it, with the identifier's dots and underscores turned into hyphens, such as `cms-slot--product-after-price`. Its top-level blocks are spaced by `--cms-block-spacing`, like a tree's, but not contained to `--cms-content-width`: the slot sits wherever its template event prints it ([Blocks](blocks.md#class-names)).
 
 ## Stock slots
 
@@ -46,11 +46,11 @@ The plugin prepends these to `setono_sylius_cms.slots`. None is capped, and a pr
 
 | Identifier | Where | Sylius 1.14 template event (priority) | Provides |
 | --- | --- | --- | --- |
-| `layout.top` | Every page: the top of the page | `sylius.shop.layout.before_body` (0) | |
-| `layout.before_content` | Every page: above the main content | `sylius.shop.layout.before_content` (0) | |
-| `layout.after_content` | Every page: below the main content | `sylius.shop.layout.after_content` (0) | |
-| `layout.footer` | Every page: the footer | `sylius.shop.layout.footer` (-10) | |
-| `homepage` | Sylius's homepage, above its own blocks | `sylius.shop.homepage` (100) | |
+| `shop.top` | Every page: the top of the header, above the logo, inside the shop's container | `sylius.shop.layout.header` (30) | |
+| `shop.before_content` | Every page: above the main content | `sylius.shop.layout.before_content` (0) | |
+| `shop.after_content` | Every page: below the main content | `sylius.shop.layout.after_content` (0) | |
+| `shop.footer` | Every page: the footer | `sylius.shop.layout.footer` (-10) | |
+| `store_homepage` | Sylius's own homepage, above its own blocks | `sylius.shop.homepage` (100) | |
 | `product.top` | Product page: above the main content | `sylius.shop.layout.before_content` (-10) | `product`, resolved |
 | `product.sidebar` | Product page: the bottom of the column beside the images | `sylius.shop.product.show.right_sidebar` (1) | `product` |
 | `product.after_price` | Product page: under the price | `sylius.shop.product.show.right_sidebar` (28) | `product` |
@@ -59,16 +59,20 @@ The plugin prepends these to `setono_sylius_cms.slots`. None is capped, and a pr
 | `product.after_associations` | Product page: below the associations | `sylius.shop.product.show.content` (5) | `product` |
 | `taxon.header` | Taxon page: the header | `sylius.shop.taxon.header` (1) | `taxon` |
 | `taxon.before_grid` | Taxon page: above the product grid | `sylius.shop.product.index.before_list` (0) | `taxon`, resolved |
-| `taxon.after_grid` | Taxon page: below the product grid | `sylius.shop.product.index.before_pagination` (-10) | `taxon`, resolved |
+| `taxon.after_grid` | Taxon page: below the product grid, when the taxon has products | `sylius.shop.product.index.before_pagination` (-10) | `taxon`, resolved |
 | `taxon.sidebar` | Taxon page: the sidebar, below the taxon menu | `sylius.shop.product.index.after_vertical_menu` (0) | `taxon` |
 | `cart.after_summary` | Cart: below the summary, above the suggestions | `sylius.shop.cart.suggestions` (100) | |
-| `checkout.sidebar` | Checkout: the sidebar on every step | `sylius.shop.checkout.sidebar` (0) | |
+| `checkout.sidebar` | Checkout: the sidebar on every step but the last (complete), which has none | `sylius.shop.checkout.sidebar` (0) | |
 | `order.thank_you` | Thank-you page: after the message | `sylius.shop.order.thank_you.after_message` (0) | |
 | `account.dashboard` | Account dashboard: after the customer's information | `sylius.shop.account.dashboard.after_information` (0) | |
 
 "Resolved" means the template event doesn't pass that key, so the slot gets it from a context resolver ([Context resolvers](#context-resolvers)). `product.top` sits in a layout event that fires on every page, so it renders only where the `product` resolver finds a product.
 
-On a channel with a CMS [homepage](../../GLOSSARY.md#entries), Sylius's homepage template doesn't render, so placements in `homepage` don't show there ([URLs and SEO](urls-and-seo.md#homepage)). The admin flags them ([Admin](admin.md#problems)).
+- **The `shop.*` slots** are named after the shop as a whole, not after a CMS [layout](../../GLOSSARY.md#entries), and `store_homepage` after Sylius's own homepage, which a CMS homepage replaces.
+- **`taxon.after_grid`** sits inside Sylius's check for a non-empty product list, so it doesn't render on a taxon with no products.
+- **`taxon.header` and `taxon.sidebar`** fire inside a Sylius sub-request (`sylius_shop_partial_taxon_show_by_slug`). They still preview, patch in the builder and show on share links, because preview and share state are read from the main request ([Rendering](rendering.md#preview-mode-and-share-links)).
+
+On a channel with a CMS [homepage](../../GLOSSARY.md#entries), Sylius's homepage template doesn't render, so placements in `store_homepage` don't show there ([URLs and SEO](urls-and-seo.md#homepage)). The admin flags them ([Admin](admin.md#problems)).
 
 ## Context keys
 
@@ -109,7 +113,7 @@ A [snippet](../../GLOSSARY.md#entries) declares the host-page context it needs, 
 
 ## Placements
 
-A [placement](../../GLOSSARY.md#shop-pages) shows one snippet in one slot. It has a UUID, the slot's identifier, a [page scope](#page-scopes) and a position in the slot. A snippet can have many placements, such as one in `layout.footer` with an empty scope and one in `product.sidebar` scoped to the Shoes taxon.
+A [placement](../../GLOSSARY.md#shop-pages) shows one snippet in one slot. It has a UUID, the slot's identifier, a [page scope](#page-scopes) and a position in the slot. A snippet can have many placements, such as one in `shop.footer` with an empty scope and one in `product.sidebar` scoped to the Shoes taxon.
 
 - **Placements take effect on save** ([ADR 0005](../adr/0005-placements-take-effect-on-save.md)). They don't go through drafts, and adding, editing, removing or reordering them fires `PlacementsChanged` ([Extending](extending.md#events)) and bumps the snippet's `changedAt`.
 - **The snippet decides when its content shows.** A placement shows its snippet only while the snippet is visible ([Content model](content-model.md#when-an-entry-shows)): a placement of an unpublished, disabled or expired snippet shows nothing.
@@ -148,7 +152,7 @@ A [binding](../../GLOSSARY.md#shop-pages) shows a property of the host-page cont
 
 - **Only declared properties can be bound.** Each is declared in code for a context key, `channel` or `customer`, with a label and a type ([Extending](extending.md#bindable-properties)). Editors can't enter a property path.
 - **The picker lists only properties that fit** the field's binding types and the context the entry provides or the snippet declares. Channel and customer properties fit everywhere.
-- **Binding types** are `text`, `number` and `url`. Text and Textarea fields accept `text` and `number`, Number fields accept `number`, and Link fields accept `url`. Rich text tokens accept `text` and `number`. There are no image bindings in v2.0.
+- **Binding types** are `text`, `number` and `url`. Text and Textarea fields accept `text` and `number`, Number fields accept `number`, and Link fields accept `url`, bound inside the link's `ref`, so the link keeps its own label and anchor ([Content model](content-model.md#links)). Rich text tokens accept `text` and `number`. There are no image bindings in v2.0.
 - **Fallback.** A binding can carry a fallback for when its value is empty, such as "Hi there" for a guest's first name. The fallback follows the field's translatability. Without one, the field renders empty. This is different from the [fallback chain](localization.md#fallback-chain), which is about locales.
 - **Bound values can't be typed in place** in the builder's preview ([Builder](builder.md)).
 

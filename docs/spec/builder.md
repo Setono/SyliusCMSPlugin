@@ -145,11 +145,12 @@ The builder holds the entry's working copy as JSON in the browser and saves it a
 
 Preview mode renders the working copy on the real shop page, with the same Twig templates shoppers see ([Rendering](rendering.md)).
 
-- **Turning it on.** A signed, short-lived token in the query parameter `_cms_preview` on the shop URL turns it on. The builder gets the token from its JSON endpoints and loads the iframe from the admin's own host, so the preview works when channels have their own hostnames.
+- **Turning it on.** A signed, short-lived token in the query parameter `_cms_preview` on the shop URL turns it on. It's read from the main request, so slots rendered in Sylius sub-requests preview too ([Rendering](rendering.md#preview-mode-and-share-links)). The builder gets the token from its JSON endpoints and loads the iframe from the admin's own host, so the preview works when channels have their own hostnames.
 - **What the token forces:** the channel, the locale, the sample object (the host-page context), Shown to and Date. Every condition on the page follows Shown to and Date, including those on other snippets in slots. The forced Date applies to date windows only, not to other entries' scheduled publishes.
 - **The edited entry** renders its working copy, ignoring its own audience, date window, `enabled` switch and publish state. Its blocks still follow the pickers. Everything else on the page shows its published content.
 - **Starting values.** Shown to starts as Guest if the entry's audience allows guests, and otherwise as the first group it allows. Date starts as now, or as the start of the entry's date window when that's in the future.
 - **Responses** send `Cache-Control: no-store` and `X-Robots-Tag: noindex`.
+- **Templates can tell.** `cms_preview_mode()` returns `builder` in the preview, so themes leave out analytics and other tracking, and the iframe's reloads aren't counted as page views ([Extending](extending.md#twig)).
 
 ### The bridge
 
@@ -171,13 +172,13 @@ Preview mode injects a bridge script into the page, which shoppers never get.
 
 ## JSON endpoints
 
-The builder talks to plain JSON controllers under the admin firewall, not to API Platform. Every endpoint below is prefixed with `/admin/cms/api`, requires an admin user and checks a CSRF token on every request that changes something.
+The builder talks to plain JSON controllers under the admin firewall, not to API Platform. Every endpoint below is prefixed with `/{admin}/cms/api`, where `{admin}` is Sylius's admin path ([Routes](extending.md#routes)). Each requires an admin user and checks a CSRF token on every request that changes something.
 
-The paths and route names are contracts. The request and response bodies are internal to the builder app that ships with the plugin, and aren't part of the BC promise, with two exceptions: entries travel in the [entry format](content-model.md#entry-format), and what widgets reach through `.builder` ([Extending](extending.md#widgets)) keeps its shape.
+**These endpoints are internal.** Only the builder app that ships with the plugin calls them, so their paths, route names and bodies aren't part of the BC promise and can change in any release, together with the app. They're listed here to guide the build. Two things they carry are contracts anyway: entries travel in the [entry format](content-model.md#entry-format), and what widgets reach through `.builder` ([Extending](extending.md#widgets)) keeps its shape.
 
 | Name (`setono_sylius_cms_admin_api_…`) | Method | Path | Purpose |
 | --- | --- | --- | --- |
-| `registry` | GET | `/registry` | Block types, layouts, content types, their field schemas, block styles, sources, condition kinds, bindable properties, link targets, slots, context keys and the UI strings, in the admin user's locale. |
+| `registry` | GET | `/registry` | Block types, layouts, content types, their field schemas, block styles, sources, condition kinds, bindable properties, link targets, slots, context keys, the effective upload limit ([Media](media.md#what-the-library-holds)) and the UI strings, in the admin user's locale. |
 | `entry_show` | GET | `/entries/{uuid}` | The working copy: the draft, or the rows of a never-published entry, in the entry format. Also its on-save settings, its status, its lock state, and who else has it open. |
 | `entry_save` | PATCH | `/entries/{uuid}` | Autosaves a change set since the last load. Answers with the merged changes from colleagues, or the clashes. |
 | `entry_settings` | PUT | `/entries/{uuid}/settings` | Saves the on-save settings: enabled, date window, channels, audience, "Homepage of" and position. |

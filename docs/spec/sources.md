@@ -72,11 +72,12 @@ Every shipped source can be disabled with `setono_sylius_cms.disabled.sources`. 
 
 | Code | Label | Needs | Parameters | Order |
 | --- | --- | --- | --- | --- |
-| `entries_from_collection` | From a collection | | `contentType` (Choice of the collections' content type codes, required), `categories` (Entries of that collection's category type, optional) | the content type's order, then the ID |
+| `entries_from_collection` | From a collection | | `contentType` (Choice of the collections' content type codes, required), `categories` (`Entries(categoriesOf: 'contentType')`: that collection's categories, optional) | the content type's order, then the ID |
 | `entries_in_this_category` | In this category | `entry`, a category | none | the listed content type's order, then the ID |
 | `related_entries` | Related | `entry`, of a collection with categories | none | newest first, then the ID |
 
 - **From a collection** lists one content type's entries, optionally only those in any of the chosen categories. It has no limit of its own.
+- **Each entry source says what it lists** through `ListedContentTypeAwareInterface` ([Extending](extending.md#sources)), so the Entries block offers the right card displays: From a collection lists its `contentType` parameter, In this category the content type whose category type is the host entry's, and Related the host entry's own type.
 - **In this category** lists the entries of the collection whose category type is the host-page entry's content type, that are in that category. It's offered only where a category is the host-page context, which makes category archives work ([Collections](collections.md#categories)).
 - **Related** lists entries of the host-page entry's content type that share at least one category with it, leaving that entry out. It's offered only on entries of a collection with categories. "Newest first" is the content type's order when that order is a date descending, such as Blog post's `publishedAt`, and `createdAt` descending otherwise.
 - **Category filters** join the indexed (entry, field, UUID) reference table, so they page in SQL on MySQL and PostgreSQL ([Collections](collections.md#categories)).

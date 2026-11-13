@@ -19,9 +19,9 @@ Every entry also has the base fields in [Content model](content-model.md#entries
 | Content type | Code | Own URL | Block tree | Layouts | Order | Cards |
 | --- | --- | --- | --- | --- | --- | --- |
 | Blog post | `blog_post` | yes, prefix `blog` | yes, `Allow('*')` | `article` (default) | `publishedAt` descending | `grid`, `carousel` |
-| Blog category | `blog_category` | yes, prefix `blog/category` | yes, `Allow('*')`, holds its post list | `default` (default) | `createdAt` descending | none |
+| Blog category | `blog_category` | yes, prefix `blog/category` | yes, `Allow('*')`, holds its post list | `standard` (default) | `createdAt` descending | none |
 | FAQ item | `faq_item` | no | no | none | `position` | `accordion` |
-| FAQ category | `faq_category` | no | no | none | `createdAt` descending | none |
+| FAQ category | `faq_category` | no | no | none | `position` | none |
 
 Their fields, beyond the base fields:
 
@@ -80,8 +80,8 @@ One generic block, code `entries`, lists entries of any collection, mirroring th
 | `paginate` | Toggle, off by default | no |
 
 - **Filling it.** Hand-picked, or one of the entry sources: From a collection, In this category or Related ([Sources](sources.md#entry-sources)).
-- **Displays.** The block offers the displays that the listed content type has cards for: `grid` and `carousel` for blog posts, and `accordion` for FAQ items. A hand-picked list offers the displays that every picked entry's content type has. The carousel display uses the shared carousel script ([Blocks](blocks.md#carousel)).
-- **Markup.** `cms-entries cms-entries--<display>`, with a `cms-entries__item` around each card, and `<nav class="cms-pagination">` for the page links.
+- **Displays.** The block offers the displays that the listed content type has cards for: `grid` and `carousel` for blog posts, and `accordion` for FAQ items. A source says which content type it lists from its parameters and the host entry's type ([Extending](extending.md#sources)), and all three entry sources do. A hand-picked list offers the displays that every picked entry's content type has. The carousel display uses the shared carousel script ([Blocks](blocks.md#carousel)).
+- **Markup.** `cms-entries cms-entries--<display>`, with a `cms-entries__item` around each card, and `<nav class="cms-pagination">` for the page links. Inside the `nav`: a `cms-pagination__list` (`ol`) of `cms-pagination__item`s, each holding a `cms-pagination__link` (`a`). The current page's link has `cms-pagination__link--current` and `aria-current="page"`. `cms-pagination__previous` and `cms-pagination__next` are the links before and after the list, left out on the first and last page. A gap in the numbers is a `cms-pagination__gap` item.
 
 ### Cards
 
@@ -115,7 +115,7 @@ All text in the shipped presets is translation keys ([Layouts and presets](layou
 **Layouts**, one per content type with its own URL, each its type's default ([Layouts and presets](layouts-and-presets.md#shipped-layouts)):
 
 - **Blog post: Article** (`article`). Contained width, showing the title, the date, links to its categories and the featured image above the tree.
-- **Blog category** (`default`). The title and the description above the tree.
+- **Blog category: Standard** (`standard`). The title and the description above the tree.
 
 **Starting points:**
 

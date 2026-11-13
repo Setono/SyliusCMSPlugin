@@ -127,7 +127,7 @@ Creating an entry from the Overview, All entries or a list:
 - **Import:** upload a zip, then see the dry-run plan: create, update, unchanged or left alone per record, the conflicts, homepage changes and unresolved references.
   - Records with a draft or a scheduled publish here, or changed here since the export, are conflicts and block the import. A checkbox overwrites them, which discards their drafts.
   - An option publishes everything imported.
-  - **Import** confirms, runs on the Messenger worker and shows its progress. The result links to the imported drafts to review and publish.
+  - **Import** confirms, runs on the Messenger worker and shows its progress. The uploaded zip is kept in the plugin's storage, so a worker on another server can read it ([Transfer](transfer.md#who-runs-it)). The result links to the imported drafts to review and publish, or lists why the import refused.
 
 ## Problems
 
@@ -141,7 +141,7 @@ The admin flags problems on the entry, in the lists' problem marker, on the Over
 
 **Warnings:**
 
-- an entry whose layout was removed from code
+- an entry whose layout was removed from code or disabled
 - an entry URL that a Sylius or app route takes ([URLs and SEO](urls-and-seo.md#routing))
 - a category archive whose block tree no longer holds an Entries block ([Collections](collections.md))
 - a capped slot without a catch-all placement ([Targeting](targeting.md))

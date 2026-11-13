@@ -77,7 +77,9 @@ The builder's preview and share links render through this pipeline, turned on by
 - **A share link** (`_cms_share`) renders one entry's draft, or its published content when it has no draft, with the channel, locale, Shown to and Date fixed when the link was created. It has no markers and no bridge.
 - **The edited entry ignores its own visibility**: an unpublished or disabled entry, or one outside its audience or date window, still renders. Its blocks still follow Shown to and Date. Everything else on the page, such as snippets in other slots, shows its published content and follows the same rules as for a shopper.
 - **A snippet that loses its capped slot** still shows there in the preview, as if it won ([Targeting](targeting.md)).
-- Both send `Cache-Control: no-store` and `X-Robots-Tag: noindex`.
+- Both send `Cache-Control: no-store` and `X-Robots-Tag: noindex`. A share link also sends `Referrer-Policy: no-referrer`, so its token isn't passed on to other sites.
+- **Read from the main request.** The token, and with it the preview or share state, is read from the main request (`RequestStack::getMainRequest()`), and so are context resolvers ([Extending](extending.md#context-keys-and-resolvers)). So slots that fire inside a Sylius sub-request, such as `taxon.header` and `taxon.sidebar`, preview, get patched in by the builder and show on share links like any other.
+- **Templates can tell.** The plugin sets the request attribute `_cms_preview_mode` on the main request to `builder` or `share`, `RenderContext` carries the same value, and `cms_preview_mode()` returns it in Twig, `null` for shoppers ([Extending](extending.md#twig)). Themes and other plugins use it to leave out analytics, ad pixels, consent tools and A/B scripts, so the builder's reloads aren't counted as page views and share tokens don't reach analytics.
 
 ## No caching in v2.0
 
@@ -85,7 +87,7 @@ v2.0 caches nothing it renders ([ADR 0021](../adr/0021-storefront-output-renders
 
 What stays in place for a cache added later:
 
-- **Condition kinds declare what they read**, and clock readers report their next change ([Extending](extending.md#condition-kinds)). A later HTML cache adds declarations that block types and sources opt into, and treats any that haven't declared themselves cacheable as uncacheable, so nothing written for v2.0 breaks.
+- **Condition kinds declare what they read**, and kinds that read the time report their next change ([Extending](extending.md#condition-kinds)). A later HTML cache adds declarations that block types and sources opt into, and treats any that haven't declared themselves cacheable as uncacheable, so nothing written for v2.0 breaks.
 - **Listings and sources report no next date boundary** in v2.0.
 - **Change events** implement `StorefrontChangedInterface` and carry the affected UUIDs ([Extending](extending.md#events)). Nothing in v2.0 listens to them for caching.
 - **Three services can be decorated:** `PlacementProviderInterface`, `EntryUrlLookupInterface` and `ReferenceLoaderInterface` ([Extending](extending.md#rendering-services)). A project that needs to cache placements, URL lookups or references decorates one with a tag-aware cache and invalidates it on `StorefrontChangedInterface` events. The plugin's docs include a cookbook page that shows how.
@@ -96,7 +98,7 @@ The shipped stylesheet and carousel script ([Blocks](blocks.md)) load through th
 
 ## Profiler panel
 
-A Symfony profiler panel, in dev, lists each slot rendered on the page with:
+A Symfony profiler panel, in dev, lists each slot rendered on the page, including slots rendered in sub-requests such as `taxon.header`, with:
 
 - the context it resolved, and whether it came from the template event or a resolver
 - every candidate placement, in editor order, with whether it showed and, if not, why: its page scope didn't match, its snippet isn't published or is disabled, outside its date window, not in the channel, not translated or held back, or outside the audience, or the slot's cap was already reached
@@ -109,6 +111,6 @@ The model needs no change for a headless API ([API-readiness check](https://gith
 - **One read pipeline**, [above](#one-read-pipeline), outside Twig.
 - **One visibility query** for "entries this shopper may see", which sources, URL lookup and capped slots all use ([Sources](sources.md#visible-queries)).
 - **A URL lookup service** that takes a channel, a locale and a path, and returns an entry, a redirect or nothing. The route condition and `setono:cms:check-routes` share it, and a later API would too.
-- **A preview context service** scoped to the request and set from the signed token, not from Twig.
+- **A preview context service** set from the signed token on the main request, not from Twig.
 - **Link targets return the reference too.** A `ResolvedLink` carries the target and its code or UUID beside the URL and name ([Extending](extending.md#link-targets)), so a later projection can give a headless frontend both.
 - **Explicit context only**, as [above](#one-read-pipeline).

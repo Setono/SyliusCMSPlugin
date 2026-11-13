@@ -108,4 +108,4 @@ Missing translations are shown by these counts and chips. They aren't counted as
 
 ## A future translator
 
-There's no AI translation, and no translation export or import, in v2. The per-field translation state (untranslated, outdated) is the seam a future translator fills, AI or not, through `TranslationStateInterface` ([Extending](extending.md#translation-state)).
+There's no AI translation, and no translation export or import, in v2. The per-field translation state (untranslated, outdated) is the seam a future translator fills, AI or not, through `TranslationStateInterface` ([Extending](extending.md#translation-state)). A translator records the fingerprint of the source it actually translated, so a source that changes while a translation is in flight leaves the result outdated.

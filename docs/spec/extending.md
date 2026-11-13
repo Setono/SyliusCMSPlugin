@@ -125,7 +125,7 @@ final class Landing
 | `thumbnail` | `string\|null` | `null` | The wireframe card in the create dialog and the entry settings. |
 | `template` | `string` | required | |
 | `version` | `int` | `1` | Versions its fields, like a block type's. |
-| `default` | `bool` | `false` | Exactly one layout per content type is the default. |
+| `default` | `bool` | `false` | Marks the content type's default layout. Two defaults for one content type fail the container build, unless `content_types.<code>.default_layout` names one, which always wins ([Configuration](#configuration)). |
 | `shows` | `list<string>` | `[]` | The entry fields its template prints, by property name. The builder marks the others "Not shown in this layout". |
 
 Layout fields are the class's typed properties, stored in the tree's `layout.fields` ([Layouts and presets](layouts-and-presets.md)).
@@ -250,7 +250,7 @@ Every field attribute extends `Setono\SyliusCMSPlugin\Field\Field`, which has th
 | `Taxon` | `taxon` | no | | `?TaxonInterface` | |
 | `Taxons` | `taxons` | no | | `ItemList<TaxonInterface>` | `max`, `sources`, `limit` |
 | `Entry` | `entry` | no | | `?EntryInterface` | `contentType: class-string\|null` |
-| `Entries` | `entries` | no | | `ItemList<EntryInterface>` | `contentType: class-string\|null`, `indexed: bool = false`, `max`, `sources`, `limit` |
+| `Entries` | `entries` | no | | `ItemList<EntryInterface>` | `contentType: class-string\|null`, `categoriesOf: string\|null = null`, `indexed: bool = false`, `max`, `sources`, `limit` |
 | `Snippet` | `snippet` | no | | `?SnippetInterface` | |
 | `Code` | `code` | no | | `?string` | |
 
@@ -263,6 +263,28 @@ Every field attribute extends `Setono\SyliusCMSPlugin\Field\Field`, which has th
 The stored value of each type is in [Content model](content-model.md#values-per-field-type).
 
 ### Adding a field type
+
+A field attribute class extends `Field` and carries `#[FieldType]`, which declares what the plugin needs before it stores or shows a value:
+
+```php
+use Setono\SyliusCMSPlugin\Attribute\FieldType;
+use Setono\SyliusCMSPlugin\Field\Field;
+
+#[\Attribute(\Attribute::TARGET_PROPERTY)]
+#[FieldType(code: 'app_opening_hours', translatable: false, bindable: [], widget: 'app-opening-hours')]
+final class OpeningHours extends Field
+{
+}
+```
+
+| Option | Type | Default | Meaning |
+| --- | --- | --- | --- |
+| `code` | `string` | required | The field type's code. Unique, and never changes once content uses it. |
+| `translatable` | `bool` | `false` | Its default translatability, used when a field leaves `translatable:` at `null`. It decides whether the plugin stores one value or a locale map of values. A field type can still keep locale maps inside its one value: Link declares `false` and keeps its label per locale, and its handler reads the field's own `translatable` to pick the [link's shape](content-model.md#links). |
+| `bindable` | `list<BindingType>` | `[]` | The binding types a field of this type accepts. Empty means it can't be bound. |
+| `widget` | `string\|null` | `null` | The custom element's tag name ([Widgets](#widgets)). Required for a project's own field type. The shipped field types have none. |
+
+The shipped field types carry it too, with the codes, defaults and binding types in the table above.
 
 ```php
 namespace Setono\SyliusCMSPlugin\Field;
@@ -290,17 +312,19 @@ interface FieldHandlerInterface
 
 `Reference` (`Setono\SyliusCMSPlugin\Field\Reference`) has `type` (`product`, `taxon`, `channel`, `customer_group`, `locale`, `product_attribute`, `entry` or `media_item`), `id` (a code or a UUID) and `dependency` (`true` when an export must bring the record along). Snippets and media items in a block tree are dependencies, and entries, products and taxons are links.
 
-The schema's `x-cms-*` keywords:
+The schema's `x-cms-*` keywords. The plugin adds most of them around what the handler's `schema()` returns:
 
-| Keyword | Value |
-| --- | --- |
-| `x-cms-type` | The field type's code. |
-| `x-cms-widget` | The custom element's tag name, for a project's own field type. |
-| `x-cms-label`, `x-cms-help` | Translated strings. |
-| `x-cms-required` | `true` or `false`. |
-| `x-cms-translatable` | `true` or `false`. |
-| `x-cms-bindable` | The binding types the field accepts (`text`, `number`, `url`), or absent. |
-| `x-cms-options` | The field type's own options, as JSON. |
+| Keyword | Value | Filled by |
+| --- | --- | --- |
+| `x-cms-type` | The field type's code. | the plugin, from `#[FieldType(code:)]` |
+| `x-cms-widget` | The custom element's tag name, for a project's own field type. | the plugin, from `#[FieldType(widget:)]` |
+| `x-cms-label`, `x-cms-help` | Translated strings. | the plugin, from the field's `label` and `help` |
+| `x-cms-required` | `true` or `false`. | the plugin, from the field's `required` |
+| `x-cms-translatable` | `true` or `false`. | the plugin, from the field's `translatable`, or the field type's default |
+| `x-cms-bindable` | The binding types the field accepts (`text`, `number`, `url`), or absent. | the plugin, from `#[FieldType(bindable:)]` |
+| `x-cms-options` | The field type's own options, as JSON. | the handler |
+
+Everything else in the schema, the JSON Schema for one value, is the handler's.
 
 ### Widgets
 
@@ -334,6 +358,22 @@ interface SourceInterface
 | `params` | Its parameters class. |
 
 A source that needs `entry` and fits only some content types also implements `EntryContextAwareInterface::supportsEntryContentType(string $code): bool`. The builder offers it only for those types. "In this category" and "Related" do this.
+
+An entry source whose `of` is `EntryInterface::class` can say which content type it lists, so the Entries block can offer that type's [card displays](collections.md#the-entries-block):
+
+```php
+namespace Setono\SyliusCMSPlugin\Source;
+
+interface ListedContentTypeAwareInterface
+{
+    /** The code of the content type it lists with these parameters, in an entry of $hostContentType (null outside an entry). Null when it can't tell. */
+    public function getListedContentType(object $params, ?string $hostContentType): ?string;
+}
+```
+
+Without it, or when it returns `null`, the listed type is the one `of` names. When that's `EntryInterface::class` too, the block offers the displays that every content type with cards has. All three shipped entry sources implement it.
+
+**A field that depends on another.** Field options are fixed in code, with one exception: `Entries(categoriesOf: 'contentType')` lists the categories of the content type that the named property of the same object holds. From a collection's `categories` parameter uses it. The builder clears the field when that property changes.
 
 The rules every source follows are in [Sources](sources.md): a stable order ending in a unique tie-breaker, no limit of its own, and building on the visible queries:
 
@@ -369,14 +409,14 @@ interface ConditionKindInterface
     public function matches(object $params, RenderContext $context): bool;
 }
 
-interface ClockAwareConditionKindInterface extends ConditionKindInterface
+interface TimeDependentConditionKindInterface extends ConditionKindInterface
 {
     /** The next time the result can change after $now, or null. */
     public function nextChange(object $params, \DateTimeImmutable $now): ?\DateTimeImmutable;
 }
 ```
 
-`#[AsConditionKind(code, label, needs = [], reads = [], params = null)]`. `reads` is a list of `Setono\SyliusCMSPlugin\Condition\Reads` cases: `HostPage`, `Channel`, `Locale`, `Customer` and `Clock`. A kind that reads `Clock` implements `ClockAwareConditionKindInterface`.
+`#[AsConditionKind(code, label, needs = [], reads = null, params = null)]`. `reads` is a list of `Setono\SyliusCMSPlugin\Condition\Reads` cases: `HostPage`, `Channel`, `Locale`, `Customer` and `Time`. `null`, the default, means unknown, and a later cache treats a kind that hasn't declared what it reads as uncacheable ([ADR 0021](../adr/0021-storefront-output-renders-on-every-request-in-v2-0.md)). `[]` claims it reads nothing. A kind that reads `Time` implements `TimeDependentConditionKindInterface`.
 
 `matches()` answers "is one of". The plugin provides "is not one of" by negating it, so kinds never implement it. Kinds work in visibility conditions on blocks and in page scopes, never on entries ([ADR 0010](../adr/0010-entries-have-an-audience-not-visibility-conditions.md)). The shipped kinds are in [Targeting](targeting.md#condition-kinds).
 
@@ -387,11 +427,11 @@ namespace Setono\SyliusCMSPlugin\Binding;
 
 interface BindablePropertyInterface
 {
-    public function resolve(object $subject, object $params, string $localeCode): string|int|float|null;
+    public function resolve(object $subject, object $params, RenderContext $context): string|int|float|null;
 }
 ```
 
-`#[AsBindableProperty(contextKey, code, label, type, params = null)]`. `contextKey` is a context key, `channel` or `customer`. `type` is a `Setono\SyliusCMSPlugin\Binding\BindingType` case: `Text`, `Number` or `Url`. A binding is stored as `<contextKey>.<code>`.
+It reads the channel, locale, currency and customer from `$context`, like every other extension point ([Rendering](rendering.md)). `#[AsBindableProperty(contextKey, code, label, type, params = null)]`. `contextKey` is a context key, `channel` or `customer`. `type` is a `Setono\SyliusCMSPlugin\Binding\BindingType` case: `Text`, `Number` or `Url`. A binding is stored as `<contextKey>.<code>`.
 
 A property that's a plain property path can be declared in config instead:
 
@@ -419,7 +459,7 @@ interface LinkTargetInterface
 }
 ```
 
-`#[AsLinkTarget(code, label)]`. `ResolvedLink` has `target` and `ref` (the reference it resolved, so a later API can give a headless frontend both), `url` and `name`. An empty label shows `name`, the target's current name in the shopper's locale. Any target can add an anchor.
+`#[AsLinkTarget(code, label, translatableRef = false)]`. A target with `translatableRef: true`, such as `url`, stores its `ref` per locale ([Content model](content-model.md#links)). Either way, the plugin picks the current locale's ref, with the fallback chain, so `resolve()` always gets one string. `ResolvedLink` has `target` and `ref` (the reference it resolved, so a later API can give a headless frontend both), `url` and `name`. An empty label shows `name`, the target's current name in the shopper's locale. Any target can add an anchor.
 
 Shipped targets:
 
@@ -429,7 +469,7 @@ Shipped targets:
 | `product` | a product, by code | its shop URL, or `null` when it isn't visible ([Sources](sources.md#visible-queries)) |
 | `taxon` | a taxon, by code | its shop URL, or `null` when it isn't enabled |
 | `media` | a document or video media item, by UUID | its permanent URL ([Media](media.md#permanent-urls)) |
-| `url` | a URL per locale, including `mailto:` and `tel:` | the URL as typed |
+| `url` | a URL, per locale (`translatableRef: true`), including `mailto:` and `tel:` | the URL as typed |
 
 ## Context keys and resolvers
 
@@ -440,12 +480,12 @@ namespace Setono\SyliusCMSPlugin\Context;
 
 interface ContextResolverInterface
 {
-    /** The object for this key on the current request, or null on pages that don't have one. */
+    /** The object for this key on the page being shown, or null on pages that don't have one. */
     public function resolve(Request $request): ?object;
 }
 ```
 
-`#[AsContextResolver(key)]` registers a resolver for one context key. A slot runs it when its template event doesn't pass that key.
+`#[AsContextResolver(key)]` registers a resolver for one context key. A slot runs it when its template event doesn't pass that key. `$request` is always the main request (`RequestStack::getMainRequest()`), also when the slot renders inside a sub-request, such as Sylius's taxon header ([Rendering](rendering.md#preview-mode-and-share-links)).
 
 ## Upgraders
 
@@ -503,7 +543,11 @@ namespace Setono\SyliusCMSPlugin\Rendering;
 
 interface PlacementProviderInterface
 {
-    /** All of the channel's placements, in slot and position order. */
+    /**
+     * All of the channel's placements, in slot and position order.
+     *
+     * @return list<PlacementData>
+     */
     public function getPlacements(ChannelInterface $channel): array;
 }
 
@@ -520,9 +564,9 @@ interface ReferenceLoaderInterface
 }
 ```
 
-`EntryUrlMatch` has the entry's UUID and content type code, and `redirectTo`: the current path when `$path` is an old slug, otherwise `null`.
+`PlacementData` is a serializable value object, so a decorator can cache it: the placement's UUID, the snippet's UUID, the slot identifier, the page scope's conditions and the position. `EntryUrlMatch` has the entry's UUID and content type code, and `redirectTo`: the current path when `$path` is an old slug, otherwise `null`.
 
-`RenderContext` (`Setono\SyliusCMSPlugin\Rendering\RenderContext`) carries the channel, the locale code, the currency code, the customer (or `null`), the customer group value (a group code, `@guest` or `@no_group`), the current time, the host-page context (`get(string $key): ?object`) and whether it's a preview. Preview mode's Shown to and Date set the customer group value and the time here, and nowhere else.
+`RenderContext` (`Setono\SyliusCMSPlugin\Rendering\RenderContext`) carries the channel, the locale code, the currency code, the customer (or `null`), the customer group value (a group code, `@guest` or `@no_group`), the current time, the host-page context (`get(string $key): ?object`) and its preview mode: `null`, `builder` or `share` ([Rendering](rendering.md#preview-mode-and-share-links)). Preview mode's Shown to and Date set the customer group value and the time here, and nowhere else.
 
 ## Translation state
 
@@ -531,15 +575,15 @@ No translator ships in v2. The `Setono\SyliusCMSPlugin\Translation\TranslationSt
 ```php
 interface TranslationStateInterface
 {
-    /** Every translatable value of the entry's draft for $localeCode, with its state, source locale and source value. */
+    /** Every translatable value of the entry's draft for $localeCode, with its state, source locale, source value and source fingerprint. */
     public function values(EntryInterface $entry, string $localeCode): iterable;
 
-    /** Writes a translated value into the draft, recording its source locale and the source's fingerprint. */
-    public function write(EntryInterface $entry, string $localeCode, string $path, mixed $value, string $sourceLocaleCode): void;
+    /** Writes a translated value into the draft, recording its source locale and $sourceFingerprint: the fingerprint of the source value that was actually translated. */
+    public function write(EntryInterface $entry, string $localeCode, string $path, mixed $value, string $sourceLocaleCode, string $sourceFingerprint): void;
 }
 ```
 
-Each value has a `path` (`entry.<field>`, `layout.<field>` or `block.<key>.<field>`), a `state` (`Untranslated`, `Outdated` or `UpToDate`), the source locale, the source value and the current value. Completeness counts and outdated flags read the same service ([Localization](localization.md#completeness-and-outdated-flags)).
+Each value has a `path` (`entry.<field>`, `layout.<field>` or `block.<key>.<field>`), a `state` (`Untranslated`, `Outdated` or `UpToDate`), the source locale, the source value, the source's current fingerprint and the current value. A translator passes the fingerprint it read back to `write()`, so a source that changed while the translation was in flight leaves the value outdated. Completeness counts and outdated flags read the same service ([Localization](localization.md#completeness-and-outdated-flags)).
 
 ## Events
 
@@ -571,7 +615,7 @@ Events are classes in `Setono\SyliusCMSPlugin\Event`, dispatched synchronously o
 | `ImportFinished` | `result` (created, updated and unchanged UUIDs, and unresolved references) | yes |
 | `BestsellersComputed` | `channelCodes` | yes |
 
-Every event that changes shopper output implements `StorefrontChangedInterface`, whose `getAffectedUuids(): array` lists the UUIDs it touches, so cache invalidation can listen once. An empty list means the change can't be narrowed to records, as with `BestsellersComputed`. Nothing in v2.0 listens to them for caching ([ADR 0021](../adr/0021-storefront-output-renders-on-every-request-in-v2-0.md)).
+Every event that changes shopper output implements `StorefrontChangedInterface`, whose `getAffectedUuids(): ?array` lists the UUIDs it touches, so cache invalidation can listen once. `null` means the change can't be narrowed to records, as with `BestsellersComputed`. An empty list means it touched none, such as an import that changed nothing. Nothing in v2.0 listens to them for caching ([ADR 0021](../adr/0021-storefront-output-renders-on-every-request-in-v2-0.md)).
 
 ## Twig
 
@@ -585,6 +629,7 @@ Every event that changes shopper output implements `StorefrontChangedInterface`,
 | `cms_image(media, options = {})` | safe HTML | Renders an image media item ([Media](media.md#the-image-helper)). |
 | `cms_link(link)` | `?ResolvedLink` | Resolves a `Link` value. `null` means don't render the link. |
 | `cms_url(entry)` | `?string` | An entry's URL in the current channel and locale, or `null` when it has none or isn't visible. |
+| `cms_preview_mode()` | `?string` | `builder` in the builder's preview, `share` on a share link, otherwise `null`. Themes use it to leave out analytics and other tracking ([Rendering](rendering.md#preview-mode-and-share-links)). |
 
 **Templates** are overridden the Symfony way, under `templates/bundles/SetonoSyliusCMSPlugin/`, or in a Sylius theme. There's no template suggestion chain. The shipped templates are at:
 
@@ -596,13 +641,13 @@ A card template gets `entry` and `display`.
 
 ## Routes
 
-Route names and paths are contracts. The app imports three files:
+The route files an app imports, and the names and paths of the routes below, are contracts. The app imports three files:
 
 ```yaml
 # config/routes/setono_sylius_cms.yaml
 setono_sylius_cms_admin:
     resource: '@SetonoSyliusCMSPlugin/config/routes/admin.php'
-    prefix: /admin
+    prefix: '/%sylius_admin.path_name%'
 
 setono_sylius_cms_media:
     resource: '@SetonoSyliusCMSPlugin/config/routes/media.php'
@@ -614,22 +659,23 @@ setono_sylius_cms_shop:
         _locale: ^[A-Za-z]{2,4}(_([A-Za-z]{4}|[0-9]{3}))?(_([A-Za-z]{2}|[0-9]{3}))?$
 ```
 
-The `_locale` requirement is the one `sylius_shop` uses.
+The `_locale` requirement is the one `sylius_shop` uses. The admin prefix is Sylius's own admin path (`admin` by default, set by `SYLIUS_ADMIN_ROUTING_PATH_NAME`), so the CMS admin stays under the admin firewall on a shop that renamed it. Admin paths below are relative to it, written `/{admin}`.
 
 | Name | Method | Path | Chapter |
 | --- | --- | --- | --- |
 | `setono_sylius_cms_shop_entry` | GET | `/{_locale}/{path}`, priority -1000, `path: .+(?<!/)` | [URLs and SEO](urls-and-seo.md#routing) |
-| `setono_sylius_cms_media` | GET | `/media/{uuid}/{filename}` | [Media](media.md#permanent-urls) |
-| `setono_sylius_cms_admin_overview` | GET | `/admin/cms` | [Admin](admin.md#overview) |
-| `setono_sylius_cms_admin_entry_index` | GET | `/admin/cms/entries/{contentType}`, where `{contentType}` is a code or `all` | [Admin](admin.md#entry-lists) |
-| `setono_sylius_cms_admin_entry_create` | GET, POST | `/admin/cms/entries/{contentType}/new` | [Admin](admin.md#create-dialog) |
-| `setono_sylius_cms_admin_entry_show` | GET | `/admin/cms/entry/{uuid}` | [Admin](admin.md#entry-overview-page) |
-| `setono_sylius_cms_admin_builder` | GET | `/admin/cms/entry/{uuid}/builder` | [Builder](builder.md) |
-| `setono_sylius_cms_admin_media_index` | GET | `/admin/cms/media` | [Admin](admin.md#media-library) |
-| `setono_sylius_cms_admin_preset_index` | GET | `/admin/cms/presets` | [Admin](admin.md#presets) |
-| `setono_sylius_cms_admin_transfer` | GET | `/admin/cms/transfer` | [Admin](admin.md#transfer) |
+| `setono_sylius_cms_media` | GET | `/media/{uuid}/{filename}`, where `{uuid}` matches a UUID | [Media](media.md#permanent-urls) |
+| `setono_sylius_cms_admin_overview` | GET | `/{admin}/cms` | [Admin](admin.md#overview) |
+| `setono_sylius_cms_admin_entry_index_all` | GET | `/{admin}/cms/entries` (All entries) | [Admin](admin.md#entry-lists) |
+| `setono_sylius_cms_admin_entry_index` | GET | `/{admin}/cms/entries/{contentType}`, where `{contentType}` is a content type code | [Admin](admin.md#entry-lists) |
+| `setono_sylius_cms_admin_entry_create` | GET, POST | `/{admin}/cms/entries/{contentType}/new` | [Admin](admin.md#create-dialog) |
+| `setono_sylius_cms_admin_entry_show` | GET | `/{admin}/cms/entry/{uuid}` | [Admin](admin.md#entry-overview-page) |
+| `setono_sylius_cms_admin_builder` | GET | `/{admin}/cms/entry/{uuid}/builder` | [Builder](builder.md) |
+| `setono_sylius_cms_admin_media_index` | GET | `/{admin}/cms/media` | [Admin](admin.md#media-library) |
+| `setono_sylius_cms_admin_preset_index` | GET | `/{admin}/cms/presets` | [Admin](admin.md#presets) |
+| `setono_sylius_cms_admin_transfer` | GET | `/{admin}/cms/transfer` | [Admin](admin.md#transfer) |
 
-The builder's JSON endpoints live under `/admin/cms/api` and are listed in [Builder](builder.md#json-endpoints). The homepage keeps Sylius's `sylius_shop_homepage` route ([URLs and SEO](urls-and-seo.md#homepage)).
+`{uuid}` matches a UUID, and `{contentType}` a content type code. The builder's JSON endpoints, under `/{admin}/cms/api`, are internal: their paths, names and bodies can change in any release ([Builder](builder.md#json-endpoints)). The homepage keeps Sylius's `sylius_shop_homepage` route ([URLs and SEO](urls-and-seo.md#homepage)).
 
 ## Configuration
 
@@ -642,6 +688,7 @@ setono_sylius_cms:
         block_types: []      # block type codes
         sources: []          # source codes
         presets: []          # code preset codes
+        layouts: []          # "<content type code>.<layout code>", such as page.standard
         content_types: []    # blog_post, blog_category, faq_item, faq_category
 
     embed_code: false        # true enables the Embed code block (ADR 0018)
@@ -654,6 +701,7 @@ setono_sylius_cms:
     content_types:
         # blog_post:
         #     prefix: 'news'
+        #     default_layout: 'article'   # a layout code; overrides #[Layout(default: true)]
 
     slots:                   # see Slots; the stock slots are prepended here
         # app.store_locator.top:
@@ -677,7 +725,7 @@ setono_sylius_cms:
         paths: []            # directories of code preset files; bundles prepend theirs
 
     media:
-        storage: 'setono_sylius_cms.storage'     # a Flysystem storage service
+        storage: 'setono_sylius_cms.storage'     # a Flysystem storage service; the default writes to %kernel.project_dir%/public/media/cms
         liip:
             loader: 'setono_sylius_cms'
             resolver: 'setono_sylius_cms'
@@ -685,7 +733,7 @@ setono_sylius_cms:
             image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml']
             video: ['video/mp4', 'video/webm']
             document: ['application/pdf']
-        max_upload_size: '20M'
+        max_upload_size: null  # null means PHP's effective limit; a value above it is lowered to it
         widths: [320, 640, 960, 1280, 1600, 1920, 2560]
         grace_period: 'P1D'  # ISO 8601 duration before a replaced file is deleted
 
@@ -696,7 +744,7 @@ setono_sylius_cms:
         window: 'P30D'       # ISO 8601 duration the default calculator counts paid orders over
 ```
 
-A project caps a stock slot by setting `slots.<id>.cap`, and moves a shipped content type's URLs with `content_types.<code>.prefix`.
+A project caps a stock slot by setting `slots.<id>.cap`, moves a shipped content type's URLs with `content_types.<code>.prefix`, and changes its default layout with `content_types.<code>.default_layout`. A disabled layout is hidden from editors, and its entries render with the default layout, as for a [removed layout](layouts-and-presets.md#a-removed-layout). The default layout can't be disabled.
 
 ## Console commands
 
@@ -704,7 +752,7 @@ A project caps a stock slot by setting `slots.<id>.cap`, and moves a shipped con
 | --- | --- |
 | `setono:cms:check-routes` | Lists every entry URL that another route now matches, with its channel, locale, URL and route. Exits non-zero when it finds any, for CI and deploys. |
 | `setono:cms:export <dir> [--entry=UUID]... [--content-type=CODE]... [--media-folder=UUID]... [--presets] [--all] [--zip]` | Exports ([Transfer](transfer.md#commands)). |
-| `setono:cms:import <path> [--dry-run] [--publish] [--overwrite]` | Imports a folder or zip ([Transfer](transfer.md#commands)). |
+| `setono:cms:import <path> [--dry-run] [--publish] [--overwrite]` | Imports a folder or zip. A dry run exits with the code the real run would ([Transfer](transfer.md#commands)). |
 | `setono:cms:preset:export <preset> <dir>` | Writes an editor preset, by UUID or name, to a code preset file. |
 | `setono:cms:preset:validate [<path>]...` | Validates code preset files, by default in every registered directory. Exits non-zero on any error. |
 | `setono:cms:bestsellers:compute [--channel=CODE]` | Recomputes bestseller scores, for every channel by default. Run it from cron. |

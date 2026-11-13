@@ -77,6 +77,7 @@ Publish validates, refuses on errors, and points at the blocks and fields that h
 - each field type's own validation ([Extending](extending.md#field-types))
 - the nesting rules: allowed block types, min and max, parents and needed context ([Content model](content-model.md#blocks-and-nesting))
 - blocks of a type the code no longer has
+- the Embed code block: while `embed_code` is off, an `embed_code` block whose key isn't already in the entry's published tree is refused, however it got into the draft ([Blocks](blocks.md#embed-code))
 - the slug: unique per channel and locale, and not matched by another route ([URLs and SEO](urls-and-seo.md#routing))
 
 Slug checks also run whenever a slug or the channels change, so the builder shows a clash before publish.
@@ -92,7 +93,7 @@ A publish:
 5. writes indexed `Entries` fields to the reference table ([Collections](collections.md#categories))
 6. updates the media usage index ([Media](media.md))
 7. stores a [revision](#revisions)
-8. bumps `changedAt`
+8. bumps `changedAt`, or, in an import, sets it to the export's value ([Transfer](transfer.md#what-an-import-does))
 9. after the transaction commits, dispatches `EntryPublished` with the old and new slugs
 
 A content type can fill values on publish, as Blog post fills its date on the first publish when it's empty ([Collections](collections.md)).
@@ -109,7 +110,7 @@ Each translation has a switch, such as "Show in Danish", stored as `shown` in th
 
 ## Date window
 
-Every entry has an optional "Show from" and "Show until", stored as columns so listings and sources filter on them in SQL ([Sources](sources.md#visible-queries)).
+Every entry has an optional "Show from" and "Show until", stored as columns so listings and sources filter on them in SQL ([Sources](sources.md#visible-queries)). "Show from" is inclusive and "Show until" exclusive, as in the [date window condition](targeting.md#condition-kinds).
 
 - The [date window](../../GLOSSARY.md#publishing) takes effect on save, outside the draft.
 - It's checked when content renders, so it needs no worker.
@@ -162,6 +163,7 @@ A [share link](../../GLOSSARY.md#publishing) shows one entry's draft in the shop
 - **What it shows:** the entry's current draft, or its rows when it has no draft. Everything else on the page, such as a snippet in a slot, shows its published content.
 - **Read-only.** It has no bridge and no toolbar, so viewers can't change Shown to or Date.
 - **Never cached and never indexed.** Responses send `Cache-Control: no-store` and `X-Robots-Tag: noindex`.
+- **The token doesn't leak.** Responses also send `Referrer-Policy: no-referrer`, so the token isn't passed on to other sites. Templates can tell they're on a share link with `cms_preview_mode()`, and leave out analytics that would record the URL ([Rendering](rendering.md#preview-mode-and-share-links)).
 - **Several per entry.** Each works until it's revoked. The overview page lists them with their channel, locale, Shown to, Date and who made them, with copy and revoke ([Admin](admin.md#entry-overview-page)).
 
 Share links don't travel in a transfer ([Transfer](transfer.md)).

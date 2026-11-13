@@ -33,7 +33,7 @@ These kinds ship. Each declares the context keys it needs and what it reads ([Ex
 | --- | --- | --- | --- | --- |
 | `channel` | Channel | | `Channel` | `channels`: channel codes |
 | `locale` | Locale | | `Locale` | `locales`: locale codes |
-| `date_window` | Date window | | `Clock` | `from` and `until`: Date and time values, each optional |
+| `date_window` | Date window | | `Time` | `from` and `until`: Date and time values, each optional. `from` is inclusive and `until` exclusive, so a window that ends at `2026-12-01T00:00:00Z` shows until the last second of 30 November. |
 | `customer_group` | Customer group | | `Customer` | `groups`: customer group codes, `@guest` and `@no_group` |
 | `product` | Product | `product` | `HostPage` | `products`: product codes |
 | `product_in_taxon` | Product in taxon | `product` | `HostPage` | `taxons`: taxon codes, and `includeChildren`: a Toggle |
@@ -99,9 +99,9 @@ v2.0 caches nothing the shop renders ([ADR 0021](../adr/0021-storefront-output-r
 
 The declarations a later cache needs ship anyway, so adding one breaks nothing written for v2.0:
 
-- Every condition kind declares what it reads: `HostPage`, `Channel`, `Locale`, `Customer` or `Clock`.
-- Kinds that read `Clock` report their next change with `nextChange()` ([Extending](extending.md#condition-kinds)).
-- The rule a later cache must keep: output that read the customer is never served from a shared cache to someone in a different customer group, and output that read the clock expires at its next change.
+- Every condition kind declares what it reads: `HostPage`, `Channel`, `Locale`, `Customer` or `Time`. A kind that declares nothing counts as reading anything, so a later cache never caches its output.
+- Kinds that read `Time` implement `TimeDependentConditionKindInterface` and report their next change with `nextChange()` ([Extending](extending.md#condition-kinds)).
+- The rule a later cache must keep: output that read the customer is never served from a shared cache to someone in a different customer group, and output that read the time expires at its next change.
 
 Listings and sources report no next date boundary in v2.0.
 

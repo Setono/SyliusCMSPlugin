@@ -22,24 +22,27 @@ These classes are shared:
 
 | Class | On | Meaning |
 | --- | --- | --- |
-| `cms-tree` | the element a layout wraps around the top-level blocks | Top-level blocks inside it are contained to `--cms-content-width`, except those marked `cms-full-width`. |
-| `cms-full-width` | a Group or Banner root whose `fullWidth` is on | Reaches the edges of its surroundings ([ADR 0017](../adr/0017-shipped-blocks-are-theme-agnostic.md)). |
+| `cms-tree` | the element a layout wraps around the top-level blocks | Top-level blocks inside it are contained to `--cms-content-width` and centred, except those marked `cms-full-width`. They're spaced by `--cms-block-spacing`. |
+| `cms-full-width` | a Group or Banner root whose `fullWidth` is on | Directly inside `cms-tree`, it breaks out of the shop's container to the edges of the viewport ([ADR 0017](../adr/0017-shipped-blocks-are-theme-agnostic.md)), with `width: 100vw; margin-inline: calc(50% - 50vw)`. Anywhere else, such as in a slot or a column, it fills its surroundings. |
+| `cms-slot` | the wrapper a non-empty slot prints around its snippets' top-level blocks | See [Slots](slots.md#rendering-a-slot). |
 | `cms-image-placeholder` | an empty image in the builder's preview and the preset browser | A neutral grey box at the image's aspect ratio. |
 
 A chosen block style adds its class to the block's root element, next to `cms-<block>`.
 
+**Full width and scrollbars.** On browsers with classic scrollbars, `100vw` includes the vertical scrollbar, so a full-width block can be a scrollbar's width wider than the page. The stylesheet never styles `html` or `body`, so a theme that then shows a horizontal scrollbar adds `overflow-x: clip` to `body`.
+
 ### Custom properties
 
-The stylesheet reads these, each with the default shown. Themes set them on `:root` or on any ancestor.
+The stylesheet reads these, each with the default shown. Themes set them on `:root` or on any ancestor, except `--cms-carousel-per-view`, which the stylesheet sets on each carousel ([Carousel](#carousel)).
 
 | Property | Default | Used for |
 | --- | --- | --- |
-| `--cms-content-width` | `1127px` | The width top-level blocks are contained to, matching the stock shop's container. |
+| `--cms-content-width` | `100%` | The width top-level blocks in `cms-tree` are contained to. The tree already sits inside the shop layout's `.ui.container`, so by default blocks are exactly as wide as the shop's own content. A theme whose layout has no container sets a width here. |
 | `--cms-block-spacing` | `2rem` | Vertical space between top-level blocks. |
 | `--cms-gap` | `1rem` | Gaps in grids, columns and carousels. |
 | `--cms-column-min-width` | `240px` | The width below which Columns wrap onto new lines. |
 | `--cms-grid-item-min-width` | `220px` | The narrowest card or tile in a grid of products, taxons or entries. |
-| `--cms-carousel-per-view` | `1` | Slides shown at once in a Carousel. The Products and Entries carousels set it to `4` and `3`. |
+| `--cms-carousel-per-view` | `1` | Slides shown at once in a carousel. The stylesheet sets it on each `.cms-carousel` from its `data-cms-per-view`. A theme overrides it on the element itself, such as `.cms-carousel[data-cms-per-view="4"] { --cms-carousel-per-view: 3; }`. |
 | `--cms-spacer-small`, `--cms-spacer-medium`, `--cms-spacer-large` | `1rem`, `2rem`, `4rem` | Spacer heights. |
 | `--cms-muted-background` | `#f4f4f4` | The Group's `muted` style. |
 | `--cms-dark-background`, `--cms-dark-color` | `#1b1c1d`, `#ffffff` | The Group's `dark` style. |
@@ -54,7 +57,7 @@ The stylesheet reads these, each with the default shown. Themes set them on `:ro
 
 The plugin ships the stylesheet and the carousel script prebuilt, installed by `assets:install`:
 
-- `/bundles/setonosyliuscmsplugin/shop/cms.css`, through the `setono_sylius_cms_stylesheet` block on the `sylius.shop.layout.stylesheets` template event
+- `/bundles/setonosyliuscmsplugin/shop/cms.css`, through the `setono_sylius_cms_stylesheet` block on the `sylius.shop.layout.stylesheets` template event, at priority 20. That's above Sylius's own `styles` block (10), so the file loads before the theme's CSS and declares the `cms` layer first. A theme that uses cascade layers of its own, such as Tailwind 4's, then keeps them above `cms`.
 - `/bundles/setonosyliuscmsplugin/shop/cms.js`, through the `setono_sylius_cms_javascript` block on the `sylius.shop.layout.javascripts` template event
 
 `setono_sylius_cms.assets: false` removes both blocks, for agencies that bundle the files into their own build ([Extending](extending.md#configuration)).
@@ -186,7 +189,7 @@ Markup: `cms-video`, with `cms-video__frame` holding the `<video>` or the embed'
 | --- | --- | --- |
 | `link` | Link, required | label and URL |
 
-Markup: `<a class="cms-button">`, plus the style's class. The label is the link's label, or its target's name. A link that doesn't resolve renders no button.
+Markup: `<a class="cms-button">`, plus the style's class. The label is the link's label, or its target's name. A link that doesn't resolve renders no button. A [bound link](content-model.md#links), such as one to the host page's product, has no target name, so publish requires a label for it.
 
 ### Banner
 
@@ -285,14 +288,17 @@ Only visible children become slides, so the slide count and the dots are always 
 Markup:
 
 ```html
-<div class="cms-carousel" data-cms-autoplay="5000" style="--cms-carousel-per-view: 1">
+<div class="cms-carousel" data-cms-per-view="1" data-cms-autoplay="5000">
     <div class="cms-carousel__track">
         <div class="cms-carousel__slide">…</div>
     </div>
 </div>
 ```
 
-`data-cms-autoplay` holds the interval in milliseconds and is left out when autoplay is off.
+`data-cms-per-view` holds the editor's `perView`, and the Products and Entries carousels print `4` and `3`. `data-cms-autoplay` holds the interval in milliseconds and is left out when autoplay is off.
+
+- **Slides per view.** Inside `@layer cms`, the stylesheet sets `--cms-carousel-per-view` on each carousel from `data-cms-per-view`, and the slide width follows from it. No inline style is printed, so theme CSS always wins.
+- **Narrow screens.** Below `48rem` the stylesheet shows at most 2 slides, and below `30rem` 1, whatever `data-cms-per-view` says. A theme overrides these the same way.
 
 - **It works without JS.** The track scrolls with CSS scroll-snap.
 - **The script adds** `cms-carousel__prev` and `cms-carousel__next` buttons, a `cms-carousel__dots` list of `cms-carousel__dot` buttons, and autoplay, which pauses while the pointer or focus is inside. It has no dependencies.
@@ -325,7 +331,7 @@ Raw HTML, scripts included, printed unescaped in the shop ([ADR 0018](../adr/001
 | --- | --- | --- |
 | `code` | Code | no |
 
-- **It's off until a project sets `setono_sylius_cms.embed_code: true`.** While it's off, editors can't add it. Blocks already in trees keep rendering, like those of any disabled block type.
+- **It's off until a project sets `setono_sylius_cms.embed_code: true`.** While it's off, editors can't add it, and publish and import refuse an `embed_code` block whose key isn't already in the entry's published tree. So neither a hand-made draft save nor an import can bring one in ([Publishing](publishing.md#validation), [Transfer](transfer.md#code-the-target-must-have)). Blocks published while it was on keep rendering ([ADR 0018](../adr/0018-raw-html-is-an-opt-in-embed-code-block.md)).
 - **The builder's preview and the preset browser** show a placeholder, `cms-embed-code cms-embed-code--placeholder`, in its place, so third-party scripts never run inside the builder.
 - In the shop it renders `<div class="cms-embed-code">` around the code.
 

@@ -60,7 +60,7 @@ setono_sylius_cms_shop:
 - **One route,** `setono_sylius_cms_shop_entry`, with the path `/{path}` and the requirement `path: .+(?<!/)`.
 - **Priority -1000.** The loader sets it, because YAML can't set route priority in Symfony 6.4. The route is matched after every other route, whatever order the routing files load in.
 - **The route condition looks the URL up** through `EntryUrlLookupInterface` ([Extending](extending.md#rendering-services)) by:
-  - the channel, resolved from the request's host
+  - the channel, from Sylius's channel context (`sylius.context.channel`), so a single-channel shop and the dev environment's fake channel resolve as they do everywhere else in the shop
   - the locale, taken from the URL's `_locale` parameter, never from Sylius's locale context, which isn't set yet when conditions run
   - the path, which is the prefix and the slug, including old slugs
 - **The lookup is memoised** within a request, so the condition and the controller share one query.
@@ -112,7 +112,7 @@ A page can be a channel's [homepage](../../GLOSSARY.md#entries).
 - **The route doesn't change.** It stays `sylius_shop_homepage`, so every `path('sylius_shop_homepage')` in themes keeps working.
 - **The page's own URL gets a `301` to `/{locale}/`** in every channel where it's the homepage. Links to the page point straight there, and `/{locale}/` is its canonical URL.
 - **The builder previews it at `/{locale}/`.**
-- **Sylius's homepage template doesn't render** on a channel with a CMS homepage, so placements in the `homepage` stock slot don't show there. The admin warns about such placements ([Admin](admin.md#problems)). The page's layout can have slots of its own ([Slots](slots.md)).
+- **Sylius's homepage template doesn't render** on a channel with a CMS homepage, so placements in the `store_homepage` stock slot don't show there. The admin warns about such placements ([Admin](admin.md#problems)). The page's layout can have slots of its own ([Slots](slots.md)).
 
 ## SEO fields
 
@@ -134,7 +134,7 @@ An entry shown at its own URL, or as a homepage, prints these into the shop layo
 - **Meta description:** `<meta name="description">`, left out when empty.
 - **Robots:** `<meta name="robots" content="noindex">` when "Hide from search engines" is on.
 - **Canonical:** `<link rel="canonical">` with the entry's own absolute URL in the current channel and locale, without the query string. For a homepage it's `/{locale}/`. On page 2 onwards of a paginated Entries block, it's the entry's own URL with `?page=N`, the one exception to dropping the query string ([ADR 0019](../adr/0019-categories-are-entries-and-collections-are-listed-by-pages.md)).
-- **Hreflang:** a `<link rel="alternate" hreflang="…">` for each locale the entry is visible in for the current channel and shopper, with that locale's absolute URL, plus `x-default` pointing at the channel's default locale when the entry is visible there. Hreflang values use the locale code with a hyphen, such as `en-US`.
+- **Hreflang:** a `<link rel="alternate" hreflang="…">` for each locale the entry is visible in for the current channel and shopper, with that locale's absolute URL, plus `x-default` pointing at the channel's default locale when the entry is visible there. Hreflang values use the locale code with a hyphen, such as `en-US`. Page 2 and later of a [paginated listing](collections.md#pagination) print no hreflang, because the other locales' page N needn't hold the same entries.
 
 The CMS prints no Open Graph tags, so they never appear twice beside an SEO plugin's.
 

@@ -19,6 +19,7 @@ Every entry has these, whatever its content type:
 | `enabled` | On for a new entry. |
 | Date window | Optional "Show from" and "Show until", as columns. |
 | Audience | Everyone, only some customer groups, or everyone except some ([ADR 0010](../adr/0010-entries-have-an-audience-not-visibility-conditions.md)). See [Targeting](targeting.md#an-entrys-audience). |
+| `createdAt` | When it was created, in UTC. Set once. It travels in the [entry format](#entry-format), so ordering by it is the same in every environment. |
 | `changedAt` | When its published content or an on-save setting last changed. See [Transfer](transfer.md#stale-records). |
 
 Content types add more:
@@ -110,14 +111,14 @@ A [field](../../GLOSSARY.md#content-structure) is declared in code with a [field
 
 **Translatable or shared.** Each field type has a default, and a block type or layout can override it per field with `translatable:`:
 
-- translatable by default: Text, Textarea, Rich text, and a Link's label and external URL
+- translatable by default: Text, Textarea, Rich text, and a Link's label and the `ref` of a target whose ref is translatable, such as an external URL ([Links](#links))
 - shared by default: everything else, including references, list fields, numbers, choices, toggles and dates
 
 On a content type, translatability follows where the property sits: on the translation subclass it's translatable, and on the entry subclass it's shared.
 
 **A list field** (Products, Taxons, Entries) is either hand-picked, or filled by a [source](../../GLOSSARY.md#content-structure) of the same kind with a number of items to show ([Sources](sources.md)). Media list fields are always hand-picked.
 
-**A bindable field** (Text, Textarea, Number and Link) can show a [binding](../../GLOSSARY.md#shop-pages) instead of a fixed value, with an optional fallback. Rich text holds bindings as inline tokens ([Slots](slots.md#bindings)).
+**A bindable field** (Text, Textarea and Number) can show a [binding](../../GLOSSARY.md#shop-pages) instead of a fixed value, with an optional fallback. Rich text holds bindings as inline tokens, and a Link holds one in its `ref`, so it keeps its own label and anchor ([Links](#links), [Slots](slots.md#bindings)).
 
 **Values that don't fit.** A stored value that doesn't fit its field type, such as a string in a Number field, counts as missing. `setono:cms:lint` reports these ([Extending](extending.md#console-commands)).
 
@@ -147,7 +148,7 @@ The block tree column holds one object:
 ```json
 {
     "layout": {
-        "code": "default",
+        "code": "standard",
         "version": 1,
         "fields": {
             "showTitle": true
@@ -172,12 +173,12 @@ The block tree column holds one object:
     "version": 1,
     "style": "dark",
     "fields": {
+        "fullWidth": true,
         "heading": {
             "da_DK": "Vinterudsalg",
             "en_US": "Winter sale"
         },
-        "image": "0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60",
-        "fullWidth": true
+        "image": "0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60"
     },
     "translated": {
         "heading": {
@@ -224,7 +225,7 @@ Either can instead hold one of these special values. Keys that start with `$` ar
 
 | Special value | Shape | Where |
 | --- | --- | --- |
-| Binding | `{"$bind": "product.name", "$params": {}, "$fallback": null}` | Bindable fields. `$bind` is `<context key>.<property code>`. `$params` holds the bindable property's parameters, such as `{"attribute": "material"}` for Product attribute. `$fallback` is what the field would otherwise store (a value, or a locale map for a translatable field), or `null`. |
+| Binding | `{"$bind": "product.name", "$params": {}, "$fallback": null}` | Bindable fields, and a Link's `ref` ([Links](#links)). `$bind` is `<context key>.<property code>`. `$params` holds the bindable property's parameters, such as `{"attribute": "material"}` for Product attribute. `$fallback` is what the field would otherwise store (a value, or a locale map for a translatable field), or `null`. |
 | Source | `{"$source": "bestsellers", "$params": {"taxon": "t_shirts"}, "$limit": 8}` | List fields. `$source` is the source's code, `$params` its parameter values, stored as shared field values, and `$limit` how many items show, or the page size when the list paginates. |
 | Translation key | `{"$trans": "setono_sylius_cms.preset.hero.heading", "$domain": "messages"}` | Translatable text-like fields, in code preset files only. `$domain` is optional and defaults to `messages`. On insert, each of the entry's locales gets the key's translation if there is one, and the others stay empty. |
 
@@ -234,7 +235,7 @@ Either can instead hold one of these special values. Keys that start with `$` ar
 | --- | --- | --- |
 | Text | `Text` | a string |
 | Textarea | `Textarea` | a string, newlines kept |
-| Rich text | `RichText` | a ProseMirror document: `{"type": "doc", "content": [...]}`. See [Rich text](#rich-text). |
+| Rich text | `RichText` | a ProseMirror document: `{"content": [...], "type": "doc"}`. See [Rich text](#rich-text). |
 | Number | `Number` | a number |
 | Toggle | `Toggle` | `true` or `false` |
 | Choice | `Choice` | the chosen value as a string, or an array of strings when `multiple` |
@@ -272,11 +273,21 @@ A Link field stores:
 | Key | Value |
 | --- | --- |
 | `target` | The link target's code: `entry`, `product`, `taxon`, `media`, `url`, or a project's own ([Extending](extending.md#link-targets)). |
-| `ref` | What the target refers to: a UUID for `entry` and `media`, a code for `product` and `taxon`, and a locale map of URLs for `url` (including `mailto:` and `tel:`). |
+| `ref` | What the target refers to, as a string: a UUID for `entry` and `media`, a code for `product` and `taxon`, and a URL for `url` (including `mailto:` and `tel:`). A target whose ref is translatable, such as `url`, stores a locale map of strings here instead. |
 | `anchor` | A fragment without the `#`, or `null`. |
 | `label` | A locale map. An empty label shows the target's current name in the shopper's locale. |
 
-A Link field declared `translatable: true` stores a locale map of whole links instead, and each link's `label` and a `url` target's `ref` are then plain strings.
+A Link field has three shapes, set by `translatable:`:
+
+| `translatable:` | Shape |
+| --- | --- |
+| `null` (the default) | As above: `label` is a locale map, and so is `ref` when the target's ref is translatable. Everything else is shared. |
+| `false` | One link for every locale: `label` is a string or `null`, and `ref` is a string. |
+| `true` | A locale map of whole links. In each, `label` is a string or `null`, and `ref` is a string. |
+
+Whatever the shape, the plugin picks the current locale's value, with the [fallback chain](../../GLOSSARY.md#entries), before it calls the link target, so a target's `resolve()` always gets a string ([Extending](extending.md#link-targets)).
+
+**A bound link.** A link that shows a binding, such as a Button to the host page's product, has the `url` target and holds the [binding](#field-values) in its `ref`: `{"target": "url", "ref": {"$bind": "product.url", "$params": {}, "$fallback": null}, "anchor": null, "label": {"en_US": "View product"}}`. Its label and anchor stay the editor's own. A binding of type `url` is the only one a `ref` accepts.
 
 ### Rich text
 
@@ -284,8 +295,8 @@ Rich text uses one schema, shared by the field's editor, typing in place and the
 
 - **Nodes:** `doc`, `paragraph`, `text`, `heading` (levels 2 to 4), `bulletList`, `orderedList`, `listItem`, `blockquote`, `hardBreak`, `horizontalRule`, and `cmsBinding`.
 - **Marks:** `bold`, `italic`, `underline`, `strike`, `code`, and `cmsLink`.
-- **`cmsBinding`** is an inline atom node: `{"type": "cmsBinding", "attrs": {"property": "product.name", "params": {}, "fallback": "this product"}}`.
-- **`cmsLink`** is a mark whose `attrs` are a link without its label: `{"target": "product", "ref": "t_shirt_red", "anchor": null}`, and a plain string `ref` for a `url` target. A link that doesn't resolve renders as plain text.
+- **`cmsBinding`** is an inline atom node: `{"attrs": {"fallback": "this product", "params": {}, "property": "product.name"}, "type": "cmsBinding"}`.
+- **`cmsLink`** is a mark whose `attrs` are a link without its label: `{"anchor": null, "ref": "t_shirt_red", "target": "product"}`, and a plain string `ref` for a `url` target. A link that doesn't resolve renders as plain text.
 
 `ueberdosis/tiptap-php` renders rich text and sanitises it on save. There are no blocks inside rich text in v2.0.
 
@@ -297,7 +308,7 @@ Rich text uses one schema, shared by the field's editor, typing in place and the
     "negate": false,
     "params": {
         "from": "2026-11-27T00:00:00Z",
-        "until": "2026-11-30T23:59:59Z"
+        "until": "2026-12-01T00:00:00Z"
     }
 }
 ```
@@ -336,21 +347,22 @@ Drafts, revisions and exports hold a whole entry in one format ([ADR 0009](../ad
     "uuid": "0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e",
     "contentType": "blog_post",
     "version": 1,
+    "createdAt": "2026-11-12T08:30:00Z",
     "fields": {
-        "noindex": false,
-        "publishedAt": "2026-11-13T09:00:00Z",
+        "categories": ["0193a5be-7255-7f00-8a1b-2c3d4e5f6a7b"],
         "featuredImage": "0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60",
-        "categories": ["0193a5be-7255-7f00-8a1b-2c3d4e5f6a7b"]
+        "noindex": false,
+        "publishedAt": "2026-11-13T09:00:00Z"
     },
     "translations": {
         "en_US": {
             "shown": true,
             "fields": {
-                "title": "Ten ways to style a scarf",
-                "slug": "ten-ways-to-style-a-scarf",
-                "metaTitle": null,
+                "excerpt": "From office to weekend.",
                 "metaDescription": null,
-                "excerpt": "From office to weekend."
+                "metaTitle": null,
+                "slug": "ten-ways-to-style-a-scarf",
+                "title": "Ten ways to style a scarf"
             },
             "translated": {}
         }
@@ -367,6 +379,7 @@ Drafts, revisions and exports hold a whole entry in one format ([ADR 0009](../ad
 | `uuid` | The entry's UUID. |
 | `contentType` | The content type's code. |
 | `version` | The version of the content type it was saved with. |
+| `createdAt` | When the entry was created, in UTC. It isn't drafted: a publish never changes it, and an import keeps the source's value. |
 | `fields` | The drafted shared fields: the base fields its content type has (`noindex`, and a snippet's `context`) and the content type's own fields on the entry subclass, keyed by property name, in the [field value](#values-per-field-type) encoding. |
 | `translations` | One object per locale: `shown` (`false` when held back), `fields` (the translatable fields, including `title`, and `slug`, `metaTitle` and `metaDescription` for a content type with its own URL) and `translated` (field name to [translation state](#translation-state)). |
 | `tree` | The [stored block tree](#the-tree). |
@@ -379,8 +392,12 @@ A share link renders a draft by building an entry from this format that Doctrine
 
 Wherever the plugin writes this JSON (the tree column, drafts, revisions, preset files, exports and fingerprints), it writes it the same way, so files diff cleanly in Git:
 
-- Keys in the order this spec lists them. Field names in the order their properties are declared. Locale maps, and other maps keyed by codes or UUIDs, sorted by key.
+- **Keys the spec lists** come in the order it lists them, such as a block's `key`, `type`, `version` and so on.
+- **Every other object's keys are sorted** by byte value. That covers field names, locale maps, other maps keyed by codes or UUIDs, `$params` and `params`, ProseMirror nodes, marks and their `attrs`, and whatever JSON a project's own field type stores. Field names never follow property declaration order, so moving a property changes nothing.
+- **Maps are objects**, written `{}` when empty. Lists are arrays, written `[]` when empty.
 - `JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION`.
+
+These rules are part of the contract: [fingerprints](#translation-state) hash this JSON, so changing them would mark every translation outdated.
 - Files (presets and exports) are also pretty-printed with four spaces and end with a newline.
 
 ## Schema changes
