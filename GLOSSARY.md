@@ -14,6 +14,10 @@ _Avoid_: element, component, widget, section
 A developer-defined kind of block. It sets which fields the block has, which block types it may contain, and how it renders.
 _Avoid_: block template, component definition
 
+**Block style**:
+A developer-defined, named look that editors can pick for a block of one block type, such as "Dark" or "Outlined".
+_Avoid_: variant, theme, skin, design option
+
 **Block tree**:
 The ordered, nested blocks that make up the body of an entry.
 _Avoid_: content, page builder data
