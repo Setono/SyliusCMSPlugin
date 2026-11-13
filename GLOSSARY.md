@@ -57,7 +57,7 @@ An entry of the built-in content type for standalone pages with their own URL an
 _Avoid_: CMS page, static page
 
 **Built-in content type**:
-A content type the plugin itself depends on: Page, Snippet or Menu. Collections never use a built-in content type.
+A content type the plugin itself depends on: Page or Snippet. Collections never use a built-in content type.
 _Avoid_: core type, system type
 
 **Collection**:
@@ -67,10 +67,6 @@ _Avoid_: section, channel, list
 **Snippet**:
 An entry of the built-in content type for named, reusable block trees without their own URL. A snippet is shown in slots, or referenced from other block trees, and stays the same wherever it's used.
 _Avoid_: shared block, global block, fragment, partial, synced pattern
-
-**Menu**:
-An entry of the built-in content type for navigation, whose block tree holds links, groups of links and, in mega menus, other blocks.
-_Avoid_: navigation, menu tree
 
 **Layout**:
 A developer-defined frame around the block tree of an entry shown at its own URL. It shows the entry's fields and its own, and can contain slots. Each content type with its own URL has one or more layouts of its own.
