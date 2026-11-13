@@ -52,9 +52,17 @@ _Avoid_: localization, language version, locale variant
 The locales a translatable field falls back through, in order, when it's empty in the current locale. It ends at the store's fallback locale. A binding's fallback is a different thing.
 _Avoid_: default locale, locale fallback
 
+**Slug**:
+The part of an entry's URL that editors set for each translation, such as `about-us` or `about/team`. No two entries have the same URL in one channel and locale.
+_Avoid_: path, handle, permalink, URL key
+
 **Page**:
 An entry of the built-in content type for standalone pages with their own URL and a block tree.
 _Avoid_: CMS page, static page
+
+**Homepage**:
+The page a channel shows at its root URL in place of the store's own homepage. A channel has at most one.
+_Avoid_: front page, start page, landing page
 
 **Built-in content type**:
 A content type the plugin itself depends on: Page or Snippet. Collections never use a built-in content type.
