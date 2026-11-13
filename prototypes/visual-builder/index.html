@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROTOTYPE · Visual builder</title>
+<!--
+  PROTOTYPE, throwaway. Never merge, never ship.
+  Question: how should the v2 visual builder look and behave? (Setono/SyliusCMSPlugin#195)
+  Plan: three structurally different builder shells, switchable via ?variant=A|B|C and the floating bar
+  (arrow keys work too), each editing the same entries: a page, two snippets and a menu.
+  Nothing is persisted; a reload resets. Open this file in a browser. No build step.
+-->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/components/icon.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap">
+<link rel="stylesheet" href="prototype.css">
+</head>
+<body>
+<div id="app"></div>
+<div id="overlay"></div>
+<div id="protobar"></div>
+<script src="fixtures.js"></script>
+<script src="core.js"></script>
+<script src="preview.js"></script>
+<script src="variants.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
