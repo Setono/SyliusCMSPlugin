@@ -76,6 +76,14 @@ _Avoid_: core type, system type
 All entries of one content type other than the built-in ones, such as the blog, the FAQ or the store locations.
 _Avoid_: section, channel, list
 
+**Category**:
+An entry that groups entries of one collection, such as the blog's "News" or "Recipes". A collection's categories are a collection of their own, and an entry can be in several categories.
+_Avoid_: tag, taxon, topic, section
+
+**Card**:
+How an entry looks when it's listed among others, such as a blog post's image, date, title and excerpt in a grid, or an FAQ item's question and answer in an accordion. Each content type sets its own cards.
+_Avoid_: teaser, tile, summary, excerpt (an excerpt is a field)
+
 **Snippet**:
 An entry of the built-in content type for named, reusable block trees without their own URL. A snippet is shown in slots, or referenced from other block trees, and stays the same wherever it's used.
 _Avoid_: shared block, global block, fragment, partial, synced pattern
