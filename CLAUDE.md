@@ -41,8 +41,7 @@ The testing rule is in [the spec's Testing section](docs/spec/README.md#testing)
 - Test both happy path and edge cases
 
 ### UI Verification
-- **All UI changes MUST be verified using the Playwright MCP** - After making any change that affects the rendered UI (templates, forms, styling, layout, flash messages, etc.), use the Playwright MCP to navigate the running test application and confirm the change renders and behaves as expected
-- Run the test application (see [Test Application](#test-application)) and use the Playwright MCP `browser_navigate`, `browser_snapshot`, and `browser_take_screenshot` tools to inspect the affected pages
+- **All UI changes MUST be verified with UI tests** - After making any change that affects the rendered UI (templates, forms, styling, layout, flash messages, etc.), cover it with a test in the `ui` suite (`tests/UI`) that drives a real browser through the test application with `playwright-php/playwright-symfony`, and run that suite
 - Verify both the visual result and the interactive behavior (e.g. submitting forms, triggering flash messages)
 
 ## Development Commands
