@@ -140,6 +140,9 @@ final class ConfigurationTest extends TestCase
         yield 'an empty class' => [['group' => ['brand' => ['label' => 'app.brand', 'class' => '']]], 'cannot contain an empty value'];
         yield 'a style code that is no code' => [['group' => ['Brand' => ['label' => 'app.brand', 'class' => 'app-group--brand']]], 'The block style code "Brand" must match ^[a-z][a-z0-9_]*$'];
         yield 'a block type code that is no code' => [['app-banner' => ['brand' => ['label' => 'app.brand', 'class' => 'app-banner--brand']]], 'The block type code "app-banner" must match ^[a-z][a-z0-9_]*$'];
+        yield 'a style code with a hyphen' => [['group' => ['dark-blue' => ['label' => 'app.dark_blue', 'class' => 'app-group--dark-blue']]], 'The block style code "dark-blue" must match'];
+        yield 'a numeric style code' => [['group' => [42 => ['label' => 'app.brand', 'class' => 'app-group--brand']]], 'The block style code "42" must match'];
+        yield 'a numeric block type code' => [[42 => ['brand' => ['label' => 'app.brand', 'class' => 'app-group--brand']]], 'The block type code "42" must match'];
     }
 
     /**

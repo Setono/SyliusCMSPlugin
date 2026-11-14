@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler;
 
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractCompilerPassTestCase;
+use Setono\SyliusCMSPlugin\Block\Group;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBlockTypesPass;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
@@ -111,6 +112,18 @@ final class RegisterBlockTypesPassTest extends AbstractCompilerPassTestCase
         $this->expectExceptionMessage(sprintf('The block style code "Dark-Blue" of %s must match', InvalidStyleCode::class));
 
         $this->compile();
+    }
+
+    /**
+     * @test
+     */
+    public function it_accepts_a_block_type_whose_block_styles_have_valid_codes_of_their_own(): void
+    {
+        $this->setDefinition('app.group', (new Definition(Group::class))->addTag('setono_sylius_cms.block_type'));
+
+        $this->compile();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BlockTypeRegistry::class, 0, ['group' => Group::class]);
     }
 
     /**

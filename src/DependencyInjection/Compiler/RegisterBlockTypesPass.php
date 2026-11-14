@@ -73,11 +73,11 @@ final class RegisterBlockTypesPass implements CompilerPassInterface
                 throw new \LogicException(sprintf('The block style code "%s" of %s must match %s', $style->code, $class, self::CODE_PATTERN));
             }
 
-            if (isset($codes[$style->code])) {
+            if (in_array($style->code, $codes, true)) {
                 throw new \LogicException(sprintf('%s declares the block style "%s" more than once', $class, $style->code));
             }
 
-            $codes[$style->code] = true;
+            $codes[] = $style->code;
         }
     }
 

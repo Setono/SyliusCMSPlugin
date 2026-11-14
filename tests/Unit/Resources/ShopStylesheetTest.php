@@ -135,7 +135,7 @@ final class ShopStylesheetTest extends TestCase
                 continue;
             }
 
-            foreach (array_filter(array_map(trim(...), explode(';', $body))) as $declaration) {
+            foreach (array_filter(array_map(trim(...), explode(';', $body)), static fn (string $declaration): bool => '' !== $declaration) as $declaration) {
                 [$property, $value] = array_map(trim(...), explode(':', $declaration, 2)) + [1 => ''];
                 $declarations[$property] = $value;
             }

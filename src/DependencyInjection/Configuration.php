@@ -73,21 +73,27 @@ final class Configuration implements ConfigurationInterface
                             ->end()
                         ->end()
                     ->end()
-                    ->validate()
-                        ->always(static function (array $blockStyles): array {
-                            foreach ($blockStyles as $blockType => $styles) {
-                                self::assertCode('block type', (string) $blockType);
-                                foreach (array_keys($styles) as $style) {
-                                    self::assertCode('block style', (string) $style);
-                                }
-                            }
-
-                            return $blockStyles;
-                        })
-                    ->end()
+                    ->validate()->always(self::assertBlockStyleCodes(...))->end()
                 ->end()
             ->end()
         ;
+    }
+
+    /**
+     * @param array<array-key, array<array-key, array{label: string, class: string}>> $blockStyles
+     *
+     * @return array<array-key, array<array-key, array{label: string, class: string}>>
+     */
+    private static function assertBlockStyleCodes(array $blockStyles): array
+    {
+        foreach ($blockStyles as $blockType => $styles) {
+            self::assertCode('block type', (string) $blockType);
+            foreach (array_keys($styles) as $style) {
+                self::assertCode('block style', (string) $style);
+            }
+        }
+
+        return $blockStyles;
     }
 
     private static function assertCode(string $kind, string $code): void
