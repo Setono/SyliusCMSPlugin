@@ -13,10 +13,12 @@ use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
+use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
+use Sylius\Resource\Factory\Factory;
+use Sylius\Resource\Factory\TranslatableFactory;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Resource\ResourceInterface;
 use Symfony\Component\DependencyInjection\ChildDefinition;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * See examples of tests and configuration options here: https://github.com/SymfonyTest/SymfonyDependencyInjectionTest
@@ -96,18 +98,43 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
      */
     public function it_registers_page_as_a_sylius_resource(): void
     {
-        $container = new ContainerBuilder();
+        $this->load();
 
-        (new SetonoSyliusCMSExtension())->prepend($container);
-
-        self::assertSame([[
-            'resources' => [
-                'setono_sylius_cms.page' => [
-                    'driver' => 'doctrine/orm',
-                    'classes' => ['model' => Page::class, 'interface' => PageInterface::class],
-                    'translation' => ['classes' => ['model' => PageTranslation::class, 'interface' => PageTranslationInterface::class]],
+        $resources = $this->container->getParameter('sylius.resources');
+        self::assertIsArray($resources);
+        self::assertSame([
+            'driver' => 'doctrine/orm',
+            'classes' => [
+                'model' => Page::class,
+                'interface' => PageInterface::class,
+                'controller' => ResourceController::class,
+                'factory' => TranslatableFactory::class,
+            ],
+            'translation' => [
+                'classes' => [
+                    'model' => PageTranslation::class,
+                    'interface' => PageTranslationInterface::class,
+                    'controller' => ResourceController::class,
+                    'factory' => Factory::class,
                 ],
             ],
-        ]], $container->getExtensionConfig('sylius_resource'));
+        ], $resources['setono_sylius_cms.page'] ?? null);
+
+        $this->assertContainerBuilderHasService('setono_sylius_cms.factory.page');
+        $this->assertContainerBuilderHasService('setono_sylius_cms.repository.page');
+        $this->assertContainerBuilderHasService('setono_sylius_cms.factory.page_translation');
+    }
+
+    /**
+     * @test
+     */
+    public function a_project_overrides_the_page_model_in_the_plugin_config(): void
+    {
+        $this->load(['resources' => ['page' => ['classes' => ['model' => 'App\\Entity\\Page']]]]);
+
+        /** @var array{'setono_sylius_cms.page': array{classes: array{model: string}}} $resources */
+        $resources = $this->container->getParameter('sylius.resources');
+
+        self::assertSame('App\\Entity\\Page', $resources['setono_sylius_cms.page']['classes']['model']);
     }
 }

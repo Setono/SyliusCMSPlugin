@@ -201,7 +201,18 @@ class StoreLocation extends Entry
   A translation subclass extends `Setono\SyliusCMSPlugin\Model\EntryTranslation`. A content type without one uses `EntryTranslation` itself.
 - **Fields.** Mapped properties with a field attribute. Shared fields sit on the entry subclass, and translatable fields on its translation subclass. The property holds the value as Doctrine maps it, such as a UUID string for a `Media` field. `cms_value()` hydrates it.
 - **Columns.** The plugin prefixes every column of a subclass, and of its translation subclass, with the content type's code and `_`, such as `blog_post_published_at`. It builds both discriminator maps from the registered content types.
-- **Extending a shipped content type.** Subclass its model, and its translation model if needed, and override `classes.model` and `translation.classes.model` of its resource. The subclass keeps the shipped `#[ContentType]`: the plugin reads the attribute from the nearest class in the hierarchy that has one.
+- **Extending a shipped content type.** Subclass its model, and its translation model if needed, and override them in the plugin's `resources` config, the way Sylius plugins let projects replace their models. The subclass keeps the shipped `#[ContentType]`: the plugin reads the attribute from the nearest class in the hierarchy that has one.
+
+  ```yaml
+  setono_sylius_cms:
+      resources:
+          page:
+              classes:
+                  model: App\Entity\Page
+              translation:
+                  classes:
+                      model: App\Entity\PageTranslation
+  ```
 - **Disabling a shipped content type** with `disabled.content_types` hides it from the admin, the builder, sources and routing. Its columns stay mapped.
 
 ### Shipped content types
@@ -742,6 +753,25 @@ setono_sylius_cms:
 
     bestsellers:
         window: 'P30D'       # ISO 8601 duration the default calculator counts paid orders over
+
+    resources:               # the shipped Sylius resources, registered as setono_sylius_cms.<name>
+        page:
+            options: ~
+            classes:
+                model: Setono\SyliusCMSPlugin\Model\Page
+                interface: Setono\SyliusCMSPlugin\Model\PageInterface
+                controller: Sylius\Bundle\ResourceBundle\Controller\ResourceController
+                repository: ~        # Sylius's default repository
+                factory: Sylius\Resource\Factory\TranslatableFactory
+            translation:
+                options: ~
+                classes:
+                    model: Setono\SyliusCMSPlugin\Model\PageTranslation
+                    interface: Setono\SyliusCMSPlugin\Model\PageTranslationInterface
+                    controller: Sylius\Bundle\ResourceBundle\Controller\ResourceController
+                    repository: ~
+                    factory: Sylius\Resource\Factory\Factory
+        # The other shipped content types are added here as they're built, in the same shape
 ```
 
 A project caps a stock slot by setting `slots.<id>.cap`, moves a shipped content type's URLs with `content_types.<code>.prefix`, and changes its default layout with `content_types.<code>.default_layout`. A disabled layout is hidden from editors, and its entries render with the default layout, as for a [removed layout](layouts-and-presets.md#a-removed-layout). The default layout can't be disabled.
