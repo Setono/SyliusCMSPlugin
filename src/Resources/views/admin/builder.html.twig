@@ -1,0 +1,17 @@
+{#
+ # The builder's own full-screen page: no Sylius admin layout, no Semantic UI and no jQuery (ADR 0008).
+ # The builder app is prebuilt into src/Resources/public/builder and installed by assets:install
+ #}
+<!DOCTYPE html>
+<html lang="{{ app.request.locale|replace({'_': '-'}) }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ entry.title }} | {{ 'setono_sylius_cms.builder.title'|trans }}</title>
+    <link rel="stylesheet" href="{{ asset('bundles/setonosyliuscmsplugin/builder/builder.css') }}">
+</head>
+<body>
+    <div id="cms-builder" data-config="{{ config|json_encode }}"></div>
+    <script type="module" src="{{ asset('bundles/setonosyliuscmsplugin/builder/builder.js') }}"></script>
+</body>
+</html>

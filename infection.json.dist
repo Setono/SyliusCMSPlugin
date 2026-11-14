@@ -2,6 +2,12 @@
     "source": {
         "directories": [
             "src"
+        ],
+        "excludes": [
+            "Controller",
+            "Repository",
+            "Resources",
+            "Rendering/EntryUrlLookup.php"
         ]
     },
     "testFrameworkOptions": "--testsuite=unit",

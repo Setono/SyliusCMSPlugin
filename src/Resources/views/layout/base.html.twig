@@ -1,0 +1,12 @@
+{#
+ # Every layout template extends this one (docs/spec/extending.md#layout-templates). It gets:
+ #   entry    the entry being shown
+ #   layout   the hydrated layout object (null until the layout machinery arrives)
+ #   blocks   the visible top-level blocks, as BlockViews: render them with cms_blocks(blocks)
+ #   context  the host-page context: {entry: entry}
+ #}
+{% extends '@SyliusShop/layout.html.twig' %}
+
+{% block content %}
+    {% block cms_content %}{% endblock %}
+{% endblock %}
