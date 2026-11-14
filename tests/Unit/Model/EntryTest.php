@@ -162,7 +162,9 @@ final class EntryTest extends TestCase
 
         $page->setDateWindow(new DateWindow(new \DateTimeImmutable('2026-11-27 01:00:00', $copenhagen)));
 
-        self::assertSame('2026-11-27 00:00:00 UTC', (new \ReflectionProperty(Entry::class, 'showFrom'))->getValue($page)?->format('Y-m-d H:i:s T'));
+        $showFrom = (new \ReflectionProperty(Entry::class, 'showFrom'))->getValue($page);
+        self::assertInstanceOf(\DateTimeImmutable::class, $showFrom);
+        self::assertSame('2026-11-27 00:00:00 UTC', $showFrom->format('Y-m-d H:i:s T'));
         self::assertNull((new \ReflectionProperty(Entry::class, 'showUntil'))->getValue($page));
     }
 

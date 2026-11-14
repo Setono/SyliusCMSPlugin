@@ -163,6 +163,7 @@ final class VisibleEntriesQueryTest extends KernelTestCase
         self::assertSame(['entry'], $queryBuilder->getRootAliases());
         self::assertSame([], $queryBuilder->getDQLPart('orderBy'));
 
+        /** @var list<PageInterface> $found */
         $found = $queryBuilder->andWhere('entry.uuid = :uuid')->setParameter('uuid', $visible->getUuid())->getQuery()->getResult();
 
         self::assertSame([$visible->getUuid()], array_map(static fn (PageInterface $page): string => $page->getUuid(), $found));

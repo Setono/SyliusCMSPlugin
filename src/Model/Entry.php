@@ -247,7 +247,9 @@ abstract class Entry implements EntryInterface
     }
 
     /**
-     * @param Collection<array-key, EntryChannel|EntryAudienceGroup> $rows
+     * @template T of EntryChannel|EntryAudienceGroup
+     *
+     * @param Collection<array-key, T> $rows
      *
      * @return list<string> sorted
      */

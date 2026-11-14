@@ -69,10 +69,13 @@ final readonly class PreviewTokenAction
 
         $entry = $this->entryRepository->findOneByUuid($entryUuid) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $entryUuid));
 
-        // Entries are in every channel until channels arrive with the on-save settings
         $channel = $this->channelRepository->findOneByCode($channelCode);
         if (!$channel instanceof ChannelInterface) {
             return self::badRequest(sprintf('There is no channel %s', $channelCode));
+        }
+
+        if (!in_array($channelCode, $entry->getChannelCodes(), true)) {
+            return self::badRequest(sprintf("The entry isn't in the channel %s", $channelCode));
         }
 
         if (!$channel->getLocales()->exists(static fn (int|string $key, LocaleInterface $locale): bool => $locale->getCode() === $localeCode)) {

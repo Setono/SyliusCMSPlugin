@@ -159,8 +159,6 @@ final class AudienceTest extends TestCase
      */
     public function the_customer_group_value_is_the_groups_code_guest_or_no_group(): void
     {
-        self::assertSame('@guest', CustomerGroupValue::GUEST);
-        self::assertSame('@no_group', CustomerGroupValue::NO_GROUP);
         self::assertSame('@guest', CustomerGroupValue::of(null));
         self::assertSame('@no_group', $this->customerGroupValueOf('no group'));
         self::assertSame('wholesale', $this->customerGroupValueOf('wholesale'));

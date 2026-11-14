@@ -42,7 +42,12 @@ final readonly class DateWindow
 
     public function equals(self $other): bool
     {
-        return $this->from == $other->from && $this->until == $other->until;
+        return self::same($this->from, $other->from) && self::same($this->until, $other->until);
+    }
+
+    private static function same(?\DateTimeImmutable $a, ?\DateTimeImmutable $b): bool
+    {
+        return $a?->getTimestamp() === $b?->getTimestamp();
     }
 
     private static function normalize(?\DateTimeImmutable $at): ?\DateTimeImmutable
