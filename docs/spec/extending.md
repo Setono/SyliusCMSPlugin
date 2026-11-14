@@ -646,14 +646,14 @@ The route files an app imports, and the names and paths of the routes below, are
 ```yaml
 # config/routes/setono_sylius_cms.yaml
 setono_sylius_cms_admin:
-    resource: '@SetonoSyliusCMSPlugin/config/routes/admin.php'
+    resource: '@SetonoSyliusCMSPlugin/Resources/config/routes/admin.php'
     prefix: '/%sylius_admin.path_name%'
 
 setono_sylius_cms_media:
-    resource: '@SetonoSyliusCMSPlugin/config/routes/media.php'
+    resource: '@SetonoSyliusCMSPlugin/Resources/config/routes/media.php'
 
 setono_sylius_cms_shop:
-    resource: '@SetonoSyliusCMSPlugin/config/routes/shop.php'
+    resource: '@SetonoSyliusCMSPlugin/Resources/config/routes/shop.php'
     prefix: /{_locale}
     requirements:
         _locale: ^[A-Za-z]{2,4}(_([A-Za-z]{4}|[0-9]{3}))?(_([A-Za-z]{2}|[0-9]{3}))?$

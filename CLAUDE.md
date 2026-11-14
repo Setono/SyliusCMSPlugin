@@ -10,6 +10,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`docs/spec/README.md`**: the specification, which is the source of truth for v2. It covers the platform (PHP ≥ 8.2, Symfony 6.4, MySQL 8.0+ and PostgreSQL), the names (namespace `Setono\SyliusCMSPlugin`, config root `setono_sylius_cms`) and which contracts are public. Each build ticket links the chapters it implements.
 - **`docs/adr/`**: the reasons behind the hard-to-reverse calls. Read the ones that touch the area you work in, and flag it explicitly if your work contradicts one.
 
+## Conventions
+
+The internals every slice follows, settled with the maintainer in #216. Prefer Sylius practice, then Symfony's, for anything they don't cover.
+
+- **Layout.** Bundle files live in `src/Resources/{config,views,translations,public}`. Route files are PHP, at `src/Resources/config/routes/{admin,shop,media}.php`, imported as `@SetonoSyliusCMSPlugin/Resources/config/routes/*.php`. Template names are `@SetonoSyliusCMSPlugin/<path>` (`block/…`, `layout/…`, `admin/…`), and public assets are served from `/bundles/setonosyliuscmsplugin/…`.
+- **Namespaces.** One per area, named as the spec names them (`Attribute`, `Field`, `Rendering`, `Value`, …). Entities and their interfaces go in `Model`.
+- **Services.** XML, one file per area in `src/Resources/config/services/`, each imported from `services.xml`. Arguments are explicit, with no autowiring. Service ids are FQCNs, and every service a project may decorate or inject also gets its interface as an alias. Extension points reach projects through autoconfiguration, registered in `SetonoSyliusCMSExtension`.
+- **Doctrine mapping.** XML, in `src/Resources/config/doctrine/model/`. Models are mapped superclasses that become entities as their Sylius resource's model, except the single-table-inheritance roots `Entry` and `EntryTranslation`. The plugin ships no migrations: projects generate their own, and the test app uses `doctrine:schema:update`.
+- **The builder app.** Its source is in `assets/builder/`, with `package.json` and `package-lock.json` at the repo root. Vite builds it to `src/Resources/public/builder/builder.{js,css}`, which is committed: run `npm run build` after every change to it, and CI fails when the build doesn't match the sources. The working copy lives in a Zustand store and every edit goes through Immer, whose patches build the autosave change set (their inverses are kept for undo). Fields render through the app's own form renderer, with one component per `x-cms-type`. Styling is CSS Modules with `--builder-*` design tokens, plus Radix UI primitives for menus, dialogs and popovers.
+- **Test data and UI tests.** See [Testing Requirements](#testing-requirements).
+
 ## Code Standards
 
 Follow clean code principles and SOLID design patterns when working with this codebase:
@@ -30,7 +41,9 @@ The testing rule is in [the spec's Testing section](docs/spec/README.md#testing)
 | `functional` | `tests/Functional` | Symfony kernel and web test cases against the test application and a real database: controllers, routing, rendering, console commands |
 | `ui` | `tests/UI` | A real browser driven by [`playwright-php/playwright-symfony`](https://github.com/playwright-php/playwright-symfony) through the storefront and the admin |
 
-- Functional and UI tests create their data with `Setono\SyliusCMSPlugin\Tests\Support\Fixtures` (extend it as needed). Every test runs in a database transaction that is rolled back afterwards (`dama/doctrine-test-bundle`). UI tests run the kernel in the same PHP process as the browser, so data a test creates is visible to the pages it visits.
+- Functional and UI tests start from the test app's `test` fixtures suite (`tests/Application/config/packages/sylius_fixtures.yaml`): the channel `WEB` on `localhost` with `en_US` and `USD`, and the admin user `sylius`. It's built from Sylius's own fixtures and loaded once before the suites. Every test runs in a database transaction that's rolled back to it afterwards (`dama/doctrine-test-bundle`). A test that needs more creates it with Sylius's example factories (`sylius.fixture.example_factory.*`), or with a resource's own factory for CMS entries (the helpers in `tests/Support/Entries.php`).
+- UI tests extend `Setono\SyliusCMSPlugin\Tests\UI\UITestCase`, the one base test case for `playwright-php/playwright-symfony`. It runs the kernel in the same PHP process as the browser, so data a test creates is visible to the pages it visits. If playwright-symfony can't do something a test needs, stop and report it rather than switching tools.
+- The builder app's TypeScript is unit tested with Vitest (`npm test`), next to its source in `assets/builder/tests`.
 - Follow the BDD-style naming convention for test methods (e.g., `it_should_do_something_when_condition_is_met`)
 - **MUST use Prophecy for mocking** - Use the `ProphecyTrait` and `$this->prophesize()` for all mocks, NOT PHPUnit's `$this->createMock()`
 - **Form testing** - Use Symfony's best practices for form testing as documented at https://symfony.com/doc/current/form/unit_testing.html
@@ -55,7 +68,9 @@ The testing rule is in [the spec's Testing section](docs/spec/README.md#testing)
 - `vendor/bin/phpunit --testsuite unit` (or `functional`, `ui`) - Run one test suite; `vendor/bin/phpunit` runs all three
 - `symfony lsp:check` - Run Symfony-aware diagnostics (routes, services, templates, translations, config) against the plugin and its test application. Requires the Symfony CLI 5.20 or newer
 
-The functional and UI suites need a database with the schema created, and built assets. The UI suite also needs the Playwright browser: `vendor/bin/playwright-install chromium` (Node 20+).
+The functional and UI suites need a database with the schema created, the `test` fixtures loaded (`(cd tests/Application && APP_ENV=test bin/console sylius:fixtures:load test --no-interaction)`) and built assets. The UI suite also needs the Playwright browser: `vendor/bin/playwright-install chromium` (Node 20+).
+
+Infection (`vendor/bin/infection`) requires 100% MSI on the `unit` suite. It leaves out the code only the functional suite can test (`excludes` in `infection.json.dist`); everything else needs unit tests that kill every mutant.
 
 ### Static Analysis
 
@@ -68,7 +83,7 @@ PHPStan is configured in `phpstan.neon` with:
   - `phpstan/phpstan-phpunit` - PHPUnit test integration
   - `jangregor/phpstan-prophecy` - Prophecy mocking integration
 - **Symfony Integration**: Uses console application loader (`tests/PHPStan/console_application.php`)
-- **Doctrine Integration**: Uses object manager loader (`tests/PHPStan/object_manager.php`)
+- **Doctrine Integration**: Uses object manager loader (`tests/PHPStan/object_manager.php`). It boots the test kernel without `.env`, so export a `DATABASE_URL` that includes `serverVersion` (CI's does), or Doctrine tries to connect
 - **Exclusions**: Test application directory
 - **Baseline**: Generate with `composer analyse -- --generate-baseline` to track improvements
 

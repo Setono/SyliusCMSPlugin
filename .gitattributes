@@ -5,14 +5,23 @@
 /CHANGELOG.md                       export-ignore
 /README.md                          export-ignore
 /UPGRADE.md                         export-ignore
+/assets                            export-ignore
 /composer-dependency-analyser.php   export-ignore
 /docs                               export-ignore
 /docs                               export-ignore
 /ecs.php                            export-ignore
 /etc                                export-ignore
 /infection.json.dist                export-ignore
+/package-lock.json                  export-ignore
+/package.json                       export-ignore
 /phpunit.xml.dist                   export-ignore
 /psalm-baseline.xml                 export-ignore
 /psalm.xml                          export-ignore
 /rector.php                         export-ignore
 /tests                              export-ignore
+/tsconfig.json                      export-ignore
+/tsconfig.node.json                 export-ignore
+/vite.config.ts                     export-ignore
+
+# Built from assets/builder by "npm run build"
+/src/Resources/public/builder/**    linguist-generated
