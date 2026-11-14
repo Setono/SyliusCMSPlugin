@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Publishing;
 
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Event\BeforeEntryPublish;
 use Setono\SyliusCMSPlugin\Event\EntryPublished;
@@ -22,7 +20,7 @@ final readonly class EntryPublisher implements EntryPublisherInterface
 {
     public function __construct(
         private WorkingCopyManagerInterface $workingCopies,
-        private ManagerRegistry $managerRegistry,
+        private EntryLock $entryLock,
         private ClockInterface $clock,
         private EventDispatcherInterface $eventDispatcher,
         private ContentTypeRegistryInterface $contentTypes,
@@ -30,33 +28,34 @@ final readonly class EntryPublisher implements EntryPublisherInterface
     ) {
     }
 
+    /**
+     * Steps 1 to 8 run in one transaction, with the entry's row locked as autosave locks it, so what's validated and
+     * what listeners see is the working copy that's published, and no save lands in between
+     */
     public function publish(EntryInterface $entry): void
     {
-        $workingCopy = $this->workingCopies->getWorkingCopy($entry);
+        $oldSlugs = $this->entryLock->write($entry, function () use ($entry): array {
+            $workingCopy = $this->workingCopies->getWorkingCopy($entry);
 
-        // 1. Validation refuses on errors
-        $errors = $this->entryValidator->validate($workingCopy);
-        if ([] !== $errors) {
-            throw new InvalidEntryException($errors);
-        }
+            // 1. Validation refuses on errors
+            $errors = $this->entryValidator->validate($workingCopy);
+            if ([] !== $errors) {
+                throw new InvalidEntryException($errors);
+            }
 
-        // 2. A listener can veto the publish
-        $veto = $this->eventDispatcher->dispatch(new BeforeEntryPublish($workingCopy, false))->getVetoMessage();
-        if (null !== $veto) {
-            throw new PublishVetoedException($veto);
-        }
+            // 2. A listener can veto the publish
+            $veto = $this->eventDispatcher->dispatch(new BeforeEntryPublish($workingCopy, false))->getVetoMessage();
+            if (null !== $veto) {
+                throw new PublishVetoedException($veto);
+            }
 
-        $manager = $this->managerRegistry->getManagerForClass($entry::class);
-        if (!$manager instanceof EntityManagerInterface) {
-            throw new \LogicException(sprintf('No Doctrine entity manager manages %s', $entry::class));
-        }
+            $oldSlugs = $entry->isPublished() ? self::slugs($entry) : [];
 
-        $oldSlugs = $entry->isPublished() ? self::slugs($entry) : [];
-
-        // 3. and 8. Copy the draft onto the rows, delete it and bump changedAt, in one transaction
-        $manager->wrapInTransaction(function () use ($entry): void {
-            $this->workingCopies->applyDraft($entry);
+            // 3. and 8. Copy the working copy onto the rows, delete the draft and bump changedAt
+            $this->workingCopies->applyToRows($entry, $workingCopy);
             $entry->publish($this->clock->now()->setTimezone(new \DateTimeZone('UTC')));
+
+            return $oldSlugs;
         });
 
         // 9. After the transaction commits

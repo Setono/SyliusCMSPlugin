@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Publishing;
 
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
-use Doctrine\Persistence\ObjectManager;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -14,8 +15,10 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Event\BeforeEntryPublish;
 use Setono\SyliusCMSPlugin\Event\EntryPublished;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Publishing\EntryLock;
 use Setono\SyliusCMSPlugin\Publishing\EntryPublisher;
 use Setono\SyliusCMSPlugin\Publishing\InvalidEntryException;
 use Setono\SyliusCMSPlugin\Publishing\PublishVetoedException;
@@ -29,19 +32,20 @@ final class EntryPublisherTest extends TestCase
 {
     use ProphecyTrait;
 
-    /** @var ObjectProphecy<WorkingCopyManagerInterface> */
-    private ObjectProphecy $workingCopies;
-
-    /** @var ObjectProphecy<EntityManagerInterface> */
-    private ObjectProphecy $manager;
-
     /** @var ObjectProphecy<ManagerRegistry> */
     private ObjectProphecy $managerRegistry;
+
+    /** @var ObjectProphecy<WorkingCopyManagerInterface> */
+    private ObjectProphecy $workingCopies;
 
     /** @var ObjectProphecy<EntryValidatorInterface> */
     private ObjectProphecy $entryValidator;
 
     private EventDispatcher $eventDispatcher;
+
+    private Page $page;
+
+    private Page $workingCopy;
 
     /** @var list<string> what happened, in order */
     private array $calls = [];
@@ -51,22 +55,35 @@ final class EntryPublisherTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->workingCopies = $this->prophesize(WorkingCopyManagerInterface::class);
-        $this->manager = $this->prophesize(EntityManagerInterface::class);
+        $this->page = self::page();
+        $this->workingCopy = clone $this->page;
+
+        $manager = $this->prophesize(EntityManagerInterface::class);
+        $connection = $this->prophesize(Connection::class);
+        $manager->getConnection()->willReturn($connection->reveal());
+        $connection->beginTransaction()->will($this->record('begin'));
+        $connection->commit()->will($this->record('commit'));
+        $connection->rollBack()->will($this->record('roll back'));
+        $manager->lock($this->page, LockMode::PESSIMISTIC_WRITE)->will($this->record('lock to write'));
+        $manager->refresh($this->page)->will($this->record('read again'));
+        $manager->flush()->will($this->record('flush'));
         $this->managerRegistry = $this->prophesize(ManagerRegistry::class);
-        $this->managerRegistry->getManagerForClass(Page::class)->willReturn($this->manager->reveal());
-        $this->entryValidator = $this->prophesize(EntryValidatorInterface::class);
-        $this->entryValidator->validate(Argument::any())->willReturn([]);
+        $this->managerRegistry->getManagerForClass(Page::class)->willReturn($manager->reveal());
 
         $calls = &$this->calls;
-        $this->manager->wrapInTransaction(Argument::type('callable'))->will(static function (array $arguments) use (&$calls): mixed {
-            $transaction = $arguments[0] ?? null;
-            self::assertIsCallable($transaction);
-            $calls[] = 'begin';
-            $result = $transaction();
-            $calls[] = 'commit';
+        $workingCopy = $this->workingCopy;
+        $this->workingCopies = $this->prophesize(WorkingCopyManagerInterface::class);
+        $this->workingCopies->getWorkingCopy($this->page)->will(static function () use (&$calls, $workingCopy): EntryInterface {
+            $calls[] = 'get working copy';
 
-            return $result;
+            return $workingCopy;
+        });
+
+        $this->entryValidator = $this->prophesize(EntryValidatorInterface::class);
+        $this->entryValidator->validate($this->workingCopy)->will(static function () use (&$calls): array {
+            $calls[] = 'validate';
+
+            return [];
         });
 
         $this->eventDispatcher = new EventDispatcher();
@@ -81,24 +98,25 @@ final class EntryPublisherTest extends TestCase
     /**
      * @test
      */
-    public function it_publishes_the_working_copy_in_a_transaction_and_dispatches_events_around_it(): void
+    public function it_validates_asks_listeners_about_and_publishes_one_working_copy_read_with_the_entry_locked(): void
     {
-        $page = self::page();
-        $workingCopy = clone $page;
-        $this->workingCopies->getWorkingCopy($page)->willReturn($workingCopy);
+        $page = $this->page;
         $calls = &$this->calls;
-        $this->workingCopies->applyDraft($page)->will(static function () use ($page, &$calls): void {
-            $calls[] = 'apply draft';
+        $this->workingCopies->applyToRows($page, $this->workingCopy)->will(static function () use ($page, &$calls): void {
+            $calls[] = 'apply to rows';
             self::assertFalse($page->isPublished());
         });
 
         $this->publisher()->publish($page);
 
-        self::assertSame([BeforeEntryPublish::class, 'begin', 'apply draft', 'commit', EntryPublished::class], $this->calls);
+        self::assertSame(
+            ['begin', 'lock to write', 'read again', 'get working copy', 'validate', BeforeEntryPublish::class, 'apply to rows', 'flush', 'commit', EntryPublished::class],
+            $this->calls,
+        );
 
         $before = $this->events[0];
         self::assertInstanceOf(BeforeEntryPublish::class, $before);
-        self::assertSame($workingCopy, $before->entry);
+        self::assertSame($this->workingCopy, $before->entry);
         self::assertFalse($before->scheduled);
 
         $published = $this->events[1];
@@ -117,13 +135,12 @@ final class EntryPublisherTest extends TestCase
     /**
      * @test
      */
-    public function a_republish_reports_the_slugs_shoppers_saw_before_and_see_now(): void
+    public function it_reports_the_slugs_shoppers_saw_before_and_see_now_on_a_republish(): void
     {
-        $page = self::page();
+        $page = $this->page;
         $page->getTranslation('da_DK')->setTitle('Om os');
         $page->publish(new \DateTimeImmutable('2026-11-01 10:00:00', new \DateTimeZone('UTC')));
-        $this->workingCopies->getWorkingCopy($page)->willReturn(clone $page);
-        $this->workingCopies->applyDraft($page)->will(static function () use ($page): void {
+        $this->workingCopies->applyToRows($page, $this->workingCopy)->will(static function () use ($page): void {
             $page->setSlug('about');
             $page->getTranslation('da_DK')->setSlug('om-os');
         });
@@ -140,23 +157,20 @@ final class EntryPublisherTest extends TestCase
     /**
      * @test
      */
-    public function a_veto_stops_the_publish_with_its_message(): void
+    public function it_stops_the_publish_with_the_message_of_a_veto(): void
     {
-        $page = self::page();
-        $this->workingCopies->getWorkingCopy($page)->willReturn($page);
-        $this->workingCopies->applyDraft(Argument::any())->shouldNotBeCalled();
-        $this->manager->wrapInTransaction(Argument::any())->shouldNotBeCalled();
+        $this->workingCopies->applyToRows(Argument::cetera())->shouldNotBeCalled();
         $this->eventDispatcher->addListener(BeforeEntryPublish::class, static fn (BeforeEntryPublish $event) => $event->veto('Not on a Sunday'));
 
         try {
-            $this->publisher()->publish($page);
+            $this->publisher()->publish($this->page);
             self::fail('The publish was not vetoed');
         } catch (PublishVetoedException $e) {
             self::assertSame('Not on a Sunday', $e->getMessage());
         }
 
-        self::assertFalse($page->isPublished());
-        self::assertSame([BeforeEntryPublish::class], $this->calls);
+        self::assertFalse($this->page->isPublished());
+        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'validate', BeforeEntryPublish::class, 'roll back'], $this->calls);
     }
 
     /**
@@ -164,50 +178,20 @@ final class EntryPublisherTest extends TestCase
      */
     public function it_refuses_a_working_copy_with_errors_before_listeners_hear_of_it(): void
     {
-        $page = self::page();
-        $workingCopy = clone $page;
         $errors = [new ValidationError('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 'text', 'en_US', 'This field is required.')];
-        $this->workingCopies->getWorkingCopy($page)->willReturn($workingCopy);
-        $this->entryValidator->validate($workingCopy)->willReturn($errors);
-        $this->workingCopies->applyDraft(Argument::any())->shouldNotBeCalled();
-        $this->manager->wrapInTransaction(Argument::any())->shouldNotBeCalled();
+        $this->entryValidator->validate($this->workingCopy)->willReturn($errors);
+        $this->workingCopies->applyToRows(Argument::cetera())->shouldNotBeCalled();
 
         try {
-            $this->publisher()->publish($page);
+            $this->publisher()->publish($this->page);
             self::fail('The publish was not refused');
         } catch (InvalidEntryException $e) {
             self::assertSame($errors, $e->errors);
             self::assertSame('Validation found errors in the entry, so it can\'t be published', $e->getMessage());
         }
 
-        self::assertFalse($page->isPublished());
-        self::assertSame([], $this->calls);
-    }
-
-    /**
-     * @test
-     *
-     * @dataProvider managersWithoutTransactions
-     */
-    public function it_needs_a_doctrine_entity_manager_for_the_entry(?ObjectManager $manager): void
-    {
-        $page = self::page();
-        $this->workingCopies->getWorkingCopy($page)->willReturn($page);
-        $this->managerRegistry->getManagerForClass(Page::class)->willReturn($manager);
-
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage(Page::class);
-
-        $this->publisher()->publish($page);
-    }
-
-    /**
-     * @return iterable<string, array{ObjectManager|null}>
-     */
-    public function managersWithoutTransactions(): iterable
-    {
-        yield 'no manager' => [null];
-        yield 'an object manager' => [$this->prophesize(ObjectManager::class)->reveal()];
+        self::assertFalse($this->page->isPublished());
+        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'roll back'], $this->calls);
     }
 
     private function publisher(): EntryPublisher
@@ -217,7 +201,7 @@ final class EntryPublisherTest extends TestCase
 
         return new EntryPublisher(
             $this->workingCopies->reveal(),
-            $this->managerRegistry->reveal(),
+            new EntryLock($this->managerRegistry->reveal()),
             $clock->reveal(),
             $this->eventDispatcher,
             new ContentTypeRegistry([
@@ -225,6 +209,18 @@ final class EntryPublisherTest extends TestCase
             ]),
             $this->entryValidator->reveal(),
         );
+    }
+
+    /**
+     * Prophecy binds a promise's closure to the double, so it reaches the calls by reference
+     */
+    private function record(string $call): \Closure
+    {
+        $calls = &$this->calls;
+
+        return static function () use ($call, &$calls): void {
+            $calls[] = $call;
+        };
     }
 
     private static function page(): Page

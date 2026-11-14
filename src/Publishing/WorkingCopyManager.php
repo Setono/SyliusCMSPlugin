@@ -81,15 +81,17 @@ final readonly class WorkingCopyManager implements WorkingCopyManagerInterface
         $this->manager->flush();
     }
 
-    public function applyDraft(EntryInterface $entry): void
+    public function applyToRows(EntryInterface $entry, EntryInterface $workingCopy): void
     {
-        $draft = $this->draftRepository->findOneByEntry($entry);
-        if (null === $draft) {
-            return;
+        // A never-published entry is its own working copy. Another goes through the entry format, as a draft does
+        if ($workingCopy !== $entry) {
+            $this->entryDenormalizer->denormalize(CanonicalJson::decode(CanonicalJson::encode($this->entryNormalizer->normalize($workingCopy))), $entry);
         }
 
-        $this->entryDenormalizer->denormalize($this->readDraft($draft), $entry);
-        $this->manager->remove($draft);
+        $draft = $this->draftRepository->findOneByEntry($entry);
+        if (null !== $draft) {
+            $this->manager->remove($draft);
+        }
     }
 
     /**

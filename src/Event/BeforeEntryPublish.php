@@ -17,7 +17,7 @@ final class BeforeEntryPublish extends Event
 
     /**
      * @param EntryInterface $entry the entry as it will be published: its working copy, which is the draft, or the rows of
-     *                              an entry that has none. Changing it changes nothing
+     *                              an entry that has none. It's the copy that is then published, so listeners read it and leave it as it is
      */
     public function __construct(
         public readonly EntryInterface $entry,

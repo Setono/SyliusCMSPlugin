@@ -174,25 +174,28 @@ final class WorkingCopyManagerTest extends TestCase
     /**
      * @test
      */
-    public function applying_the_draft_copies_it_onto_the_rows_and_deletes_it_without_flushing(): void
+    public function it_copies_the_working_copy_it_is_given_onto_the_rows_and_deletes_the_draft_without_flushing(): void
     {
         $page = self::page('Hello', published: true);
         $draft = $this->draft($page, 'Hello world', 'About');
         $this->drafts->findOneByEntry($page)->willReturn($draft);
+        $workingCopy = $this->workingCopies()->getWorkingCopy($page);
+        $workingCopy->getTranslation('en_US')->setTitle('About the shop');
 
         $this->manager->remove($draft)->shouldBeCalledOnce();
         $this->manager->flush()->shouldNotBeCalled();
 
-        $this->workingCopies()->applyDraft($page);
+        $this->workingCopies()->applyToRows($page, $workingCopy);
 
-        self::assertSame($draft->getContent(), self::json($page));
-        self::assertSame('About', $page->getTranslation('en_US')->getTitle());
+        self::assertSame(self::json($workingCopy), self::json($page));
+        self::assertSame('About the shop', $page->getTranslation('en_US')->getTitle());
+        self::assertSame(['en_US' => 'Hello world'], $page->getBlockTree()->blocks[0]->fields['text'] ?? null);
     }
 
     /**
      * @test
      */
-    public function applying_without_a_draft_leaves_the_rows(): void
+    public function it_leaves_the_rows_of_a_never_published_entry_which_is_its_own_working_copy(): void
     {
         $page = self::page('Hello');
         $before = self::json($page);
@@ -200,7 +203,7 @@ final class WorkingCopyManagerTest extends TestCase
 
         $this->manager->remove(Argument::any())->shouldNotBeCalled();
 
-        $this->workingCopies()->applyDraft($page);
+        $this->workingCopies()->applyToRows($page, $this->workingCopies()->getWorkingCopy($page));
 
         self::assertSame($before, self::json($page));
     }
@@ -239,7 +242,7 @@ final class WorkingCopyManagerTest extends TestCase
     /**
      * @test
      */
-    public function a_draft_is_upgraded_when_it_is_read_and_when_it_is_applied(): void
+    public function a_draft_is_upgraded_when_it_is_read_so_its_working_copy_goes_onto_the_rows_upgraded(): void
     {
         $page = self::page('Hello', published: true);
         $copy = clone $page;
@@ -250,9 +253,10 @@ final class WorkingCopyManagerTest extends TestCase
         $this->drafts->findOneByEntry($page)->willReturn($draft);
         $this->manager->remove($draft)->shouldBeCalledOnce();
 
-        self::assertSame(['heading' => ['en_US' => 'Hello world']], $this->workingCopies()->getWorkingCopy($page)->getBlockTree()->blocks[0]->fields);
+        $workingCopy = $this->workingCopies()->getWorkingCopy($page);
+        self::assertSame(['heading' => ['en_US' => 'Hello world']], $workingCopy->getBlockTree()->blocks[0]->fields);
 
-        $this->workingCopies()->applyDraft($page);
+        $this->workingCopies()->applyToRows($page, $workingCopy);
 
         self::assertSame(3, $page->getBlockTree()->blocks[0]->version);
         self::assertSame(['heading' => ['en_US' => 'Hello world']], $page->getBlockTree()->blocks[0]->fields);

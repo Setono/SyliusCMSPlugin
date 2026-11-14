@@ -25,6 +25,7 @@ use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Publishing\Autosave;
+use Setono\SyliusCMSPlugin\Publishing\EntryLock;
 use Setono\SyliusCMSPlugin\Publishing\StaleLockTokenException;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
@@ -81,6 +82,7 @@ final class AutosaveTest extends TestCase
         $this->manager->lock($this->entry, LockMode::PESSIMISTIC_READ)->will($this->record('lock to read'));
         $this->manager->lock($this->entry, LockMode::PESSIMISTIC_WRITE)->will($this->record('lock to write'));
         $this->manager->refresh($this->entry)->will($this->record('read again'));
+        $this->manager->flush()->will($this->record('flush'));
 
         $this->workingCopies = $this->prophesize(WorkingCopyManagerInterface::class);
         $calls = &$this->calls;
@@ -127,7 +129,7 @@ final class AutosaveTest extends TestCase
         self::assertFalse($result->merged);
         self::assertSame([], $result->clashes);
         self::assertSame(['Hello there', 'World'], self::texts($this->workingCopy));
-        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'forget old saves', 'number the save', 'save working copy', 'commit'], $this->calls);
+        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'forget old saves', 'number the save', 'save working copy', 'flush', 'commit'], $this->calls);
         $this->savedChangeSets->removeSavedBefore($this->entry, new \DateTimeImmutable('2026-11-13 10:00:00'))->shouldHaveBeenCalledOnce();
         $this->savedChangeSets->add($this->entry, 4, $changeSet, new \DateTimeImmutable('2026-11-14 10:00:00'))->shouldHaveBeenCalledOnce();
     }
@@ -170,7 +172,7 @@ final class AutosaveTest extends TestCase
         self::assertSame(4, $result->saved->lockToken);
         self::assertTrue($result->merged);
         self::assertCount(1, $result->clashes);
-        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'commit'], $this->calls);
+        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'flush', 'commit'], $this->calls);
     }
 
     /**
@@ -185,7 +187,7 @@ final class AutosaveTest extends TestCase
 
         self::assertSame(3, $result->saved->lockToken);
         self::assertFalse($result->merged);
-        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'commit'], $this->calls);
+        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'flush', 'commit'], $this->calls);
     }
 
     /**
@@ -246,7 +248,7 @@ final class AutosaveTest extends TestCase
 
         self::assertSame(4, $loaded->lockToken);
         self::assertSame($this->workingCopy, $loaded->workingCopy);
-        self::assertSame(['begin', 'lock to write', 'read again', 'forget old saves', 'number the save', 'discard the draft', 'get working copy', 'commit'], $this->calls);
+        self::assertSame(['begin', 'lock to write', 'read again', 'forget old saves', 'number the save', 'discard the draft', 'get working copy', 'flush', 'commit'], $this->calls);
         $this->savedChangeSets->removeSavedBefore($this->entry, new \DateTimeImmutable('2026-11-13 10:00:00'))->shouldHaveBeenCalledOnce();
         $this->savedChangeSets->add($this->entry, 4, new ChangeSet([]), new \DateTimeImmutable('2026-11-14 10:00:00'))->shouldHaveBeenCalledOnce();
     }
@@ -263,25 +265,13 @@ final class AutosaveTest extends TestCase
         $loaded = $this->autosave()->discard($this->entry);
 
         self::assertSame(3, $loaded->lockToken);
-        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'commit'], $this->calls);
-    }
-
-    /**
-     * @test
-     */
-    public function it_needs_an_entity_manager_for_the_entry(): void
-    {
-        $this->managerRegistry->getManagerForClass(Page::class)->willReturn(null);
-
-        $this->expectException(\LogicException::class);
-
-        $this->autosave()->load($this->entry);
+        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'flush', 'commit'], $this->calls);
     }
 
     private function autosave(): Autosave
     {
         return new Autosave(
-            $this->managerRegistry->reveal(),
+            new EntryLock($this->managerRegistry->reveal()),
             $this->workingCopies->reveal(),
             $this->savedChangeSets->reveal(),
             new ChangeSetMerger(),

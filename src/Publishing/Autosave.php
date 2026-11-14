@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Publishing;
 
-use Doctrine\DBAL\LockMode;
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier;
@@ -16,8 +13,8 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
 
 /**
- * Saves are kept for a day for merging onto. Each one runs with the entry's row locked, so saves of one entry wait for
- * each other, and loading waits for a save in flight, so a lock token always matches the working copy it came with
+ * Saves are kept for a day for merging onto. Each one runs with the entry's row locked (EntryLock), so saves of one entry
+ * wait for each other, and loading waits for a save in flight, so a lock token always matches the working copy it came with
  */
 final readonly class Autosave implements AutosaveInterface
 {
@@ -28,7 +25,7 @@ final readonly class Autosave implements AutosaveInterface
     public const KEPT_FOR = '1 day';
 
     public function __construct(
-        private ManagerRegistry $managerRegistry,
+        private EntryLock $entryLock,
         private WorkingCopyManagerInterface $workingCopies,
         private SavedChangeSetRepositoryInterface $savedChangeSets,
         private ChangeSetMerger $merger,
@@ -39,7 +36,7 @@ final readonly class Autosave implements AutosaveInterface
 
     public function load(EntryInterface $entry): LoadedWorkingCopy
     {
-        return $this->locked($entry, LockMode::PESSIMISTIC_READ, fn (): LoadedWorkingCopy => new LoadedWorkingCopy(
+        return $this->entryLock->read($entry, fn (): LoadedWorkingCopy => new LoadedWorkingCopy(
             $this->workingCopies->getWorkingCopy($entry),
             $this->savedChangeSets->findLatestVersion($entry),
         ));
@@ -47,7 +44,7 @@ final readonly class Autosave implements AutosaveInterface
 
     public function save(EntryInterface $entry, ChangeSet $changeSet, int $lockToken): SaveResult
     {
-        return $this->locked($entry, LockMode::PESSIMISTIC_WRITE, function () use ($entry, $changeSet, $lockToken): SaveResult {
+        return $this->entryLock->write($entry, function () use ($entry, $changeSet, $lockToken): SaveResult {
             $version = $this->savedChangeSets->findLatestVersion($entry);
             $theirs = $this->savedChangeSets->findChangeSetsSince($entry, $lockToken);
             if ($lockToken > $version || count($theirs) !== $version - $lockToken) {
@@ -74,11 +71,10 @@ final readonly class Autosave implements AutosaveInterface
 
     public function discard(EntryInterface $entry): LoadedWorkingCopy
     {
-        return $this->locked($entry, LockMode::PESSIMISTIC_WRITE, function () use ($entry): LoadedWorkingCopy {
+        return $this->entryLock->write($entry, function () use ($entry): LoadedWorkingCopy {
             $version = $this->savedChangeSets->findLatestVersion($entry);
 
             if ($this->workingCopies->hasDraft($entry)) {
-                // Discarding the draft flushes, which writes the numbered save too
                 $this->number($entry, ++$version, new ChangeSet([]));
                 $this->workingCopies->discard($entry);
             }
@@ -96,40 +92,5 @@ final readonly class Autosave implements AutosaveInterface
         $now = $this->clock->now();
         $this->savedChangeSets->removeSavedBefore($entry, $now->modify('-' . self::KEPT_FOR));
         $this->savedChangeSets->add($entry, $version, $changeSet, $now);
-    }
-
-    /**
-     * Runs the callback in a transaction, with the entry's row locked and read again
-     *
-     * @template T
-     *
-     * @param LockMode::PESSIMISTIC_* $lockMode
-     * @param callable(): T $callback
-     *
-     * @return T
-     */
-    private function locked(EntryInterface $entry, int $lockMode, callable $callback): mixed
-    {
-        $manager = $this->managerRegistry->getManagerForClass($entry::class);
-        if (!$manager instanceof EntityManagerInterface) {
-            throw new \LogicException(sprintf('No Doctrine entity manager manages %s', $entry::class));
-        }
-
-        $connection = $manager->getConnection();
-        $connection->beginTransaction();
-
-        try {
-            $manager->lock($entry, $lockMode);
-            $manager->refresh($entry);
-
-            $result = $callback();
-            $connection->commit();
-
-            return $result;
-        } catch (\Throwable $e) {
-            $connection->rollBack();
-
-            throw $e;
-        }
     }
 }

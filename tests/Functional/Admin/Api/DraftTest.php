@@ -256,7 +256,8 @@ final class DraftTest extends BuilderApiTestCase
 
         self::assertInstanceOf(BeforeEntryPublish::class, $before);
         self::assertFalse($before->scheduled);
-        self::assertSame($outside, $beforeLevel);
+        // Listeners see the working copy that is published, read in the publish's transaction with the entry locked
+        self::assertSame($outside + 1, $beforeLevel);
         self::assertFalse($beforeDraftGone);
 
         self::assertInstanceOf(EntryPublished::class, $published);

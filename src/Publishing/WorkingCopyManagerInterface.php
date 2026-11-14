@@ -26,8 +26,9 @@ interface WorkingCopyManagerInterface extends WorkingCopyProviderInterface
     public function discard(EntryInterface $entry): void;
 
     /**
-     * Copies the draft, when the entry has one, onto the rows and deletes it. It doesn't flush, because publishing
-     * does that in its own transaction
+     * Copies a working copy got from getWorkingCopy() onto the rows, and deletes the draft when the entry has one.
+     * Publishing passes the working copy it validated, so that's what's published. It doesn't flush, because
+     * publishing does that in its own transaction
      */
-    public function applyDraft(EntryInterface $entry): void;
+    public function applyToRows(EntryInterface $entry, EntryInterface $workingCopy): void;
 }
