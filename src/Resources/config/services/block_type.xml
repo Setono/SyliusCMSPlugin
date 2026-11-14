@@ -3,6 +3,23 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <!-- The shipped block types. Block types are metadata: RegisterBlockTypesPass reads these into the registry and removes the services -->
+        <!-- In the order the picker lists them: structure, then content -->
+        <service id="Setono\SyliusCMSPlugin\Block\Group" class="Setono\SyliusCMSPlugin\Block\Group">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Block\Columns" class="Setono\SyliusCMSPlugin\Block\Columns">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Block\Column" class="Setono\SyliusCMSPlugin\Block\Column">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Block\Spacer" class="Setono\SyliusCMSPlugin\Block\Spacer">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Block\Heading" class="Setono\SyliusCMSPlugin\Block\Heading">
             <tag name="setono_sylius_cms.block_type"/>
         </service>

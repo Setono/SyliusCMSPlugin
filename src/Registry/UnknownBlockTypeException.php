@@ -10,4 +10,12 @@ final class UnknownBlockTypeException extends \InvalidArgumentException
     {
         parent::__construct(sprintf('There is no block type with the code "%s"', $code));
     }
+
+    public static function forClass(string $class): self
+    {
+        $exception = new self('');
+        $exception->message = sprintf('The class %s is no registered block type', $class);
+
+        return $exception;
+    }
 }

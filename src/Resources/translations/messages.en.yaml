@@ -1,18 +1,30 @@
 setono_sylius_cms:
     block_type:
+        column: Column
+        columns: Columns
+        group: Group
         heading: Heading
+        spacer: Spacer
     choice:
         heading_level:
             h1: Heading 1
             h2: Heading 2
             h3: Heading 3
             h4: Heading 4
+        spacer_size:
+            large: Large
+            medium: Medium
+            small: Small
     content_type:
         page: Page
     field:
+        group:
+            full_width: Full width
         heading:
             level: Level
             text: Text
+        spacer:
+            size: Size
     form:
         entry:
             slug: Slug

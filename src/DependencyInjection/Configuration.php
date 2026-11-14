@@ -20,8 +20,28 @@ final class Configuration implements ConfigurationInterface
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder('setono_sylius_cms');
+        $rootNode = $treeBuilder->getRootNode();
 
-        $this->addResourcesSection($treeBuilder->getRootNode());
+        $rootNode
+            ->children()
+                ->arrayNode('disabled')
+                    ->info('Shipped items to switch off. Blocks of a disabled block type already in trees keep rendering')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->arrayNode('block_types')
+                            ->info('Block type codes')
+                            ->scalarPrototype()->end()
+                        ->end()
+                    ->end()
+                ->end()
+                ->booleanNode('assets')
+                    ->info('false stops loading the shipped stylesheet, for projects that bundle it into their own build')
+                    ->defaultTrue()
+                ->end()
+            ->end()
+        ;
+
+        $this->addResourcesSection($rootNode);
 
         return $treeBuilder;
     }
