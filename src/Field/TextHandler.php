@@ -6,6 +6,9 @@ namespace Setono\SyliusCMSPlugin\Field;
 
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
+/**
+ * Handles Text and Textarea fields: a string, with an optional max length
+ */
 final class TextHandler implements FieldHandlerInterface
 {
     public function schema(Field $field): array
@@ -54,10 +57,10 @@ final class TextHandler implements FieldHandlerInterface
         }
     }
 
-    private static function text(Field $field): Text
+    private static function text(Field $field): Text|Textarea
     {
-        if (!$field instanceof Text) {
-            throw new \InvalidArgumentException(sprintf('%s handles %s fields, got %s', self::class, Text::class, $field::class));
+        if (!$field instanceof Text && !$field instanceof Textarea) {
+            throw new \InvalidArgumentException(sprintf('%s handles %s and %s fields, got %s', self::class, Text::class, Textarea::class, $field::class));
         }
 
         return $field;
