@@ -54,6 +54,40 @@ trait Entries
         return $page;
     }
 
+    /**
+     * Creates a never-published page in en_US with the given top-level blocks
+     */
+    protected static function createPageWithBlocks(string $title, string $slug, StoredBlock ...$blocks): PageInterface
+    {
+        /** @var FactoryInterface<PageInterface> $factory */
+        $factory = self::getContainer()->get('setono_sylius_cms.factory.page');
+
+        $page = $factory->createNew();
+        $page->setCurrentLocale('en_US');
+        $page->setFallbackLocale('en_US');
+        $page->setTitle($title);
+        $page->setSlug($slug);
+        $page->setBlockTree(new StoredTree($page->getBlockTree()->layout, array_values($blocks)));
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
+        $manager->persist($page);
+        $manager->flush();
+
+        return $page;
+    }
+
+    /**
+     * A Heading block with its text in en_US
+     */
+    protected static function headingBlock(string $key, string $text): StoredBlock
+    {
+        $block = new StoredBlock($key, 'heading', 1);
+        $block->setValue('text', 'en_US', $text);
+
+        return $block;
+    }
+
     protected static function reloadPage(PageInterface $page): PageInterface
     {
         /** @var ObjectManager $manager */

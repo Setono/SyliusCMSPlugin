@@ -56,6 +56,7 @@ final readonly class BuilderAction
                     'entry' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_show', ['uuid' => $entry->getUuid()]),
                     'publish' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_publish', ['uuid' => $entry->getUuid()]),
                     'previewToken' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_token'),
+                    'previewRender' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_render'),
                 ],
                 'channels' => $this->channels(),
                 // The rest of the UI strings arrive with the registry, so the app shows these until it has loaded

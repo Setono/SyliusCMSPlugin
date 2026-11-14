@@ -53,6 +53,7 @@ final class BuilderTest extends WebTestCase
             'entry' => sprintf('/admin/cms/api/entries/%s', $uuid),
             'publish' => sprintf('/admin/cms/api/entries/%s/publish', $uuid),
             'previewToken' => '/admin/cms/api/preview/token',
+            'previewRender' => '/admin/cms/api/preview/render',
         ], $config['endpoints']);
         self::assertSame([['code' => 'WEB', 'name' => 'Setono CMS Test Store']], $config['channels'], "The entry's channels, for the preview channel picker");
         self::assertSame([
