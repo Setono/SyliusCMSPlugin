@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Model;
 
 use Doctrine\Common\Collections\Collection;
+use Setono\SyliusCMSPlugin\Targeting\Audience;
+use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Resource\Model\ResourceInterface;
 use Sylius\Resource\Model\TranslatableInterface;
@@ -34,7 +36,45 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
      */
     public function getChangedAt(): \DateTimeImmutable;
 
+    /**
+     * Saving an on-save setting bumps it, as publishing does
+     */
+    public function setChangedAt(\DateTimeImmutable $changedAt): void;
+
     public function getLastPublishedAt(): ?\DateTimeImmutable;
+
+    /**
+     * On for a new entry. Turning it off unpublishes the entry and keeps its published content. An on-save setting
+     */
+    public function isEnabled(): bool;
+
+    public function setEnabled(bool $enabled): void;
+
+    /**
+     * "Show from" (inclusive) and "Show until" (exclusive). An on-save setting
+     */
+    public function getDateWindow(): DateWindow;
+
+    public function setDateWindow(DateWindow $dateWindow): void;
+
+    /**
+     * The codes of the channels it's in, sorted. A new entry starts in every channel. An on-save setting
+     *
+     * @return list<string>
+     */
+    public function getChannelCodes(): array;
+
+    /**
+     * @param iterable<string> $codes
+     */
+    public function setChannelCodes(iterable $codes): void;
+
+    /**
+     * The customers it shows to. An on-save setting (ADR 0010)
+     */
+    public function getAudience(): Audience;
+
+    public function setAudience(Audience $audience): void;
 
     public function isPublished(): bool;
 

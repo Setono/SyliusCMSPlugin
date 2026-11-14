@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Rendering;
 
 use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
+use Setono\SyliusCMSPlugin\Targeting\CustomerGroupValue;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
@@ -48,22 +49,10 @@ final readonly class ShopRenderContextFactory implements RenderContextFactoryInt
             $this->previewContext->getPreview()->localeCode ?? $this->localeContext->getLocaleCode(),
             $this->currencyContext->getCurrencyCode(),
             $customer,
-            self::customerGroup($customer),
+            CustomerGroupValue::of($customer),
             $this->clock->now(),
             $hostPageContext,
             $this->previewContext->getMode(),
         );
-    }
-
-    /**
-     * A customer group code, or one of the reserved values "@guest" and "@no_group"
-     */
-    private static function customerGroup(?CustomerInterface $customer): string
-    {
-        if (null === $customer) {
-            return '@guest';
-        }
-
-        return $customer->getGroup()?->getCode() ?? '@no_group';
     }
 }

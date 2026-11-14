@@ -8,6 +8,8 @@ use Setono\SyliusCMSPlugin\Builder\EntryStatus;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Json\ListedObject;
+use Setono\SyliusCMSPlugin\Publishing\EntrySettings;
+use Setono\SyliusCMSPlugin\Publishing\EntrySettingsNormalizer;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
@@ -15,7 +17,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * The working copy (the draft, or the rows of an entry without one) in the entry format, with the entry's state
+ * The working copy (the draft, or the rows of an entry without one) in the entry format, with the entry's on-save
+ * settings, which aren't part of the draft, and its state
  */
 final readonly class ShowEntryAction
 {
@@ -24,6 +27,7 @@ final readonly class ShowEntryAction
         private EntryRepositoryInterface $entryRepository,
         private WorkingCopyManagerInterface $workingCopies,
         private EntryNormalizer $entryNormalizer,
+        private EntrySettingsNormalizer $settingsNormalizer,
     ) {
     }
 
@@ -35,6 +39,7 @@ final readonly class ShowEntryAction
 
         return new JsonResponse(CanonicalJson::encode(new ListedObject([
             'entry' => $this->entryNormalizer->normalize($this->workingCopies->getWorkingCopy($entry)),
+            'settings' => $this->settingsNormalizer->normalize(EntrySettings::of($entry)),
             'status' => EntryStatus::of($entry, $this->workingCopies->hasDraft($entry)),
         ])), json: true);
     }

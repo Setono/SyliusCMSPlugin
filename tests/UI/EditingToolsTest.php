@@ -90,7 +90,7 @@ final class EditingToolsTest extends UITestCase
         $preview->getByRole('toolbar')->getByRole('button', ['name' => 'Move up'])->click();
 
         self::assertTexts(['Second', 'First'], $preview->locator('.cms-tree > .cms-heading'));
-        self::assertTexts(['Second', 'First'], $page->getByRole('navigation', ['name' => 'Blocks'])->locator('[aria-pressed]'), contains: true);
+        self::assertTexts(['Second', 'First'], $page->getByRole('navigation', ['name' => 'Blocks'])->locator('li [aria-pressed]'), contains: true);
         Expect::locator($page->getByRole('status'))->toHaveText('Saved');
         self::assertSame([self::SECOND, self::FIRST], self::reloadPage($entry)->getBlockTree()->keys());
     }

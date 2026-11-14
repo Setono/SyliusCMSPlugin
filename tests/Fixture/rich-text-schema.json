@@ -1,0 +1,9 @@
+{
+    "nodes": ["doc", "paragraph", "text", "heading", "bulletList", "orderedList", "listItem", "blockquote", "hardBreak", "horizontalRule"],
+    "marks": ["bold", "italic", "underline", "strike", "code"],
+    "attributes": {
+        "heading": ["level"],
+        "orderedList": ["start"]
+    },
+    "headingLevels": [2, 3, 4]
+}

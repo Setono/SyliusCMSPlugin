@@ -10,6 +10,8 @@ use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Setono\SyliusCMSPlugin\Security\BuilderCsrfToken;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
+use Sylius\Component\Customer\Model\CustomerGroupInterface;
+use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,6 +27,7 @@ final readonly class BuilderAction
 {
     /**
      * @param ChannelRepositoryInterface<ChannelInterface> $channelRepository
+     * @param RepositoryInterface<CustomerGroupInterface> $customerGroupRepository
      */
     public function __construct(
         private AdminAccessChecker $adminAccessChecker,
@@ -35,6 +38,7 @@ final readonly class BuilderAction
         private TranslatorInterface $translator,
         private Environment $twig,
         private ChannelRepositoryInterface $channelRepository,
+        private RepositoryInterface $customerGroupRepository,
     ) {
     }
 
@@ -56,10 +60,12 @@ final readonly class BuilderAction
                     'entry' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_show', ['uuid' => $entry->getUuid()]),
                     'publish' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_publish', ['uuid' => $entry->getUuid()]),
                     'discard' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_discard', ['uuid' => $entry->getUuid()]),
+                    'settings' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_settings', ['uuid' => $entry->getUuid()]),
                     'previewToken' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_token'),
                     'previewRender' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_render'),
                 ],
                 'channels' => $this->channels(),
+                'customerGroups' => $this->customerGroups(),
                 // The rest of the UI strings arrive with the registry, so the app shows these until it has loaded
                 'strings' => [
                     'setono_sylius_cms.builder.loading' => $this->translator->trans('setono_sylius_cms.builder.loading'),
@@ -82,8 +88,7 @@ final readonly class BuilderAction
     }
 
     /**
-     * The entry's channels, which the preview can show it in. Entries are in every channel until channels arrive
-     * with the on-save settings
+     * The store's channels, which the settings pick the entry's channels from. The preview picks from the entry's
      *
      * @return list<array{code: string|null, name: string|null}>
      */
@@ -92,6 +97,19 @@ final readonly class BuilderAction
         return array_values(array_map(
             static fn (ChannelInterface $channel): array => ['code' => $channel->getCode(), 'name' => $channel->getName()],
             $this->channelRepository->findBy([], ['id' => 'ASC']),
+        ));
+    }
+
+    /**
+     * The store's customer groups, which the audience picks from, beside guests and customers without a group
+     *
+     * @return list<array{code: string|null, name: string|null}>
+     */
+    private function customerGroups(): array
+    {
+        return array_values(array_map(
+            static fn (CustomerGroupInterface $group): array => ['code' => $group->getCode(), 'name' => $group->getName()],
+            $this->customerGroupRepository->findBy([], ['name' => 'ASC']),
         ));
     }
 

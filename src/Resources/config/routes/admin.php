@@ -8,6 +8,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewTokenAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PublishEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RegistryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntrySettingsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;
@@ -49,6 +50,12 @@ return static function (RoutingConfigurator $routes): void {
     $routes->add('setono_sylius_cms_admin_api_entry_save', '/cms/api/entries/{uuid}')
         ->controller(SaveEntryAction::class)
         ->methods(['PATCH'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_entry_settings', '/cms/api/entries/{uuid}/settings')
+        ->controller(SaveEntrySettingsAction::class)
+        ->methods(['PUT'])
         ->requirements(['uuid' => Requirement::UUID])
     ;
 

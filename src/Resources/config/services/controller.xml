@@ -6,7 +6,7 @@
 
         <service id="Setono\SyliusCMSPlugin\Controller\Shop\ShowEntryAction" class="Setono\SyliusCMSPlugin\Controller\Shop\ShowEntryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder"/>
@@ -26,6 +26,7 @@
             <argument type="service" id="router"/>
             <argument type="service" id="twig"/>
             <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="sylius.repository.channel"/>
 
             <tag name="controller.service_arguments"/>
         </service>
@@ -39,6 +40,7 @@
             <argument type="service" id="translator"/>
             <argument type="service" id="twig"/>
             <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="sylius.repository.customer_group"/>
 
             <tag name="controller.service_arguments"/>
         </service>
@@ -55,6 +57,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsNormalizer"/>
 
             <tag name="controller.service_arguments"/>
         </service>
@@ -65,6 +68,16 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntrySettingsAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntrySettingsAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\BuilderCsrfToken"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsNormalizer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaverInterface"/>
 
             <tag name="controller.service_arguments"/>
         </service>

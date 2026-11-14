@@ -80,6 +80,21 @@ describe('rendering a form from a field schema', () => {
         expect(screen.getAllByRole('option')).toHaveLength(5);
     });
 
+    it('should render a textarea field as a labelled, multi-line textbox that keeps newlines', () => {
+        const textareaSchema: FieldSchema = { ...textSchema, 'x-cms-type': 'textarea', 'x-cms-label': 'Excerpt', 'x-cms-options': { maxLength: 160 } };
+        const onChange = renderField(textareaSchema, 'One\nTwo');
+
+        const textbox = screen.getByRole('textbox', { name: 'Excerpt' });
+        expect(textbox.tagName).toBe('TEXTAREA');
+        expect(textbox).toHaveValue('One\nTwo');
+        expect(textbox).toHaveAttribute('maxlength', '160');
+        expect(textbox).toHaveAttribute('aria-required', 'true');
+
+        fireEvent.change(textbox, { target: { value: 'One\nTwo\nThree' } });
+
+        expect(onChange).toHaveBeenCalledWith('One\nTwo\nThree');
+    });
+
     it('should render a note for a field type the builder does not know', () => {
         renderField({ ...textSchema, 'x-cms-type': 'app_opening_hours', 'x-cms-label': 'Opening hours' });
 

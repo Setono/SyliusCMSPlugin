@@ -5,15 +5,24 @@ import { App } from '../src/App';
 import { envelope, openEnvelope, type FromBridge, type ToBridge } from '../src/bridge/protocol';
 import type { BuilderConfig } from '../src/config';
 import type { EntryResponse, EntryStatus, StoredBlock } from '../src/types';
-import { block, blockOf, entry, registry } from './fixtures';
+import { block, blockOf, entry, registry, settings } from './fixtures';
 
 const config: BuilderConfig = {
     entryUuid: '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e',
     locale: 'en_US',
     csrfToken: 'abc123',
     backUrl: '/admin/',
-    endpoints: { registry: '/registry', entry: '/entry', publish: '/publish', discard: '/discard', previewToken: '/preview/token', previewRender: '/preview/render' },
+    endpoints: {
+        registry: '/registry',
+        entry: '/entry',
+        publish: '/publish',
+        discard: '/discard',
+        settings: '/settings',
+        previewToken: '/preview/token',
+        previewRender: '/preview/render',
+    },
     channels: [{ code: 'WEB', name: 'Web store' }],
+    customerGroups: [],
 };
 
 const ORIGIN = 'http://admin.example';
@@ -30,10 +39,11 @@ function fakeApi(blocks: StoredBlock[] = [block('a', { text: { en_US: 'Welcome' 
 
     return {
         fetchRegistry: vi.fn(async () => registry),
-        fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), status: 'never_published' })),
+        fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), settings: settings(), status: 'never_published' })),
         saveChanges: vi.fn(async (): Promise<EntryStatus> => 'never_published'),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
-        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), status: 'published' })),
+        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), settings: settings(), status: 'published' })),
+        saveSettings: vi.fn(async () => settings()),
         createPreviewUrl: vi.fn(async ({ locale }: PreviewRequest) => `${ORIGIN}/${locale}/about-us?_cms_preview=token-${++count}`),
         renderPreview: renderedBlocks(),
         ...overrides,
@@ -274,7 +284,8 @@ describe('the bridge in the preview', () => {
 
         fromBridge({ type: 'select_parent', key: 'a' });
 
-        expect(screen.getByText('Select a block to edit its fields')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Entry settings', pressed: true })).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: 'Settings', selected: true })).toBeInTheDocument();
     });
 
     it("should take the editor to the block's settings from its toolbar", async () => {
@@ -298,7 +309,7 @@ describe('the bridge in the preview', () => {
 
 describe('the editing tools in the preview', () => {
     function treeRows(): string[] {
-        return [...screen.getByRole('navigation').querySelectorAll('button[aria-pressed]')].map((button) => button.textContent ?? '');
+        return [...screen.getByRole('navigation').querySelectorAll('li button[aria-pressed]')].map((button) => button.textContent ?? '');
     }
 
     it('should move the block down from its toolbar, and put it at its new spot in the preview', async () => {

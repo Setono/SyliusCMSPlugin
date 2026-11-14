@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError, createApi } from '../src/api';
 import type { BuilderConfig } from '../src/config';
-import { entry } from './fixtures';
+import { entry, settings } from './fixtures';
 
 const config: BuilderConfig = {
     entryUuid: 'e1',
@@ -13,10 +13,12 @@ const config: BuilderConfig = {
         entry: '/admin/cms/api/entries/e1',
         publish: '/admin/cms/api/entries/e1/publish',
         discard: '/admin/cms/api/entries/e1/discard',
+        settings: '/admin/cms/api/entries/e1/settings',
         previewToken: '/admin/cms/api/preview/token',
         previewRender: '/admin/cms/api/preview/render',
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
+    customerGroups: [],
 };
 
 function respond(status: number, body: unknown) {
@@ -59,7 +61,7 @@ describe('the JSON endpoints', () => {
     });
 
     it('should discard with the CSRF token and answer with the published content', async () => {
-        const answer = { entry: entry(), status: 'published' };
+        const answer = { entry: entry(), settings: settings(), status: 'published' };
         const fetch = respond(200, answer);
 
         await expect(createApi(config, fetch).discard()).resolves.toEqual(answer);
@@ -69,6 +71,32 @@ describe('the JSON endpoints', () => {
             credentials: 'same-origin',
             headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123' },
         });
+    });
+
+    it('should save the settings that changed with the CSRF token, and answer with all of them', async () => {
+        const saved = { ...settings(), enabled: false };
+        const fetch = respond(200, { settings: saved });
+
+        await expect(createApi(config, fetch).saveSettings({ enabled: false })).resolves.toEqual(saved);
+
+        expect(fetch).toHaveBeenCalledWith('/admin/cms/api/entries/e1/settings', {
+            method: 'PUT',
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: false }),
+        });
+    });
+
+    it('should fail with the reason the server refused the settings for', async () => {
+        const fetch = respond(400, { error: '"Show until" must come after "Show from"' });
+
+        await expect(createApi(config, fetch).saveSettings({ showUntil: '2026-11-01T00:00:00Z' })).rejects.toEqual(
+            new ApiError('"Show until" must come after "Show from"', 400),
+        );
+    });
+
+    it('should fail when the settings answer has no settings', async () => {
+        await expect(createApi(config, respond(200, {})).saveSettings({ enabled: true })).rejects.toBeInstanceOf(ApiError);
     });
 
     it('should fail with the reason the server refused a publish for', async () => {

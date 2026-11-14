@@ -10,10 +10,11 @@ import { AddBlockButton } from './BlockPicker';
 import { blockHint } from './BlockTreePane';
 import { ArrowDownIcon, ArrowUpIcon, CopyIcon, PlusIcon, TrashIcon } from './icons';
 import styles from './SelectionPane.module.css';
+import { SettingsPane } from './SettingsPane';
 
 /**
- * The right pane: the selected block's path, its actions, its fields, rendered from their schemas, and its children.
- * With several blocks selected, the actions for all of them.
+ * The right pane: the selected block's path, its actions, its fields, rendered from their schemas, and its children,
+ * or the entry's settings. With several blocks selected, the actions for all of them.
  */
 export function SelectionPane() {
     const t = useTranslator();
@@ -32,12 +33,9 @@ export function SelectionPane() {
         );
     }
 
+    // With nothing selected, or the entry's settings selected, it shows the settings
     if (block === undefined) {
-        return (
-            <div className={styles.pane}>
-                <p className={styles.empty}>{t('setono_sylius_cms.builder.no_selection')}</p>
-            </div>
-        );
+        return <SettingsPane />;
     }
 
     const label = blockType?.label ?? block.type;

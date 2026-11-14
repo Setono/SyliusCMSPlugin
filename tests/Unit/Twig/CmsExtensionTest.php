@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Twig;
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Block\Heading;
+use Setono\SyliusCMSPlugin\Block\RichText;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
@@ -17,6 +18,7 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer;
 use Setono\SyliusCMSPlugin\Twig\CmsExtension;
 use Setono\SyliusCMSPlugin\Twig\CmsRuntime;
+use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\Request;
@@ -84,6 +86,31 @@ final class CmsExtensionTest extends TestCase
         self::assertSame(
             '<h2 class="cms-heading">&lt;b&gt;Tom &amp; Jerry&lt;/b&gt; &quot;say&quot; &#039;it&#039;</h2>',
             $this->render('{{ cms_blocks(blocks) }}', [self::heading('<b>Tom & Jerry</b> "say" \'it\'')]),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_renders_a_rich_text_block_with_its_html_as_it_is(): void
+    {
+        $richText = new RichText();
+        $richText->content = new RichTextValue(['type' => 'doc', 'content' => []], '<p>A <strong>bold</strong> word &amp; more</p>');
+
+        self::assertSame(
+            '<div class="cms-rich-text"><p>A <strong>bold</strong> word &amp; more</p></div>',
+            $this->render('{{ cms_blocks(blocks) }}', [new BlockView(self::KEY, 'rich_text', $richText, null, [])]),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_renders_an_empty_rich_text_block_as_an_empty_wrapper(): void
+    {
+        self::assertSame(
+            '<div class="cms-rich-text"></div>',
+            $this->render('{{ cms_blocks(blocks) }}', [new BlockView(self::KEY, 'rich_text', new RichText(), null, [])]),
         );
     }
 
@@ -211,7 +238,7 @@ final class CmsExtensionTest extends TestCase
         $twig = new Environment(new ChainLoader([new ArrayLoader($templates), $filesystem]), ['strict_variables' => true]);
         $twig->addExtension(new CmsExtension());
 
-        $renderer = new TwigBlockRenderer($twig, new BlockTypeRegistry(['heading' => Heading::class], new FieldReader()));
+        $renderer = new TwigBlockRenderer($twig, new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class], new FieldReader()));
         $previewContext = new PreviewContext($this->requestStack, new PreviewTokenSigner('secret', new MockClock()));
         $twig->addRuntimeLoader(new FactoryRuntimeLoader([
             CmsRuntime::class => static fn (): CmsRuntime => new CmsRuntime($renderer),

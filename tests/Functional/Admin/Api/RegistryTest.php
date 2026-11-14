@@ -69,6 +69,34 @@ final class RegistryTest extends BuilderApiTestCase
             ],
         ], $heading['fields']);
 
+        self::assertSame([
+            [
+                'name' => 'title',
+                'schema' => [
+                    'type' => 'string',
+                    'x-cms-options' => ['maxLength' => null],
+                    'x-cms-type' => 'text',
+                    'x-cms-label' => 'Title',
+                    'x-cms-help' => null,
+                    'x-cms-required' => true,
+                    'x-cms-translatable' => true,
+                ],
+            ],
+            [
+                'name' => 'content',
+                'schema' => [
+                    'type' => 'object',
+                    'properties' => ['type' => ['const' => 'doc'], 'content' => ['type' => 'array']],
+                    'required' => ['type', 'content'],
+                    'x-cms-type' => 'rich_text',
+                    'x-cms-label' => 'Content',
+                    'x-cms-help' => null,
+                    'x-cms-required' => false,
+                    'x-cms-translatable' => true,
+                ],
+            ],
+        ], self::blockTypes($registry)['accordion_item']['fields']);
+
         self::assertIsArray($registry['strings']);
         self::assertSame('Saving…', $registry['strings']['setono_sylius_cms.builder.saving'] ?? null);
         self::assertSame('Saved', $registry['strings']['setono_sylius_cms.builder.saved'] ?? null);
@@ -87,7 +115,7 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($registry);
         $blockTypes = self::blockTypes($registry);
 
-        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading'], array_keys($blockTypes));
+        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'accordion', 'accordion_item'], array_keys($blockTypes));
 
         self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
         self::assertNull($blockTypes['columns']['parents']);
@@ -98,11 +126,19 @@ final class RegistryTest extends BuilderApiTestCase
             ['type' => 'columns', 'min' => null, 'max' => null],
             ['type' => 'spacer', 'min' => null, 'max' => null],
             ['type' => 'heading', 'min' => null, 'max' => null],
+            ['type' => 'rich_text', 'min' => null, 'max' => null],
+            ['type' => 'accordion', 'min' => null, 'max' => null],
         ];
         self::assertSame($all, $blockTypes['group']['children']);
         self::assertSame($all, $blockTypes['column']['children']);
         self::assertSame([], $blockTypes['spacer']['children']);
         self::assertSame([], $blockTypes['heading']['children']);
+        self::assertSame([], $blockTypes['rich_text']['children']);
+
+        self::assertSame([['type' => 'accordion_item', 'min' => 1, 'max' => null]], $blockTypes['accordion']['children']);
+        self::assertNull($blockTypes['accordion']['parents']);
+        self::assertSame(['accordion'], $blockTypes['accordion_item']['parents']);
+        self::assertSame([], $blockTypes['accordion_item']['children']);
 
         self::assertSame('/bundles/setonosyliuscmsplugin/thumbnail/block/columns.svg', $blockTypes['columns']['thumbnail']);
         self::assertFalse($blockTypes['spacer']['disabled']);

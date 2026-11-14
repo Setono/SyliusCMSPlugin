@@ -1,9 +1,12 @@
 setono_sylius_cms:
     block_type:
+        accordion: Accordion
+        accordion_item: Accordion item
         column: Column
         columns: Columns
         group: Group
         heading: Heading
+        rich_text: Rich text
         spacer: Spacer
     choice:
         heading_level:
@@ -18,11 +21,16 @@ setono_sylius_cms:
     content_type:
         page: Page
     field:
+        accordion_item:
+            content: Content
+            title: Title
         group:
             full_width: Full width
         heading:
             level: Level
             text: Text
+        rich_text:
+            content: Content
         spacer:
             size: Size
     form:
@@ -39,18 +47,29 @@ setono_sylius_cms:
         add_block_above: Add block above
         add_block_below: Add block below
         add_block_inside: 'Add a block inside %block%'
+        audience: Audience
+        audience_everyone: Everyone
+        audience_except: Everyone except these
+        audience_only: Only these
         back: Back
         block_settings: Settings
         blocks: Blocks
         blocks_selected: '%count% blocks selected'
+        channels: Channels
         children: Blocks inside
+        customer_groups: Customer groups
+        date_window: Date window
         delete_block: Delete block
+        deleted: deleted
         desktop: Desktop
         discard_changes: Discard changes
         discard_failed: Couldn't discard the changes
         discarding: Discarding…
         drop_refused: '%block% can''t go there'
         duplicate: Duplicate
+        enabled: Enabled
+        entry_settings: Entry settings
+        guests: Guests
         load_failed: Couldn't load the entry
         loading: Loading…
         mobile: Mobile
@@ -58,8 +77,8 @@ setono_sylius_cms:
         move_up: Move up
         never_published: Never published
         no_blocks: No blocks yet
+        no_group: Signed in without a group
         no_matching_block_types: No block types match
-        no_selection: Select a block to edit its fields
         path: Path
         preview: Preview
         preview_channel: Preview channel
@@ -70,11 +89,27 @@ setono_sylius_cms:
         published: Published
         publishing: Publishing…
         redo: Redo
+        rich_text:
+            blockquote: Quote
+            bold: Bold
+            bullet_list: Bulleted list
+            code: Code
+            heading: 'Heading %level%'
+            horizontal_rule: Horizontal line
+            italic: Italic
+            ordered_list: Numbered list
+            strike: Strikethrough
+            toolbar: Formatting
+            underline: Underline
         save_failed: Couldn't save
         saved: Saved
         saving: Saving…
         search_block_types: Search block types
         select_parent: Select parent
+        settings: Settings
+        show_from: Show from
+        show_until: Show until
+        takes_effect_on_save: Takes effect when saved, without publishing
         title: Builder
         undo: Undo
         unpublished_changes: Unpublished changes

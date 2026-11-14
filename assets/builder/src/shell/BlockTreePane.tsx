@@ -38,6 +38,7 @@ export function BlockTreePane({ headingId }: { headingId: string }) {
     const t = useTranslator();
     const { store } = useBuilder();
     const blocks = useBuilderState((state) => state.entry.tree.blocks);
+    const settingsSelected = useBuilderState((state) => state.selectedKey === null);
     // The drag as it is now, which drag events read; the state copies only re-render the rows.
     const current = useRef<DragState>({ dragged: null, target: null });
     const [dragged, setDragged] = useState<string | null>(null);
@@ -92,6 +93,12 @@ export function BlockTreePane({ headingId }: { headingId: string }) {
 
     return (
         <div className={styles.pane}>
+            {/* The entry's settings sit at the top of the tree. Selecting them deselects the block */}
+            <div className={styles.row} data-selected={settingsSelected || undefined}>
+                <button type="button" className={styles.select} aria-pressed={settingsSelected} onClick={() => store.getState().selectBlock(null)}>
+                    <span className={styles.label}>{t('setono_sylius_cms.builder.entry_settings')}</span>
+                </button>
+            </div>
             <h2 id={headingId} className={styles.heading}>
                 {t('setono_sylius_cms.builder.blocks')}
             </h2>

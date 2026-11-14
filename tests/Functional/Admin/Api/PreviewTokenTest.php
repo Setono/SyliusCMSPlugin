@@ -132,6 +132,24 @@ final class PreviewTokenTest extends BuilderApiTestCase
     }
 
     /**
+     * The preview shows the entry in one of its channels
+     *
+     * @test
+     */
+    public function it_refuses_a_channel_the_entry_is_not_in(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('About us', 'about-us', channels: ['OTHER']);
+        $csrfToken = self::openBuilder($client, $page);
+
+        $response = self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US'], $csrfToken);
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertIsArray($response);
+        self::assertSame("The entry isn't in the channel WEB", $response['error'] ?? null);
+    }
+
+    /**
      * @test
      */
     public function it_refuses_a_body_that_is_not_json(): void

@@ -5,24 +5,34 @@ import type { Change } from '../src/changeSet';
 import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
 import type { EntryResponse, EntryStatus, StoredBlock } from '../src/types';
-import { block, blockOf, entry, registry } from './fixtures';
+import { block, blockOf, entry, registry, settings } from './fixtures';
 
 const config: BuilderConfig = {
     entryUuid: '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e',
     locale: 'en_US',
     csrfToken: 'abc123',
     backUrl: '/admin/',
-    endpoints: { registry: '/registry', entry: '/entry', publish: '/publish', discard: '/discard', previewToken: '/preview/token', previewRender: '/preview/render' },
+    endpoints: {
+        registry: '/registry',
+        entry: '/entry',
+        publish: '/publish',
+        discard: '/discard',
+        settings: '/settings',
+        previewToken: '/preview/token',
+        previewRender: '/preview/render',
+    },
     channels: [{ code: 'WEB', name: 'Web store' }],
+    customerGroups: [],
 };
 
 function fakeApi(blocks: StoredBlock[]) {
     return {
         fetchRegistry: vi.fn(async () => registry),
-        fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), status: 'never_published' })),
+        fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), settings: settings(), status: 'never_published' })),
         saveChanges: vi.fn(async (_changes: readonly Change[]): Promise<EntryStatus> => 'never_published'),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
-        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), status: 'published' })),
+        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), settings: settings(), status: 'published' })),
+        saveSettings: vi.fn(async () => settings()),
         createPreviewUrl: vi.fn(async () => 'http://admin.example/en_US/about-us?_cms_preview=abc.def'),
         renderPreview: vi.fn(async (): Promise<Record<string, string>> => ({})),
     } satisfies BuilderApi;
@@ -42,7 +52,7 @@ function tree(): HTMLElement {
 
 /** The names of the tree's rows, in order. */
 function rows(): string[] {
-    return [...tree().querySelectorAll('button[aria-pressed]')].map((button) => button.textContent ?? '');
+    return [...tree().querySelectorAll('li button[aria-pressed]')].map((button) => button.textContent ?? '');
 }
 
 function selectionPane(): HTMLElement {

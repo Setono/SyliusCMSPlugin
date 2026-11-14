@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 
+use Setono\SyliusCMSPlugin\Tests\Support\Customers;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class BuilderTest extends WebTestCase
 {
+    use Customers;
     use Entries;
 
     /**
@@ -53,14 +55,36 @@ final class BuilderTest extends WebTestCase
             'entry' => sprintf('/admin/cms/api/entries/%s', $uuid),
             'publish' => sprintf('/admin/cms/api/entries/%s/publish', $uuid),
             'discard' => sprintf('/admin/cms/api/entries/%s/discard', $uuid),
+            'settings' => sprintf('/admin/cms/api/entries/%s/settings', $uuid),
             'previewToken' => '/admin/cms/api/preview/token',
             'previewRender' => '/admin/cms/api/preview/render',
         ], $config['endpoints']);
-        self::assertSame([['code' => 'WEB', 'name' => 'Setono CMS Test Store']], $config['channels'], "The entry's channels, for the preview channel picker");
+        self::assertSame([['code' => 'WEB', 'name' => 'Setono CMS Test Store']], $config['channels'], "The store's channels, for the settings' channel picker and the preview's");
+        self::assertSame([], $config['customerGroups']);
         self::assertSame([
             'setono_sylius_cms.builder.loading' => 'Loading…',
             'setono_sylius_cms.builder.load_failed' => 'Couldn\'t load the entry',
         ], $config['strings'], 'The strings the app shows before the registry has loaded');
+    }
+
+    /**
+     * The audience picker offers them
+     *
+     * @test
+     */
+    public function it_gives_the_builder_the_stores_customer_groups(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        self::createCustomerGroup('wholesale', 'Wholesale');
+        self::createCustomerGroup('retail', 'Retail');
+        $page = self::createPage('About us', 'about-us');
+
+        $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));
+
+        $config = json_decode((string) $crawler->filter('#cms-builder')->attr('data-config'), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertIsArray($config);
+        self::assertSame([['code' => 'retail', 'name' => 'Retail'], ['code' => 'wholesale', 'name' => 'Wholesale']], $config['customerGroups']);
     }
 
     /**

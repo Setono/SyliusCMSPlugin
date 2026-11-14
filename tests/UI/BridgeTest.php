@@ -90,7 +90,7 @@ final class BridgeTest extends UITestCase
         $page->getByLabel('Text')->fill('Middle');
 
         self::assertTexts(['First', 'Middle', 'Second'], $preview->locator('.cms-tree .cms-heading'));
-        self::assertTexts(['First', 'Middle', 'Second'], $page->getByRole('navigation')->locator('[aria-pressed]'), contains: true);
+        self::assertTexts(['First', 'Middle', 'Second'], $page->getByRole('navigation')->locator('li [aria-pressed]'), contains: true);
         Expect::locator($page->getByRole('status'))->toHaveText('Saved');
     }
 

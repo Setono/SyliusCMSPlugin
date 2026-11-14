@@ -1,5 +1,5 @@
 import { createBuilderStore, type BuilderStore } from '../src/store';
-import type { AllowedBlockType, BlockTypeDefinition, ContentTypeDefinition, Entry, FieldValues, Registry, StoredBlock } from '../src/types';
+import type { AllowedBlockType, BlockTypeDefinition, ContentTypeDefinition, Entry, EntrySettings, FieldSchema, FieldValues, Registry, StoredBlock } from '../src/types';
 
 /** What '*' resolves to everywhere but inside Columns: every block type except Column. */
 const anyBlock: AllowedBlockType[] = ['group', 'columns', 'spacer', 'heading'].map((type) => ({ type, min: null, max: null }));
@@ -101,6 +101,54 @@ export const spacer: BlockTypeDefinition = {
 
 export const blockTypes: BlockTypeDefinition[] = [group, columns, column, spacer, heading];
 
+/** A rich text field's schema, as the registry endpoint answers it. */
+export const richTextSchema: FieldSchema = {
+    type: 'object',
+    properties: { type: { const: 'doc' }, content: { type: 'array' } },
+    required: ['type', 'content'],
+    'x-cms-type': 'rich_text',
+    'x-cms-label': 'Content',
+    'x-cms-help': null,
+    'x-cms-required': false,
+    'x-cms-translatable': true,
+};
+
+export const accordion: BlockTypeDefinition = {
+    code: 'accordion',
+    label: 'Accordion',
+    version: 1,
+    thumbnail: '/thumbnail/accordion.svg',
+    disabled: false,
+    parents: null,
+    children: [{ type: 'accordion_item', min: 1, max: null }],
+    fields: [],
+};
+
+export const accordionItem: BlockTypeDefinition = {
+    code: 'accordion_item',
+    label: 'Accordion item',
+    version: 1,
+    thumbnail: '/thumbnail/accordion_item.svg',
+    disabled: false,
+    parents: ['accordion'],
+    children: [],
+    fields: [
+        {
+            name: 'title',
+            schema: {
+                type: 'string',
+                'x-cms-type': 'text',
+                'x-cms-label': 'Title',
+                'x-cms-help': null,
+                'x-cms-required': true,
+                'x-cms-translatable': true,
+                'x-cms-options': { maxLength: null },
+            },
+        },
+        { name: 'content', schema: richTextSchema },
+    ],
+};
+
 export const page: ContentTypeDefinition = { code: 'page', label: 'Page', blocks: anyBlock };
 
 export const strings: Record<string, string> = {
@@ -138,7 +186,22 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.path': 'Path',
     'setono_sylius_cms.builder.blocks_selected': '%count% blocks selected',
     'setono_sylius_cms.builder.no_blocks': 'No blocks yet',
-    'setono_sylius_cms.builder.no_selection': 'Select a block to edit its fields',
+    'setono_sylius_cms.builder.entry_settings': 'Entry settings',
+    'setono_sylius_cms.builder.settings': 'Settings',
+    'setono_sylius_cms.builder.takes_effect_on_save': 'Takes effect when saved, without publishing',
+    'setono_sylius_cms.builder.enabled': 'Enabled',
+    'setono_sylius_cms.builder.date_window': 'Date window',
+    'setono_sylius_cms.builder.show_from': 'Show from',
+    'setono_sylius_cms.builder.show_until': 'Show until',
+    'setono_sylius_cms.builder.channels': 'Channels',
+    'setono_sylius_cms.builder.audience': 'Audience',
+    'setono_sylius_cms.builder.audience_everyone': 'Everyone',
+    'setono_sylius_cms.builder.audience_only': 'Only these',
+    'setono_sylius_cms.builder.audience_except': 'Everyone except these',
+    'setono_sylius_cms.builder.customer_groups': 'Customer groups',
+    'setono_sylius_cms.builder.guests': 'Guests',
+    'setono_sylius_cms.builder.no_group': 'Signed in without a group',
+    'setono_sylius_cms.builder.deleted': 'deleted',
     'setono_sylius_cms.builder.unsupported_field_type': "This field type isn't supported yet",
     'setono_sylius_cms.builder.preview': 'Preview',
     'setono_sylius_cms.builder.preview_failed': "Couldn't load the preview",
@@ -146,6 +209,17 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.preview_width': 'Preview width',
     'setono_sylius_cms.builder.desktop': 'Desktop',
     'setono_sylius_cms.builder.mobile': 'Mobile',
+    'setono_sylius_cms.builder.rich_text.toolbar': 'Formatting',
+    'setono_sylius_cms.builder.rich_text.bold': 'Bold',
+    'setono_sylius_cms.builder.rich_text.italic': 'Italic',
+    'setono_sylius_cms.builder.rich_text.underline': 'Underline',
+    'setono_sylius_cms.builder.rich_text.strike': 'Strikethrough',
+    'setono_sylius_cms.builder.rich_text.code': 'Code',
+    'setono_sylius_cms.builder.rich_text.heading': 'Heading %level%',
+    'setono_sylius_cms.builder.rich_text.bullet_list': 'Bulleted list',
+    'setono_sylius_cms.builder.rich_text.ordered_list': 'Numbered list',
+    'setono_sylius_cms.builder.rich_text.blockquote': 'Quote',
+    'setono_sylius_cms.builder.rich_text.horizontal_rule': 'Horizontal line',
 };
 
 export const registry: Registry = { blockTypes, contentTypes: [page], strings };
@@ -176,14 +250,19 @@ export function entry(blocks: StoredBlock[] = []): Entry {
     };
 }
 
+/** The settings of a new entry in the WEB channel, changed by the overrides. */
+export function settings(overrides: Partial<EntrySettings> = {}): EntrySettings {
+    return { enabled: true, showFrom: null, showUntil: null, channels: ['WEB'], audience: { mode: 'everyone', groups: [] }, ...overrides };
+}
+
 /** A store on an entry with the given blocks, whose new block keys are new-1, new-2 and so on. */
-export function storeWith(blocks: StoredBlock[] = [], types: BlockTypeDefinition[] = blockTypes): BuilderStore {
+export function storeWith(blocks: StoredBlock[] = [], types: BlockTypeDefinition[] = blockTypes, contentType: ContentTypeDefinition = page): BuilderStore {
     let count = 0;
 
     return createBuilderStore({
         locale: 'en_US',
         blockTypes: types,
-        contentTypes: [page],
+        contentTypes: [contentType],
         entry: entry(blocks),
         status: 'never_published',
         generateKey: () => `new-${++count}`,

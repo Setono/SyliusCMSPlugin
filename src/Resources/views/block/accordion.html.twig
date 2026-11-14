@@ -1,0 +1,5 @@
+<div class="cms-accordion{{ view.styleClass ? ' ' ~ view.styleClass }}">
+    {%- for item in children -%}
+        {{ cms_block(item) }}
+    {%- endfor -%}
+</div>

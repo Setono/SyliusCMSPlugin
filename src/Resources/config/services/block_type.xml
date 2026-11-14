@@ -23,5 +23,17 @@
         <service id="Setono\SyliusCMSPlugin\Block\Heading" class="Setono\SyliusCMSPlugin\Block\Heading">
             <tag name="setono_sylius_cms.block_type"/>
         </service>
+
+        <service id="Setono\SyliusCMSPlugin\Block\RichText" class="Setono\SyliusCMSPlugin\Block\RichText">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Block\Accordion" class="Setono\SyliusCMSPlugin\Block\Accordion">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Block\AccordionItem" class="Setono\SyliusCMSPlugin\Block\AccordionItem">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
     </services>
 </container>
