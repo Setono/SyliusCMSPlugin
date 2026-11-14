@@ -1,0 +1,193 @@
+import { fireEvent, within } from '@testing-library/dom';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createBridge, type Bridge } from '../../src/bridge/bridge';
+import type { BridgeStrings, FromBridge } from '../../src/bridge/protocol';
+
+const strings: BridgeStrings = {
+    selectParent: 'Select parent',
+    settings: 'Settings',
+    delete: 'Delete block',
+    addBefore: 'Add block above',
+    addAfter: 'Add block below',
+};
+
+function marked(key: string, html: string, type = 'heading'): string {
+    return `<!--cms:block ${key} ${type}-->${html}<!--/cms:block ${key}-->`;
+}
+
+/** The bridge's own controls, which it draws in a shadow root so the shop's CSS leaves them alone. */
+function controls(): HTMLElement {
+    const root = document.querySelector('[data-cms-bridge]')?.shadowRoot?.firstElementChild;
+    if (!(root instanceof HTMLElement)) {
+        throw new Error('The bridge has drawn no controls');
+    }
+
+    return root;
+}
+
+function outline(): HTMLElement | null {
+    return controls().querySelector('[data-outline="selected"]');
+}
+
+describe('the bridge', () => {
+    let posted: FromBridge[];
+    let bridge: Bridge;
+    let scrolledTo: Element[];
+
+    beforeEach(() => {
+        document.body.innerHTML = `<header><a href="/">Shop</a></header><main>${marked('a', '<h2 class="cms-heading">First</h2>')}${marked(
+            'b',
+            `<section class="cms-section"><a href="/elsewhere">${marked('c', '<h2 class="cms-heading">Inside</h2>')}</a></section>`,
+            'section',
+        )}${marked('d', '<h2 class="cms-heading">Last</h2>')}</main>`;
+        posted = [];
+        scrolledTo = [];
+        Element.prototype.scrollIntoView = function (this: Element) {
+            scrolledTo.push(this);
+        };
+        bridge = createBridge(document, (message) => posted.push(message));
+    });
+
+    afterEach(() => {
+        bridge.dispose();
+    });
+
+    it('should tell the builder it is ready', () => {
+        expect(posted).toEqual([{ type: 'ready' }]);
+    });
+
+    describe('once the builder has set it up', () => {
+        beforeEach(() => {
+            bridge.receive({ type: 'init', strings });
+            posted = [];
+        });
+
+        it('should select the innermost block a click lands in, instead of following its link', () => {
+            const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+
+            document.querySelectorAll('h2')[1]?.dispatchEvent(click);
+
+            expect(posted).toEqual([{ type: 'select', key: 'c' }]);
+            expect(click.defaultPrevented).toBe(true);
+        });
+
+        it('should leave clicks outside the blocks to the page', () => {
+            const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+
+            document.querySelector('header a')?.dispatchEvent(click);
+
+            expect(posted).toEqual([]);
+            expect(click.defaultPrevented).toBe(false);
+        });
+
+        it('should outline the block the builder selects and scroll to it', () => {
+            bridge.receive({ type: 'select', key: 'd' });
+
+            expect(outline()).toBeVisible();
+            expect(scrolledTo).toEqual([document.querySelectorAll('h2')[2]]);
+        });
+
+        it('should drop the outline when the builder selects nothing', () => {
+            bridge.receive({ type: 'select', key: 'd' });
+            bridge.receive({ type: 'select', key: null });
+
+            expect(outline()).not.toBeVisible();
+            expect(within(controls()).queryByRole('toolbar')).toBeNull();
+        });
+
+        it("should give the selected block a toolbar with select parent, settings and delete, which ask the builder", () => {
+            bridge.receive({ type: 'select', key: 'c' });
+            const toolbar = within(controls()).getByRole('toolbar');
+
+            fireEvent.click(within(toolbar).getByRole('button', { name: 'Select parent' }));
+            fireEvent.click(within(toolbar).getByRole('button', { name: 'Settings' }));
+            fireEvent.click(within(toolbar).getByRole('button', { name: 'Delete block' }));
+
+            expect(posted).toEqual([
+                { type: 'select_parent', key: 'c' },
+                { type: 'settings', key: 'c' },
+                { type: 'delete', key: 'c' },
+            ]);
+        });
+
+        it('should offer + above and below the selected block, which asks the builder for the block picker at that spot', () => {
+            bridge.receive({ type: 'select', key: 'a' });
+
+            fireEvent.click(within(controls()).getByRole('button', { name: 'Add block below' }));
+            fireEvent.click(within(controls()).getByRole('button', { name: 'Add block above' }));
+
+            expect(posted).toEqual([
+                { type: 'add', key: 'a', position: 'after' },
+                { type: 'add', key: 'a', position: 'before' },
+            ]);
+        });
+
+        it('should patch a block with its new HTML and dispatch a bubbling cms:render from its root element', () => {
+            const rendered: Array<{ target: EventTarget | null; detail: unknown }> = [];
+            document.addEventListener('cms:render', (event) => rendered.push({ target: event.target, detail: (event as CustomEvent).detail }));
+            const first = document.querySelector('h2');
+
+            bridge.receive({ type: 'patch', blocks: [{ key: 'a', html: marked('a', '<h2 class="cms-heading">First, changed</h2>') }] });
+
+            expect(document.querySelector('h2')).toBe(first);
+            expect(first).toHaveTextContent('First, changed');
+            expect(rendered).toEqual([{ target: first, detail: { key: 'a', type: 'heading' } }]);
+        });
+
+        it('should tell the builder when a block it patches is not in the page', () => {
+            bridge.receive({ type: 'patch', blocks: [{ key: 'gone', html: marked('gone', '<p>Gone</p>') }] });
+
+            expect(posted).toEqual([{ type: 'missing', key: 'gone' }]);
+        });
+
+        it('should insert a new block after the nearest block before its spot that is in the page', () => {
+            const rendered: unknown[] = [];
+            document.addEventListener('cms:render', (event) => rendered.push((event as CustomEvent).detail));
+
+            bridge.receive({ type: 'insert', block: { key: 'new', html: marked('new', '<h2 class="cms-heading">New</h2>') }, previous: ['hidden', 'a'], next: ['b'] });
+
+            expect(Array.from(document.querySelectorAll('main > h2, main > section'), (element) => element.textContent)).toEqual(['First', 'New', 'Inside', 'Last']);
+            expect(rendered).toEqual([{ key: 'new', type: 'heading' }]);
+        });
+
+        it('should insert a new block before the nearest block after its spot when none before it is in the page', () => {
+            bridge.receive({ type: 'insert', block: { key: 'new', html: marked('new', '<h2 class="cms-heading">New</h2>') }, previous: [], next: ['hidden', 'd'] });
+
+            expect(Array.from(document.querySelectorAll('main > h2, main > section'), (element) => element.textContent)).toEqual(['First', 'Inside', 'New', 'Last']);
+        });
+
+        it('should tell the builder when it has nowhere to insert a block', () => {
+            bridge.receive({ type: 'insert', block: { key: 'new', html: marked('new', '<h2>New</h2>') }, previous: [], next: [] });
+
+            expect(posted).toEqual([{ type: 'missing', key: 'new' }]);
+            expect(document.body).not.toHaveTextContent('New');
+        });
+
+        it('should remove a block with its markers', () => {
+            bridge.receive({ type: 'remove', key: 'b' });
+
+            expect(document.querySelector('main')?.innerHTML).toBe(`${marked('a', '<h2 class="cms-heading">First</h2>')}${marked('d', '<h2 class="cms-heading">Last</h2>')}`);
+        });
+    });
+
+    it('should leave the page alone until the builder has set it up', () => {
+        posted = [];
+        const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+
+        document.querySelector('h2')?.dispatchEvent(click);
+
+        expect(posted).toEqual([]);
+        expect(click.defaultPrevented).toBe(false);
+    });
+
+    it('should stop listening once disposed', () => {
+        bridge.receive({ type: 'init', strings });
+        bridge.dispose();
+        posted = [];
+
+        document.querySelector('h2')?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+        expect(posted).toEqual([]);
+        expect(document.querySelector('[data-cms-bridge]')).toBeNull();
+    });
+});

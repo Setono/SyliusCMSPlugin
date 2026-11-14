@@ -7,7 +7,7 @@
         "node": ">=20"
     },
     "scripts": {
-        "build": "npm run typecheck && vite build",
+        "build": "npm run typecheck && vite build && vite build --mode bridge",
         "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
         "test": "vitest run"
     },
