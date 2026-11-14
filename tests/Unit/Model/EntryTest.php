@@ -114,6 +114,13 @@ final class EntryTest extends TestCase
 
         self::assertTrue($page->getAudience()->equals(Audience::everyone()));
         self::assertSame([], $page->getChannelCodes());
+
+        $page->setChannelCodes((static function (): \Generator {
+            yield 'WEB';
+            yield 'B2B';
+        })());
+
+        self::assertSame(['B2B', 'WEB'], $page->getChannelCodes());
     }
 
     /**

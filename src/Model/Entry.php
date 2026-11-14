@@ -255,7 +255,7 @@ abstract class Entry implements EntryInterface
      */
     private static function codes(Collection $rows): array
     {
-        $codes = array_values($rows->map(static fn (EntryChannel|EntryAudienceGroup $row): string => $row->getCode())->toArray());
+        $codes = $rows->map(static fn (EntryChannel|EntryAudienceGroup $row): string => $row->getCode())->toArray();
         sort($codes, \SORT_STRING);
 
         return $codes;

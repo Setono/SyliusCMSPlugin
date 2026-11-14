@@ -52,6 +52,17 @@ final class EntrySettingsTest extends TestCase
     public function its_channels_are_sorted_codes_without_duplicates(): void
     {
         self::assertSame(['B2B', 'WEB'], (new EntrySettings(true, new DateWindow(), ['WEB', 'B2B', 'WEB'], Audience::everyone()))->channels);
+        self::assertSame(['B2B', 'WEB'], (new EntrySettings(true, new DateWindow(), self::generate('WEB', 'B2B'), Audience::everyone()))->channels);
+    }
+
+    /**
+     * @return \Generator<int, string>
+     */
+    private static function generate(string ...$codes): \Generator
+    {
+        foreach ($codes as $code) {
+            yield $code;
+        }
     }
 
     /**

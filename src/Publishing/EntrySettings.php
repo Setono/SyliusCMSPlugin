@@ -31,7 +31,7 @@ final readonly class EntrySettings
         iterable $channels,
         public Audience $audience,
     ) {
-        $codes = array_values(array_unique([...$channels]));
+        $codes = array_unique([...$channels]);
         sort($codes, \SORT_STRING);
         $this->channels = $codes;
     }

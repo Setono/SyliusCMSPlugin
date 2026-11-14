@@ -42,21 +42,15 @@ final class EntrySettingsNormalizer
             throw new InvalidEntrySettingsException('The settings must be a JSON object');
         }
 
-        try {
-            return new EntrySettings(
-                array_key_exists('enabled', $data) ? self::enabled($data['enabled']) : $current->enabled,
-                new DateWindow(
-                    array_key_exists('showFrom', $data) ? self::dateTime('showFrom', $data['showFrom']) : $current->dateWindow->from,
-                    array_key_exists('showUntil', $data) ? self::dateTime('showUntil', $data['showUntil']) : $current->dateWindow->until,
-                ),
-                array_key_exists('channels', $data) ? self::channels($data['channels']) : $current->channels,
-                array_key_exists('audience', $data) ? self::audience($data['audience']) : $current->audience,
-            );
-        } catch (InvalidEntrySettingsException $e) {
-            throw $e;
-        } catch (\InvalidArgumentException $e) {
-            throw new InvalidEntrySettingsException($e->getMessage(), 0, $e);
-        }
+        return new EntrySettings(
+            array_key_exists('enabled', $data) ? self::enabled($data['enabled']) : $current->enabled,
+            self::dateWindow(
+                array_key_exists('showFrom', $data) ? self::dateTime('showFrom', $data['showFrom']) : $current->dateWindow->from,
+                array_key_exists('showUntil', $data) ? self::dateTime('showUntil', $data['showUntil']) : $current->dateWindow->until,
+            ),
+            array_key_exists('channels', $data) ? self::channels($data['channels']) : $current->channels,
+            array_key_exists('audience', $data) ? self::audience($data['audience']) : $current->audience,
+        );
     }
 
     private static function enabled(mixed $value): bool
@@ -78,7 +72,16 @@ final class EntrySettingsNormalizer
         try {
             return new \DateTimeImmutable($value);
         } catch (\Exception $e) {
-            throw new InvalidEntrySettingsException($error, 0, $e);
+            throw new InvalidEntrySettingsException($error, previous: $e);
+        }
+    }
+
+    private static function dateWindow(?\DateTimeImmutable $from, ?\DateTimeImmutable $until): DateWindow
+    {
+        try {
+            return new DateWindow($from, $until);
+        } catch (\InvalidArgumentException $e) {
+            throw new InvalidEntrySettingsException($e->getMessage(), previous: $e);
         }
     }
 
@@ -115,6 +118,10 @@ final class EntrySettingsNormalizer
             $codes[] = is_string($group) ? $group : throw new InvalidEntrySettingsException($error);
         }
 
-        return new Audience($mode, $codes);
+        try {
+            return new Audience($mode, $codes);
+        } catch (\InvalidArgumentException $e) {
+            throw new InvalidEntrySettingsException($e->getMessage(), previous: $e);
+        }
     }
 }
