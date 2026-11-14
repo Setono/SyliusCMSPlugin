@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Card;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Gallery;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Panel;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Slide;
 
@@ -81,6 +82,17 @@ final class NestingRulesTest extends TestCase
     /**
      * @test
      */
+    public function a_block_type_named_by_its_class_before_star_keeps_its_min_and_max(): void
+    {
+        $children = self::rules(extra: ['panel' => Panel::class])->children('panel');
+
+        self::assertEquals(new AllowedBlockType('heading', null, 2), $children[0]);
+        self::assertContains('group', self::codes($children));
+    }
+
+    /**
+     * @test
+     */
     public function the_top_level_follows_the_same_rules_as_children_with_no_parent(): void
     {
         self::assertSame(['group', 'columns', 'spacer', 'heading', 'gallery', 'card'], self::codes(self::rules()->topLevel('page')));
@@ -107,8 +119,9 @@ final class NestingRulesTest extends TestCase
 
     /**
      * @param list<string> $disabled
+     * @param array<string, class-string> $extra more block types by code
      */
-    private static function rules(array $disabled = []): NestingRules
+    private static function rules(array $disabled = [], array $extra = []): NestingRules
     {
         return new NestingRules(
             new BlockTypeRegistry([
@@ -120,7 +133,7 @@ final class NestingRulesTest extends TestCase
                 'gallery' => Gallery::class,
                 'slide' => Slide::class,
                 'card' => Card::class,
-            ], new FieldReader(), $disabled),
+            ] + $extra, new FieldReader(), $disabled),
             new ContentTypeRegistry([
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
                 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
