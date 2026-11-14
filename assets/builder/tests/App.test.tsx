@@ -113,7 +113,7 @@ describe('the builder', () => {
 
         expect(saveChanges).toHaveBeenCalledTimes(1);
         expect(saveChanges.mock.calls[0]?.[0]).toEqual([
-            { op: 'add_block', parent: null, index: 1, block: expect.objectContaining({ type: 'heading', version: 1, fields: {} }) },
+            { op: 'add_block', parent: null, index: 1, after: 'a', block: expect.objectContaining({ type: 'heading', version: 1, fields: {} }) },
             { op: 'set_value', key: expect.stringMatching(/^[0-9a-f-]{36}$/), field: 'text', locale: 'en_US', value: 'Hello' },
         ]);
         expect(screen.getByRole('button', { name: 'Heading Hello', pressed: true })).toBeInTheDocument();

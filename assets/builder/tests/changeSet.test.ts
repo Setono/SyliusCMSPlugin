@@ -89,7 +89,7 @@ describe('building the change set', () => {
 
         store.getState().addBlock('heading');
 
-        expect(store.getState().unsaved).toEqual([{ op: 'add_block', parent: null, index: 1, block: store.getState().entry.tree.blocks[1] }]);
+        expect(store.getState().unsaved).toEqual([{ op: 'add_block', parent: null, index: 1, after: 'a', block: store.getState().entry.tree.blocks[1] }]);
     });
 
     it('should send a translatable value with the edited locale and a shared value with no locale', () => {
@@ -140,7 +140,7 @@ describe('building the change set', () => {
         expect(changes).toEqual([
             { op: 'remove_block', key: 'b' },
             { op: 'set_value', key: 'a', field: 'level', locale: null, value: 'h4' },
-            { op: 'add_block', parent: null, index: 1, block: block('c') },
+            { op: 'add_block', parent: null, index: 1, after: 'a', block: block('c') },
         ]);
     });
 
@@ -153,7 +153,7 @@ describe('building the change set', () => {
 
         expect(changes).toEqual([
             { op: 'remove_block', key: 'a1' },
-            { op: 'add_block', parent: 'a', index: 1, block: block('a3') },
+            { op: 'add_block', parent: 'a', index: 1, after: 'a2', block: block('a3') },
         ]);
     });
 
@@ -172,7 +172,19 @@ describe('sending moves', () => {
 
         store.getState().moveBlock('a', null, 2);
 
-        expect(store.getState().unsaved).toEqual([{ op: 'move_block', key: 'a', parent: null, index: 2 }]);
+        expect(store.getState().unsaved).toEqual([{ op: 'move_block', key: 'a', parent: null, index: 2, after: 'c' }]);
+    });
+
+    it('should name the block an added or moved block goes right after, so that a merged save keeps it there', () => {
+        const store = storeWith([block('a'), block('b'), block('c')]);
+
+        store.getState().moveBlock('a', null, 2);
+        store.getState().addBlock('heading', null, 1);
+
+        expect(store.getState().unsaved).toEqual([
+            { op: 'move_block', key: 'a', parent: null, index: 2, after: 'c' },
+            { op: 'add_block', parent: null, index: 1, after: 'b', block: expect.objectContaining({ key: 'new-1' }) },
+        ]);
     });
 
     it('should send a move to the front of a list as one move', () => {
@@ -188,7 +200,7 @@ describe('sending moves', () => {
 
         store.getState().moveBlock('h', 'c1', 1);
 
-        expect(store.getState().unsaved).toEqual([{ op: 'move_block', key: 'h', parent: 'c1', index: 1 }]);
+        expect(store.getState().unsaved).toEqual([{ op: 'move_block', key: 'h', parent: 'c1', index: 1, after: 'x' }]);
     });
 
     it('should send a block moved out of a container that comes before it in the list as one move', () => {
@@ -196,7 +208,7 @@ describe('sending moves', () => {
 
         store.getState().moveBlock('a', null, 2);
 
-        expect(store.getState().unsaved).toEqual([{ op: 'move_block', key: 'a', parent: null, index: 2 }]);
+        expect(store.getState().unsaved).toEqual([{ op: 'move_block', key: 'a', parent: null, index: 2, after: 'd' }]);
     });
 
     it('should send a block moved between two containers as one move', () => {
@@ -340,7 +352,7 @@ describe('merging change sets', () => {
         // new-2's index counts new-1, so new-1 must reach the server before it's removed.
         expect(store.getState().unsaved).toEqual([
             { op: 'add_block', parent: null, index: 0, block: expect.objectContaining({ key: 'new-1' }) },
-            { op: 'add_block', parent: null, index: 1, block: expect.objectContaining({ key: 'new-2' }) },
+            { op: 'add_block', parent: null, index: 1, after: 'new-1', block: expect.objectContaining({ key: 'new-2' }) },
             { op: 'remove_block', key: 'new-1' },
         ]);
     });
@@ -354,7 +366,7 @@ describe('merging change sets', () => {
 
         expect(store.getState().unsaved).toEqual([
             { op: 'add_block', parent: 'g', index: 0, block: expect.objectContaining({ key: 'new-1' }) },
-            { op: 'move_block', key: 'a', parent: 'g', index: 1 },
+            { op: 'move_block', key: 'a', parent: 'g', index: 1, after: 'new-1' },
             { op: 'remove_block', key: 'new-1' },
         ]);
     });

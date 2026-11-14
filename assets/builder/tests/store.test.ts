@@ -449,7 +449,7 @@ describe('undo and redo', () => {
         expect(store.getState().unsaved).toEqual([
             { op: 'set_value', key: 'a', field: 'text', locale: 'en_US', value: 'Hello' },
             { op: 'remove_block', key: 'new-1' },
-            { op: 'add_block', parent: null, index: 1, block: expect.objectContaining({ key: 'new-1' }) },
+            { op: 'add_block', parent: null, index: 1, after: 'a', block: expect.objectContaining({ key: 'new-1' }) },
         ]);
     });
 

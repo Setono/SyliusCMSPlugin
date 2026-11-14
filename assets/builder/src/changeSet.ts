@@ -13,6 +13,11 @@ export interface AddBlockChange {
     parent: string | null;
     /** Its position in that list once the changes before it are applied. */
     index: number;
+    /**
+     * The block it goes right after, when it doesn't go first. The server puts it there wherever that block is by
+     * then, so that a save merged onto a colleague's keeps it where the editor put it, and falls back to the index.
+     */
+    after?: string;
     block: StoredBlock;
 }
 
@@ -23,6 +28,8 @@ export interface MoveBlockChange {
     parent: string | null;
     /** Its position in that list once the changes before it are applied and it's taken out of where it was. */
     index: number;
+    /** The block it goes right after, when it doesn't go first, as for an addition. */
+    after?: string;
 }
 
 export interface RemoveBlockChange {
@@ -258,17 +265,19 @@ function diffBlockList(parent: string | null, after: readonly StoredBlock[], dif
         if (!kept.has(block.key)) {
             // Blocks still to move away to other lists are counted, because the server still has them here.
             const list = diff.server.list(parent).filter((key) => key !== block.key);
-            const index = position === 0 ? 0 : list.indexOf(after[position - 1]?.key ?? '') + 1;
+            const previous = position === 0 ? undefined : after[position - 1]?.key;
+            const index = previous === undefined ? 0 : list.indexOf(previous) + 1;
+            const anchor = previous === undefined ? {} : { after: previous };
 
             if (!diff.server.has(block.key)) {
-                changes.push({ op: 'add_block', parent, index, block });
+                changes.push({ op: 'add_block', parent, index, ...anchor, block });
                 diff.server.add(block, parent, index);
                 collectKeys(block, diff.addedOrRemoved);
 
                 return;
             }
 
-            changes.push({ op: 'move_block', key: block.key, parent, index });
+            changes.push({ op: 'move_block', key: block.key, parent, index, ...anchor });
             diff.server.move(block.key, parent, index);
         }
 
