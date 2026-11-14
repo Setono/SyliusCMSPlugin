@@ -15,6 +15,7 @@
     "doctrine/persistence": "^2.3 || ^3.0",
     "psr/clock": "^1.0",
     "psr/container": "^1.1 || ^2.0",
+    "psr/log": "^1.1 || ^2.0 || ^3.0",
     "sylius/channel": "~1.14.0",
     "sylius/core": "~1.14.0",
     "sylius/core-bundle": "~1.14.0",
