@@ -1,10 +1,11 @@
 import { useId } from 'react';
 import { useBuilder, useBuilderState } from '../context';
 import { FieldRow } from '../form/FieldRow';
+import formStyles from '../form/Form.module.css';
 import { useTranslator } from '../i18n';
 import { canDuplicate } from '../nesting';
 import { canShift, findBlock, pathTo, topmostBlocks } from '../tree';
-import type { StoredBlock } from '../types';
+import type { BlockStyleDefinition, StoredBlock } from '../types';
 import { readFieldValue } from '../values';
 import { AddBlockButton } from './BlockPicker';
 import { blockHint } from './BlockTreePane';
@@ -13,8 +14,8 @@ import styles from './SelectionPane.module.css';
 import { SettingsPane } from './SettingsPane';
 
 /**
- * The right pane: the selected block's path, its actions, its fields, rendered from their schemas, and its children,
- * or the entry's settings. With several blocks selected, the actions for all of them.
+ * The right pane: the selected block's path, its actions, its block style when its block type offers any, its fields,
+ * rendered from their schemas, and its children, or the entry's settings. With several blocks selected, the actions for all of them.
  */
 export function SelectionPane() {
     const t = useTranslator();
@@ -45,6 +46,7 @@ export function SelectionPane() {
             <Path block={block} />
             <h2 className={styles.heading}>{label}</h2>
             <Actions keys={[block.key]} />
+            {blockType !== undefined && blockType.styles.length > 0 && <StylePicker block={block} styles={blockType.styles} />}
             <div key={block.key} className={styles.fields}>
                 {blockType?.fields.map(({ name, schema }) => (
                     <FieldRow
@@ -117,6 +119,40 @@ function Actions({ keys }: { keys: readonly string[] }) {
                     {icon}
                 </button>
             ))}
+        </div>
+    );
+}
+
+/**
+ * The block styles the block type offers, and none. A style the block has that's no longer declared shows as none,
+ * as it renders.
+ */
+function StylePicker({ block, styles }: { block: StoredBlock; styles: readonly BlockStyleDefinition[] }) {
+    const t = useTranslator();
+    const { store } = useBuilder();
+    const id = `cms-style-${block.key}`;
+    const picked = styles.some((style) => style.code === block.style) ? (block.style ?? '') : '';
+
+    return (
+        <div className={formStyles.field}>
+            <div className={formStyles.labelRow}>
+                <label htmlFor={id} className={formStyles.label}>
+                    {t('setono_sylius_cms.builder.block_style')}
+                </label>
+            </div>
+            <select
+                id={id}
+                className={formStyles.select}
+                value={picked}
+                onChange={(event) => store.getState().setBlockStyle(block.key, event.currentTarget.value === '' ? null : event.currentTarget.value)}
+            >
+                <option value="">{t('setono_sylius_cms.builder.no_style')}</option>
+                {styles.map((style) => (
+                    <option key={style.code} value={style.code}>
+                        {style.label}
+                    </option>
+                ))}
+            </select>
         </div>
     );
 }

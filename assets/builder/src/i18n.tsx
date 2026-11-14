@@ -35,6 +35,8 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.undo'
     | 'setono_sylius_cms.builder.redo'
     | 'setono_sylius_cms.builder.path'
+    | 'setono_sylius_cms.builder.block_style'
+    | 'setono_sylius_cms.builder.no_style'
     | 'setono_sylius_cms.builder.blocks_selected'
     | 'setono_sylius_cms.builder.no_blocks'
     | 'setono_sylius_cms.builder.entry_settings'

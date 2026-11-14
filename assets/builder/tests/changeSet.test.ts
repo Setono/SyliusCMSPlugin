@@ -9,7 +9,7 @@ enablePatches();
 
 const isTranslatable: TranslatableLookup = (blockType, field) => blockType === 'heading' && field === 'text';
 
-/** Applies block additions, moves and removals in order, the way the server does. */
+/** Applies block additions, moves, removals, values and styles in order, the way the server does. */
 function replay(blocks: StoredBlock[], changes: readonly Change[]): StoredBlock[] {
     const tree = structuredClone(blocks);
     const find = (list: StoredBlock[], key: string): StoredBlock | undefined =>
@@ -34,6 +34,11 @@ function replay(blocks: StoredBlock[], changes: readonly Change[]): StoredBlock[
             }
         } else if (change.op === 'remove_block') {
             takeOut(tree, change.key);
+        } else if (change.op === 'set_style') {
+            const target = find(tree, change.key);
+            if (target !== undefined) {
+                target.style = change.style;
+            }
         } else {
             const target = find(tree, change.key);
             if (target !== undefined) {
@@ -142,6 +147,33 @@ describe('building the change set', () => {
             { op: 'set_value', key: 'a', field: 'level', locale: null, value: 'h4' },
             { op: 'add_block', parent: null, index: 1, block: block('c') },
         ]);
+    });
+
+    it('should compare styles when the whole list of blocks is replaced', () => {
+        const changes = changesOf(entry([{ ...blockOf('group', 'g'), style: 'muted' }, blockOf('group', 'h')]), (working) => {
+            working.tree.blocks = [blockOf('group', 'g'), { ...blockOf('group', 'h'), style: 'dark' }];
+        });
+
+        expect(changes).toEqual([
+            { op: 'set_style', key: 'g', style: null },
+            { op: 'set_style', key: 'h', style: 'dark' },
+        ]);
+    });
+
+    it('should send a style set on a block as a set_style change, and nothing when it stays the same', () => {
+        const before = entry([{ ...blockOf('group', 'g'), style: 'dark' }]);
+
+        expect(
+            changesOf(before, (working) => {
+                working.tree.blocks[0]!.style = 'muted';
+            }),
+        ).toEqual([{ op: 'set_style', key: 'g', style: 'muted' }]);
+        expect(
+            changesOf(before, (working) => {
+                working.tree.blocks[0]!.style = 'muted';
+                working.tree.blocks[0]!.style = 'dark';
+            }),
+        ).toEqual([]);
     });
 
     it('should diff the children of a block as a list of their own', () => {
@@ -258,6 +290,18 @@ describe('sending the editing tools', () => {
                 store.getState().removeBlocks(['b']);
                 store.getState().undo();
                 store.getState().setFieldValue('b', 'text', 'After');
+            },
+        ],
+        [
+            'styles picked, a styled block deleted and duplicated, and undone',
+            (store) => {
+                store.getState().setBlockStyle('g', 'dark');
+                store.getState().setBlockStyle('h', 'muted');
+                store.getState().duplicateBlocks(['g']);
+                store.getState().setBlockStyle('new-1', null);
+                store.getState().removeBlocks(['h']);
+                store.getState().undo();
+                store.getState().setBlockStyle('h', 'dark');
             },
         ],
         [

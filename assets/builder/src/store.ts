@@ -83,6 +83,8 @@ export interface BuilderActions {
      * one after another in the same field, such as while typing, are undone in one step.
      */
     setFieldValue(key: string, field: string, value: JsonValue | null): void;
+    /** Picks one of the block type's styles for a block, by its code, or none when the style is null. */
+    setBlockStyle(key: string, style: string | null): void;
     /** Undoes the last edit, which is then saved like any other change. Returns whether there was one. */
     undo(): boolean;
     /** Redoes the last edit undone, which is then saved like any other change. Returns whether there was one. */
@@ -314,6 +316,15 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
                     {},
                     JSON.stringify(['set_value', key, field]),
                 );
+            },
+
+            setBlockStyle(key, style) {
+                edit((working) => {
+                    const target = findBlock(working.tree.blocks, key);
+                    if (target !== undefined) {
+                        target.style = style;
+                    }
+                });
             },
 
             undo() {

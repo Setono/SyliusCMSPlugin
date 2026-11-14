@@ -118,6 +118,12 @@ export interface AllowedBlockType {
     max: number | null;
 }
 
+/** A named look editors pick for a block. The block stores its code in its style. */
+export interface BlockStyleDefinition {
+    code: string;
+    label: string;
+}
+
 export interface BlockTypeDefinition {
     code: string;
     label: string;
@@ -130,6 +136,8 @@ export interface BlockTypeDefinition {
     parents: string[] | null;
     /** What its children may be, with the rules already resolved: '*' and parents are taken into account. */
     children: AllowedBlockType[];
+    /** The block styles it offers, those it declares first and then those added in config. */
+    styles: BlockStyleDefinition[];
     /** In display order. */
     fields: FieldDefinition[];
 }
