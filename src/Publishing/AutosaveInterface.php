@@ -29,4 +29,13 @@ interface AutosaveInterface
      * @throws StaleLockTokenException when the lock token is one the server can't merge onto, and nothing is saved
      */
     public function save(EntryInterface $entry, ChangeSet $changeSet, int $lockToken): SaveResult;
+
+    /**
+     * Discards the draft, so the entry goes back to its published content. The discard is numbered like a save with no
+     * changes, so builders still on the draft pull the published content in on their next presence ping or save, and a
+     * save made on the draft merges onto the published content: an edit to a block only the draft had is a clash
+     *
+     * @return LoadedWorkingCopy the working copy, which is the published content, with its lock token
+     */
+    public function discard(EntryInterface $entry): LoadedWorkingCopy;
 }

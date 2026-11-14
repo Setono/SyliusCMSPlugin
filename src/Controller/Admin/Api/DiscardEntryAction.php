@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
-use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
+use Setono\SyliusCMSPlugin\Publishing\AutosaveInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Setono\SyliusCMSPlugin\Security\BuilderCsrfToken;
@@ -23,7 +23,7 @@ final readonly class DiscardEntryAction
         private AdminAccessChecker $adminAccessChecker,
         private BuilderCsrfToken $csrfToken,
         private EntryRepositoryInterface $entryRepository,
-        private WorkingCopyManagerInterface $workingCopies,
+        private AutosaveInterface $autosave,
         private ShowEntryAction $showEntry,
     ) {
     }
@@ -38,7 +38,7 @@ final readonly class DiscardEntryAction
             return new JsonResponse(['error' => 'Invalid CSRF token'], Response::HTTP_FORBIDDEN);
         }
 
-        $this->workingCopies->discard($entry);
+        $this->autosave->discard($entry);
 
         return ($this->showEntry)($uuid);
     }

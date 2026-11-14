@@ -64,14 +64,38 @@ final readonly class Autosave implements AutosaveInterface
             if ([] !== $merge->changeSet->changes) {
                 $workingCopy->setBlockTree($this->applier->apply($merge->changeSet, $workingCopy->getBlockTree()));
 
-                $now = $this->clock->now();
-                $this->savedChangeSets->removeSavedBefore($entry, $now->modify('-' . self::KEPT_FOR));
-                $this->savedChangeSets->add($entry, ++$version, $merge->changeSet, $now);
+                $this->number($entry, ++$version, $merge->changeSet);
                 $this->workingCopies->save($entry, $workingCopy);
             }
 
             return new SaveResult(new LoadedWorkingCopy($workingCopy, $version), [] !== $theirs, $merge->clashes);
         });
+    }
+
+    public function discard(EntryInterface $entry): LoadedWorkingCopy
+    {
+        return $this->locked($entry, LockMode::PESSIMISTIC_WRITE, function () use ($entry): LoadedWorkingCopy {
+            $version = $this->savedChangeSets->findLatestVersion($entry);
+
+            if ($this->workingCopies->hasDraft($entry)) {
+                // Discarding the draft flushes, which writes the numbered save too
+                $this->number($entry, ++$version, new ChangeSet([]));
+                $this->workingCopies->discard($entry);
+            }
+
+            return new LoadedWorkingCopy($this->workingCopies->getWorkingCopy($entry), $version);
+        });
+    }
+
+    /**
+     * Records a save under its version, the lock token of the builder that made it, and forgets the saves too old to
+     * merge onto. It's written on the next flush
+     */
+    private function number(EntryInterface $entry, int $version, ChangeSet $changeSet): void
+    {
+        $now = $this->clock->now();
+        $this->savedChangeSets->removeSavedBefore($entry, $now->modify('-' . self::KEPT_FOR));
+        $this->savedChangeSets->add($entry, $version, $changeSet, $now);
     }
 
     /**

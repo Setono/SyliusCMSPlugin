@@ -236,6 +236,39 @@ final class AutosaveTest extends TestCase
     /**
      * @test
      */
+    public function it_discards_the_draft_and_numbers_the_discard_as_an_empty_save(): void
+    {
+        $this->savedChangeSets->findLatestVersion($this->entry)->willReturn(3);
+        $this->workingCopies->hasDraft($this->entry)->willReturn(true);
+        $this->workingCopies->discard($this->entry)->will($this->record('discard the draft'));
+
+        $loaded = $this->autosave()->discard($this->entry);
+
+        self::assertSame(4, $loaded->lockToken);
+        self::assertSame($this->workingCopy, $loaded->workingCopy);
+        self::assertSame(['begin', 'lock to write', 'read again', 'forget old saves', 'number the save', 'discard the draft', 'get working copy', 'commit'], $this->calls);
+        $this->savedChangeSets->removeSavedBefore($this->entry, new \DateTimeImmutable('2026-11-13 10:00:00'))->shouldHaveBeenCalledOnce();
+        $this->savedChangeSets->add($this->entry, 4, new ChangeSet([]), new \DateTimeImmutable('2026-11-14 10:00:00'))->shouldHaveBeenCalledOnce();
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_the_lock_token_when_there_is_no_draft_to_discard(): void
+    {
+        $this->savedChangeSets->findLatestVersion($this->entry)->willReturn(3);
+        $this->workingCopies->hasDraft($this->entry)->willReturn(false);
+        $this->workingCopies->discard(Argument::any())->shouldNotBeCalled();
+
+        $loaded = $this->autosave()->discard($this->entry);
+
+        self::assertSame(3, $loaded->lockToken);
+        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'commit'], $this->calls);
+    }
+
+    /**
+     * @test
+     */
     public function it_needs_an_entity_manager_for_the_entry(): void
     {
         $this->managerRegistry->getManagerForClass(Page::class)->willReturn(null);

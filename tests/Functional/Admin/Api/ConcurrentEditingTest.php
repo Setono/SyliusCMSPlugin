@@ -146,6 +146,76 @@ final class ConcurrentEditingTest extends BuilderApiTestCase
     /**
      * @test
      */
+    public function a_discard_moves_the_lock_token_on_so_a_colleague_pulls_in_the_published_content_with_their_edit(): void
+    {
+        $client = self::createClient();
+        $page = self::createTwoHeadings(true);
+        $jane = self::createAdmin('jane', 'Jane', 'Roe');
+
+        $johnsToken = self::openBuilder($client, $page);
+        self::save($client, $page, 0, [self::setText(self::A, 'Hello there')], $johnsToken);
+
+        $discarded = self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/discard', $page->getUuid()), null, $johnsToken);
+        self::assertIsArray($discarded);
+        self::assertSame(2, $discarded['lockToken'] ?? null);
+
+        // Jane loaded the draft at lock token 1, before the discard
+        $janesToken = self::openBuilder($client, $page, $jane);
+        self::assertSame(['editors' => [], 'lockToken' => 2], self::presence($client, $page, $janesToken));
+
+        $response = self::save($client, $page, 1, [self::setText(self::B, 'Wide world')], $janesToken);
+
+        self::assertResponseIsSuccessful();
+        self::assertIsArray($response);
+        self::assertSame(3, $response['lockToken'] ?? null);
+        self::assertSame([], $response['clashes'] ?? null);
+        self::assertSame(['Hello', 'Wide world'], self::texts($response['entry'] ?? null));
+        self::assertSame(['Hello', 'Wide world'], self::texts(self::workingCopy($client, $page)));
+    }
+
+    /**
+     * @test
+     */
+    public function an_edit_to_a_block_only_the_discarded_draft_had_comes_back_as_a_clash(): void
+    {
+        $client = self::createClient();
+        $page = self::createTwoHeadings(true);
+        $jane = self::createAdmin('jane', 'Jane', 'Roe');
+        $added = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4c';
+
+        $johnsToken = self::openBuilder($client, $page);
+        self::save($client, $page, 0, [['op' => 'add_block', 'parent' => null, 'index' => 2, 'after' => self::B, 'block' => ['key' => $added, 'type' => 'heading', 'version' => 1]]], $johnsToken);
+        self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/discard', $page->getUuid()), null, $johnsToken);
+
+        // Jane loaded the draft at lock token 1, with the added heading, before the discard
+        $janesToken = self::openBuilder($client, $page, $jane);
+        $response = self::save($client, $page, 1, [self::setText($added, 'Added and edited')], $janesToken);
+
+        self::assertResponseIsSuccessful();
+        self::assertIsArray($response);
+        self::assertSame(2, $response['lockToken'] ?? null);
+        self::assertSame([['kind' => 'deleted_block', 'key' => $added]], $response['clashes'] ?? null);
+        self::assertSame(['Hello', 'World'], self::texts($response['entry'] ?? null));
+    }
+
+    /**
+     * @test
+     */
+    public function discarding_an_entry_without_a_draft_leaves_the_lock_token(): void
+    {
+        $client = self::createClient();
+        $page = self::createTwoHeadings(true);
+        $csrfToken = self::openBuilder($client, $page);
+
+        $discarded = self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/discard', $page->getUuid()), null, $csrfToken);
+
+        self::assertIsArray($discarded);
+        self::assertSame(0, $discarded['lockToken'] ?? null);
+    }
+
+    /**
+     * @test
+     */
     public function a_save_needs_a_lock_token(): void
     {
         $client = self::createClient();
