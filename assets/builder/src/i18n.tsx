@@ -33,7 +33,18 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.preview_channel'
     | 'setono_sylius_cms.builder.preview_width'
     | 'setono_sylius_cms.builder.desktop'
-    | 'setono_sylius_cms.builder.mobile';
+    | 'setono_sylius_cms.builder.mobile'
+    | 'setono_sylius_cms.builder.rich_text.toolbar'
+    | 'setono_sylius_cms.builder.rich_text.bold'
+    | 'setono_sylius_cms.builder.rich_text.italic'
+    | 'setono_sylius_cms.builder.rich_text.underline'
+    | 'setono_sylius_cms.builder.rich_text.strike'
+    | 'setono_sylius_cms.builder.rich_text.code'
+    | 'setono_sylius_cms.builder.rich_text.heading'
+    | 'setono_sylius_cms.builder.rich_text.bullet_list'
+    | 'setono_sylius_cms.builder.rich_text.ordered_list'
+    | 'setono_sylius_cms.builder.rich_text.blockquote'
+    | 'setono_sylius_cms.builder.rich_text.horizontal_rule';
 
 /** Values for the placeholders in a string, such as { '%block%': 'Columns' }. */
 export type TranslationParameters = Readonly<Record<string, string>>;

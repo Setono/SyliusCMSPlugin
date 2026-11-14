@@ -40,6 +40,8 @@ export default defineConfig({
         cssCodeSplit: false,
         modulePreload: false,
         reportCompressedSize: false,
+        // One module by design, and Tiptap with ProseMirror makes up about half of it
+        chunkSizeWarningLimit: 1024,
         rollupOptions: {
             input: resolve(builderRoot, 'src/main.tsx'),
             output: {

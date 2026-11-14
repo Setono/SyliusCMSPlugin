@@ -69,6 +69,18 @@ setono_sylius_cms:
         publish_failed: Couldn't publish
         published: Published
         publishing: Publishing…
+        rich_text:
+            blockquote: Quote
+            bold: Bold
+            bullet_list: Bulleted list
+            code: Code
+            heading: 'Heading %level%'
+            horizontal_rule: Horizontal line
+            italic: Italic
+            ordered_list: Numbered list
+            strike: Strikethrough
+            toolbar: Formatting
+            underline: Underline
         save_failed: Couldn't save
         saved: Saved
         saving: Saving…

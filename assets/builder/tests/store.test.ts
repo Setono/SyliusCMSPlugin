@@ -1,6 +1,6 @@
 import { applyPatches } from 'immer';
 import { describe, expect, it } from 'vitest';
-import { block, blockOf, blockTypes, entry, keys, shape, spacer, storeWith } from './fixtures';
+import { accordion, accordionItem, block, blockOf, blockTypes, entry, keys, page, shape, spacer, storeWith } from './fixtures';
 
 describe('the working copy', () => {
     it('should append a new block of the block type to the top level and select it', () => {
@@ -140,6 +140,17 @@ describe('inserting a block', () => {
         expect(shape(store.getState().entry.tree.blocks)).toEqual(['new-1', ['new-2', 'new-3']]);
         expect(store.getState().selectedKey).toBe('new-1');
         expect(store.getState().history).toHaveLength(1);
+    });
+
+    it('should add an Accordion with one item straight away', () => {
+        const withAccordion = { ...page, blocks: [...(page.blocks ?? []), { type: 'accordion', min: null, max: null }] };
+        const store = storeWith([], [...blockTypes, accordion, accordionItem], withAccordion);
+
+        store.getState().addBlock('accordion');
+
+        const [inserted] = store.getState().entry.tree.blocks;
+        expect(inserted?.type).toBe('accordion');
+        expect(inserted?.children.map((child) => child.type)).toEqual(['accordion_item']);
     });
 
     it('should add one Column at a time into Columns, up to its max', () => {
