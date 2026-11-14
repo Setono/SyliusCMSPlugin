@@ -93,6 +93,21 @@ export interface Editor {
     name: string;
 }
 
+/**
+ * Something publish refuses, as entry_validate and a refused publish list it: in a block's field, in a block as a
+ * whole, in an entry field, or in the entry as a whole.
+ */
+export interface ValidationError {
+    /** The key of the block it's in, or null when it's in the entry. */
+    block: string | null;
+    /** The field it's in, or null when it's about the block or the entry as a whole. */
+    field: string | null;
+    /** The locale of a translatable value, or null. */
+    locale: string | null;
+    /** Translated, ready to show. */
+    message: string;
+}
+
 export interface EntryResponse {
     entry: Entry;
     /** The working copy's version, which a save made on it carries. */
@@ -161,6 +176,12 @@ export interface AllowedBlockType {
     max: number | null;
 }
 
+/** A named look editors pick for a block. The block stores its code in its style. */
+export interface BlockStyleDefinition {
+    code: string;
+    label: string;
+}
+
 export interface BlockTypeDefinition {
     code: string;
     label: string;
@@ -173,6 +194,8 @@ export interface BlockTypeDefinition {
     parents: string[] | null;
     /** What its children may be, with the rules already resolved: '*' and parents are taken into account. */
     children: AllowedBlockType[];
+    /** The block styles it offers, those it declares first and then those added in config. */
+    styles: BlockStyleDefinition[];
     /** In display order. */
     fields: FieldDefinition[];
 }

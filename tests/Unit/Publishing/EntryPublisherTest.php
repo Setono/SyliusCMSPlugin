@@ -17,9 +17,12 @@ use Setono\SyliusCMSPlugin\Event\EntryPublished;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Publishing\EntryPublisher;
+use Setono\SyliusCMSPlugin\Publishing\InvalidEntryException;
 use Setono\SyliusCMSPlugin\Publishing\PublishVetoedException;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface;
+use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 final class EntryPublisherTest extends TestCase
@@ -35,6 +38,9 @@ final class EntryPublisherTest extends TestCase
     /** @var ObjectProphecy<ManagerRegistry> */
     private ObjectProphecy $managerRegistry;
 
+    /** @var ObjectProphecy<EntryValidatorInterface> */
+    private ObjectProphecy $entryValidator;
+
     private EventDispatcher $eventDispatcher;
 
     /** @var list<string> what happened, in order */
@@ -49,6 +55,8 @@ final class EntryPublisherTest extends TestCase
         $this->manager = $this->prophesize(EntityManagerInterface::class);
         $this->managerRegistry = $this->prophesize(ManagerRegistry::class);
         $this->managerRegistry->getManagerForClass(Page::class)->willReturn($this->manager->reveal());
+        $this->entryValidator = $this->prophesize(EntryValidatorInterface::class);
+        $this->entryValidator->validate(Argument::any())->willReturn([]);
 
         $calls = &$this->calls;
         $this->manager->wrapInTransaction(Argument::type('callable'))->will(static function (array $arguments) use (&$calls): mixed {
@@ -153,6 +161,31 @@ final class EntryPublisherTest extends TestCase
 
     /**
      * @test
+     */
+    public function it_refuses_a_working_copy_with_errors_before_listeners_hear_of_it(): void
+    {
+        $page = self::page();
+        $workingCopy = clone $page;
+        $errors = [new ValidationError('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 'text', 'en_US', 'This field is required.')];
+        $this->workingCopies->getWorkingCopy($page)->willReturn($workingCopy);
+        $this->entryValidator->validate($workingCopy)->willReturn($errors);
+        $this->workingCopies->applyDraft(Argument::any())->shouldNotBeCalled();
+        $this->manager->wrapInTransaction(Argument::any())->shouldNotBeCalled();
+
+        try {
+            $this->publisher()->publish($page);
+            self::fail('The publish was not refused');
+        } catch (InvalidEntryException $e) {
+            self::assertSame($errors, $e->errors);
+            self::assertSame('Validation found errors in the entry, so it can\'t be published', $e->getMessage());
+        }
+
+        self::assertFalse($page->isPublished());
+        self::assertSame([], $this->calls);
+    }
+
+    /**
+     * @test
      *
      * @dataProvider managersWithoutTransactions
      */
@@ -190,6 +223,7 @@ final class EntryPublisherTest extends TestCase
             new ContentTypeRegistry([
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             ]),
+            $this->entryValidator->reveal(),
         );
     }
 

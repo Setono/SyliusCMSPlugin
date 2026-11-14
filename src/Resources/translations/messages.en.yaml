@@ -1,4 +1,7 @@
 setono_sylius_cms:
+    block_style:
+        dark: Dark
+        muted: Muted
     block_type:
         accordion: Accordion
         accordion_item: Accordion item
@@ -37,6 +40,8 @@ setono_sylius_cms:
         entry:
             slug: Slug
             title: Title
+    publish:
+        invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'
     ui:
         create: Create
         new_entry: 'New %content_type%'
@@ -54,6 +59,7 @@ setono_sylius_cms:
         audience_only: Only these
         back: Back
         block_settings: Settings
+        block_style: Style
         blocks: Blocks
         blocks_selected: '%count% blocks selected'
         channels: Channels
@@ -79,6 +85,7 @@ setono_sylius_cms:
         enabled: Enabled
         entry_settings: Entry settings
         guests: Guests
+        has_errors: Has errors
         keep_mine: Keep mine
         load_failed: Couldn't load the entry
         loading: Loading…
@@ -89,6 +96,7 @@ setono_sylius_cms:
         no_blocks: No blocks yet
         no_group: Signed in without a group
         no_matching_block_types: No block types match
+        no_style: None
         path: Path
         preview: Preview
         preview_channel: Preview channel
@@ -123,5 +131,7 @@ setono_sylius_cms:
         takes_effect_on_save: Takes effect when saved, without publishing
         title: Builder
         undo: Undo
+        unknown_block_type: 'Unknown block type: %type%'
+        unknown_block_type_help: The code no longer has this block type. The block is kept as it is, but the shop doesn't show it.
         unpublished_changes: Unpublished changes
         unsupported_field_type: This field type isn't supported yet

@@ -85,7 +85,8 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
     public function publish(\DateTimeImmutable $at): void;
 
     /**
-     * One block tree for all translations
+     * One block tree for all translations, as it's stored, without upgrading it. Read the rows' tree through
+     * StoredDataUpgraderInterface::readBlockTree(), or the working copy's through WorkingCopyProviderInterface
      */
     public function getBlockTree(): StoredTree;
 

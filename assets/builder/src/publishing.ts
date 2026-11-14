@@ -3,9 +3,18 @@ import type { Autosave } from './autosave';
 import { mergeChanges } from './changeSet';
 import type { BuilderStore } from './store';
 import type { EntryResponse, EntryStatus } from './types';
+import { createValidationStore, firstBlockWithError, type ValidationStore } from './validation';
 
-/** Publishing first saves what's unsaved, then publishes. */
-export function createPublish(store: BuilderStore, autosave: Autosave, send: () => Promise<EntryStatus>): () => Promise<void> {
+/**
+ * Publishing first saves what's unsaved, then publishes. When validation refuses the publish, its errors are shown and
+ * the first block with one is selected, or the entry's settings when only the entry has errors.
+ */
+export function createPublish(
+    store: BuilderStore,
+    autosave: Autosave,
+    send: () => Promise<EntryStatus>,
+    validation: ValidationStore = createValidationStore(),
+): () => Promise<void> {
     return async () => {
         if (store.getState().publishState === 'publishing') {
             return;
@@ -19,10 +28,18 @@ export function createPublish(store: BuilderStore, autosave: Autosave, send: () 
             }
 
             store.setState({ status: await send(), publishState: 'idle', publishRefusal: null });
+            // What was published passed validation
+            validation.getState().setErrors([]);
         } catch (error) {
-            // The server answers 422 with the reason when it refuses, such as a BeforeEntryPublish listener's veto.
-            const refusal = error instanceof ApiError && error.status === 422 ? error.message : null;
-            store.setState({ publishState: 'failed', publishRefusal: refusal });
+            // The server answers 422 with the reason when it refuses: with the errors when validation refuses, and
+            // with a BeforeEntryPublish listener's veto
+            const refused = error instanceof ApiError && error.status === 422;
+            store.setState({ publishState: 'failed', publishRefusal: refused ? error.message : null });
+
+            if (refused && error.errors.length > 0) {
+                validation.getState().setErrors(error.errors);
+                store.getState().selectBlock(firstBlockWithError(store.getState().entry.tree.blocks, error.errors));
+            }
         }
     };
 }

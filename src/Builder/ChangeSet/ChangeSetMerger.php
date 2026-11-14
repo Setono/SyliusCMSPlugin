@@ -9,8 +9,9 @@ use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 /**
  * Merges a save onto what colleagues saved since the builder last loaded. Changes that don't touch the same values are
- * both applied, and so are moves. A real clash goes to the editor instead of being applied: the same field in the same
- * locale, an edit to a block a colleague deleted, or deleting a block a colleague changed something in.
+ * both applied, and so are moves and block styles, the editor's last. A real clash goes to the editor instead of being
+ * applied: the same field in the same locale, an edit to a block a colleague deleted, or deleting a block a colleague
+ * changed something in.
  * See "Saving" in docs/spec/publishing.md
  */
 final readonly class ChangeSetMerger
@@ -78,7 +79,7 @@ final readonly class ChangeSetMerger
     private static function missingBlock(Change $change, Outline $outline): ?string
     {
         $needed = match (true) {
-            $change instanceof SetValue, $change instanceof RemoveBlock => [$change->key],
+            $change instanceof SetValue, $change instanceof SetStyle, $change instanceof RemoveBlock => [$change->key],
             $change instanceof MoveBlock => [$change->key, $change->parent],
             $change instanceof AddBlock => [$change->parent],
             // A change the applier doesn't know, which it refuses

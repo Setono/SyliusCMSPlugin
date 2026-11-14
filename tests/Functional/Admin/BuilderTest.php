@@ -53,6 +53,7 @@ final class BuilderTest extends WebTestCase
         self::assertSame([
             'registry' => '/admin/cms/api/registry',
             'entry' => sprintf('/admin/cms/api/entries/%s', $uuid),
+            'validate' => sprintf('/admin/cms/api/entries/%s/validate', $uuid),
             'publish' => sprintf('/admin/cms/api/entries/%s/publish', $uuid),
             'discard' => sprintf('/admin/cms/api/entries/%s/discard', $uuid),
             'settings' => sprintf('/admin/cms/api/entries/%s/settings', $uuid),

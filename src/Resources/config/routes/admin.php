@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\RegistryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntrySettingsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\ValidateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
@@ -57,6 +58,12 @@ return static function (RoutingConfigurator $routes): void {
     $routes->add('setono_sylius_cms_admin_api_entry_settings', '/cms/api/entries/{uuid}/settings')
         ->controller(SaveEntrySettingsAction::class)
         ->methods(['PUT'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_entry_validate', '/cms/api/entries/{uuid}/validate')
+        ->controller(ValidateEntryAction::class)
+        ->methods(['POST'])
         ->requirements(['uuid' => Requirement::UUID])
     ;
 

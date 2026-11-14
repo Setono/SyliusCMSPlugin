@@ -24,6 +24,15 @@
     font-size: var(--builder-font-size-sm);
 }
 
+/* What publish would refuse in the field */
+.errors {
+    margin: 0;
+    padding: 0;
+    color: var(--builder-color-danger);
+    font-size: var(--builder-font-size-sm);
+    list-style: none;
+}
+
 .input,
 .textarea,
 .select {

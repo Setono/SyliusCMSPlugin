@@ -78,6 +78,16 @@ describe('pulling in a colleague\'s changes', () => {
         ]);
     });
 
+    it('should apply a block style not yet saved on top of theirs', () => {
+        const store = storeWith([blockOf('group', 'g')]);
+        store.getState().setBlockStyle('g', 'dark');
+
+        store.getState().pullIn(entry([blockOf('group', 'g', [], { fullWidth: true })]));
+
+        expect(store.getState().entry.tree.blocks[0]).toEqual({ ...blockOf('group', 'g', [], { fullWidth: true }), style: 'dark' });
+        expect(store.getState().unsaved).toEqual([{ op: 'set_style', key: 'g', style: 'dark' }]);
+    });
+
     it('should move blocks between lists the way they did', () => {
         const store = storeWith([blockOf('group', 'g', [block('a'), block('b')]), blockOf('group', 'h', [block('c')])]);
         const theirs = merged((copy) => {

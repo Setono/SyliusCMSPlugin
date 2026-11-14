@@ -10,6 +10,9 @@ interface EntryPublisherInterface
 {
     /**
      * Makes the entry's content the content shoppers see
+     *
+     * @throws InvalidEntryException when validation finds errors in the entry's working copy
+     * @throws PublishVetoedException when a BeforeEntryPublish listener vetoes the publish
      */
     public function publish(EntryInterface $entry): void;
 }

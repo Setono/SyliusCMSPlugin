@@ -20,6 +20,8 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 final class Configuration implements ConfigurationInterface
 {
+    private const CODE_PATTERN = '/^[a-z][a-z0-9_]*$/';
+
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder('setono_sylius_cms');
@@ -44,9 +46,61 @@ final class Configuration implements ConfigurationInterface
             ->end()
         ;
 
+        $this->addBlockStylesSection($rootNode);
         $this->addResourcesSection($rootNode);
 
         return $treeBuilder;
+    }
+
+    /**
+     * Block styles added to any block type, shipped or not, by block type code and style code. See "Block styles" in docs/spec/blocks.md
+     */
+    private function addBlockStylesSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('block_styles')
+                    ->info('Styles added to any block type, shipped or not: block type code => style code => {label, class}')
+                    ->useAttributeAsKey('block_type')
+                    ->normalizeKeys(false)
+                    ->arrayPrototype()
+                        ->useAttributeAsKey('code')
+                        ->normalizeKeys(false)
+                        ->arrayPrototype()
+                            ->children()
+                                ->scalarNode('label')->info('A translation key, shown in the builder\'s style picker')->isRequired()->cannotBeEmpty()->end()
+                                ->scalarNode('class')->info('The CSS class added to the block\'s root element')->isRequired()->cannotBeEmpty()->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                    ->validate()->always(self::assertBlockStyleCodes(...))->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * @param array<array-key, array<array-key, array{label: string, class: string}>> $blockStyles
+     *
+     * @return array<array-key, array<array-key, array{label: string, class: string}>>
+     */
+    private static function assertBlockStyleCodes(array $blockStyles): array
+    {
+        foreach ($blockStyles as $blockType => $styles) {
+            self::assertCode('block type', (string) $blockType);
+            foreach (array_keys($styles) as $style) {
+                self::assertCode('block style', (string) $style);
+            }
+        }
+
+        return $blockStyles;
+    }
+
+    private static function assertCode(string $kind, string $code): void
+    {
+        if (1 !== preg_match(self::CODE_PATTERN, $code)) {
+            throw new \InvalidArgumentException(sprintf('The %s code "%s" must match %s', $kind, $code, trim(self::CODE_PATTERN, '/')));
+        }
     }
 
     /**

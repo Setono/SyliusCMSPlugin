@@ -11,6 +11,7 @@ const config: BuilderConfig = {
     endpoints: {
         registry: '/admin/cms/api/registry',
         entry: '/admin/cms/api/entries/e1',
+        validate: '/admin/cms/api/entries/e1/validate',
         publish: '/admin/cms/api/entries/e1/publish',
         discard: '/admin/cms/api/entries/e1/discard',
         settings: '/admin/cms/api/entries/e1/settings',
@@ -135,6 +136,39 @@ describe('the JSON endpoints', () => {
         const fetch = respond(422, { error: 'Not on a Sunday' });
 
         await expect(createApi(config, fetch).publish()).rejects.toEqual(new ApiError('Not on a Sunday', 422));
+    });
+
+    it('should fail with the validation errors a refused publish lists', async () => {
+        const errors = [{ block: 'a', field: 'text', locale: 'en_US', message: 'This field is required.' }];
+        const fetch = respond(422, { error: 'One error needs fixing', errors });
+
+        const refusal = await createApi(config, fetch)
+            .publish()
+            .catch((error: unknown) => error);
+
+        expect(refusal).toEqual(new ApiError('One error needs fixing', 422, errors));
+        expect(refusal).toHaveProperty('errors', errors);
+    });
+
+    it('should validate the working copy and answer with its errors, without a CSRF token', async () => {
+        const errors = [
+            { block: 'a', field: null, locale: null, message: 'Needs at least 2 Column blocks inside.' },
+            { block: null, field: 'campaign', locale: null, message: 'This value should not be blank.' },
+        ];
+        const fetch = respond(200, { errors });
+
+        await expect(createApi(config, fetch).validate()).resolves.toEqual(errors);
+
+        expect(fetch).toHaveBeenCalledWith('/admin/cms/api/entries/e1/validate', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+        });
+    });
+
+    it('should fail when the validation answer has no list of errors', async () => {
+        await expect(createApi(config, respond(200, {})).validate()).rejects.toBeInstanceOf(ApiError);
+        await expect(createApi(config, respond(200, { errors: [{ block: 'a' }] })).validate()).rejects.toBeInstanceOf(ApiError);
     });
 
     it('should ask for a preview token for the entry in a channel and a locale, and answer with the preview URL', async () => {

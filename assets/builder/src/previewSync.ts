@@ -1,14 +1,15 @@
 /**
  * Keeps the preview in step with the working copy, through the bridge in the preview's page. After each edit it has
  * the changed blocks rendered by preview_render and patched into the page, so the page doesn't reload. It links the
- * selection both ways, and turns what the editor does in the preview into edits. See "The bridge" and "Updating the
- * preview" in docs/spec/builder.md
+ * selection both ways, and turns what the editor does in the preview, such as typing in place, into edits. See
+ * "The bridge", "Working in the preview" and "Updating the preview" in docs/spec/builder.md
  */
 import type { BridgeStrings, FromBridge, RenderedBlock, ToBridge } from './bridge/protocol';
 import { planPreviewUpdate, type PreviewPlan } from './previewPlan';
 import { actedOn, type BuilderStore } from './store';
 import { blockList, findBlock, locateBlock, type BlockSpot } from './tree';
-import type { StoredBlock } from './types';
+import type { JsonValue, StoredBlock } from './types';
+import { isJsonObject } from './values';
 
 export interface PreviewSyncOptions {
     store: BuilderStore;
@@ -220,6 +221,15 @@ export function createPreviewSync({ store, strings, render, reload, openBlockPic
                 case 'missing':
                     startOver();
                     break;
+                case 'edit': {
+                    // Through the same path as an edit in the right pane, so it autosaves and undoes the same way
+                    const type = state.blockTypes.find((blockType) => blockType.code === findBlock(blocks, message.key)?.type);
+                    const schema = type?.fields.find((field) => field.name === message.field)?.schema;
+                    if (schema !== undefined && typedInPlace(schema['x-cms-type'], message.value)) {
+                        state.setFieldValue(message.key, message.field, message.value);
+                    }
+                    break;
+                }
                 case 'ready':
                     break;
             }
@@ -231,4 +241,17 @@ export function createPreviewSync({ store, strings, render, reload, openBlockPic
             page++;
         },
     };
+}
+
+/** Whether the value fits a field of the field type, when that's a field type editors type in place. */
+function typedInPlace(fieldType: string, value: JsonValue | null): boolean {
+    switch (fieldType) {
+        case 'text':
+        case 'textarea':
+            return value === null || typeof value === 'string';
+        case 'rich_text':
+            return value === null || (isJsonObject(value) && value['type'] === 'doc');
+        default:
+            return false;
+    }
 }

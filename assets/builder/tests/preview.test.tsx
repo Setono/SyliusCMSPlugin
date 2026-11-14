@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { BuilderApi, PreviewRequest } from '../src/api';
 import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
-import type { EntryResponse, EntryStatus, PresenceResponse, SaveResponse } from '../src/types';
+import type { EntryResponse, EntryStatus, PresenceResponse, SaveResponse, ValidationError } from '../src/types';
 import { block, entry, registry, settings } from './fixtures';
 
 const config: BuilderConfig = {
@@ -14,6 +14,7 @@ const config: BuilderConfig = {
     endpoints: {
         registry: '/registry',
         entry: '/entry',
+        validate: '/validate',
         publish: '/publish',
         discard: '/discard',
         settings: '/settings',
@@ -40,6 +41,7 @@ function fakeApi(overrides: Partial<BuilderApi> = {}) {
         fetchRegistry: vi.fn(async () => registry),
         fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings({ channels: ['WEB', 'B2B'] }), status: 'never_published', lockToken: 0, editors: [] })),
         saveChanges: vi.fn(async (): Promise<SaveResponse> => ({ status: 'never_published', lockToken: 1 })),
+        validate: vi.fn(async (): Promise<ValidationError[]> => []),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
         discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings({ channels: ['WEB', 'B2B'] }), status: 'published', lockToken: 0, editors: [] })),
         saveSettings: vi.fn(async () => settings({ channels: ['WEB', 'B2B'] })),

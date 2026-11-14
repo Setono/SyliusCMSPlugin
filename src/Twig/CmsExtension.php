@@ -16,7 +16,7 @@ final class CmsExtension extends AbstractExtension
     public function getFunctions(): array
     {
         return [
-            new TwigFunction('cms_field', [CmsRuntime::class, 'field'], ['is_safe' => ['html']]),
+            new TwigFunction('cms_field', [CmsRuntime::class, 'field'], ['is_safe' => ['html'], 'needs_context' => true]),
             new TwigFunction('cms_block', [CmsRuntime::class, 'block'], ['is_safe' => ['html'], 'needs_context' => true]),
             new TwigFunction('cms_blocks', [CmsRuntime::class, 'blocks'], ['is_safe' => ['html'], 'needs_context' => true]),
             new TwigFunction('cms_preview_mode', [PreviewContext::class, 'getMode']),

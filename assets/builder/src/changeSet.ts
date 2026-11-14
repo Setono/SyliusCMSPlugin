@@ -47,17 +47,24 @@ export interface SetValueChange {
     value: JsonValue | null;
 }
 
-export type Change = AddBlockChange | MoveBlockChange | RemoveBlockChange | SetValueChange;
+export interface SetStyleChange {
+    op: 'set_style';
+    key: string;
+    /** The code of one of the block type's styles, or null for none. */
+    style: string | null;
+}
+
+export type Change = AddBlockChange | MoveBlockChange | RemoveBlockChange | SetValueChange | SetStyleChange;
 
 /** Whether a field of a block type is translatable. */
 export type TranslatableLookup = (blockType: string, field: string) => boolean;
 
-type Target = { kind: 'list'; parent: string | null; depth: number } | { kind: 'fields'; key: string; field: string | undefined };
+type Target = { kind: 'list'; parent: string | null; depth: number } | { kind: 'fields'; key: string; field: string | undefined } | { kind: 'style'; key: string };
 
 /**
  * Turns the patches of one edit into key-based changes.
  *
- * Patches into a block's fields become set_value changes. Patches that touch a list of blocks aren't
+ * Patches into a block's fields become set_value changes, and into its style set_style. Patches that touch a list of blocks aren't
  * read index by index, because Immer reports a removal from the middle of a list as replacements plus a
  * trailing removal, and a move as a removal from one list and an addition to another. Instead each list's
  * keys are compared before and after the edit, against the tree as the server has it once the changes
@@ -66,6 +73,7 @@ type Target = { kind: 'list'; parent: string | null; depth: number } | { kind: '
 export function changesFromPatches(patches: readonly Patch[], before: Entry, after: Entry, isTranslatable: TranslatableLookup): Change[] {
     const lists = new Map<string | null, number>();
     const fieldTargets: Array<{ key: string; field: string | undefined }> = [];
+    const styleTargets = new Set<string>();
 
     for (const patch of patches) {
         const target = locate(patch.path, before, after);
@@ -73,6 +81,8 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
             lists.set(target.parent, target.depth);
         } else if (target?.kind === 'fields') {
             fieldTargets.push(target);
+        } else if (target?.kind === 'style') {
+            styleTargets.add(target.key);
         }
     }
 
@@ -104,6 +114,13 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
         const previousFields = findBlock(before.tree.blocks, key)?.fields ?? {};
         const fields = field === undefined ? undefined : [field];
         changes.push(...diffFields(block, previousFields, isTranslatable, fields));
+    }
+
+    for (const key of styleTargets) {
+        const block = findBlock(after.tree.blocks, key);
+        if (block !== undefined && !addedOrRemoved.has(key)) {
+            changes.push(...diffStyle(block, findBlock(before.tree.blocks, key)?.style ?? null));
+        }
     }
 
     return mergeChanges([], changes);
@@ -197,6 +214,16 @@ function applyChange(blocks: StoredBlock[], change: Change): boolean {
 
             return true;
         }
+        case 'set_style': {
+            const target = findBlock(blocks, change.key);
+            if (target === undefined) {
+                return false;
+            }
+
+            target.style = change.style;
+
+            return true;
+        }
     }
 }
 
@@ -210,7 +237,7 @@ export function insertBlock(blocks: StoredBlock[], block: StoredBlock, parent: s
 
 /**
  * Appends later changes to earlier ones, keeping only what the server still needs: the last value per
- * block, field and locale, and nothing for a block that was added and removed again in between.
+ * block, field and locale, the last style per block, and nothing for a block that was added and removed again in between.
  */
 export function mergeChanges(earlier: readonly Change[], later: readonly Change[]): Change[] {
     return later.reduce<Change[]>((changes, change) => mergeChange(changes, change), [...earlier]);
@@ -220,6 +247,8 @@ function mergeChange(changes: Change[], change: Change): Change[] {
     switch (change.op) {
         case 'set_value':
             return [...changes.filter((earlier) => !isSameValue(earlier, change)), change];
+        case 'set_style':
+            return [...changes.filter((earlier) => !(earlier.op === 'set_style' && earlier.key === change.key)), change];
         case 'add_block':
         case 'move_block':
             return [...changes, change];
@@ -246,7 +275,7 @@ function mergeRemoval(changes: Change[], removal: RemoveBlockChange): Change[] {
         return [...changes.slice(0, additionIndex), ...later.filter((change) => !gone.has(change.op === 'add_block' ? change.block.key : change.key))];
     }
 
-    return [...changes.filter((change) => !(change.op === 'set_value' && change.key === removal.key)), removal];
+    return [...changes.filter((change) => !((change.op === 'set_value' || change.op === 'set_style') && change.key === removal.key)), removal];
 }
 
 /** A later addition into the same list counted its index with the block in place, and so may any later move. */
@@ -274,8 +303,8 @@ function collectKeys(block: StoredBlock, keys: Set<string>): void {
 }
 
 /**
- * What a patch path points at: a list of blocks (the top level, or a block's children), or a block's
- * fields. Everything else, such as entry fields or a block's style, has no change of its own yet.
+ * What a patch path points at: a list of blocks (the top level, or a block's children), a block's
+ * fields, or its style. Everything else, such as entry fields, has no change of its own yet.
  */
 function locate(path: Patch['path'], before: Entry, after: Entry): Target | null {
     if (path.length === 0 || (path.length === 1 && path[0] === 'tree')) {
@@ -303,6 +332,10 @@ function locate(path: Patch['path'], before: Entry, after: Entry): Target | null
             const field = path[i + 2];
 
             return { kind: 'fields', key: block.key, field: field === undefined ? undefined : String(field) };
+        }
+
+        if (property === 'style') {
+            return { kind: 'style', key: block.key };
         }
 
         if (property !== 'children') {
@@ -383,6 +416,7 @@ function diffBlockList(parent: string | null, after: readonly StoredBlock[], dif
         const old = findBlock(diff.before.tree.blocks, block.key);
         if (old !== undefined && old !== block) {
             changes.push(...diffFields(block, old.fields, diff.isTranslatable));
+            changes.push(...diffStyle(block, old.style));
             if (old.children !== block.children) {
                 changes.push(...diffBlockList(block.key, block.children, diff));
             }
@@ -496,6 +530,11 @@ function parentsOf(blocks: readonly StoredBlock[], parent: string | null = null,
     }
 
     return parents;
+}
+
+/** A set_style change when the block's style differs from before. */
+function diffStyle(block: StoredBlock, before: string | null): SetStyleChange[] {
+    return block.style === before ? [] : [{ op: 'set_style', key: block.key, style: block.style }];
 }
 
 /** set_value changes for the given fields of a block, or for all of them, that differ from before. */

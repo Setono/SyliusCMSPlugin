@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Builder\ChangeSet;
 
 use PHPUnit\Framework\TestCase;
+use Setono\SyliusCMSPlugin\Block\Group;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\RichText;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\AddBlock;
@@ -14,11 +15,13 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
+use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
@@ -192,6 +195,21 @@ final class ChangeSetApplierTest extends TestCase
     /**
      * @test
      */
+    public function it_sets_a_block_style_from_the_block_type_or_the_config_and_takes_it_away_again(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'group', 1), new StoredBlock(self::B, 'group', 1, style: 'muted')]);
+
+        $tree = $this->apply($tree, new SetStyle(self::A, 'dark'), new SetStyle(self::B, 'brand'));
+        self::assertSame('dark', $tree->blocks[0]->style);
+        self::assertSame('brand', $tree->blocks[1]->style);
+
+        $tree = $this->apply($tree, new SetStyle(self::A, null));
+        self::assertNull($tree->blocks[0]->style);
+    }
+
+    /**
+     * @test
+     */
     public function it_applies_the_changes_in_order(): void
     {
         $tree = new StoredTree(null, []);
@@ -255,7 +273,7 @@ final class ChangeSetApplierTest extends TestCase
      *
      * @dataProvider provideInvalidChanges
      */
-    public function it_refuses_a_change_that_does_not_fit_the_tree(AddBlock|MoveBlock|RemoveBlock|SetValue $change, string $message): void
+    public function it_refuses_a_change_that_does_not_fit_the_tree(Change $change, string $message): void
     {
         $existing = new StoredBlock(self::A, 'heading', 1);
         $unknown = new StoredBlock(self::B, 'removed', 1);
@@ -268,7 +286,7 @@ final class ChangeSetApplierTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{AddBlock|MoveBlock|RemoveBlock|SetValue, string}>
+     * @return iterable<string, array{Change, string}>
      */
     public function provideInvalidChanges(): iterable
     {
@@ -292,9 +310,12 @@ final class ChangeSetApplierTest extends TestCase
         yield 'setting a field the block type does not have' => [new SetValue(self::A, 'subtitle', 'en_US', 'Hello'), '"subtitle"'];
         yield 'setting a translatable field without a locale' => [new SetValue(self::A, 'text', null, 'Hello'), 'translatable'];
         yield 'setting a shared field for one locale' => [new SetValue(self::A, 'level', 'en_US', 'h3'), 'shared'];
+        yield 'setting the style of a block the tree does not have' => [new SetStyle($other, 'dark'), $other];
+        yield 'setting the style of a block of an unknown type' => [new SetStyle(self::B, 'dark'), '"removed"'];
+        yield 'setting a style the block type does not offer' => [new SetStyle(self::A, 'dark'), 'The block type "heading" has no block style "dark"'];
     }
 
-    private function apply(StoredTree $tree, AddBlock|MoveBlock|RemoveBlock|SetValue ...$changes): StoredTree
+    private function apply(StoredTree $tree, Change ...$changes): StoredTree
     {
         return self::applier()->apply(new ChangeSet(array_values($changes)), $tree);
     }
@@ -302,8 +323,13 @@ final class ChangeSetApplierTest extends TestCase
     private static function applier(): ChangeSetApplier
     {
         return new ChangeSetApplier(
-            new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class, 'shared_note' => SharedNote::class], new FieldReader()),
+            new BlockTypeRegistry(
+                ['heading' => Heading::class, 'rich_text' => RichText::class, 'shared_note' => SharedNote::class, 'group' => Group::class],
+                new FieldReader(),
+                styles: ['group' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-group--brand']]],
+            ),
             new FieldHandlerLocator(new ServiceLocator([
+                ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
                 TextHandler::class => static fn (): TextHandler => new TextHandler(),
                 ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
                 RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),

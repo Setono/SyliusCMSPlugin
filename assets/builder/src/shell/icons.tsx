@@ -107,3 +107,13 @@ export function GripIcon() {
         </Icon>
     );
 }
+
+/** Marks something that has errors. */
+export function AlertIcon() {
+    return (
+        <Icon>
+            <circle cx="8" cy="8" r="6.25" />
+            <path d="M8 4.75v3.75M8 11.25h.01" strokeWidth="1.75" />
+        </Icon>
+    );
+}

@@ -4,7 +4,7 @@ import type { BuilderApi, PreviewRequest } from '../src/api';
 import { App } from '../src/App';
 import { envelope, openEnvelope, type FromBridge, type ToBridge } from '../src/bridge/protocol';
 import type { BuilderConfig } from '../src/config';
-import type { EntryResponse, EntryStatus, PresenceResponse, SaveResponse, StoredBlock } from '../src/types';
+import type { EntryResponse, EntryStatus, PresenceResponse, SaveResponse, StoredBlock, ValidationError } from '../src/types';
 import { block, blockOf, entry, registry, settings } from './fixtures';
 
 const config: BuilderConfig = {
@@ -15,6 +15,7 @@ const config: BuilderConfig = {
     endpoints: {
         registry: '/registry',
         entry: '/entry',
+        validate: '/validate',
         publish: '/publish',
         discard: '/discard',
         settings: '/settings',
@@ -42,6 +43,7 @@ function fakeApi(blocks: StoredBlock[] = [block('a', { text: { en_US: 'Welcome' 
         fetchRegistry: vi.fn(async () => registry),
         fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), settings: settings(), status: 'never_published', lockToken: 0, editors: [] })),
         saveChanges: vi.fn(async (): Promise<SaveResponse> => ({ status: 'never_published', lockToken: 1 })),
+        validate: vi.fn(async (): Promise<ValidationError[]> => []),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
         discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), settings: settings(), status: 'published', lockToken: 0, editors: [] })),
         saveSettings: vi.fn(async () => settings()),
@@ -108,6 +110,12 @@ describe('the bridge in the preview', () => {
                     moveUp: 'Move up',
                     moveDown: 'Move down',
                     duplicate: 'Duplicate',
+                    formatting: 'Formatting',
+                    bold: 'Bold',
+                    italic: 'Italic',
+                    underline: 'Underline',
+                    strike: 'Strikethrough',
+                    code: 'Code',
                 },
             },
             { type: 'select', key: null },
@@ -156,6 +164,33 @@ describe('the bridge in the preview', () => {
 
         await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Saved'));
         expect(api.createPreviewUrl).toHaveBeenCalledTimes(1);
+    });
+
+    it('should re-render a block whose style was picked and patch it in, without a reload', async () => {
+        const api = fakeApi([blockOf('group', 'g', [block('a', { text: { en_US: 'Inside' } })])]);
+        const { sent } = await openWithBridge(api);
+        fireEvent.click(within(screen.getByRole('navigation')).getByRole('button', { name: 'Group' }));
+
+        fireEvent.change(screen.getByRole('combobox', { name: 'Style' }), { target: { value: 'dark' } });
+
+        await waitFor(() => expect(sent().at(-1)).toEqual({ type: 'patch', blocks: [{ key: 'g', html: '<!--cms:block g heading--><h2>g</h2><!--/cms:block g-->' }] }));
+        expect(api.renderPreview).toHaveBeenCalledExactlyOnceWith('token-1', [{ ...blockOf('group', 'g', [block('a', { text: { en_US: 'Inside' } })]), style: 'dark' }]);
+        expect(api.createPreviewUrl).toHaveBeenCalledTimes(1);
+    });
+
+    it('should show in the right pane and save what the editor types in place in the preview', async () => {
+        const api = fakeApi();
+        const { sent } = await openWithBridge(api);
+        fromBridge({ type: 'select', key: 'a' });
+
+        fromBridge({ type: 'edit', key: 'a', field: 'text', value: 'Welcome back' });
+
+        expect(screen.getByLabelText('Text')).toHaveValue('Welcome back');
+        expect(treeRow('Welcome back')).toHaveAttribute('aria-pressed', 'true');
+        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Saved'));
+        expect(api.saveChanges).toHaveBeenCalledWith([{ op: 'set_value', key: 'a', field: 'text', locale: 'en_US', value: 'Welcome back' }], 0);
+        // Re-rendered like any edit. The bridge holds the patch back while the field is being typed in
+        await waitFor(() => expect(sent().at(-1)).toMatchObject({ type: 'patch', blocks: [{ key: 'a' }] }));
     });
 
     it('should render what changed while a render was on its way once it is back', async () => {

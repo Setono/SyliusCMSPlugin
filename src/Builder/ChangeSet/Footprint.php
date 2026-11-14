@@ -7,8 +7,8 @@ namespace Setono\SyliusCMSPlugin\Builder\ChangeSet;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 
 /**
- * What colleagues' change sets touched: the values they set, the blocks they set values on or added, and the blocks
- * they moved. A block they removed is gone, so a change to it shows up as a missing block instead
+ * What colleagues' change sets touched: the values they set, the blocks they set values or styles on or added, and the
+ * blocks they moved. A block they removed is gone, so a change to it shows up as a missing block instead
  *
  * @internal
  */
@@ -28,6 +28,10 @@ final class Footprint
         foreach ($changeSet->changes as $change) {
             if ($change instanceof SetValue) {
                 $this->values[self::valueId($change)] = $change->value;
+                $this->changed[] = $change->key;
+            }
+
+            if ($change instanceof SetStyle) {
                 $this->changed[] = $change->key;
             }
 

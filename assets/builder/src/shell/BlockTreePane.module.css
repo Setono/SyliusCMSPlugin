@@ -101,6 +101,28 @@
     background: var(--builder-color-danger-subtle);
 }
 
+/* A block or the entry with errors that publish would refuse, and a block of a type the code no longer has */
+.row[data-invalid] {
+    border-color: var(--builder-color-danger);
+}
+
+.row[data-invalid][data-selected] {
+    background: var(--builder-color-danger-subtle);
+}
+
+.invalid {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: var(--builder-space-5);
+    color: var(--builder-color-danger);
+}
+
+.unknown .label {
+    color: var(--builder-color-text-muted);
+    font-style: italic;
+}
+
 .grip {
     display: grid;
     flex: none;

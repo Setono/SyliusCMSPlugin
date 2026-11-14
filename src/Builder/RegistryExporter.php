@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Builder;
 
+use Setono\SyliusCMSPlugin\Attribute\Style;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Registry\AllowedBlockType;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
@@ -16,7 +17,7 @@ use Symfony\Component\Translation\TranslatorBagInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
- * What the builder's registry endpoint answers: the block types with their field schemas and nesting rules,
+ * What the builder's registry endpoint answers: the block types with their field schemas, nesting rules and block styles,
  * what the top level of each content type may hold, and the UI strings, translated in the current locale,
  * which in the admin is the admin user's locale. The shape is internal to the builder
  */
@@ -60,6 +61,8 @@ final readonly class RegistryExporter
             'disabled' => $blockType->disabled,
             'parents' => null === $blockType->parents ? null : array_map(fn (string $class): string => $this->blockTypes->getByClass($class)->code, $blockType->parents),
             'children' => self::allowed($this->nestingRules->children($blockType->code)),
+            // The style picker stores a style's code in the block's style; its class only matters to rendering
+            'styles' => array_values(array_map(fn (Style $style): array => ['code' => $style->code, 'label' => $this->translator->trans($style->label)], $blockType->styles)),
             'fields' => array_values(array_map(fn (FieldMetadata $field): array => ['name' => $field->name, 'schema' => $this->schema($field)], $blockType->fields)),
         ];
     }

@@ -8,6 +8,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer"/>
             <argument type="service" id="setono_sylius_cms.manager.draft"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface" alias="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManager"/>
 
@@ -27,6 +28,7 @@
             <argument type="service" id="clock"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntryPublisher"/>
 

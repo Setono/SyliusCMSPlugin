@@ -191,6 +191,48 @@ final class EntryTest extends BuilderApiTestCase
     }
 
     /**
+     * @test
+     */
+    public function it_saves_the_block_style_picked_for_a_block_and_taking_it_away(): void
+    {
+        $client = self::createClient();
+        $page = self::createPageWithBlocks('About us', 'about-us', [
+            new StoredBlock(self::GROUP_KEY, 'group', 1),
+            new StoredBlock(self::KEY, 'group', 1, style: 'muted'),
+        ]);
+        $csrfToken = self::openBuilder($client, $page);
+
+        self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['lockToken' => 0, 'changes' => [
+            ['op' => 'set_style', 'key' => self::GROUP_KEY, 'style' => 'dark'],
+            ['op' => 'set_style', 'key' => self::KEY, 'style' => null],
+        ]], $csrfToken);
+
+        self::assertResponseIsSuccessful();
+        $blocks = self::reloadPage($page)->getBlockTree()->blocks;
+        self::assertSame('dark', $blocks[0]->style);
+        self::assertNull($blocks[1]->style);
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_block_style_the_block_type_does_not_offer(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('About us', 'about-us', 'Hello');
+        $csrfToken = self::openBuilder($client, $page);
+
+        $response = self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['lockToken' => 0, 'changes' => [
+            ['op' => 'set_style', 'key' => self::KEY, 'style' => 'dark'],
+        ]], $csrfToken);
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertIsArray($response);
+        self::assertSame('The block type "heading" has no block style "dark"', $response['error'] ?? null);
+        self::assertNull(self::reloadPage($page)->getBlockTree()->blocks[0]->style);
+    }
+
+    /**
      * A group with a heading inside, as the builder sends a copy of one
      *
      * @return array<string, mixed>

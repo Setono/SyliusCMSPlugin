@@ -1,6 +1,6 @@
 import type { Change } from './changeSet';
 import type { BuilderConfig } from './config';
-import type { EntryResponse, EntrySettings, EntryStatus, PresenceResponse, Registry, SaveResponse, StoredBlock } from './types';
+import type { EntryResponse, EntrySettings, EntryStatus, PresenceResponse, Registry, SaveResponse, StoredBlock, ValidationError } from './types';
 
 /** The builder's JSON endpoints. They're internal, and change together with the app. */
 export interface BuilderApi {
@@ -13,7 +13,12 @@ export interface BuilderApi {
     saveChanges(changes: readonly Change[], lockToken: number): Promise<SaveResponse>;
     /** Says the editor still has the entry open, and answers with who else does and the working copy's lock token. */
     presence(): Promise<PresenceResponse>;
-    /** Fails with an ApiError of status 422 and the reason when the server refuses, such as a listener's veto. */
+    /** Validates the working copy as the server holds it, as publish would, and answers with its errors. */
+    validate(): Promise<ValidationError[]>;
+    /**
+     * Fails with an ApiError of status 422 and the reason when the server refuses: with the errors when validation
+     * refuses, and with none when a listener vetoes.
+     */
     publish(): Promise<EntryStatus>;
     /** Deletes the draft, and answers with the working copy that's left: the published content. */
     discard(): Promise<EntryResponse>;
@@ -38,6 +43,8 @@ export class ApiError extends Error {
     constructor(
         message: string,
         readonly status: number,
+        /** The validation errors the server refused for, such as a publish's. */
+        readonly errors: ValidationError[] = [],
     ) {
         super(message);
         this.name = 'ApiError';
@@ -63,7 +70,7 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) 
 
         const body: unknown = await response.json().catch(() => undefined);
         if (response.status !== 200) {
-            throw new ApiError(errorMessage(body) ?? `${url} answered ${response.status}.`, response.status);
+            throw new ApiError(errorMessage(body) ?? `${url} answered ${response.status}.`, response.status, (isObject(body) ? validationErrors(body.errors) : null) ?? []);
         }
 
         if (body === undefined) {
@@ -106,6 +113,17 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) 
             }
 
             return body as unknown as PresenceResponse;
+        },
+
+        async validate() {
+            // It changes nothing, so it needs no CSRF token
+            const body = await request(config.endpoints.validate, { method: 'POST' });
+            const errors = isObject(body) ? validationErrors(body.errors) : null;
+            if (errors === null) {
+                throw new ApiError('The answer has no list of errors.', 200);
+            }
+
+            return errors;
         },
 
         async publish() {
@@ -172,6 +190,15 @@ function entryStatus(body: unknown): EntryStatus {
     }
 
     return status as EntryStatus;
+}
+
+/** The validation errors in a list from the server, or null when it isn't one. */
+function validationErrors(list: unknown): ValidationError[] | null {
+    const isNullableString = (value: unknown): boolean => value === null || typeof value === 'string';
+    const isError = (error: unknown): boolean =>
+        isObject(error) && isNullableString(error.block) && isNullableString(error.field) && isNullableString(error.locale) && typeof error.message === 'string';
+
+    return Array.isArray(list) && list.every(isError) ? (list as ValidationError[]) : null;
 }
 
 function errorMessage(body: unknown): string | undefined {

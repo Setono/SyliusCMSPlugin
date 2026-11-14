@@ -11,7 +11,7 @@ use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
  * What the builder autosaves: the changes it made since it last loaded, as values by field and locale,
- * and blocks added, moved or removed. See "Saving" in docs/spec/builder.md. The body format is internal to the builder
+ * block styles, and blocks added, moved or removed. See "Saving" in docs/spec/builder.md. The body format is internal to the builder
  */
 final readonly class ChangeSet
 {
@@ -61,6 +61,7 @@ final readonly class ChangeSet
                 'after' => $change->after,
             ]),
             $change instanceof RemoveBlock => new ListedObject(['op' => 'remove_block', 'key' => $change->key]),
+            $change instanceof SetStyle => new ListedObject(['op' => 'set_style', 'key' => $change->key, 'style' => $change->style]),
             $change instanceof SetValue => new ListedObject([
                 'op' => 'set_value',
                 'key' => $change->key,
@@ -98,7 +99,11 @@ final readonly class ChangeSet
                 self::nullableString($change, 'locale'),
                 array_key_exists('value', $change) ? $change['value'] : throw new InvalidChangeSetException('A set_value change must have a value'),
             ),
-            default => throw new InvalidChangeSetException('A change must have the op add_block, move_block, remove_block or set_value'),
+            'set_style' => new SetStyle(
+                self::string($change, 'key'),
+                array_key_exists('style', $change) ? self::nullableString($change, 'style') : throw new InvalidChangeSetException('A set_style change must have a style'),
+            ),
+            default => throw new InvalidChangeSetException('A change must have the op add_block, move_block, remove_block, set_value or set_style'),
         };
     }
 

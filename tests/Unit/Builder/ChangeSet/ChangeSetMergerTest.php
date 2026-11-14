@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\Clash;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\Merge;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -353,12 +354,59 @@ final class ChangeSetMergerTest extends TestCase
     /**
      * @test
      */
+    public function it_returns_a_clash_instead_of_deleting_a_block_whose_first_child_a_colleague_changed(): void
+    {
+        $tree = self::tree(self::heading(self::A, children: [self::heading(self::B), self::heading(self::C)]));
+
+        $merge = self::merge([new SetValue(self::B, 'level', null, 'h2')], [new RemoveBlock(self::A)], $tree);
+
+        self::assertSame([['kind' => 'changed_block', 'key' => self::A]], self::clashes($merge));
+    }
+
+    /**
+     * @test
+     */
     public function it_returns_a_clash_instead_of_deleting_a_block_with_a_change_deep_inside_it(): void
     {
         $tree = self::tree(self::heading(self::A, children: [self::heading(self::B, children: [self::heading(self::C, children: [self::heading(self::D)])])]));
 
         $merge = self::merge([new SetValue(self::D, 'level', null, 'h2')], [new RemoveBlock(self::A)], $tree);
 
+        self::assertSame([['kind' => 'changed_block', 'key' => self::A]], self::clashes($merge));
+    }
+
+    /**
+     * @test
+     */
+    public function it_applies_the_style_the_editor_picked_last_when_both_picked_one(): void
+    {
+        $mine = [new SetStyle(self::A, 'light')];
+
+        $merge = self::merge([new SetStyle(self::A, 'dark')], $mine, self::tree(self::heading(self::A)));
+
+        self::assertEquals($mine, $merge->changeSet->changes);
+        self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_a_clash_instead_of_picking_a_style_for_a_block_a_colleague_deleted(): void
+    {
+        $merge = self::merge([new RemoveBlock(self::A)], [new SetStyle(self::A, 'dark')], self::tree(self::heading(self::B)));
+
+        self::assertSame([], $merge->changeSet->changes);
+        self::assertSame([['kind' => 'deleted_block', 'key' => self::A]], self::clashes($merge));
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_a_clash_instead_of_deleting_a_block_a_colleague_picked_a_style_for(): void
+    {
+        $merge = self::merge([new SetStyle(self::B, 'dark')], [new RemoveBlock(self::A)], self::tree(self::heading(self::A, children: [self::heading(self::B)])));
+
+        self::assertSame([], $merge->changeSet->changes);
         self::assertSame([['kind' => 'changed_block', 'key' => self::A]], self::clashes($merge));
     }
 

@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -106,6 +107,8 @@ final class ChangeSetTest extends TestCase
             new MoveBlock(self::KEY, null, 0),
             new SetValue(self::KEY, 'text', 'en_US', ['type' => 'doc', 'content' => []]),
             new SetValue(self::KEY, 'level', null, null),
+            new SetStyle(self::KEY, 'dark'),
+            new SetStyle(self::KEY, null),
             new RemoveBlock(self::KEY),
         ]);
 
@@ -116,6 +119,8 @@ final class ChangeSetTest extends TestCase
             . '{"op":"move_block","key":"' . self::KEY . '","parent":null,"index":0,"after":null},'
             . '{"op":"set_value","key":"' . self::KEY . '","field":"text","locale":"en_US","value":{"content":[],"type":"doc"}},'
             . '{"op":"set_value","key":"' . self::KEY . '","field":"level","locale":null,"value":null},'
+            . '{"op":"set_style","key":"' . self::KEY . '","style":"dark"},'
+            . '{"op":"set_style","key":"' . self::KEY . '","style":null},'
             . '{"op":"remove_block","key":"' . self::KEY . '"}]}',
             $json,
         );
@@ -133,6 +138,19 @@ final class ChangeSetTest extends TestCase
         $this->expectException(\LogicException::class);
 
         $changeSet->toArray();
+    }
+
+    /**
+     * @test
+     */
+    public function it_reads_a_block_style_picked_and_one_taken_away(): void
+    {
+        $changeSet = ChangeSet::fromArray(['changes' => [
+            ['op' => 'set_style', 'key' => self::KEY, 'style' => 'dark'],
+            ['op' => 'set_style', 'key' => self::KEY, 'style' => null],
+        ]]);
+
+        self::assertEquals([new SetStyle(self::KEY, 'dark'), new SetStyle(self::KEY, null)], $changeSet->changes);
     }
 
     /**
@@ -188,5 +206,9 @@ final class ChangeSetTest extends TestCase
         yield 'move_block with a negative index' => [['changes' => [['index' => -1] + $moveBlock]]];
         yield 'move_block after a non-string' => [['changes' => [['after' => 1] + $moveBlock]]];
         yield 'add_block after an empty key' => [['changes' => [['after' => ''] + $addBlock]]];
+        yield 'set_style without a key' => [['changes' => [['op' => 'set_style', 'style' => 'dark']]]];
+        yield 'set_style without a style' => [['changes' => [['op' => 'set_style', 'key' => self::KEY]]]];
+        yield 'set_style with a non-string style' => [['changes' => [['op' => 'set_style', 'key' => self::KEY, 'style' => 1]]]];
+        yield 'set_style with an empty style' => [['changes' => [['op' => 'set_style', 'key' => self::KEY, 'style' => '']]]];
     }
 }

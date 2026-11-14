@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection;
 
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
+use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
+use Setono\SyliusCMSPlugin\Attribute\Layout;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Model\Draft;
@@ -14,9 +16,12 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
+use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\LandingFromOne;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Resource\Factory\Factory;
 use Sylius\Resource\Factory\TranslatableFactory;
@@ -100,11 +105,42 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_autoconfigures_layouts_and_upgraders_by_their_attributes(): void
+    {
+        $this->load();
+
+        $configurators = $this->container->getAutoconfiguredAttributes();
+
+        $layout = new ChildDefinition('');
+        $configurators[Layout::class]($layout, new Layout('landing', Page::class, 'app.landing', 'landing.html.twig'), new \ReflectionClass(Landing::class));
+        self::assertTrue($layout->hasTag('setono_sylius_cms.layout'));
+
+        $upgrader = new ChildDefinition('');
+        $configurators[AsUpgrader::class]($upgrader, new AsUpgrader(Landing::class, 1), new \ReflectionClass(LandingFromOne::class));
+        self::assertTrue($upgrader->hasTag('setono_sylius_cms.upgrader'));
+    }
+
+    /**
+     * @test
+     */
     public function it_hands_the_disabled_block_types_to_the_block_type_registry(): void
     {
         $this->load(['disabled' => ['block_types' => ['spacer']]]);
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.block_types', ['spacer']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_the_block_styles_added_in_config_to_the_block_type_registry(): void
+    {
+        $blockStyles = ['group' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-group--brand']]];
+
+        $this->load(['block_styles' => $blockStyles]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.block_styles', $blockStyles);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BlockTypeRegistry::class, 3, '%setono_sylius_cms.block_styles%');
     }
 
     /**
