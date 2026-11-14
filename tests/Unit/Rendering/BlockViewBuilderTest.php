@@ -6,12 +6,14 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Rendering;
 
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Setono\SyliusCMSPlugin\Block\Group;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\RichText;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
+use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
@@ -153,6 +155,34 @@ final class BlockViewBuilderTest extends TestCase
         self::assertSame(self::B, $views[0]->children[0]->key);
     }
 
+    /**
+     * @test
+     */
+    public function it_gives_a_view_the_class_of_its_block_style_from_the_block_type_or_the_config(): void
+    {
+        $views = $this->builder()->build([
+            new StoredBlock(self::A, 'group', 1, style: 'dark'),
+            new StoredBlock(self::B, 'group', 1, style: 'brand'),
+        ], $this->context('en_US'));
+
+        self::assertSame('cms-group--dark', $views[0]->styleClass);
+        self::assertSame('app-group--brand', $views[1]->styleClass);
+    }
+
+    /**
+     * @test
+     */
+    public function a_style_code_that_is_no_longer_declared_resolves_to_no_class(): void
+    {
+        $views = $this->builder()->build([
+            new StoredBlock(self::A, 'group', 1, style: 'retired'),
+            new StoredBlock(self::B, 'heading', 1, style: 'dark'),
+        ], $this->context('en_US'));
+
+        self::assertNull($views[0]->styleClass);
+        self::assertNull($views[1]->styleClass, 'Another block type\'s style is no style');
+    }
+
     private function builder(): BlockViewBuilder
     {
         $fallbackChain = $this->prophesize(FallbackChainInterface::class);
@@ -165,10 +195,15 @@ final class BlockViewBuilderTest extends TestCase
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator->reveal()),
+            ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
         ]));
 
         return new BlockViewBuilder(
-            new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class], new FieldReader()),
+            new BlockTypeRegistry(
+                ['heading' => Heading::class, 'rich_text' => RichText::class, 'group' => Group::class],
+                new FieldReader(),
+                styles: ['group' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-group--brand']]],
+            ),
             new BlockHydrator($handlers, $fallbackChain->reveal()),
         );
     }

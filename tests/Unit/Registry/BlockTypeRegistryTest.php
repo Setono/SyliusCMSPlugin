@@ -6,8 +6,10 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Registry;
 
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Attribute\Allow;
+use Setono\SyliusCMSPlugin\Attribute\Style;
 use Setono\SyliusCMSPlugin\Block\Column;
 use Setono\SyliusCMSPlugin\Block\Columns;
+use Setono\SyliusCMSPlugin\Block\Group;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
@@ -174,5 +176,46 @@ final class BlockTypeRegistryTest extends TestCase
         self::assertSame([], $plain->children);
         self::assertNull($plain->parents);
         self::assertNull($plain->thumbnail);
+    }
+
+    /**
+     * @test
+     */
+    public function it_merges_the_styles_a_block_type_declares_with_those_a_project_adds_in_config(): void
+    {
+        $registry = new BlockTypeRegistry(['group' => Group::class, 'plain' => Plain::class], new FieldReader(), [], [
+            'group' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-group--brand']],
+            'plain' => ['boxed' => ['label' => 'app.cms.block_style.boxed', 'class' => 'app-plain--boxed']],
+        ]);
+
+        self::assertEquals([
+            'muted' => new Style('muted', 'setono_sylius_cms.block_style.muted', 'cms-group--muted'),
+            'dark' => new Style('dark', 'setono_sylius_cms.block_style.dark', 'cms-group--dark'),
+            'brand' => new Style('brand', 'app.cms.block_style.brand', 'app-group--brand'),
+        ], $registry->get('group')->styles);
+        self::assertEquals(['boxed' => new Style('boxed', 'app.cms.block_style.boxed', 'app-plain--boxed')], $registry->get('plain')->styles);
+    }
+
+    /**
+     * @test
+     */
+    public function a_style_added_in_config_with_the_code_of_a_declared_one_replaces_it_in_its_place(): void
+    {
+        $registry = new BlockTypeRegistry(['group' => Group::class], new FieldReader(), [], [
+            'group' => ['muted' => ['label' => 'app.cms.block_style.soft', 'class' => 'app-group--soft']],
+        ]);
+
+        self::assertEquals([
+            'muted' => new Style('muted', 'app.cms.block_style.soft', 'app-group--soft'),
+            'dark' => new Style('dark', 'setono_sylius_cms.block_style.dark', 'cms-group--dark'),
+        ], $registry->get('group')->styles);
+    }
+
+    /**
+     * @test
+     */
+    public function a_block_type_offers_no_styles_unless_it_or_the_config_adds_some(): void
+    {
+        self::assertSame([], (new BlockTypeRegistry(['plain' => Plain::class], new FieldReader()))->get('plain')->styles);
     }
 }

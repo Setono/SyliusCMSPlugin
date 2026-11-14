@@ -1,4 +1,7 @@
 setono_sylius_cms:
+    block_style:
+        dark: Dark
+        muted: Muted
     block_type:
         accordion: Accordion
         accordion_item: Accordion item

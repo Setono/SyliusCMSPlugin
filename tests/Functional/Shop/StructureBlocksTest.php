@@ -74,6 +74,50 @@ final class StructureBlocksTest extends WebTestCase
         self::assertSame('<div class="cms-spacer cms-spacer--medium" aria-hidden="true"></div>', $spacers->eq(1)->outerHtml());
     }
 
+    /**
+     * @test
+     */
+    public function a_published_group_with_the_dark_style_renders_the_style_class_next_to_its_own(): void
+    {
+        $client = self::createClient();
+        self::createPageWithBlocks('Dark', 'dark', [
+            new StoredBlock('0193a5be-0000-7000-8000-000000000001', 'group', 1, style: 'dark', children: [self::heading('0193a5be-0000-7000-8000-000000000002', 'Night')]),
+        ], published: true);
+
+        $crawler = $client->request('GET', '/en_US/dark');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('cms-group cms-group--dark', $crawler->filter('.cms-tree > .cms-group')->attr('class'));
+    }
+
+    /**
+     * @test
+     */
+    public function a_group_renders_the_class_of_a_style_the_app_adds_in_its_config(): void
+    {
+        $client = self::createClient();
+        self::createPageWithBlocks('Branded', 'branded', [
+            new StoredBlock('0193a5be-0000-7000-8000-000000000001', 'group', 1, style: 'brand', fields: ['fullWidth' => true]),
+        ], published: true);
+
+        $crawler = $client->request('GET', '/en_US/branded');
+
+        self::assertSame('cms-group cms-full-width app-group--brand', $crawler->filter('.cms-tree > .cms-group')->attr('class'));
+    }
+
+    /**
+     * @test
+     */
+    public function a_group_with_no_style_renders_plain(): void
+    {
+        $client = self::createClient();
+        self::createPageWithBlocks('Plain', 'plain', [new StoredBlock('0193a5be-0000-7000-8000-000000000001', 'group', 1)], published: true);
+
+        $crawler = $client->request('GET', '/en_US/plain');
+
+        self::assertSame('cms-group', $crawler->filter('.cms-tree > .cms-group')->attr('class'));
+    }
+
     private static function withoutWhitespaceBetweenTags(string $html): string
     {
         return (string) preg_replace('/>\s+</', '><', trim($html));

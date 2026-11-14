@@ -9,6 +9,7 @@
             <argument type="collection"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\FieldReader"/>
             <argument>%setono_sylius_cms.disabled.block_types%</argument>
+            <argument>%setono_sylius_cms.block_styles%</argument>
         </service>
         <service id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry"/>
 

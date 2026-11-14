@@ -40,6 +40,7 @@ final class ConfigurationTest extends TestCase
         ], [
             'disabled' => ['block_types' => []],
             'assets' => true,
+            'block_styles' => [],
             'resources' => [
                 'draft' => [
                     'classes' => [
@@ -94,6 +95,51 @@ final class ConfigurationTest extends TestCase
     public function assets_is_a_boolean(): void
     {
         $this->assertConfigurationIsInvalid([['assets' => 'no']], 'Invalid type for path "setono_sylius_cms.assets"');
+    }
+
+    /**
+     * @test
+     */
+    public function a_project_adds_block_styles_to_any_block_type_by_code(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['block_styles' => ['banner' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-banner--brand']]]],
+            ['block_styles' => [
+                'banner' => ['outlined' => ['label' => 'app.cms.block_style.outlined', 'class' => 'app-banner--outlined']],
+                'group' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-group--brand']],
+            ]],
+        ], ['block_styles' => [
+            'banner' => [
+                'brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-banner--brand'],
+                'outlined' => ['label' => 'app.cms.block_style.outlined', 'class' => 'app-banner--outlined'],
+            ],
+            'group' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-group--brand']],
+        ]], 'block_styles');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidBlockStyles
+     *
+     * @param array<array-key, mixed> $blockStyles
+     */
+    public function it_refuses_an_invalid_block_style(array $blockStyles, string $message): void
+    {
+        $this->assertConfigurationIsInvalid([['block_styles' => $blockStyles]], $message);
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>, string}>
+     */
+    public function provideInvalidBlockStyles(): iterable
+    {
+        yield 'no label' => [['group' => ['brand' => ['class' => 'app-group--brand']]], 'The child config "label" under "setono_sylius_cms.block_styles.group.brand" must be configured'];
+        yield 'no class' => [['group' => ['brand' => ['label' => 'app.brand']]], 'The child config "class" under "setono_sylius_cms.block_styles.group.brand" must be configured'];
+        yield 'an empty label' => [['group' => ['brand' => ['label' => '', 'class' => 'app-group--brand']]], 'cannot contain an empty value'];
+        yield 'an empty class' => [['group' => ['brand' => ['label' => 'app.brand', 'class' => '']]], 'cannot contain an empty value'];
+        yield 'a style code that is no code' => [['group' => ['Brand' => ['label' => 'app.brand', 'class' => 'app-group--brand']]], 'The block style code "Brand" must match ^[a-z][a-z0-9_]*$'];
+        yield 'a block type code that is no code' => [['app-banner' => ['brand' => ['label' => 'app.brand', 'class' => 'app-banner--brand']]], 'The block type code "app-banner" must match ^[a-z][a-z0-9_]*$'];
     }
 
     /**

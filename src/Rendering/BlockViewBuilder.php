@@ -33,11 +33,12 @@ final readonly class BlockViewBuilder
                 continue;
             }
 
+            $blockType = $this->blockTypes->get($block->type);
             $views[] = new BlockView(
                 $block->key,
                 $block->type,
-                $this->hydrator->hydrate($this->blockTypes->get($block->type), $block, $context),
-                null,
+                $this->hydrator->hydrate($blockType, $block, $context),
+                $blockType->styleClass($block->style),
                 $this->build($block->children, $context),
             );
         }

@@ -14,6 +14,7 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
@@ -105,6 +106,19 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->load(['disabled' => ['block_types' => ['spacer']]]);
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.block_types', ['spacer']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_the_block_styles_added_in_config_to_the_block_type_registry(): void
+    {
+        $blockStyles = ['group' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-group--brand']]];
+
+        $this->load(['block_styles' => $blockStyles]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.block_styles', $blockStyles);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BlockTypeRegistry::class, 3, '%setono_sylius_cms.block_styles%');
     }
 
     /**
