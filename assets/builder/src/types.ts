@@ -88,10 +88,53 @@ export interface EntrySettings {
     audience: { mode: AudienceMode; groups: string[] };
 }
 
+/** Someone else who has the entry open in the builder. */
+export interface Editor {
+    name: string;
+}
+
 export interface EntryResponse {
     entry: Entry;
+    /** The working copy's version, which a save made on it carries. */
+    lockToken: number;
     settings: EntrySettings;
     status: EntryStatus;
+    /** Who else has the entry open. */
+    editors: Editor[];
+}
+
+/**
+ * A real clash between the editor's save and what a colleague saved since: the same field in the same locale, an edit
+ * to a block the colleague deleted, or the deletion of a block the colleague changed something in. The server applied
+ * everything else, but not this.
+ */
+export type Clash =
+    | {
+          kind: 'value';
+          key: string;
+          field: string;
+          /** null for a shared field. */
+          locale: string | null;
+          mine: JsonValue | null;
+          theirs: JsonValue | null;
+      }
+    | { kind: 'deleted_block'; key: string }
+    | { kind: 'changed_block'; key: string };
+
+export interface SaveResponse {
+    status: EntryStatus;
+    /** The working copy's version after the save, which the next save carries. */
+    lockToken: number;
+    /** The working copy with colleagues' changes in it, when they saved since the last load. */
+    entry?: Entry;
+    clashes?: Clash[];
+}
+
+export interface PresenceResponse {
+    /** Who else has the entry open. */
+    editors: Editor[];
+    /** The working copy's version, which is ahead of the builder's when colleagues saved since. */
+    lockToken: number;
 }
 
 /** JSON Schema for one value (one locale's value, for a translatable field), plus the x-cms-* keywords. */

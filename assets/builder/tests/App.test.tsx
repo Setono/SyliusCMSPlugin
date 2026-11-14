@@ -4,7 +4,7 @@ import { ApiError, type BuilderApi } from '../src/api';
 import type { Change } from '../src/changeSet';
 import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
-import type { EntryResponse, EntryStatus, StoredBlock } from '../src/types';
+import type { EntryResponse, EntryStatus, PresenceResponse, SaveResponse, StoredBlock } from '../src/types';
 import { block, blockOf, entry, registry, settings, spacer, strings } from './fixtures';
 
 const config: BuilderConfig = {
@@ -20,6 +20,7 @@ const config: BuilderConfig = {
         settings: '/settings',
         previewToken: '/preview/token',
         previewRender: '/preview/render',
+        presence: '/presence',
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
@@ -29,13 +30,14 @@ const config: BuilderConfig = {
 function fakeApi(overrides: Partial<BuilderApi> = {}) {
     return {
         fetchRegistry: vi.fn(async () => registry),
-        fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings(), status: 'never_published' })),
-        saveChanges: vi.fn(async (): Promise<EntryStatus> => 'never_published'),
+        fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings(), status: 'never_published', lockToken: 0, editors: [] })),
+        saveChanges: vi.fn(async (): Promise<SaveResponse> => ({ status: 'never_published', lockToken: 1 })),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
-        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings(), status: 'published' })),
+        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings(), status: 'published', lockToken: 0, editors: [] })),
         saveSettings: vi.fn(async () => settings()),
         createPreviewUrl: vi.fn(async () => 'http://admin.example/en_US/about-us?_cms_preview=abc.def'),
         renderPreview: vi.fn(async (): Promise<Record<string, string>> => ({})),
+        presence: vi.fn(async (): Promise<PresenceResponse> => ({ editors: [], lockToken: 0 })),
         ...overrides,
     };
 }
@@ -51,7 +53,7 @@ function addBlock(label: string) {
 }
 
 function withBlocks(...blocks: StoredBlock[]): Partial<BuilderApi> {
-    return { fetchEntry: async () => ({ entry: entry(blocks), settings: settings(), status: 'never_published' }) };
+    return { fetchEntry: async () => ({ entry: entry(blocks), settings: settings(), status: 'never_published', lockToken: 0, editors: [] }) };
 }
 
 /** The tree item of the block whose row button has this name. */
@@ -100,7 +102,7 @@ describe('the builder', () => {
     });
 
     it('should add a heading, autosave its text and publish it', async () => {
-        const saveChanges = vi.fn(async (_changes: readonly Change[]): Promise<EntryStatus> => 'never_published');
+        const saveChanges = vi.fn(async (_changes: readonly Change[]): Promise<SaveResponse> => ({ status: 'never_published', lockToken: 1 }));
         const publish = vi.fn(async (): Promise<EntryStatus> => 'published');
         await openBuilder(fakeApi({ saveChanges, publish }));
 
@@ -162,8 +164,8 @@ describe('the builder', () => {
 
     it('should show unpublished changes once a published entry is saved, and discard them', async () => {
         const api = fakeApi({
-            fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings(), status: 'published' })),
-            saveChanges: vi.fn(async (): Promise<EntryStatus> => 'unpublished_changes'),
+            fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings(), status: 'published', lockToken: 0, editors: [] })),
+            saveChanges: vi.fn(async (): Promise<SaveResponse> => ({ status: 'unpublished_changes', lockToken: 1 })),
         });
         await openBuilder(api);
 
@@ -187,7 +189,7 @@ describe('the builder', () => {
     it('should report a failed discard', async () => {
         await openBuilder(
             fakeApi({
-                fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a')]), settings: settings(), status: 'unpublished_changes' })),
+                fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a')]), settings: settings(), status: 'unpublished_changes', lockToken: 0, editors: [] })),
                 discard: vi.fn(() => Promise.reject(new Error('Offline'))),
             }),
         );

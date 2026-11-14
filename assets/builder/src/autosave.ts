@@ -1,10 +1,15 @@
 import { mergeChanges, type Change } from './changeSet';
 import type { BuilderStore } from './store';
-import type { EntryStatus } from './types';
+import type { SaveResponse } from './types';
 
 export interface Autosave {
     /** Sends the unsaved changes now, after any save in flight. Resolves to whether everything got saved. */
     flush(): Promise<boolean>;
+    /**
+     * Pulls in what colleagues saved, once the working copy on the server has moved on to the lock token: it sends the
+     * unsaved changes, or none, and the answer carries theirs. Resolves to whether it got through.
+     */
+    pull(lockToken: number): Promise<boolean>;
     dispose(): void;
 }
 
@@ -16,10 +21,12 @@ export interface AutosaveOptions {
 /**
  * Saves the working copy's changes a moment after each edit. Only one save is in flight at a time:
  * changes made during a save go into the next one, and a failed save's changes stay for the next.
+ * Each save carries the lock token of the last load or save. When colleagues saved since, the answer carries the
+ * working copy with their changes, and the clashes, which the builder pulls in.
  */
 export function createAutosave(
     store: BuilderStore,
-    send: (changes: readonly Change[]) => Promise<EntryStatus>,
+    send: (changes: readonly Change[], lockToken: number) => Promise<SaveResponse>,
     { delay = 500 }: AutosaveOptions = {},
 ): Autosave {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -32,27 +39,34 @@ export function createAutosave(
         }
     };
 
-    const save = async (): Promise<boolean> => {
+    /** Sends the unsaved changes, or none when pulling up to the lock token. */
+    const save = async (pullTo?: number): Promise<boolean> => {
         while (inFlight !== undefined) {
             await inFlight;
         }
 
-        const changes = store.getState().unsaved;
-        if (changes.length === 0) {
+        const { unsaved: changes, lockToken, saveState } = store.getState();
+        if (changes.length === 0 && (pullTo === undefined || lockToken >= pullTo)) {
             return true;
         }
 
-        store.setState({ unsaved: [], saveState: 'saving' });
+        const saving = changes.length > 0;
+        store.setState({ unsaved: [], saveState: saving ? 'saving' : saveState });
 
-        inFlight = send(changes)
+        inFlight = send(changes, lockToken)
             .then(
-                (status) => {
-                    store.setState((state) => ({ status, saveState: state.unsaved.length > 0 ? 'saving' : 'saved' }));
+                (answer) => {
+                    store.setState({ status: answer.status, lockToken: answer.lockToken });
+                    if (answer.entry !== undefined) {
+                        store.getState().pullIn(answer.entry, answer.clashes ?? []);
+                    }
+
+                    store.setState((state) => ({ saveState: state.unsaved.length > 0 ? 'saving' : saving ? 'saved' : saveState }));
 
                     return true;
                 },
                 () => {
-                    store.setState((state) => ({ unsaved: mergeChanges(changes, state.unsaved), saveState: 'failed' }));
+                    store.setState((state) => ({ unsaved: mergeChanges(changes, state.unsaved), saveState: saving ? 'failed' : saveState }));
 
                     return false;
                 },
@@ -87,6 +101,12 @@ export function createAutosave(
             cancelTimer();
 
             return save();
+        },
+
+        pull(lockToken) {
+            cancelTimer();
+
+            return save(lockToken);
         },
 
         dispose() {

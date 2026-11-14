@@ -16,6 +16,7 @@ const config: BuilderConfig = {
         settings: '/admin/cms/api/entries/e1/settings',
         previewToken: '/admin/cms/api/preview/token',
         previewRender: '/admin/cms/api/preview/render',
+        presence: '/admin/cms/api/entries/e1/presence',
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
@@ -26,18 +27,46 @@ function respond(status: number, body: unknown) {
 }
 
 describe('the JSON endpoints', () => {
-    it('should send the change set with the CSRF token and the session cookie', async () => {
-        const fetch = respond(200, { status: 'never_published' });
+    it('should send the change set with the lock token, the CSRF token and the session cookie', async () => {
+        const fetch = respond(200, { status: 'never_published', lockToken: 4 });
         const changes = [{ op: 'remove_block' as const, key: 'a' }];
 
-        await expect(createApi(config, fetch).saveChanges(changes)).resolves.toBe('never_published');
+        await expect(createApi(config, fetch).saveChanges(changes, 3)).resolves.toEqual({ status: 'never_published', lockToken: 4 });
 
         expect(fetch).toHaveBeenCalledWith('/admin/cms/api/entries/e1', {
             method: 'PATCH',
             credentials: 'same-origin',
             headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123', 'Content-Type': 'application/json' },
-            body: JSON.stringify({ changes }),
+            body: JSON.stringify({ lockToken: 3, changes }),
         });
+    });
+
+    it("should answer a save with the colleagues' changes and the clashes when the server merged it", async () => {
+        const clashes = [{ kind: 'deleted_block', key: 'a' }];
+        const answer = { status: 'unpublished_changes', lockToken: 5, entry: entry(), clashes };
+
+        await expect(createApi(config, respond(200, answer)).saveChanges([], 3)).resolves.toEqual(answer);
+    });
+
+    it('should fail when a save answers without a lock token', async () => {
+        await expect(createApi(config, respond(200, { status: 'published' })).saveChanges([], 0)).rejects.toBeInstanceOf(ApiError);
+    });
+
+    it('should say the editor still has the entry open, and answer with who else does and the lock token', async () => {
+        const answer = { editors: [{ name: 'Jane Roe' }], lockToken: 7 };
+        const fetch = respond(200, answer);
+
+        await expect(createApi(config, fetch).presence()).resolves.toEqual(answer);
+
+        expect(fetch).toHaveBeenCalledWith('/admin/cms/api/entries/e1/presence', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123' },
+        });
+    });
+
+    it('should fail when presence answers without the editors', async () => {
+        await expect(createApi(config, respond(200, { lockToken: 7 })).presence()).rejects.toBeInstanceOf(ApiError);
     });
 
     it('should publish with the CSRF token and an empty body', async () => {
@@ -53,15 +82,18 @@ describe('the JSON endpoints', () => {
     });
 
     it('should answer with the status a save leaves, such as unpublished changes', async () => {
-        await expect(createApi(config, respond(200, { status: 'unpublished_changes' })).saveChanges([])).resolves.toBe('unpublished_changes');
+        await expect(createApi(config, respond(200, { status: 'unpublished_changes', lockToken: 1 })).saveChanges([], 0)).resolves.toEqual({
+            status: 'unpublished_changes',
+            lockToken: 1,
+        });
     });
 
     it('should fail when the answer has a status it does not know', async () => {
-        await expect(createApi(config, respond(200, { status: 'scheduled' })).saveChanges([])).rejects.toBeInstanceOf(ApiError);
+        await expect(createApi(config, respond(200, { status: 'scheduled', lockToken: 1 })).saveChanges([], 0)).rejects.toBeInstanceOf(ApiError);
     });
 
     it('should discard with the CSRF token and answer with the published content', async () => {
-        const answer = { entry: entry(), settings: settings(), status: 'published' };
+        const answer = { entry: entry(), lockToken: 2, settings: settings(), status: 'published', editors: [] };
         const fetch = respond(200, answer);
 
         await expect(createApi(config, fetch).discard()).resolves.toEqual(answer);
@@ -146,7 +178,7 @@ describe('the JSON endpoints', () => {
     it('should fail with the error the server gives', async () => {
         const fetch = respond(403, { error: 'Invalid CSRF token.' });
 
-        await expect(createApi(config, fetch).saveChanges([])).rejects.toEqual(new ApiError('Invalid CSRF token.', 403));
+        await expect(createApi(config, fetch).saveChanges([], 0)).rejects.toEqual(new ApiError('Invalid CSRF token.', 403));
     });
 
     it('should fail when the answer is not JSON', async () => {

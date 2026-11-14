@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ApiError, type BuilderApi } from '../src/api';
 import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
-import type { EntryResponse, EntrySettings, EntryStatus } from '../src/types';
+import type { EntryResponse, EntrySettings, EntryStatus, PresenceResponse, SaveResponse } from '../src/types';
 import { block, entry, registry, settings } from './fixtures';
 
 const config: BuilderConfig = {
@@ -19,6 +19,7 @@ const config: BuilderConfig = {
         settings: '/settings',
         previewToken: '/preview/token',
         previewRender: '/preview/render',
+        presence: '/presence',
     },
     channels: [
         { code: 'WEB', name: 'Web store' },
@@ -36,10 +37,10 @@ function fakeApi(initial: EntrySettings = settings(), overrides: Partial<Builder
 
     return {
         fetchRegistry: vi.fn(async () => registry),
-        fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: initial, status: 'published' })),
-        saveChanges: vi.fn(async (): Promise<EntryStatus> => 'published'),
+        fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: initial, status: 'published', lockToken: 0, editors: [] })),
+        saveChanges: vi.fn(async (): Promise<SaveResponse> => ({ status: 'published', lockToken: 1 })),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
-        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(), settings: saved, status: 'published' })),
+        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(), settings: saved, status: 'published', lockToken: 0, editors: [] })),
         saveSettings: vi.fn(async (changes: Partial<EntrySettings>): Promise<EntrySettings> => {
             saved = { ...saved, ...changes };
 
@@ -47,6 +48,7 @@ function fakeApi(initial: EntrySettings = settings(), overrides: Partial<Builder
         }),
         createPreviewUrl: vi.fn(async ({ channel }: { channel: string }) => `http://admin.example/en_US/about-us?channel=${channel}`),
         renderPreview: vi.fn(async (): Promise<Record<string, string>> => ({})),
+        presence: vi.fn(async (): Promise<PresenceResponse> => ({ editors: [], lockToken: 0 })),
         ...overrides,
     };
 }

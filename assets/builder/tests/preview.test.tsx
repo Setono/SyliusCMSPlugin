@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { BuilderApi, PreviewRequest } from '../src/api';
 import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
-import type { EntryResponse, EntryStatus } from '../src/types';
+import type { EntryResponse, EntryStatus, PresenceResponse, SaveResponse } from '../src/types';
 import { block, entry, registry, settings } from './fixtures';
 
 const config: BuilderConfig = {
@@ -19,6 +19,7 @@ const config: BuilderConfig = {
         settings: '/settings',
         previewToken: '/preview/token',
         previewRender: '/preview/render',
+        presence: '/presence',
     },
     channels: [
         { code: 'WEB', name: 'Web store' },
@@ -37,13 +38,14 @@ function previewUrls() {
 function fakeApi(overrides: Partial<BuilderApi> = {}) {
     return {
         fetchRegistry: vi.fn(async () => registry),
-        fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings({ channels: ['WEB', 'B2B'] }), status: 'never_published' })),
-        saveChanges: vi.fn(async (): Promise<EntryStatus> => 'never_published'),
+        fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings({ channels: ['WEB', 'B2B'] }), status: 'never_published', lockToken: 0, editors: [] })),
+        saveChanges: vi.fn(async (): Promise<SaveResponse> => ({ status: 'never_published', lockToken: 1 })),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
-        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings({ channels: ['WEB', 'B2B'] }), status: 'published' })),
+        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings({ channels: ['WEB', 'B2B'] }), status: 'published', lockToken: 0, editors: [] })),
         saveSettings: vi.fn(async () => settings({ channels: ['WEB', 'B2B'] })),
         createPreviewUrl: previewUrls(),
         renderPreview: vi.fn(async (): Promise<Record<string, string>> => ({})),
+        presence: vi.fn(async (): Promise<PresenceResponse> => ({ editors: [], lockToken: 0 })),
         ...overrides,
     };
 }
@@ -77,7 +79,7 @@ describe('the preview', () => {
     });
 
     it("should not reload after a saved change, which the bridge patches in instead", async () => {
-        const saved = deferred<EntryStatus>();
+        const saved = deferred<SaveResponse>();
         const api = fakeApi({ saveChanges: vi.fn(() => saved.promise) });
         await openBuilder(api);
         await waitFor(() => expect(preview()).toHaveAttribute('src', expect.stringContaining('_cms_preview=1')));
@@ -85,7 +87,7 @@ describe('the preview', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Delete block' }));
         await waitFor(() => expect(api.saveChanges).toHaveBeenCalledTimes(1));
-        await act(async () => saved.resolve('never_published'));
+        await act(async () => saved.resolve({ status: 'never_published', lockToken: 1 }));
 
         await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Saved'));
         expect(api.createPreviewUrl).toHaveBeenCalledTimes(1);
@@ -94,7 +96,7 @@ describe('the preview', () => {
 
     it('should reload when the same URL comes back', async () => {
         const api = fakeApi({
-            fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome back' } })]), settings: settings({ channels: ['WEB', 'B2B'] }), status: 'unpublished_changes' })),
+            fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome back' } })]), settings: settings({ channels: ['WEB', 'B2B'] }), status: 'unpublished_changes', lockToken: 0, editors: [] })),
             createPreviewUrl: vi.fn(async () => 'http://admin.example/en_US/about-us?_cms_preview=same'),
         });
         await openBuilder(api);
@@ -109,7 +111,7 @@ describe('the preview', () => {
 
     it('should reload with the published content after discarding changes', async () => {
         const api = fakeApi({
-            fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome back' } })]), settings: settings({ channels: ['WEB', 'B2B'] }), status: 'unpublished_changes' })),
+            fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome back' } })]), settings: settings({ channels: ['WEB', 'B2B'] }), status: 'unpublished_changes', lockToken: 0, editors: [] })),
         });
         await openBuilder(api);
         await waitFor(() => expect(preview()).toHaveAttribute('src', expect.stringContaining('_cms_preview=1')));
@@ -179,7 +181,7 @@ describe('the preview', () => {
 
     it('should show no preview for an entry without channels', async () => {
         const api = fakeApi({
-            fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(), settings: settings({ channels: [] }), status: 'never_published' })),
+            fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(), settings: settings({ channels: [] }), status: 'never_published', lockToken: 0, editors: [] })),
         });
         await openBuilder(api);
 

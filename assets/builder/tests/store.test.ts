@@ -83,10 +83,11 @@ describe('the working copy', () => {
         store.getState().selectBlock('a');
         const revision = store.getState().revision;
 
-        store.getState().load(entry([block('a', { text: { en_US: 'Hello' } })]), 'published');
+        store.getState().load(entry([block('a', { text: { en_US: 'Hello' } })]), 'published', 4);
 
         expect(store.getState().entry.tree.blocks).toEqual([block('a', { text: { en_US: 'Hello' } })]);
         expect(store.getState().status).toBe('published');
+        expect(store.getState().lockToken).toBe(4);
         expect(store.getState().unsaved).toEqual([]);
         expect(store.getState().history.done).toEqual([]);
         expect(store.getState().selectedKey).toBe('a');
@@ -97,7 +98,7 @@ describe('the working copy', () => {
         const store = storeWith([block('a'), block('b')]);
         store.getState().selectBlock('b');
 
-        store.getState().load(entry([block('a')]), 'published');
+        store.getState().load(entry([block('a')]), 'published', 1);
 
         expect(store.getState().selectedKey).toBeNull();
     });

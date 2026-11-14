@@ -1,4 +1,4 @@
-import { useBuilder, useBuilderState, usePreviewState } from '../context';
+import { useBuilder, useBuilderState, usePresenceState, usePreviewState } from '../context';
 import { useTranslator, type MessageKey } from '../i18n';
 import type { EntryStatus } from '../types';
 import { ArrowLeftIcon, DesktopIcon, MobileIcon, RedoIcon, UndoIcon } from './icons';
@@ -36,6 +36,7 @@ export function TopBar() {
             <PreviewWidth />
             <UndoRedo />
             <SaveState />
+            <Editors />
             <Publish />
         </div>
     );
@@ -123,6 +124,36 @@ function SaveState() {
             {text}
         </span>
     );
+}
+
+/** Who else has the entry open, by their initials, with their names for screen readers and on hover. */
+function Editors() {
+    const t = useTranslator();
+    const editors = usePresenceState((state) => state.editors);
+
+    if (editors.length === 0) {
+        return null;
+    }
+
+    return (
+        <ul className={styles.editors} aria-label={t('setono_sylius_cms.builder.also_editing')}>
+            {editors.map(({ name }, i) => (
+                <li key={`${i}-${name}`} className={styles.editor} title={name}>
+                    <span aria-hidden="true">{initials(name)}</span>
+                    <span className={styles.visuallyHidden}>{name}</span>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+/** The first letters of the first and the last word of a name, such as JR for Jane Roe. */
+export function initials(name: string): string {
+    const words = name.trim().split(/\s+/).filter((word) => word !== '');
+    const first = words[0]?.[0] ?? '';
+    const last = words.length > 1 ? (words.at(-1)?.[0] ?? '') : '';
+
+    return (first + last).toUpperCase();
 }
 
 /** Publish, and Discard changes when the entry has a draft. */

@@ -25,6 +25,7 @@ export interface BuilderConfig {
         settings: string;
         previewToken: string;
         previewRender: string;
+        presence: string;
     };
     /** The store's channels. The settings pick the entry's channels from them, and the preview picks from the entry's. */
     channels: Channel[];

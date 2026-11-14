@@ -2,6 +2,7 @@ import { useEffect, useId, useRef } from 'react';
 import { useBuilder } from '../context';
 import { shortcutOf } from '../shortcuts';
 import { BlockTreePane } from './BlockTreePane';
+import { ClashDialog } from './ClashDialog';
 import { Preview } from './Preview';
 import { SelectionPane } from './SelectionPane';
 import styles from './Shell.module.css';
@@ -46,6 +47,7 @@ export function Shell() {
             <aside ref={selection} className={styles.selection}>
                 <SelectionPane />
             </aside>
+            <ClashDialog />
         </div>
     );
 }

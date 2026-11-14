@@ -3,7 +3,7 @@ import { createAutosave } from '../src/autosave';
 import type { Change } from '../src/changeSet';
 import { ApiError } from '../src/api';
 import { createDiscard, createPublish } from '../src/publishing';
-import type { EntryResponse, EntryStatus } from '../src/types';
+import type { Clash, EntryResponse, EntryStatus, SaveResponse } from '../src/types';
 import { block, entry, settings, storeWith } from './fixtures';
 
 /** A promise to settle from the test. */
@@ -22,6 +22,11 @@ const hello: Change = { op: 'set_value', key: 'a', field: 'text', locale: 'en_US
 
 const hello2: Change = { op: 'set_value', key: 'a', field: 'text', locale: 'en_US', value: 'Hello world' };
 
+/** The answer to a save that no colleague's save came before. */
+function saved(status: EntryStatus, lockToken = 1): SaveResponse {
+    return { status, lockToken };
+}
+
 describe('autosave', () => {
     beforeEach(() => {
         vi.useFakeTimers();
@@ -33,7 +38,7 @@ describe('autosave', () => {
 
     it('should send one change set a moment after the last edit', async () => {
         const store = storeWith([block('a')]);
-        const send = vi.fn(async (): Promise<EntryStatus> => 'never_published');
+        const send = vi.fn(async (): Promise<SaveResponse> => saved('never_published'));
         createAutosave(store, send);
 
         expect(store.getState().saveState).toBe('idle');
@@ -50,15 +55,15 @@ describe('autosave', () => {
         await vi.advanceTimersByTimeAsync(1);
 
         expect(send).toHaveBeenCalledTimes(1);
-        expect(send).toHaveBeenCalledWith([hello]);
+        expect(send).toHaveBeenCalledWith([hello], 0);
         expect(store.getState().saveState).toBe('saved');
         expect(store.getState().unsaved).toEqual([]);
     });
 
     it('should never have two saves in flight and send changes made during a save in the next one', async () => {
         const store = storeWith([block('a')]);
-        const first = deferred<EntryStatus>();
-        const send = vi.fn().mockReturnValueOnce(first.promise).mockResolvedValue('never_published');
+        const first = deferred<SaveResponse>();
+        const send = vi.fn().mockReturnValueOnce(first.promise).mockResolvedValue(saved('never_published', 2));
         createAutosave(store, send);
 
         store.getState().setFieldValue('a', 'text', 'Hello');
@@ -68,17 +73,17 @@ describe('autosave', () => {
 
         expect(send).toHaveBeenCalledTimes(1);
 
-        first.resolve('never_published');
+        first.resolve(saved('never_published'));
         await vi.advanceTimersByTimeAsync(0);
 
         expect(send).toHaveBeenCalledTimes(2);
-        expect(send).toHaveBeenLastCalledWith([{ op: 'set_value', key: 'a', field: 'level', locale: null, value: 'h3' }]);
+        expect(send).toHaveBeenLastCalledWith([{ op: 'set_value', key: 'a', field: 'level', locale: null, value: 'h3' }], 1);
         expect(store.getState().saveState).toBe('saved');
     });
 
     it('should keep the changes of a failed save for the next one', async () => {
         const store = storeWith([block('a')]);
-        const send = vi.fn().mockRejectedValueOnce(new Error('Offline')).mockResolvedValue('never_published');
+        const send = vi.fn().mockRejectedValueOnce(new Error('Offline')).mockResolvedValue(saved('never_published'));
         createAutosave(store, send);
 
         store.getState().setFieldValue('a', 'text', 'Hello');
@@ -91,7 +96,7 @@ describe('autosave', () => {
         expect(store.getState().saveState).toBe('saving');
         await vi.advanceTimersByTimeAsync(500);
 
-        expect(send).toHaveBeenLastCalledWith([hello, { op: 'set_value', key: 'a', field: 'level', locale: null, value: 'h3' }]);
+        expect(send).toHaveBeenLastCalledWith([hello, { op: 'set_value', key: 'a', field: 'level', locale: null, value: 'h3' }], 0);
         expect(store.getState().saveState).toBe('saved');
     });
 
@@ -106,6 +111,67 @@ describe('autosave', () => {
         expect(store.getState().saveState).toBe('saved');
         vi.runAllTimers();
         expect(send).not.toHaveBeenCalled();
+    });
+
+    it('should carry the lock token and keep the one each answer gives', async () => {
+        const store = storeWith([block('a')]);
+        const send = vi.fn().mockResolvedValueOnce(saved('never_published', 3)).mockResolvedValue(saved('never_published', 4));
+        createAutosave(store, send);
+
+        store.getState().setFieldValue('a', 'text', 'Hello');
+        await vi.advanceTimersByTimeAsync(500);
+
+        expect(send).toHaveBeenLastCalledWith([hello], 0);
+        expect(store.getState().lockToken).toBe(3);
+
+        store.getState().setFieldValue('a', 'level', 'h3');
+        await vi.advanceTimersByTimeAsync(500);
+
+        expect(send).toHaveBeenLastCalledWith([{ op: 'set_value', key: 'a', field: 'level', locale: null, value: 'h3' }], 3);
+        expect(store.getState().lockToken).toBe(4);
+    });
+
+    it("should pull in the colleagues' changes and the clashes an answer carries", async () => {
+        const store = storeWith([block('a'), block('b')]);
+        const theirs = entry([block('a', { text: { en_US: 'Hello' } }), block('b', { text: { en_US: 'Theirs' } })]);
+        const clash: Clash = { kind: 'value', key: 'b', field: 'text', locale: 'en_US', mine: 'Mine', theirs: 'Theirs' };
+        createAutosave(store, async () => ({ status: 'never_published', lockToken: 2, entry: theirs, clashes: [clash] }));
+
+        store.getState().setFieldValue('a', 'text', 'Hello');
+        await vi.advanceTimersByTimeAsync(500);
+
+        expect(store.getState().entry).toEqual(theirs);
+        expect(store.getState().clashes).toEqual([clash]);
+        expect(store.getState().lockToken).toBe(2);
+        expect(store.getState().saveState).toBe('saved');
+    });
+
+    it('should pull in what colleagues saved once the working copy has moved on, sending nothing new', async () => {
+        const store = storeWith([block('a')]);
+        const theirs = entry([block('a', { level: 'h3' })]);
+        const send = vi.fn(async (): Promise<SaveResponse> => ({ status: 'never_published', lockToken: 1, entry: theirs, clashes: [] }));
+        const autosave = createAutosave(store, send);
+
+        await autosave.pull(1);
+
+        expect(send).toHaveBeenCalledWith([], 0);
+        expect(store.getState().entry).toEqual(theirs);
+        expect(store.getState().lockToken).toBe(1);
+        expect(store.getState().saveState).toBe('idle');
+
+        // It has what the server has
+        await autosave.pull(1);
+
+        expect(send).toHaveBeenCalledTimes(1);
+    });
+
+    it('should leave the save state alone when a pull fails', async () => {
+        const store = storeWith([block('a')]);
+        const autosave = createAutosave(store, () => Promise.reject(new Error('Offline')));
+
+        expect(await autosave.pull(1)).toBe(false);
+
+        expect(store.getState().saveState).toBe('idle');
     });
 
     it('should stop saving once disposed', () => {
@@ -128,7 +194,7 @@ describe('publishing', () => {
         const autosave = createAutosave(store, async () => {
             calls.push('save');
 
-            return 'never_published';
+            return saved('never_published');
         });
         const publish = createPublish(store, autosave, async () => {
             calls.push('publish');
@@ -201,9 +267,9 @@ describe('discarding changes', () => {
     it('should drop the unsaved changes, discard the draft and load the published content', async () => {
         const store = storeWith([block('a', { text: { en_US: 'Hello world' } })]);
         store.setState({ status: 'unpublished_changes' });
-        const save = vi.fn(async (): Promise<EntryStatus> => 'unpublished_changes');
+        const save = vi.fn(async (): Promise<SaveResponse> => saved('unpublished_changes'));
         const autosave = createAutosave(store, save);
-        const send = vi.fn(async (): Promise<EntryResponse> => ({ entry: published, settings: settings(), status: 'published' }));
+        const send = vi.fn(async (): Promise<EntryResponse> => ({ entry: published, lockToken: 5, settings: settings(), status: 'published', editors: [] }));
         const discard = createDiscard(store, autosave, send);
 
         store.getState().setFieldValue('a', 'text', 'Goodbye');
@@ -216,6 +282,7 @@ describe('discarding changes', () => {
         expect(send).toHaveBeenCalledTimes(1);
         expect(store.getState().entry).toEqual(published);
         expect(store.getState().status).toBe('published');
+        expect(store.getState().lockToken).toBe(5);
         expect(store.getState().unsaved).toEqual([]);
         expect(store.getState().saveState).toBe('idle');
         expect(store.getState().discardState).toBe('idle');
@@ -224,7 +291,7 @@ describe('discarding changes', () => {
 
     it('should wait for a save in flight before it discards', async () => {
         const store = storeWith([block('a')]);
-        const saving = deferred<EntryStatus>();
+        const saving = deferred<SaveResponse>();
         const calls: string[] = [];
         const autosave = createAutosave(store, () => {
             calls.push('save');
@@ -234,7 +301,7 @@ describe('discarding changes', () => {
         const discard = createDiscard(store, autosave, async () => {
             calls.push('discard');
 
-            return { entry: published, settings: settings(), status: 'published' };
+            return { entry: published, lockToken: 5, settings: settings(), status: 'published', editors: [] };
         });
 
         store.getState().setFieldValue('a', 'text', 'Hello world');
@@ -244,7 +311,7 @@ describe('discarding changes', () => {
 
         expect(calls).toEqual(['save']);
 
-        saving.resolve('unpublished_changes');
+        saving.resolve(saved('unpublished_changes'));
         await discarding;
 
         expect(calls).toEqual(['save', 'discard']);
@@ -254,7 +321,7 @@ describe('discarding changes', () => {
 
     it('should keep the working copy and save its unsaved changes when the discard fails', async () => {
         const store = storeWith([block('a')]);
-        const save = vi.fn(async (): Promise<EntryStatus> => 'unpublished_changes');
+        const save = vi.fn(async (): Promise<SaveResponse> => saved('unpublished_changes'));
         const autosave = createAutosave(store, save);
         const discard = createDiscard(store, autosave, () => Promise.reject(new Error('Offline')));
 
@@ -263,14 +330,14 @@ describe('discarding changes', () => {
 
         expect(store.getState().discardState).toBe('failed');
         expect(store.getState().entry.tree.blocks[0]?.fields).toEqual({ text: { en_US: 'Hello world' } });
-        await vi.waitFor(() => expect(save).toHaveBeenCalledWith([hello2]));
+        await vi.waitFor(() => expect(save).toHaveBeenCalledWith([hello2], 0));
         autosave.dispose();
     });
 
     it('should not discard twice at once', async () => {
         const store = storeWith();
         const autosave = createAutosave(store, vi.fn());
-        const send = vi.fn(async (): Promise<EntryResponse> => ({ entry: published, settings: settings(), status: 'published' }));
+        const send = vi.fn(async (): Promise<EntryResponse> => ({ entry: published, lockToken: 5, settings: settings(), status: 'published', editors: [] }));
         const discard = createDiscard(store, autosave, send);
 
         await Promise.all([discard(), discard()]);

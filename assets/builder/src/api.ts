@@ -1,12 +1,18 @@
 import type { Change } from './changeSet';
 import type { BuilderConfig } from './config';
-import type { EntryResponse, EntrySettings, EntryStatus, Registry, StoredBlock } from './types';
+import type { EntryResponse, EntrySettings, EntryStatus, PresenceResponse, Registry, SaveResponse, StoredBlock } from './types';
 
 /** The builder's JSON endpoints. They're internal, and change together with the app. */
 export interface BuilderApi {
     fetchRegistry(): Promise<Registry>;
     fetchEntry(): Promise<EntryResponse>;
-    saveChanges(changes: readonly Change[]): Promise<EntryStatus>;
+    /**
+     * Saves the changes made since the last load or save, carrying the lock token from it. When colleagues saved since,
+     * the answer carries the working copy with their changes, and the clashes.
+     */
+    saveChanges(changes: readonly Change[], lockToken: number): Promise<SaveResponse>;
+    /** Says the editor still has the entry open, and answers with who else does and the working copy's lock token. */
+    presence(): Promise<PresenceResponse>;
     /** Fails with an ApiError of status 422 and the reason when the server refuses, such as a listener's veto. */
     publish(): Promise<EntryStatus>;
     /** Deletes the draft, and answers with the working copy that's left: the published content. */
@@ -78,14 +84,28 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) 
             return (await request(config.endpoints.entry)) as EntryResponse;
         },
 
-        async saveChanges(changes) {
+        async saveChanges(changes, lockToken) {
             const body = await request(config.endpoints.entry, {
                 method: 'PATCH',
                 headers: { ...write, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ changes }),
+                body: JSON.stringify({ lockToken, changes }),
             });
 
-            return entryStatus(body);
+            entryStatus(body);
+            if (!isObject(body) || typeof body.lockToken !== 'number') {
+                throw new ApiError('The answer has no lock token.', 200);
+            }
+
+            return body as unknown as SaveResponse;
+        },
+
+        async presence() {
+            const body = await request(config.endpoints.presence, { method: 'POST', headers: write });
+            if (!isObject(body) || !Array.isArray(body.editors) || typeof body.lockToken !== 'number') {
+                throw new ApiError('The answer has no editors.', 200);
+            }
+
+            return body as unknown as PresenceResponse;
         },
 
         async publish() {

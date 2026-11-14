@@ -4,7 +4,7 @@ import type { BuilderApi, PreviewRequest } from '../src/api';
 import { App } from '../src/App';
 import { envelope, openEnvelope, type FromBridge, type ToBridge } from '../src/bridge/protocol';
 import type { BuilderConfig } from '../src/config';
-import type { EntryResponse, EntryStatus, StoredBlock } from '../src/types';
+import type { EntryResponse, EntryStatus, PresenceResponse, SaveResponse, StoredBlock } from '../src/types';
 import { block, blockOf, entry, registry, settings } from './fixtures';
 
 const config: BuilderConfig = {
@@ -20,6 +20,7 @@ const config: BuilderConfig = {
         settings: '/settings',
         previewToken: '/preview/token',
         previewRender: '/preview/render',
+        presence: '/presence',
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
@@ -39,13 +40,14 @@ function fakeApi(blocks: StoredBlock[] = [block('a', { text: { en_US: 'Welcome' 
 
     return {
         fetchRegistry: vi.fn(async () => registry),
-        fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), settings: settings(), status: 'never_published' })),
-        saveChanges: vi.fn(async (): Promise<EntryStatus> => 'never_published'),
+        fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), settings: settings(), status: 'never_published', lockToken: 0, editors: [] })),
+        saveChanges: vi.fn(async (): Promise<SaveResponse> => ({ status: 'never_published', lockToken: 1 })),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
-        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), settings: settings(), status: 'published' })),
+        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), settings: settings(), status: 'published', lockToken: 0, editors: [] })),
         saveSettings: vi.fn(async () => settings()),
         createPreviewUrl: vi.fn(async ({ locale }: PreviewRequest) => `${ORIGIN}/${locale}/about-us?_cms_preview=token-${++count}`),
         renderPreview: renderedBlocks(),
+        presence: vi.fn(async (): Promise<PresenceResponse> => ({ editors: [], lockToken: 0 })),
         ...overrides,
     };
 }

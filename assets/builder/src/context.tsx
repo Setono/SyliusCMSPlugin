@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react';
 import { useStore } from 'zustand';
 import type { BuilderApi, PreviewRequest } from './api';
 import type { Channel, CustomerGroup } from './config';
+import type { PresenceState, PresenceStore } from './presence';
 import type { PreviewState, PreviewStore } from './preview';
 import type { SettingsState, SettingsStore } from './settings';
 import type { BuilderState, BuilderStore } from './store';
@@ -19,6 +20,8 @@ export interface BuilderSession {
     renderPreview: BuilderApi['renderPreview'];
     /** The entry's on-save settings. */
     settings: SettingsStore;
+    /** Who else has the entry open. */
+    presence: PresenceStore;
     /** The store's channels, which the entry's channels are picked from. */
     channels: Channel[];
     /** The store's customer groups, which the audience names. */
@@ -46,6 +49,11 @@ export function useBuilderState<T>(selector: (state: BuilderState) => T): T {
 /** Selects from the on-save settings. The selector must return state as it is, not a new object. */
 export function useSettingsState<T>(selector: (state: SettingsState) => T): T {
     return useStore(useBuilder().settings, selector);
+}
+
+/** Selects from who else has the entry open. The selector must return state as it is, not a new object. */
+export function usePresenceState<T>(selector: (state: PresenceState) => T): T {
+    return useStore(useBuilder().presence, selector);
 }
 
 /** Selects from what the preview shows. The selector must return state as it is, not a new object. */

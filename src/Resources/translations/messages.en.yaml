@@ -47,6 +47,7 @@ setono_sylius_cms:
         add_block_above: Add block above
         add_block_below: Add block below
         add_block_inside: 'Add a block inside %block%'
+        also_editing: Also editing
         audience: Audience
         audience_everyone: Everyone
         audience_except: Everyone except these
@@ -57,6 +58,14 @@ setono_sylius_cms:
         blocks_selected: '%count% blocks selected'
         channels: Channels
         children: Blocks inside
+        clash: A colleague changed this too
+        clash_changed_block: 'You deleted %block%, which a colleague changed.'
+        clash_count: '%index% of %count%'
+        clash_deleted_block: 'A colleague deleted %block%, which you changed.'
+        clash_empty: Nothing
+        clash_theirs: Theirs
+        clash_value: 'You and a colleague both changed %field% in %block%.'
+        clash_yours: Yours
         customer_groups: Customer groups
         date_window: Date window
         delete_block: Delete block
@@ -70,6 +79,7 @@ setono_sylius_cms:
         enabled: Enabled
         entry_settings: Entry settings
         guests: Guests
+        keep_mine: Keep mine
         load_failed: Couldn't load the entry
         loading: Loading…
         mobile: Mobile
@@ -109,6 +119,7 @@ setono_sylius_cms:
         settings: Settings
         show_from: Show from
         show_until: Show until
+        take_theirs: Take theirs
         takes_effect_on_save: Takes effect when saved, without publishing
         title: Builder
         undo: Undo

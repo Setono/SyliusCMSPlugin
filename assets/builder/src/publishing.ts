@@ -44,8 +44,8 @@ export function createDiscard(store: BuilderStore, autosave: Autosave, send: () 
             // Waits for a save in flight. Nothing is left to send.
             await autosave.flush();
 
-            const { entry, status } = await send();
-            store.getState().load(entry, status);
+            const { entry, status, lockToken } = await send();
+            store.getState().load(entry, status, lockToken);
             store.setState({ discardState: 'idle', saveState: 'idle' });
         } catch {
             // The working copy stays as it is, so its unsaved changes get saved after all.

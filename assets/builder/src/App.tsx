@@ -5,6 +5,7 @@ import { createAutosave, type Autosave } from './autosave';
 import type { BuilderConfig } from './config';
 import { BuilderProvider, type BuilderSession } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
+import { createPresence, type Presence } from './presence';
 import { createPreviewStore } from './preview';
 import { createDiscard, createPublish } from './publishing';
 import { createSettingsStore } from './settings';
@@ -28,10 +29,11 @@ export function App({ config, api, autosaveDelay }: AppProps) {
     useEffect(() => {
         let active = true;
         let autosave: Autosave | undefined;
+        let presence: Presence | undefined;
         let unsubscribeSettings: (() => void) | undefined;
 
         Promise.all([api.fetchRegistry(), api.fetchEntry()]).then(
-            ([registry, { entry, settings: entrySettings, status }]) => {
+            ([registry, { entry, settings: entrySettings, status, lockToken, editors }]) => {
                 if (!active) {
                     return;
                 }
@@ -42,8 +44,11 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                     contentTypes: registry.contentTypes,
                     entry,
                     status,
+                    lockToken,
                 });
-                autosave = createAutosave(store, (changes) => api.saveChanges(changes), { delay: autosaveDelay });
+                autosave = createAutosave(store, (changes, token) => api.saveChanges(changes, token), { delay: autosaveDelay });
+                // Who else has the entry open. It also pulls in what they saved, once the working copy has moved on
+                presence = createPresence(store, autosave, () => api.presence(), editors);
 
                 // The preview shows the entry in one of its own channels, which follow the settings as they change.
                 const settings = createSettingsStore(entrySettings, (changes) => api.saveSettings(changes));
@@ -72,6 +77,7 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                         },
                         renderPreview: (token, blocks) => api.renderPreview(token, blocks),
                         settings,
+                        presence: presence.store,
                         channels: config.channels,
                         customerGroups: config.customerGroups,
                     },
@@ -87,6 +93,7 @@ export function App({ config, api, autosaveDelay }: AppProps) {
         return () => {
             active = false;
             autosave?.dispose();
+            presence?.dispose();
             unsubscribeSettings?.();
         };
     }, [api, config, autosaveDelay]);

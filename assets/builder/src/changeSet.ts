@@ -2,10 +2,10 @@
  * The autosave change set: what the builder sends to the entry_save endpoint, built from the Immer
  * patches of each edit. Pure functions, with no React and no I/O.
  */
-import type { Patch } from 'immer';
-import { blockList, findBlock } from './tree';
+import { produce, type Patch } from 'immer';
+import { blockList, findBlock, removeBlockFrom } from './tree';
 import type { Entry, FieldValues, JsonValue, StoredBlock } from './types';
-import { isJsonObject, jsonEqual, normalizeValue } from './values';
+import { isJsonObject, jsonEqual, normalizeValue, writeFieldValue } from './values';
 
 export interface AddBlockChange {
     op: 'add_block';
@@ -107,6 +107,105 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
     }
 
     return mergeChanges([], changes);
+}
+
+/** What applying changes to a working copy gave. */
+export interface AppliedChanges {
+    entry: Entry;
+    /** The changes that applied, in order. */
+    applied: Change[];
+    /** The keys of the blocks that changes which didn't apply needed, such as a block a colleague deleted. */
+    missing: string[];
+}
+
+/**
+ * Applies changes to a working copy by key, the way the server does: an added or moved block goes right after the
+ * block it names when its list has that block, and otherwise at its index. A change the server would refuse, such as
+ * one to a block that isn't there any more, is left out.
+ */
+export function applyChanges(entry: Entry, changes: readonly Change[]): AppliedChanges {
+    const applied: Change[] = [];
+    const missing: string[] = [];
+
+    const next = produce<Entry, Entry>(entry, (working) => {
+        const blocks = working.tree.blocks;
+        for (const change of changes) {
+            const needed = neededKeys(change).find((key) => findBlock(blocks, key) === undefined);
+            if (needed !== undefined) {
+                if (change.op !== 'remove_block') {
+                    missing.push(needed);
+                }
+
+                continue;
+            }
+
+            if (applyChange(blocks, change)) {
+                applied.push(change);
+            }
+        }
+    });
+
+    return { entry: next, applied, missing };
+}
+
+/** The blocks a change finds by key. */
+function neededKeys(change: Change): string[] {
+    switch (change.op) {
+        case 'add_block':
+            return change.parent === null ? [] : [change.parent];
+        case 'move_block':
+            return change.parent === null ? [change.key] : [change.key, change.parent];
+        default:
+            return [change.key];
+    }
+}
+
+/** Applies one change whose blocks are all there. Answers false for one the server would refuse. */
+function applyChange(blocks: StoredBlock[], change: Change): boolean {
+    switch (change.op) {
+        case 'add_block': {
+            const taken = new Set<string>();
+            collectKeys(change.block, taken);
+            if ([...taken].some((key) => findBlock(blocks, key) !== undefined)) {
+                return false;
+            }
+
+            insertBlock(blocks, change.block, change.parent, change.index, change.after);
+
+            return true;
+        }
+        case 'move_block': {
+            const moved = findBlock(blocks, change.key);
+            if (moved === undefined || (change.parent !== null && findBlock([moved], change.parent) !== undefined)) {
+                return false;
+            }
+
+            removeBlockFrom(blocks, change.key);
+            insertBlock(blocks, moved, change.parent, change.index, change.after);
+
+            return true;
+        }
+        case 'remove_block':
+            return removeBlockFrom(blocks, change.key);
+        case 'set_value': {
+            const target = findBlock(blocks, change.key);
+            if (target === undefined) {
+                return false;
+            }
+
+            writeFieldValue(target.fields, change.field, change.locale !== null, change.locale ?? '', change.value);
+
+            return true;
+        }
+    }
+}
+
+/** Inserts a block right after the block it names when the list has that block, and otherwise at its index. */
+export function insertBlock(blocks: StoredBlock[], block: StoredBlock, parent: string | null, index: number, after?: string): void {
+    const list = parent === null ? blocks : (findBlock(blocks, parent)?.children ?? []);
+    const anchor = after === undefined ? -1 : list.findIndex((sibling) => sibling.key === after);
+
+    list.splice(anchor === -1 ? Math.min(Math.max(index, 0), list.length) : anchor + 1, 0, block);
 }
 
 /**

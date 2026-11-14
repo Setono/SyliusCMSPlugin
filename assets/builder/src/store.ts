@@ -4,11 +4,12 @@
  */
 import { enablePatches, produceWithPatches, type Patch } from 'immer';
 import { createStore, type StoreApi } from 'zustand/vanilla';
-import { changesFromPatches, mergeChanges, type Change, type TranslatableLookup } from './changeSet';
-import { emptyHistory, recordEdit, redoEdit, undoEdit, type History, type Step } from './history';
+import { applyChanges, changesFromPatches, insertBlock, mergeChanges, type Change, type TranslatableLookup } from './changeSet';
+import { emptyHistory, rebaseHistory, recordEdit, redoEdit, undoEdit, type History, type Step } from './history';
 import { canDuplicate, canMoveBlocks, createNestingRules, initialChildren, insertableIn, type NestingRules } from './nesting';
+import { holdClashes, reconcile, withoutKeysIn, type HeldClash } from './pullIn';
 import { copyWithNewKeys, findBlock, generateBlockKey, locateBlock, moveBlocksTo, removeBlockFrom, topmostBlocks } from './tree';
-import type { BlockTypeDefinition, ContentTypeDefinition, Entry, EntryStatus, JsonValue, StoredBlock } from './types';
+import type { BlockTypeDefinition, Clash, ContentTypeDefinition, Entry, EntryStatus, JsonValue, StoredBlock } from './types';
 import { writeFieldValue } from './values';
 
 enablePatches();
@@ -36,7 +37,16 @@ export interface BuilderData {
     history: History;
     /** The changes not yet sent to the server, in order. */
     unsaved: Change[];
-    /** Counts the edits, so autosave can tell an edit from other state changes. */
+    /** The working copy's version as of the last load or save, which the next save carries. */
+    lockToken: number;
+    /** Clashes with colleagues' changes, for the editor to resolve one at a time, the first one first. */
+    clashes: HeldClash[];
+    /** How many clashes the editor resolved since there were none, to count them as they go. */
+    resolvedClashes: number;
+    /**
+     * Counts the changes to the working copy, made in the builder or pulled in from colleagues, so autosave and the
+     * preview can tell them from other state changes. Loading a working copy doesn't count.
+     */
     revision: number;
     saveState: SaveState;
     publishState: PublishState;
@@ -91,7 +101,18 @@ export interface BuilderActions {
      * Loads a working copy from the server in place of the one being edited, such as the published content after
      * discarding the draft. It isn't an edit: nothing is left to save or undo.
      */
-    load(entry: Entry, status: EntryStatus): void;
+    load(entry: Entry, status: EntryStatus, lockToken: number): void;
+    /**
+     * Pulls in a working copy the server merged a save onto, with colleagues' changes in it. The changes not yet saved
+     * go on top, the way the server will apply them, and the undo stack keeps the edits that colleagues' changes leave
+     * alone. It isn't an edit. The clashes are held for the editor, and so is a change not yet saved to a block that's gone.
+     */
+    pullIn(merged: Entry, clashes?: readonly Clash[]): void;
+    /**
+     * Resolves the first clash: keeping the editor's side is an edit like any other, and taking the colleague's
+     * leaves the working copy as it is.
+     */
+    resolveClash(choice: 'mine' | 'theirs'): void;
 }
 
 export type BuilderState = BuilderData & BuilderActions;
@@ -104,10 +125,11 @@ export interface BuilderStoreOptions {
     contentTypes: ContentTypeDefinition[];
     entry: Entry;
     status: EntryStatus;
+    lockToken?: number;
     generateKey?: () => string;
 }
 
-export function createBuilderStore({ locale, blockTypes, contentTypes, entry, status, generateKey = generateBlockKey }: BuilderStoreOptions): BuilderStore {
+export function createBuilderStore({ locale, blockTypes, contentTypes, entry, status, lockToken = 0, generateKey = generateBlockKey }: BuilderStoreOptions): BuilderStore {
     const blockTypesByCode = new Map(blockTypes.map((blockType) => [blockType.code, blockType]));
     const rules = createNestingRules(blockTypes, contentTypes.find((contentType) => contentType.code === entry.contentType)?.blocks ?? null);
     const createBlock = (type: string): StoredBlock => ({
@@ -179,6 +201,9 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
             selection: [],
             history: emptyHistory,
             unsaved: [],
+            lockToken,
+            clashes: [],
+            resolvedClashes: 0,
             revision: 0,
             saveState: 'idle',
             publishState: 'idle',
@@ -285,15 +310,74 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
                 set({ selection: [...selection, key], selectedKey: key });
             },
 
-            load(loaded, loadedStatus) {
+            load(loaded, loadedStatus, loadedLockToken) {
                 const { selectedKey, selection } = get();
 
                 set({
                     entry: loaded,
                     status: loadedStatus,
+                    lockToken: loadedLockToken,
                     ...selectedIn(loaded, selection, selectedKey),
                     history: emptyHistory,
                     unsaved: [],
+                    clashes: [],
+                    resolvedClashes: 0,
+                });
+            },
+
+            pullIn(merged, clashes = []) {
+                const state = get();
+                const { entry: target, applied, missing } = applyChanges(merged, state.unsaved);
+                const [next, patches] = produceWithPatches<Entry, Entry>(state.entry, (working) => reconcile(working, target));
+                const held = holdClashes(state.entry, next, [...clashes, ...missing.map((key): Clash => ({ kind: 'deleted_block', key }))], state.clashes);
+
+                if (patches.length === 0) {
+                    set({ unsaved: applied, clashes: held });
+
+                    return;
+                }
+
+                set({
+                    ...selectedIn(next, state.selection, state.selectedKey),
+                    entry: next,
+                    history: rebaseHistory(state.history, patches),
+                    unsaved: applied,
+                    clashes: held,
+                    revision: state.revision + 1,
+                });
+            },
+
+            resolveClash(choice) {
+                const [clash, ...rest] = get().clashes;
+                if (clash === undefined) {
+                    return;
+                }
+
+                set({ clashes: rest, resolvedClashes: rest.length === 0 ? 0 : get().resolvedClashes + 1 });
+                if (choice === 'theirs') {
+                    return;
+                }
+
+                edit((working) => {
+                    const blocks = working.tree.blocks;
+                    switch (clash.kind) {
+                        case 'value': {
+                            const target = findBlock(blocks, clash.key);
+                            if (target !== undefined) {
+                                writeFieldValue(target.fields, clash.field, clash.locale !== null, clash.locale ?? '', clash.mine);
+                            }
+                            break;
+                        }
+                        case 'changed_block':
+                            removeBlockFrom(blocks, clash.key);
+                            break;
+                        case 'deleted_block':
+                            if (findBlock(blocks, clash.key) === undefined) {
+                                const parent = clash.parent !== null && findBlock(blocks, clash.parent) !== undefined ? clash.parent : null;
+                                insertBlock(blocks, withoutKeysIn(blocks, clash.block), parent, clash.index, clash.after);
+                            }
+                            break;
+                    }
                 });
             },
 
