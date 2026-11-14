@@ -9,6 +9,12 @@ const strings: BridgeStrings = {
     delete: 'Delete block',
     addBefore: 'Add block above',
     addAfter: 'Add block below',
+    formatting: 'Formatting',
+    bold: 'Bold',
+    italic: 'Italic',
+    underline: 'Underline',
+    strike: 'Strikethrough',
+    code: 'Code',
 };
 
 function marked(key: string, html: string, type = 'heading'): string {

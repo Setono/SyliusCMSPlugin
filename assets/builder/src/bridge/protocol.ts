@@ -2,6 +2,7 @@
  * The messages the builder and the bridge in its preview exchange by postMessage. The protocol is internal: both ends
  * ship together in the plugin, so it can change in any release (docs/spec/builder.md#the-bridge).
  */
+import type { JsonValue } from '../types';
 
 /** The bridge's UI strings, which the builder sends it, translated, from the registry. */
 export interface BridgeStrings {
@@ -10,6 +11,13 @@ export interface BridgeStrings {
     delete: string;
     addBefore: string;
     addAfter: string;
+    /** The toolbar of rich text typed in place, and its marks, as the right pane's toolbar names them. */
+    formatting: string;
+    bold: string;
+    italic: string;
+    underline: string;
+    strike: string;
+    code: string;
 }
 
 /** A block's HTML as preview_render answers it: its output, bracketed by its markers. */
@@ -42,7 +50,12 @@ export type FromBridge =
     /** + next to a block: the editor wants to add a block at that spot. x and y are where the + is in the page's viewport. */
     | { type: 'add'; key: string; position: 'before' | 'after'; x: number; y: number }
     /** A block the builder patched or inserted has no place in the page, so only a reload shows it. */
-    | { type: 'missing'; key: string };
+    | { type: 'missing'; key: string }
+    /**
+     * The editor typed in place: the field's new value in the edited locale, a string for text and textareas and a
+     * document for rich text. null means it's empty.
+     */
+    | { type: 'edit'; key: string; field: string; value: JsonValue | null };
 
 /** Tells the plugin's messages apart from any other postMessage traffic the shop page has. */
 const CHANNEL = 'setono_sylius_cms.bridge';
