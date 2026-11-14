@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="Setono\SyliusCMSPlugin\Registry\FieldReader" class="Setono\SyliusCMSPlugin\Registry\FieldReader"/>
+
+        <service id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry" class="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry">
+            <!-- Replaced by RegisterBlockTypesPass with the block type classes by code -->
+            <argument type="collection"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\FieldReader"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry"/>
+
+        <service id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry" class="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry">
+            <!-- Replaced by RegisterContentTypesPass with the content types' resources by code -->
+            <argument type="collection"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry"/>
+    </services>
+</container>

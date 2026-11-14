@@ -1,0 +1,10 @@
+.screen {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: var(--builder-color-canvas);
+    color: var(--builder-color-text-muted);
+    font-family: var(--builder-font-family);
+    font-size: var(--builder-font-size-md);
+}

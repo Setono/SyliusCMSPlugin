@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="Setono\SyliusCMSPlugin\Rendering\ShopRenderContextFactory" class="Setono\SyliusCMSPlugin\Rendering\ShopRenderContextFactory">
+            <argument type="service" id="sylius.context.channel"/>
+            <argument type="service" id="sylius.context.locale"/>
+            <argument type="service" id="sylius.context.currency"/>
+            <argument type="service" id="sylius.context.customer"/>
+            <argument type="service" id="clock"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface" alias="Setono\SyliusCMSPlugin\Rendering\ShopRenderContextFactory"/>
+
+        <service id="Setono\SyliusCMSPlugin\Rendering\BlockHydrator" class="Setono\SyliusCMSPlugin\Rendering\BlockHydrator">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder" class="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockHydrator"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer" class="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer">
+            <argument type="service" id="twig"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface" alias="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer"/>
+
+        <service id="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookup" class="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookup">
+            <argument type="service" id="doctrine"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookupInterface" alias="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookup"/>
+    </services>
+</container>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- The condition of the setono_sylius_cms_shop_entry route calls it as service('setono_sylius_cms_entry_url_matcher') -->
+        <service id="Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher" class="Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher">
+            <argument type="service" id="sylius.context.channel"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookupInterface"/>
+
+            <tag name="routing.condition_service" alias="setono_sylius_cms_entry_url_matcher"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+    </services>
+</container>

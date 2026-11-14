@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    Translations mirror the entries' single table inheritance (ADR 0007). A content type without translatable fields
+    of its own uses EntryTranslation itself, which is "entry" in the map. Setono\SyliusCMSPlugin\Doctrine\DiscriminatorMapListener
+    adds each content type's own translation class under the content type's code
+    -->
+    <entity name="Setono\SyliusCMSPlugin\Model\EntryTranslation"
+            table="setono_sylius_cms__entry_translation"
+            inheritance-type="SINGLE_TABLE">
+        <discriminator-column name="content_type" type="string" length="64"/>
+        <discriminator-map>
+            <discriminator-mapping value="entry" class="Setono\SyliusCMSPlugin\Model\EntryTranslation"/>
+        </discriminator-map>
+
+        <unique-constraints>
+            <unique-constraint name="setono_sylius_cms__entry_translation_uniq_trans" columns="translatable_id,locale"/>
+        </unique-constraints>
+
+        <indexes>
+            <index name="setono_sylius_cms__entry_translation_url_idx" columns="locale,slug"/>
+        </indexes>
+
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="locale" type="string"/>
+        <field name="title" type="string" nullable="true"/>
+        <field name="slug" type="string" nullable="true"/>
+
+        <many-to-one field="translatable" target-entity="Setono\SyliusCMSPlugin\Model\Entry" inversed-by="translations">
+            <join-column name="translatable_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
+        </many-to-one>
+    </entity>
+</doctrine-mapping>

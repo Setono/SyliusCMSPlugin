@@ -1,0 +1,57 @@
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+}
+
+.labelRow {
+    display: flex;
+    gap: var(--builder-space-1);
+    align-items: baseline;
+}
+
+.label {
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.required {
+    color: var(--builder-color-danger);
+}
+
+.help {
+    margin: 0;
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}
+
+.input,
+.select {
+    width: 100%;
+    min-height: var(--builder-control-height);
+    padding: var(--builder-space-1) var(--builder-space-2);
+    border: 1px solid var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-surface);
+    color: var(--builder-color-text);
+    font: inherit;
+}
+
+.input:focus-visible,
+.select:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: -1px;
+    border-color: var(--builder-color-focus);
+}
+
+.select[multiple] {
+    min-height: calc(var(--builder-control-height) * 3);
+}
+
+.unsupported {
+    margin: 0;
+    padding: var(--builder-space-2);
+    border: 1px dashed var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-sm);
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}

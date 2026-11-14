@@ -51,7 +51,7 @@ The plugin ships a route loader, which the app imports once under its shop prefi
 
 ```yaml
 setono_sylius_cms_shop:
-    resource: '@SetonoSyliusCMSPlugin/config/routes/shop.php'
+    resource: '@SetonoSyliusCMSPlugin/Resources/config/routes/shop.php'
     prefix: /{_locale}
     requirements:
         _locale: ^[A-Za-z]{2,4}(_([A-Za-z]{4}|[0-9]{3}))?(_([A-Za-z]{2}|[0-9]{3}))?$

@@ -9,7 +9,7 @@ use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
-final class Kernel extends BaseKernel
+class Kernel extends BaseKernel
 {
     use MicroKernelTrait;
 
