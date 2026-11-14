@@ -10,6 +10,9 @@ export interface BridgeStrings {
     delete: string;
     addBefore: string;
     addAfter: string;
+    moveUp: string;
+    moveDown: string;
+    duplicate: string;
 }
 
 /** A block's HTML as preview_render answers it: its output, bracketed by its markers. */
@@ -39,6 +42,12 @@ export type FromBridge =
     | { type: 'select_parent'; key: string }
     | { type: 'settings'; key: string }
     | { type: 'delete'; key: string }
+    /** One place up or down in its list. */
+    | { type: 'move'; key: string; direction: 'up' | 'down' }
+    | { type: 'duplicate'; key: string }
+    /** ⌘Z or ⇧⌘Z pressed in the page. */
+    | { type: 'undo' }
+    | { type: 'redo' }
     /** + next to a block: the editor wants to add a block at that spot. x and y are where the + is in the page's viewport. */
     | { type: 'add'; key: string; position: 'before' | 'after'; x: number; y: number }
     /** A block the builder patched or inserted has no place in the page, so only a reload shows it. */

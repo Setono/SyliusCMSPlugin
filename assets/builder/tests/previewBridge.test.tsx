@@ -87,7 +87,16 @@ describe('the bridge in the preview', () => {
         expect(sent()).toEqual([
             {
                 type: 'init',
-                strings: { selectParent: 'Select parent', settings: 'Settings', delete: 'Delete block', addBefore: 'Add block above', addAfter: 'Add block below' },
+                strings: {
+                    selectParent: 'Select parent',
+                    settings: 'Settings',
+                    delete: 'Delete block',
+                    addBefore: 'Add block above',
+                    addAfter: 'Add block below',
+                    moveUp: 'Move up',
+                    moveDown: 'Move down',
+                    duplicate: 'Duplicate',
+                },
             },
             { type: 'select', key: null },
         ]);
@@ -283,6 +292,57 @@ describe('the bridge in the preview', () => {
         fromBridge({ type: 'delete', key: 'a' });
 
         expect(screen.queryByText('Welcome')).not.toBeInTheDocument();
+        expect(sent().at(-1)).toEqual({ type: 'remove', key: 'a' });
+    });
+});
+
+describe('the editing tools in the preview', () => {
+    function treeRows(): string[] {
+        return [...screen.getByRole('navigation').querySelectorAll('button[aria-pressed]')].map((button) => button.textContent ?? '');
+    }
+
+    it('should move the block down from its toolbar, and put it at its new spot in the preview', async () => {
+        const { sent } = await openWithBridge(fakeApi());
+
+        fromBridge({ type: 'move', key: 'a', direction: 'down' });
+
+        expect(treeRows()).toEqual(['HeadingGoodbye', 'HeadingWelcome']);
+        await waitFor(() => expect(sent().at(-1)).toMatchObject({ type: 'insert', block: { key: 'a' }, previous: ['b'], next: [] }));
+    });
+
+    it('should duplicate the block from its toolbar, and put the copy in the preview after it', async () => {
+        const { sent } = await openWithBridge(fakeApi());
+
+        fromBridge({ type: 'duplicate', key: 'a' });
+
+        expect(treeRows()).toEqual(['HeadingWelcome', 'HeadingWelcome', 'HeadingGoodbye']);
+        await waitFor(() => expect(sent().find((message) => message.type === 'insert')).toMatchObject({ previous: ['a'], next: ['b'] }));
+    });
+
+    it("should act on the whole selection when the toolbar's block is part of it", async () => {
+        await openWithBridge(fakeApi([block('a', { text: { en_US: 'First' } }), block('b', { text: { en_US: 'Second' } }), block('c', { text: { en_US: 'Third' } })]));
+        fireEvent.click(treeRow('First'));
+        fireEvent.click(treeRow('Third'), { metaKey: true });
+
+        fromBridge({ type: 'duplicate', key: 'c' });
+        expect(treeRows()).toEqual(['HeadingFirst', 'HeadingFirst', 'HeadingSecond', 'HeadingThird', 'HeadingThird']);
+
+        fromBridge({ type: 'delete', key: 'b' });
+        expect(treeRows()).toEqual(['HeadingFirst', 'HeadingFirst', 'HeadingThird', 'HeadingThird']);
+    });
+
+    it('should undo and redo when the bridge passes ⌘Z on, and patch the preview the same way', async () => {
+        const { sent } = await openWithBridge(fakeApi());
+        fromBridge({ type: 'delete', key: 'a' });
+
+        fromBridge({ type: 'undo' });
+
+        expect(treeRows()).toEqual(['HeadingWelcome', 'HeadingGoodbye']);
+        await waitFor(() => expect(sent().at(-1)).toMatchObject({ type: 'insert', block: { key: 'a' }, previous: [], next: ['b'] }));
+
+        fromBridge({ type: 'redo' });
+
+        expect(treeRows()).toEqual(['HeadingGoodbye']);
         expect(sent().at(-1)).toEqual({ type: 'remove', key: 'a' });
     });
 });
