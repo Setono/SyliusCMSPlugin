@@ -10,19 +10,11 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
  * Reads and writes an entry's working copy: what the builder edits and previews. It's the entry's draft, or its rows
  * when it has none (ADR 0009). See "Drafts" in docs/spec/publishing.md
  */
-interface WorkingCopyManagerInterface
+interface WorkingCopyManagerInterface extends WorkingCopyProviderInterface
 {
     /**
-     * A never-published entry is its own working copy, so saving it writes the rows, which no shopper sees yet.
-     *
-     * A published entry's working copy is a copy of it that Doctrine doesn't manage, holding its draft, or its published
-     * content when it has no draft yet. Changing it never changes what shoppers see
-     */
-    public function get(EntryInterface $entry): EntryInterface;
-
-    /**
-     * Saves a working copy got from get(): to the rows of a never-published entry, and otherwise to the entry's draft,
-     * which the first save after a publish creates. Saving a draft leaves changedAt alone and dispatches no event
+     * Saves a working copy got from getWorkingCopy(): to the rows of a never-published entry, which no shopper sees
+     * yet, and otherwise to the entry's draft, which the first save after a publish creates. Saving a draft leaves changedAt alone and dispatches no event
      */
     public function save(EntryInterface $entry, EntryInterface $workingCopy): void;
 

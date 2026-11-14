@@ -43,7 +43,7 @@ final readonly class SaveEntryAction
             return new JsonResponse(['error' => 'Invalid CSRF token'], Response::HTTP_FORBIDDEN);
         }
 
-        $workingCopy = $this->workingCopies->get($entry);
+        $workingCopy = $this->workingCopies->getWorkingCopy($entry);
 
         try {
             $changeSet = ChangeSet::fromArray(CanonicalJson::decode($request->getContent()));

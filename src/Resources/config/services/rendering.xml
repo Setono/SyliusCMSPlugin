@@ -8,6 +8,7 @@
             <argument type="service" id="sylius.context.currency"/>
             <argument type="service" id="sylius.context.customer"/>
             <argument type="service" id="clock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface" alias="Setono\SyliusCMSPlugin\Rendering\ShopRenderContextFactory"/>
 

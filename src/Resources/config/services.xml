@@ -9,6 +9,7 @@
         <import resource="services/field.xml"/>
         <import resource="services/form.xml"/>
         <import resource="services/localization.xml"/>
+        <import resource="services/preview.xml"/>
         <import resource="services/publishing.xml"/>
         <import resource="services/registry.xml"/>
         <import resource="services/rendering.xml"/>

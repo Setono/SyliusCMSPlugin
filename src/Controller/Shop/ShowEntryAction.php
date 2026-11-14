@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Shop;
 
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
+use Setono\SyliusCMSPlugin\Rendering\EntryUrlMatch;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher;
@@ -27,20 +30,19 @@ final readonly class ShowEntryAction
         private RenderContextFactoryInterface $renderContextFactory,
         private BlockViewBuilder $blockViewBuilder,
         private Environment $twig,
+        private PreviewedEntryProvider $previewedEntryProvider,
     ) {
     }
 
     public function __invoke(Request $request, string $path): Response
     {
-        // 1. The URL lookup, which the route condition already did, so this reads the memoised match
-        $match = $this->entryUrlMatcher->match($request->attributes->getString('_locale'), $path);
-        $entry = null === $match ? null : $this->entryRepository->findOneByUuid($match->uuid);
+        $localeCode = $request->attributes->getString('_locale');
 
-        // 2. Visibility. In this slice an entry is visible once it has been published.
-        // Enabled, the date window, channels, translations held back and the audience come with their tickets
-        if (null === $entry || !$entry->isPublished()) {
-            throw new NotFoundHttpException(sprintf('No visible entry at "%s"', $path));
-        }
+        // 1. The URL lookup, which the route condition already did, so this reads the memoised match
+        $match = $this->entryUrlMatcher->match($localeCode, $path);
+
+        $entry = $this->previewedEntry($match, $localeCode) ?? $this->visibleEntry($match)
+            ?? throw new NotFoundHttpException(sprintf('No visible entry at "%s"', $path));
 
         $renderContext = $this->renderContextFactory->create(['entry' => $entry]);
         $contentType = $this->contentTypes->getByEntry($entry);
@@ -53,5 +55,30 @@ final readonly class ShowEntryAction
             'context' => $renderContext->getHostPageContext(),
             CmsRuntime::RENDER_CONTEXT => $renderContext,
         ]));
+    }
+
+    /**
+     * In the builder's preview, the edited entry renders its working copy, whatever its own visibility
+     */
+    private function previewedEntry(?EntryUrlMatch $match, string $localeCode): ?EntryInterface
+    {
+        if (null === $match) {
+            return null;
+        }
+
+        $workingCopy = $this->previewedEntryProvider->getWorkingCopy($localeCode);
+
+        return null !== $workingCopy && $workingCopy->getUuid() === $match->uuid ? $workingCopy : null;
+    }
+
+    /**
+     * 2. Visibility. In this slice an entry is visible once it has been published.
+     * Enabled, the date window, channels, translations held back and the audience come with their tickets
+     */
+    private function visibleEntry(?EntryUrlMatch $match): ?EntryInterface
+    {
+        $entry = null === $match ? null : $this->entryRepository->findOneByUuid($match->uuid);
+
+        return true === $entry?->isPublished() ? $entry : null;
     }
 }

@@ -44,4 +44,5 @@
     --builder-top-bar-height: 3.5rem;
     --builder-tree-width: 17rem;
     --builder-selection-width: 21rem;
+    --builder-preview-mobile-width: 375px;
 }

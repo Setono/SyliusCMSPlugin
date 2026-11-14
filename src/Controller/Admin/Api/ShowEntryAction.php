@@ -34,7 +34,7 @@ final readonly class ShowEntryAction
         $entry = $this->entryRepository->findOneByUuid($uuid) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $uuid));
 
         return new JsonResponse(CanonicalJson::encode(new ListedObject([
-            'entry' => $this->entryNormalizer->normalize($this->workingCopies->get($entry)),
+            'entry' => $this->entryNormalizer->normalize($this->workingCopies->getWorkingCopy($entry)),
             'status' => EntryStatus::of($entry, $this->workingCopies->hasDraft($entry)),
         ])), json: true);
     }

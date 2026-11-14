@@ -28,7 +28,7 @@ final readonly class WorkingCopyManager implements WorkingCopyManagerInterface
     ) {
     }
 
-    public function get(EntryInterface $entry): EntryInterface
+    public function getWorkingCopy(EntryInterface $entry): EntryInterface
     {
         if (!$entry->isPublished()) {
             return $entry;

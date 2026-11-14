@@ -53,7 +53,9 @@ final class BuilderTest extends WebTestCase
             'entry' => sprintf('/admin/cms/api/entries/%s', $uuid),
             'publish' => sprintf('/admin/cms/api/entries/%s/publish', $uuid),
             'discard' => sprintf('/admin/cms/api/entries/%s/discard', $uuid),
+            'previewToken' => '/admin/cms/api/preview/token',
         ], $config['endpoints']);
+        self::assertSame([['code' => 'WEB', 'name' => 'Setono CMS Test Store']], $config['channels'], "The entry's channels, for the preview channel picker");
         self::assertSame([
             'setono_sylius_cms.builder.loading' => 'Loading…',
             'setono_sylius_cms.builder.load_failed' => 'Couldn\'t load the entry',

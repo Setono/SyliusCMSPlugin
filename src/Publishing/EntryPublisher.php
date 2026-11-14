@@ -31,7 +31,7 @@ final readonly class EntryPublisher implements EntryPublisherInterface
     public function publish(EntryInterface $entry): void
     {
         // 2. A listener can veto the publish
-        $veto = $this->eventDispatcher->dispatch(new BeforeEntryPublish($this->workingCopies->get($entry), false))->getVetoMessage();
+        $veto = $this->eventDispatcher->dispatch(new BeforeEntryPublish($this->workingCopies->getWorkingCopy($entry), false))->getVetoMessage();
         if (null !== $veto) {
             throw new PublishVetoedException($veto);
         }

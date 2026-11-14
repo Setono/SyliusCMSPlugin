@@ -56,6 +56,12 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.no_blocks': 'No blocks yet',
     'setono_sylius_cms.builder.no_selection': 'Select a block to edit its fields',
     'setono_sylius_cms.builder.unsupported_field_type': "This field type isn't supported yet",
+    'setono_sylius_cms.builder.preview': 'Preview',
+    'setono_sylius_cms.builder.preview_failed': "Couldn't load the preview",
+    'setono_sylius_cms.builder.preview_channel': 'Preview channel',
+    'setono_sylius_cms.builder.preview_width': 'Preview width',
+    'setono_sylius_cms.builder.desktop': 'Desktop',
+    'setono_sylius_cms.builder.mobile': 'Mobile',
 };
 
 export const registry: Registry = { blockTypes: [heading], strings };

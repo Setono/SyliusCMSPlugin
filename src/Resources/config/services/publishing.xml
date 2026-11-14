@@ -19,5 +19,8 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntryPublisher"/>
+
+        <!-- Everything that reads an entry's working copy goes through it, such as the builder's preview -->
+        <service id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface" alias="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManager"/>
     </services>
 </container>

@@ -49,7 +49,7 @@ final class WorkingCopyManagerTest extends TestCase
     {
         $page = self::page('Hello');
 
-        $workingCopy = $this->workingCopies()->get($page);
+        $workingCopy = $this->workingCopies()->getWorkingCopy($page);
         self::assertSame($page, $workingCopy);
 
         $this->manager->persist(Argument::any())->shouldNotBeCalled();
@@ -66,7 +66,7 @@ final class WorkingCopyManagerTest extends TestCase
         $page = self::page('Hello', published: true);
         $this->drafts->findOneByEntry($page)->willReturn(null);
 
-        $workingCopy = $this->workingCopies()->get($page);
+        $workingCopy = $this->workingCopies()->getWorkingCopy($page);
         $workingCopy->setBlockTree(new StoredTree(null, []));
 
         self::assertNotSame($page, $workingCopy);
@@ -85,7 +85,7 @@ final class WorkingCopyManagerTest extends TestCase
         $changedAt = $page->getChangedAt();
         $this->drafts->findOneByEntry($page)->willReturn(null);
 
-        $workingCopy = $this->workingCopies()->get($page);
+        $workingCopy = $this->workingCopies()->getWorkingCopy($page);
         $workingCopy->setBlockTree(self::tree('Hello world'));
 
         $this->manager->persist(Argument::that(static fn (mixed $draft): bool => $draft instanceof DraftInterface && $page === $draft->getEntry() && self::json($workingCopy) === $draft->getContent()))->shouldBeCalledOnce();
@@ -106,7 +106,7 @@ final class WorkingCopyManagerTest extends TestCase
         $draft = $this->draft($page, 'Hello world');
         $this->drafts->findOneByEntry($page)->willReturn($draft);
 
-        $workingCopy = $this->workingCopies()->get($page);
+        $workingCopy = $this->workingCopies()->getWorkingCopy($page);
         self::assertSame(['en_US' => 'Hello world'], $workingCopy->getBlockTree()->blocks[0]->fields['text'] ?? null);
         self::assertSame(['en_US' => 'Hello'], $page->getBlockTree()->blocks[0]->fields['text'] ?? null);
 

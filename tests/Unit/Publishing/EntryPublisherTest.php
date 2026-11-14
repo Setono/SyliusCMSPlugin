@@ -77,7 +77,7 @@ final class EntryPublisherTest extends TestCase
     {
         $page = self::page();
         $workingCopy = clone $page;
-        $this->workingCopies->get($page)->willReturn($workingCopy);
+        $this->workingCopies->getWorkingCopy($page)->willReturn($workingCopy);
         $calls = &$this->calls;
         $this->workingCopies->applyDraft($page)->will(static function () use ($page, &$calls): void {
             $calls[] = 'apply draft';
@@ -114,7 +114,7 @@ final class EntryPublisherTest extends TestCase
         $page = self::page();
         $page->getTranslation('da_DK')->setTitle('Om os');
         $page->publish(new \DateTimeImmutable('2026-11-01 10:00:00', new \DateTimeZone('UTC')));
-        $this->workingCopies->get($page)->willReturn(clone $page);
+        $this->workingCopies->getWorkingCopy($page)->willReturn(clone $page);
         $this->workingCopies->applyDraft($page)->will(static function () use ($page): void {
             $page->setSlug('about');
             $page->getTranslation('da_DK')->setSlug('om-os');
@@ -135,7 +135,7 @@ final class EntryPublisherTest extends TestCase
     public function a_veto_stops_the_publish_with_its_message(): void
     {
         $page = self::page();
-        $this->workingCopies->get($page)->willReturn($page);
+        $this->workingCopies->getWorkingCopy($page)->willReturn($page);
         $this->workingCopies->applyDraft(Argument::any())->shouldNotBeCalled();
         $this->manager->wrapInTransaction(Argument::any())->shouldNotBeCalled();
         $this->eventDispatcher->addListener(BeforeEntryPublish::class, static fn (BeforeEntryPublish $event) => $event->veto('Not on a Sunday'));
@@ -159,7 +159,7 @@ final class EntryPublisherTest extends TestCase
     public function it_needs_a_doctrine_entity_manager_for_the_entry(?ObjectManager $manager): void
     {
         $page = self::page();
-        $this->workingCopies->get($page)->willReturn($page);
+        $this->workingCopies->getWorkingCopy($page)->willReturn($page);
         $this->managerRegistry->getManagerForClass(Page::class)->willReturn($manager);
 
         $this->expectException(\LogicException::class);

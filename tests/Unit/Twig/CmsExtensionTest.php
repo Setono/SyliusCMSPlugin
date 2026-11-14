@@ -7,6 +7,9 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Twig;
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Block\Heading;
+use Setono\SyliusCMSPlugin\Preview\Preview;
+use Setono\SyliusCMSPlugin\Preview\PreviewContext;
+use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
@@ -15,6 +18,9 @@ use Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer;
 use Setono\SyliusCMSPlugin\Twig\CmsExtension;
 use Setono\SyliusCMSPlugin\Twig\CmsRuntime;
 use Sylius\Component\Core\Model\ChannelInterface;
+use Symfony\Component\Clock\MockClock;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Twig\Environment;
 use Twig\Error\RuntimeError;
 use Twig\Loader\ArrayLoader;
@@ -27,6 +33,13 @@ final class CmsExtensionTest extends TestCase
     use ProphecyTrait;
 
     private const KEY = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f';
+
+    private RequestStack $requestStack;
+
+    protected function setUp(): void
+    {
+        $this->requestStack = new RequestStack();
+    }
 
     /**
      * @test
@@ -147,6 +160,27 @@ final class CmsExtensionTest extends TestCase
     /**
      * @test
      */
+    public function templates_can_tell_they_render_in_the_builders_preview(): void
+    {
+        $signer = new PreviewTokenSigner('secret', new MockClock());
+        $this->requestStack->push(new Request([PreviewContext::QUERY_PARAMETER => $signer->sign(new Preview('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', 'WEB', 'en_US'))]));
+
+        self::assertSame('builder', $this->render('{{ cms_preview_mode() }}', []));
+    }
+
+    /**
+     * @test
+     */
+    public function templates_see_no_preview_mode_for_shoppers(): void
+    {
+        $this->requestStack->push(new Request());
+
+        self::assertSame('none', $this->render('{{ cms_preview_mode() ?? "none" }}', []));
+    }
+
+    /**
+     * @test
+     */
     public function it_needs_the_render_context_to_render_blocks(): void
     {
         $this->expectException(RuntimeError::class);
@@ -178,7 +212,11 @@ final class CmsExtensionTest extends TestCase
         $twig->addExtension(new CmsExtension());
 
         $renderer = new TwigBlockRenderer($twig, new BlockTypeRegistry(['heading' => Heading::class], new FieldReader()));
-        $twig->addRuntimeLoader(new FactoryRuntimeLoader([CmsRuntime::class => static fn (): CmsRuntime => new CmsRuntime($renderer)]));
+        $previewContext = new PreviewContext($this->requestStack, new PreviewTokenSigner('secret', new MockClock()));
+        $twig->addRuntimeLoader(new FactoryRuntimeLoader([
+            CmsRuntime::class => static fn (): CmsRuntime => new CmsRuntime($renderer),
+            PreviewContext::class => static fn (): PreviewContext => $previewContext,
+        ]));
 
         return $twig;
     }
