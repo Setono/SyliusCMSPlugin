@@ -11,5 +11,14 @@
             <argument/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface" alias="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgrader"/>
+
+        <!-- Writes an entry's rows and draft back upgraded, for setono:cms:upgrade -->
+        <service id="Setono\SyliusCMSPlugin\Upgrade\EntryRewriter" class="Setono\SyliusCMSPlugin\Upgrade\EntryRewriter">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer"/>
+        </service>
     </services>
 </container>
