@@ -6,6 +6,7 @@ import type { BuilderState, BuilderStore } from './store';
 export interface BuilderSession {
     store: BuilderStore;
     publish: () => Promise<void>;
+    discard: () => Promise<void>;
     backUrl: string;
 }
 

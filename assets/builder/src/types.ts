@@ -68,7 +68,8 @@ export interface Entry {
     tree: StoredBlockTree;
 }
 
-export type EntryStatus = 'never_published' | 'published';
+/** The entry states of docs/spec/publishing.md#entry-states that the builder shows so far. */
+export type EntryStatus = 'never_published' | 'published' | 'unpublished_changes';
 
 export interface EntryResponse {
     entry: Entry;

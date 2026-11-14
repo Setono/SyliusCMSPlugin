@@ -54,6 +54,11 @@
     color: var(--builder-color-success);
 }
 
+.status[data-status="unpublished_changes"] {
+    background: var(--builder-color-warning-subtle);
+    color: var(--builder-color-warning);
+}
+
 .saveState {
     flex: none;
     color: var(--builder-color-text-muted);
@@ -71,9 +76,30 @@
     align-items: center;
 }
 
-.publishFailed {
+.failed {
     color: var(--builder-color-danger);
     font-size: var(--builder-font-size-sm);
+}
+
+.discardButton {
+    min-height: var(--builder-control-height);
+    padding: 0 var(--builder-space-3);
+    border: 1px solid var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-surface);
+    color: var(--builder-color-text);
+    font: inherit;
+    font-weight: var(--builder-font-weight-medium);
+    cursor: pointer;
+}
+
+.discardButton:hover:not(:disabled) {
+    background: var(--builder-color-hover);
+}
+
+.discardButton:disabled {
+    cursor: progress;
+    opacity: 0.7;
 }
 
 .publishButton {
@@ -98,6 +124,7 @@
 }
 
 .back:focus-visible,
+.discardButton:focus-visible,
 .publishButton:focus-visible {
     outline: 2px solid var(--builder-color-focus);
     outline-offset: 2px;

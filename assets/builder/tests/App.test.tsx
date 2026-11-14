@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { BuilderApi } from '../src/api';
+import { ApiError, type BuilderApi } from '../src/api';
 import type { Change } from '../src/changeSet';
 import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
@@ -12,7 +12,7 @@ const config: BuilderConfig = {
     locale: 'en_US',
     csrfToken: 'abc123',
     backUrl: '/admin/',
-    endpoints: { registry: '/registry', entry: '/entry', publish: '/publish' },
+    endpoints: { registry: '/registry', entry: '/entry', publish: '/publish', discard: '/discard' },
     strings: { 'setono_sylius_cms.builder.loading': 'Loading…' },
 };
 
@@ -22,6 +22,7 @@ function fakeApi(overrides: Partial<BuilderApi> = {}) {
         fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), status: 'never_published' })),
         saveChanges: vi.fn(async (): Promise<EntryStatus> => 'never_published'),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
+        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), status: 'published' })),
         ...overrides,
     };
 }
@@ -114,6 +115,53 @@ describe('the builder', () => {
 
         expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't publish");
         expect(api.publish).not.toHaveBeenCalled();
+    });
+
+    it('should show unpublished changes once a published entry is saved, and discard them', async () => {
+        const api = fakeApi({
+            fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), status: 'published' })),
+            saveChanges: vi.fn(async (): Promise<EntryStatus> => 'unpublished_changes'),
+        });
+        await openBuilder(api);
+
+        expect(screen.getByText('Published', { exact: true })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Discard changes' })).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Heading Welcome' }));
+        fireEvent.change(screen.getByRole('textbox', { name: 'Text' }), { target: { value: 'Welcome back' } });
+
+        expect(await screen.findByText('Unpublished changes', { exact: true })).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
+
+        expect(await screen.findByRole('button', { name: 'Heading Welcome' })).toBeInTheDocument();
+        expect(screen.getByRole('textbox', { name: 'Text' })).toHaveValue('Welcome');
+        expect(screen.getByText('Published', { exact: true })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Discard changes' })).not.toBeInTheDocument();
+        expect(api.discard).toHaveBeenCalledTimes(1);
+    });
+
+    it('should report a failed discard', async () => {
+        await openBuilder(
+            fakeApi({
+                fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a')]), status: 'unpublished_changes' })),
+                discard: vi.fn(() => Promise.reject(new Error('Offline'))),
+            }),
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
+
+        expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't discard the changes");
+        expect(screen.getByText('Unpublished changes', { exact: true })).toBeInTheDocument();
+    });
+
+    it('should show why the server refused a publish', async () => {
+        await openBuilder(fakeApi({ publish: vi.fn(() => Promise.reject(new ApiError('Not on a Sunday', 422))) }));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+
+        expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't publish: Not on a Sunday");
+        expect(screen.getByText('Never published', { exact: true })).toBeInTheDocument();
     });
 
     it('should say so when the entry cannot be loaded', async () => {

@@ -1,6 +1,6 @@
 import { applyPatches } from 'immer';
 import { describe, expect, it } from 'vitest';
-import { block, keys, storeWith } from './fixtures';
+import { block, entry, keys, storeWith } from './fixtures';
 
 describe('the working copy', () => {
     it('should append a new block of the block type to the top level and select it', () => {
@@ -92,5 +92,30 @@ describe('the working copy', () => {
 
         expect(store.getState().history).toHaveLength(0);
         expect(store.getState().revision).toBe(0);
+    });
+
+    it('should load another working copy in place of the one it edits, with nothing left to save or undo', () => {
+        const store = storeWith([block('a', { text: { en_US: 'Hello world' } }), block('b')]);
+        store.getState().setFieldValue('a', 'text', 'Goodbye');
+        store.getState().selectBlock('a');
+        const revision = store.getState().revision;
+
+        store.getState().load(entry([block('a', { text: { en_US: 'Hello' } })]), 'published');
+
+        expect(store.getState().entry.tree.blocks).toEqual([block('a', { text: { en_US: 'Hello' } })]);
+        expect(store.getState().status).toBe('published');
+        expect(store.getState().unsaved).toEqual([]);
+        expect(store.getState().history).toEqual([]);
+        expect(store.getState().selectedKey).toBe('a');
+        expect(store.getState().revision).toBe(revision);
+    });
+
+    it('should drop the selection when the loaded working copy does not have the selected block', () => {
+        const store = storeWith([block('a'), block('b')]);
+        store.getState().selectBlock('b');
+
+        store.getState().load(entry([block('a')]), 'published');
+
+        expect(store.getState().selectedKey).toBeNull();
     });
 });

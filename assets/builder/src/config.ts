@@ -9,6 +9,7 @@ export interface BuilderConfig {
         registry: string;
         entry: string;
         publish: string;
+        discard: string;
     };
     /** UI strings needed before the registry arrives, such as the loading text. Optional. */
     strings?: Record<string, string>;
