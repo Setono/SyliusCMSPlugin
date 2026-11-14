@@ -72,6 +72,7 @@ setono_sylius_cms:
         enabled: Enabled
         entry_settings: Entry settings
         guests: Guests
+        has_errors: Has errors
         load_failed: Couldn't load the entry
         loading: Loading…
         mobile: Mobile
@@ -114,5 +115,7 @@ setono_sylius_cms:
         takes_effect_on_save: Takes effect when saved, without publishing
         title: Builder
         undo: Undo
+        unknown_block_type: 'Unknown block type: %type%'
+        unknown_block_type_help: The code no longer has this block type. The block is kept as it is, but the shop doesn't show it.
         unpublished_changes: Unpublished changes
         unsupported_field_type: This field type isn't supported yet

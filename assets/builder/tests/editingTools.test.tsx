@@ -4,7 +4,7 @@ import type { BuilderApi } from '../src/api';
 import type { Change } from '../src/changeSet';
 import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
-import type { EntryResponse, EntryStatus, StoredBlock } from '../src/types';
+import type { EntryResponse, EntryStatus, StoredBlock, ValidationError } from '../src/types';
 import { block, blockOf, entry, registry, settings } from './fixtures';
 
 const config: BuilderConfig = {
@@ -15,6 +15,7 @@ const config: BuilderConfig = {
     endpoints: {
         registry: '/registry',
         entry: '/entry',
+        validate: '/validate',
         publish: '/publish',
         discard: '/discard',
         settings: '/settings',
@@ -30,6 +31,7 @@ function fakeApi(blocks: StoredBlock[]) {
         fetchRegistry: vi.fn(async () => registry),
         fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), settings: settings(), status: 'never_published' })),
         saveChanges: vi.fn(async (_changes: readonly Change[]): Promise<EntryStatus> => 'never_published'),
+        validate: vi.fn(async (): Promise<ValidationError[]> => []),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
         discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), settings: settings(), status: 'published' })),
         saveSettings: vi.fn(async () => settings()),

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ApiError, type BuilderApi } from '../src/api';
 import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
-import type { EntryResponse, EntrySettings, EntryStatus } from '../src/types';
+import type { EntryResponse, EntrySettings, EntryStatus, ValidationError } from '../src/types';
 import { block, entry, registry, settings } from './fixtures';
 
 const config: BuilderConfig = {
@@ -14,6 +14,7 @@ const config: BuilderConfig = {
     endpoints: {
         registry: '/registry',
         entry: '/entry',
+        validate: '/validate',
         publish: '/publish',
         discard: '/discard',
         settings: '/settings',
@@ -38,6 +39,7 @@ function fakeApi(initial: EntrySettings = settings(), overrides: Partial<Builder
         fetchRegistry: vi.fn(async () => registry),
         fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: initial, status: 'published' })),
         saveChanges: vi.fn(async (): Promise<EntryStatus> => 'published'),
+        validate: vi.fn(async (): Promise<ValidationError[]> => []),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
         discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(), settings: saved, status: 'published' })),
         saveSettings: vi.fn(async (changes: Partial<EntrySettings>): Promise<EntrySettings> => {

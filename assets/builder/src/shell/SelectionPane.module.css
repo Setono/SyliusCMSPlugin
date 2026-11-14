@@ -11,6 +11,25 @@
     font-weight: var(--builder-font-weight-bold);
 }
 
+.unknown {
+    margin: 0;
+    color: var(--builder-color-text-muted);
+}
+
+/* What publish would refuse about the block as a whole */
+.errors {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    margin: 0;
+    padding: var(--builder-space-2) var(--builder-space-3);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-danger-subtle);
+    color: var(--builder-color-danger);
+    font-size: var(--builder-font-size-sm);
+    list-style: none;
+}
+
 .path {
     display: flex;
     flex-wrap: wrap;

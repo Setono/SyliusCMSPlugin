@@ -4,7 +4,7 @@ import type { BuilderApi, PreviewRequest } from '../src/api';
 import { App } from '../src/App';
 import { envelope, openEnvelope, type FromBridge, type ToBridge } from '../src/bridge/protocol';
 import type { BuilderConfig } from '../src/config';
-import type { EntryResponse, EntryStatus, StoredBlock } from '../src/types';
+import type { EntryResponse, EntryStatus, StoredBlock, ValidationError } from '../src/types';
 import { block, blockOf, entry, registry, settings } from './fixtures';
 
 const config: BuilderConfig = {
@@ -15,6 +15,7 @@ const config: BuilderConfig = {
     endpoints: {
         registry: '/registry',
         entry: '/entry',
+        validate: '/validate',
         publish: '/publish',
         discard: '/discard',
         settings: '/settings',
@@ -41,6 +42,7 @@ function fakeApi(blocks: StoredBlock[] = [block('a', { text: { en_US: 'Welcome' 
         fetchRegistry: vi.fn(async () => registry),
         fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), settings: settings(), status: 'never_published' })),
         saveChanges: vi.fn(async (): Promise<EntryStatus> => 'never_published'),
+        validate: vi.fn(async (): Promise<ValidationError[]> => []),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
         discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), settings: settings(), status: 'published' })),
         saveSettings: vi.fn(async () => settings()),

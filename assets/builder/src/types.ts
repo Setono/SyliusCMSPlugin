@@ -88,6 +88,21 @@ export interface EntrySettings {
     audience: { mode: AudienceMode; groups: string[] };
 }
 
+/**
+ * Something publish refuses, as entry_validate and a refused publish list it: in a block's field, in a block as a
+ * whole, in an entry field, or in the entry as a whole.
+ */
+export interface ValidationError {
+    /** The key of the block it's in, or null when it's in the entry. */
+    block: string | null;
+    /** The field it's in, or null when it's about the block or the entry as a whole. */
+    field: string | null;
+    /** The locale of a translatable value, or null. */
+    locale: string | null;
+    /** Translated, ready to show. */
+    message: string;
+}
+
 export interface EntryResponse {
     entry: Entry;
     settings: EntrySettings;

@@ -1,13 +1,14 @@
 import { useId } from 'react';
-import { useBuilder, useBuilderState } from '../context';
+import { useBuilder, useBuilderState, useValidationState } from '../context';
 import { FieldRow } from '../form/FieldRow';
 import { useTranslator } from '../i18n';
 import { canDuplicate } from '../nesting';
 import { canShift, findBlock, pathTo, topmostBlocks } from '../tree';
 import type { StoredBlock } from '../types';
+import { blockMessages, fieldMessages } from '../validation';
 import { readFieldValue } from '../values';
 import { AddBlockButton } from './BlockPicker';
-import { blockHint } from './BlockTreePane';
+import { blockHint, blockLabel } from './BlockTreePane';
 import { ArrowDownIcon, ArrowUpIcon, CopyIcon, PlusIcon, TrashIcon } from './icons';
 import styles from './SelectionPane.module.css';
 import { SettingsPane } from './SettingsPane';
@@ -23,6 +24,7 @@ export function SelectionPane() {
     const blockType = useBuilderState((state) => (block === undefined ? undefined : state.rules.blockTypes.get(block.type)));
     const locale = useBuilderState((state) => state.locale);
     const selection = useBuilderState((state) => state.selection);
+    const errors = useValidationState((state) => state.errors);
 
     if (selection.length > 1) {
         return (
@@ -38,12 +40,14 @@ export function SelectionPane() {
         return <SettingsPane />;
     }
 
-    const label = blockType?.label ?? block.type;
+    const label = blockLabel(block, blockType, t);
 
     return (
         <div className={styles.pane}>
             <Path block={block} />
             <h2 className={styles.heading}>{label}</h2>
+            {blockType === undefined && <p className={styles.unknown}>{t('setono_sylius_cms.builder.unknown_block_type_help')}</p>}
+            <BlockErrors blockKey={block.key} />
             <Actions keys={[block.key]} />
             <div key={block.key} className={styles.fields}>
                 {blockType?.fields.map(({ name, schema }) => (
@@ -54,11 +58,30 @@ export function SelectionPane() {
                         locale={locale}
                         value={readFieldValue(block.fields, name, schema['x-cms-translatable'], locale)}
                         onChange={(value) => store.getState().setFieldValue(block.key, name, value)}
+                        errors={fieldMessages(errors, block.key, name, locale)}
                     />
                 ))}
             </div>
             {(blockType?.children.length ?? 0) > 0 && <Children block={block} label={label} />}
         </div>
+    );
+}
+
+/** The errors about the block as a whole, such as a block type its spot can't hold, which publish would refuse. */
+function BlockErrors({ blockKey }: { blockKey: string }) {
+    const errors = useValidationState((state) => state.errors);
+    const messages = blockMessages(errors, blockKey);
+
+    if (messages.length === 0) {
+        return null;
+    }
+
+    return (
+        <ul className={styles.errors}>
+            {messages.map((message) => (
+                <li key={message}>{message}</li>
+            ))}
+        </ul>
     );
 }
 
@@ -69,7 +92,7 @@ function Path({ block }: { block: StoredBlock }) {
     const blocks = useBuilderState((state) => state.entry.tree.blocks);
     const blockTypes = useBuilderState((state) => state.rules.blockTypes);
     const path = pathTo(blocks, block.key);
-    const labelOf = (step: StoredBlock): string => blockTypes.get(step.type)?.label ?? step.type;
+    const labelOf = (step: StoredBlock): string => blockLabel(step, blockTypes.get(step.type), t);
 
     // A list rather than a nav landmark, so the tree stays the builder's one navigation
     return (
@@ -147,7 +170,7 @@ function Children({ block, label }: { block: StoredBlock; label: string }) {
                         return (
                             <li key={child.key}>
                                 <button type="button" className={styles.child} onClick={() => store.getState().selectBlock(child.key)}>
-                                    <span className={styles.childLabel}>{childType?.label ?? child.type}</span>
+                                    <span className={styles.childLabel}>{blockLabel(child, childType, t)}</span>
                                     {hint !== '' && <span className={styles.childHint}>{hint}</span>}
                                 </button>
                             </li>

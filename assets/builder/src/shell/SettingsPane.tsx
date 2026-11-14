@@ -1,9 +1,10 @@
 import { useEffect, useId, useState } from 'react';
-import { useBuilder, useSettingsState } from '../context';
+import { useBuilder, useBuilderState, useSettingsState, useValidationState } from '../context';
 import { fromLocalInput, toLocalInput } from '../dates';
 import formStyles from '../form/Form.module.css';
 import { useTranslator, type MessageKey } from '../i18n';
 import type { AudienceMode } from '../types';
+import { entryMessages } from '../validation';
 import styles from './SettingsPane.module.css';
 
 /**
@@ -18,6 +19,7 @@ export function SettingsPane() {
 
     return (
         <div className={styles.pane}>
+            <EntryErrors />
             <div role="tablist" className={styles.tabs} aria-label={t('setono_sylius_cms.builder.entry_settings')}>
                 <button type="button" role="tab" id={tabId} className={styles.tab} aria-selected="true" aria-controls={panelId}>
                     {t('setono_sylius_cms.builder.settings')}
@@ -31,6 +33,28 @@ export function SettingsPane() {
                 <SaveState />
             </div>
         </div>
+    );
+}
+
+/**
+ * What publish would refuse in the entry itself: its fields, and what its top level holds. The entry's fields get
+ * forms of their own with their tickets, so each error names its field for now
+ */
+function EntryErrors() {
+    const errors = useValidationState((state) => state.errors);
+    const locale = useBuilderState((state) => state.locale);
+    const messages = entryMessages(errors, locale);
+
+    if (messages.length === 0) {
+        return null;
+    }
+
+    return (
+        <ul className={styles.errors}>
+            {messages.map((message) => (
+                <li key={message}>{message}</li>
+            ))}
+        </ul>
     );
 }
 

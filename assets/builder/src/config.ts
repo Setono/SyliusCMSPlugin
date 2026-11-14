@@ -20,6 +20,7 @@ export interface BuilderConfig {
     endpoints: {
         registry: string;
         entry: string;
+        validate: string;
         publish: string;
         discard: string;
         settings: string;

@@ -5,10 +5,13 @@ import type { Channel, CustomerGroup } from './config';
 import type { PreviewState, PreviewStore } from './preview';
 import type { SettingsState, SettingsStore } from './settings';
 import type { BuilderState, BuilderStore } from './store';
+import type { ValidationState, ValidationStore } from './validation';
 
 /** One open entry in the builder. */
 export interface BuilderSession {
     store: BuilderStore;
+    /** What publish would refuse in the working copy, as the server last validated it. */
+    validation: ValidationStore;
     publish: () => Promise<void>;
     discard: () => Promise<void>;
     backUrl: string;
@@ -46,6 +49,11 @@ export function useBuilderState<T>(selector: (state: BuilderState) => T): T {
 /** Selects from the on-save settings. The selector must return state as it is, not a new object. */
 export function useSettingsState<T>(selector: (state: SettingsState) => T): T {
     return useStore(useBuilder().settings, selector);
+}
+
+/** Selects from the validation errors. The selector must return state as it is, or a primitive, not a new object. */
+export function useValidationState<T>(selector: (state: ValidationState) => T): T {
+    return useStore(useBuilder().validation, selector);
 }
 
 /** Selects from what the preview shows. The selector must return state as it is, not a new object. */

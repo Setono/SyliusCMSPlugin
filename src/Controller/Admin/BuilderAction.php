@@ -58,6 +58,7 @@ final readonly class BuilderAction
                 'endpoints' => [
                     'registry' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_registry'),
                     'entry' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_show', ['uuid' => $entry->getUuid()]),
+                    'validate' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_validate', ['uuid' => $entry->getUuid()]),
                     'publish' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_publish', ['uuid' => $entry->getUuid()]),
                     'discard' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_discard', ['uuid' => $entry->getUuid()]),
                     'settings' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_settings', ['uuid' => $entry->getUuid()]),

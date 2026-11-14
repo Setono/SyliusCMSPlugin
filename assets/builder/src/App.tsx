@@ -10,6 +10,7 @@ import { createDiscard, createPublish } from './publishing';
 import { createSettingsStore } from './settings';
 import { Shell } from './shell/Shell';
 import { createBuilderStore } from './store';
+import { createValidation, createValidationStore, type Validation } from './validation';
 
 export interface AppProps {
     config: BuilderConfig;
@@ -28,6 +29,7 @@ export function App({ config, api, autosaveDelay }: AppProps) {
     useEffect(() => {
         let active = true;
         let autosave: Autosave | undefined;
+        let validation: Validation | undefined;
         let unsubscribeSettings: (() => void) | undefined;
 
         Promise.all([api.fetchRegistry(), api.fetchEntry()]).then(
@@ -45,6 +47,11 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                 });
                 autosave = createAutosave(store, (changes) => api.saveChanges(changes), { delay: autosaveDelay });
 
+                // Invalid blocks are flagged from the start, and again after each save
+                const validationStore = createValidationStore();
+                validation = createValidation(store, validationStore, () => api.validate());
+                void validation.validate();
+
                 // The preview shows the entry in one of its own channels, which follow the settings as they change.
                 const settings = createSettingsStore(entrySettings, (changes) => api.saveSettings(changes));
                 const entryChannels = (codes: string[]) => config.channels.filter(({ code }) => codes.includes(code));
@@ -60,8 +67,9 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                     translate: createTranslator({ ...config.strings, ...registry.strings }),
                     session: {
                         store,
+                        validation: validationStore,
                         backUrl: config.backUrl,
-                        publish: createPublish(store, autosave, () => api.publish()),
+                        publish: createPublish(store, autosave, () => api.publish(), validationStore),
                         discard: createDiscard(store, autosave, () => api.discard()),
                         preview,
                         // The page renders what the server holds, so a new page waits for the unsaved changes
@@ -87,6 +95,7 @@ export function App({ config, api, autosaveDelay }: AppProps) {
         return () => {
             active = false;
             autosave?.dispose();
+            validation?.dispose();
             unsubscribeSettings?.();
         };
     }, [api, config, autosaveDelay]);

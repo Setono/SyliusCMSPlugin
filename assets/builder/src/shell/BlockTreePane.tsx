@@ -1,14 +1,15 @@
 import { createContext, useContext, useRef, useState, type DragEvent } from 'react';
-import { useBuilder, useBuilderState } from '../context';
-import { useTranslator } from '../i18n';
+import { useBuilder, useBuilderState, useValidationState } from '../context';
+import { useTranslator, type Translate } from '../i18n';
 import { canMove, canMoveBlocks, placement, type DropZone } from '../nesting';
 import { actedOn } from '../store';
 import { findBlock } from '../tree';
 import type { BlockTypeDefinition, StoredBlock } from '../types';
+import { blockHasErrors } from '../validation';
 import { readFieldValue } from '../values';
 import { AddBlockButton } from './BlockPicker';
 import styles from './BlockTreePane.module.css';
-import { GripIcon, PlusIcon, TrashIcon } from './icons';
+import { AlertIcon, GripIcon, PlusIcon, TrashIcon } from './icons';
 
 /** Where the dragged block would land, and whether the nesting rules let it. */
 interface DropTarget {
@@ -39,6 +40,7 @@ export function BlockTreePane({ headingId }: { headingId: string }) {
     const { store } = useBuilder();
     const blocks = useBuilderState((state) => state.entry.tree.blocks);
     const settingsSelected = useBuilderState((state) => state.selectedKey === null);
+    const entryInvalid = useValidationState((state) => state.errors.some((error) => error.block === null));
     // The drag as it is now, which drag events read; the state copies only re-render the rows.
     const current = useRef<DragState>({ dragged: null, target: null });
     const [dragged, setDragged] = useState<string | null>(null);
@@ -94,10 +96,11 @@ export function BlockTreePane({ headingId }: { headingId: string }) {
     return (
         <div className={styles.pane}>
             {/* The entry's settings sit at the top of the tree. Selecting them deselects the block */}
-            <div className={styles.row} data-selected={settingsSelected || undefined}>
+            <div className={styles.row} data-selected={settingsSelected || undefined} data-invalid={entryInvalid || undefined}>
                 <button type="button" className={styles.select} aria-pressed={settingsSelected} onClick={() => store.getState().selectBlock(null)}>
                     <span className={styles.label}>{t('setono_sylius_cms.builder.entry_settings')}</span>
                 </button>
+                {entryInvalid && <InvalidFlag />}
             </div>
             <h2 id={headingId} className={styles.heading}>
                 {t('setono_sylius_cms.builder.blocks')}
@@ -143,7 +146,8 @@ function BlockRow({ block }: { block: StoredBlock }) {
     const moving = useBuilderState((state) => dragging?.dragged !== null && dragging?.dragged !== undefined && actedOn(state.selection, dragging.dragged).includes(block.key));
     const blockType = useBuilderState((state) => state.rules.blockTypes.get(block.type));
     const locale = useBuilderState((state) => state.locale);
-    const label = blockType?.label ?? block.type;
+    const invalid = useValidationState((state) => blockHasErrors(state.errors, block.key));
+    const label = blockLabel(block, blockType, t);
     const hint = blockHint(block, blockType, locale);
     const holdsBlocks = (blockType?.children.length ?? 0) > 0;
     const target = dragging?.target?.key === block.key ? dragging.target : null;
@@ -172,8 +176,9 @@ function BlockRow({ block }: { block: StoredBlock }) {
 
     return (
         <div
-            className={styles.row}
+            className={blockType === undefined ? `${styles.row} ${styles.unknown}` : styles.row}
             data-selected={selected || undefined}
+            data-invalid={invalid || undefined}
             data-dragged={moving || undefined}
             data-drop={target?.zone}
             data-refused={(target !== null && !target.allowed) || undefined}
@@ -218,6 +223,7 @@ function BlockRow({ block }: { block: StoredBlock }) {
                 <span className={styles.label}>{label}</span>
                 {hint !== '' && <span className={styles.hint}>{hint}</span>}
             </button>
+            {invalid && <InvalidFlag />}
             {holdsBlocks && (
                 <AddBlockButton parent={block.key} className={styles.action} label={t('setono_sylius_cms.builder.add_block_inside', { '%block%': label })}>
                     <PlusIcon />
@@ -258,6 +264,23 @@ function zoneOf(event: DragEvent<HTMLElement>, holdsBlocks: boolean): DropZone {
     }
 
     return holdsBlocks ? 'inside' : 'after';
+}
+
+/** Flags a row whose block, or the entry, has errors that publish would refuse. Selecting it shows them. */
+function InvalidFlag() {
+    const t = useTranslator();
+    const label = t('setono_sylius_cms.builder.has_errors');
+
+    return (
+        <span role="img" className={styles.invalid} aria-label={label} title={label}>
+            <AlertIcon />
+        </span>
+    );
+}
+
+/** The block type's label, or says that the code no longer has the block's type. */
+export function blockLabel(block: StoredBlock, blockType: BlockTypeDefinition | undefined, t: Translate): string {
+    return blockType?.label ?? t('setono_sylius_cms.builder.unknown_block_type', { '%type%': block.type });
 }
 
 /** The value of the block's first text field in the edited locale, to tell blocks of one type apart. */
