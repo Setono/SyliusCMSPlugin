@@ -18,11 +18,18 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManager;
+use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Teaser;
+use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\RenameField;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgrader;
 use Sylius\Resource\Factory\FactoryInterface;
+use Symfony\Component\DependencyInjection\ServiceLocator;
 
 final class WorkingCopyManagerTest extends TestCase
 {
@@ -198,6 +205,59 @@ final class WorkingCopyManagerTest extends TestCase
         self::assertSame($before, self::json($page));
     }
 
+    /**
+     * @test
+     */
+    public function a_never_published_entrys_working_copy_holds_its_rows_upgraded(): void
+    {
+        $page = self::page('Hello');
+        $page->setBlockTree(self::teaserAtVersion1('Hello'));
+
+        $workingCopy = $this->workingCopies()->getWorkingCopy($page);
+
+        self::assertSame($page, $workingCopy);
+        self::assertSame(3, $workingCopy->getBlockTree()->blocks[0]->version);
+        self::assertSame(['heading' => ['en_US' => 'Hello']], $workingCopy->getBlockTree()->blocks[0]->fields);
+    }
+
+    /**
+     * @test
+     */
+    public function a_published_entrys_working_copy_holds_its_rows_upgraded_and_leaves_the_rows_as_they_are(): void
+    {
+        $page = self::page('Hello', published: true);
+        $page->setBlockTree(self::teaserAtVersion1('Hello'));
+        $rows = $page->getBlockTreeJson();
+        $this->drafts->findOneByEntry($page)->willReturn(null);
+
+        $workingCopy = $this->workingCopies()->getWorkingCopy($page);
+
+        self::assertSame(['heading' => ['en_US' => 'Hello']], $workingCopy->getBlockTree()->blocks[0]->fields);
+        self::assertSame($rows, $page->getBlockTreeJson());
+    }
+
+    /**
+     * @test
+     */
+    public function a_draft_is_upgraded_when_it_is_read_and_when_it_is_applied(): void
+    {
+        $page = self::page('Hello', published: true);
+        $copy = clone $page;
+        $copy->setBlockTree(self::teaserAtVersion1('Hello world'));
+        $draft = new Draft();
+        $draft->setEntry($page);
+        $draft->setContent(self::json($copy));
+        $this->drafts->findOneByEntry($page)->willReturn($draft);
+        $this->manager->remove($draft)->shouldBeCalledOnce();
+
+        self::assertSame(['heading' => ['en_US' => 'Hello world']], $this->workingCopies()->getWorkingCopy($page)->getBlockTree()->blocks[0]->fields);
+
+        $this->workingCopies()->applyDraft($page);
+
+        self::assertSame(3, $page->getBlockTree()->blocks[0]->version);
+        self::assertSame(['heading' => ['en_US' => 'Hello world']], $page->getBlockTree()->blocks[0]->fields);
+    }
+
     private function workingCopies(): WorkingCopyManager
     {
         return new WorkingCopyManager(
@@ -211,6 +271,15 @@ final class WorkingCopyManagerTest extends TestCase
             self::normalizer(),
             new EntryDenormalizer(self::registry()),
             $this->manager->reveal(),
+            new StoredDataUpgrader(
+                new BlockTypeRegistry(['teaser' => Teaser::class], new FieldReader()),
+                new LayoutRegistry([], new FieldReader()),
+                self::registry(),
+                new ServiceLocator([
+                    'block_type:teaser:1' => static fn (): RenameField => new RenameField('title', 'headline'),
+                    'block_type:teaser:2' => static fn (): RenameField => new RenameField('headline', 'heading'),
+                ]),
+            ),
         );
     }
 
@@ -253,6 +322,14 @@ final class WorkingCopyManagerTest extends TestCase
         $block->setValue('text', 'en_US', $heading);
 
         return new StoredTree(null, [$block]);
+    }
+
+    /**
+     * A tree with a Teaser block as version 1 stored it: Teaser is at version 3, and its "heading" was "title" in version 1
+     */
+    private static function teaserAtVersion1(string $heading): StoredTree
+    {
+        return new StoredTree(null, [new StoredBlock(self::KEY, 'teaser', 1, fields: ['title' => ['en_US' => $heading]])]);
     }
 
     private static function json(EntryInterface $entry): string

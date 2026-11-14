@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection;
 
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
+use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
+use Setono\SyliusCMSPlugin\Attribute\Layout;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Model\Draft;
@@ -17,7 +19,9 @@ use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
+use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\LandingFromOne;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Resource\Factory\Factory;
 use Sylius\Resource\Factory\TranslatableFactory;
@@ -96,6 +100,24 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $configurators[BlockType::class]($definition, new BlockType('plain', 'app.plain', 'plain.html.twig'), new \ReflectionClass(Plain::class));
 
         self::assertTrue($definition->hasTag('setono_sylius_cms.block_type'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_autoconfigures_layouts_and_upgraders_by_their_attributes(): void
+    {
+        $this->load();
+
+        $configurators = $this->container->getAutoconfiguredAttributes();
+
+        $layout = new ChildDefinition('');
+        $configurators[Layout::class]($layout, new Layout('landing', Page::class, 'app.landing', 'landing.html.twig'), new \ReflectionClass(Landing::class));
+        self::assertTrue($layout->hasTag('setono_sylius_cms.layout'));
+
+        $upgrader = new ChildDefinition('');
+        $configurators[AsUpgrader::class]($upgrader, new AsUpgrader(Landing::class, 1), new \ReflectionClass(LandingFromOne::class));
+        self::assertTrue($upgrader->hasTag('setono_sylius_cms.upgrader'));
     }
 
     /**

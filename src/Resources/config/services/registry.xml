@@ -13,6 +13,13 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry"/>
 
+        <service id="Setono\SyliusCMSPlugin\Registry\LayoutRegistry" class="Setono\SyliusCMSPlugin\Registry\LayoutRegistry">
+            <!-- Replaced by RegisterLayoutsPass with the layout classes by content type and code -->
+            <argument type="collection"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\FieldReader"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\LayoutRegistry"/>
+
         <service id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry" class="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry">
             <!-- Replaced by RegisterContentTypesPass with the content types' resources by code -->
             <argument type="collection"/>
