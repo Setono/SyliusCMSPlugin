@@ -229,6 +229,38 @@ describe('sending moves', () => {
     });
 });
 
+describe('sending the editing tools', () => {
+    const start = (): StoredBlock[] => [block('a'), blockOf('group', 'g', [block('b'), block('c')]), blockOf('group', 'h', [block('d')]), block('e')];
+
+    it.each<[string, (store: ReturnType<typeof storeWith>) => void]>([
+        ['several blocks moved into a container', (store) => store.getState().moveBlocks(['e', 'a', 'd'], 'g', 1)],
+        ['several blocks moved up and down', (store) => store.getState().shiftBlocks(['h', 'c', 'e'], 'up') && store.getState().shiftBlocks(['a', 'b'], 'down')],
+        ['several blocks duplicated', (store) => store.getState().duplicateBlocks(['g', 'd', 'e'])],
+        ['several blocks deleted', (store) => store.getState().removeBlocks(['a', 'c', 'h'])],
+        [
+            'edits undone and redone',
+            (store) => {
+                store.getState().duplicateBlocks(['g']);
+                store.getState().moveBlocks(['a', 'new-1'], 'h', 0);
+                store.getState().removeBlocks(['b']);
+                store.getState().undo();
+                store.getState().undo();
+                store.getState().redo();
+                store.getState().undo();
+                store.getState().undo();
+                store.getState().redo();
+            },
+        ],
+    ])('should send changes that take the saved tree to the working copy: %s', (_, act) => {
+        const store = storeWith(start());
+
+        act(store);
+
+        expect(store.getState().unsaved.length).toBeGreaterThan(0);
+        expect(replay(start(), store.getState().unsaved)).toEqual(store.getState().entry.tree.blocks);
+    });
+});
+
 describe('merging change sets', () => {
     it('should keep the last value per block, field and locale', () => {
         const merged = mergeChanges(

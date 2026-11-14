@@ -82,6 +82,12 @@ describe('dropping a dragged block', () => {
     it('should place nothing for a block the tree does not have', () => {
         expect(placement(tree, 'a', 'missing', 'before')).toBeNull();
     });
+
+    it('should count the index once every block dragged together is taken out, and place nothing on one of them', () => {
+        expect(placement(tree, ['a', 'cols-c1'], 'b', 'after')).toEqual({ parent: null, index: 2 });
+        expect(placement(tree, ['a', 'b'], 'cols-c2', 'inside')).toEqual({ parent: 'cols-c2', index: 0 });
+        expect(placement(tree, ['a', 'b'], 'b', 'before')).toBeNull();
+    });
 });
 
 describe('moving a block', () => {
