@@ -6,11 +6,11 @@ namespace Setono\SyliusCMSPlugin\Controller\Shop;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
+use Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
 use Setono\SyliusCMSPlugin\Rendering\EntryUrlMatch;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
-use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher;
 use Setono\SyliusCMSPlugin\Twig\CmsRuntime;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,7 +25,7 @@ final readonly class ShowEntryAction
 {
     public function __construct(
         private EntryUrlMatcher $entryUrlMatcher,
-        private EntryRepositoryInterface $entryRepository,
+        private VisibleEntriesQueryInterface $visibleEntries,
         private ContentTypeRegistryInterface $contentTypes,
         private RenderContextFactoryInterface $renderContextFactory,
         private BlockViewBuilder $blockViewBuilder,
@@ -44,6 +44,7 @@ final readonly class ShowEntryAction
         $entry = $this->previewedEntry($match, $localeCode) ?? $this->visibleEntry($match)
             ?? throw new NotFoundHttpException(sprintf('No visible entry at "%s"', $path));
 
+        // 3. The render context, with the entry as host-page context
         $renderContext = $this->renderContextFactory->create(['entry' => $entry]);
         $contentType = $this->contentTypes->getByEntry($entry);
 
@@ -72,13 +73,22 @@ final readonly class ShowEntryAction
     }
 
     /**
-     * 2. Visibility. In this slice an entry is visible once it has been published.
-     * Enabled, the date window, channels, translations held back and the audience come with their tickets
+     * 2. Visibility, which the route condition doesn't check, because it runs before the firewall and the audience needs
+     * the signed-in customer. An entry that isn't visible answers 404, with no redirect to sign in
      */
     private function visibleEntry(?EntryUrlMatch $match): ?EntryInterface
     {
-        $entry = null === $match ? null : $this->entryRepository->findOneByUuid($match->uuid);
+        if (null === $match) {
+            return null;
+        }
 
-        return true === $entry?->isPublished() ? $entry : null;
+        $entry = $this->visibleEntries->createQueryBuilder($match->contentType, $this->renderContextFactory->create())
+            ->andWhere('entry.uuid = :uuid')
+            ->setParameter('uuid', $match->uuid)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
+
+        return $entry instanceof EntryInterface ? $entry : null;
     }
 }
