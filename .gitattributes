@@ -21,7 +21,7 @@
 /tests                              export-ignore
 /tsconfig.json                      export-ignore
 /tsconfig.node.json                 export-ignore
-/vite.config.ts                     export-ignore
+/vite.config.mts                    export-ignore
 
 # Built from assets/builder by "npm run build"
 /src/Resources/public/builder/**    linguist-generated
