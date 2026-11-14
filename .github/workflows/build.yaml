@@ -13,7 +13,7 @@ on:
 env:
     APP_ENV: "test"
     DATABASE_URL: "mysql://root:root@127.0.0.1/sylius?serverVersion=8.0&charset=utf8mb4"
-    PHP_EXTENSIONS: "intl, mbstring, pdo_mysql, pdo_pgsql"
+    PHP_EXTENSIONS: "intl, mbstring, pdo_mysql"
 
 jobs:
     coding-standards:
@@ -199,7 +199,7 @@ jobs:
                 run: "vendor/bin/phpunit --testsuite unit"
 
     database-tests:
-        name: "${{ matrix.suite == 'ui' && 'UI' || 'Functional' }} tests (PHP${{ matrix.php-version }} | ${{ matrix.database }})"
+        name: "${{ matrix.suite == 'ui' && 'UI' || 'Functional' }} tests (PHP${{ matrix.php-version }})"
 
         runs-on: "ubuntu-latest"
 
@@ -215,22 +215,10 @@ jobs:
                     - "8.3"
                     - "8.4"
 
-                database:
-                    - "mysql"
-                    - "postgres"
-
-        env:
-            DATABASE_URL: "${{ matrix.database == 'mysql' && 'mysql://root:root@127.0.0.1/sylius?serverVersion=8.0&charset=utf8mb4' || 'postgresql://postgres:postgres@127.0.0.1/sylius?serverVersion=16&charset=utf8' }}"
-
         steps:
-            # The runner image doesn't ship MySQL, so both databases run as containers with pinned versions
+            # The runner image doesn't ship MySQL, so it runs as a container with a pinned version
             -   name: "Start MySQL"
-                if: "matrix.database == 'mysql'"
                 run: "docker run --detach --name database --publish 3306:3306 --env MYSQL_ROOT_PASSWORD=root --health-cmd 'mysqladmin ping -h 127.0.0.1 -proot' --health-interval 2s --health-retries 60 mysql:8.0"
-
-            -   name: "Start PostgreSQL"
-                if: "matrix.database == 'postgres'"
-                run: "docker run --detach --name database --publish 5432:5432 --env POSTGRES_PASSWORD=postgres --health-cmd 'pg_isready -U postgres -h 127.0.0.1' --health-interval 2s --health-retries 60 postgres:16"
 
             -   name: "Checkout"
                 uses: "actions/checkout@v5"

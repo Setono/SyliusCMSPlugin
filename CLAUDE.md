@@ -75,7 +75,7 @@ PHPStan is configured in `phpstan.neon` with:
 
 ### Test Application
 The plugin includes a test Symfony application in `tests/Application/` for development and testing:
-- **Database**: MySQL 8.0+ or PostgreSQL, chosen by `DATABASE_URL`. Set it in `tests/Application/.env.local` / `.env.test.local` or the environment, and always include `serverVersion` in it
+- **Database**: the tests and CI run on MySQL 8.0. The app also boots on PostgreSQL, chosen by `DATABASE_URL`, but the suites aren't run there. Set `DATABASE_URL` in `tests/Application/.env.local` / `.env.test.local` or the environment, and always include `serverVersion` in it
 - Create the schema with `(cd tests/Application && bin/console doctrine:database:create && bin/console doctrine:schema:update --force --complete)`. Use `schema:update` rather than `schema:create`, which fails on PostgreSQL. Run it again after changing the Doctrine mapping
 - Run `(cd tests/Application && yarn install && yarn build && bin/console assets:install)` to build assets
 - Use standard Symfony commands for the test app

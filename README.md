@@ -21,8 +21,8 @@ no migration from v1.
 
 ## Development
 
-The plugin is developed against the Sylius test application in `tests/Application`. It runs on MySQL 8.0+ or
-PostgreSQL. Set `DATABASE_URL` in `tests/Application/.env.local` or `tests/Application/.env.test.local` to choose one.
+The plugin is developed against the Sylius test application in `tests/Application`. The tests run on MySQL 8.0. Set
+`DATABASE_URL` in `tests/Application/.env.local` or `tests/Application/.env.test.local` to point it at your database.
 
 ```shell
 composer install
