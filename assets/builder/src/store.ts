@@ -5,7 +5,7 @@
 import { enablePatches, produceWithPatches, type Patch } from 'immer';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { changesFromPatches, mergeChanges, type Change, type TranslatableLookup } from './changeSet';
-import { findBlock, generateBlockKey, removeBlockFrom } from './tree';
+import { blockList, findBlock, generateBlockKey, removeBlockFrom, type BlockSpot } from './tree';
 import type { BlockTypeDefinition, Entry, EntryStatus, JsonValue, StoredBlock } from './types';
 import { writeFieldValue } from './values';
 
@@ -39,8 +39,8 @@ export interface BuilderData {
 }
 
 export interface BuilderActions {
-    /** Appends a new block of the block type to the top level and selects it. Returns its key. */
-    addBlock(blockType: string): string | null;
+    /** Adds a new block of the block type at the spot, by default at the end of the top level, and selects it. Returns its key. */
+    addBlock(blockType: string, spot?: BlockSpot): string | null;
     removeBlock(key: string): void;
     selectBlock(key: string | null): void;
     /** Sets a field's value in the edited locale, or its one value when it's shared. null or '' removes it. */
@@ -98,7 +98,7 @@ export function createBuilderStore({ locale, blockTypes, entry, status, generate
             saveState: 'idle',
             publishState: 'idle',
 
-            addBlock(code) {
+            addBlock(code, spot) {
                 const blockType = blockTypesByCode.get(code);
                 if (blockType === undefined) {
                     return null;
@@ -117,7 +117,8 @@ export function createBuilderStore({ locale, blockTypes, entry, status, generate
 
                 edit(
                     (working) => {
-                        working.tree.blocks.push(block);
+                        const list = blockList(working, spot?.parent ?? null);
+                        list.splice(spot?.index ?? list.length, 0, block);
                     },
                     { selectedKey: block.key },
                 );

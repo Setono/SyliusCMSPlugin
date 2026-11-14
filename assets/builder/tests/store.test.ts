@@ -23,6 +23,25 @@ describe('the working copy', () => {
         expect(store.getState().selectedKey).toBe('new-1');
     });
 
+    it('should add a new block at a spot in the top level and select it', () => {
+        const store = storeWith([block('a'), block('b')]);
+
+        const key = store.getState().addBlock('heading', { parent: null, index: 1 });
+
+        expect(keys(store)).toEqual(['a', 'new-1', 'b']);
+        expect(store.getState().selectedKey).toBe(key);
+        expect(store.getState().unsaved).toEqual([{ op: 'add_block', parent: null, index: 1, block: expect.objectContaining({ key: 'new-1' }) }]);
+    });
+
+    it("should add a new block at a spot in a block's children", () => {
+        const store = storeWith([{ ...block('parent'), children: [block('a')] }]);
+
+        store.getState().addBlock('heading', { parent: 'parent', index: 0 });
+
+        expect(store.getState().entry.tree.blocks[0]?.children.map((child) => child.key)).toEqual(['new-1', 'a']);
+        expect(store.getState().unsaved).toEqual([{ op: 'add_block', parent: 'parent', index: 0, block: expect.objectContaining({ key: 'new-1' }) }]);
+    });
+
     it('should not add a block of a block type the registry does not have', () => {
         const store = storeWith();
 

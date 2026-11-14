@@ -16,6 +16,7 @@ export interface BuilderConfig {
         entry: string;
         publish: string;
         previewToken: string;
+        previewRender: string;
     };
     /** The entry's channels, for the preview channel picker. */
     channels: Channel[];
