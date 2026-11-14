@@ -7,6 +7,7 @@ import { BuilderProvider, type BuilderSession } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
 import { createPreviewStore } from './preview';
 import { createDiscard, createPublish } from './publishing';
+import { createSettingsStore } from './settings';
 import { Shell } from './shell/Shell';
 import { createBuilderStore } from './store';
 
@@ -27,9 +28,10 @@ export function App({ config, api, autosaveDelay }: AppProps) {
     useEffect(() => {
         let active = true;
         let autosave: Autosave | undefined;
+        let unsubscribeSettings: (() => void) | undefined;
 
         Promise.all([api.fetchRegistry(), api.fetchEntry()]).then(
-            ([registry, { entry, status }]) => {
+            ([registry, { entry, settings: entrySettings, status }]) => {
                 if (!active) {
                     return;
                 }
@@ -43,6 +45,16 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                 });
                 autosave = createAutosave(store, (changes) => api.saveChanges(changes), { delay: autosaveDelay });
 
+                // The preview shows the entry in one of its own channels, which follow the settings as they change.
+                const settings = createSettingsStore(entrySettings, (changes) => api.saveSettings(changes));
+                const entryChannels = (codes: string[]) => config.channels.filter(({ code }) => codes.includes(code));
+                const preview = createPreviewStore(entryChannels(entrySettings.channels));
+                unsubscribeSettings = settings.subscribe((state, previous) => {
+                    if (state.settings.channels !== previous.settings.channels) {
+                        preview.getState().setChannels(entryChannels(state.settings.channels));
+                    }
+                });
+
                 setPhase({
                     name: 'ready',
                     translate: createTranslator({ ...config.strings, ...registry.strings }),
@@ -51,8 +63,17 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                         backUrl: config.backUrl,
                         publish: createPublish(store, autosave, () => api.publish()),
                         discard: createDiscard(store, autosave, () => api.discard()),
-                        preview: createPreviewStore(config.channels),
-                        createPreviewUrl: (preview) => api.createPreviewUrl(preview),
+                        preview,
+                        // The page renders what the server holds, so a new page waits for the unsaved changes
+                        createPreviewUrl: async (request) => {
+                            await autosave?.flush();
+
+                            return api.createPreviewUrl(request);
+                        },
+                        renderPreview: (token, blocks) => api.renderPreview(token, blocks),
+                        settings,
+                        channels: config.channels,
+                        customerGroups: config.customerGroups,
                     },
                 });
             },
@@ -66,6 +87,7 @@ export function App({ config, api, autosaveDelay }: AppProps) {
         return () => {
             active = false;
             autosave?.dispose();
+            unsubscribeSettings?.();
         };
     }, [api, config, autosaveDelay]);
 

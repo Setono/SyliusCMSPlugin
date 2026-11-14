@@ -44,23 +44,37 @@ setono_sylius_cms:
     # The builder app's UI strings. Every key under setono_sylius_cms.builder reaches the app through the registry endpoint
     builder:
         add_block: Add block
+        add_block_above: Add block above
+        add_block_below: Add block below
         add_block_inside: 'Add a block inside %block%'
+        audience: Audience
+        audience_everyone: Everyone
+        audience_except: Everyone except these
+        audience_only: Only these
         back: Back
+        block_settings: Settings
         blocks: Blocks
+        channels: Channels
         children: Blocks inside
+        customer_groups: Customer groups
+        date_window: Date window
         delete_block: Delete block
+        deleted: deleted
         desktop: Desktop
         discard_changes: Discard changes
         discard_failed: Couldn't discard the changes
         discarding: Discarding…
         drop_refused: '%block% can''t go there'
+        enabled: Enabled
+        entry_settings: Entry settings
+        guests: Guests
         load_failed: Couldn't load the entry
         loading: Loading…
         mobile: Mobile
         never_published: Never published
         no_blocks: No blocks yet
+        no_group: Signed in without a group
         no_matching_block_types: No block types match
-        no_selection: Select a block to edit its fields
         preview: Preview
         preview_channel: Preview channel
         preview_failed: Couldn't load the preview
@@ -85,6 +99,11 @@ setono_sylius_cms:
         saved: Saved
         saving: Saving…
         search_block_types: Search block types
+        select_parent: Select parent
+        settings: Settings
+        show_from: Show from
+        show_until: Show until
+        takes_effect_on_save: Takes effect when saved, without publishing
         title: Builder
         unpublished_changes: Unpublished changes
         unsupported_field_type: This field type isn't supported yet

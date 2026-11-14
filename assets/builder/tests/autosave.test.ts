@@ -4,7 +4,7 @@ import type { Change } from '../src/changeSet';
 import { ApiError } from '../src/api';
 import { createDiscard, createPublish } from '../src/publishing';
 import type { EntryResponse, EntryStatus } from '../src/types';
-import { block, entry, storeWith } from './fixtures';
+import { block, entry, settings, storeWith } from './fixtures';
 
 /** A promise to settle from the test. */
 function deferred<T>() {
@@ -203,7 +203,7 @@ describe('discarding changes', () => {
         store.setState({ status: 'unpublished_changes' });
         const save = vi.fn(async (): Promise<EntryStatus> => 'unpublished_changes');
         const autosave = createAutosave(store, save);
-        const send = vi.fn(async (): Promise<EntryResponse> => ({ entry: published, status: 'published' }));
+        const send = vi.fn(async (): Promise<EntryResponse> => ({ entry: published, settings: settings(), status: 'published' }));
         const discard = createDiscard(store, autosave, send);
 
         store.getState().setFieldValue('a', 'text', 'Goodbye');
@@ -234,7 +234,7 @@ describe('discarding changes', () => {
         const discard = createDiscard(store, autosave, async () => {
             calls.push('discard');
 
-            return { entry: published, status: 'published' };
+            return { entry: published, settings: settings(), status: 'published' };
         });
 
         store.getState().setFieldValue('a', 'text', 'Hello world');
@@ -270,7 +270,7 @@ describe('discarding changes', () => {
     it('should not discard twice at once', async () => {
         const store = storeWith();
         const autosave = createAutosave(store, vi.fn());
-        const send = vi.fn(async (): Promise<EntryResponse> => ({ entry: published, status: 'published' }));
+        const send = vi.fn(async (): Promise<EntryResponse> => ({ entry: published, settings: settings(), status: 'published' }));
         const discard = createDiscard(store, autosave, send);
 
         await Promise.all([discard(), discard()]);

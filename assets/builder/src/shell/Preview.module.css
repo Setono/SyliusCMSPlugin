@@ -30,3 +30,11 @@
     padding: var(--builder-space-4);
     color: var(--builder-color-danger);
 }
+
+/* Where + in the preview was clicked, which the block picker opens next to. */
+.pickerAnchor {
+    position: fixed;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}

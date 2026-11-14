@@ -5,6 +5,12 @@ interface TreeBlock<B> {
     children: B[];
 }
 
+/** A spot in the block tree: a position in the top level when the parent is null, and otherwise in the parent's children. */
+export interface BlockSpot {
+    parent: string | null;
+    index: number;
+}
+
 /** Finds a block anywhere in the block tree by its key. */
 export function findBlock<B extends TreeBlock<B>>(blocks: readonly B[], key: string): B | undefined {
     for (const block of blocks) {
@@ -15,6 +21,23 @@ export function findBlock<B extends TreeBlock<B>>(blocks: readonly B[], key: str
         const child = findBlock(block.children, key);
         if (child !== undefined) {
             return child;
+        }
+    }
+
+    return undefined;
+}
+
+/** Where a block is in the block tree: its parent's key, or null at the top level, and its index there. */
+export function locateBlock<B extends TreeBlock<B>>(blocks: B[], key: string, parent: string | null = null): BlockSpot | undefined {
+    const index = blocks.findIndex((block) => block.key === key);
+    if (index !== -1) {
+        return { parent, index };
+    }
+
+    for (const block of blocks) {
+        const spot = locateBlock(block.children, key, block.key);
+        if (spot !== undefined) {
+            return spot;
         }
     }
 

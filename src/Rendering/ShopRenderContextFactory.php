@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Rendering;
 
 use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
+use Setono\SyliusCMSPlugin\Targeting\CustomerGroupValue;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
@@ -16,7 +17,8 @@ use Sylius\Component\Locale\Context\LocaleContextInterface;
 /**
  * Creates the render context of a shop request from Sylius's contexts. This is the one place the read pipeline's
  * channel, locale, currency, customer, time and preview mode come from. In preview mode, the preview's channel comes
- * through Sylius's channel context, and its locale through the URL
+ * through Sylius's channel context, and its locale from the token, which also holds when the builder renders blocks
+ * through its own endpoint, outside the shop's URLs
  */
 final readonly class ShopRenderContextFactory implements RenderContextFactoryInterface
 {
@@ -44,25 +46,13 @@ final readonly class ShopRenderContextFactory implements RenderContextFactoryInt
 
         return new RenderContext(
             $channel,
-            $this->localeContext->getLocaleCode(),
+            $this->previewContext->getPreview()->localeCode ?? $this->localeContext->getLocaleCode(),
             $this->currencyContext->getCurrencyCode(),
             $customer,
-            self::customerGroup($customer),
+            CustomerGroupValue::of($customer),
             $this->clock->now(),
             $hostPageContext,
             $this->previewContext->getMode(),
         );
-    }
-
-    /**
-     * A customer group code, or one of the reserved values "@guest" and "@no_group"
-     */
-    private static function customerGroup(?CustomerInterface $customer): string
-    {
-        if (null === $customer) {
-            return '@guest';
-        }
-
-        return $customer->getGroup()?->getCode() ?? '@no_group';
     }
 }

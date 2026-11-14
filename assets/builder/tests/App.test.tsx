@@ -5,26 +5,37 @@ import type { Change } from '../src/changeSet';
 import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
 import type { EntryResponse, EntryStatus, StoredBlock } from '../src/types';
-import { block, blockOf, entry, registry, spacer, strings } from './fixtures';
+import { block, blockOf, entry, registry, settings, spacer, strings } from './fixtures';
 
 const config: BuilderConfig = {
     entryUuid: '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e',
     locale: 'en_US',
     csrfToken: 'abc123',
     backUrl: '/admin/',
-    endpoints: { registry: '/registry', entry: '/entry', publish: '/publish', discard: '/discard', previewToken: '/preview/token' },
+    endpoints: {
+        registry: '/registry',
+        entry: '/entry',
+        publish: '/publish',
+        discard: '/discard',
+        settings: '/settings',
+        previewToken: '/preview/token',
+        previewRender: '/preview/render',
+    },
     channels: [{ code: 'WEB', name: 'Web store' }],
+    customerGroups: [],
     strings: { 'setono_sylius_cms.builder.loading': 'Loading…' },
 };
 
 function fakeApi(overrides: Partial<BuilderApi> = {}) {
     return {
         fetchRegistry: vi.fn(async () => registry),
-        fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), status: 'never_published' })),
+        fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings(), status: 'never_published' })),
         saveChanges: vi.fn(async (): Promise<EntryStatus> => 'never_published'),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
-        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), status: 'published' })),
+        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings(), status: 'published' })),
+        saveSettings: vi.fn(async () => settings()),
         createPreviewUrl: vi.fn(async () => 'http://admin.example/en_US/about-us?_cms_preview=abc.def'),
+        renderPreview: vi.fn(async (): Promise<Record<string, string>> => ({})),
         ...overrides,
     };
 }
@@ -40,7 +51,7 @@ function addBlock(label: string) {
 }
 
 function withBlocks(...blocks: StoredBlock[]): Partial<BuilderApi> {
-    return { fetchEntry: async () => ({ entry: entry(blocks), status: 'never_published' }) };
+    return { fetchEntry: async () => ({ entry: entry(blocks), settings: settings(), status: 'never_published' }) };
 }
 
 /** The tree item of the block whose row button has this name. */
@@ -85,7 +96,7 @@ describe('the builder', () => {
         expect(screen.getByRole('status')).toBeEmptyDOMElement();
         expect(screen.getByRole('navigation', { name: 'Blocks' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Heading Welcome', pressed: false })).toBeInTheDocument();
-        expect(screen.getByText('Select a block to edit its fields')).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: 'Settings', selected: true })).toBeInTheDocument();
     });
 
     it('should add a heading, autosave its text and publish it', async () => {
@@ -151,7 +162,7 @@ describe('the builder', () => {
 
     it('should show unpublished changes once a published entry is saved, and discard them', async () => {
         const api = fakeApi({
-            fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), status: 'published' })),
+            fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings(), status: 'published' })),
             saveChanges: vi.fn(async (): Promise<EntryStatus> => 'unpublished_changes'),
         });
         await openBuilder(api);
@@ -176,7 +187,7 @@ describe('the builder', () => {
     it('should report a failed discard', async () => {
         await openBuilder(
             fakeApi({
-                fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a')]), status: 'unpublished_changes' })),
+                fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a')]), settings: settings(), status: 'unpublished_changes' })),
                 discard: vi.fn(() => Promise.reject(new Error('Offline'))),
             }),
         );

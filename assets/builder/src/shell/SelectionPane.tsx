@@ -9,21 +9,18 @@ import { AddBlockButton } from './BlockPicker';
 import { blockHint } from './BlockTreePane';
 import { PlusIcon } from './icons';
 import styles from './SelectionPane.module.css';
+import { SettingsPane } from './SettingsPane';
 
-/** The right pane: the selected block's fields, rendered from their schemas, and its children. */
+/** The right pane: the selected block's fields, rendered from their schemas, and its children, or the entry's settings. */
 export function SelectionPane() {
-    const t = useTranslator();
     const { store } = useBuilder();
     const block = useBuilderState((state) => (state.selectedKey === null ? undefined : findBlock(state.entry.tree.blocks, state.selectedKey)));
     const blockType = useBuilderState((state) => (block === undefined ? undefined : state.rules.blockTypes.get(block.type)));
     const locale = useBuilderState((state) => state.locale);
 
+    // With nothing selected, or the entry's settings selected, it shows the settings
     if (block === undefined) {
-        return (
-            <div className={styles.pane}>
-                <p className={styles.empty}>{t('setono_sylius_cms.builder.no_selection')}</p>
-            </div>
-        );
+        return <SettingsPane />;
     }
 
     const label = blockType?.label ?? block.type;

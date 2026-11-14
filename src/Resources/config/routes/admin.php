@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DiscardEntryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRenderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewTokenAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PublishEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RegistryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntrySettingsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;
@@ -51,6 +53,12 @@ return static function (RoutingConfigurator $routes): void {
         ->requirements(['uuid' => Requirement::UUID])
     ;
 
+    $routes->add('setono_sylius_cms_admin_api_entry_settings', '/cms/api/entries/{uuid}/settings')
+        ->controller(SaveEntrySettingsAction::class)
+        ->methods(['PUT'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
     $routes->add('setono_sylius_cms_admin_api_entry_publish', '/cms/api/entries/{uuid}/publish')
         ->controller(PublishEntryAction::class)
         ->methods(['POST'])
@@ -65,6 +73,11 @@ return static function (RoutingConfigurator $routes): void {
 
     $routes->add('setono_sylius_cms_admin_api_preview_token', '/cms/api/preview/token')
         ->controller(PreviewTokenAction::class)
+        ->methods(['POST'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_preview_render', '/cms/api/preview/render')
+        ->controller(PreviewRenderAction::class)
         ->methods(['POST'])
     ;
 };

@@ -9,6 +9,8 @@ use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
+use Setono\SyliusCMSPlugin\Targeting\Audience;
+use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Bundle\CoreBundle\Fixture\Factory\ExampleFactoryInterface;
@@ -125,6 +127,30 @@ final class PreviewModeTest extends WebTestCase
     }
 
     /**
+     * See "Preview mode" in docs/spec/builder.md
+     *
+     * @test
+     */
+    public function the_edited_entry_ignores_its_enabled_switch_date_window_and_audience(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('About us', 'about-us', 'Hello', published: true);
+        $page->setEnabled(false);
+        $page->setDateWindow(new DateWindow(null, new \DateTimeImmutable('2000-01-01T00:00:00Z')));
+        $page->setAudience(Audience::only('wholesale'));
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
+        $manager->flush();
+
+        $client->request('GET', '/en_US/about-us');
+        self::assertResponseStatusCodeSame(404);
+
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
+        self::assertResponseStatusCodeSame(200);
+        self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello');
+    }
+
+    /**
      * @test
      */
     public function other_entries_render_as_they_do_for_shoppers(): void
@@ -167,6 +193,52 @@ final class PreviewModeTest extends WebTestCase
         self::assertNull($client->getRequest()->attributes->get('_cms_preview_mode'));
         self::assertSelectorExists('#test-app-analytics');
         self::assertSelectorNotExists('meta[name="test-app-preview-mode"]');
+    }
+
+    /**
+     * @test
+     */
+    public function the_preview_brackets_each_blocks_output_with_markers_that_carry_its_key(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('About us', 'about-us', 'Hello');
+
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
+
+        self::assertMatchesRegularExpression(
+            '#<!--cms:block 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f heading--><h2 class="cms-heading">Hello</h2>\s*<!--/cms:block 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f-->#',
+            (string) $client->getResponse()->getContent(),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function the_preview_gets_the_bridge_script(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('About us', 'about-us', 'Hello');
+
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
+
+        self::assertSame('/bundles/setonosyliuscmsplugin/builder/bridge.js', $client->getCrawler()->filter('body > script[data-cms-bridge]')->attr('src'));
+        self::assertSame('module', $client->getCrawler()->filter('script[data-cms-bridge]')->attr('type'));
+    }
+
+    /**
+     * @test
+     */
+    public function a_shoppers_response_has_no_markers_and_no_bridge(): void
+    {
+        $client = self::createClient();
+        self::createPage('About us', 'about-us', 'Hello', published: true);
+
+        $client->request('GET', '/en_US/about-us');
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello');
+        self::assertStringNotContainsString('cms:block', (string) $client->getResponse()->getContent());
+        self::assertSelectorNotExists('script[data-cms-bridge]');
     }
 
     /**

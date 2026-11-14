@@ -14,6 +14,8 @@ export interface PreviewState {
     channel: string | null;
     width: PreviewWidth;
     setChannel(code: string): void;
+    /** Follows the entry's channels as they change, keeping the channel shown while the entry is still in it. */
+    setChannels(channels: Channel[]): void;
     setWidth(width: PreviewWidth): void;
 }
 
@@ -28,6 +30,13 @@ export function createPreviewStore(channels: Channel[]): PreviewStore {
 
         setChannel(channel) {
             set({ channel });
+        },
+
+        setChannels(entryChannels) {
+            set(({ channel }) => ({
+                channels: entryChannels,
+                channel: entryChannels.some(({ code }) => code === channel) ? channel : (entryChannels[0]?.code ?? null),
+            }));
         },
 
         setWidth(width) {
