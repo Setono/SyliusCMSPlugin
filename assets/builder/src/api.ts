@@ -7,7 +7,10 @@ export interface BuilderApi {
     fetchRegistry(): Promise<Registry>;
     fetchEntry(): Promise<EntryResponse>;
     saveChanges(changes: readonly Change[]): Promise<EntryStatus>;
+    /** Fails with an ApiError of status 422 and the reason when the server refuses, such as a listener's veto. */
     publish(): Promise<EntryStatus>;
+    /** Deletes the draft, and answers with the working copy that's left: the published content. */
+    discard(): Promise<EntryResponse>;
     /** Asks for a preview token, and answers with the URL of the preview it turns on. */
     createPreviewUrl(preview: PreviewRequest): Promise<string>;
     /** Renders blocks of the working copy as the builder holds them, under a preview token, and answers their HTML by key. */
@@ -84,6 +87,10 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) 
             return entryStatus(await request(config.endpoints.publish, { method: 'POST', headers: write }));
         },
 
+        async discard() {
+            return (await request(config.endpoints.discard, { method: 'POST', headers: write })) as EntryResponse;
+        },
+
         async createPreviewUrl({ channel, locale }) {
             const body = await request(config.endpoints.previewToken, {
                 method: 'POST',
@@ -116,13 +123,15 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) 
     };
 }
 
+const statuses: readonly unknown[] = ['never_published', 'published', 'unpublished_changes'] satisfies EntryStatus[];
+
 function entryStatus(body: unknown): EntryStatus {
     const status = isObject(body) ? body.status : undefined;
-    if (status !== 'published' && status !== 'never_published') {
+    if (!statuses.includes(status)) {
         throw new ApiError('The answer has no entry status.', 200);
     }
 
-    return status;
+    return status as EntryStatus;
 }
 
 function errorMessage(body: unknown): string | undefined {

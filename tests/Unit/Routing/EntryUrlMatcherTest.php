@@ -14,7 +14,7 @@ use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
-use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProvider;
+use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Rendering\EntryUrlLookupInterface;
@@ -187,10 +187,13 @@ final class EntryUrlMatcherTest extends TestCase
         $contentTypes = $this->prophesize(ContentTypeRegistryInterface::class);
         $contentTypes->getByEntry(Argument::type(Page::class))->willReturn(new ContentTypeMetadata('page', 'Page', 1, '', null, Page::class, PageTranslation::class, 'setono_sylius_cms.page'));
 
+        $workingCopies = $this->prophesize(WorkingCopyProviderInterface::class);
+        $workingCopies->getWorkingCopy(Argument::type(Page::class))->willReturnArgument(0);
+
         $previewedEntries = new PreviewedEntryProvider(
             new PreviewContext($this->requestStack, new PreviewTokenSigner('secret', new MockClock())),
             $this->entryRepository->reveal(),
-            new WorkingCopyProvider(),
+            $workingCopies->reveal(),
             $contentTypes->reveal(),
         );
 

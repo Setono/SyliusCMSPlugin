@@ -8,7 +8,9 @@ use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
+use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Bundle\CoreBundle\Fixture\Factory\ExampleFactoryInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -33,6 +35,30 @@ final class PreviewModeTest extends WebTestCase
         self::assertSelectorTextSame('h1', 'About us');
         self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello');
         self::assertSelectorExists('#footer', 'Everything else on the page renders as it does for shoppers');
+    }
+
+    /**
+     * @test
+     */
+    public function a_published_page_renders_its_draft_with_a_valid_token_while_shoppers_see_the_rows(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('About us', 'about-us', 'Hello', published: true);
+
+        /** @var WorkingCopyManagerInterface $workingCopies */
+        $workingCopies = self::getContainer()->get(WorkingCopyManagerInterface::class);
+        $workingCopy = $workingCopies->getWorkingCopy($page);
+        $block = $workingCopy->getBlockTree()->blocks[0] ?? null;
+        self::assertNotNull($block);
+        $block->setValue('text', 'en_US', 'Hello world');
+        $workingCopy->setBlockTree(new StoredTree($workingCopy->getBlockTree()->layout, [$block]));
+        $workingCopies->save($page, $workingCopy);
+
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
+        self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello world');
+
+        $client->request('GET', '/en_US/about-us');
+        self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello');
     }
 
     /**

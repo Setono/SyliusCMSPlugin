@@ -34,7 +34,7 @@ final class PreviewFailureTest extends BuilderApiTestCase
     public function preview_render_answers_a_throwing_blocks_error_under_its_key_and_html_for_the_others(): void
     {
         $client = self::createClient();
-        $page = self::createPageWithBlocks('About us', 'about-us');
+        $page = self::createPageWithBlocks('About us', 'about-us', []);
         $csrfToken = self::openBuilder($client, $page);
 
         $response = self::json($client, 'POST', '/admin/cms/api/preview/render?_cms_preview=' . self::token($page), ['blocks' => [
@@ -58,7 +58,7 @@ final class PreviewFailureTest extends BuilderApiTestCase
     {
         $client = self::createClient();
         $broken = new StoredBlock(self::BROKEN, 'broken', 1);
-        $page = self::createPageWithBlocks('About us', 'about-us', self::headingBlock(self::HEADING, 'Still here'), $broken);
+        $page = self::createPageWithBlocks('About us', 'about-us', [self::heading(self::HEADING, 'Still here'), $broken]);
 
         $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
 

@@ -11,7 +11,7 @@ const config: BuilderConfig = {
     locale: 'en_US',
     csrfToken: 'abc123',
     backUrl: '/admin/',
-    endpoints: { registry: '/registry', entry: '/entry', publish: '/publish', previewToken: '/preview/token' },
+    endpoints: { registry: '/registry', entry: '/entry', publish: '/publish', discard: '/discard', previewToken: '/preview/token', previewRender: '/preview/render' },
     channels: [
         { code: 'WEB', name: 'Web store' },
         { code: 'B2B', name: 'Wholesale' },
@@ -31,7 +31,9 @@ function fakeApi(overrides: Partial<BuilderApi> = {}) {
         fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), status: 'never_published' })),
         saveChanges: vi.fn(async (): Promise<EntryStatus> => 'never_published'),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
+        discard: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), status: 'published' })),
         createPreviewUrl: previewUrls(),
+        renderPreview: vi.fn(async (): Promise<Record<string, string>> => ({})),
         ...overrides,
     };
 }
@@ -92,6 +94,22 @@ describe('the preview', () => {
 
         await waitFor(() => expect(api.createPreviewUrl).toHaveBeenCalledTimes(2));
         await waitFor(() => expect(preview()).not.toBe(first));
+    });
+
+    it('should reload with the published content after discarding changes', async () => {
+        const api = fakeApi({
+            fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome back' } })]), status: 'unpublished_changes' })),
+        });
+        await openBuilder(api);
+        await waitFor(() => expect(preview()).toHaveAttribute('src', expect.stringContaining('_cms_preview=1')));
+        const first = preview();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
+
+        await waitFor(() => expect(preview()).toHaveAttribute('src', expect.stringContaining('_cms_preview=2')));
+        expect(preview()).not.toBe(first);
+        expect(api.discard).toHaveBeenCalledTimes(1);
+        expect(api.saveChanges).not.toHaveBeenCalled();
     });
 
     it('should show the preview in the channel picked', async () => {

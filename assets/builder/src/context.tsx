@@ -8,6 +8,7 @@ import type { BuilderState, BuilderStore } from './store';
 export interface BuilderSession {
     store: BuilderStore;
     publish: () => Promise<void>;
+    discard: () => Promise<void>;
     backUrl: string;
     preview: PreviewStore;
     /** Asks for a preview token, and answers with the URL of the preview it turns on. */

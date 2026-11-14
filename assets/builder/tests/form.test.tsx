@@ -3,9 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { FieldRow } from '../src/form/FieldRow';
 import { createTranslator, TranslatorProvider } from '../src/i18n';
 import type { FieldSchema, JsonValue } from '../src/types';
-import { heading, strings } from './fixtures';
+import { group, heading, strings } from './fixtures';
 
 const [textSchema, choiceSchema] = heading.fields.map((field) => field.schema) as [FieldSchema, FieldSchema];
+const [toggleSchema] = group.fields.map((field) => field.schema) as [FieldSchema];
 
 function renderField(schema: FieldSchema, value?: JsonValue, onChange = vi.fn()) {
     render(
@@ -85,5 +86,25 @@ describe('rendering a form from a field schema', () => {
         expect(screen.getByText('Opening hours')).toBeInTheDocument();
         expect(screen.getByText("This field type isn't supported yet")).toBeInTheDocument();
         expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    });
+
+    it('should render a toggle field as a labelled checkbox that is off by default and reports on and off', () => {
+        const onChange = renderField(toggleSchema);
+
+        const checkbox = screen.getByRole('checkbox', { name: 'Full width' });
+        expect(checkbox).not.toBeChecked();
+
+        fireEvent.click(checkbox);
+        expect(onChange).toHaveBeenLastCalledWith(true);
+    });
+
+    it('should show a toggle that is on as checked and report turning it off', () => {
+        const onChange = renderField(toggleSchema, true);
+
+        const checkbox = screen.getByRole('checkbox', { name: 'Full width' });
+        expect(checkbox).toBeChecked();
+
+        fireEvent.click(checkbox);
+        expect(onChange).toHaveBeenLastCalledWith(false);
     });
 });

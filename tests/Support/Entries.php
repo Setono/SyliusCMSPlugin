@@ -27,6 +27,16 @@ trait Entries
      */
     protected static function createPage(string $title, string $slug, ?string $heading = null, bool $published = false): PageInterface
     {
+        return self::createPageWithBlocks($title, $slug, null === $heading ? [] : [self::heading('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', $heading)], $published);
+    }
+
+    /**
+     * Creates a page in en_US through the page resource's own factory, with these top-level blocks
+     *
+     * @param list<StoredBlock> $blocks
+     */
+    protected static function createPageWithBlocks(string $title, string $slug, array $blocks, bool $published = false): PageInterface
+    {
         /** @var FactoryInterface<PageInterface> $factory */
         $factory = self::getContainer()->get('setono_sylius_cms.factory.page');
 
@@ -35,12 +45,7 @@ trait Entries
         $page->setFallbackLocale('en_US');
         $page->setTitle($title);
         $page->setSlug($slug);
-
-        if (null !== $heading) {
-            $block = new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 'heading', 1);
-            $block->setValue('text', 'en_US', $heading);
-            $page->setBlockTree(new StoredTree($page->getBlockTree()->layout, [$block]));
-        }
+        $page->setBlockTree(new StoredTree($page->getBlockTree()->layout, $blocks));
 
         if ($published) {
             $page->publish(new \DateTimeImmutable());
@@ -55,32 +60,9 @@ trait Entries
     }
 
     /**
-     * Creates a never-published page in en_US with the given top-level blocks
+     * A heading block with its text in en_US
      */
-    protected static function createPageWithBlocks(string $title, string $slug, StoredBlock ...$blocks): PageInterface
-    {
-        /** @var FactoryInterface<PageInterface> $factory */
-        $factory = self::getContainer()->get('setono_sylius_cms.factory.page');
-
-        $page = $factory->createNew();
-        $page->setCurrentLocale('en_US');
-        $page->setFallbackLocale('en_US');
-        $page->setTitle($title);
-        $page->setSlug($slug);
-        $page->setBlockTree(new StoredTree($page->getBlockTree()->layout, array_values($blocks)));
-
-        /** @var ObjectManager $manager */
-        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
-        $manager->persist($page);
-        $manager->flush();
-
-        return $page;
-    }
-
-    /**
-     * A Heading block with its text in en_US
-     */
-    protected static function headingBlock(string $key, string $text): StoredBlock
+    protected static function heading(string $key, string $text): StoredBlock
     {
         $block = new StoredBlock($key, 'heading', 1);
         $block->setValue('text', 'en_US', $text);

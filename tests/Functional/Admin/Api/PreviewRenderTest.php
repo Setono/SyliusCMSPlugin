@@ -25,8 +25,8 @@ final class PreviewRenderTest extends BuilderApiTestCase
         $csrfToken = self::openBuilder($client, $page);
 
         $response = self::json($client, 'POST', self::uri($page), ['blocks' => [
-            self::heading(self::FIRST, 'Changed in the builder'),
-            self::heading(self::SECOND, 'Not saved yet', 'h3'),
+            self::storedHeading(self::FIRST, 'Changed in the builder'),
+            self::storedHeading(self::SECOND, 'Not saved yet', 'h3'),
         ]], $csrfToken);
 
         self::assertResponseIsSuccessful();
@@ -52,7 +52,7 @@ final class PreviewRenderTest extends BuilderApiTestCase
         $page = self::createPage('About us', 'about-us', 'Hello');
         $csrfToken = self::openBuilder($client, $page);
 
-        self::json($client, 'POST', self::uri($page), ['blocks' => [self::heading(self::FIRST, 'Hello')]], $csrfToken);
+        self::json($client, 'POST', self::uri($page), ['blocks' => [self::storedHeading(self::FIRST, 'Hello')]], $csrfToken);
 
         self::assertTrue($client->getResponse()->headers->hasCacheControlDirective('no-store'));
     }
@@ -66,7 +66,7 @@ final class PreviewRenderTest extends BuilderApiTestCase
         $page = self::createPage('About us', 'about-us', 'Hello');
         $csrfToken = self::openBuilder($client, $page);
 
-        $response = self::json($client, 'POST', self::uri($page), ['blocks' => [['type' => 'removed_from_code'] + self::heading(self::FIRST, 'Hello')]], $csrfToken);
+        $response = self::json($client, 'POST', self::uri($page), ['blocks' => [['type' => 'removed_from_code'] + self::storedHeading(self::FIRST, 'Hello')]], $csrfToken);
 
         self::assertResponseIsSuccessful();
         self::assertSame(['blocks' => [self::FIRST => '']], $response);
@@ -192,7 +192,7 @@ final class PreviewRenderTest extends BuilderApiTestCase
      *
      * @return array<string, mixed>
      */
-    private static function heading(string $key, string $text, string $level = 'h2'): array
+    private static function storedHeading(string $key, string $text, string $level = 'h2'): array
     {
         return [
             'key' => $key,

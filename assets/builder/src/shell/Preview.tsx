@@ -7,7 +7,8 @@ type Frame = { state: 'waiting' } | { state: 'loaded'; url: string; version: num
 
 /**
  * The centre pane: the real shop page with the working copy, in an iframe from the admin's own host. It loads with a
- * new preview token whenever the channel or locale changes, and reloads after each saved change.
+ * new preview token whenever the channel or locale changes, and reloads after each saved change and after discarding
+ * changes.
  */
 export function Preview({ className }: { className?: string | undefined }) {
     const t = useTranslator();
@@ -46,9 +47,12 @@ export function Preview({ className }: { className?: string | undefined }) {
 
         load();
 
-        // Once everything is saved, the server renders what the builder holds.
+        // Once everything is saved, the server renders what the builder holds. So it does when the builder loads a
+        // working copy from the server instead of editing it, such as the published content after discarding changes.
         const unsubscribe = store.subscribe((state, previous) => {
-            if (state.saveState === 'saved' && previous.saveState !== 'saved') {
+            const saved = state.saveState === 'saved' && previous.saveState !== 'saved';
+            const loaded = state.entry !== previous.entry && state.revision === previous.revision;
+            if (saved || loaded) {
                 load();
             }
         });

@@ -68,7 +68,8 @@ export interface Entry {
     tree: StoredBlockTree;
 }
 
-export type EntryStatus = 'never_published' | 'published';
+/** The entry states of docs/spec/publishing.md#entry-states that the builder shows so far. */
+export type EntryStatus = 'never_published' | 'published' | 'unpublished_changes';
 
 export interface EntryResponse {
     entry: Entry;
@@ -92,16 +93,39 @@ export interface FieldDefinition {
     schema: FieldSchema;
 }
 
+/** A block type a spot in the tree may hold, with the fewest and the most blocks of it there. */
+export interface AllowedBlockType {
+    type: string;
+    min: number | null;
+    max: number | null;
+}
+
 export interface BlockTypeDefinition {
     code: string;
     label: string;
     version: number;
+    /** A public path to the picker's preview image. */
+    thumbnail: string | null;
+    /** Switched off in the config: the picker leaves it out, but blocks of it already in the tree stay. */
+    disabled: boolean;
+    /** The only block types it may sit inside, or null for anywhere a parent allows it. */
+    parents: string[] | null;
+    /** What its children may be, with the rules already resolved: '*' and parents are taken into account. */
+    children: AllowedBlockType[];
     /** In display order. */
     fields: FieldDefinition[];
 }
 
+export interface ContentTypeDefinition {
+    code: string;
+    label: string;
+    /** What the top level of its tree may hold, or null when it has no block tree. */
+    blocks: AllowedBlockType[] | null;
+}
+
 export interface Registry {
     blockTypes: BlockTypeDefinition[];
+    contentTypes: ContentTypeDefinition[];
     /** The UI strings, already translated, keyed by translation key. */
     strings: Record<string, string>;
 }

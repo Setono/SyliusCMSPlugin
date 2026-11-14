@@ -4,6 +4,8 @@
     <services>
         <service id="Setono\SyliusCMSPlugin\Builder\RegistryExporter" class="Setono\SyliusCMSPlugin\Builder\RegistryExporter">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\NestingRulesInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
             <argument type="service" id="translator"/>
             <argument type="service" id="translator"/>
@@ -14,6 +16,10 @@
         </service>
 
         <service id="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer" class="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer" class="Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
     </services>

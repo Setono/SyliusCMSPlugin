@@ -25,6 +25,8 @@
     --builder-color-danger-subtle: #fdecea;
     --builder-color-success: #11703f;
     --builder-color-success-subtle: #e3f4ea;
+    --builder-color-warning: #8a4b00;
+    --builder-color-warning-subtle: #fdf1dc;
     --builder-color-neutral-subtle: #eceef1;
 
     --builder-space-1: 0.25rem;

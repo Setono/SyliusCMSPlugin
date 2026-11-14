@@ -52,6 +52,7 @@ final class BuilderTest extends WebTestCase
             'registry' => '/admin/cms/api/registry',
             'entry' => sprintf('/admin/cms/api/entries/%s', $uuid),
             'publish' => sprintf('/admin/cms/api/entries/%s/publish', $uuid),
+            'discard' => sprintf('/admin/cms/api/entries/%s/discard', $uuid),
             'previewToken' => '/admin/cms/api/preview/token',
             'previewRender' => '/admin/cms/api/preview/render',
         ], $config['endpoints']);

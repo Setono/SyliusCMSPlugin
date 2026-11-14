@@ -14,6 +14,13 @@ interface BlockTypeRegistryInterface
     public function get(string $code): BlockTypeMetadata;
 
     /**
+     * @param class-string $class
+     *
+     * @throws UnknownBlockTypeException
+     */
+    public function getByClass(string $class): BlockTypeMetadata;
+
+    /**
      * @return list<BlockTypeMetadata>
      */
     public function all(): array;

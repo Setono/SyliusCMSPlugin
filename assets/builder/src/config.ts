@@ -15,6 +15,7 @@ export interface BuilderConfig {
         registry: string;
         entry: string;
         publish: string;
+        discard: string;
         previewToken: string;
         previewRender: string;
     };

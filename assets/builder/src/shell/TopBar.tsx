@@ -1,7 +1,14 @@
 import { useBuilder, useBuilderState, usePreviewState } from '../context';
-import { useTranslator } from '../i18n';
+import { useTranslator, type MessageKey } from '../i18n';
+import type { EntryStatus } from '../types';
 import { ArrowLeftIcon, DesktopIcon, MobileIcon } from './icons';
 import styles from './TopBar.module.css';
+
+const statusLabels: Record<EntryStatus, MessageKey> = {
+    never_published: 'setono_sylius_cms.builder.never_published',
+    published: 'setono_sylius_cms.builder.published',
+    unpublished_changes: 'setono_sylius_cms.builder.unpublished_changes',
+};
 
 export function TopBar() {
     const t = useTranslator();
@@ -22,7 +29,7 @@ export function TopBar() {
             <div className={styles.heading}>
                 <h1 className={styles.title}>{title}</h1>
                 <span className={styles.status} data-status={status}>
-                    {status === 'published' ? t('setono_sylius_cms.builder.published') : t('setono_sylius_cms.builder.never_published')}
+                    {t(statusLabels[status])}
                 </span>
             </div>
             <PreviewChannel />
@@ -96,20 +103,36 @@ function SaveState() {
     );
 }
 
+/** Publish, and Discard changes when the entry has a draft. */
 function Publish() {
     const t = useTranslator();
-    const { publish } = useBuilder();
+    const { publish, discard } = useBuilder();
     const publishState = useBuilderState((state) => state.publishState);
+    const publishRefusal = useBuilderState((state) => state.publishRefusal);
+    const discardState = useBuilderState((state) => state.discardState);
+    const hasDraft = useBuilderState((state) => state.status === 'unpublished_changes');
     const publishing = publishState === 'publishing';
+    const discarding = discardState === 'discarding';
 
     return (
         <div className={styles.publish}>
             {publishState === 'failed' && (
-                <span role="alert" className={styles.publishFailed}>
+                <span role="alert" className={styles.failed}>
                     {t('setono_sylius_cms.builder.publish_failed')}
+                    {publishRefusal !== null && `: ${publishRefusal}`}
                 </span>
             )}
-            <button type="button" className={styles.publishButton} disabled={publishing} onClick={() => void publish()}>
+            {discardState === 'failed' && (
+                <span role="alert" className={styles.failed}>
+                    {t('setono_sylius_cms.builder.discard_failed')}
+                </span>
+            )}
+            {hasDraft && (
+                <button type="button" className={styles.discardButton} disabled={discarding || publishing} onClick={() => void discard()}>
+                    {discarding ? t('setono_sylius_cms.builder.discarding') : t('setono_sylius_cms.builder.discard_changes')}
+                </button>
+            )}
+            <button type="button" className={styles.publishButton} disabled={publishing || discarding} onClick={() => void publish()}>
                 {publishing ? t('setono_sylius_cms.builder.publishing') : t('setono_sylius_cms.builder.publish')}
             </button>
         </div>

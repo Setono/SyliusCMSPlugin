@@ -1,18 +1,30 @@
 setono_sylius_cms:
     block_type:
+        column: Column
+        columns: Columns
+        group: Group
         heading: Heading
+        spacer: Spacer
     choice:
         heading_level:
             h1: Heading 1
             h2: Heading 2
             h3: Heading 3
             h4: Heading 4
+        spacer_size:
+            large: Large
+            medium: Medium
+            small: Small
     content_type:
         page: Page
     field:
+        group:
+            full_width: Full width
         heading:
             level: Level
             text: Text
+        spacer:
+            size: Size
     form:
         entry:
             slug: Slug
@@ -24,15 +36,22 @@ setono_sylius_cms:
     # The builder app's UI strings. Every key under setono_sylius_cms.builder reaches the app through the registry endpoint
     builder:
         add_block: Add block
+        add_block_inside: 'Add a block inside %block%'
         back: Back
         blocks: Blocks
+        children: Blocks inside
         delete_block: Delete block
         desktop: Desktop
+        discard_changes: Discard changes
+        discard_failed: Couldn't discard the changes
+        discarding: Discarding…
+        drop_refused: '%block% can''t go there'
         load_failed: Couldn't load the entry
         loading: Loading…
         mobile: Mobile
         never_published: Never published
         no_blocks: No blocks yet
+        no_matching_block_types: No block types match
         no_selection: Select a block to edit its fields
         preview: Preview
         preview_channel: Preview channel
@@ -45,5 +64,7 @@ setono_sylius_cms:
         save_failed: Couldn't save
         saved: Saved
         saving: Saving…
+        search_block_types: Search block types
         title: Builder
+        unpublished_changes: Unpublished changes
         unsupported_field_type: This field type isn't supported yet

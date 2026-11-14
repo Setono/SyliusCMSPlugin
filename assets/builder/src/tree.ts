@@ -12,7 +12,7 @@ export interface BlockSpot {
 }
 
 /** Finds a block anywhere in the block tree by its key. */
-export function findBlock<B extends TreeBlock<B>>(blocks: B[], key: string): B | undefined {
+export function findBlock<B extends TreeBlock<B>>(blocks: readonly B[], key: string): B | undefined {
     for (const block of blocks) {
         if (block.key === key) {
             return block;
@@ -54,6 +54,23 @@ export function removeBlockFrom<B extends TreeBlock<B>>(blocks: B[], key: string
     }
 
     return blocks.some((block) => removeBlockFrom(block.children, key));
+}
+
+/**
+ * Moves a block, with its children, to a list: the top level when parent is null, and otherwise the parent's
+ * children. The index counts the list once the block is taken out, and is clamped to it.
+ */
+export function moveBlockTo<B extends TreeBlock<B>>(blocks: B[], key: string, parent: string | null, index: number): boolean {
+    const block = findBlock(blocks, key);
+    const target = parent === null ? blocks : findBlock(blocks, parent)?.children;
+    if (block === undefined || target === undefined || findBlock([block], parent ?? '') !== undefined) {
+        return false;
+    }
+
+    removeBlockFrom(blocks, key);
+    target.splice(Math.max(0, Math.min(index, target.length)), 0, block);
+
+    return true;
 }
 
 /** The blocks of one list: the top level when the parent is null, and otherwise the parent's children. */

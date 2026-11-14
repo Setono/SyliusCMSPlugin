@@ -1,12 +1,43 @@
 import { enablePatches, produceWithPatches } from 'immer';
 import { describe, expect, it } from 'vitest';
 import { changesFromPatches, mergeChanges, type Change, type TranslatableLookup } from '../src/changeSet';
-import type { Entry } from '../src/types';
-import { block, entry, storeWith } from './fixtures';
+import type { Entry, StoredBlock } from '../src/types';
+import { block, blockOf, entry, shape, storeWith } from './fixtures';
 
 enablePatches();
 
 const isTranslatable: TranslatableLookup = (blockType, field) => blockType === 'heading' && field === 'text';
+
+/** Applies block additions, moves and removals in order, the way the server does. */
+function replay(blocks: StoredBlock[], changes: readonly Change[]): StoredBlock[] {
+    const tree = structuredClone(blocks);
+    const find = (list: StoredBlock[], key: string): StoredBlock | undefined =>
+        list.find((candidate) => candidate.key === key) ?? list.map((candidate) => find(candidate.children, key)).find((found) => found !== undefined);
+    const listOf = (parent: string | null): StoredBlock[] => (parent === null ? tree : (find(tree, parent)?.children ?? []));
+    const takeOut = (list: StoredBlock[], key: string): StoredBlock | undefined => {
+        const index = list.findIndex((candidate) => candidate.key === key);
+        if (index !== -1) {
+            return list.splice(index, 1)[0];
+        }
+
+        return list.map((candidate) => takeOut(candidate.children, key)).find((found) => found !== undefined);
+    };
+
+    for (const change of changes) {
+        if (change.op === 'add_block') {
+            listOf(change.parent).splice(change.index, 0, structuredClone(change.block));
+        } else if (change.op === 'move_block') {
+            const moved = takeOut(tree, change.key);
+            if (moved !== undefined) {
+                listOf(change.parent).splice(change.index, 0, moved);
+            }
+        } else if (change.op === 'remove_block') {
+            takeOut(tree, change.key);
+        }
+    }
+
+    return tree;
+}
 
 /** The changes of one edit made directly with Immer. */
 function changesOf(before: Entry, recipe: (working: Entry) => void): Change[] {
@@ -129,6 +160,75 @@ describe('building the change set', () => {
     });
 });
 
+describe('sending moves', () => {
+    it('should send a reorder as one move to the index once the block is taken out', () => {
+        const store = storeWith([block('a'), block('b'), block('c')]);
+
+        store.getState().moveBlock('a', null, 2);
+
+        expect(store.getState().unsaved).toEqual([{ op: 'move_block', key: 'a', parent: null, index: 2 }]);
+    });
+
+    it('should send a move to the front of a list as one move', () => {
+        const store = storeWith([block('a'), block('b'), block('c')]);
+
+        store.getState().moveBlock('c', null, 0);
+
+        expect(store.getState().unsaved).toEqual([{ op: 'move_block', key: 'c', parent: null, index: 0 }]);
+    });
+
+    it('should send a block nested into another as one move with its parent', () => {
+        const store = storeWith([block('h'), blockOf('columns', 'cols', [blockOf('column', 'c1', [block('x')]), blockOf('column', 'c2')])]);
+
+        store.getState().moveBlock('h', 'c1', 1);
+
+        expect(store.getState().unsaved).toEqual([{ op: 'move_block', key: 'h', parent: 'c1', index: 1 }]);
+    });
+
+    it('should send a block moved out of a container that comes before it in the list as one move', () => {
+        const store = storeWith([blockOf('group', 'g', [block('a'), block('b'), block('c')]), block('d')]);
+
+        store.getState().moveBlock('a', null, 2);
+
+        expect(store.getState().unsaved).toEqual([{ op: 'move_block', key: 'a', parent: null, index: 2 }]);
+    });
+
+    it('should send a block moved between two containers as one move', () => {
+        const store = storeWith([blockOf('group', 'g1', [block('a'), block('b')]), blockOf('group', 'g2', [block('c')])]);
+
+        store.getState().moveBlock('b', 'g2', 0);
+
+        expect(store.getState().unsaved).toEqual([{ op: 'move_block', key: 'b', parent: 'g2', index: 0 }]);
+    });
+
+    it('should send an inserted container with the children it gets straight away as one addition', () => {
+        const store = storeWith();
+
+        store.getState().addBlock('columns');
+
+        expect(store.getState().unsaved).toEqual([
+            {
+                op: 'add_block',
+                parent: null,
+                index: 0,
+                block: expect.objectContaining({ key: 'new-1', children: [expect.objectContaining({ key: 'new-2' }), expect.objectContaining({ key: 'new-3' })] }),
+            },
+        ]);
+    });
+
+    it('should send as few moves as replay to the same tree when a whole tree is replaced at once', () => {
+        const before = [block('a'), blockOf('group', 'g', [block('b'), block('c')]), block('d')];
+        const after = [block('d'), blockOf('group', 'g', [block('c'), block('a')]), block('b')];
+
+        const changes = changesOf(entry(before), (working) => {
+            working.tree.blocks = after;
+        });
+
+        expect(changes.map((change) => change.op)).toEqual(['move_block', 'move_block', 'move_block']);
+        expect(shape(replay(before, changes))).toEqual(shape(after));
+    });
+});
+
 describe('merging change sets', () => {
     it('should keep the last value per block, field and locale', () => {
         const merged = mergeChanges(
@@ -186,6 +286,20 @@ describe('merging change sets', () => {
         expect(store.getState().unsaved).toEqual([
             { op: 'add_block', parent: null, index: 0, block: expect.objectContaining({ key: 'new-1' }) },
             { op: 'add_block', parent: null, index: 1, block: expect.objectContaining({ key: 'new-2' }) },
+            { op: 'remove_block', key: 'new-1' },
+        ]);
+    });
+
+    it('should keep a new block and its removal when a block was moved after it', () => {
+        const store = storeWith([block('a'), blockOf('group', 'g')]);
+
+        store.getState().addBlock('heading', 'g');
+        store.getState().moveBlock('a', 'g', 1);
+        store.getState().removeBlock('new-1');
+
+        expect(store.getState().unsaved).toEqual([
+            { op: 'add_block', parent: 'g', index: 0, block: expect.objectContaining({ key: 'new-1' }) },
+            { op: 'move_block', key: 'a', parent: 'g', index: 1 },
             { op: 'remove_block', key: 'new-1' },
         ]);
     });

@@ -10,7 +10,7 @@ use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
  * What the builder autosaves: the changes it made since it last loaded, as values by field and locale,
- * and blocks added or removed. See "Saving" in docs/spec/builder.md. The body format is internal to the builder
+ * and blocks added, moved or removed. See "Saving" in docs/spec/builder.md. The body format is internal to the builder
  */
 final readonly class ChangeSet
 {
@@ -47,6 +47,11 @@ final readonly class ChangeSet
                 self::index($change),
                 self::block($change, $serializer),
             ),
+            'move_block' => new MoveBlock(
+                self::string($change, 'key'),
+                self::nullableString($change, 'parent'),
+                self::index($change),
+            ),
             'remove_block' => new RemoveBlock(self::string($change, 'key')),
             'set_value' => new SetValue(
                 self::string($change, 'key'),
@@ -54,7 +59,7 @@ final readonly class ChangeSet
                 self::nullableString($change, 'locale'),
                 array_key_exists('value', $change) ? $change['value'] : throw new InvalidChangeSetException('A set_value change must have a value'),
             ),
-            default => throw new InvalidChangeSetException('A change must have the op add_block, remove_block or set_value'),
+            default => throw new InvalidChangeSetException('A change must have the op add_block, move_block, remove_block or set_value'),
         };
     }
 
@@ -86,7 +91,7 @@ final readonly class ChangeSet
     {
         $index = $change['index'] ?? null;
         if (!is_int($index) || $index < 0) {
-            throw new InvalidChangeSetException('The "index" of an add_block change must be 0 or more');
+            throw new InvalidChangeSetException('The "index" of a change must be 0 or more');
         }
 
         return $index;

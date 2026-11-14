@@ -6,7 +6,7 @@ import type { BuilderConfig } from './config';
 import { BuilderProvider, type BuilderSession } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
 import { createPreviewStore } from './preview';
-import { createPublish } from './publishing';
+import { createDiscard, createPublish } from './publishing';
 import { Shell } from './shell/Shell';
 import { createBuilderStore } from './store';
 
@@ -34,7 +34,13 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                     return;
                 }
 
-                const store = createBuilderStore({ locale: config.locale, blockTypes: registry.blockTypes, entry, status });
+                const store = createBuilderStore({
+                    locale: config.locale,
+                    blockTypes: registry.blockTypes,
+                    contentTypes: registry.contentTypes,
+                    entry,
+                    status,
+                });
                 autosave = createAutosave(store, (changes) => api.saveChanges(changes), { delay: autosaveDelay });
 
                 setPhase({
@@ -44,6 +50,7 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                         store,
                         backUrl: config.backUrl,
                         publish: createPublish(store, autosave, () => api.publish()),
+                        discard: createDiscard(store, autosave, () => api.discard()),
                         preview: createPreviewStore(config.channels),
                         createPreviewUrl: (preview) => api.createPreviewUrl(preview),
                     },

@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Builder\EntryStatus;
 use Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface;
+use Setono\SyliusCMSPlugin\Publishing\PublishVetoedException;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Setono\SyliusCMSPlugin\Security\BuilderCsrfToken;
@@ -14,6 +15,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
+/**
+ * Publishes now. A publish that a BeforeEntryPublish listener vetoes answers 422 with the listener's message
+ */
 final readonly class PublishEntryAction
 {
     public function __construct(
@@ -34,8 +38,13 @@ final readonly class PublishEntryAction
             return new JsonResponse(['error' => 'Invalid CSRF token'], Response::HTTP_FORBIDDEN);
         }
 
-        $this->entryPublisher->publish($entry);
+        try {
+            $this->entryPublisher->publish($entry);
+        } catch (PublishVetoedException $e) {
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
-        return new JsonResponse(['status' => EntryStatus::of($entry)]);
+        // A publish leaves no draft
+        return new JsonResponse(['status' => EntryStatus::of($entry, false)]);
     }
 }

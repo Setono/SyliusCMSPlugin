@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Registry;
 
 use PHPUnit\Framework\TestCase;
+use Setono\SyliusCMSPlugin\Attribute\Allow;
+use Setono\SyliusCMSPlugin\Block\Column;
+use Setono\SyliusCMSPlugin\Block\Columns;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
@@ -107,5 +110,69 @@ final class BlockTypeRegistryTest extends TestCase
         self::assertTrue($heading->fields['text']->translatable);
         self::assertFalse($heading->fields['level']->translatable);
         self::assertSame('h2', $heading->fields['level']->default);
+    }
+
+    /**
+     * @test
+     */
+    public function it_reads_what_a_block_type_may_hold_where_it_may_sit_and_its_thumbnail(): void
+    {
+        $registry = new BlockTypeRegistry(['columns' => Columns::class, 'column' => Column::class], new FieldReader());
+
+        $columns = $registry->get('columns');
+        self::assertEquals([new Allow(Column::class, 2, 4)], $columns->children);
+        self::assertNull($columns->parents);
+        self::assertSame('/bundles/setonosyliuscmsplugin/thumbnail/block/columns.svg', $columns->thumbnail);
+
+        $column = $registry->get('column');
+        self::assertEquals([new Allow('*')], $column->children);
+        self::assertSame([Columns::class], $column->parents);
+    }
+
+    /**
+     * @test
+     */
+    public function it_finds_a_block_type_by_its_class(): void
+    {
+        $registry = new BlockTypeRegistry(['teaser' => Teaser::class, 'plain' => Plain::class], new FieldReader());
+
+        self::assertSame('plain', $registry->getByClass(Plain::class)->code);
+        self::assertSame($registry->get('teaser'), $registry->getByClass(Teaser::class));
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_on_a_class_that_is_no_registered_block_type(): void
+    {
+        $this->expectException(UnknownBlockTypeException::class);
+        $this->expectExceptionMessage(sprintf('The class %s is no registered block type', Heading::class));
+
+        (new BlockTypeRegistry(['plain' => Plain::class], new FieldReader()))->getByClass(Heading::class);
+    }
+
+    /**
+     * @test
+     */
+    public function it_keeps_a_disabled_block_type_so_blocks_of_it_keep_rendering_and_marks_it_disabled(): void
+    {
+        $registry = new BlockTypeRegistry(['teaser' => Teaser::class, 'plain' => Plain::class], new FieldReader(), ['teaser']);
+
+        self::assertTrue($registry->has('teaser'));
+        self::assertTrue($registry->get('teaser')->disabled);
+        self::assertFalse($registry->get('plain')->disabled);
+        self::assertCount(2, $registry->all());
+    }
+
+    /**
+     * @test
+     */
+    public function a_block_type_holds_nothing_sits_anywhere_and_has_no_thumbnail_unless_it_says_otherwise(): void
+    {
+        $plain = (new BlockTypeRegistry(['plain' => Plain::class], new FieldReader()))->get('plain');
+
+        self::assertSame([], $plain->children);
+        self::assertNull($plain->parents);
+        self::assertNull($plain->thumbnail);
     }
 }
