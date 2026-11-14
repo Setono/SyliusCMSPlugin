@@ -8,6 +8,14 @@ export interface BuilderApi {
     fetchEntry(): Promise<EntryResponse>;
     saveChanges(changes: readonly Change[]): Promise<EntryStatus>;
     publish(): Promise<EntryStatus>;
+    /** Asks for a preview token, and answers with the URL of the preview it turns on. */
+    createPreviewUrl(preview: PreviewRequest): Promise<string>;
+}
+
+/** What the preview shows the working copy in. Shown to, Date, the sample object and the placement come later. */
+export interface PreviewRequest {
+    channel: string;
+    locale: string;
 }
 
 export class ApiError extends Error {
@@ -72,6 +80,21 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) 
 
         async publish() {
             return entryStatus(await request(config.endpoints.publish, { method: 'POST', headers: write }));
+        },
+
+        async createPreviewUrl({ channel, locale }) {
+            const body = await request(config.endpoints.previewToken, {
+                method: 'POST',
+                headers: { ...write, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ entry: config.entryUuid, channel, locale }),
+            });
+
+            const url = isObject(body) ? body.url : undefined;
+            if (typeof url !== 'string') {
+                throw new ApiError('The answer has no preview URL.', 200);
+            }
+
+            return url;
         },
     };
 }

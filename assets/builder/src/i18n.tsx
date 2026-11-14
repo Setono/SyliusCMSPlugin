@@ -18,7 +18,13 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.delete_block'
     | 'setono_sylius_cms.builder.no_blocks'
     | 'setono_sylius_cms.builder.no_selection'
-    | 'setono_sylius_cms.builder.unsupported_field_type';
+    | 'setono_sylius_cms.builder.unsupported_field_type'
+    | 'setono_sylius_cms.builder.preview'
+    | 'setono_sylius_cms.builder.preview_failed'
+    | 'setono_sylius_cms.builder.preview_channel'
+    | 'setono_sylius_cms.builder.preview_width'
+    | 'setono_sylius_cms.builder.desktop'
+    | 'setono_sylius_cms.builder.mobile';
 
 export type Translate = (key: MessageKey) => string;
 

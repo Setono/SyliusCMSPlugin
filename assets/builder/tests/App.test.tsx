@@ -12,7 +12,8 @@ const config: BuilderConfig = {
     locale: 'en_US',
     csrfToken: 'abc123',
     backUrl: '/admin/',
-    endpoints: { registry: '/registry', entry: '/entry', publish: '/publish' },
+    endpoints: { registry: '/registry', entry: '/entry', publish: '/publish', previewToken: '/preview/token' },
+    channels: [{ code: 'WEB', name: 'Web store' }],
     strings: { 'setono_sylius_cms.builder.loading': 'Loading…' },
 };
 
@@ -22,6 +23,7 @@ function fakeApi(overrides: Partial<BuilderApi> = {}) {
         fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), status: 'never_published' })),
         saveChanges: vi.fn(async (): Promise<EntryStatus> => 'never_published'),
         publish: vi.fn(async (): Promise<EntryStatus> => 'published'),
+        createPreviewUrl: vi.fn(async () => 'http://admin.example/en_US/about-us?_cms_preview=abc.def'),
         ...overrides,
     };
 }

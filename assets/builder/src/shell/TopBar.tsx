@@ -1,6 +1,6 @@
-import { useBuilder, useBuilderState } from '../context';
+import { useBuilder, useBuilderState, usePreviewState } from '../context';
 import { useTranslator } from '../i18n';
-import { ArrowLeftIcon } from './icons';
+import { ArrowLeftIcon, DesktopIcon, MobileIcon } from './icons';
 import styles from './TopBar.module.css';
 
 export function TopBar() {
@@ -25,8 +25,56 @@ export function TopBar() {
                     {status === 'published' ? t('setono_sylius_cms.builder.published') : t('setono_sylius_cms.builder.never_published')}
                 </span>
             </div>
+            <PreviewChannel />
+            <PreviewWidth />
             <SaveState />
             <Publish />
+        </div>
+    );
+}
+
+/** The channel the preview shows the entry in, one of the entry's channels. */
+function PreviewChannel() {
+    const t = useTranslator();
+    const channels = usePreviewState((state) => state.channels);
+    const channel = usePreviewState((state) => state.channel);
+    const setChannel = usePreviewState((state) => state.setChannel);
+
+    if (channel === null) {
+        return null;
+    }
+
+    return (
+        <select
+            className={styles.channel}
+            aria-label={t('setono_sylius_cms.builder.preview_channel')}
+            value={channel}
+            onChange={(event) => setChannel(event.currentTarget.value)}
+        >
+            {channels.map(({ code, name }) => (
+                <option key={code} value={code}>
+                    {name}
+                </option>
+            ))}
+        </select>
+    );
+}
+
+function PreviewWidth() {
+    const t = useTranslator();
+    const width = usePreviewState((state) => state.width);
+    const setWidth = usePreviewState((state) => state.setWidth);
+    const desktop = t('setono_sylius_cms.builder.desktop');
+    const mobile = t('setono_sylius_cms.builder.mobile');
+
+    return (
+        <div role="group" className={styles.widths} aria-label={t('setono_sylius_cms.builder.preview_width')}>
+            <button type="button" className={styles.width} aria-label={desktop} title={desktop} aria-pressed={width === 'desktop'} onClick={() => setWidth('desktop')}>
+                <DesktopIcon />
+            </button>
+            <button type="button" className={styles.width} aria-label={mobile} title={mobile} aria-pressed={width === 'mobile'} onClick={() => setWidth('mobile')}>
+                <MobileIcon />
+            </button>
         </div>
     );
 }

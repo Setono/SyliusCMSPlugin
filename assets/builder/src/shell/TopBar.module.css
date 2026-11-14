@@ -54,6 +54,48 @@
     color: var(--builder-color-success);
 }
 
+.channel {
+    flex: 0 1 12rem;
+    min-width: 0;
+    min-height: var(--builder-control-height);
+    padding: 0 var(--builder-space-2);
+    border: 1px solid var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-surface);
+    color: var(--builder-color-text);
+    font: inherit;
+}
+
+.widths {
+    display: flex;
+    flex: none;
+    padding: 2px;
+    border: 1px solid var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-sm);
+}
+
+.width {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--builder-control-height) - 6px);
+    height: calc(var(--builder-control-height) - 6px);
+    border: 0;
+    border-radius: 3px;
+    background: none;
+    color: var(--builder-color-text-muted);
+    cursor: pointer;
+}
+
+.width:hover {
+    background: var(--builder-color-hover);
+}
+
+.width[aria-pressed="true"] {
+    background: var(--builder-color-selected);
+    color: var(--builder-color-accent);
+}
+
 .saveState {
     flex: none;
     color: var(--builder-color-text-muted);
@@ -98,6 +140,8 @@
 }
 
 .back:focus-visible,
+.channel:focus-visible,
+.width:focus-visible,
 .publishButton:focus-visible {
     outline: 2px solid var(--builder-color-focus);
     outline-offset: 2px;

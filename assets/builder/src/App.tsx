@@ -5,6 +5,7 @@ import { createAutosave, type Autosave } from './autosave';
 import type { BuilderConfig } from './config';
 import { BuilderProvider, type BuilderSession } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
+import { createPreviewStore } from './preview';
 import { createPublish } from './publishing';
 import { Shell } from './shell/Shell';
 import { createBuilderStore } from './store';
@@ -43,6 +44,8 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                         store,
                         backUrl: config.backUrl,
                         publish: createPublish(store, autosave, () => api.publish()),
+                        preview: createPreviewStore(config.channels),
+                        createPreviewUrl: (preview) => api.createPreviewUrl(preview),
                     },
                 });
             },

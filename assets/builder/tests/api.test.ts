@@ -11,7 +11,9 @@ const config: BuilderConfig = {
         registry: '/admin/cms/api/registry',
         entry: '/admin/cms/api/entries/e1',
         publish: '/admin/cms/api/entries/e1/publish',
+        previewToken: '/admin/cms/api/preview/token',
     },
+    channels: [{ code: 'WEB', name: 'Web store' }],
 };
 
 function respond(status: number, body: unknown) {
@@ -43,6 +45,25 @@ describe('the JSON endpoints', () => {
             credentials: 'same-origin',
             headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123' },
         });
+    });
+
+    it('should ask for a preview token for the entry in a channel and a locale, and answer with the preview URL', async () => {
+        const fetch = respond(200, { url: 'http://admin.example/en_US/about-us?_cms_preview=abc.def' });
+
+        await expect(createApi(config, fetch).createPreviewUrl({ channel: 'WEB', locale: 'en_US' })).resolves.toBe(
+            'http://admin.example/en_US/about-us?_cms_preview=abc.def',
+        );
+
+        expect(fetch).toHaveBeenCalledWith('/admin/cms/api/preview/token', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ entry: 'e1', channel: 'WEB', locale: 'en_US' }),
+        });
+    });
+
+    it('should fail when the preview token answer has no URL', async () => {
+        await expect(createApi(config, respond(200, {})).createPreviewUrl({ channel: 'WEB', locale: 'en_US' })).rejects.toBeInstanceOf(ApiError);
     });
 
     it('should fail with the error the server gives', async () => {
