@@ -44,6 +44,22 @@ abstract class Entry implements EntryInterface
         $this->setBlockTree(new StoredTree(null, []));
     }
 
+    /**
+     * A clone is a copy of the entry with copies of its translations, which Doctrine doesn't manage,
+     * so changing it never changes the rows. A published entry's working copy is one (ADR 0009)
+     */
+    public function __clone()
+    {
+        $translations = $this->translations;
+
+        $this->initializeTranslationsCollection();
+        $this->translationsCache = [];
+
+        foreach ($translations as $translation) {
+            $this->addTranslation(clone $translation);
+        }
+    }
+
     public function getId(): ?int
     {
         return $this->id;

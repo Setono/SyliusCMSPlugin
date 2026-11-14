@@ -68,9 +68,11 @@ final class StoredTreeSerializer
     }
 
     /**
+     * Reads a tree decoded with CanonicalJson::decode(), such as the tree of an entry in the entry format
+     *
      * @throws InvalidStoredTreeException
      */
-    private function denormalize(mixed $data): StoredTree
+    public function denormalize(mixed $data): StoredTree
     {
         $data = self::map($data, 'The block tree');
 

@@ -27,6 +27,9 @@ setono_sylius_cms:
         back: Back
         blocks: Blocks
         delete_block: Delete block
+        discard_changes: Discard changes
+        discard_failed: Couldn't discard the changes
+        discarding: Discarding…
         load_failed: Couldn't load the entry
         loading: Loading…
         never_published: Never published
@@ -40,4 +43,5 @@ setono_sylius_cms:
         saved: Saved
         saving: Saving…
         title: Builder
+        unpublished_changes: Unpublished changes
         unsupported_field_type: This field type isn't supported yet

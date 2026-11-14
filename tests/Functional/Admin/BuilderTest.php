@@ -52,6 +52,7 @@ final class BuilderTest extends WebTestCase
             'registry' => '/admin/cms/api/registry',
             'entry' => sprintf('/admin/cms/api/entries/%s', $uuid),
             'publish' => sprintf('/admin/cms/api/entries/%s/publish', $uuid),
+            'discard' => sprintf('/admin/cms/api/entries/%s/discard', $uuid),
         ], $config['endpoints']);
         self::assertSame([
             'setono_sylius_cms.builder.loading' => 'Loading…',

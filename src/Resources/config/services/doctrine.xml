@@ -14,5 +14,8 @@
             <argument>Setono\SyliusCMSPlugin\Model\Entry</argument>
         </service>
         <service id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface" alias="Setono\SyliusCMSPlugin\Repository\EntryRepository"/>
+
+        <!-- setono_sylius_cms.repository.draft is registered with the draft resource -->
+        <service id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface" alias="setono_sylius_cms.repository.draft"/>
     </services>
 </container>
