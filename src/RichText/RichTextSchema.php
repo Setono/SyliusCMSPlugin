@@ -76,7 +76,7 @@ final readonly class RichTextSchema
      */
     public function attributes(): array
     {
-        return array_map(static fn (array $rules): array => array_keys($rules), self::attributeRules());
+        return array_map(array_keys(...), self::attributeRules());
     }
 
     /**
