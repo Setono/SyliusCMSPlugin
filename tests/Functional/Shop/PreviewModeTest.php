@@ -206,7 +206,7 @@ final class PreviewModeTest extends WebTestCase
         $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
 
         self::assertMatchesRegularExpression(
-            '#<!--cms:block 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f heading--><h2 class="cms-heading">Hello</h2>\s*<!--/cms:block 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f-->#',
+            '#<!--cms:block 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f heading--><h2 class="cms-heading"><!--cms:field 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f text text-->Hello<!--/cms:field 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f text--></h2>\s*<!--/cms:block 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f-->#',
             (string) $client->getResponse()->getContent(),
         );
     }
@@ -238,6 +238,7 @@ final class PreviewModeTest extends WebTestCase
         self::assertResponseStatusCodeSame(200);
         self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello');
         self::assertStringNotContainsString('cms:block', (string) $client->getResponse()->getContent());
+        self::assertStringNotContainsString('cms:field', (string) $client->getResponse()->getContent());
         self::assertSelectorNotExists('script[data-cms-bridge]');
     }
 

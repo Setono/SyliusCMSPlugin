@@ -37,6 +37,11 @@
             <argument type="service" id="logger"/>
         </service>
 
+        <!-- Marks the fields cms_field() prints that editors can type in place, in the builder's preview -->
+        <service id="Setono\SyliusCMSPlugin\Preview\FieldMarker" class="Setono\SyliusCMSPlugin\Preview\FieldMarker">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+        </service>
+
         <!-- Sets _cms_preview_mode before the router listener (32), and the headers after the session listener (-1000) -->
         <service id="Setono\SyliusCMSPlugin\Preview\PreviewModeListener" class="Setono\SyliusCMSPlugin\Preview\PreviewModeListener">
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>

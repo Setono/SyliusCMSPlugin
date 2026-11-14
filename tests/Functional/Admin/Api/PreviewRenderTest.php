@@ -36,8 +36,52 @@ final class PreviewRenderTest extends BuilderApiTestCase
         [$first, $second] = [$response['blocks'][self::FIRST], $response['blocks'][self::SECOND]];
         self::assertIsString($first);
         self::assertIsString($second);
-        self::assertMatchesRegularExpression('#^<!--cms:block ' . self::FIRST . ' heading--><h2 class="cms-heading">Changed in the builder</h2>\s*<!--/cms:block ' . self::FIRST . '-->$#', $first);
-        self::assertMatchesRegularExpression('#^<!--cms:block ' . self::SECOND . ' heading--><h3 class="cms-heading">Not saved yet</h3>\s*<!--/cms:block ' . self::SECOND . '-->$#', $second);
+        self::assertMatchesRegularExpression('#^<!--cms:block ' . self::FIRST . ' heading--><h2 class="cms-heading">.*Changed in the builder.*</h2>\s*<!--/cms:block ' . self::FIRST . '-->$#', $first);
+        self::assertMatchesRegularExpression('#^<!--cms:block ' . self::SECOND . ' heading--><h3 class="cms-heading">.*Not saved yet.*</h3>\s*<!--/cms:block ' . self::SECOND . '-->$#', $second);
+    }
+
+    /**
+     * @test
+     */
+    public function it_marks_the_fields_editors_can_type_in_place(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('About us', 'about-us', 'Hello');
+        $csrfToken = self::openBuilder($client, $page);
+
+        $response = self::json($client, 'POST', self::uri($page), ['blocks' => [
+            self::storedHeading(self::FIRST, 'Typed in place'),
+            self::storedRichText(self::SECOND, ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [
+                ['type' => 'text', 'text' => 'A '],
+                ['type' => 'text', 'text' => 'bold', 'marks' => [['type' => 'bold']]],
+                ['type' => 'text', 'text' => ' word'],
+            ]]]]),
+        ]], $csrfToken);
+
+        self::assertResponseIsSuccessful();
+        self::assertIsArray($response);
+        self::assertIsArray($response['blocks'] ?? null);
+        self::assertSame(
+            '<h2 class="cms-heading"><!--cms:field ' . self::FIRST . ' text text-->Typed in place<!--/cms:field ' . self::FIRST . ' text--></h2>',
+            self::between($response['blocks'][self::FIRST] ?? null, self::FIRST),
+            'The heading level is a choice, which is not typed in place, so only the text is marked',
+        );
+        self::assertSame(
+            '<div class="cms-rich-text"><!--cms:field ' . self::SECOND . ' content rich_text--><p>A <strong>bold</strong> word</p><!--/cms:field ' . self::SECOND . ' content--></div>',
+            self::between($response['blocks'][self::SECOND] ?? null, self::SECOND),
+        );
+    }
+
+    /**
+     * What a block's HTML holds between its block markers, trimmed
+     */
+    private static function between(mixed $html, string $key): string
+    {
+        self::assertIsString($html);
+        self::assertStringStartsWith('<!--cms:block ' . $key . ' ', $html);
+        self::assertStringEndsWith('<!--/cms:block ' . $key . '-->', $html);
+
+        return trim(substr($html, (int) strpos($html, '-->') + 3, -strlen('<!--/cms:block ' . $key . '-->')));
     }
 
     /**
@@ -197,6 +241,27 @@ final class PreviewRenderTest extends BuilderApiTestCase
             'version' => 1,
             'style' => null,
             'fields' => ['text' => ['en_US' => $text], 'level' => $level],
+            'translated' => (object) [],
+            'conditions' => [],
+            'children' => [],
+        ];
+    }
+
+    /**
+     * A rich text block in the stored block tree format, as the builder holds it
+     *
+     * @param array<string, mixed> $document
+     *
+     * @return array<string, mixed>
+     */
+    private static function storedRichText(string $key, array $document): array
+    {
+        return [
+            'key' => $key,
+            'type' => 'rich_text',
+            'version' => 1,
+            'style' => null,
+            'fields' => ['content' => ['en_US' => $document]],
             'translated' => (object) [],
             'conditions' => [],
             'children' => [],

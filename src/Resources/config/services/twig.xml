@@ -8,6 +8,7 @@
 
         <service id="Setono\SyliusCMSPlugin\Twig\CmsRuntime" class="Setono\SyliusCMSPlugin\Twig\CmsRuntime">
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\FieldMarker"/>
 
             <tag name="twig.runtime"/>
         </service>
