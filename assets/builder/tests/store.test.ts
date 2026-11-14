@@ -1,6 +1,6 @@
 import { applyPatches } from 'immer';
 import { describe, expect, it } from 'vitest';
-import { block, entry, keys, storeWith } from './fixtures';
+import { block, blockOf, blockTypes, entry, keys, shape, spacer, storeWith } from './fixtures';
 
 describe('the working copy', () => {
     it('should append a new block of the block type to the top level and select it', () => {
@@ -117,5 +117,92 @@ describe('the working copy', () => {
         store.getState().load(entry([block('a')]), 'published');
 
         expect(store.getState().selectedKey).toBeNull();
+    });
+});
+
+describe('inserting a block', () => {
+    it('should insert a block into the children of a block at an index', () => {
+        const store = storeWith([blockOf('group', 'g', [block('a'), block('b')])]);
+
+        expect(store.getState().addBlock('heading', 'g', 1)).toBe('new-1');
+
+        expect(shape(store.getState().entry.tree.blocks)).toEqual(['g', ['a', 'new-1', 'b']]);
+        expect(store.getState().selectedKey).toBe('new-1');
+    });
+
+    it('should add the only block type a container allows straight away, as many as its min needs', () => {
+        const store = storeWith();
+
+        store.getState().addBlock('columns');
+
+        const [inserted] = store.getState().entry.tree.blocks;
+        expect(inserted?.children.map((child) => child.type)).toEqual(['column', 'column']);
+        expect(shape(store.getState().entry.tree.blocks)).toEqual(['new-1', ['new-2', 'new-3']]);
+        expect(store.getState().selectedKey).toBe('new-1');
+        expect(store.getState().history).toHaveLength(1);
+    });
+
+    it('should add one Column at a time into Columns, up to its max', () => {
+        const store = storeWith([blockOf('columns', 'cols', [blockOf('column', 'c1'), blockOf('column', 'c2'), blockOf('column', 'c3')])]);
+
+        expect(store.getState().addBlock('column', 'cols')).toBe('new-1');
+        expect(store.getState().addBlock('column', 'cols')).toBeNull();
+
+        expect(shape(store.getState().entry.tree.blocks)).toEqual(['cols', ['c1', 'c2', 'c3', 'new-1']]);
+    });
+
+    it('should refuse a block type the spot does not allow', () => {
+        const store = storeWith([block('h')]);
+
+        expect(store.getState().addBlock('column')).toBeNull();
+        expect(store.getState().addBlock('heading', 'h')).toBeNull();
+        expect(store.getState().history).toHaveLength(0);
+    });
+
+    it('should refuse a disabled block type', () => {
+        const store = storeWith([], blockTypes.map((type) => (type === spacer ? { ...spacer, disabled: true } : type)));
+
+        expect(store.getState().addBlock('spacer')).toBeNull();
+        expect(keys(store)).toEqual([]);
+    });
+});
+
+describe('moving a block in the tree', () => {
+    it('should reorder the blocks of a list', () => {
+        const store = storeWith([block('a'), block('b'), block('c')]);
+
+        expect(store.getState().moveBlock('a', null, 2)).toBe(true);
+
+        expect(keys(store)).toEqual(['b', 'c', 'a']);
+        expect(store.getState().history).toHaveLength(1);
+    });
+
+    it('should nest a block, with its children, inside another', () => {
+        const store = storeWith([blockOf('group', 'g', [block('a')]), blockOf('columns', 'cols', [blockOf('column', 'c1'), blockOf('column', 'c2')])]);
+
+        expect(store.getState().moveBlock('g', 'c2', 0)).toBe(true);
+
+        expect(shape(store.getState().entry.tree.blocks)).toEqual(['cols', ['c1', 'c2', ['g', ['a']]]]);
+    });
+
+    it('should refuse a drop the rules do not allow and leave the tree as it is', () => {
+        const store = storeWith([blockOf('columns', 'cols', [blockOf('column', 'c1'), blockOf('column', 'c2')]), block('h')]);
+        const before = store.getState().entry;
+
+        expect(store.getState().moveBlock('c1', null, 0)).toBe(false);
+        expect(store.getState().moveBlock('h', 'cols', 0)).toBe(false);
+        expect(store.getState().moveBlock('cols', 'c1', 0)).toBe(false);
+
+        expect(store.getState().entry).toBe(before);
+        expect(store.getState().history).toHaveLength(0);
+    });
+
+    it('should keep the selection on the moved block', () => {
+        const store = storeWith([block('a'), blockOf('group', 'g')]);
+        store.getState().selectBlock('a');
+
+        store.getState().moveBlock('a', 'g', 0);
+
+        expect(store.getState().selectedKey).toBe('a');
     });
 });

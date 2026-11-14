@@ -4,6 +4,8 @@
     <services>
         <service id="Setono\SyliusCMSPlugin\Builder\RegistryExporter" class="Setono\SyliusCMSPlugin\Builder\RegistryExporter">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\NestingRulesInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
             <argument type="service" id="translator"/>
             <argument type="service" id="translator"/>

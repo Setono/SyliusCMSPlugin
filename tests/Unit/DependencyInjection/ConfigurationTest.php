@@ -38,6 +38,8 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             [],
         ], [
+            'disabled' => ['block_types' => []],
+            'assets' => true,
             'resources' => [
                 'draft' => [
                     'classes' => [
@@ -65,6 +67,33 @@ final class ConfigurationTest extends TestCase
                 ],
             ],
         ]);
+    }
+
+    /**
+     * @test
+     */
+    public function a_project_switches_off_shipped_block_types_by_code(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['disabled' => ['block_types' => ['spacer']]],
+            ['disabled' => ['block_types' => ['group']]],
+        ], ['disabled' => ['block_types' => ['spacer', 'group']]], 'disabled');
+    }
+
+    /**
+     * @test
+     */
+    public function a_project_stops_loading_the_shipped_stylesheet(): void
+    {
+        $this->assertProcessedConfigurationEquals([['assets' => false]], ['assets' => false], 'assets');
+    }
+
+    /**
+     * @test
+     */
+    public function assets_is_a_boolean(): void
+    {
+        $this->assertConfigurationIsInvalid([['assets' => 'no']], 'Invalid type for path "setono_sylius_cms.assets"');
     }
 
     /**

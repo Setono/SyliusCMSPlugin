@@ -5,8 +5,14 @@ interface TreeBlock<B> {
     children: B[];
 }
 
+/** A spot in the block tree: a position in the top level when the parent is null, and otherwise in the parent's children. */
+export interface BlockSpot {
+    parent: string | null;
+    index: number;
+}
+
 /** Finds a block anywhere in the block tree by its key. */
-export function findBlock<B extends TreeBlock<B>>(blocks: B[], key: string): B | undefined {
+export function findBlock<B extends TreeBlock<B>>(blocks: readonly B[], key: string): B | undefined {
     for (const block of blocks) {
         if (block.key === key) {
             return block;
@@ -15,6 +21,23 @@ export function findBlock<B extends TreeBlock<B>>(blocks: B[], key: string): B |
         const child = findBlock(block.children, key);
         if (child !== undefined) {
             return child;
+        }
+    }
+
+    return undefined;
+}
+
+/** Where a block is in the block tree: its parent's key, or null at the top level, and its index there. */
+export function locateBlock<B extends TreeBlock<B>>(blocks: B[], key: string, parent: string | null = null): BlockSpot | undefined {
+    const index = blocks.findIndex((block) => block.key === key);
+    if (index !== -1) {
+        return { parent, index };
+    }
+
+    for (const block of blocks) {
+        const spot = locateBlock(block.children, key, block.key);
+        if (spot !== undefined) {
+            return spot;
         }
     }
 
@@ -31,6 +54,23 @@ export function removeBlockFrom<B extends TreeBlock<B>>(blocks: B[], key: string
     }
 
     return blocks.some((block) => removeBlockFrom(block.children, key));
+}
+
+/**
+ * Moves a block, with its children, to a list: the top level when parent is null, and otherwise the parent's
+ * children. The index counts the list once the block is taken out, and is clamped to it.
+ */
+export function moveBlockTo<B extends TreeBlock<B>>(blocks: B[], key: string, parent: string | null, index: number): boolean {
+    const block = findBlock(blocks, key);
+    const target = parent === null ? blocks : findBlock(blocks, parent)?.children;
+    if (block === undefined || target === undefined || findBlock([block], parent ?? '') !== undefined) {
+        return false;
+    }
+
+    removeBlockFrom(blocks, key);
+    target.splice(Math.max(0, Math.min(index, target.length)), 0, block);
+
+    return true;
 }
 
 /** The blocks of one list: the top level when the parent is null, and otherwise the parent's children. */

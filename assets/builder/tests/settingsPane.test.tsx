@@ -18,6 +18,7 @@ const config: BuilderConfig = {
         discard: '/discard',
         settings: '/settings',
         previewToken: '/preview/token',
+        previewRender: '/preview/render',
     },
     channels: [
         { code: 'WEB', name: 'Web store' },
@@ -45,6 +46,7 @@ function fakeApi(initial: EntrySettings = settings(), overrides: Partial<Builder
             return saved;
         }),
         createPreviewUrl: vi.fn(async ({ channel }: { channel: string }) => `http://admin.example/en_US/about-us?channel=${channel}`),
+        renderPreview: vi.fn(async (): Promise<Record<string, string>> => ({})),
         ...overrides,
     };
 }

@@ -15,6 +15,7 @@ const config: BuilderConfig = {
         discard: '/admin/cms/api/entries/e1/discard',
         settings: '/admin/cms/api/entries/e1/settings',
         previewToken: '/admin/cms/api/preview/token',
+        previewRender: '/admin/cms/api/preview/render',
     },
     channels: [{ code: 'WEB', name: 'Web store' }],
     customerGroups: [],
@@ -121,6 +122,25 @@ describe('the JSON endpoints', () => {
 
     it('should fail when the preview token answer has no URL', async () => {
         await expect(createApi(config, respond(200, {})).createPreviewUrl({ channel: 'WEB', locale: 'en_US' })).rejects.toBeInstanceOf(ApiError);
+    });
+
+    it('should ask for blocks of the working copy to be rendered under the preview token, and answer their HTML by key', async () => {
+        const fetch = respond(200, { blocks: { a: '<!--cms:block a heading--><h2>Hello</h2><!--/cms:block a-->' } });
+        const blocks = [{ key: 'a', type: 'heading', version: 1, style: null, fields: { text: { en_US: 'Hello' } }, translated: {}, conditions: [], children: [] }];
+
+        await expect(createApi(config, fetch).renderPreview('abc.def+/', blocks)).resolves.toEqual({ a: '<!--cms:block a heading--><h2>Hello</h2><!--/cms:block a-->' });
+
+        expect(fetch).toHaveBeenCalledWith('/admin/cms/api/preview/render?_cms_preview=abc.def%2B%2F', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ blocks }),
+        });
+    });
+
+    it('should fail when the rendered blocks are missing from the answer', async () => {
+        await expect(createApi(config, respond(200, { blocks: { a: 1 } })).renderPreview('t', [])).rejects.toBeInstanceOf(ApiError);
+        await expect(createApi(config, respond(200, {})).renderPreview('t', [])).rejects.toBeInstanceOf(ApiError);
     });
 
     it('should fail with the error the server gives', async () => {

@@ -5,8 +5,9 @@
 import { enablePatches, produceWithPatches, type Patch } from 'immer';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { changesFromPatches, mergeChanges, type Change, type TranslatableLookup } from './changeSet';
-import { findBlock, generateBlockKey, removeBlockFrom } from './tree';
-import type { BlockTypeDefinition, Entry, EntryStatus, JsonValue, StoredBlock } from './types';
+import { canMove, createNestingRules, initialChildren, insertableIn, type NestingRules } from './nesting';
+import { findBlock, generateBlockKey, moveBlockTo, removeBlockFrom } from './tree';
+import type { BlockTypeDefinition, ContentTypeDefinition, Entry, EntryStatus, JsonValue, StoredBlock } from './types';
 import { writeFieldValue } from './values';
 
 enablePatches();
@@ -28,6 +29,8 @@ export interface BuilderData {
     /** The one locale the builder edits. */
     locale: string;
     blockTypes: BlockTypeDefinition[];
+    /** What each spot in the tree may hold. */
+    rules: NestingRules;
     entry: Entry;
     status: EntryStatus;
     selectedKey: string | null;
@@ -44,8 +47,14 @@ export interface BuilderData {
 }
 
 export interface BuilderActions {
-    /** Appends a new block of the block type to the top level and selects it. Returns its key. */
-    addBlock(blockType: string): string | null;
+    /**
+     * Inserts a new block of the block type and selects it: at the top level when parent is null, otherwise into
+     * the parent's children, at index or at the end. A container that allows only one block type gets those
+     * children straight away. Returns its key, or null when the spot doesn't take the block type.
+     */
+    addBlock(blockType: string, parent?: string | null, index?: number): string | null;
+    /** Moves a block, with its children, unless the nesting rules refuse it. The index counts the list once the block is taken out. */
+    moveBlock(key: string, parent: string | null, index: number): boolean;
     removeBlock(key: string): void;
     selectBlock(key: string | null): void;
     /** Sets a field's value in the edited locale, or its one value when it's shared. null or '' removes it. */
@@ -64,13 +73,25 @@ export type BuilderStore = StoreApi<BuilderState>;
 export interface BuilderStoreOptions {
     locale: string;
     blockTypes: BlockTypeDefinition[];
+    contentTypes: ContentTypeDefinition[];
     entry: Entry;
     status: EntryStatus;
     generateKey?: () => string;
 }
 
-export function createBuilderStore({ locale, blockTypes, entry, status, generateKey = generateBlockKey }: BuilderStoreOptions): BuilderStore {
+export function createBuilderStore({ locale, blockTypes, contentTypes, entry, status, generateKey = generateBlockKey }: BuilderStoreOptions): BuilderStore {
     const blockTypesByCode = new Map(blockTypes.map((blockType) => [blockType.code, blockType]));
+    const rules = createNestingRules(blockTypes, contentTypes.find((contentType) => contentType.code === entry.contentType)?.blocks ?? null);
+    const createBlock = (type: string): StoredBlock => ({
+        key: generateKey(),
+        type,
+        version: blockTypesByCode.get(type)?.version ?? 1,
+        style: null,
+        fields: {},
+        translated: {},
+        conditions: [],
+        children: [],
+    });
     const isTranslatable: TranslatableLookup = (blockType, field) =>
         blockTypesByCode.get(blockType)?.fields.find((definition) => definition.name === field)?.schema['x-cms-translatable'] === true;
 
@@ -99,6 +120,7 @@ export function createBuilderStore({ locale, blockTypes, entry, status, generate
         return {
             locale,
             blockTypes,
+            rules,
             entry,
             status,
             selectedKey: null,
@@ -110,31 +132,35 @@ export function createBuilderStore({ locale, blockTypes, entry, status, generate
             publishRefusal: null,
             discardState: 'idle',
 
-            addBlock(code) {
-                const blockType = blockTypesByCode.get(code);
-                if (blockType === undefined) {
+            addBlock(code, parent = null, index) {
+                if (!insertableIn(rules, get().entry.tree.blocks, parent).some((blockType) => blockType.code === code)) {
                     return null;
                 }
 
-                const block: StoredBlock = {
-                    key: generateKey(),
-                    type: blockType.code,
-                    version: blockType.version,
-                    style: null,
-                    fields: {},
-                    translated: {},
-                    conditions: [],
-                    children: [],
-                };
+                const block = createBlock(code);
+                block.children = initialChildren(rules, code, createBlock);
 
                 edit(
                     (working) => {
-                        working.tree.blocks.push(block);
+                        const list = parent === null ? working.tree.blocks : findBlock(working.tree.blocks, parent)?.children;
+                        list?.splice(index ?? list.length, 0, block);
                     },
                     { selectedKey: block.key },
                 );
 
                 return block.key;
+            },
+
+            moveBlock(key, parent, index) {
+                if (!canMove(rules, get().entry.tree.blocks, key, parent)) {
+                    return false;
+                }
+
+                edit((working) => {
+                    moveBlockTo(working.tree.blocks, key, parent, index);
+                });
+
+                return true;
             },
 
             removeBlock(key) {

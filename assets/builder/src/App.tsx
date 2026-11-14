@@ -36,7 +36,13 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                     return;
                 }
 
-                const store = createBuilderStore({ locale: config.locale, blockTypes: registry.blockTypes, entry, status });
+                const store = createBuilderStore({
+                    locale: config.locale,
+                    blockTypes: registry.blockTypes,
+                    contentTypes: registry.contentTypes,
+                    entry,
+                    status,
+                });
                 autosave = createAutosave(store, (changes) => api.saveChanges(changes), { delay: autosaveDelay });
 
                 // The preview shows the entry in one of its own channels, which follow the settings as they change.
@@ -58,7 +64,13 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                         publish: createPublish(store, autosave, () => api.publish()),
                         discard: createDiscard(store, autosave, () => api.discard()),
                         preview,
-                        createPreviewUrl: (request) => api.createPreviewUrl(request),
+                        // The page renders what the server holds, so a new page waits for the unsaved changes
+                        createPreviewUrl: async (request) => {
+                            await autosave?.flush();
+
+                            return api.createPreviewUrl(request);
+                        },
+                        renderPreview: (token, blocks) => api.renderPreview(token, blocks),
                         settings,
                         channels: config.channels,
                         customerGroups: config.customerGroups,

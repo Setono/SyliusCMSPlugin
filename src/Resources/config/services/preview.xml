@@ -30,12 +30,27 @@
             <tag name="sylius.context.channel" priority="128"/>
         </service>
 
+        <!-- Adds the markers, and shows a block's error in place of its output, in the builder's preview -->
+        <service id="Setono\SyliusCMSPlugin\Preview\PreviewBlockRenderer" class="Setono\SyliusCMSPlugin\Preview\PreviewBlockRenderer"
+                 decorates="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface">
+            <argument type="service" id=".inner"/>
+            <argument type="service" id="logger"/>
+        </service>
+
         <!-- Sets _cms_preview_mode before the router listener (32), and the headers after the session listener (-1000) -->
         <service id="Setono\SyliusCMSPlugin\Preview\PreviewModeListener" class="Setono\SyliusCMSPlugin\Preview\PreviewModeListener">
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
 
             <tag name="kernel.event_listener" event="kernel.request" method="onRequest" priority="64"/>
             <tag name="kernel.event_listener" event="kernel.response" method="onResponse" priority="-1010"/>
+        </service>
+
+        <!-- After the profiler's toolbar (-128) and the preview headers (-1010) -->
+        <service id="Setono\SyliusCMSPlugin\Preview\BridgeScriptListener" class="Setono\SyliusCMSPlugin\Preview\BridgeScriptListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
+            <argument type="service" id="twig"/>
+
+            <tag name="kernel.event_listener" event="kernel.response" method="onResponse" priority="-1020"/>
         </service>
     </services>
 </container>

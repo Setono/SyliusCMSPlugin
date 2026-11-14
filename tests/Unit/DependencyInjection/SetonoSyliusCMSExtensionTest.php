@@ -100,6 +100,46 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_hands_the_disabled_block_types_to_the_block_type_registry(): void
+    {
+        $this->load(['disabled' => ['block_types' => ['spacer']]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.block_types', ['spacer']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_loads_the_stylesheet_through_the_shop_layout_stylesheets_template_event_before_sylius_own_styles(): void
+    {
+        $this->load();
+
+        self::assertSame([[
+            'events' => [
+                'sylius.shop.layout.stylesheets' => [
+                    'blocks' => [
+                        'setono_sylius_cms_stylesheet' => ['template' => '@SetonoSyliusCMSPlugin/shop/stylesheet.html.twig', 'priority' => 20],
+                    ],
+                ],
+            ],
+        ]], $this->container->getExtensionConfig('sylius_ui'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_does_not_load_the_stylesheet_when_assets_is_off(): void
+    {
+        $this->container->loadFromExtension('setono_sylius_cms', ['assets' => false]);
+
+        $this->load(['assets' => false]);
+
+        self::assertSame([], $this->container->getExtensionConfig('sylius_ui'));
+    }
+
+    /**
+     * @test
+     */
     public function it_registers_page_as_a_sylius_resource(): void
     {
         $this->load();

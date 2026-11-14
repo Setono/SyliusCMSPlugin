@@ -31,6 +31,18 @@ trait Entries
      */
     protected static function createPage(string $title, string $slug, ?string $heading = null, bool $published = false, ?array $channels = null): PageInterface
     {
+        return self::createPageWithBlocks($title, $slug, null === $heading ? [] : [self::heading('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', $heading)], $published, $channels);
+    }
+
+    /**
+     * Creates a page in en_US through the page resource's own factory, with these top-level blocks.
+     * Like a page created in the admin, it's in every channel unless $channels says otherwise
+     *
+     * @param list<StoredBlock> $blocks
+     * @param list<string>|null $channels channel codes
+     */
+    protected static function createPageWithBlocks(string $title, string $slug, array $blocks, bool $published = false, ?array $channels = null): PageInterface
+    {
         /** @var FactoryInterface<PageInterface> $factory */
         $factory = self::getContainer()->get('setono_sylius_cms.factory.page');
 
@@ -39,12 +51,7 @@ trait Entries
         $page->setFallbackLocale('en_US');
         $page->setTitle($title);
         $page->setSlug($slug);
-
-        if (null !== $heading) {
-            $block = new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 'heading', 1);
-            $block->setValue('text', 'en_US', $heading);
-            $page->setBlockTree(new StoredTree($page->getBlockTree()->layout, [$block]));
-        }
+        $page->setBlockTree(new StoredTree($page->getBlockTree()->layout, $blocks));
 
         $page->setChannelCodes($channels ?? self::channelCodes());
 
@@ -58,6 +65,17 @@ trait Entries
         $manager->flush();
 
         return $page;
+    }
+
+    /**
+     * A heading block with its text in en_US
+     */
+    protected static function heading(string $key, string $text): StoredBlock
+    {
+        $block = new StoredBlock($key, 'heading', 1);
+        $block->setValue('text', 'en_US', $text);
+
+        return $block;
     }
 
     protected static function reloadPage(PageInterface $page): PageInterface

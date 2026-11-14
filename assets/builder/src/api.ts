@@ -1,6 +1,6 @@
 import type { Change } from './changeSet';
 import type { BuilderConfig } from './config';
-import type { EntryResponse, EntrySettings, EntryStatus, Registry } from './types';
+import type { EntryResponse, EntrySettings, EntryStatus, Registry, StoredBlock } from './types';
 
 /** The builder's JSON endpoints. They're internal, and change together with the app. */
 export interface BuilderApi {
@@ -18,6 +18,8 @@ export interface BuilderApi {
     saveSettings(changes: Partial<EntrySettings>): Promise<EntrySettings>;
     /** Asks for a preview token, and answers with the URL of the preview it turns on. */
     createPreviewUrl(preview: PreviewRequest): Promise<string>;
+    /** Renders blocks of the working copy as the builder holds them, under a preview token, and answers their HTML by key. */
+    renderPreview(token: string, blocks: readonly StoredBlock[]): Promise<Record<string, string>>;
 }
 
 /** What the preview shows the working copy in. Shown to, Date, the sample object and the placement come later. */
@@ -122,6 +124,21 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) 
             }
 
             return url;
+        },
+
+        async renderPreview(token, blocks) {
+            const body = await request(`${config.endpoints.previewRender}?_cms_preview=${encodeURIComponent(token)}`, {
+                method: 'POST',
+                headers: { ...write, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ blocks }),
+            });
+
+            const html = isObject(body) ? body.blocks : undefined;
+            if (!isObject(html) || !Object.values(html).every((value) => typeof value === 'string')) {
+                throw new ApiError('The answer has no rendered blocks.', 200);
+            }
+
+            return html as Record<string, string>;
         },
     };
 }

@@ -23,8 +23,8 @@ final class PreviewTest extends UITestCase
         Expect::locator($preview->getByRole('heading', ['level' => 1]))->toHaveText('About us');
         Expect::locator($preview->locator('#footer'))->toBeAttached();
 
-        $page->getByRole('button', ['name' => 'Add block'])->click();
-        $page->getByRole('menuitem', ['name' => 'Heading'])->click();
+        $page->getByRole('button', ['name' => 'Add block', 'exact' => true])->click();
+        $page->getByRole('dialog', ['name' => 'Add block'])->getByRole('button', ['name' => 'Heading', 'exact' => true])->click();
         $page->getByLabel('Text')->fill('Hello');
 
         Expect::locator($page->getByRole('status'))->toHaveText('Saved');

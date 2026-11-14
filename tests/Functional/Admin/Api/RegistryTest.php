@@ -33,8 +33,7 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($registry);
         self::assertIsArray($registry['blockTypes']);
 
-        $heading = $registry['blockTypes'][0];
-        self::assertIsArray($heading);
+        $heading = self::blockTypes($registry)['heading'];
         self::assertSame('heading', $heading['code']);
         self::assertSame('Heading', $heading['label']);
         self::assertSame(1, $heading['version']);
@@ -74,5 +73,55 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertSame('Saving…', $registry['strings']['setono_sylius_cms.builder.saving'] ?? null);
         self::assertSame('Saved', $registry['strings']['setono_sylius_cms.builder.saved'] ?? null);
         self::assertSame('Publish', $registry['strings']['setono_sylius_cms.builder.publish'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function it_answers_what_each_block_type_may_hold_and_where_it_may_sit(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+
+        $registry = self::json($client, 'GET', '/admin/cms/api/registry');
+        self::assertIsArray($registry);
+        $blockTypes = self::blockTypes($registry);
+
+        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading'], array_keys($blockTypes));
+
+        self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
+        self::assertNull($blockTypes['columns']['parents']);
+        self::assertSame(['columns'], $blockTypes['column']['parents']);
+
+        $all = [
+            ['type' => 'group', 'min' => null, 'max' => null],
+            ['type' => 'columns', 'min' => null, 'max' => null],
+            ['type' => 'spacer', 'min' => null, 'max' => null],
+            ['type' => 'heading', 'min' => null, 'max' => null],
+        ];
+        self::assertSame($all, $blockTypes['group']['children']);
+        self::assertSame($all, $blockTypes['column']['children']);
+        self::assertSame([], $blockTypes['spacer']['children']);
+        self::assertSame([], $blockTypes['heading']['children']);
+
+        self::assertSame('/bundles/setonosyliuscmsplugin/thumbnail/block/columns.svg', $blockTypes['columns']['thumbnail']);
+        self::assertFalse($blockTypes['spacer']['disabled']);
+
+        self::assertSame([['code' => 'page', 'label' => 'Page', 'blocks' => $all]], $registry['contentTypes']);
+    }
+
+    /**
+     * @param array<array-key, mixed> $registry
+     *
+     * @return array<string, array<string, mixed>> the block types by code
+     */
+    private static function blockTypes(array $registry): array
+    {
+        self::assertIsArray($registry['blockTypes']);
+
+        /** @var array<string, array<string, mixed>> $blockTypes */
+        $blockTypes = array_column($registry['blockTypes'], null, 'code');
+
+        return $blockTypes;
     }
 }
