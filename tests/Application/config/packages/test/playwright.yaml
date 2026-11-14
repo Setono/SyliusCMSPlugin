@@ -1,0 +1,8 @@
+playwright:
+    assets:
+        # Static files the browser asks for are served from public/ without going through the kernel:
+        # Encore builds, files from assets:install and uploaded media
+        prefixes:
+            - '/build'
+            - '/bundles'
+            - '/media'
