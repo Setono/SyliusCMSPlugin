@@ -66,7 +66,7 @@ describe('the preview', () => {
         expect(screen.getByRole('combobox', { name: 'Preview channel' })).toHaveValue('WEB');
     });
 
-    it('should reload after each saved change, with a new token', async () => {
+    it("should not reload after a saved change, which the bridge patches in instead", async () => {
         const saved = deferred<EntryStatus>();
         const api = fakeApi({ saveChanges: vi.fn(() => saved.promise) });
         await openBuilder(api);
@@ -75,22 +75,23 @@ describe('the preview', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Delete block' }));
         await waitFor(() => expect(api.saveChanges).toHaveBeenCalledTimes(1));
-
-        expect(api.createPreviewUrl).toHaveBeenCalledTimes(1);
-
         await act(async () => saved.resolve('never_published'));
 
-        await waitFor(() => expect(preview()).toHaveAttribute('src', expect.stringContaining('_cms_preview=2')));
-        expect(preview()).not.toBe(first);
+        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Saved'));
+        expect(api.createPreviewUrl).toHaveBeenCalledTimes(1);
+        expect(preview()).toBe(first);
     });
 
     it('should reload when the same URL comes back', async () => {
-        const api = fakeApi({ createPreviewUrl: vi.fn(async () => 'http://admin.example/en_US/about-us?_cms_preview=same') });
+        const api = fakeApi({
+            fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome back' } })]), status: 'unpublished_changes' })),
+            createPreviewUrl: vi.fn(async () => 'http://admin.example/en_US/about-us?_cms_preview=same'),
+        });
         await openBuilder(api);
         await waitFor(() => expect(preview()).toHaveAttribute('src', 'http://admin.example/en_US/about-us?_cms_preview=same'));
         const first = preview();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Delete block' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
 
         await waitFor(() => expect(api.createPreviewUrl).toHaveBeenCalledTimes(2));
         await waitFor(() => expect(preview()).not.toBe(first));

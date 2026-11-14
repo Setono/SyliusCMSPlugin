@@ -52,7 +52,13 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                         publish: createPublish(store, autosave, () => api.publish()),
                         discard: createDiscard(store, autosave, () => api.discard()),
                         preview: createPreviewStore(config.channels),
-                        createPreviewUrl: (preview) => api.createPreviewUrl(preview),
+                        // The page renders what the server holds, so a new page waits for the unsaved changes
+                        createPreviewUrl: async (preview) => {
+                            await autosave?.flush();
+
+                            return api.createPreviewUrl(preview);
+                        },
+                        renderPreview: (token, blocks) => api.renderPreview(token, blocks),
                     },
                 });
             },

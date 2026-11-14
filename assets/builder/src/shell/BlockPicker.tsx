@@ -2,7 +2,9 @@ import * as Popover from '@radix-ui/react-popover';
 import { useId, useState, type ReactNode } from 'react';
 import { useBuilder, useBuilderState } from '../context';
 import { useTranslator } from '../i18n';
-import { allowedIn, insertableIn } from '../nesting';
+import { allowedIn, insertableIn, type NestingRules } from '../nesting';
+import type { BlockSpot } from '../tree';
+import type { BlockTypeDefinition, StoredBlock } from '../types';
 import styles from './BlockPicker.module.css';
 
 export interface AddBlockButtonProps {
@@ -25,8 +27,7 @@ export function AddBlockButton({ parent, className, label, children }: AddBlockB
     const tree = useBuilderState((state) => state.entry.tree.blocks);
     const [open, setOpen] = useState(false);
     const insertable = insertableIn(rules, tree, parent);
-    const allowed = allowedIn(rules, tree, parent);
-    const only = allowed.length === 1 ? insertable[0] : undefined;
+    const only = soleBlockType(rules, tree, parent);
 
     const onOpenChange = (next: boolean): void => {
         if (next && only !== undefined) {
@@ -56,6 +57,47 @@ export function AddBlockButton({ parent, className, label, children }: AddBlockB
                     />
                 </Popover.Content>
             </Popover.Portal>
+        </Popover.Root>
+    );
+}
+
+/** The one block type a spot allows, such as Column in Columns, which is added straight away instead of picked. */
+export function soleBlockType(rules: NestingRules, tree: readonly StoredBlock[], parent: string | null): BlockTypeDefinition | undefined {
+    return allowedIn(rules, tree, parent).length === 1 ? insertableIn(rules, tree, parent)[0] : undefined;
+}
+
+export interface BlockPickerAtProps {
+    /** The spot to add the picked block at, or null while the picker is closed. */
+    spot: BlockSpot | null;
+    onClose: () => void;
+    /** What the picker opens next to. */
+    children: ReactNode;
+}
+
+/**
+ * The block picker for a spot anywhere in the tree, opened from outside the tree, such as by + between blocks in the
+ * preview. It adds the picked block at the spot's index.
+ */
+export function BlockPickerAt({ spot, onClose, children }: BlockPickerAtProps) {
+    const t = useTranslator();
+    const { store } = useBuilder();
+
+    return (
+        <Popover.Root open={spot !== null} onOpenChange={(open) => !open && onClose()}>
+            <Popover.Anchor asChild>{children}</Popover.Anchor>
+            {spot !== null && (
+                <Popover.Portal>
+                    <Popover.Content className={styles.picker} aria-label={t('setono_sylius_cms.builder.add_block')} side="bottom" align="center" sideOffset={8} collisionPadding={8}>
+                        <BlockPicker
+                            parent={spot.parent}
+                            onPick={(code) => {
+                                store.getState().addBlock(code, spot.parent, spot.index);
+                                onClose();
+                            }}
+                        />
+                    </Popover.Content>
+                </Popover.Portal>
+            )}
         </Popover.Root>
     );
 }

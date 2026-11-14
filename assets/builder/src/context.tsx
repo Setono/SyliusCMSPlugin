@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 import { useStore } from 'zustand';
-import type { PreviewRequest } from './api';
+import type { BuilderApi, PreviewRequest } from './api';
 import type { PreviewState, PreviewStore } from './preview';
 import type { BuilderState, BuilderStore } from './store';
 
@@ -13,6 +13,8 @@ export interface BuilderSession {
     preview: PreviewStore;
     /** Asks for a preview token, and answers with the URL of the preview it turns on. */
     createPreviewUrl: (preview: PreviewRequest) => Promise<string>;
+    /** Renders blocks of the working copy under a preview token, and answers their HTML by key. */
+    renderPreview: BuilderApi['renderPreview'];
 }
 
 const BuilderContext = createContext<BuilderSession | null>(null);

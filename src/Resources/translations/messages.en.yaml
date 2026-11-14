@@ -36,8 +36,11 @@ setono_sylius_cms:
     # The builder app's UI strings. Every key under setono_sylius_cms.builder reaches the app through the registry endpoint
     builder:
         add_block: Add block
+        add_block_above: Add block above
+        add_block_below: Add block below
         add_block_inside: 'Add a block inside %block%'
         back: Back
+        block_settings: Settings
         blocks: Blocks
         children: Blocks inside
         delete_block: Delete block
@@ -65,6 +68,7 @@ setono_sylius_cms:
         saved: Saved
         saving: Saving…
         search_block_types: Search block types
+        select_parent: Select parent
         title: Builder
         unpublished_changes: Unpublished changes
         unsupported_field_type: This field type isn't supported yet
