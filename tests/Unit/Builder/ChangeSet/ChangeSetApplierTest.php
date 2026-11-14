@@ -208,8 +208,8 @@ final class ChangeSetApplierTest extends TestCase
         $withUnknownChild = new StoredBlock($other, 'heading', 1);
         $withUnknownChild->children = [new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d', 'nope', 1)];
 
-        yield 'adding a block with a key the tree has' => [new AddBlock(null, 0, new StoredBlock(self::A, 'heading', 1)), self::A];
-        yield 'adding a block whose child has a key the tree has' => [new AddBlock(null, 0, $child), self::A];
+        yield 'adding a block with a key the tree has' => [new AddBlock(null, 0, new StoredBlock(self::A, 'heading', 1)), 'The tree already has a block with the key ' . self::A];
+        yield 'adding a block whose child has a key the tree has' => [new AddBlock(null, 0, $child), 'The tree already has a block with the key ' . self::A];
         yield 'adding a block of an unknown type' => [new AddBlock(null, 0, new StoredBlock($other, 'nope', 1)), '"nope"'];
         yield 'adding a block with a child of an unknown type' => [new AddBlock(null, 0, $withUnknownChild), '"nope"'];
         yield 'adding a block inside a block the tree does not have' => [new AddBlock($other, 0, new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4e', 'heading', 1)), $other];
