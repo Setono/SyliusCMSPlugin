@@ -70,6 +70,47 @@ final class ChangeSetApplierTest extends TestCase
     /**
      * @test
      */
+    public function it_puts_an_added_block_right_after_the_block_it_goes_after_wherever_that_is_now(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::C, 'heading', 1), new StoredBlock(self::A, 'heading', 1)]);
+
+        $tree = $this->apply($tree, new AddBlock(null, 1, new StoredBlock(self::B, 'heading', 1), self::A));
+
+        self::assertSame([self::C, self::A, self::B], $tree->keys());
+    }
+
+    /**
+     * @test
+     */
+    public function it_moves_a_block_right_after_the_block_it_goes_after_wherever_that_is_now(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1), new StoredBlock(self::C, 'heading', 1), new StoredBlock(self::B, 'heading', 1)]);
+
+        $tree = $this->apply($tree, new MoveBlock(self::A, null, 0, self::B));
+
+        self::assertSame([self::C, self::B, self::A], $tree->keys());
+    }
+
+    /**
+     * @test
+     */
+    public function it_puts_a_block_at_its_index_when_the_list_does_not_have_the_block_it_goes_after(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1, children: [new StoredBlock(self::C, 'heading', 1)])]);
+
+        $tree = $this->apply(
+            $tree,
+            new AddBlock(self::A, 0, new StoredBlock(self::B, 'heading', 1), self::A),
+            new MoveBlock(self::C, null, 5, self::B),
+        );
+
+        self::assertSame([self::A, self::B, self::C], $tree->keys());
+        self::assertSame(self::B, ($tree->blocks[0]->children[0] ?? null)?->key);
+    }
+
+    /**
+     * @test
+     */
     public function it_moves_a_block_with_its_children_into_another_block(): void
     {
         $moved = new StoredBlock(self::B, 'heading', 1, fields: ['level' => 'h3'], children: [new StoredBlock(self::C, 'heading', 1)]);

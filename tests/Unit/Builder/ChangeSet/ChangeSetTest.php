@@ -11,6 +11,8 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
+use Setono\SyliusCMSPlugin\Json\CanonicalJson;
+use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
 final class ChangeSetTest extends TestCase
 {
@@ -73,6 +75,55 @@ final class ChangeSetTest extends TestCase
     /**
      * @test
      */
+    public function it_reads_the_block_an_added_or_moved_block_goes_right_after(): void
+    {
+        $after = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a';
+
+        $changeSet = ChangeSet::fromArray(['changes' => [
+            ['op' => 'add_block', 'parent' => null, 'index' => 1, 'after' => $after, 'block' => ['key' => self::KEY, 'type' => 'heading', 'version' => 1]],
+            ['op' => 'move_block', 'key' => self::KEY, 'parent' => null, 'index' => 1, 'after' => $after],
+            ['op' => 'move_block', 'key' => self::KEY, 'parent' => null, 'index' => 0, 'after' => null],
+        ]]);
+
+        [$add, $move, $first] = $changeSet->changes;
+
+        self::assertInstanceOf(AddBlock::class, $add);
+        self::assertSame($after, $add->after);
+        self::assertEquals(new MoveBlock(self::KEY, null, 1, $after), $move);
+        self::assertEquals(new MoveBlock(self::KEY, null, 0), $first);
+    }
+
+    /**
+     * @test
+     */
+    public function it_writes_the_changes_the_way_it_reads_them(): void
+    {
+        $parent = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a';
+        $block = new StoredBlock(self::KEY, 'heading', 1, fields: ['text' => ['en_US' => 'Hello']], children: [new StoredBlock($parent, 'spacer', 2)]);
+        $changeSet = new ChangeSet([
+            new AddBlock($parent, 2, $block, $parent),
+            new MoveBlock(self::KEY, null, 0),
+            new SetValue(self::KEY, 'text', 'en_US', ['type' => 'doc', 'content' => []]),
+            new SetValue(self::KEY, 'level', null, null),
+            new RemoveBlock(self::KEY),
+        ]);
+
+        $json = CanonicalJson::encode($changeSet->toArray());
+
+        self::assertSame(
+            '{"changes":[{"op":"add_block","parent":"' . $parent . '","index":2,"after":"' . $parent . '","block":{"key":"' . self::KEY . '","type":"heading","version":1,"style":null,"fields":{"text":{"en_US":"Hello"}},"translated":{},"conditions":[],"children":[{"key":"' . $parent . '","type":"spacer","version":2,"style":null,"fields":{},"translated":{},"conditions":[],"children":[]}]}},'
+            . '{"op":"move_block","key":"' . self::KEY . '","parent":null,"index":0,"after":null},'
+            . '{"op":"set_value","key":"' . self::KEY . '","field":"text","locale":"en_US","value":{"content":[],"type":"doc"}},'
+            . '{"op":"set_value","key":"' . self::KEY . '","field":"level","locale":null,"value":null},'
+            . '{"op":"remove_block","key":"' . self::KEY . '"}]}',
+            $json,
+        );
+        self::assertEquals($changeSet, ChangeSet::fromArray(CanonicalJson::decode($json)));
+    }
+
+    /**
+     * @test
+     */
     public function it_reads_an_empty_change_set(): void
     {
         self::assertSame([], ChangeSet::fromArray(['changes' => []])->changes);
@@ -121,5 +172,7 @@ final class ChangeSetTest extends TestCase
         yield 'move_block with a non-string parent' => [['changes' => [['parent' => 1] + $moveBlock]]];
         yield 'move_block without an index' => [['changes' => [array_diff_key($moveBlock, ['index' => true])]]];
         yield 'move_block with a negative index' => [['changes' => [['index' => -1] + $moveBlock]]];
+        yield 'move_block after a non-string' => [['changes' => [['after' => 1] + $moveBlock]]];
+        yield 'add_block after an empty key' => [['changes' => [['after' => ''] + $addBlock]]];
     }
 }

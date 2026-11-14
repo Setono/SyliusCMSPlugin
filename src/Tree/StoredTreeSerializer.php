@@ -49,7 +49,7 @@ final class StoredTreeSerializer
         ]);
     }
 
-    private function normalizeBlock(StoredBlock $block): ListedObject
+    public function normalizeBlock(StoredBlock $block): ListedObject
     {
         return new ListedObject([
             'key' => $block->key,

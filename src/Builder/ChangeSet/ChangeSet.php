@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Builder\ChangeSet;
 
+use Setono\SyliusCMSPlugin\Json\ListedObject;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
@@ -35,6 +36,42 @@ final readonly class ChangeSet
         return new self(array_map(static fn (mixed $change): Change => self::change($change, $serializer), $data['changes']));
     }
 
+    /**
+     * The change set in the format fromArray() reads, to encode as canonical JSON
+     *
+     * @return array{changes: list<ListedObject>}
+     */
+    public function toArray(): array
+    {
+        $serializer = new StoredTreeSerializer();
+
+        return ['changes' => array_map(static fn (Change $change): ListedObject => match (true) {
+            $change instanceof AddBlock => new ListedObject([
+                'op' => 'add_block',
+                'parent' => $change->parent,
+                'index' => $change->index,
+                'after' => $change->after,
+                'block' => $serializer->normalizeBlock($change->block),
+            ]),
+            $change instanceof MoveBlock => new ListedObject([
+                'op' => 'move_block',
+                'key' => $change->key,
+                'parent' => $change->parent,
+                'index' => $change->index,
+                'after' => $change->after,
+            ]),
+            $change instanceof RemoveBlock => new ListedObject(['op' => 'remove_block', 'key' => $change->key]),
+            $change instanceof SetValue => new ListedObject([
+                'op' => 'set_value',
+                'key' => $change->key,
+                'field' => $change->field,
+                'locale' => $change->locale,
+                'value' => $change->value,
+            ]),
+            default => throw new \LogicException(sprintf('Unknown change %s', $change::class)),
+        }, $this->changes)];
+    }
+
     private static function change(mixed $change, StoredTreeSerializer $serializer): Change
     {
         if (!is_array($change)) {
@@ -46,11 +83,13 @@ final readonly class ChangeSet
                 self::nullableString($change, 'parent'),
                 self::index($change),
                 self::block($change, $serializer),
+                self::nullableString($change, 'after'),
             ),
             'move_block' => new MoveBlock(
                 self::string($change, 'key'),
                 self::nullableString($change, 'parent'),
                 self::index($change),
+                self::nullableString($change, 'after'),
             ),
             'remove_block' => new RemoveBlock(self::string($change, 'key')),
             'set_value' => new SetValue(

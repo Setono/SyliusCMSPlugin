@@ -73,7 +73,7 @@ final readonly class ChangeSetApplier
         }
 
         $this->sanitizeBlock($change->block);
-        self::insert($tree, $change->block, $change->index, $change->parent);
+        self::insert($tree, $change->block, $change->index, $change->parent, $change->after);
     }
 
     private function moveBlock(MoveBlock $change, StoredTree $tree): void
@@ -85,11 +85,21 @@ final readonly class ChangeSetApplier
         }
 
         $tree->removeBlock($change->key);
-        self::insert($tree, $block, $change->index, $change->parent);
+        self::insert($tree, $block, $change->index, $change->parent, $change->after);
     }
 
-    private static function insert(StoredTree $tree, StoredBlock $block, int $index, ?string $parent): void
+    /**
+     * Inserts the block right after the block $after when the list has it, and otherwise at the index
+     */
+    private static function insert(StoredTree $tree, StoredBlock $block, int $index, ?string $parent, ?string $after): void
     {
+        $list = null === $parent ? $tree->blocks : ($tree->findBlock($parent)->children ?? []);
+        foreach ($list as $i => $sibling) {
+            if ($sibling->key === $after) {
+                $index = $i + 1;
+            }
+        }
+
         if (!$tree->insertBlock($block, $index, $parent)) {
             // Only a parent the tree doesn't have refuses an insert
             throw new InvalidChangeSetException(sprintf('The tree has no block with the key %s', $parent));
