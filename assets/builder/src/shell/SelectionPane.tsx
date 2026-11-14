@@ -1,24 +1,20 @@
 import { useBuilder, useBuilderState } from '../context';
 import { FieldRow } from '../form/FieldRow';
-import { useTranslator } from '../i18n';
 import { findBlock } from '../tree';
 import { readFieldValue } from '../values';
 import styles from './SelectionPane.module.css';
+import { SettingsPane } from './SettingsPane';
 
-/** The right pane: the selected block's fields, rendered from their schemas. */
+/** The right pane: the selected block's fields, rendered from their schemas, or the entry's settings. */
 export function SelectionPane() {
-    const t = useTranslator();
     const { store } = useBuilder();
     const block = useBuilderState((state) => (state.selectedKey === null ? undefined : findBlock(state.entry.tree.blocks, state.selectedKey)));
     const blockType = useBuilderState((state) => state.blockTypes.find((definition) => definition.code === block?.type));
     const locale = useBuilderState((state) => state.locale);
 
+    // With nothing selected, or the entry's settings selected, it shows the settings
     if (block === undefined) {
-        return (
-            <div className={styles.pane}>
-                <p className={styles.empty}>{t('setono_sylius_cms.builder.no_selection')}</p>
-            </div>
-        );
+        return <SettingsPane />;
     }
 
     return (

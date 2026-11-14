@@ -1,5 +1,11 @@
-/** A channel the entry is in, which the preview can show it in. */
+/** A channel of the store. */
 export interface Channel {
+    code: string;
+    name: string;
+}
+
+/** A customer group of the store, which an entry's audience can name. */
+export interface CustomerGroup {
     code: string;
     name: string;
 }
@@ -16,10 +22,13 @@ export interface BuilderConfig {
         entry: string;
         publish: string;
         discard: string;
+        settings: string;
         previewToken: string;
     };
-    /** The entry's channels, for the preview channel picker. */
+    /** The store's channels. The settings pick the entry's channels from them, and the preview picks from the entry's. */
     channels: Channel[];
+    /** The store's customer groups, for the audience. */
+    customerGroups: CustomerGroup[];
     /** UI strings needed before the registry arrives, such as the loading text. Optional. */
     strings?: Record<string, string>;
 }

@@ -1,5 +1,5 @@
 import { createBuilderStore, type BuilderStore } from '../src/store';
-import type { BlockTypeDefinition, Entry, FieldValues, Registry, StoredBlock } from '../src/types';
+import type { BlockTypeDefinition, Entry, EntrySettings, FieldValues, Registry, StoredBlock } from '../src/types';
 
 export const heading: BlockTypeDefinition = {
     code: 'heading',
@@ -54,7 +54,22 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.add_block': 'Add block',
     'setono_sylius_cms.builder.delete_block': 'Delete block',
     'setono_sylius_cms.builder.no_blocks': 'No blocks yet',
-    'setono_sylius_cms.builder.no_selection': 'Select a block to edit its fields',
+    'setono_sylius_cms.builder.entry_settings': 'Entry settings',
+    'setono_sylius_cms.builder.settings': 'Settings',
+    'setono_sylius_cms.builder.takes_effect_on_save': 'Takes effect when saved, without publishing',
+    'setono_sylius_cms.builder.enabled': 'Enabled',
+    'setono_sylius_cms.builder.date_window': 'Date window',
+    'setono_sylius_cms.builder.show_from': 'Show from',
+    'setono_sylius_cms.builder.show_until': 'Show until',
+    'setono_sylius_cms.builder.channels': 'Channels',
+    'setono_sylius_cms.builder.audience': 'Audience',
+    'setono_sylius_cms.builder.audience_everyone': 'Everyone',
+    'setono_sylius_cms.builder.audience_only': 'Only these',
+    'setono_sylius_cms.builder.audience_except': 'Everyone except these',
+    'setono_sylius_cms.builder.customer_groups': 'Customer groups',
+    'setono_sylius_cms.builder.guests': 'Guests',
+    'setono_sylius_cms.builder.no_group': 'Signed in without a group',
+    'setono_sylius_cms.builder.deleted': 'deleted',
     'setono_sylius_cms.builder.unsupported_field_type': "This field type isn't supported yet",
     'setono_sylius_cms.builder.preview': 'Preview',
     'setono_sylius_cms.builder.preview_failed': "Couldn't load the preview",
@@ -85,6 +100,11 @@ export function entry(blocks: StoredBlock[] = []): Entry {
             blocks,
         },
     };
+}
+
+/** The settings of a new entry in the WEB channel, changed by the overrides. */
+export function settings(overrides: Partial<EntrySettings> = {}): EntrySettings {
+    return { enabled: true, showFrom: null, showUntil: null, channels: ['WEB'], audience: { mode: 'everyone', groups: [] }, ...overrides };
 }
 
 /** A store on an entry with the given blocks, whose new block keys are new-1, new-2 and so on. */

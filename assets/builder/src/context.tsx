@@ -1,7 +1,9 @@
 import { createContext, useContext } from 'react';
 import { useStore } from 'zustand';
 import type { PreviewRequest } from './api';
+import type { Channel, CustomerGroup } from './config';
 import type { PreviewState, PreviewStore } from './preview';
+import type { SettingsState, SettingsStore } from './settings';
 import type { BuilderState, BuilderStore } from './store';
 
 /** One open entry in the builder. */
@@ -13,6 +15,12 @@ export interface BuilderSession {
     preview: PreviewStore;
     /** Asks for a preview token, and answers with the URL of the preview it turns on. */
     createPreviewUrl: (preview: PreviewRequest) => Promise<string>;
+    /** The entry's on-save settings. */
+    settings: SettingsStore;
+    /** The store's channels, which the entry's channels are picked from. */
+    channels: Channel[];
+    /** The store's customer groups, which the audience names. */
+    customerGroups: CustomerGroup[];
 }
 
 const BuilderContext = createContext<BuilderSession | null>(null);
@@ -31,6 +39,11 @@ export function useBuilder(): BuilderSession {
 /** Selects from the builder's store. The selector must return state as it is, not a new object. */
 export function useBuilderState<T>(selector: (state: BuilderState) => T): T {
     return useStore(useBuilder().store, selector);
+}
+
+/** Selects from the on-save settings. The selector must return state as it is, not a new object. */
+export function useSettingsState<T>(selector: (state: SettingsState) => T): T {
+    return useStore(useBuilder().settings, selector);
 }
 
 /** Selects from what the preview shows. The selector must return state as it is, not a new object. */

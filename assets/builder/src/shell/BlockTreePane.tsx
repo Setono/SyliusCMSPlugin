@@ -9,10 +9,18 @@ import { TrashIcon } from './icons';
 /** The left pane: the block tree. Only the top level for now; nesting comes later. */
 export function BlockTreePane({ headingId }: { headingId: string }) {
     const t = useTranslator();
+    const { store } = useBuilder();
     const blocks = useBuilderState((state) => state.entry.tree.blocks);
+    const settingsSelected = useBuilderState((state) => state.selectedKey === null);
 
     return (
         <div className={styles.pane}>
+            {/* The entry's settings sit at the top of the tree. Selecting them deselects the block */}
+            <div className={styles.row} data-selected={settingsSelected || undefined}>
+                <button type="button" className={styles.select} aria-pressed={settingsSelected} onClick={() => store.getState().selectBlock(null)}>
+                    <span className={styles.label}>{t('setono_sylius_cms.builder.entry_settings')}</span>
+                </button>
+            </div>
             <h2 id={headingId} className={styles.heading}>
                 {t('setono_sylius_cms.builder.blocks')}
             </h2>

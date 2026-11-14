@@ -71,8 +71,26 @@ export interface Entry {
 /** The entry states of docs/spec/publishing.md#entry-states that the builder shows so far. */
 export type EntryStatus = 'never_published' | 'published' | 'unpublished_changes';
 
+export type AudienceMode = 'everyone' | 'only' | 'except';
+
+/**
+ * The entry's on-save settings, which take effect as soon as they're saved, outside the draft. Customer group values are
+ * customer group codes, '@guest' and '@no_group'.
+ */
+export interface EntrySettings {
+    enabled: boolean;
+    /** UTC, such as 2026-11-27T00:00:00Z, or null. Inclusive. */
+    showFrom: string | null;
+    /** UTC, or null. Exclusive. */
+    showUntil: string | null;
+    /** Channel codes. */
+    channels: string[];
+    audience: { mode: AudienceMode; groups: string[] };
+}
+
 export interface EntryResponse {
     entry: Entry;
+    settings: EntrySettings;
     status: EntryStatus;
 }
 
