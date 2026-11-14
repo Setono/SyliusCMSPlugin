@@ -63,6 +63,16 @@ final class BridgeScriptListenerTest extends TestCase
     /**
      * @test
      */
+    public function it_reads_the_content_type_whatever_its_case(): void
+    {
+        $response = $this->respond($this->previewRequest(), new Response(self::PAGE, 200, ['Content-Type' => 'TEXT/HTML']));
+
+        self::assertSame('<html><body><h1>About us</h1><script data-cms-bridge></script></body></html>', $response->getContent());
+    }
+
+    /**
+     * @test
+     */
     public function it_finds_a_closing_body_tag_in_upper_case(): void
     {
         $response = $this->respond($this->previewRequest(), new Response('<HTML><BODY>Hi</BODY></HTML>'));

@@ -34,9 +34,14 @@ final readonly class BridgeScriptListener
             return;
         }
 
+        // A streamed or binary response has no content to inject into
         $content = $response->getContent();
-        $position = false === $content ? false : strripos($content, '</body>');
-        if (false === $content || false === $position) {
+        if (false === $content) {
+            return;
+        }
+
+        $position = strripos($content, '</body>');
+        if (false === $position) {
             return;
         }
 

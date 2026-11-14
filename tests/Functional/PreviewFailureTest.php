@@ -45,10 +45,13 @@ final class PreviewFailureTest extends BuilderApiTestCase
         self::assertResponseIsSuccessful();
         self::assertIsArray($response);
         self::assertIsArray($response['blocks'] ?? null);
-        self::assertStringStartsWith('<!--cms:block ' . self::BROKEN . ' broken--><div data-cms-block-error role="alert"', (string) $response['blocks'][self::BROKEN]);
-        self::assertStringContainsString('>' . htmlspecialchars(self::ERROR) . '</div><!--/cms:block ' . self::BROKEN . '-->', (string) $response['blocks'][self::BROKEN]);
-        self::assertStringNotContainsString('cms-broken', (string) $response['blocks'][self::BROKEN], 'No half-printed markup is left behind');
-        self::assertMatchesRegularExpression('#<h2 class="cms-heading">Still here</h2>#', (string) $response['blocks'][self::HEADING]);
+        [$broken, $heading] = [$response['blocks'][self::BROKEN] ?? null, $response['blocks'][self::HEADING] ?? null];
+        self::assertIsString($broken);
+        self::assertIsString($heading);
+        self::assertStringStartsWith('<!--cms:block ' . self::BROKEN . ' broken--><div data-cms-block-error role="alert"', $broken);
+        self::assertStringContainsString('>' . htmlspecialchars(self::ERROR) . '</div><!--/cms:block ' . self::BROKEN . '-->', $broken);
+        self::assertStringNotContainsString('cms-broken', $broken, 'No half-printed markup is left behind');
+        self::assertStringContainsString('<h2 class="cms-heading">Still here</h2>', $heading);
     }
 
     /**

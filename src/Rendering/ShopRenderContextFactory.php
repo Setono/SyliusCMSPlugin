@@ -45,7 +45,7 @@ final readonly class ShopRenderContextFactory implements RenderContextFactoryInt
 
         return new RenderContext(
             $channel,
-            $this->previewContext->getPreview()?->localeCode ?? $this->localeContext->getLocaleCode(),
+            $this->previewContext->getPreview()->localeCode ?? $this->localeContext->getLocaleCode(),
             $this->currencyContext->getCurrencyCode(),
             $customer,
             self::customerGroup($customer),

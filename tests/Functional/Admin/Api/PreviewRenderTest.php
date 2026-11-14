@@ -33,14 +33,11 @@ final class PreviewRenderTest extends BuilderApiTestCase
         self::assertIsArray($response);
         self::assertIsArray($response['blocks'] ?? null);
         self::assertSame([self::FIRST, self::SECOND], array_keys($response['blocks']));
-        self::assertMatchesRegularExpression(
-            '#^<!--cms:block ' . self::FIRST . ' heading--><h2 class="cms-heading">Changed in the builder</h2>\s*<!--/cms:block ' . self::FIRST . '-->$#',
-            $response['blocks'][self::FIRST],
-        );
-        self::assertMatchesRegularExpression(
-            '#^<!--cms:block ' . self::SECOND . ' heading--><h3 class="cms-heading">Not saved yet</h3>\s*<!--/cms:block ' . self::SECOND . '-->$#',
-            $response['blocks'][self::SECOND],
-        );
+        [$first, $second] = [$response['blocks'][self::FIRST], $response['blocks'][self::SECOND]];
+        self::assertIsString($first);
+        self::assertIsString($second);
+        self::assertMatchesRegularExpression('#^<!--cms:block ' . self::FIRST . ' heading--><h2 class="cms-heading">Changed in the builder</h2>\s*<!--/cms:block ' . self::FIRST . '-->$#', $first);
+        self::assertMatchesRegularExpression('#^<!--cms:block ' . self::SECOND . ' heading--><h3 class="cms-heading">Not saved yet</h3>\s*<!--/cms:block ' . self::SECOND . '-->$#', $second);
     }
 
     /**

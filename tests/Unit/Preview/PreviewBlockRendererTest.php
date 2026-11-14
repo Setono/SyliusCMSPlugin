@@ -80,6 +80,18 @@ final class PreviewBlockRendererTest extends TestCase
     /**
      * @test
      */
+    public function it_shows_the_message_of_an_exception_that_wraps_another_when_twig_did_not_wrap_it(): void
+    {
+        $thrown = new \RuntimeException('The product list could not be loaded', previous: new \LogicException('Connection refused'));
+
+        $html = $this->throwingRenderer($thrown)->render($this->view(), $this->context(RenderContext::PREVIEW_MODE_BUILDER));
+
+        self::assertStringContainsString('>The product list could not be loaded</div>', $html);
+    }
+
+    /**
+     * @test
+     */
     public function it_shows_twigs_own_message_when_twig_itself_failed(): void
     {
         $html = $this->throwingRenderer(new RuntimeError('Variable "nope" does not exist.'))->render($this->view(), $this->context(RenderContext::PREVIEW_MODE_BUILDER));
