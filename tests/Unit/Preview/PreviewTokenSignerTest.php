@@ -79,7 +79,7 @@ final class PreviewTokenSignerTest extends TestCase
     {
         $signer = $this->signer();
         $token = $signer->sign(new Preview(self::ENTRY, 'WEB', 'en_US'));
-        $tampered = substr($token, 0, -1) . ('A' === substr($token, -1) ? 'B' : 'A');
+        $tampered = substr($token, 0, -1) . (str_ends_with($token, 'A') ? 'B' : 'A');
 
         self::assertNull($signer->verify($tampered));
     }
@@ -142,6 +142,16 @@ final class PreviewTokenSignerTest extends TestCase
         yield 'channel not a string' => [sprintf('{"entry":"%s","channel":null,"locale":"en_US","expires":%d}', self::ENTRY, $expires)];
         yield 'locale not a string' => [sprintf('{"entry":"%s","channel":"WEB","locale":[],"expires":%d}', self::ENTRY, $expires)];
         yield 'expires not a number' => [sprintf('{"entry":"%s","channel":"WEB","locale":"en_US","expires":"%d"}', self::ENTRY, $expires)];
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_signed_payload_that_is_not_base64(): void
+    {
+        $signature = self::encode(hash_hmac('sha256', 'setono_sylius_cms_preview.!!!', 'secret', true));
+
+        self::assertNull($this->signer()->verify('!!!.' . $signature));
     }
 
     /**
