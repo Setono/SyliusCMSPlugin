@@ -26,6 +26,12 @@ final class ValidationTest extends BuilderApiTestCase
 
     private const BANNER = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e53';
 
+    private const GROUP = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e54';
+
+    private const GROUP_COPY = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e55';
+
+    private const BANNER_COPY = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e56';
+
     /**
      * @test
      */
@@ -49,6 +55,34 @@ final class ValidationTest extends BuilderApiTestCase
             (string) self::drafts()->findOneByEntry(self::reloadPage($page))?->getContent(),
         );
         self::assertStringContainsString(sprintf('{"key":"%s","type":"column"', self::STRAY_COLUMN), (string) self::drafts()->findOneByEntry(self::reloadPage($page))?->getContent());
+    }
+
+    /**
+     * @test
+     */
+    public function a_block_that_holds_a_block_of_a_type_the_code_no_longer_has_can_be_edited_and_duplicated(): void
+    {
+        $client = self::createClient();
+        $page = self::createPageWithBlocks('About us', 'about-us', [
+            new StoredBlock(self::GROUP, 'group', 1, children: [new StoredBlock(self::BANNER, 'banner', 1, fields: ['title' => 'Winter sale'])]),
+        ], published: true);
+        $csrfToken = self::openBuilder($client, $page);
+
+        $response = self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['lockToken' => 0, 'changes' => [
+            ['op' => 'set_value', 'key' => self::GROUP, 'field' => 'fullWidth', 'locale' => null, 'value' => true],
+            ['op' => 'add_block', 'parent' => null, 'index' => 1, 'after' => self::GROUP, 'block' => [
+                'key' => self::GROUP_COPY, 'type' => 'group', 'version' => 1, 'style' => null, 'fields' => ['fullWidth' => true], 'translated' => [], 'conditions' => [], 'children' => [
+                    ['key' => self::BANNER_COPY, 'type' => 'banner', 'version' => 1, 'style' => null, 'fields' => ['title' => 'Winter sale'], 'translated' => [], 'conditions' => [], 'children' => []],
+                ],
+            ]],
+        ]], $csrfToken);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['status' => 'unpublished_changes', 'lockToken' => 1], $response);
+
+        $draft = (string) self::drafts()->findOneByEntry(self::reloadPage($page))?->getContent();
+        self::assertStringContainsString(sprintf('{"key":"%s","type":"group","version":1,"style":null,"fields":{"fullWidth":true},', self::GROUP), $draft);
+        self::assertStringContainsString(sprintf('{"key":"%s","type":"banner","version":1,"style":null,"fields":{"title":"Winter sale"},', self::BANNER_COPY), $draft);
     }
 
     /**

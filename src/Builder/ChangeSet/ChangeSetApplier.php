@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Builder\ChangeSet;
 
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\SanitizingFieldHandlerInterface;
+use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -62,11 +63,12 @@ final readonly class ChangeSetApplier
 
     /**
      * The nesting rules aren't checked here: the builder refuses a drop or an insert that breaks them,
-     * and data that breaks them anyway saves and is flagged
+     * and data that breaks them anyway saves and is flagged. The builder only adds block types the code has, but a copy
+     * of a block can hold blocks of a type the code no longer has, which are kept as they are
      */
     private function addBlock(AddBlock $change, StoredTree $tree): void
     {
-        $this->assertKnownTypes($change->block);
+        $this->blockType($change->block);
 
         $taken = array_intersect($change->block->keys(), $tree->keys());
         if ([] !== $taken) {
@@ -117,9 +119,7 @@ final readonly class ChangeSetApplier
     private function setValue(SetValue $change, StoredTree $tree): void
     {
         $block = $tree->findBlock($change->key) ?? throw new InvalidChangeSetException(sprintf('The tree has no block with the key %s', $change->key));
-        $this->assertKnownTypes($block);
-
-        $field = $this->blockTypes->get($block->type)->fields[$change->field] ?? throw new InvalidChangeSetException(sprintf('The block type "%s" has no field "%s"', $block->type, $change->field));
+        $field = $this->blockType($block)->fields[$change->field] ?? throw new InvalidChangeSetException(sprintf('The block type "%s" has no field "%s"', $block->type, $change->field));
 
         if ($field->translatable && null === $change->locale) {
             throw new InvalidChangeSetException(sprintf('The field "%s" is translatable, so a value needs a locale', $change->field));
@@ -135,11 +135,9 @@ final readonly class ChangeSetApplier
     private function setStyle(SetStyle $change, StoredTree $tree): void
     {
         $block = $tree->findBlock($change->key) ?? throw new InvalidChangeSetException(sprintf('The tree has no block with the key %s', $change->key));
-        if (!$this->blockTypes->has($block->type)) {
-            throw new InvalidChangeSetException(sprintf('There is no block type with the code "%s"', $block->type));
-        }
+        $blockType = $this->blockType($block);
 
-        if (null !== $change->style && !isset($this->blockTypes->get($block->type)->styles[$change->style])) {
+        if (null !== $change->style && !isset($blockType->styles[$change->style])) {
             throw new InvalidChangeSetException(sprintf('The block type "%s" has no block style "%s"', $block->type, $change->style));
         }
 
@@ -147,10 +145,15 @@ final readonly class ChangeSetApplier
     }
 
     /**
-     * Sanitises the values of a block and the blocks inside it
+     * Sanitises the values of a block and the blocks inside it. A block of a type the code no longer has is kept as it
+     * is, with what's inside it
      */
     private function sanitizeBlock(StoredBlock $block): void
     {
+        if (!$this->blockTypes->has($block->type)) {
+            return;
+        }
+
         $fields = $this->blockTypes->get($block->type)->fields;
 
         foreach ($block->fields as $name => $value) {
@@ -179,14 +182,15 @@ final readonly class ChangeSetApplier
         return $handler instanceof SanitizingFieldHandlerInterface ? $handler->sanitize($field->field, $value) : $value;
     }
 
-    private function assertKnownTypes(StoredBlock $block): void
+    /**
+     * The block's own type, which a change to the block needs. The blocks inside it can be of any type
+     */
+    private function blockType(StoredBlock $block): BlockTypeMetadata
     {
         if (!$this->blockTypes->has($block->type)) {
             throw new InvalidChangeSetException(sprintf('There is no block type with the code "%s"', $block->type));
         }
 
-        foreach ($block->children as $child) {
-            $this->assertKnownTypes($child);
-        }
+        return $this->blockTypes->get($block->type);
     }
 }

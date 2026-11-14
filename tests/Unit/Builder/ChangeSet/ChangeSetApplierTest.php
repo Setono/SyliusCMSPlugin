@@ -293,13 +293,10 @@ final class ChangeSetApplierTest extends TestCase
         $other = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4c';
         $child = new StoredBlock($other, 'heading', 1);
         $child->children = [new StoredBlock(self::A, 'heading', 1)];
-        $withUnknownChild = new StoredBlock($other, 'heading', 1);
-        $withUnknownChild->children = [new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d', 'nope', 1)];
 
         yield 'adding a block with a key the tree has' => [new AddBlock(null, 0, new StoredBlock(self::A, 'heading', 1)), 'The tree already has a block with the key ' . self::A];
         yield 'adding a block whose child has a key the tree has' => [new AddBlock(null, 0, $child), 'The tree already has a block with the key ' . self::A];
         yield 'adding a block of an unknown type' => [new AddBlock(null, 0, new StoredBlock($other, 'nope', 1)), '"nope"'];
-        yield 'adding a block with a child of an unknown type' => [new AddBlock(null, 0, $withUnknownChild), '"nope"'];
         yield 'adding a block inside a block the tree does not have' => [new AddBlock($other, 0, new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4e', 'heading', 1)), $other];
         yield 'moving a block the tree does not have' => [new MoveBlock($other, null, 0), $other];
         yield 'moving a block inside a block the tree does not have' => [new MoveBlock(self::A, $other, 0), $other];
@@ -435,5 +432,33 @@ final class ChangeSetApplierTest extends TestCase
         $this->expectExceptionMessage('inside itself');
 
         $this->apply($tree, new MoveBlock(self::A, self::B, 0));
+    }
+
+    /**
+     * @test
+     */
+    public function it_changes_a_block_that_holds_a_block_of_a_type_the_code_no_longer_has(): void
+    {
+        $unknown = new StoredBlock(self::B, 'removed', 1, fields: ['content' => self::DIRTY]);
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1, children: [$unknown])]);
+
+        $tree = $this->apply($tree, new SetValue(self::A, 'text', 'en_US', 'Hello'));
+
+        self::assertSame(['text' => ['en_US' => 'Hello']], $tree->blocks[0]->fields);
+        self::assertSame(['content' => self::DIRTY], $tree->blocks[0]->children[0]->fields);
+    }
+
+    /**
+     * @test
+     */
+    public function it_keeps_a_block_of_a_type_the_code_no_longer_has_inside_an_added_block_as_it_is(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)]);
+        $copy = new StoredBlock(self::B, 'group', 1, children: [new StoredBlock(self::C, 'removed', 1, fields: ['content' => self::DIRTY])]);
+
+        $tree = $this->apply($tree, new AddBlock(null, 1, $copy));
+
+        self::assertSame([self::A, self::B, self::C], $tree->keys());
+        self::assertSame(['content' => self::DIRTY], $tree->blocks[1]->children[0]->fields);
     }
 }
