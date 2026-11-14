@@ -8,7 +8,7 @@ namespace Setono\SyliusCMSPlugin\Upgrade;
  * A block, a layout or an entry saved with a newer version of its block type, layout or content type than the code
  * has, such as after a deploy is rolled back. Preset inserts and imports refuse it
  */
-final readonly class NewerVersion
+final readonly class NewerVersion implements \Stringable
 {
     public function __construct(
         public Kind $kind,

@@ -16,6 +16,7 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\TeaserFromThree;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\TeaserFromTwo;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\TeaserFromZero;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgrader;
+use Setono\SyliusCMSPlugin\Upgrade\UpgraderInterface;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -133,7 +134,7 @@ final class RegisterUpgradersPassTest extends AbstractCompilerPassTestCase
         $this->setDefinition('app.upgrader', (new Definition(NotAnUpgrader::class))->addTag('setono_sylius_cms.upgrader'));
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage(sprintf('The upgrader %s must implement %s', NotAnUpgrader::class, 'Setono\SyliusCMSPlugin\Upgrade\UpgraderInterface'));
+        $this->expectExceptionMessage(sprintf('The upgrader %s must implement %s', NotAnUpgrader::class, UpgraderInterface::class));
 
         $this->compile();
     }
