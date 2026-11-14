@@ -127,15 +127,17 @@ function isSameValue(change: Change, other: SetValueChange): boolean {
 }
 
 function mergeRemoval(changes: Change[], removal: RemoveBlockChange): Change[] {
-    const additionIndex = changes.findIndex((change) => change.op === 'add_block' && change.block.key === removal.key);
+    const additionIndex = changes.map((change) => change.op === 'add_block' && change.block.key === removal.key).lastIndexOf(true);
     const addition = changes[additionIndex];
 
     // A block added since the last save never reaches the server, unless a later add_block into the same
-    // list counted its index with the block in place: dropping the block would then shift that one.
+    // list counted its index with the block in place: dropping the block would then shift that one. What
+    // came before the addition stays, such as the removal of the block that undo put back.
     if (addition?.op === 'add_block' && !hasLaterAdditionTo(changes, additionIndex, addition.parent)) {
-        const gone = keysAddedWithin(changes, addition);
+        const later = changes.slice(additionIndex);
+        const gone = keysAddedWithin(later, addition);
 
-        return changes.filter((change) => !gone.has(change.op === 'add_block' ? change.block.key : change.key));
+        return [...changes.slice(0, additionIndex), ...later.filter((change) => !gone.has(change.op === 'add_block' ? change.block.key : change.key))];
     }
 
     return [...changes.filter((change) => !(change.op === 'set_value' && change.key === removal.key)), removal];

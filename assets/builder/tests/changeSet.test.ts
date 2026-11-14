@@ -2,6 +2,7 @@ import { enablePatches, produceWithPatches } from 'immer';
 import { describe, expect, it } from 'vitest';
 import { changesFromPatches, mergeChanges, type Change, type TranslatableLookup } from '../src/changeSet';
 import type { Entry, StoredBlock } from '../src/types';
+import { writeFieldValue } from '../src/values';
 import { block, blockOf, entry, shape, storeWith } from './fixtures';
 
 enablePatches();
@@ -33,6 +34,11 @@ function replay(blocks: StoredBlock[], changes: readonly Change[]): StoredBlock[
             }
         } else if (change.op === 'remove_block') {
             takeOut(tree, change.key);
+        } else {
+            const target = find(tree, change.key);
+            if (target !== undefined) {
+                writeFieldValue(target.fields, change.field, change.locale !== null, change.locale ?? '', change.value);
+            }
         }
     }
 
@@ -237,6 +243,23 @@ describe('sending the editing tools', () => {
         ['several blocks moved up and down', (store) => store.getState().shiftBlocks(['h', 'c', 'e'], 'up') && store.getState().shiftBlocks(['a', 'b'], 'down')],
         ['several blocks duplicated', (store) => store.getState().duplicateBlocks(['g', 'd', 'e'])],
         ['several blocks deleted', (store) => store.getState().removeBlocks(['a', 'c', 'h'])],
+        [
+            'a delete undone and redone',
+            (store) => {
+                store.getState().removeBlocks(['a', 'e']);
+                store.getState().undo();
+                store.getState().redo();
+            },
+        ],
+        [
+            'a field edited, the block deleted, the delete undone and the field edited again',
+            (store) => {
+                store.getState().setFieldValue('b', 'text', 'Before');
+                store.getState().removeBlocks(['b']);
+                store.getState().undo();
+                store.getState().setFieldValue('b', 'text', 'After');
+            },
+        ],
         [
             'edits undone and redone',
             (store) => {
