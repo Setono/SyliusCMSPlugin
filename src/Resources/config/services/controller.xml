@@ -58,6 +58,9 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsNormalizer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\PresenceTrackerInterface"/>
+            <argument type="service" id="security.token_storage"/>
 
             <tag name="controller.service_arguments"/>
         </service>
@@ -67,7 +70,19 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\BuilderCsrfToken"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\PresenceAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\PresenceAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\BuilderCsrfToken"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\PresenceTrackerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface"/>
+            <argument type="service" id="security.token_storage"/>
 
             <tag name="controller.service_arguments"/>
         </service>

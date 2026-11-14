@@ -44,7 +44,7 @@ final class EntryTest extends BuilderApiTestCase
         self::assertResponseHeaderSame('Content-Type', 'application/json');
         self::assertSame(
             sprintf(
-                '{"entry":{"uuid":"%s","contentType":"page","version":1,"createdAt":"%s","fields":{},"translations":{"en_US":{"shown":true,"fields":{"slug":"about-us","title":"About us"},"translated":{}}},"tree":{"layout":{"code":"standard","version":1,"fields":{},"translated":{}},"blocks":[{"key":"%s","type":"heading","version":1,"style":null,"fields":{"text":{"en_US":"Hello"}},"translated":{},"conditions":[],"children":[]}]}},"settings":{"enabled":true,"showFrom":null,"showUntil":null,"channels":["WEB"],"audience":{"mode":"everyone","groups":[]}},"status":"never_published"}',
+                '{"entry":{"uuid":"%s","contentType":"page","version":1,"createdAt":"%s","fields":{},"translations":{"en_US":{"shown":true,"fields":{"slug":"about-us","title":"About us"},"translated":{}}},"tree":{"layout":{"code":"standard","version":1,"fields":{},"translated":{}},"blocks":[{"key":"%s","type":"heading","version":1,"style":null,"fields":{"text":{"en_US":"Hello"}},"translated":{},"conditions":[],"children":[]}]}},"lockToken":0,"settings":{"enabled":true,"showFrom":null,"showUntil":null,"channels":["WEB"],"audience":{"mode":"everyone","groups":[]}},"status":"never_published","editors":[]}',
                 $page->getUuid(),
                 $page->getCreatedAt()->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z'),
                 self::KEY,
@@ -74,7 +74,7 @@ final class EntryTest extends BuilderApiTestCase
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us');
 
-        self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['changes' => []]);
+        self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['lockToken' => 0, 'changes' => []]);
 
         self::assertResponseRedirects('http://localhost/admin/login');
     }
@@ -88,7 +88,7 @@ final class EntryTest extends BuilderApiTestCase
         $page = self::createPage('About us', 'about-us');
         self::openBuilder($client, $page);
 
-        $body = ['changes' => [['op' => 'add_block', 'parent' => null, 'index' => 0, 'block' => ['key' => self::NEW_KEY, 'type' => 'heading', 'version' => 1]]]];
+        $body = ['lockToken' => 0, 'changes' => [['op' => 'add_block', 'parent' => null, 'index' => 0, 'block' => ['key' => self::NEW_KEY, 'type' => 'heading', 'version' => 1]]]];
 
         self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), $body);
         self::assertResponseStatusCodeSame(403);
@@ -108,7 +108,7 @@ final class EntryTest extends BuilderApiTestCase
         $page = self::createPage('About us', 'about-us', 'Hello');
         $csrfToken = self::openBuilder($client, $page);
 
-        $response = self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['changes' => [
+        $response = self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['lockToken' => 0, 'changes' => [
             ['op' => 'add_block', 'parent' => null, 'index' => 1, 'block' => ['key' => self::NEW_KEY, 'type' => 'heading', 'version' => 1, 'style' => null, 'fields' => [], 'translated' => [], 'conditions' => [], 'children' => []]],
             ['op' => 'set_value', 'key' => self::NEW_KEY, 'field' => 'text', 'locale' => 'en_US', 'value' => 'World'],
             ['op' => 'set_value', 'key' => self::NEW_KEY, 'field' => 'level', 'locale' => null, 'value' => 'h3'],
@@ -116,7 +116,7 @@ final class EntryTest extends BuilderApiTestCase
         ]], $csrfToken);
 
         self::assertResponseIsSuccessful();
-        self::assertSame(['status' => 'never_published'], $response);
+        self::assertSame(['status' => 'never_published', 'lockToken' => 1], $response);
 
         $page = self::reloadPage($page);
         self::assertSame(
@@ -135,7 +135,7 @@ final class EntryTest extends BuilderApiTestCase
         $page = self::createPage('About us', 'about-us', 'Hello');
         $csrfToken = self::openBuilder($client, $page);
 
-        $response = self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['changes' => [
+        $response = self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['lockToken' => 0, 'changes' => [
             ['op' => 'set_value', 'key' => self::KEY, 'field' => 'text', 'locale' => 'en_US', 'value' => 'Changed'],
             ['op' => 'set_value', 'key' => self::KEY, 'field' => 'subtitle', 'locale' => 'en_US', 'value' => 'Nope'],
         ]], $csrfToken);
@@ -157,7 +157,7 @@ final class EntryTest extends BuilderApiTestCase
         $page = self::createPageWithBlocks('About us', 'about-us', [$group]);
         $csrfToken = self::openBuilder($client, $page);
 
-        self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['changes' => [
+        self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['lockToken' => 0, 'changes' => [
             ['op' => 'add_block', 'parent' => null, 'index' => 1, 'block' => self::group(self::COPY_KEY, self::NEW_KEY)],
         ]], $csrfToken);
 
@@ -177,7 +177,7 @@ final class EntryTest extends BuilderApiTestCase
         $page = self::createPageWithBlocks('About us', 'about-us', [$group]);
         $csrfToken = self::openBuilder($client, $page);
 
-        $response = self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['changes' => [
+        $response = self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['lockToken' => 0, 'changes' => [
             ['op' => 'set_value', 'key' => self::KEY, 'field' => 'text', 'locale' => 'en_US', 'value' => 'Changed'],
             ['op' => 'add_block', 'parent' => null, 'index' => 1, 'block' => self::group(self::COPY_KEY, self::KEY)],
         ]], $csrfToken);

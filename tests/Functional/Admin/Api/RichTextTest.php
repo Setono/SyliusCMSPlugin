@@ -24,7 +24,7 @@ final class RichTextTest extends BuilderApiTestCase
         $page = self::createPageWithBlocks('Story', 'story', [new StoredBlock(self::KEY, 'rich_text', 1)]);
         $csrfToken = self::openBuilder($client, $page);
 
-        self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['changes' => [
+        self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['lockToken' => 0, 'changes' => [
             ['op' => 'set_value', 'key' => self::KEY, 'field' => 'content', 'locale' => 'en_US', 'value' => ['type' => 'doc', 'content' => [
                 ['type' => 'heading', 'attrs' => ['level' => 1, 'id' => 'top'], 'content' => [['type' => 'text', 'text' => 'Title']]],
                 ['type' => 'paragraph', 'attrs' => ['style' => 'color: red'], 'content' => [
@@ -55,7 +55,7 @@ final class RichTextTest extends BuilderApiTestCase
         $page = self::createPage('Story', 'story');
         $csrfToken = self::openBuilder($client, $page);
 
-        self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['changes' => [
+        self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['lockToken' => 0, 'changes' => [
             ['op' => 'add_block', 'parent' => null, 'index' => 0, 'block' => [
                 'key' => self::NEW_KEY,
                 'type' => 'rich_text',

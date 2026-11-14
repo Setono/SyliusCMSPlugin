@@ -8,25 +8,39 @@ use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 abstract class BuilderApiTestCase extends WebTestCase
 {
     use Entries;
 
     /**
-     * Signs the admin user in and opens the builder, which is where the builder app gets its CSRF token from
+     * Signs the admin user in, "sylius" unless another is given, and opens the builder, which is where the builder app
+     * gets its CSRF token from. Signing in starts a new session, so the CSRF token of an earlier one no longer works
      *
      * @return string the CSRF token
      */
-    protected static function openBuilder(KernelBrowser $client, PageInterface $page): string
+    protected static function openBuilder(KernelBrowser $client, PageInterface $page, ?UserInterface $admin = null): string
     {
-        $client->loginUser(self::admin(), 'admin');
+        $client->loginUser($admin ?? self::admin(), 'admin');
         $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));
 
         /** @var array{csrfToken: string} $config */
         $config = json_decode((string) $crawler->filter('#cms-builder')->attr('data-config'), true, 512, \JSON_THROW_ON_ERROR);
 
         return $config['csrfToken'];
+    }
+
+    /**
+     * The lock token entry_show answers with, which a save carries
+     */
+    protected static function lockToken(KernelBrowser $client, PageInterface $page): int
+    {
+        $response = self::json($client, 'GET', '/admin/cms/api/entries/' . $page->getUuid());
+        self::assertIsArray($response);
+        self::assertIsInt($response['lockToken'] ?? null);
+
+        return $response['lockToken'];
     }
 
     /**

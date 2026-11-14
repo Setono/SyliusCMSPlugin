@@ -91,7 +91,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
         $response = self::json($client, 'GET', '/admin/cms/api/entries/' . $page->getUuid());
 
         self::assertIsArray($response);
-        self::assertSame(['entry', 'settings', 'status'], array_keys($response));
+        self::assertSame(['entry', 'lockToken', 'settings', 'status', 'editors'], array_keys($response));
         self::assertSame(['enabled' => true, 'showFrom' => null, 'showUntil' => null, 'channels' => ['WEB'], 'audience' => ['mode' => 'only', 'groups' => ['wholesale']]], $response['settings']);
         self::assertSame('published', $response['status']);
     }
@@ -104,7 +104,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
         $csrfToken = self::openBuilder($client, $page);
-        self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['changes' => [
+        self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['lockToken' => 0, 'changes' => [
             ['op' => 'set_value', 'key' => self::KEY, 'field' => 'text', 'locale' => 'en_US', 'value' => 'Hello world'],
         ]], $csrfToken);
         $rows = self::reloadPage($page)->getBlockTreeJson();
@@ -132,7 +132,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
         $csrfToken = self::openBuilder($client, $page);
-        self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['changes' => [
+        self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['lockToken' => 0, 'changes' => [
             ['op' => 'set_value', 'key' => self::KEY, 'field' => 'text', 'locale' => 'en_US', 'value' => 'Not ready yet'],
         ]], $csrfToken);
 

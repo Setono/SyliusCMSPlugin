@@ -33,7 +33,7 @@ final class DraftTest extends BuilderApiTestCase
 
         $response = self::saveHeading($client, $page, 'Hello world', $csrfToken);
 
-        self::assertSame(['status' => 'never_published'], $response);
+        self::assertSame(['status' => 'never_published', 'lockToken' => 1], $response);
         self::assertSame(['en_US' => 'Hello world'], self::reloadPage($page)->getBlockTree()->blocks[0]->fields['text'] ?? null);
         self::assertNull(self::draftOf($page));
     }
@@ -51,7 +51,7 @@ final class DraftTest extends BuilderApiTestCase
         $response = self::saveHeading($client, $page, 'Hello world', $csrfToken);
 
         self::assertResponseIsSuccessful();
-        self::assertSame(['status' => 'unpublished_changes'], $response);
+        self::assertSame(['status' => 'unpublished_changes', 'lockToken' => 1], $response);
         self::assertSame($rows, self::reloadPage($page)->getBlockTreeJson());
         self::assertSame(
             sprintf(
@@ -92,7 +92,7 @@ final class DraftTest extends BuilderApiTestCase
 
         $client->request('GET', '/admin/cms/api/entries/' . $page->getUuid());
         self::assertSame(
-            sprintf('{"entry":%s,%s"status":"unpublished_changes"}', (string) self::draftOf($page)?->getContent(), '"settings":{"enabled":true,"showFrom":null,"showUntil":null,"channels":["WEB"],"audience":{"mode":"everyone","groups":[]}},'),
+            sprintf('{"entry":%s,"lockToken":1,%s"status":"unpublished_changes","editors":[]}', (string) self::draftOf($page)?->getContent(), '"settings":{"enabled":true,"showFrom":null,"showUntil":null,"channels":["WEB"],"audience":{"mode":"everyone","groups":[]}},'),
             $client->getResponse()->getContent(),
         );
     }
@@ -156,7 +156,7 @@ final class DraftTest extends BuilderApiTestCase
         self::assertResponseIsSuccessful();
         self::assertSame(
             sprintf(
-                '{"entry":{"uuid":"%s","contentType":"page","version":1,"createdAt":"%s","fields":{},"translations":{"en_US":{"shown":true,"fields":{"slug":"about-us","title":"About us"},"translated":{}}},"tree":{"layout":{"code":"standard","version":1,"fields":{},"translated":{}},"blocks":[{"key":"%s","type":"heading","version":1,"style":null,"fields":{"text":{"en_US":"Hello"}},"translated":{},"conditions":[],"children":[]}]}},"settings":{"enabled":true,"showFrom":null,"showUntil":null,"channels":["WEB"],"audience":{"mode":"everyone","groups":[]}},"status":"published"}',
+                '{"entry":{"uuid":"%s","contentType":"page","version":1,"createdAt":"%s","fields":{},"translations":{"en_US":{"shown":true,"fields":{"slug":"about-us","title":"About us"},"translated":{}}},"tree":{"layout":{"code":"standard","version":1,"fields":{},"translated":{}},"blocks":[{"key":"%s","type":"heading","version":1,"style":null,"fields":{"text":{"en_US":"Hello"}},"translated":{},"conditions":[],"children":[]}]}},"lockToken":1,"settings":{"enabled":true,"showFrom":null,"showUntil":null,"channels":["WEB"],"audience":{"mode":"everyone","groups":[]}},"status":"published","editors":[]}',
                 $page->getUuid(),
                 $page->getCreatedAt()->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z'),
                 self::KEY,
@@ -275,7 +275,7 @@ final class DraftTest extends BuilderApiTestCase
      */
     private static function saveHeading(KernelBrowser $client, PageInterface $page, string $text, string $csrfToken): mixed
     {
-        return self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['changes' => [
+        return self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['lockToken' => self::lockToken($client, $page), 'changes' => [
             ['op' => 'set_value', 'key' => self::KEY, 'field' => 'text', 'locale' => 'en_US', 'value' => $text],
         ]], $csrfToken);
     }

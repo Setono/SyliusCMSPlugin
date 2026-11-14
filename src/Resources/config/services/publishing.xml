@@ -11,6 +11,16 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface" alias="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManager"/>
 
+        <service id="Setono\SyliusCMSPlugin\Publishing\Autosave" class="Setono\SyliusCMSPlugin\Publishing\Autosave">
+            <argument type="service" id="doctrine"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier"/>
+            <argument type="service" id="clock"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface" alias="Setono\SyliusCMSPlugin\Publishing\Autosave"/>
+
         <service id="Setono\SyliusCMSPlugin\Publishing\EntryPublisher" class="Setono\SyliusCMSPlugin\Publishing\EntryPublisher">
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface"/>
             <argument type="service" id="doctrine"/>

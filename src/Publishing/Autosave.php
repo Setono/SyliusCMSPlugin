@@ -1,0 +1,111 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Setono\SyliusCMSPlugin\Publishing;
+
+use Doctrine\DBAL\LockMode;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
+use Psr\Clock\ClockInterface;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\Merge;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
+
+/**
+ * Saves are kept for a day for merging onto. Each one runs with the entry's row locked, so saves of one entry wait for
+ * each other, and loading waits for a save in flight, so a lock token always matches the working copy it came with
+ */
+final readonly class Autosave implements AutosaveInterface
+{
+    /**
+     * How long saves are kept for merging onto. A builder that hasn't saved or pulled colleagues' changes in for longer
+     * has to load the entry again
+     */
+    public const KEPT_FOR = '1 day';
+
+    public function __construct(
+        private ManagerRegistry $managerRegistry,
+        private WorkingCopyManagerInterface $workingCopies,
+        private SavedChangeSetRepositoryInterface $savedChangeSets,
+        private ChangeSetMerger $merger,
+        private ChangeSetApplier $applier,
+        private ClockInterface $clock,
+    ) {
+    }
+
+    public function load(EntryInterface $entry): LoadedWorkingCopy
+    {
+        return $this->locked($entry, LockMode::PESSIMISTIC_READ, fn (): LoadedWorkingCopy => new LoadedWorkingCopy(
+            $this->workingCopies->getWorkingCopy($entry),
+            $this->savedChangeSets->findLatestVersion($entry),
+        ));
+    }
+
+    public function save(EntryInterface $entry, ChangeSet $changeSet, int $lockToken): SaveResult
+    {
+        return $this->locked($entry, LockMode::PESSIMISTIC_WRITE, function () use ($entry, $changeSet, $lockToken): SaveResult {
+            $version = $this->savedChangeSets->findLatestVersion($entry);
+            $theirs = $this->savedChangeSets->findChangeSetsSince($entry, $lockToken);
+            if ($lockToken > $version || count($theirs) !== $version - $lockToken) {
+                throw new StaleLockTokenException(sprintf('The lock token %d is not one the working copy at version %d can merge onto', $lockToken, $version));
+            }
+
+            $workingCopy = $this->workingCopies->getWorkingCopy($entry);
+            $merge = [] === $theirs ? new Merge($changeSet, []) : $this->merger->merge(
+                new ChangeSet(array_merge(...array_map(static fn (ChangeSet $saved): array => $saved->changes, $theirs))),
+                $changeSet,
+                $workingCopy->getBlockTree(),
+            );
+
+            if ([] !== $merge->changeSet->changes) {
+                $workingCopy->setBlockTree($this->applier->apply($merge->changeSet, $workingCopy->getBlockTree()));
+
+                $now = $this->clock->now();
+                $this->savedChangeSets->removeSavedBefore($entry, $now->modify('-' . self::KEPT_FOR));
+                $this->savedChangeSets->add($entry, ++$version, $merge->changeSet, $now);
+                $this->workingCopies->save($entry, $workingCopy);
+            }
+
+            return new SaveResult(new LoadedWorkingCopy($workingCopy, $version), [] !== $theirs, $merge->clashes);
+        });
+    }
+
+    /**
+     * Runs the callback in a transaction, with the entry's row locked and read again
+     *
+     * @template T
+     *
+     * @param LockMode::PESSIMISTIC_* $lockMode
+     * @param callable(): T $callback
+     *
+     * @return T
+     */
+    private function locked(EntryInterface $entry, int $lockMode, callable $callback): mixed
+    {
+        $manager = $this->managerRegistry->getManagerForClass($entry::class);
+        if (!$manager instanceof EntityManagerInterface) {
+            throw new \LogicException(sprintf('No Doctrine entity manager manages %s', $entry::class));
+        }
+
+        $connection = $manager->getConnection();
+        $connection->beginTransaction();
+
+        try {
+            $manager->lock($entry, $lockMode);
+            $manager->refresh($entry);
+
+            $result = $callback();
+            $connection->commit();
+
+            return $result;
+        } catch (\Throwable $e) {
+            $connection->rollBack();
+
+            throw $e;
+        }
+    }
+}

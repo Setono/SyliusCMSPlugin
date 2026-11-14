@@ -16,6 +16,14 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger" class="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger"/>
+
+        <service id="Setono\SyliusCMSPlugin\Builder\PresenceTracker" class="Setono\SyliusCMSPlugin\Builder\PresenceTracker">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryPresenceRepositoryInterface"/>
+            <argument type="service" id="clock"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Builder\PresenceTrackerInterface" alias="Setono\SyliusCMSPlugin\Builder\PresenceTracker"/>
+
         <service id="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer" class="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>

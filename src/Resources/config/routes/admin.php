@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DiscardEntryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\PresenceAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRenderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewTokenAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PublishEntryAction;
@@ -67,6 +68,12 @@ return static function (RoutingConfigurator $routes): void {
 
     $routes->add('setono_sylius_cms_admin_api_entry_discard', '/cms/api/entries/{uuid}/discard')
         ->controller(DiscardEntryAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_entry_presence', '/cms/api/entries/{uuid}/presence')
+        ->controller(PresenceAction::class)
         ->methods(['POST'])
         ->requirements(['uuid' => Requirement::UUID])
     ;
