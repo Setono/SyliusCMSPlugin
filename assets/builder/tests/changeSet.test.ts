@@ -2,6 +2,7 @@ import { enablePatches, produceWithPatches } from 'immer';
 import { describe, expect, it } from 'vitest';
 import { changesFromPatches, mergeChanges, type Change, type TranslatableLookup } from '../src/changeSet';
 import type { Entry, StoredBlock } from '../src/types';
+import { writeFieldValue } from '../src/values';
 import { block, blockOf, entry, shape, storeWith } from './fixtures';
 
 enablePatches();
@@ -33,6 +34,11 @@ function replay(blocks: StoredBlock[], changes: readonly Change[]): StoredBlock[
             }
         } else if (change.op === 'remove_block') {
             takeOut(tree, change.key);
+        } else {
+            const target = find(tree, change.key);
+            if (target !== undefined) {
+                writeFieldValue(target.fields, change.field, change.locale !== null, change.locale ?? '', change.value);
+            }
         }
     }
 
@@ -226,6 +232,55 @@ describe('sending moves', () => {
 
         expect(changes.map((change) => change.op)).toEqual(['move_block', 'move_block', 'move_block']);
         expect(shape(replay(before, changes))).toEqual(shape(after));
+    });
+});
+
+describe('sending the editing tools', () => {
+    const start = (): StoredBlock[] => [block('a'), blockOf('group', 'g', [block('b'), block('c')]), blockOf('group', 'h', [block('d')]), block('e')];
+
+    it.each<[string, (store: ReturnType<typeof storeWith>) => void]>([
+        ['several blocks moved into a container', (store) => store.getState().moveBlocks(['e', 'a', 'd'], 'g', 1)],
+        ['several blocks moved up and down', (store) => store.getState().shiftBlocks(['h', 'c', 'e'], 'up') && store.getState().shiftBlocks(['a', 'b'], 'down')],
+        ['several blocks duplicated', (store) => store.getState().duplicateBlocks(['g', 'd', 'e'])],
+        ['several blocks deleted', (store) => store.getState().removeBlocks(['a', 'c', 'h'])],
+        [
+            'a delete undone and redone',
+            (store) => {
+                store.getState().removeBlocks(['a', 'e']);
+                store.getState().undo();
+                store.getState().redo();
+            },
+        ],
+        [
+            'a field edited, the block deleted, the delete undone and the field edited again',
+            (store) => {
+                store.getState().setFieldValue('b', 'text', 'Before');
+                store.getState().removeBlocks(['b']);
+                store.getState().undo();
+                store.getState().setFieldValue('b', 'text', 'After');
+            },
+        ],
+        [
+            'edits undone and redone',
+            (store) => {
+                store.getState().duplicateBlocks(['g']);
+                store.getState().moveBlocks(['a', 'new-1'], 'h', 0);
+                store.getState().removeBlocks(['b']);
+                store.getState().undo();
+                store.getState().undo();
+                store.getState().redo();
+                store.getState().undo();
+                store.getState().undo();
+                store.getState().redo();
+            },
+        ],
+    ])('should send changes that take the saved tree to the working copy: %s', (_, act) => {
+        const store = storeWith(start());
+
+        act(store);
+
+        expect(store.getState().unsaved.length).toBeGreaterThan(0);
+        expect(replay(start(), store.getState().unsaved)).toEqual(store.getState().entry.tree.blocks);
     });
 });
 

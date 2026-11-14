@@ -1,4 +1,3 @@
-import { applyPatches } from 'immer';
 import { describe, expect, it, vi } from 'vitest';
 import type { BridgeStrings } from '../src/bridge/protocol';
 import { createPreviewSync } from '../src/previewSync';
@@ -12,6 +11,9 @@ const strings: BridgeStrings = {
     delete: 'Delete block',
     addBefore: 'Add block above',
     addAfter: 'Add block below',
+    moveUp: 'Move up',
+    moveDown: 'Move down',
+    duplicate: 'Duplicate',
     formatting: 'Formatting',
     bold: 'Bold',
     italic: 'Italic',
@@ -44,12 +46,25 @@ describe('an edit typed in place in the preview', () => {
 
         listen(store).receive({ type: 'edit', key: 'a', field: 'text', value: 'Welcome back' });
 
-        const { entry, unsaved, history, revision } = store.getState();
+        const { entry, unsaved, revision } = store.getState();
         expect(entry.tree.blocks[0]?.fields).toEqual({ text: { en_US: 'Welcome back', da_DK: 'Velkommen' }, level: 'h2' });
         expect(unsaved).toEqual([{ op: 'set_value', key: 'a', field: 'text', locale: 'en_US', value: 'Welcome back' }]);
         expect(revision).toBe(1);
-        expect(history).toHaveLength(1);
-        expect(applyPatches(entry, history[0]?.inversePatches ?? [])).toEqual(before);
+
+        expect(store.getState().undo()).toBe(true);
+        expect(store.getState().entry).toEqual(before);
+    });
+
+    it('should undo what was typed in one field in one step, as typing in the right pane does', () => {
+        const store = storeWith([block('a', { text: { en_US: 'Welcome' } })]);
+        const sync = listen(store);
+
+        sync.receive({ type: 'edit', key: 'a', field: 'text', value: 'Welcome b' });
+        sync.receive({ type: 'edit', key: 'a', field: 'text', value: 'Welcome ba' });
+        sync.receive({ type: 'edit', key: 'a', field: 'text', value: 'Welcome back' });
+        store.getState().undo();
+
+        expect(store.getState().entry.tree.blocks[0]?.fields).toEqual({ text: { en_US: 'Welcome' } });
     });
 
     it('should write rich text typed in place as its document', () => {
@@ -82,7 +97,7 @@ describe('an edit typed in place in the preview', () => {
         listen(store).receive({ type: 'edit', ...edit });
 
         expect(store.getState().entry.tree.blocks[0]?.fields).toEqual({ text: { en_US: 'Welcome' }, level: 'h2' });
-        expect(store.getState().history).toHaveLength(0);
+        expect(store.getState().history.done).toHaveLength(0);
     });
 
     it('should ignore rich text that is not a document', () => {
@@ -90,6 +105,6 @@ describe('an edit typed in place in the preview', () => {
 
         listen(store).receive({ type: 'edit', key: 'item', field: 'content', value: 'We ship within a day.' });
 
-        expect(store.getState().history).toHaveLength(0);
+        expect(store.getState().history.done).toHaveLength(0);
     });
 });

@@ -57,18 +57,19 @@ export function removeBlockFrom<B extends TreeBlock<B>>(blocks: B[], key: string
 }
 
 /**
- * Moves a block, with its children, to a list: the top level when parent is null, and otherwise the parent's
- * children. The index counts the list once the block is taken out, and is clamped to it.
+ * Moves blocks, with their children, to a list, one after the other in tree order: the top level when parent is null,
+ * and otherwise the parent's children. A block inside another of them moves with that one. The index counts the list
+ * once the blocks are taken out, and is clamped to it.
  */
-export function moveBlockTo<B extends TreeBlock<B>>(blocks: B[], key: string, parent: string | null, index: number): boolean {
-    const block = findBlock(blocks, key);
+export function moveBlocksTo<B extends TreeBlock<B>>(blocks: B[], keys: readonly string[], parent: string | null, index: number): boolean {
+    const moved = topmostBlocks(blocks, keys);
     const target = parent === null ? blocks : findBlock(blocks, parent)?.children;
-    if (block === undefined || target === undefined || findBlock([block], parent ?? '') !== undefined) {
+    if (moved.length === 0 || target === undefined || findBlock(moved, parent ?? '') !== undefined) {
         return false;
     }
 
-    removeBlockFrom(blocks, key);
-    target.splice(Math.max(0, Math.min(index, target.length)), 0, block);
+    moved.forEach((block) => removeBlockFrom(blocks, block.key));
+    target.splice(Math.max(0, Math.min(index, target.length)), 0, ...moved);
 
     return true;
 }
@@ -80,6 +81,56 @@ export function blockList(entry: Entry, parent: string | null): StoredBlock[] {
     }
 
     return findBlock(entry.tree.blocks, parent)?.children ?? [];
+}
+
+/**
+ * The blocks among the keys that no other block among them holds, in tree order, so that a selected block inside
+ * another selected block counts once. Keys the tree doesn't have are left out.
+ */
+export function topmostBlocks<B extends TreeBlock<B>>(blocks: readonly B[], keys: readonly string[]): B[] {
+    const wanted = new Set(keys);
+
+    return blocks.flatMap((block) => (wanted.has(block.key) ? [block] : topmostBlocks(block.children, keys)));
+}
+
+/** The blocks from the top level down to the block, the block last, or nothing when the tree doesn't have it. */
+export function pathTo<B extends TreeBlock<B>>(blocks: readonly B[], key: string): B[] {
+    for (const block of blocks) {
+        if (block.key === key) {
+            return [block];
+        }
+
+        const below = pathTo(block.children, key);
+        if (below.length > 0) {
+            return [block, ...below];
+        }
+    }
+
+    return [];
+}
+
+/**
+ * Whether moving the blocks one place up or down moves any of them: one of them has a block next to it in that
+ * direction, in its list, that doesn't move too. A block inside another of them moves with that one.
+ */
+export function canShift<B extends TreeBlock<B>>(blocks: readonly B[], keys: readonly string[], direction: 'up' | 'down'): boolean {
+    const moved = new Set(topmostBlocks(blocks, keys).map((block) => block.key));
+    const step = direction === 'up' ? -1 : 1;
+    const shifts = (list: readonly B[]): boolean =>
+        list.some((block, i) => {
+            const neighbour = list[i + step];
+
+            return (moved.has(block.key) && neighbour !== undefined && !moved.has(neighbour.key)) || shifts(block.children);
+        });
+
+    return shifts(blocks);
+}
+
+/** A copy of a block with a new key for it and for every block inside it. */
+export function copyWithNewKeys(block: StoredBlock, generateKey: () => string): StoredBlock {
+    const key = generateKey();
+
+    return { ...block, key, children: block.children.map((child) => copyWithNewKeys(child, generateKey)) };
 }
 
 /** A new lowercase UUID for a block key. */

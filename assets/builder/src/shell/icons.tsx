@@ -60,6 +60,46 @@ export function MobileIcon() {
     );
 }
 
+export function UndoIcon() {
+    return (
+        <Icon>
+            <path d="M5.5 3 2.5 6l3 3M2.5 6h7a4 4 0 0 1 0 8H7" />
+        </Icon>
+    );
+}
+
+export function RedoIcon() {
+    return (
+        <Icon>
+            <path d="M10.5 3l3 3-3 3M13.5 6h-7a4 4 0 0 0 0 8H9" />
+        </Icon>
+    );
+}
+
+export function ArrowUpIcon() {
+    return (
+        <Icon>
+            <path d="M8 13V3M4 7l4-4 4 4" />
+        </Icon>
+    );
+}
+
+export function ArrowDownIcon() {
+    return (
+        <Icon>
+            <path d="M8 3v10M4 9l4 4 4-4" />
+        </Icon>
+    );
+}
+
+export function CopyIcon() {
+    return (
+        <Icon>
+            <path d="M5.5 5.5h8v8h-8zM10.5 5.5v-3h-8v8h3" />
+        </Icon>
+    );
+}
+
 export function GripIcon() {
     return (
         <Icon>

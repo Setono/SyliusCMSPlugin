@@ -9,6 +9,9 @@ const strings: BridgeStrings = {
     delete: 'Delete block',
     addBefore: 'Add block above',
     addAfter: 'Add block below',
+    moveUp: 'Move up',
+    moveDown: 'Move down',
+    duplicate: 'Duplicate',
     formatting: 'Formatting',
     bold: 'Bold',
     italic: 'Italic',
@@ -114,6 +117,35 @@ describe('the bridge', () => {
                 { type: 'settings', key: 'c' },
                 { type: 'delete', key: 'c' },
             ]);
+        });
+
+        it("should offer move up, move down and duplicate in the selected block's toolbar, which ask the builder", () => {
+            bridge.receive({ type: 'select', key: 'a' });
+            const toolbar = within(controls()).getByRole('toolbar');
+
+            fireEvent.click(within(toolbar).getByRole('button', { name: 'Move up' }));
+            fireEvent.click(within(toolbar).getByRole('button', { name: 'Move down' }));
+            fireEvent.click(within(toolbar).getByRole('button', { name: 'Duplicate' }));
+
+            expect(posted).toEqual([
+                { type: 'move', key: 'a', direction: 'up' },
+                { type: 'move', key: 'a', direction: 'down' },
+                { type: 'duplicate', key: 'a' },
+            ]);
+        });
+
+        it('should pass ⌘Z and ⇧⌘Z pressed in the page on to the builder, which undoes and redoes', () => {
+            const undo = new KeyboardEvent('keydown', { key: 'z', metaKey: true, bubbles: true, cancelable: true });
+            const redo = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true });
+            const other = new KeyboardEvent('keydown', { key: 'z', bubbles: true, cancelable: true });
+
+            document.querySelector('h2')?.dispatchEvent(undo);
+            document.body.dispatchEvent(redo);
+            document.body.dispatchEvent(other);
+
+            expect(posted).toEqual([{ type: 'undo' }, { type: 'redo' }]);
+            expect(undo.defaultPrevented).toBe(true);
+            expect(other.defaultPrevented).toBe(false);
         });
 
         it('should offer + above and below the selected block, which asks the builder for the block picker at that spot', () => {

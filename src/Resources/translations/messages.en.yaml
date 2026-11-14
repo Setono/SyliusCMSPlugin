@@ -54,6 +54,7 @@ setono_sylius_cms:
         back: Back
         block_settings: Settings
         blocks: Blocks
+        blocks_selected: '%count% blocks selected'
         channels: Channels
         children: Blocks inside
         customer_groups: Customer groups
@@ -65,16 +66,20 @@ setono_sylius_cms:
         discard_failed: Couldn't discard the changes
         discarding: Discarding…
         drop_refused: '%block% can''t go there'
+        duplicate: Duplicate
         enabled: Enabled
         entry_settings: Entry settings
         guests: Guests
         load_failed: Couldn't load the entry
         loading: Loading…
         mobile: Mobile
+        move_down: Move down
+        move_up: Move up
         never_published: Never published
         no_blocks: No blocks yet
         no_group: Signed in without a group
         no_matching_block_types: No block types match
+        path: Path
         preview: Preview
         preview_channel: Preview channel
         preview_failed: Couldn't load the preview
@@ -83,6 +88,7 @@ setono_sylius_cms:
         publish_failed: Couldn't publish
         published: Published
         publishing: Publishing…
+        redo: Redo
         rich_text:
             blockquote: Quote
             bold: Bold
@@ -105,5 +111,6 @@ setono_sylius_cms:
         show_until: Show until
         takes_effect_on_save: Takes effect when saved, without publishing
         title: Builder
+        undo: Undo
         unpublished_changes: Unpublished changes
         unsupported_field_type: This field type isn't supported yet

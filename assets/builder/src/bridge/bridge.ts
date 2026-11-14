@@ -7,6 +7,7 @@ import type { Editor } from '@tiptap/core';
 import { caretAt, fieldAt, startTyping, type Caret, type TypingInPlace } from './inPlace';
 import { blockContaining, blockElements, blockHolds, blockNodes, findBlock, rootElement, type BlockRange, type FieldRange } from './markers';
 import { morphBlock, parseHtml } from './morph';
+import { shortcutOf } from '../shortcuts';
 import type { BridgeStrings, FromBridge, RenderedBlock, ToBridge } from './protocol';
 
 export interface Bridge {
@@ -33,6 +34,9 @@ svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width:
 
 const ICONS = {
     selectParent: '<path d="M6 10 2.5 6.5 6 3M2.5 6.5H10a3.5 3.5 0 0 1 3.5 3.5v3"/>',
+    moveUp: '<path d="M8 13V3M4 7l4-4 4 4"/>',
+    moveDown: '<path d="M8 3v10M4 9l4 4 4-4"/>',
+    duplicate: '<path d="M5.5 5.5h8v8h-8zM10.5 5.5v-3h-8v8h3"/>',
     settings: '<path d="M2.5 4.5h11M2.5 11.5h11"/><circle cx="6" cy="4.5" r="1.75" fill="#2f6fed"/><circle cx="10" cy="11.5" r="1.75" fill="#2f6fed"/>',
     delete: '<path d="M2.5 4h11M6.5 4V2.5h3V4M4 4l.7 9.5h6.6L12 4"/>',
     add: '<path d="M8 3v10M3 8h10"/>',
@@ -127,8 +131,20 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
         refresh();
     };
 
+    // Undo and redo work wherever the editor is, so the keys pressed in the page go to the builder
+    const onKeyDown = (event: KeyboardEvent): void => {
+        const shortcut = strings === null || event.defaultPrevented ? null : shortcutOf(event);
+        if (shortcut !== null) {
+            event.preventDefault();
+            // Undo changes the working copy, which the field being typed in shows only once the typing ends
+            typing?.stop();
+            post({ type: shortcut });
+        }
+    };
+
     document.addEventListener('click', onClick, true);
     document.addEventListener('mouseover', onPointerOver, true);
+    document.addEventListener('keydown', onKeyDown);
     window?.addEventListener('scroll', refresh, { passive: true });
     window?.addEventListener('resize', refresh);
     window?.addEventListener('blur', onBlur);
@@ -192,7 +208,7 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
                     strings = message.strings;
                     controls ??= createControls(document, strings, (action) => {
                         if (selected !== null) {
-                            post(typeof action === 'object' ? { type: 'add', key: selected, ...action } : { type: action, key: selected });
+                            post(request(action, selected));
                         }
                     });
                     break;
@@ -223,6 +239,7 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
             typing?.stop();
             document.removeEventListener('click', onClick, true);
             document.removeEventListener('mouseover', onPointerOver, true);
+            document.removeEventListener('keydown', onKeyDown);
             window?.removeEventListener('scroll', refresh);
             window?.removeEventListener('resize', refresh);
             window?.removeEventListener('blur', onBlur);
@@ -241,7 +258,16 @@ function rendered(block: BlockRange): void {
     root?.dispatchEvent(new CustomEventClass('cms:render', { bubbles: true, detail: { key: block.key, type: block.type } }));
 }
 
-type Action = 'select_parent' | 'settings' | 'delete' | { position: 'before' | 'after'; x: number; y: number };
+type Action = 'select_parent' | 'settings' | 'delete' | 'duplicate' | { direction: 'up' | 'down' } | { position: 'before' | 'after'; x: number; y: number };
+
+/** What the builder is asked to do with the selected block. */
+function request(action: Action, key: string): FromBridge {
+    if (typeof action === 'string') {
+        return { type: action, key };
+    }
+
+    return 'direction' in action ? { type: 'move', key, direction: action.direction } : { type: 'add', key, ...action };
+}
 
 /** Rich text being typed in place, which the formatting toolbar works on. */
 interface Formatting {
@@ -273,6 +299,9 @@ function createControls(document: Document, strings: BridgeStrings, act: (action
     toolbar.setAttribute('role', 'toolbar');
     toolbar.append(
         button(document, strings.selectParent, ICONS.selectParent, () => act('select_parent')),
+        button(document, strings.moveUp, ICONS.moveUp, () => act({ direction: 'up' })),
+        button(document, strings.moveDown, ICONS.moveDown, () => act({ direction: 'down' })),
+        button(document, strings.duplicate, ICONS.duplicate, () => act('duplicate')),
         button(document, strings.settings, ICONS.settings, () => act('settings')),
         button(document, strings.delete, ICONS.delete, () => act('delete')),
     );

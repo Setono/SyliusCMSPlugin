@@ -224,8 +224,8 @@ final class ChangeSetApplierTest extends TestCase
         $withUnknownChild = new StoredBlock($other, 'heading', 1);
         $withUnknownChild->children = [new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d', 'nope', 1)];
 
-        yield 'adding a block with a key the tree has' => [new AddBlock(null, 0, new StoredBlock(self::A, 'heading', 1)), self::A];
-        yield 'adding a block whose child has a key the tree has' => [new AddBlock(null, 0, $child), self::A];
+        yield 'adding a block with a key the tree has' => [new AddBlock(null, 0, new StoredBlock(self::A, 'heading', 1)), 'The tree already has a block with the key ' . self::A];
+        yield 'adding a block whose child has a key the tree has' => [new AddBlock(null, 0, $child), 'The tree already has a block with the key ' . self::A];
         yield 'adding a block of an unknown type' => [new AddBlock(null, 0, new StoredBlock($other, 'nope', 1)), '"nope"'];
         yield 'adding a block with a child of an unknown type' => [new AddBlock(null, 0, $withUnknownChild), '"nope"'];
         yield 'adding a block inside a block the tree does not have' => [new AddBlock($other, 0, new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4e', 'heading', 1)), $other];
@@ -302,6 +302,46 @@ final class ChangeSetApplierTest extends TestCase
         self::assertSame(['removed' => self::DIRTY, 'content' => ['en_US' => self::CLEAN, 'da_DK' => self::CLEAN]], $tree->blocks[0]->fields);
         self::assertSame(['body' => self::CLEAN, 'caption' => '<b>Kept as typed</b>'], $tree->blocks[0]->children[0]->fields);
         self::assertSame(['content' => 'not a locale map'], $tree->blocks[0]->children[1]->fields);
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideBlocksSharingAKey
+     */
+    public function it_refuses_a_tree_with_two_blocks_sharing_a_key(StoredBlock $added): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)]);
+
+        $this->expectException(InvalidChangeSetException::class);
+        $this->expectExceptionMessage(sprintf('The tree has more than one block with the key %s', self::C));
+
+        $this->apply($tree, new AddBlock(null, 1, $added));
+    }
+
+    /**
+     * @return iterable<string, array{StoredBlock}>
+     */
+    public function provideBlocksSharingAKey(): iterable
+    {
+        yield 'a copy whose children were not given new keys' => [new StoredBlock(self::B, 'heading', 1, children: [
+            new StoredBlock(self::C, 'heading', 1),
+            new StoredBlock(self::C, 'heading', 1),
+        ])];
+        yield 'a copy with a child under its own key' => [new StoredBlock(self::C, 'heading', 1, children: [new StoredBlock(self::C, 'heading', 1)])];
+    }
+
+    /**
+     * @test
+     */
+    public function it_adds_a_copy_of_a_block_with_new_keys_for_it_and_its_children(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1, children: [new StoredBlock(self::B, 'heading', 1)])]);
+        $copy = new StoredBlock(self::C, 'heading', 1, children: [new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d', 'heading', 1)]);
+
+        $tree = $this->apply($tree, new AddBlock(null, 1, $copy));
+
+        self::assertSame([self::A, self::B, self::C, '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d'], $tree->keys());
     }
 
     /**

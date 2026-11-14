@@ -42,7 +42,21 @@ final readonly class ChangeSetApplier
             };
         }
 
+        self::assertUniqueKeys($tree);
+
         return $tree;
+    }
+
+    /**
+     * Every change finds its block by key, so no two blocks in a tree may share one: a duplicated block gets new keys,
+     * for itself and every block inside it
+     */
+    private static function assertUniqueKeys(StoredTree $tree): void
+    {
+        $shared = array_keys(array_filter(array_count_values($tree->keys()), static fn (int $count): bool => $count > 1));
+        if ([] !== $shared) {
+            throw new InvalidChangeSetException(sprintf('The tree has more than one block with the key %s', implode(', ', $shared)));
+        }
     }
 
     /**

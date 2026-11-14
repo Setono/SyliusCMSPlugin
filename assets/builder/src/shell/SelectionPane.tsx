@@ -2,21 +2,36 @@ import { useId } from 'react';
 import { useBuilder, useBuilderState } from '../context';
 import { FieldRow } from '../form/FieldRow';
 import { useTranslator } from '../i18n';
-import { findBlock } from '../tree';
+import { canDuplicate } from '../nesting';
+import { canShift, findBlock, pathTo, topmostBlocks } from '../tree';
 import type { StoredBlock } from '../types';
 import { readFieldValue } from '../values';
 import { AddBlockButton } from './BlockPicker';
 import { blockHint } from './BlockTreePane';
-import { PlusIcon } from './icons';
+import { ArrowDownIcon, ArrowUpIcon, CopyIcon, PlusIcon, TrashIcon } from './icons';
 import styles from './SelectionPane.module.css';
 import { SettingsPane } from './SettingsPane';
 
-/** The right pane: the selected block's fields, rendered from their schemas, and its children, or the entry's settings. */
+/**
+ * The right pane: the selected block's path, its actions, its fields, rendered from their schemas, and its children,
+ * or the entry's settings. With several blocks selected, the actions for all of them.
+ */
 export function SelectionPane() {
+    const t = useTranslator();
     const { store } = useBuilder();
     const block = useBuilderState((state) => (state.selectedKey === null ? undefined : findBlock(state.entry.tree.blocks, state.selectedKey)));
     const blockType = useBuilderState((state) => (block === undefined ? undefined : state.rules.blockTypes.get(block.type)));
     const locale = useBuilderState((state) => state.locale);
+    const selection = useBuilderState((state) => state.selection);
+
+    if (selection.length > 1) {
+        return (
+            <div className={styles.pane}>
+                <h2 className={styles.heading}>{t('setono_sylius_cms.builder.blocks_selected', { '%count%': String(selection.length) })}</h2>
+                <Actions keys={selection} />
+            </div>
+        );
+    }
 
     // With nothing selected, or the entry's settings selected, it shows the settings
     if (block === undefined) {
@@ -27,7 +42,9 @@ export function SelectionPane() {
 
     return (
         <div className={styles.pane}>
+            <Path block={block} />
             <h2 className={styles.heading}>{label}</h2>
+            <Actions keys={[block.key]} />
             <div key={block.key} className={styles.fields}>
                 {blockType?.fields.map(({ name, schema }) => (
                     <FieldRow
@@ -41,6 +58,65 @@ export function SelectionPane() {
                 ))}
             </div>
             {(blockType?.children.length ?? 0) > 0 && <Children block={block} label={label} />}
+        </div>
+    );
+}
+
+/** Where the block is in the tree: the blocks it's inside, each selectable, and then the block itself. */
+function Path({ block }: { block: StoredBlock }) {
+    const t = useTranslator();
+    const { store } = useBuilder();
+    const blocks = useBuilderState((state) => state.entry.tree.blocks);
+    const blockTypes = useBuilderState((state) => state.rules.blockTypes);
+    const path = pathTo(blocks, block.key);
+    const labelOf = (step: StoredBlock): string => blockTypes.get(step.type)?.label ?? step.type;
+
+    // A list rather than a nav landmark, so the tree stays the builder's one navigation
+    return (
+        <ol aria-label={t('setono_sylius_cms.builder.path')} className={styles.path}>
+            {path.slice(0, -1).map((step) => (
+                <li key={step.key} className={styles.step}>
+                    <button type="button" className={styles.stepButton} onClick={() => store.getState().selectBlock(step.key)}>
+                        {labelOf(step)}
+                    </button>
+                </li>
+            ))}
+            <li className={styles.step}>
+                <span aria-current="location" className={styles.current}>
+                    {labelOf(block)}
+                </span>
+            </li>
+        </ol>
+    );
+}
+
+/** Move, duplicate and delete, for the selected blocks. A block inside another selected block counts once. */
+function Actions({ keys }: { keys: readonly string[] }) {
+    const t = useTranslator();
+    const { store } = useBuilder();
+    const canMoveUp = useBuilderState((state) => canShift(state.entry.tree.blocks, keys, 'up'));
+    const canMoveDown = useBuilderState((state) => canShift(state.entry.tree.blocks, keys, 'down'));
+    const duplicable = useBuilderState((state) =>
+        canDuplicate(
+            state.rules,
+            state.entry.tree.blocks,
+            topmostBlocks(state.entry.tree.blocks, keys).map((selected) => selected.key),
+        ),
+    );
+    const actions = [
+        { label: t('setono_sylius_cms.builder.move_up'), icon: <ArrowUpIcon />, enabled: canMoveUp, act: () => store.getState().shiftBlocks(keys, 'up') },
+        { label: t('setono_sylius_cms.builder.move_down'), icon: <ArrowDownIcon />, enabled: canMoveDown, act: () => store.getState().shiftBlocks(keys, 'down') },
+        { label: t('setono_sylius_cms.builder.duplicate'), icon: <CopyIcon />, enabled: duplicable, act: () => store.getState().duplicateBlocks(keys) },
+        { label: t('setono_sylius_cms.builder.delete_block'), icon: <TrashIcon />, enabled: true, act: () => store.getState().removeBlocks(keys) },
+    ];
+
+    return (
+        <div className={styles.actions}>
+            {actions.map(({ label, icon, enabled, act }) => (
+                <button key={label} type="button" className={styles.action} aria-label={label} title={label} disabled={!enabled} onClick={act}>
+                    {icon}
+                </button>
+            ))}
         </div>
     );
 }

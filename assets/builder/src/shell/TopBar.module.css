@@ -101,6 +101,35 @@
     color: var(--builder-color-accent);
 }
 
+.history {
+    display: flex;
+    flex: none;
+    gap: 2px;
+}
+
+.historyButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--builder-control-height);
+    height: var(--builder-control-height);
+    border: 0;
+    border-radius: var(--builder-radius-sm);
+    background: none;
+    color: var(--builder-color-text);
+    cursor: pointer;
+}
+
+.historyButton:hover:not(:disabled) {
+    background: var(--builder-color-hover);
+}
+
+.historyButton:disabled {
+    color: var(--builder-color-text-muted);
+    cursor: default;
+    opacity: 0.5;
+}
+
 .saveState {
     flex: none;
     color: var(--builder-color-text-muted);
@@ -169,6 +198,7 @@
 .discardButton:focus-visible,
 .channel:focus-visible,
 .width:focus-visible,
+.historyButton:focus-visible,
 .publishButton:focus-visible {
     outline: 2px solid var(--builder-color-focus);
     outline-offset: 2px;

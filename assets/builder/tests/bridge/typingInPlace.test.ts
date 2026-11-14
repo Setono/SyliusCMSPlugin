@@ -10,6 +10,9 @@ const strings: BridgeStrings = {
     delete: 'Delete block',
     addBefore: 'Add block above',
     addAfter: 'Add block below',
+    moveUp: 'Move up',
+    moveDown: 'Move down',
+    duplicate: 'Duplicate',
     formatting: 'Formatting',
     bold: 'Bold',
     italic: 'Italic',
@@ -184,6 +187,20 @@ describe('typing in place in the preview', () => {
         expect(document.body.innerHTML).not.toContain('cms:field a');
     });
 
+    it("should end typing in place on undo, which the builder does, so the preview shows the field as undone", () => {
+        const heading = query('h2');
+        fireEvent.click(heading);
+        type(heading, 'Hello world');
+
+        const undo = fireEvent.keyDown(heading, { key: 'z', ctrlKey: true });
+        bridge.receive({ type: 'patch', blocks: [{ key: 'a', html: block('a', 'heading', HEADING) }] });
+
+        expect(undo).toBe(false);
+        expect(posted.at(-1)).toEqual({ type: 'undo' });
+        expect(heading).not.toHaveAttribute('contenteditable');
+        expect(heading).toHaveTextContent(/^Hello$/);
+    });
+
     it('should keep the newlines of a textarea', () => {
         const quote = query('blockquote p');
         fireEvent.click(quote);
@@ -253,6 +270,23 @@ describe('typing in place in the preview', () => {
 
             expect(edits()).toEqual([{ type: 'edit', key: 'r', field: 'content', value: doc(text('Hello bold world', ['bold'])) }]);
             expect(within(toolbar).getByRole('button', { name: 'Bold' })).toHaveAttribute('aria-pressed', 'true');
+        });
+
+        it("should undo in the rich text editor first, as the right pane's does, and leave the builder's undo for when it has nothing left", () => {
+            const richText = query('.cms-rich-text');
+            fireEvent.click(query('.cms-rich-text p'));
+            fireEvent.keyDown(richText, { key: 'a', ctrlKey: true });
+            fireEvent.click(within(controls()).getByRole('button', { name: 'Bold' }));
+
+            fireEvent.keyDown(richText, { key: 'z', ctrlKey: true });
+
+            expect(edits().at(-1)).toEqual({ type: 'edit', key: 'r', field: 'content', value: doc(text('Hello '), text('bold', ['bold']), text(' world')) });
+            expect(posted.some((message) => message.type === 'undo')).toBe(false);
+            expect(richText).toHaveAttribute('contenteditable', 'true');
+
+            fireEvent.keyDown(richText, { key: 'z', ctrlKey: true });
+
+            expect(posted.at(-1)).toEqual({ type: 'undo' });
         });
 
         it('should send no value for rich text emptied in place', () => {
