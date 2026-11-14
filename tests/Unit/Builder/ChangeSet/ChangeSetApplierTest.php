@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Builder\ChangeSet;
 
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Block\Heading;
+use Setono\SyliusCMSPlugin\Block\RichText;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\AddBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\Change;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
@@ -14,10 +15,18 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
+use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
+use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\RichTextHandler;
+use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
+use Setono\SyliusCMSPlugin\Tests\Unit\Builder\ChangeSet\Fixture\SharedNote;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Symfony\Component\DependencyInjection\ServiceLocator;
+use Symfony\Component\Translation\IdentityTranslator;
 
 final class ChangeSetApplierTest extends TestCase
 {
@@ -26,6 +35,13 @@ final class ChangeSetApplierTest extends TestCase
     private const B = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4b';
 
     private const C = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4c';
+
+    private const DIRTY = ['type' => 'doc', 'content' => [
+        ['type' => 'paragraph', 'attrs' => ['onclick' => 'alert(1)'], 'content' => [['type' => 'text', 'text' => 'Hi', 'marks' => [['type' => 'highlight']]]]],
+        ['type' => 'iframe', 'attrs' => ['src' => 'https://example.com']],
+    ]];
+
+    private const CLEAN = ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'Hi']]]]];
 
     /**
      * @test
@@ -173,7 +189,7 @@ final class ChangeSetApplierTest extends TestCase
         $this->expectException(InvalidChangeSetException::class);
         $this->expectExceptionMessage('Unknown change');
 
-        (new ChangeSetApplier(new BlockTypeRegistry(['heading' => Heading::class], new FieldReader())))->apply(
+        self::applier()->apply(
             new ChangeSet([new class() implements Change {
             }]),
             new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)]),
@@ -208,8 +224,8 @@ final class ChangeSetApplierTest extends TestCase
         $withUnknownChild = new StoredBlock($other, 'heading', 1);
         $withUnknownChild->children = [new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d', 'nope', 1)];
 
-        yield 'adding a block with a key the tree has' => [new AddBlock(null, 0, new StoredBlock(self::A, 'heading', 1)), self::A];
-        yield 'adding a block whose child has a key the tree has' => [new AddBlock(null, 0, $child), self::A];
+        yield 'adding a block with a key the tree has' => [new AddBlock(null, 0, new StoredBlock(self::A, 'heading', 1)), 'The tree already has a block with the key ' . self::A];
+        yield 'adding a block whose child has a key the tree has' => [new AddBlock(null, 0, $child), 'The tree already has a block with the key ' . self::A];
         yield 'adding a block of an unknown type' => [new AddBlock(null, 0, new StoredBlock($other, 'nope', 1)), '"nope"'];
         yield 'adding a block with a child of an unknown type' => [new AddBlock(null, 0, $withUnknownChild), '"nope"'];
         yield 'adding a block inside a block the tree does not have' => [new AddBlock($other, 0, new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4e', 'heading', 1)), $other];
@@ -226,7 +242,106 @@ final class ChangeSetApplierTest extends TestCase
 
     private function apply(StoredTree $tree, AddBlock|MoveBlock|RemoveBlock|SetValue ...$changes): StoredTree
     {
-        return (new ChangeSetApplier(new BlockTypeRegistry(['heading' => Heading::class], new FieldReader())))->apply(new ChangeSet(array_values($changes)), $tree);
+        return self::applier()->apply(new ChangeSet(array_values($changes)), $tree);
+    }
+
+    private static function applier(): ChangeSetApplier
+    {
+        return new ChangeSetApplier(
+            new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class, 'shared_note' => SharedNote::class], new FieldReader()),
+            new FieldHandlerLocator(new ServiceLocator([
+                TextHandler::class => static fn (): TextHandler => new TextHandler(),
+                ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
+                RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
+            ])),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_sanitises_a_rich_text_value_it_sets(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'rich_text', 1), new StoredBlock(self::B, 'shared_note', 1)]);
+
+        $tree = $this->apply(
+            $tree,
+            new SetValue(self::A, 'content', 'en_US', self::DIRTY),
+            new SetValue(self::B, 'body', null, self::DIRTY),
+            new SetValue(self::B, 'caption', null, '<b>Kept as typed</b>'),
+        );
+
+        self::assertSame(['content' => ['en_US' => self::CLEAN]], $tree->blocks[0]->fields);
+        self::assertSame(['body' => self::CLEAN, 'caption' => '<b>Kept as typed</b>'], $tree->blocks[1]->fields);
+    }
+
+    /**
+     * @test
+     */
+    public function it_removes_a_rich_text_value_set_to_null(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'rich_text', 1, fields: ['content' => ['en_US' => self::CLEAN]])]);
+
+        $tree = $this->apply($tree, new SetValue(self::A, 'content', 'en_US', null));
+
+        self::assertSame([], $tree->blocks[0]->fields);
+    }
+
+    /**
+     * @test
+     */
+    public function it_sanitises_the_rich_text_values_of_an_added_block_and_the_blocks_inside_it(): void
+    {
+        $added = new StoredBlock(self::A, 'rich_text', 1, fields: ['removed' => self::DIRTY, 'content' => ['en_US' => self::DIRTY, 'da_DK' => self::DIRTY]], children: [
+            new StoredBlock(self::B, 'shared_note', 1, fields: ['body' => self::DIRTY, 'caption' => '<b>Kept as typed</b>']),
+            new StoredBlock(self::C, 'rich_text', 1, fields: ['content' => 'not a locale map']),
+        ]);
+
+        $tree = $this->apply(new StoredTree(null, []), new AddBlock(null, 0, $added));
+
+        self::assertSame(['removed' => self::DIRTY, 'content' => ['en_US' => self::CLEAN, 'da_DK' => self::CLEAN]], $tree->blocks[0]->fields);
+        self::assertSame(['body' => self::CLEAN, 'caption' => '<b>Kept as typed</b>'], $tree->blocks[0]->children[0]->fields);
+        self::assertSame(['content' => 'not a locale map'], $tree->blocks[0]->children[1]->fields);
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideBlocksSharingAKey
+     */
+    public function it_refuses_a_tree_with_two_blocks_sharing_a_key(StoredBlock $added): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)]);
+
+        $this->expectException(InvalidChangeSetException::class);
+        $this->expectExceptionMessage(sprintf('The tree has more than one block with the key %s', self::C));
+
+        $this->apply($tree, new AddBlock(null, 1, $added));
+    }
+
+    /**
+     * @return iterable<string, array{StoredBlock}>
+     */
+    public function provideBlocksSharingAKey(): iterable
+    {
+        yield 'a copy whose children were not given new keys' => [new StoredBlock(self::B, 'heading', 1, children: [
+            new StoredBlock(self::C, 'heading', 1),
+            new StoredBlock(self::C, 'heading', 1),
+        ])];
+        yield 'a copy with a child under its own key' => [new StoredBlock(self::C, 'heading', 1, children: [new StoredBlock(self::C, 'heading', 1)])];
+    }
+
+    /**
+     * @test
+     */
+    public function it_adds_a_copy_of_a_block_with_new_keys_for_it_and_its_children(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1, children: [new StoredBlock(self::B, 'heading', 1)])]);
+        $copy = new StoredBlock(self::C, 'heading', 1, children: [new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d', 'heading', 1)]);
+
+        $tree = $this->apply($tree, new AddBlock(null, 1, $copy));
+
+        self::assertSame([self::A, self::B, self::C, '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d'], $tree->keys());
     }
 
     /**

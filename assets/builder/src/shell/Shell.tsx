@@ -1,4 +1,6 @@
-import { useId, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
+import { useBuilder } from '../context';
+import { shortcutOf } from '../shortcuts';
 import { BlockTreePane } from './BlockTreePane';
 import { Preview } from './Preview';
 import { SelectionPane } from './SelectionPane';
@@ -9,6 +11,23 @@ import { TopBar } from './TopBar';
 export function Shell() {
     const treeHeadingId = useId();
     const selection = useRef<HTMLElement>(null);
+    const { store } = useBuilder();
+
+    // Undo and redo work on the working copy wherever the focus is, also in a field: its value is the working copy's.
+    // A widget with an undo of its own, such as rich text, handles the keys first.
+    useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent): void => {
+            const shortcut = shortcutOf(event);
+            if (shortcut !== null && !event.defaultPrevented) {
+                event.preventDefault();
+                store.getState()[shortcut]();
+            }
+        };
+
+        window.addEventListener('keydown', onKeyDown);
+
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [store]);
 
     // Once the right pane shows the selected block, its first field takes the focus
     const openSettings = (): void => {

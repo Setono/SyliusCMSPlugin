@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Twig;
 use Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Value\RichText;
 use Twig\Extension\RuntimeExtensionInterface;
 
 final readonly class CmsRuntime implements RuntimeExtensionInterface
@@ -22,7 +23,7 @@ final readonly class CmsRuntime implements RuntimeExtensionInterface
     }
 
     /**
-     * Prints a field of a block or a layout. Its value is already hydrated, with fallback resolved
+     * Prints a field of a block or a layout. Its value is already hydrated, with fallback resolved, and rich text is printed as its HTML
      */
     public function field(object $subject, string $name): string
     {
@@ -39,6 +40,11 @@ final readonly class CmsRuntime implements RuntimeExtensionInterface
 
         if (null === $value) {
             return '';
+        }
+
+        // Rendered from the sanitised document by tiptap-php, which escapes the text
+        if ($value instanceof RichText) {
+            return $value->html;
         }
 
         if (!is_scalar($value) && !$value instanceof \Stringable) {

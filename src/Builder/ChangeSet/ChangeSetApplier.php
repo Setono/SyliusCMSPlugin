@@ -4,18 +4,23 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Builder\ChangeSet;
 
+use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\SanitizingFieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 /**
  * Applies a change set to a block tree, all or nothing. The values themselves aren't validated,
- * because invalid content saves: publish validates
+ * because invalid content saves: publish validates. They're sanitised by field types that sanitise, such as rich text
  */
 final readonly class ChangeSetApplier
 {
-    public function __construct(private BlockTypeRegistryInterface $blockTypes)
-    {
+    public function __construct(
+        private BlockTypeRegistryInterface $blockTypes,
+        private FieldHandlerLocator $fieldHandlers,
+    ) {
     }
 
     /**
@@ -37,7 +42,21 @@ final readonly class ChangeSetApplier
             };
         }
 
+        self::assertUniqueKeys($tree);
+
         return $tree;
+    }
+
+    /**
+     * Every change finds its block by key, so no two blocks in a tree may share one: a duplicated block gets new keys,
+     * for itself and every block inside it
+     */
+    private static function assertUniqueKeys(StoredTree $tree): void
+    {
+        $shared = array_keys(array_filter(array_count_values($tree->keys()), static fn (int $count): bool => $count > 1));
+        if ([] !== $shared) {
+            throw new InvalidChangeSetException(sprintf('The tree has more than one block with the key %s', implode(', ', $shared)));
+        }
     }
 
     /**
@@ -53,6 +72,7 @@ final readonly class ChangeSetApplier
             throw new InvalidChangeSetException(sprintf('The tree already has a block with the key %s', implode(', ', $taken)));
         }
 
+        $this->sanitizeBlock($change->block);
         self::insert($tree, $change->block, $change->index, $change->parent);
     }
 
@@ -98,7 +118,40 @@ final readonly class ChangeSetApplier
             throw new InvalidChangeSetException(sprintf('The field "%s" is shared by all translations, so a value takes no locale', $change->field));
         }
 
-        $block->setValue($change->field, $change->locale, $change->value);
+        $block->setValue($change->field, $change->locale, null === $change->value ? null : $this->sanitize($field, $change->value));
+    }
+
+    /**
+     * Sanitises the values of a block and the blocks inside it
+     */
+    private function sanitizeBlock(StoredBlock $block): void
+    {
+        $fields = $this->blockTypes->get($block->type)->fields;
+
+        foreach ($block->fields as $name => $value) {
+            $field = $fields[$name] ?? null;
+            if (null === $field) {
+                // A value the block type no longer has is ignored, and dropped on a later save
+                continue;
+            }
+
+            if (!$field->translatable) {
+                $block->fields[$name] = $this->sanitize($field, $value);
+            } elseif (is_array($value)) {
+                $block->fields[$name] = array_map(fn (mixed $localized): mixed => $this->sanitize($field, $localized), $value);
+            }
+        }
+
+        foreach ($block->children as $child) {
+            $this->sanitizeBlock($child);
+        }
+    }
+
+    private function sanitize(FieldMetadata $field, mixed $value): mixed
+    {
+        $handler = $this->fieldHandlers->get($field->field);
+
+        return $handler instanceof SanitizingFieldHandlerInterface ? $handler->sanitize($field->field, $value) : $value;
     }
 
     private function assertKnownTypes(StoredBlock $block): void

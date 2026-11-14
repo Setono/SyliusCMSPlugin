@@ -8,6 +8,7 @@ use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\HydrationContext;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
+use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
 /**
@@ -29,16 +30,7 @@ final readonly class BlockHydrator
         $hydrationContext = new HydrationContext($context);
 
         foreach ($blockType->fields as $name => $field) {
-            $value = $block->fields[$name] ?? null;
-            if ($field->translatable) {
-                $value = $this->inLocale($value, $context->localeCode);
-            }
-
-            if (null === $value) {
-                continue;
-            }
-
-            $hydrated = $this->fieldHandlers->get($field->field)->hydrate($field->field, $value, $hydrationContext);
+            $hydrated = $this->hydrateField($field, $block->fields[$name] ?? null, $context->localeCode, $hydrationContext);
             if (null === $hydrated) {
                 continue;
             }
@@ -54,18 +46,29 @@ final readonly class BlockHydrator
     }
 
     /**
-     * Picks a translatable value in the current locale, falling back through the fallback chain past missing and empty values
+     * Hydrates a shared value, or a translatable value in the current locale. A translatable value falls back through
+     * the fallback chain past values that are missing, empty or don't fit, which the handler hydrates as null,
+     * such as an empty rich text document
      */
-    private function inLocale(mixed $values, string $localeCode): mixed
+    private function hydrateField(FieldMetadata $field, mixed $value, string $localeCode, HydrationContext $context): mixed
     {
-        if (!is_array($values)) {
+        if (!$field->translatable) {
+            return null === $value ? null : $this->fieldHandlers->get($field->field)->hydrate($field->field, $value, $context);
+        }
+
+        if (!is_array($value)) {
             return null;
         }
 
         foreach ($this->fallbackChain->localesFor($localeCode) as $locale) {
-            $value = $values[$locale] ?? null;
-            if (null !== $value && '' !== $value) {
-                return $value;
+            $localized = $value[$locale] ?? null;
+            if (null === $localized || '' === $localized) {
+                continue;
+            }
+
+            $hydrated = $this->fieldHandlers->get($field->field)->hydrate($field->field, $localized, $context);
+            if (null !== $hydrated) {
+                return $hydrated;
             }
         }
 

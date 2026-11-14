@@ -6,7 +6,7 @@
  */
 import type { BridgeStrings, FromBridge, RenderedBlock, ToBridge } from './bridge/protocol';
 import { planPreviewUpdate, type PreviewPlan } from './previewPlan';
-import type { BuilderStore } from './store';
+import { actedOn, type BuilderStore } from './store';
 import { blockList, findBlock, locateBlock, type BlockSpot } from './tree';
 import type { StoredBlock } from './types';
 
@@ -188,10 +188,27 @@ export function createPreviewSync({ store, strings, render, reload, openBlockPic
                         openSettings();
                     }
                     break;
+                // Move, duplicate and delete act on the whole selection when the toolbar's block is part of it
                 case 'delete':
                     if (known) {
-                        state.removeBlock(message.key);
+                        state.removeBlocks(actedOn(state.selection, message.key));
                     }
+                    break;
+                case 'move':
+                    if (known) {
+                        state.shiftBlocks(actedOn(state.selection, message.key), message.direction);
+                    }
+                    break;
+                case 'duplicate':
+                    if (known) {
+                        state.duplicateBlocks(actedOn(state.selection, message.key));
+                    }
+                    break;
+                case 'undo':
+                    state.undo();
+                    break;
+                case 'redo':
+                    state.redo();
                     break;
                 case 'add': {
                     const spot = locateBlock(blocks, message.key);

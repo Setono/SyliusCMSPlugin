@@ -29,6 +29,13 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.drop_refused'
     | 'setono_sylius_cms.builder.children'
     | 'setono_sylius_cms.builder.delete_block'
+    | 'setono_sylius_cms.builder.duplicate'
+    | 'setono_sylius_cms.builder.move_up'
+    | 'setono_sylius_cms.builder.move_down'
+    | 'setono_sylius_cms.builder.undo'
+    | 'setono_sylius_cms.builder.redo'
+    | 'setono_sylius_cms.builder.path'
+    | 'setono_sylius_cms.builder.blocks_selected'
     | 'setono_sylius_cms.builder.no_blocks'
     | 'setono_sylius_cms.builder.entry_settings'
     | 'setono_sylius_cms.builder.settings'
@@ -52,7 +59,18 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.preview_channel'
     | 'setono_sylius_cms.builder.preview_width'
     | 'setono_sylius_cms.builder.desktop'
-    | 'setono_sylius_cms.builder.mobile';
+    | 'setono_sylius_cms.builder.mobile'
+    | 'setono_sylius_cms.builder.rich_text.toolbar'
+    | 'setono_sylius_cms.builder.rich_text.bold'
+    | 'setono_sylius_cms.builder.rich_text.italic'
+    | 'setono_sylius_cms.builder.rich_text.underline'
+    | 'setono_sylius_cms.builder.rich_text.strike'
+    | 'setono_sylius_cms.builder.rich_text.code'
+    | 'setono_sylius_cms.builder.rich_text.heading'
+    | 'setono_sylius_cms.builder.rich_text.bullet_list'
+    | 'setono_sylius_cms.builder.rich_text.ordered_list'
+    | 'setono_sylius_cms.builder.rich_text.blockquote'
+    | 'setono_sylius_cms.builder.rich_text.horizontal_rule';
 
 /** Values for the placeholders in a string, such as { '%block%': 'Columns' }. */
 export type TranslationParameters = Readonly<Record<string, string>>;

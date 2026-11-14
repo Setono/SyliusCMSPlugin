@@ -1,7 +1,8 @@
 import { createContext, useContext, useRef, useState, type DragEvent } from 'react';
 import { useBuilder, useBuilderState } from '../context';
 import { useTranslator } from '../i18n';
-import { canMove, placement, type DropZone } from '../nesting';
+import { canMove, canMoveBlocks, placement, type DropZone } from '../nesting';
+import { actedOn } from '../store';
 import { findBlock } from '../tree';
 import type { BlockTypeDefinition, StoredBlock } from '../types';
 import { readFieldValue } from '../values';
@@ -64,9 +65,10 @@ export function BlockTreePane({ headingId }: { headingId: string }) {
         drop() {
             const { dragged: key, target: spot } = current.current;
             const state = store.getState();
-            const place = key === null || spot === null ? null : placement(state.entry.tree.blocks, key, spot.key, spot.zone);
-            if (key !== null && place !== null) {
-                state.moveBlock(key, place.parent, place.index);
+            const moving = key === null ? [] : actedOn(state.selection, key);
+            const place = key === null || spot === null ? null : placement(state.entry.tree.blocks, moving, spot.key, spot.zone);
+            if (place !== null) {
+                state.moveBlocks(moving, place.parent, place.index);
             }
 
             update({ dragged: null, target: null });
@@ -75,9 +77,14 @@ export function BlockTreePane({ headingId }: { headingId: string }) {
             const { dragged: key, target: spot } = current.current;
             // A drop the rules refuse never fires, so the drag just ends over the refused spot.
             if (key !== null && spot !== null && !spot.allowed) {
-                const state = store.getState();
-                const type = findBlock(state.entry.tree.blocks, key)?.type ?? '';
-                setRefused(t('setono_sylius_cms.builder.drop_refused', { '%block%': state.rules.blockTypes.get(type)?.label ?? type }));
+                const { entry, rules, selection } = store.getState();
+                const tree = entry.tree.blocks;
+                const moving = actedOn(selection, key);
+                const parent = placement(tree, moving, spot.key, spot.zone)?.parent;
+                // The block that can't go there, when several are dragged
+                const refusedKey = moving.find((moved) => parent !== undefined && !canMove(rules, tree, moved, parent)) ?? key;
+                const type = findBlock(tree, refusedKey)?.type ?? '';
+                setRefused(t('setono_sylius_cms.builder.drop_refused', { '%block%': rules.blockTypes.get(type)?.label ?? type }));
             }
 
             update({ dragged: null, target: null });
@@ -132,7 +139,8 @@ function BlockRow({ block }: { block: StoredBlock }) {
     const t = useTranslator();
     const { store } = useBuilder();
     const dragging = useContext(DraggingContext);
-    const selected = useBuilderState((state) => state.selectedKey === block.key);
+    const selected = useBuilderState((state) => state.selection.includes(block.key));
+    const moving = useBuilderState((state) => dragging?.dragged !== null && dragging?.dragged !== undefined && actedOn(state.selection, dragging.dragged).includes(block.key));
     const blockType = useBuilderState((state) => state.rules.blockTypes.get(block.type));
     const locale = useBuilderState((state) => state.locale);
     const label = blockType?.label ?? block.type;
@@ -142,14 +150,15 @@ function BlockRow({ block }: { block: StoredBlock }) {
 
     const onDragOver = (event: DragEvent<HTMLDivElement>): void => {
         const { dragged, target: previous } = dragging?.now() ?? { dragged: null, target: null };
-        if (dragging === null || dragged === null || dragged === block.key) {
+        const { entry, rules, selection } = store.getState();
+        const moved = dragged === null ? [] : actedOn(selection, dragged);
+        if (dragging === null || dragged === null || moved.includes(block.key)) {
             return;
         }
 
         const zone = zoneOf(event, holdsBlocks);
-        const { entry, rules } = store.getState();
-        const spot = placement(entry.tree.blocks, dragged, block.key, zone);
-        const allowed = spot !== null && canMove(rules, entry.tree.blocks, dragged, spot.parent);
+        const spot = placement(entry.tree.blocks, moved, block.key, zone);
+        const allowed = spot !== null && canMoveBlocks(rules, entry.tree.blocks, moved, spot.parent);
 
         if (allowed) {
             event.preventDefault();
@@ -165,7 +174,7 @@ function BlockRow({ block }: { block: StoredBlock }) {
         <div
             className={styles.row}
             data-selected={selected || undefined}
-            data-dragged={dragging?.dragged === block.key || undefined}
+            data-dragged={moving || undefined}
             data-drop={target?.zone}
             data-refused={(target !== null && !target.allowed) || undefined}
             draggable
@@ -193,7 +202,19 @@ function BlockRow({ block }: { block: StoredBlock }) {
             <span className={styles.grip} aria-hidden="true">
                 <GripIcon />
             </span>
-            <button type="button" className={styles.select} aria-pressed={selected} onClick={() => store.getState().selectBlock(block.key)}>
+            <button
+                type="button"
+                className={styles.select}
+                aria-pressed={selected}
+                onClick={(event) => {
+                    // ⌘-click, or Ctrl-click elsewhere, selects several blocks
+                    if (event.metaKey || event.ctrlKey) {
+                        store.getState().toggleSelection(block.key);
+                    } else {
+                        store.getState().selectBlock(block.key);
+                    }
+                }}
+            >
                 <span className={styles.label}>{label}</span>
                 {hint !== '' && <span className={styles.hint}>{hint}</span>}
             </button>
@@ -207,13 +228,17 @@ function BlockRow({ block }: { block: StoredBlock }) {
                 className={`${styles.action} ${styles.delete}`}
                 aria-label={t('setono_sylius_cms.builder.delete_block')}
                 title={t('setono_sylius_cms.builder.delete_block')}
-                onClick={() => store.getState().removeBlock(block.key)}
+                onClick={() => {
+                    const state = store.getState();
+                    state.removeBlocks(actedOn(state.selection, block.key));
+                }}
             >
                 <TrashIcon />
             </button>
         </div>
     );
 }
+
 
 /**
  * The top and bottom quarter of a row drop before and after its block. The middle drops inside it, when its

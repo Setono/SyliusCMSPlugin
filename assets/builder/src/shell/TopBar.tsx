@@ -1,7 +1,7 @@
 import { useBuilder, useBuilderState, usePreviewState } from '../context';
 import { useTranslator, type MessageKey } from '../i18n';
 import type { EntryStatus } from '../types';
-import { ArrowLeftIcon, DesktopIcon, MobileIcon } from './icons';
+import { ArrowLeftIcon, DesktopIcon, MobileIcon, RedoIcon, UndoIcon } from './icons';
 import styles from './TopBar.module.css';
 
 const statusLabels: Record<EntryStatus, MessageKey> = {
@@ -34,6 +34,7 @@ export function TopBar() {
             </div>
             <PreviewChannel />
             <PreviewWidth />
+            <UndoRedo />
             <SaveState />
             <Publish />
         </div>
@@ -81,6 +82,27 @@ function PreviewWidth() {
             </button>
             <button type="button" className={styles.width} aria-label={mobile} title={mobile} aria-pressed={width === 'mobile'} onClick={() => setWidth('mobile')}>
                 <MobileIcon />
+            </button>
+        </div>
+    );
+}
+
+/** Undo and redo, which work in the browser on the working copy. */
+function UndoRedo() {
+    const t = useTranslator();
+    const { store } = useBuilder();
+    const canUndo = useBuilderState((state) => state.history.done.length > 0);
+    const canRedo = useBuilderState((state) => state.history.undone.length > 0);
+    const undo = t('setono_sylius_cms.builder.undo');
+    const redo = t('setono_sylius_cms.builder.redo');
+
+    return (
+        <div className={styles.history}>
+            <button type="button" className={styles.historyButton} aria-label={undo} title={undo} disabled={!canUndo} onClick={() => store.getState().undo()}>
+                <UndoIcon />
+            </button>
+            <button type="button" className={styles.historyButton} aria-label={redo} title={redo} disabled={!canRedo} onClick={() => store.getState().redo()}>
+                <RedoIcon />
             </button>
         </div>
     );
