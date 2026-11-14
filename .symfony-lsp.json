@@ -1,0 +1,8 @@
+{
+    "version": 1,
+    "projectRoots": [
+        "."
+    ],
+    "kernel": "Setono\\SyliusCMSPlugin\\Tests\\Application\\Kernel",
+    "translationDiagnostics": true
+}

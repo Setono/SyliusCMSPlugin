@@ -1,0 +1,17 @@
+{
+    "source": {
+        "directories": [
+            "src"
+        ]
+    },
+    "testFrameworkOptions": "--testsuite=unit",
+    "logs": {
+        "text": "php://stderr",
+        "github": true,
+        "stryker": {
+            "badge": "2.x"
+        }
+    },
+    "minMsi": 100.00,
+    "minCoveredMsi": 100.00
+}
