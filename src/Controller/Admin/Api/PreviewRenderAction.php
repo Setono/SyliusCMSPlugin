@@ -14,6 +14,7 @@ use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Setono\SyliusCMSPlugin\Security\BuilderCsrfToken;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
+use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -38,6 +39,7 @@ final readonly class PreviewRenderAction
         private RenderContextFactoryInterface $renderContextFactory,
         private BlockViewBuilder $blockViewBuilder,
         private BlockRendererInterface $blockRenderer,
+        private StoredDataUpgraderInterface $upgrader,
     ) {
     }
 
@@ -65,7 +67,8 @@ final readonly class PreviewRenderAction
         }
 
         try {
-            $blocks = array_map((new StoredTreeSerializer())->denormalizeBlock(...), $blocks);
+            // The builder may hold blocks saved with an older version, such as across a deploy
+            $blocks = array_map((new StoredTreeSerializer())->denormalizeBlock(...), $this->upgrader->upgradeBlocks($blocks)->data);
         } catch (InvalidStoredTreeException $e) {
             return self::badRequest($e->getMessage());
         }
