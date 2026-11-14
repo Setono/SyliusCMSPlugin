@@ -8,13 +8,26 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Preview\Preview;
+use Setono\SyliusCMSPlugin\Preview\PreviewContext;
+use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
+use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
+use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProvider;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Rendering\EntryUrlLookupInterface;
 use Setono\SyliusCMSPlugin\Rendering\EntryUrlMatch;
+use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Channel\Context\ChannelNotFoundException;
 use Sylius\Component\Channel\Model\ChannelInterface as BaseChannelInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
+use Symfony\Component\Clock\MockClock;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 final class EntryUrlMatcherTest extends TestCase
 {
@@ -29,6 +42,11 @@ final class EntryUrlMatcherTest extends TestCase
     /** @var ObjectProphecy<ChannelInterface> */
     private ObjectProphecy $channel;
 
+    /** @var ObjectProphecy<EntryRepositoryInterface> */
+    private ObjectProphecy $entryRepository;
+
+    private RequestStack $requestStack;
+
     protected function setUp(): void
     {
         $this->channel = $this->prophesize(ChannelInterface::class);
@@ -38,6 +56,8 @@ final class EntryUrlMatcherTest extends TestCase
         $this->channelContext->getChannel()->willReturn($this->channel->reveal());
 
         $this->lookup = $this->prophesize(EntryUrlLookupInterface::class);
+        $this->entryRepository = $this->prophesize(EntryRepositoryInterface::class);
+        $this->requestStack = new RequestStack();
     }
 
     /**
@@ -136,8 +156,44 @@ final class EntryUrlMatcherTest extends TestCase
         $matcher->match('en_US', 'about-us');
     }
 
+    /**
+     * @test
+     */
+    public function in_the_builders_preview_it_matches_the_edited_entry_at_its_working_copys_url_first(): void
+    {
+        $page = new Page();
+        $page->setCurrentLocale('en_US');
+        $page->setSlug('about-us');
+        $this->entryRepository->findOneByUuid($page->getUuid())->willReturn($page);
+        $this->previewing(new Preview($page->getUuid(), 'WEB', 'en_US'));
+
+        $this->lookup->lookup($this->channel->reveal(), 'en_US', 'about-us')->shouldNotBeCalled();
+        $this->lookup->lookup($this->channel->reveal(), 'en_US', 'contact')->willReturn(null)->shouldBeCalledOnce();
+
+        $matcher = $this->matcher();
+
+        self::assertEquals(new EntryUrlMatch($page->getUuid(), 'page'), $matcher->match('en_US', 'about-us'));
+        self::assertNull($matcher->match('en_US', 'contact'), 'Other URLs are looked up as for shoppers');
+    }
+
+    private function previewing(Preview $preview): void
+    {
+        $signer = new PreviewTokenSigner('secret', new MockClock());
+        $this->requestStack->push(new Request([PreviewContext::QUERY_PARAMETER => $signer->sign($preview)]));
+    }
+
     private function matcher(): EntryUrlMatcher
     {
-        return new EntryUrlMatcher($this->channelContext->reveal(), $this->lookup->reveal());
+        $contentTypes = $this->prophesize(ContentTypeRegistryInterface::class);
+        $contentTypes->getByEntry(Argument::type(Page::class))->willReturn(new ContentTypeMetadata('page', 'Page', 1, '', null, Page::class, PageTranslation::class, 'setono_sylius_cms.page'));
+
+        $previewedEntries = new PreviewedEntryProvider(
+            new PreviewContext($this->requestStack, new PreviewTokenSigner('secret', new MockClock())),
+            $this->entryRepository->reveal(),
+            new WorkingCopyProvider(),
+            $contentTypes->reveal(),
+        );
+
+        return new EntryUrlMatcher($this->channelContext->reveal(), $this->lookup->reveal(), $previewedEntries);
     }
 }

@@ -7,5 +7,9 @@
             <argument type="service" id="clock"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntryPublisher"/>
+
+        <!-- Everything that reads an entry's working copy goes through it, such as the builder's preview -->
+        <service id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProvider" class="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProvider"/>
+        <service id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface" alias="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProvider"/>
     </services>
 </container>
