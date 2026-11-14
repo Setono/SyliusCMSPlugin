@@ -66,6 +66,6 @@ final class RegisterLayoutsPass implements CompilerPassInterface
     {
         $contentType = class_exists($layout->contentType) ? AttributeReader::contentType($layout->contentType) : null;
 
-        return $contentType?->code ?? throw new \LogicException(sprintf('The layout %s belongs to %s, which is no content type class', $class, $layout->contentType));
+        return $contentType->code ?? throw new \LogicException(sprintf('The layout %s belongs to %s, which is no content type class', $class, $layout->contentType));
     }
 }

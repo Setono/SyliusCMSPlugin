@@ -68,7 +68,7 @@ final readonly class PreviewRenderAction
 
         try {
             // The builder may hold blocks saved with an older version, such as across a deploy
-            $blocks = array_map((new StoredTreeSerializer())->denormalizeBlock(...), $this->upgrader->upgradeBlocks($blocks)->data);
+            $blocks = array_map((new StoredTreeSerializer())->denormalizeBlock(...), array_values($this->upgrader->upgradeBlocks($blocks)->data));
         } catch (InvalidStoredTreeException $e) {
             return self::badRequest($e->getMessage());
         }

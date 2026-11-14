@@ -139,7 +139,7 @@ final class UpgradeCommandTest extends KernelTestCase
      */
     private static function upgrade(array $input = []): CommandTester
     {
-        $tester = new CommandTester((new Application(self::$kernel ?? self::bootKernel()))->find('setono:cms:upgrade'));
+        $tester = new CommandTester((new Application(self::$kernel))->find('setono:cms:upgrade'));
         $tester->execute($input);
 
         return $tester;

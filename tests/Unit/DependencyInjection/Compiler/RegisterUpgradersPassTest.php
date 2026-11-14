@@ -62,10 +62,14 @@ final class RegisterUpgradersPassTest extends AbstractCompilerPassTestCase
     {
         $this->setDefinition('app.teaser_upgrader', (new Definition(TeaserFromTwo::class))->addTag('setono_sylius_cms.upgrader'));
         $this->setDefinition(TeaserFromTwo::class, (new Definition(TeaserFromTwo::class))->addTag('setono_sylius_cms.upgrader'));
+        $this->setDefinition(LandingFromOne::class, (new Definition(LandingFromOne::class))->addTag('setono_sylius_cms.upgrader'));
 
         $this->compile();
 
-        self::assertEquals(['block_type:teaser:2' => new ServiceClosureArgument(new Reference('app.teaser_upgrader'))], $this->locatorArgument());
+        self::assertEquals([
+            'block_type:teaser:2' => new ServiceClosureArgument(new Reference('app.teaser_upgrader')),
+            'layout:page:landing:1' => new ServiceClosureArgument(new Reference(LandingFromOne::class)),
+        ], $this->locatorArgument());
     }
 
     /**

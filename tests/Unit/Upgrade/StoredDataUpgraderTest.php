@@ -232,6 +232,63 @@ final class StoredDataUpgraderTest extends TestCase
     }
 
     /**
+     * @test
+     */
+    public function a_content_type_upgrader_gets_an_entrys_empty_maps_as_arrays_too(): void
+    {
+        $contentTypeUpgrader = new RenameField('image', 'featuredImage');
+
+        $upgraded = self::upgrader(['content_type:article:1' => $contentTypeUpgrader])->upgradeEntry(self::decode([
+            'contentType' => 'article',
+            'version' => 1,
+            'fields' => new \stdClass(),
+            'translations' => new \stdClass(),
+        ]));
+
+        self::assertEquals([['contentType' => 'article', 'version' => 1, 'fields' => [], 'translations' => []]], $contentTypeUpgrader->received);
+        self::assertSame('{"contentType":"article","fields":{},"translations":{},"version":2}', CanonicalJson::encode($upgraded->data));
+    }
+
+    /**
+     * @test
+     */
+    public function an_entry_of_a_content_type_the_code_no_longer_has_is_kept_as_it_is_and_its_tree_is_upgraded(): void
+    {
+        $upgraded = self::upgrader([
+            'block_type:teaser:1' => new RenameField('title', 'headline'),
+            'block_type:teaser:2' => new RenameField('headline', 'heading'),
+        ])->upgradeEntry(self::decode([
+            'contentType' => 'removed_type',
+            'version' => 1,
+            'fields' => ['image' => 'kept'],
+            'tree' => ['layout' => null, 'blocks' => [self::block('teaser', 1, ['title' => ['en_US' => 'Hello']])]],
+        ]));
+
+        self::assertSame(
+            '{"contentType":"removed_type","fields":{"image":"kept"},"tree":{"blocks":[{"children":[],"conditions":[],"fields":{"heading":{"en_US":"Hello"}},"key":"' . self::KEY . '","style":null,"translated":{},"type":"teaser","version":3}],"layout":null},"version":1}',
+            CanonicalJson::encode($upgraded->data),
+        );
+        self::assertSame([], $upgraded->newer);
+    }
+
+    /**
+     * @test
+     */
+    public function what_isnt_in_the_stored_format_is_left_as_it_is_for_the_serializers_to_refuse(): void
+    {
+        $upgrader = self::upgrader(['block_type:teaser:1' => new RenameField('title', 'headline')]);
+
+        self::assertSame(['contentType' => 'article', 'version' => 2], $upgrader->upgradeEntry(['contentType' => 'article', 'version' => 2])->data, 'An entry without a tree');
+        self::assertSame(['contentType' => 5, 'tree' => 'not a tree'], $upgrader->upgradeEntry(['contentType' => 5, 'tree' => 'not a tree'])->data);
+        self::assertSame(['layout' => ['code' => null], 'blocks' => 'not a list'], $upgrader->upgradeTree(['layout' => ['code' => null], 'blocks' => 'not a list'], 'page')->data);
+        self::assertSame(['layout' => 'landing'], $upgrader->upgradeTree(['layout' => 'landing'], 'page')->data);
+        self::assertSame(
+            ['not a block', ['type' => 'teaser', 'fields' => ['title' => 'Hello']], ['type' => 'teaser', 'version' => '1', 'fields' => ['title' => 'Hello']], ['version' => 1, 'children' => 'not a list']],
+            $upgrader->upgradeBlocks(['not a block', ['type' => 'teaser', 'fields' => ['title' => 'Hello']], ['type' => 'teaser', 'version' => '1', 'fields' => ['title' => 'Hello']], ['version' => 1, 'children' => 'not a list']])->data,
+        );
+    }
+
+    /**
      * @param array<string, UpgraderInterface> $upgraders
      */
     private static function upgrader(array $upgraders = []): StoredDataUpgrader

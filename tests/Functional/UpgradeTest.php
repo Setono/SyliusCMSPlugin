@@ -64,9 +64,11 @@ final class UpgradeTest extends BuilderApiTestCase
         $csrfToken = self::openBuilder($client, $page);
         $response = self::json($client, 'GET', '/admin/cms/api/entries/' . $page->getUuid());
         self::assertIsArray($response);
+        self::assertIsArray($response['entry'] ?? null);
+        self::assertIsArray($response['entry']['tree'] ?? null);
         self::assertSame(
-            ['key' => self::CALLOUT, 'type' => 'callout', 'version' => 2, 'style' => null, 'fields' => ['message' => ['en_US' => 'Drafted with version 1']], 'translated' => [], 'conditions' => [], 'children' => []],
-            $response['entry']['tree']['blocks'][0] ?? null,
+            [['key' => self::CALLOUT, 'type' => 'callout', 'version' => 2, 'style' => null, 'fields' => ['message' => ['en_US' => 'Drafted with version 1']], 'translated' => [], 'conditions' => [], 'children' => []]],
+            $response['entry']['tree']['blocks'] ?? null,
         );
 
         // Publishing writes it upgraded to the rows
@@ -122,7 +124,9 @@ final class UpgradeTest extends BuilderApiTestCase
 
         self::assertResponseIsSuccessful();
         self::assertIsArray($response);
-        self::assertStringContainsString('<p class="app-callout">Held at version 1</p>', (string) ($response['blocks'][self::CALLOUT] ?? null));
+        self::assertIsArray($response['blocks'] ?? null);
+        self::assertIsString($response['blocks'][self::CALLOUT] ?? null);
+        self::assertStringContainsString('<p class="app-callout">Held at version 1</p>', $response['blocks'][self::CALLOUT]);
     }
 
     /**
