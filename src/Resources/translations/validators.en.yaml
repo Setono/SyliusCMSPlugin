@@ -1,0 +1,7 @@
+setono_sylius_cms:
+    field:
+        invalid_choice: The value you selected is not a valid choice.
+        not_text: This value should be text.
+        too_long: This value is too long. It should have {{ limit }} characters or less.
+    slug:
+        invalid: A slug can't start or end with a slash, or contain two slashes in a row.

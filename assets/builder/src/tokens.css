@@ -1,0 +1,45 @@
+/* The builder's design tokens. Every colour, size and space in its stylesheets comes from here. */
+:root {
+    --builder-font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --builder-font-size-sm: 0.75rem;
+    --builder-font-size-md: 0.875rem;
+    --builder-font-size-lg: 1rem;
+    --builder-font-weight-medium: 500;
+    --builder-font-weight-bold: 600;
+    --builder-line-height: 1.45;
+
+    --builder-color-text: #1c2024;
+    --builder-color-text-muted: #60656d;
+    --builder-color-canvas: #eef0f3;
+    --builder-color-surface: #ffffff;
+    --builder-color-border: #dcdfe4;
+    --builder-color-border-strong: #b9bec7;
+    --builder-color-hover: #f3f4f6;
+    --builder-color-selected: #e8effd;
+    --builder-color-selected-border: #a9c1f5;
+    --builder-color-accent: #1f5fd6;
+    --builder-color-accent-hover: #194fb3;
+    --builder-color-accent-text: #ffffff;
+    --builder-color-focus: #1f5fd6;
+    --builder-color-danger: #b42318;
+    --builder-color-danger-subtle: #fdecea;
+    --builder-color-success: #11703f;
+    --builder-color-success-subtle: #e3f4ea;
+    --builder-color-neutral-subtle: #eceef1;
+
+    --builder-space-1: 0.25rem;
+    --builder-space-2: 0.5rem;
+    --builder-space-3: 0.75rem;
+    --builder-space-4: 1rem;
+    --builder-space-5: 1.5rem;
+
+    --builder-radius-sm: 4px;
+    --builder-radius-md: 6px;
+    --builder-radius-pill: 999px;
+    --builder-shadow-popover: 0 8px 24px rgb(16 24 40 / 14%), 0 2px 6px rgb(16 24 40 / 8%);
+
+    --builder-control-height: 2.25rem;
+    --builder-top-bar-height: 3.5rem;
+    --builder-tree-width: 17rem;
+    --builder-selection-width: 21rem;
+}

@@ -1,0 +1,104 @@
+.bar {
+    display: flex;
+    gap: var(--builder-space-4);
+    align-items: center;
+    height: 100%;
+    padding: 0 var(--builder-space-4);
+}
+
+.back {
+    display: inline-flex;
+    gap: var(--builder-space-1);
+    align-items: center;
+    min-height: var(--builder-control-height);
+    padding: 0 var(--builder-space-2);
+    border-radius: var(--builder-radius-sm);
+    color: var(--builder-color-text);
+    font-weight: var(--builder-font-weight-medium);
+    text-decoration: none;
+}
+
+.back:hover {
+    background: var(--builder-color-hover);
+}
+
+.heading {
+    display: flex;
+    flex: 1 1 auto;
+    gap: var(--builder-space-2);
+    align-items: center;
+    min-width: 0;
+}
+
+.title {
+    overflow: hidden;
+    margin: 0;
+    font-size: var(--builder-font-size-lg);
+    font-weight: var(--builder-font-weight-bold);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.status {
+    flex: none;
+    padding: 0 var(--builder-space-2);
+    border-radius: var(--builder-radius-pill);
+    background: var(--builder-color-neutral-subtle);
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.status[data-status="published"] {
+    background: var(--builder-color-success-subtle);
+    color: var(--builder-color-success);
+}
+
+.saveState {
+    flex: none;
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}
+
+.saveState[data-state="failed"] {
+    color: var(--builder-color-danger);
+}
+
+.publish {
+    display: flex;
+    flex: none;
+    gap: var(--builder-space-3);
+    align-items: center;
+}
+
+.publishFailed {
+    color: var(--builder-color-danger);
+    font-size: var(--builder-font-size-sm);
+}
+
+.publishButton {
+    min-height: var(--builder-control-height);
+    padding: 0 var(--builder-space-4);
+    border: 0;
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-accent);
+    color: var(--builder-color-accent-text);
+    font: inherit;
+    font-weight: var(--builder-font-weight-bold);
+    cursor: pointer;
+}
+
+.publishButton:hover:not(:disabled) {
+    background: var(--builder-color-accent-hover);
+}
+
+.publishButton:disabled {
+    cursor: progress;
+    opacity: 0.7;
+}
+
+.back:focus-visible,
+.publishButton:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}

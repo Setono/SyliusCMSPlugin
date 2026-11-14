@@ -1,0 +1,9 @@
+{% extends '@SetonoSyliusCMSPlugin/layout/base.html.twig' %}
+
+{% block cms_content %}
+    <h1>{{ entry.title }}</h1>
+
+    <div class="cms-tree">
+        {{ cms_blocks(blocks) }}
+    </div>
+{% endblock %}

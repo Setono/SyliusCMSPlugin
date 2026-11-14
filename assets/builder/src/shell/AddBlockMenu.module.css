@@ -1,0 +1,54 @@
+.trigger {
+    display: inline-flex;
+    gap: var(--builder-space-1);
+    align-items: center;
+    justify-content: center;
+    min-height: var(--builder-control-height);
+    padding: 0 var(--builder-space-3);
+    border: 1px dashed var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-md);
+    background: none;
+    color: var(--builder-color-text);
+    font: inherit;
+    font-weight: var(--builder-font-weight-medium);
+    cursor: pointer;
+}
+
+.trigger:hover,
+.trigger[data-state="open"] {
+    border-color: var(--builder-color-accent);
+    color: var(--builder-color-accent);
+}
+
+.trigger:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}
+
+/* Rendered in a portal at the end of the body, outside the shell, so it sets its own type and box model. */
+.menu {
+    box-sizing: border-box;
+    min-width: max(12rem, var(--radix-dropdown-menu-trigger-width));
+    padding: var(--builder-space-1);
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-surface);
+    box-shadow: var(--builder-shadow-popover);
+    color: var(--builder-color-text);
+    font-family: var(--builder-font-family);
+    font-size: var(--builder-font-size-md);
+    line-height: var(--builder-line-height);
+}
+
+.item {
+    padding: var(--builder-space-2) var(--builder-space-3);
+    border-radius: var(--builder-radius-sm);
+    outline: none;
+    cursor: pointer;
+    user-select: none;
+}
+
+.item[data-highlighted] {
+    background: var(--builder-color-selected);
+    color: var(--builder-color-accent);
+}

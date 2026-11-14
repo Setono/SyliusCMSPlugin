@@ -265,8 +265,45 @@ jobs:
             -   name: "Validate Doctrine mapping"
                 run: "(cd tests/Application && bin/console doctrine:schema:validate -vvv)" # The verbose flag will show 'missing' SQL statements, if any
 
+            # The data every functional and UI test starts from. DAMA rolls each test back to it
+            -   name: "Load the test fixtures"
+                run: "(cd tests/Application && bin/console sylius:fixtures:load test --no-interaction)"
+
             -   name: "Run the ${{ matrix.suite }} suite"
                 run: "vendor/bin/phpunit --testsuite ${{ matrix.suite }}"
+
+    builder:
+        name: "Builder app"
+
+        runs-on: "ubuntu-latest"
+
+        steps:
+            -   name: "Checkout"
+                uses: "actions/checkout@v5"
+
+            -   name: "Setup Node"
+                uses: "actions/setup-node@v4"
+                with:
+                    node-version: "22"
+                    cache: "npm"
+
+            -   name: "Install dependencies"
+                run: "npm ci"
+
+            -   name: "Type-check"
+                run: "npm run typecheck"
+
+            -   name: "Run the Vitest tests"
+                run: "npm test"
+
+            -   name: "Build"
+                run: "npm run build"
+
+            # The compiled builder is committed, so host projects need no Node. It must match its sources
+            -   name: "Check the committed build matches the sources"
+                run: |
+                    git diff --exit-code -- src/Resources/public/builder
+                    test -z "$(git status --porcelain -- src/Resources/public/builder)"
 
     mutation-tests:
         name: "Mutation tests"

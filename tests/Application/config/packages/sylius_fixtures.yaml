@@ -1,0 +1,48 @@
+# The data the functional and UI suites run against. Load it once before the suites:
+#
+#     (cd tests/Application && APP_ENV=test bin/console sylius:fixtures:load test --no-interaction)
+#
+# Every test runs in a transaction that DAMA rolls back, so each test starts from exactly this data.
+# A test that needs more creates it with Sylius's example factories (sylius.fixture.example_factory.*)
+sylius_fixtures:
+    suites:
+        test:
+            listeners:
+                orm_purger: ~
+                logger: ~
+
+            fixtures:
+                locale:
+                    options:
+                        load_default_locale: true
+                        locales: []
+
+                currency:
+                    options:
+                        currencies: ['USD']
+
+                channel:
+                    options:
+                        custom:
+                            web:
+                                code: 'WEB'
+                                name: 'Setono CMS Test Store'
+                                hostname: 'localhost'
+                                enabled: true
+                                locales: ['en_US']
+                                default_locale: 'en_US'
+                                currencies: ['USD']
+                                base_currency: 'USD'
+                                menu_taxon: null
+
+                admin_user:
+                    options:
+                        custom:
+                            sylius:
+                                email: 'sylius@example.com'
+                                username: 'sylius'
+                                password: 'sylius'
+                                enabled: true
+                                locale_code: 'en_US'
+                                first_name: 'John'
+                                last_name: 'Doe'

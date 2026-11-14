@@ -1,0 +1,48 @@
+.shell {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    grid-template-areas:
+        "top top top"
+        "tree preview selection";
+    grid-template-rows: var(--builder-top-bar-height) minmax(0, 1fr);
+    grid-template-columns: var(--builder-tree-width) minmax(0, 1fr) var(--builder-selection-width);
+    background: var(--builder-color-canvas);
+    color: var(--builder-color-text);
+    font-family: var(--builder-font-family);
+    font-size: var(--builder-font-size-md);
+    line-height: var(--builder-line-height);
+}
+
+.shell *,
+.shell *::before,
+.shell *::after {
+    box-sizing: border-box;
+}
+
+.topBar {
+    grid-area: top;
+    min-width: 0;
+    border-bottom: 1px solid var(--builder-color-border);
+    background: var(--builder-color-surface);
+}
+
+.tree {
+    grid-area: tree;
+    overflow-y: auto;
+    border-right: 1px solid var(--builder-color-border);
+    background: var(--builder-color-surface);
+}
+
+.preview {
+    grid-area: preview;
+    min-width: 0;
+    background: var(--builder-color-canvas);
+}
+
+.selection {
+    grid-area: selection;
+    overflow-y: auto;
+    border-left: 1px solid var(--builder-color-border);
+    background: var(--builder-color-surface);
+}

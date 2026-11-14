@@ -1,0 +1,24 @@
+{% extends '@SyliusAdmin/layout.html.twig' %}
+
+{% form_theme form '@SyliusAdmin/Form/theme.html.twig' %}
+
+{% set heading = 'setono_sylius_cms.ui.new_entry'|trans({'%content_type%': content_type.label|trans}) %}
+
+{% block title %}{{ heading }} {{ parent() }}{% endblock %}
+
+{% block content %}
+    <h1 class="ui header">{{ heading }}</h1>
+
+    {{ form_start(form, {'attr': {'class': 'ui loadable form', 'novalidate': 'novalidate'}}) }}
+        <div class="ui segment">
+            {{ form_row(form.title) }}
+            {% if form.slug is defined %}
+                {{ form_row(form.slug) }}
+            {% endif %}
+        </div>
+
+        <button type="submit" class="ui labeled icon primary button">
+            <i class="plus icon"></i> {{ 'setono_sylius_cms.ui.create'|trans }}
+        </button>
+    {{ form_end(form) }}
+{% endblock %}

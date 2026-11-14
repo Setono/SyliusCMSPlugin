@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- The shipped block types. Block types are metadata: RegisterBlockTypesPass reads these into the registry and removes the services -->
+        <service id="Setono\SyliusCMSPlugin\Block\Heading" class="Setono\SyliusCMSPlugin\Block\Heading">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
+    </services>
+</container>

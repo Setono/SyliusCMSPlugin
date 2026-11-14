@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    Every content type is a subclass of Entry in this one table (ADR 0001). The discriminator is the content type's code,
+    and Setono\SyliusCMSPlugin\Doctrine\DiscriminatorMapListener adds the registered content types to the map.
+    The abstract root itself is mapped to "entry" only so Doctrine never builds a default map from class names
+    -->
+    <entity name="Setono\SyliusCMSPlugin\Model\Entry"
+            table="setono_sylius_cms__entry"
+            inheritance-type="SINGLE_TABLE"
+            repository-class="Setono\SyliusCMSPlugin\Repository\EntryRepository">
+        <discriminator-column name="content_type" type="string" length="64"/>
+        <discriminator-map>
+            <discriminator-mapping value="entry" class="Setono\SyliusCMSPlugin\Model\Entry"/>
+        </discriminator-map>
+
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="uuid" type="guid" unique="true"/>
+        <!-- Text, not a database JSON type: MySQL's JSON type reorders keys, and the column holds canonical JSON -->
+        <field name="blockTree" column="block_tree" type="text"/>
+        <field name="createdAt" column="created_at" type="datetime_immutable"/>
+        <field name="changedAt" column="changed_at" type="datetime_immutable"/>
+        <field name="lastPublishedAt" column="last_published_at" type="datetime_immutable" nullable="true"/>
+
+        <one-to-many field="translations" target-entity="Setono\SyliusCMSPlugin\Model\EntryTranslation"
+                     mapped-by="translatable" index-by="locale" fetch="EXTRA_LAZY" orphan-removal="true">
+            <cascade>
+                <cascade-persist/>
+                <cascade-remove/>
+            </cascade>
+        </one-to-many>
+    </entity>
+</doctrine-mapping>

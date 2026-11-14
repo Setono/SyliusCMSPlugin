@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="Setono\SyliusCMSPlugin\Twig\CmsExtension" class="Setono\SyliusCMSPlugin\Twig\CmsExtension">
+            <tag name="twig.extension"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Twig\CmsRuntime" class="Setono\SyliusCMSPlugin\Twig\CmsRuntime">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+    </services>
+</container>

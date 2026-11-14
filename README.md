@@ -32,14 +32,26 @@ composer install
 
 (cd tests/Application && bin/console doctrine:database:create)
 (cd tests/Application && bin/console doctrine:schema:update --force --complete)
+
+# The data the functional and UI suites run against. Every test is rolled back to it
+(cd tests/Application && APP_ENV=test bin/console sylius:fixtures:load test --no-interaction)
 ```
 
 The tests come in three PHPUnit suites:
 
 ```shell
 vendor/bin/phpunit --testsuite unit
-vendor/bin/phpunit --testsuite functional # needs the database and built assets
+vendor/bin/phpunit --testsuite functional # needs the database, the test fixtures and built assets
 vendor/bin/phpunit --testsuite ui         # also needs a browser: vendor/bin/playwright-install chromium
+```
+
+The builder is a React and TypeScript app in `assets/builder`. Its compiled assets in `src/Resources/public/builder`
+are committed, so projects that install the plugin need no Node. After changing it, build it and commit the result:
+
+```shell
+npm ci
+npm test
+npm run build
 ```
 
 [ico-version]: https://poser.pugx.org/setono/sylius-cms-plugin/v/stable
