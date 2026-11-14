@@ -1,2 +1,0 @@
-setono_sylius_cms:
-    resource: "@SetonoSyliusCMSPlugin/Resources/config/routes.yaml"

@@ -26,7 +26,7 @@ final readonly class Fixtures
      * Creates an enabled channel on localhost with the en_US locale and the USD currency,
      * which is all the shop needs to render its pages
      */
-    public function createChannel(string $name, string $code = 'WEB'): ChannelInterface
+    public function createChannel(string $name): ChannelInterface
     {
         /** @var FactoryInterface<LocaleInterface> $localeFactory */
         $localeFactory = $this->service('sylius.factory.locale', FactoryInterface::class);
@@ -43,7 +43,7 @@ final readonly class Fixtures
             throw new \LogicException(sprintf('The channel factory must create an instance of %s', ChannelInterface::class));
         }
 
-        $channel->setCode($code);
+        $channel->setCode('WEB');
         $channel->setHostname('localhost');
         $channel->setEnabled(true);
         $channel->setTaxCalculationStrategy('order_items_based');
