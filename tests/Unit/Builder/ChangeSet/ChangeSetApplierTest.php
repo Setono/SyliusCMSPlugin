@@ -231,6 +231,46 @@ final class ChangeSetApplierTest extends TestCase
 
     /**
      * @test
+     *
+     * @dataProvider provideBlocksSharingAKey
+     */
+    public function it_refuses_a_tree_with_two_blocks_sharing_a_key(StoredBlock $added): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)]);
+
+        $this->expectException(InvalidChangeSetException::class);
+        $this->expectExceptionMessage(sprintf('The tree has more than one block with the key %s', self::C));
+
+        $this->apply($tree, new AddBlock(null, 1, $added));
+    }
+
+    /**
+     * @return iterable<string, array{StoredBlock}>
+     */
+    public function provideBlocksSharingAKey(): iterable
+    {
+        yield 'a copy whose children were not given new keys' => [new StoredBlock(self::B, 'heading', 1, children: [
+            new StoredBlock(self::C, 'heading', 1),
+            new StoredBlock(self::C, 'heading', 1),
+        ])];
+        yield 'a copy with a child under its own key' => [new StoredBlock(self::C, 'heading', 1, children: [new StoredBlock(self::C, 'heading', 1)])];
+    }
+
+    /**
+     * @test
+     */
+    public function it_adds_a_copy_of_a_block_with_new_keys_for_it_and_its_children(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1, children: [new StoredBlock(self::B, 'heading', 1)])]);
+        $copy = new StoredBlock(self::C, 'heading', 1, children: [new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d', 'heading', 1)]);
+
+        $tree = $this->apply($tree, new AddBlock(null, 1, $copy));
+
+        self::assertSame([self::A, self::B, self::C, '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d'], $tree->keys());
+    }
+
+    /**
+     * @test
      */
     public function it_refuses_to_move_a_block_inside_one_of_its_own_children(): void
     {

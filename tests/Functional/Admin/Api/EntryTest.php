@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 
+use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+
 final class EntryTest extends BuilderApiTestCase
 {
     private const KEY = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f';
 
     private const NEW_KEY = '0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60';
+
+    private const GROUP_KEY = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e40';
+
+    private const COPY_KEY = '0193a5be-70aa-7c11-8e2d-1b2c3d4e5f61';
 
     /**
      * @test
@@ -139,6 +145,63 @@ final class EntryTest extends BuilderApiTestCase
         self::assertIsString($response['error'] ?? null);
         self::assertStringContainsString('subtitle', $response['error']);
         self::assertSame(['en_US' => 'Hello'], self::reloadPage($page)->getBlockTree()->blocks[0]->fields['text'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function it_saves_duplicated_blocks_under_their_new_keys(): void
+    {
+        $client = self::createClient();
+        $group = new StoredBlock(self::GROUP_KEY, 'group', 1, children: [self::heading(self::KEY, 'Hello')]);
+        $page = self::createPageWithBlocks('About us', 'about-us', [$group]);
+        $csrfToken = self::openBuilder($client, $page);
+
+        self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['changes' => [
+            ['op' => 'add_block', 'parent' => null, 'index' => 1, 'block' => self::group(self::COPY_KEY, self::NEW_KEY)],
+        ]], $csrfToken);
+
+        self::assertResponseIsSuccessful();
+        $tree = self::reloadPage($page)->getBlockTree();
+        self::assertSame([self::GROUP_KEY, self::KEY, self::COPY_KEY, self::NEW_KEY], $tree->keys());
+        self::assertSame(['en_US' => 'Hello'], $tree->blocks[1]->children[0]->fields['text'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_change_set_that_reuses_a_key_and_saves_nothing(): void
+    {
+        $client = self::createClient();
+        $group = new StoredBlock(self::GROUP_KEY, 'group', 1, children: [self::heading(self::KEY, 'Hello')]);
+        $page = self::createPageWithBlocks('About us', 'about-us', [$group]);
+        $csrfToken = self::openBuilder($client, $page);
+
+        $response = self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['changes' => [
+            ['op' => 'set_value', 'key' => self::KEY, 'field' => 'text', 'locale' => 'en_US', 'value' => 'Changed'],
+            ['op' => 'add_block', 'parent' => null, 'index' => 1, 'block' => self::group(self::COPY_KEY, self::KEY)],
+        ]], $csrfToken);
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertIsArray($response);
+        self::assertIsString($response['error'] ?? null);
+        self::assertStringContainsString(self::KEY, $response['error']);
+        self::assertSame([self::GROUP_KEY, self::KEY], self::reloadPage($page)->getBlockTree()->keys());
+        self::assertSame(['en_US' => 'Hello'], self::reloadPage($page)->getBlockTree()->blocks[0]->children[0]->fields['text'] ?? null);
+    }
+
+    /**
+     * A group with a heading inside, as the builder sends a copy of one
+     *
+     * @return array<string, mixed>
+     */
+    private static function group(string $key, string $headingKey): array
+    {
+        $block = static fn (string $key, string $type, array $fields = [], array $children = []): array => [
+            'key' => $key, 'type' => $type, 'version' => 1, 'style' => null, 'fields' => $fields, 'translated' => [], 'conditions' => [], 'children' => $children,
+        ];
+
+        return $block($key, 'group', [], [$block($headingKey, 'heading', ['text' => ['en_US' => 'Hello']])]);
     }
 
     /**
