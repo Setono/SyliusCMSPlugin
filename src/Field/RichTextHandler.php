@@ -8,7 +8,7 @@ use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
-final readonly class RichTextHandler implements SanitizingFieldHandlerInterface
+final readonly class RichTextHandler implements SanitizingFieldHandlerInterface, EmptinessCheckingFieldHandlerInterface
 {
     public function __construct(private RichTextSchema $schema)
     {
@@ -48,6 +48,17 @@ final readonly class RichTextHandler implements SanitizingFieldHandlerInterface
         }
 
         $context->buildViolation('setono_sylius_cms.field.not_rich_text')->addViolation();
+    }
+
+    /**
+     * A document with nothing in it, such as one empty paragraph, is empty. A value that isn't a document isn't:
+     * validate() refuses it
+     */
+    public function isEmpty(Field $field, mixed $value): bool
+    {
+        $document = $this->schema->sanitize($value);
+
+        return null !== $document && $this->schema->isEmpty($document);
     }
 
     /**

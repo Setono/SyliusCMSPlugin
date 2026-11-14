@@ -37,6 +37,8 @@ setono_sylius_cms:
         entry:
             slug: Slug
             title: Title
+    publish:
+        invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'
     ui:
         create: Create
         new_entry: 'New %content_type%'

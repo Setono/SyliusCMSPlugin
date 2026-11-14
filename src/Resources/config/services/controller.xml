@@ -82,11 +82,21 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ValidateEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ValidateEntryAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\PublishEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\PublishEntryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\BuilderCsrfToken"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface"/>
+            <argument type="service" id="translator"/>
 
             <tag name="controller.service_arguments"/>
         </service>

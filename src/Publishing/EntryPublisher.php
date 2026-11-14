@@ -11,11 +11,12 @@ use Setono\SyliusCMSPlugin\Event\BeforeEntryPublish;
 use Setono\SyliusCMSPlugin\Event\EntryPublished;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
- * Publishes now. See "Publishing now" in docs/spec/publishing.md. Validation (#219), old slugs (#234),
- * the reference table, the media usage index and revisions (#240) join the steps with their tickets
+ * Publishes now. See "Publishing now" in docs/spec/publishing.md. Old slugs (#234), the reference table,
+ * the media usage index and revisions (#240) join the steps with their tickets
  */
 final readonly class EntryPublisher implements EntryPublisherInterface
 {
@@ -25,13 +26,22 @@ final readonly class EntryPublisher implements EntryPublisherInterface
         private ClockInterface $clock,
         private EventDispatcherInterface $eventDispatcher,
         private ContentTypeRegistryInterface $contentTypes,
+        private EntryValidatorInterface $entryValidator,
     ) {
     }
 
     public function publish(EntryInterface $entry): void
     {
+        $workingCopy = $this->workingCopies->getWorkingCopy($entry);
+
+        // 1. Validation refuses on errors
+        $errors = $this->entryValidator->validate($workingCopy);
+        if ([] !== $errors) {
+            throw new InvalidEntryException($errors);
+        }
+
         // 2. A listener can veto the publish
-        $veto = $this->eventDispatcher->dispatch(new BeforeEntryPublish($this->workingCopies->getWorkingCopy($entry), false))->getVetoMessage();
+        $veto = $this->eventDispatcher->dispatch(new BeforeEntryPublish($workingCopy, false))->getVetoMessage();
         if (null !== $veto) {
             throw new PublishVetoedException($veto);
         }
