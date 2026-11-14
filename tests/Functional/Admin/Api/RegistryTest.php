@@ -147,6 +147,26 @@ final class RegistryTest extends BuilderApiTestCase
     }
 
     /**
+     * @test
+     */
+    public function it_answers_the_group_styles_plus_the_one_the_test_app_adds_in_its_config(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+
+        $registry = self::json($client, 'GET', '/admin/cms/api/registry');
+        self::assertIsArray($registry);
+        $blockTypes = self::blockTypes($registry);
+
+        self::assertSame([
+            ['code' => 'muted', 'label' => 'Muted'],
+            ['code' => 'dark', 'label' => 'Dark'],
+            ['code' => 'brand', 'label' => 'Brand'],
+        ], $blockTypes['group']['styles']);
+        self::assertSame([], $blockTypes['heading']['styles']);
+    }
+
+    /**
      * @param array<array-key, mixed> $registry
      *
      * @return array<string, array<string, mixed>> the block types by code

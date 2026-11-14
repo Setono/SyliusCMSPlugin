@@ -84,6 +84,26 @@ final class ShopStylesheetTest extends TestCase
     /**
      * @test
      */
+    public function the_group_styles_give_it_a_background_from_their_custom_properties(): void
+    {
+        self::assertSame(['background' => 'var(--cms-muted-background)'], array_intersect_key(self::declarations('.cms-group--muted'), ['background' => true, 'color' => true]));
+        self::assertSame(['background' => 'var(--cms-dark-background)', 'color' => 'var(--cms-dark-color)'], array_intersect_key(self::declarations('.cms-group--dark'), ['background' => true, 'color' => true]));
+    }
+
+    /**
+     * @test
+     */
+    public function a_group_with_no_style_has_no_background(): void
+    {
+        foreach (['.cms-group', '.cms-group__inner'] as $selector) {
+            self::assertArrayNotHasKey('background', self::declarations($selector), $selector);
+            self::assertArrayNotHasKey('background-color', self::declarations($selector), $selector);
+        }
+    }
+
+    /**
+     * @test
+     */
     public function it_never_styles_html_or_body(): void
     {
         self::assertDoesNotMatchRegularExpression('/(^|[\s,}>~+])(html|body)\b/', self::css());
@@ -98,6 +118,30 @@ final class ShopStylesheetTest extends TestCase
         self::assertIsString($css);
 
         return trim((string) preg_replace('#/\*.*?\*/#s', '', $css));
+    }
+
+    /**
+     * The declarations of every rule whose selector list has the selector, merged in order
+     *
+     * @return array<string, string> property => value
+     */
+    private static function declarations(string $selector): array
+    {
+        preg_match_all('/([^{}]+)\{([^{}]*)\}/', self::css(), $rules, \PREG_SET_ORDER);
+
+        $declarations = [];
+        foreach ($rules as [, $selectors, $body]) {
+            if (!in_array($selector, array_map(trim(...), explode(',', $selectors)), true)) {
+                continue;
+            }
+
+            foreach (array_filter(array_map(trim(...), explode(';', $body)), static fn (string $declaration): bool => '' !== $declaration) as $declaration) {
+                [$property, $value] = array_map(trim(...), explode(':', $declaration, 2)) + [1 => ''];
+                $declarations[$property] = $value;
+            }
+        }
+
+        return $declarations;
     }
 
     private static function closingBraceOf(string $css, int $opening): int

@@ -46,6 +46,7 @@ final class RegistryExporterTest extends TestCase
                 'disabled' => false,
                 'parents' => null,
                 'children' => [],
+                'styles' => [],
                 'fields' => [
                     [
                         'name' => 'text',
@@ -118,6 +119,25 @@ final class RegistryExporterTest extends TestCase
     /**
      * @test
      */
+    public function it_exports_the_block_styles_of_each_block_type_with_their_labels_in_the_current_locale(): void
+    {
+        $exporter = $this->exporter(styles: ['heading' => [
+            'outlined' => ['label' => 'app.cms.block_style.outlined', 'class' => 'app-heading--outlined'],
+            'shouting' => ['label' => 'app.cms.block_style.shouting', 'class' => 'app-heading--shouting'],
+        ]]);
+
+        $blockTypes = array_column($exporter->export()['blockTypes'], null, 'code');
+
+        self::assertSame([
+            ['code' => 'outlined', 'label' => '[app.cms.block_style.outlined]'],
+            ['code' => 'shouting', 'label' => '[app.cms.block_style.shouting]'],
+        ], $blockTypes['heading']['styles']);
+        self::assertSame([], $blockTypes['columns']['styles']);
+    }
+
+    /**
+     * @test
+     */
     public function it_exports_what_the_top_level_of_each_content_type_may_hold(): void
     {
         self::assertSame([
@@ -148,8 +168,9 @@ final class RegistryExporterTest extends TestCase
 
     /**
      * @param list<string> $disabled
+     * @param array<string, array<string, array{label: string, class: string}>> $styles
      */
-    private function exporter(array $disabled = []): RegistryExporter
+    private function exporter(array $disabled = [], array $styles = []): RegistryExporter
     {
         $translator = $this->prophesize(TranslatorInterface::class);
         $translator->trans(Argument::type('string'))->will(static fn (array $arguments): string => sprintf('[%s]', is_string($arguments[0] ?? null) ? $arguments[0] : ''));
@@ -173,7 +194,7 @@ final class RegistryExporterTest extends TestCase
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator->reveal()),
         ]));
 
-        $blockTypes = new BlockTypeRegistry(['columns' => Columns::class, 'column' => Column::class, 'heading' => Heading::class], new FieldReader(), $disabled);
+        $blockTypes = new BlockTypeRegistry(['columns' => Columns::class, 'column' => Column::class, 'heading' => Heading::class], new FieldReader(), $disabled, $styles);
         $contentTypes = new ContentTypeRegistry([
             'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],

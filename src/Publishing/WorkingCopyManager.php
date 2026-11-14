@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Sylius\Resource\Factory\FactoryInterface;
 
 final readonly class WorkingCopyManager implements WorkingCopyManagerInterface
@@ -25,20 +26,29 @@ final readonly class WorkingCopyManager implements WorkingCopyManagerInterface
         private EntryNormalizer $entryNormalizer,
         private EntryDenormalizer $entryDenormalizer,
         private ObjectManager $manager,
+        private StoredDataUpgraderInterface $upgrader,
     ) {
     }
 
+    /**
+     * The working copy holds its tree upgraded: a never-published entry's rows are upgraded in place, so the next save
+     * writes them upgraded, and a published entry's rows are left as they are
+     */
     public function getWorkingCopy(EntryInterface $entry): EntryInterface
     {
         if (!$entry->isPublished()) {
+            $entry->setBlockTree($this->upgrader->readBlockTree($entry));
+
             return $entry;
         }
 
         $workingCopy = clone $entry;
 
         $draft = $this->draftRepository->findOneByEntry($entry);
-        if (null !== $draft) {
-            $this->entryDenormalizer->denormalize(CanonicalJson::decode($draft->getContent()), $workingCopy);
+        if (null === $draft) {
+            $workingCopy->setBlockTree($this->upgrader->readBlockTree($entry));
+        } else {
+            $this->entryDenormalizer->denormalize($this->readDraft($draft), $workingCopy);
         }
 
         return $workingCopy;
@@ -78,8 +88,18 @@ final readonly class WorkingCopyManager implements WorkingCopyManagerInterface
             return;
         }
 
-        $this->entryDenormalizer->denormalize(CanonicalJson::decode($draft->getContent()), $entry);
+        $this->entryDenormalizer->denormalize($this->readDraft($draft), $entry);
         $this->manager->remove($draft);
+    }
+
+    /**
+     * The draft in the entry format, upgraded. What isn't an entry is left for EntryDenormalizer to refuse
+     */
+    private function readDraft(DraftInterface $draft): mixed
+    {
+        $data = CanonicalJson::decode($draft->getContent());
+
+        return is_array($data) ? $this->upgrader->upgradeEntry($data)->data : $data;
     }
 
     private function createDraft(EntryInterface $entry): DraftInterface

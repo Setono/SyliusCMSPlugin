@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Rendering\EntryUrlMatch;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher;
 use Setono\SyliusCMSPlugin\Twig\CmsRuntime;
+use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -31,6 +32,7 @@ final readonly class ShowEntryAction
         private BlockViewBuilder $blockViewBuilder,
         private Environment $twig,
         private PreviewedEntryProvider $previewedEntryProvider,
+        private StoredDataUpgraderInterface $upgrader,
     ) {
     }
 
@@ -52,7 +54,7 @@ final readonly class ShowEntryAction
         return new Response($this->twig->render(sprintf('@SetonoSyliusCMSPlugin/layout/%s/standard.html.twig', $contentType->code), [
             'entry' => $entry,
             'layout' => null,
-            'blocks' => $this->blockViewBuilder->build($entry->getBlockTree()->blocks, $renderContext),
+            'blocks' => $this->blockViewBuilder->build($this->upgrader->readBlockTree($entry)->blocks, $renderContext),
             'context' => $renderContext->getHostPageContext(),
             CmsRuntime::RENDER_CONTEXT => $renderContext,
         ]));

@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler;
 
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractCompilerPassTestCase;
+use Setono\SyliusCMSPlugin\Block\Group;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBlockTypesPass;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\InvalidCode;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\InvalidStyleCode;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\NotABlockType;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\SameStyleTwice;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
@@ -96,6 +99,74 @@ final class RegisterBlockTypesPassTest extends AbstractCompilerPassTestCase
         $this->expectExceptionMessage('"Invalid-Code"');
 
         $this->compile();
+    }
+
+    /**
+     * @test
+     */
+    public function a_block_style_code_must_be_a_valid_code(): void
+    {
+        $this->setDefinition('app.invalid_style', (new Definition(InvalidStyleCode::class))->addTag('setono_sylius_cms.block_type'));
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf('The block style code "Dark-Blue" of %s must match', InvalidStyleCode::class));
+
+        $this->compile();
+    }
+
+    /**
+     * @test
+     */
+    public function it_accepts_a_block_type_whose_block_styles_have_valid_codes_of_their_own(): void
+    {
+        $this->setDefinition('app.group', (new Definition(Group::class))->addTag('setono_sylius_cms.block_type'));
+
+        $this->compile();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BlockTypeRegistry::class, 0, ['group' => Group::class]);
+    }
+
+    /**
+     * @test
+     */
+    public function two_block_styles_of_a_block_type_with_the_same_code_fail_the_build(): void
+    {
+        $this->setDefinition('app.same_style_twice', (new Definition(SameStyleTwice::class))->addTag('setono_sylius_cms.block_type'));
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf('%s declares the block style "dark" more than once', SameStyleTwice::class));
+
+        $this->compile();
+    }
+
+    /**
+     * @test
+     */
+    public function block_styles_added_in_config_to_a_block_type_that_does_not_exist_fail_the_build(): void
+    {
+        $this->setParameter('setono_sylius_cms.block_styles', [
+            'heading' => ['outlined' => ['label' => 'app.outlined', 'class' => 'app-heading--outlined']],
+            'app_banner' => ['brand' => ['label' => 'app.brand', 'class' => 'app-banner--brand']],
+        ]);
+        $this->setDefinition('app.heading', (new Definition(Heading::class))->addTag('setono_sylius_cms.block_type'));
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('setono_sylius_cms.block_styles adds styles to the block type "app_banner", but there is no block type with that code');
+
+        $this->compile();
+    }
+
+    /**
+     * @test
+     */
+    public function block_styles_added_in_config_to_existing_block_types_pass(): void
+    {
+        $this->setParameter('setono_sylius_cms.block_styles', ['heading' => ['outlined' => ['label' => 'app.outlined', 'class' => 'app-heading--outlined']]]);
+        $this->setDefinition('app.heading', (new Definition(Heading::class))->addTag('setono_sylius_cms.block_type'));
+
+        $this->compile();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BlockTypeRegistry::class, 0, ['heading' => Heading::class]);
     }
 
     /**

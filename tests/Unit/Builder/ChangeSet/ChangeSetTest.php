@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 
 final class ChangeSetTest extends TestCase
@@ -73,6 +74,19 @@ final class ChangeSetTest extends TestCase
     /**
      * @test
      */
+    public function it_reads_a_block_style_picked_and_one_taken_away(): void
+    {
+        $changeSet = ChangeSet::fromArray(['changes' => [
+            ['op' => 'set_style', 'key' => self::KEY, 'style' => 'dark'],
+            ['op' => 'set_style', 'key' => self::KEY, 'style' => null],
+        ]]);
+
+        self::assertEquals([new SetStyle(self::KEY, 'dark'), new SetStyle(self::KEY, null)], $changeSet->changes);
+    }
+
+    /**
+     * @test
+     */
     public function it_reads_an_empty_change_set(): void
     {
         self::assertSame([], ChangeSet::fromArray(['changes' => []])->changes);
@@ -121,5 +135,9 @@ final class ChangeSetTest extends TestCase
         yield 'move_block with a non-string parent' => [['changes' => [['parent' => 1] + $moveBlock]]];
         yield 'move_block without an index' => [['changes' => [array_diff_key($moveBlock, ['index' => true])]]];
         yield 'move_block with a negative index' => [['changes' => [['index' => -1] + $moveBlock]]];
+        yield 'set_style without a key' => [['changes' => [['op' => 'set_style', 'style' => 'dark']]]];
+        yield 'set_style without a style' => [['changes' => [['op' => 'set_style', 'key' => self::KEY]]]];
+        yield 'set_style with a non-string style' => [['changes' => [['op' => 'set_style', 'key' => self::KEY, 'style' => 1]]]];
+        yield 'set_style with an empty style' => [['changes' => [['op' => 'set_style', 'key' => self::KEY, 'style' => '']]]];
     }
 }

@@ -67,6 +67,21 @@
         margin-inline: auto;
     }
 
+    /* Group's block styles. A Group with no style has no background. One with a background keeps its content off its edges */
+    .cms-group--muted,
+    .cms-group--dark {
+        padding: var(--cms-block-spacing) var(--cms-gap);
+    }
+
+    .cms-group--muted {
+        background: var(--cms-muted-background);
+    }
+
+    .cms-group--dark {
+        background: var(--cms-dark-background);
+        color: var(--cms-dark-color);
+    }
+
     /* Columns side by side at equal widths, wrapping onto new lines below --cms-column-min-width */
     .cms-columns {
         display: flex;

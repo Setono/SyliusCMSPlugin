@@ -38,6 +38,7 @@ final readonly class ChangeSetApplier
                 $change instanceof MoveBlock => $this->moveBlock($change, $tree),
                 $change instanceof RemoveBlock => $this->removeBlock($change, $tree),
                 $change instanceof SetValue => $this->setValue($change, $tree),
+                $change instanceof SetStyle => $this->setStyle($change, $tree),
                 default => throw new InvalidChangeSetException(sprintf('Unknown change %s', $change::class)),
             };
         }
@@ -119,6 +120,20 @@ final readonly class ChangeSetApplier
         }
 
         $block->setValue($change->field, $change->locale, null === $change->value ? null : $this->sanitize($field, $change->value));
+    }
+
+    private function setStyle(SetStyle $change, StoredTree $tree): void
+    {
+        $block = $tree->findBlock($change->key) ?? throw new InvalidChangeSetException(sprintf('The tree has no block with the key %s', $change->key));
+        if (!$this->blockTypes->has($block->type)) {
+            throw new InvalidChangeSetException(sprintf('There is no block type with the code "%s"', $block->type));
+        }
+
+        if (null !== $change->style && !isset($this->blockTypes->get($block->type)->styles[$change->style])) {
+            throw new InvalidChangeSetException(sprintf('The block type "%s" has no block style "%s"', $block->type, $change->style));
+        }
+
+        $block->style = $change->style;
     }
 
     /**

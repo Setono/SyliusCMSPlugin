@@ -12,6 +12,7 @@ export const heading: BlockTypeDefinition = {
     disabled: false,
     parents: null,
     children: [],
+    styles: [],
     fields: [
         {
             name: 'text',
@@ -50,6 +51,10 @@ export const group: BlockTypeDefinition = {
     disabled: false,
     parents: null,
     children: anyBlock,
+    styles: [
+        { code: 'muted', label: 'Muted' },
+        { code: 'dark', label: 'Dark' },
+    ],
     fields: [
         {
             name: 'fullWidth',
@@ -74,6 +79,7 @@ export const columns: BlockTypeDefinition = {
     disabled: false,
     parents: null,
     children: [{ type: 'column', min: 2, max: 4 }],
+    styles: [],
     fields: [],
 };
 
@@ -85,6 +91,7 @@ export const column: BlockTypeDefinition = {
     disabled: false,
     parents: ['columns'],
     children: anyBlock,
+    styles: [],
     fields: [],
 };
 
@@ -96,6 +103,7 @@ export const spacer: BlockTypeDefinition = {
     disabled: false,
     parents: null,
     children: [],
+    styles: [],
     fields: [],
 };
 
@@ -121,6 +129,7 @@ export const accordion: BlockTypeDefinition = {
     disabled: false,
     parents: null,
     children: [{ type: 'accordion_item', min: 1, max: null }],
+    styles: [],
     fields: [],
 };
 
@@ -132,6 +141,7 @@ export const accordionItem: BlockTypeDefinition = {
     disabled: false,
     parents: ['accordion'],
     children: [],
+    styles: [],
     fields: [
         {
             name: 'title',
@@ -184,6 +194,8 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.undo': 'Undo',
     'setono_sylius_cms.builder.redo': 'Redo',
     'setono_sylius_cms.builder.path': 'Path',
+    'setono_sylius_cms.builder.block_style': 'Style',
+    'setono_sylius_cms.builder.no_style': 'None',
     'setono_sylius_cms.builder.blocks_selected': '%count% blocks selected',
     'setono_sylius_cms.builder.no_blocks': 'No blocks yet',
     'setono_sylius_cms.builder.entry_settings': 'Entry settings',

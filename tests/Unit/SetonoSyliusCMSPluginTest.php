@@ -8,6 +8,8 @@ use Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappi
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBlockTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLayoutsPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterUpgradersPass;
 use Setono\SyliusCMSPlugin\SetonoSyliusCMSPlugin;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -34,6 +36,8 @@ final class SetonoSyliusCMSPluginTest extends TestCase
         $passes = array_map(static fn (CompilerPassInterface $pass): string => $pass::class, $container->getCompilerPassConfig()->getBeforeOptimizationPasses());
         self::assertContains(RegisterBlockTypesPass::class, $passes);
         self::assertContains(RegisterContentTypesPass::class, $passes);
+        self::assertContains(RegisterLayoutsPass::class, $passes);
+        self::assertContains(RegisterUpgradersPass::class, $passes);
         self::assertContains(DoctrineOrmMappingsPass::class, $passes, 'The resource bundle registers the Doctrine mapping of the Model namespace');
     }
 }

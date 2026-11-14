@@ -1,1 +1,5 @@
-setono_sylius_cms: ~
+setono_sylius_cms:
+    # A block style added to a shipped block type, as a project adds one
+    block_styles:
+        group:
+            brand: { label: 'app.cms.block_style.brand', class: 'app-group--brand' }

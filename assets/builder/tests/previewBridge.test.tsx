@@ -164,6 +164,18 @@ describe('the bridge in the preview', () => {
         expect(api.createPreviewUrl).toHaveBeenCalledTimes(1);
     });
 
+    it('should re-render a block whose style was picked and patch it in, without a reload', async () => {
+        const api = fakeApi([blockOf('group', 'g', [block('a', { text: { en_US: 'Inside' } })])]);
+        const { sent } = await openWithBridge(api);
+        fireEvent.click(within(screen.getByRole('navigation')).getByRole('button', { name: 'Group' }));
+
+        fireEvent.change(screen.getByRole('combobox', { name: 'Style' }), { target: { value: 'dark' } });
+
+        await waitFor(() => expect(sent().at(-1)).toEqual({ type: 'patch', blocks: [{ key: 'g', html: '<!--cms:block g heading--><h2>g</h2><!--/cms:block g-->' }] }));
+        expect(api.renderPreview).toHaveBeenCalledExactlyOnceWith('token-1', [{ ...blockOf('group', 'g', [block('a', { text: { en_US: 'Inside' } })]), style: 'dark' }]);
+        expect(api.createPreviewUrl).toHaveBeenCalledTimes(1);
+    });
+
     it('should show in the right pane and save what the editor types in place in the preview', async () => {
         const api = fakeApi();
         const { sent } = await openWithBridge(api);

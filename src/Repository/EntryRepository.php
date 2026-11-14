@@ -18,4 +18,12 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
 
         return $entry instanceof EntryInterface ? $entry : null;
     }
+
+    public function iterateAll(): iterable
+    {
+        /** @var iterable<EntryInterface> $entries */
+        $entries = $this->createQueryBuilder('entry')->orderBy('entry.id')->getQuery()->toIterable();
+
+        return $entries;
+    }
 }
