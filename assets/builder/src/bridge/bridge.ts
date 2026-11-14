@@ -88,24 +88,21 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
     };
 
     const insert = (block: RenderedBlock, previous: string[], next: string[]): void => {
-        if (findBlock(document, block.key) !== null) {
-            patch(block);
-
-            return;
-        }
-
         const before = previous.map((key) => findBlock(document, key)).find((found) => found !== null);
         const after = before === undefined ? next.map((key) => findBlock(document, key)).find((found) => found !== null) : undefined;
-        const anchor = before === undefined ? after?.start : before.end.nextSibling;
-        const parent = before?.end.parentNode ?? after?.start.parentNode;
-        if (parent === undefined || parent === null || (before === undefined && after === undefined)) {
+        const parent = before?.end.parentNode ?? after?.start.parentNode ?? null;
+        if (parent === null) {
             post({ type: 'missing', key: block.key });
 
             return;
         }
 
+        // A block that's in the page already, such as one moved out of its parent, moves to its spot
+        remove(block.key);
+
+        const anchor = before === undefined ? (after?.start ?? null) : before.end.nextSibling;
         for (const node of parseHtml(document, block.html)) {
-            parent.insertBefore(node, anchor ?? null);
+            parent.insertBefore(node, anchor);
         }
 
         const inserted = findBlock(document, block.key);
@@ -128,7 +125,7 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
                     strings = message.strings;
                     controls ??= createControls(document, strings, (action) => {
                         if (selected !== null) {
-                            post(action === 'before' || action === 'after' ? { type: 'add', key: selected, position: action } : { type: action, key: selected });
+                            post(typeof action === 'object' ? { type: 'add', key: selected, ...action } : { type: action, key: selected });
                         }
                     });
                     break;
@@ -175,7 +172,7 @@ function rendered(block: BlockRange): void {
     root?.dispatchEvent(new CustomEventClass('cms:render', { bubbles: true, detail: { key: block.key, type: block.type } }));
 }
 
-type Action = 'select_parent' | 'settings' | 'delete' | 'before' | 'after';
+type Action = 'select_parent' | 'settings' | 'delete' | { position: 'before' | 'after'; x: number; y: number };
 
 interface Controls {
     draw(selected: BlockRange | null, hovered: BlockRange | null): void;
@@ -202,8 +199,12 @@ function createControls(document: Document, strings: BridgeStrings, act: (action
         button(document, strings.settings, ICONS.settings, () => act('settings')),
         button(document, strings.delete, ICONS.delete, () => act('delete')),
     );
-    const addBefore = button(document, strings.addBefore, ICONS.add, () => act('before'), 'add');
-    const addAfter = button(document, strings.addAfter, ICONS.add, () => act('after'), 'add');
+    const add = (position: 'before' | 'after', element: HTMLElement): void => {
+        const { left, top, width, height } = element.getBoundingClientRect();
+        act({ position, x: left + width / 2, y: top + height / 2 });
+    };
+    const addBefore = button(document, strings.addBefore, ICONS.add, () => add('before', addBefore), 'add');
+    const addAfter = button(document, strings.addAfter, ICONS.add, () => add('after', addAfter), 'add');
 
     layer.append(style, hover, selection, toolbar, addBefore, addAfter);
     shadow.append(layer);

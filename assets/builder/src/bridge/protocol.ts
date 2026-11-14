@@ -26,8 +26,8 @@ export type ToBridge =
     /** Morphs blocks that are in the page into their new HTML. */
     | { type: 'patch'; blocks: RenderedBlock[] }
     /**
-     * Inserts a block that isn't in the page yet, after the first of the blocks before its spot that is (nearest first),
-     * or else before the first of the blocks after it.
+     * Puts a block at its spot in the page: after the first of the blocks before its spot that is in the page (nearest
+     * first), or else before the first of the blocks after it. A block that's elsewhere in the page moves there.
      */
     | { type: 'insert'; block: RenderedBlock; previous: string[]; next: string[] }
     | { type: 'remove'; key: string };
@@ -39,8 +39,8 @@ export type FromBridge =
     | { type: 'select_parent'; key: string }
     | { type: 'settings'; key: string }
     | { type: 'delete'; key: string }
-    /** + next to a block: the editor wants to add a block at that spot. */
-    | { type: 'add'; key: string; position: 'before' | 'after' }
+    /** + next to a block: the editor wants to add a block at that spot. x and y are where the + is in the page's viewport. */
+    | { type: 'add'; key: string; position: 'before' | 'after'; x: number; y: number }
     /** A block the builder patched or inserted has no place in the page, so only a reload shows it. */
     | { type: 'missing'; key: string };
 

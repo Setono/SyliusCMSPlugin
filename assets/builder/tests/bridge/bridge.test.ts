@@ -116,9 +116,10 @@ describe('the bridge', () => {
             fireEvent.click(within(controls()).getByRole('button', { name: 'Add block below' }));
             fireEvent.click(within(controls()).getByRole('button', { name: 'Add block above' }));
 
+            // With where the + is in the page's viewport, so the builder can open the picker next to it
             expect(posted).toEqual([
-                { type: 'add', key: 'a', position: 'after' },
-                { type: 'add', key: 'a', position: 'before' },
+                { type: 'add', key: 'a', position: 'after', x: 0, y: 0 },
+                { type: 'add', key: 'a', position: 'before', x: 0, y: 0 },
             ]);
         });
 
@@ -154,6 +155,13 @@ describe('the bridge', () => {
             bridge.receive({ type: 'insert', block: { key: 'new', html: marked('new', '<h2 class="cms-heading">New</h2>') }, previous: [], next: ['hidden', 'd'] });
 
             expect(Array.from(document.querySelectorAll('main > h2, main > section'), (element) => element.textContent)).toEqual(['First', 'Inside', 'New', 'Last']);
+        });
+
+        it('should move a block that is already in the page to its new spot, such as one moved out of its parent', () => {
+            bridge.receive({ type: 'insert', block: { key: 'c', html: marked('c', '<h2 class="cms-heading">Moved</h2>') }, previous: ['d'], next: [] });
+
+            expect(Array.from(document.querySelectorAll('h2'), (element) => element.textContent)).toEqual(['First', 'Last', 'Moved']);
+            expect(document.querySelector('section a')?.innerHTML).toBe('');
         });
 
         it('should tell the builder when it has nowhere to insert a block', () => {

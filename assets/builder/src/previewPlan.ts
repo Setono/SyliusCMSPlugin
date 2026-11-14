@@ -11,7 +11,7 @@ export interface PreviewPlan {
     reload: boolean;
     /** Blocks in the page to re-render. */
     patch: string[];
-    /** New top-level blocks, to render and insert at their spot. */
+    /** Top-level blocks that are new or moved, to render and put at their spot. */
     insert: string[];
     /** Top-level blocks gone from the tree. */
     remove: string[];
@@ -30,16 +30,30 @@ export function planPreviewUpdate(before: Entry, after: Entry): PreviewPlan {
         return { ...plan, reload: true };
     }
 
-    const kept = keysIn(treeBefore.blocks).filter((key) => keysIn(treeAfter.blocks).includes(key));
-    if (kept.join() !== keysIn(treeAfter.blocks).filter((key) => kept.includes(key)).join()) {
-        return { ...plan, reload: true };
-    }
+    const keysBefore = keysIn(treeBefore.blocks);
+    const keysAfter = keysIn(treeAfter.blocks);
+    const kept = keysAfter.filter((key) => keysBefore.includes(key));
+    const staying = new Set(longestIncreasing(kept.map((key) => keysBefore.indexOf(key))).map((index) => keysBefore[index]));
 
-    plan.remove = keysIn(treeBefore.blocks).filter((key) => !kept.includes(key));
-    plan.insert = keysIn(treeAfter.blocks).filter((key) => !kept.includes(key));
+    plan.remove = keysBefore.filter((key) => !keysAfter.includes(key));
+    // New blocks and those that changed places with the others; the most blocks that keep their order stay put
+    plan.insert = keysAfter.filter((key) => !staying.has(key));
     planChanges(treeBefore.blocks, treeAfter.blocks, plan.patch);
+    plan.patch = plan.patch.filter((key) => !plan.insert.includes(key));
 
     return plan;
+}
+
+/** The longest run of the numbers, in their order, that only goes up. */
+function longestIncreasing(numbers: readonly number[]): number[] {
+    // runs[i] is the longest increasing run that ends with numbers[i]
+    const runs: number[][] = [];
+    numbers.forEach((number, i) => {
+        const longest = runs.slice(0, i).reduce<number[]>((best, run) => ((run.at(-1) ?? Infinity) < number && run.length > best.length ? run : best), []);
+        runs.push([...longest, number]);
+    });
+
+    return runs.reduce<number[]>((best, run) => (run.length > best.length ? run : best), []);
 }
 
 function keysIn(blocks: readonly StoredBlock[]): string[] {
