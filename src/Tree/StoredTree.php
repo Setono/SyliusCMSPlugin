@@ -36,13 +36,26 @@ final class StoredTree
     }
 
     /**
-     * Inserts a top-level block at $index, clamped to the list
+     * Inserts a block at $index, clamped to the list, at the top level or into the children of the block with the key $parent
+     *
+     * @return bool whether it was inserted, which it isn't when the tree has no block with the key $parent
      */
-    public function insertBlock(StoredBlock $block, int $index): void
+    public function insertBlock(StoredBlock $block, int $index, ?string $parent = null): bool
     {
-        $index = max(0, min($index, count($this->blocks)));
+        if (null === $parent) {
+            self::insert($this->blocks, $block, $index);
 
-        array_splice($this->blocks, $index, 0, [$block]);
+            return true;
+        }
+
+        $parentBlock = $this->findBlock($parent);
+        if (null === $parentBlock) {
+            return false;
+        }
+
+        self::insert($parentBlock->children, $block, $index);
+
+        return true;
     }
 
     /**
@@ -66,6 +79,14 @@ final class StoredTree
         }
 
         return $keys;
+    }
+
+    /**
+     * @param list<StoredBlock> $blocks
+     */
+    private static function insert(array &$blocks, StoredBlock $block, int $index): void
+    {
+        array_splice($blocks, max(0, min($index, count($blocks))), 0, [$block]);
     }
 
     /**

@@ -30,6 +30,7 @@ final readonly class ChangeSetApplier
         foreach ($changeSet->changes as $change) {
             match (true) {
                 $change instanceof AddBlock => $this->addBlock($change, $tree),
+                $change instanceof MoveBlock => $this->moveBlock($change, $tree),
                 $change instanceof RemoveBlock => $this->removeBlock($change, $tree),
                 $change instanceof SetValue => $this->setValue($change, $tree),
                 default => throw new InvalidChangeSetException(sprintf('Unknown change %s', $change::class)),
@@ -39,13 +40,12 @@ final readonly class ChangeSetApplier
         return $tree;
     }
 
+    /**
+     * The nesting rules aren't checked here: the builder refuses a drop or an insert that breaks them,
+     * and data that breaks them anyway saves and is flagged
+     */
     private function addBlock(AddBlock $change, StoredTree $tree): void
     {
-        // Nesting, and the rules on what a spot may hold, come with #218
-        if (null !== $change->parent) {
-            throw new InvalidChangeSetException('Blocks can only be added at the top level');
-        }
-
         $this->assertKnownTypes($change->block);
 
         $taken = array_intersect($change->block->keys(), $tree->keys());
@@ -53,7 +53,27 @@ final readonly class ChangeSetApplier
             throw new InvalidChangeSetException(sprintf('The tree already has a block with the key %s', implode(', ', $taken)));
         }
 
-        $tree->insertBlock($change->block, $change->index);
+        self::insert($tree, $change->block, $change->index, $change->parent);
+    }
+
+    private function moveBlock(MoveBlock $change, StoredTree $tree): void
+    {
+        $block = $tree->findBlock($change->key) ?? throw new InvalidChangeSetException(sprintf('The tree has no block with the key %s', $change->key));
+
+        if (null !== $change->parent && in_array($change->parent, $block->keys(), true)) {
+            throw new InvalidChangeSetException(sprintf('The block %s can\'t move inside itself', $change->key));
+        }
+
+        $tree->removeBlock($change->key);
+        self::insert($tree, $block, $change->index, $change->parent);
+    }
+
+    private static function insert(StoredTree $tree, StoredBlock $block, int $index, ?string $parent): void
+    {
+        if (!$tree->insertBlock($block, $index, $parent)) {
+            // Only a parent the tree doesn't have refuses an insert
+            throw new InvalidChangeSetException(sprintf('The tree has no block with the key %s', $parent));
+        }
     }
 
     private function removeBlock(RemoveBlock $change, StoredTree $tree): void

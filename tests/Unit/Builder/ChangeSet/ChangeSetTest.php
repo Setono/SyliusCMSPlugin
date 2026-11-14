@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\AddBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 
@@ -54,6 +55,24 @@ final class ChangeSetTest extends TestCase
     /**
      * @test
      */
+    public function it_reads_a_move_into_a_parent_and_to_the_top_level(): void
+    {
+        $parent = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a';
+
+        $changeSet = ChangeSet::fromArray(['changes' => [
+            ['op' => 'move_block', 'key' => self::KEY, 'parent' => $parent, 'index' => 2],
+            ['op' => 'move_block', 'key' => self::KEY, 'parent' => null, 'index' => 0],
+        ]]);
+
+        [$into, $out] = $changeSet->changes;
+
+        self::assertEquals(new MoveBlock(self::KEY, $parent, 2), $into);
+        self::assertEquals(new MoveBlock(self::KEY, null, 0), $out);
+    }
+
+    /**
+     * @test
+     */
     public function it_reads_an_empty_change_set(): void
     {
         self::assertSame([], ChangeSet::fromArray(['changes' => []])->changes);
@@ -78,13 +97,14 @@ final class ChangeSetTest extends TestCase
     {
         $setValue = ['op' => 'set_value', 'key' => self::KEY, 'field' => 'text', 'locale' => 'en_US', 'value' => 'Hello'];
         $addBlock = ['op' => 'add_block', 'parent' => null, 'index' => 0, 'block' => ['key' => self::KEY, 'type' => 'heading', 'version' => 1]];
+        $moveBlock = ['op' => 'move_block', 'key' => self::KEY, 'parent' => null, 'index' => 0];
 
         yield 'not an object' => ['changes'];
         yield 'no changes' => [[]];
         yield 'changes as a map' => [['changes' => ['a' => $setValue]]];
         yield 'a change that is not an object' => [['changes' => ['set_value']]];
         yield 'a change that is an empty object' => [['changes' => [new \stdClass()]]];
-        yield 'an unknown op' => [['changes' => [['op' => 'move_block'] + $setValue]]];
+        yield 'an unknown op' => [['changes' => [['op' => 'copy_block'] + $setValue]]];
         yield 'no op' => [['changes' => [array_diff_key($setValue, ['op' => true])]]];
         yield 'set_value without a key' => [['changes' => [array_diff_key($setValue, ['key' => true])]]];
         yield 'set_value without a field' => [['changes' => [['field' => 1] + $setValue]]];
@@ -97,5 +117,9 @@ final class ChangeSetTest extends TestCase
         yield 'add_block without an index' => [['changes' => [array_diff_key($addBlock, ['index' => true])]]];
         yield 'add_block with a non-string parent' => [['changes' => [['parent' => 1] + $addBlock]]];
         yield 'add_block with an invalid block' => [['changes' => [['block' => ['type' => 'heading']] + $addBlock]]];
+        yield 'move_block without a key' => [['changes' => [array_diff_key($moveBlock, ['key' => true])]]];
+        yield 'move_block with a non-string parent' => [['changes' => [['parent' => 1] + $moveBlock]]];
+        yield 'move_block without an index' => [['changes' => [array_diff_key($moveBlock, ['index' => true])]]];
+        yield 'move_block with a negative index' => [['changes' => [['index' => -1] + $moveBlock]]];
     }
 }
