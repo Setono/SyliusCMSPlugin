@@ -9,6 +9,8 @@ use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
+use Setono\SyliusCMSPlugin\Targeting\Audience;
+use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Bundle\CoreBundle\Fixture\Factory\ExampleFactoryInterface;
@@ -122,6 +124,30 @@ final class PreviewModeTest extends WebTestCase
         self::assertResponseStatusCodeSame(404);
         self::assertFalse($client->getResponse()->headers->has('X-Robots-Tag'));
         self::assertFalse($client->getResponse()->headers->hasCacheControlDirective('no-store'));
+    }
+
+    /**
+     * See "Preview mode" in docs/spec/builder.md
+     *
+     * @test
+     */
+    public function the_edited_entry_ignores_its_enabled_switch_date_window_and_audience(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('About us', 'about-us', 'Hello', published: true);
+        $page->setEnabled(false);
+        $page->setDateWindow(new DateWindow(null, new \DateTimeImmutable('2000-01-01T00:00:00Z')));
+        $page->setAudience(Audience::only('wholesale'));
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
+        $manager->flush();
+
+        $client->request('GET', '/en_US/about-us');
+        self::assertResponseStatusCodeSame(404);
+
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
+        self::assertResponseStatusCodeSame(200);
+        self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello');
     }
 
     /**
