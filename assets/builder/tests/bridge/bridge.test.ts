@@ -12,6 +12,12 @@ const strings: BridgeStrings = {
     moveUp: 'Move up',
     moveDown: 'Move down',
     duplicate: 'Duplicate',
+    formatting: 'Formatting',
+    bold: 'Bold',
+    italic: 'Italic',
+    underline: 'Underline',
+    strike: 'Strikethrough',
+    code: 'Code',
 };
 
 function marked(key: string, html: string, type = 'heading'): string {

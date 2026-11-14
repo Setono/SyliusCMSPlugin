@@ -50,13 +50,14 @@ export function findBlock(root: Node, key: string): BlockRange | null {
 
 /** The innermost block the node is part of, or null when it's outside every block. */
 export function blockContaining(root: Node, node: Node): BlockRange | null {
-    const containing = findBlocks(root).filter(
-        (block) =>
-            (block.start.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 &&
-            (block.end.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_PRECEDING) !== 0,
-    );
+    const containing = findBlocks(root).filter((block) => blockHolds(block, node));
 
     return containing[containing.length - 1] ?? null;
+}
+
+/** Whether the node is part of the block's output. */
+export function blockHolds(block: BlockRange, node: Node): boolean {
+    return (block.start.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 && (block.end.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_PRECEDING) !== 0;
 }
 
 /** The nodes between the block's markers. */
@@ -77,4 +78,59 @@ export function blockElements(block: BlockRange): Element[] {
 /** The block's root element: the first element of its output. */
 export function rootElement(block: BlockRange): Element | null {
     return blockElements(block)[0] ?? null;
+}
+
+/**
+ * A field that cms_field() printed and marked (src/Preview/FieldMarker.php), so editors can type it in place:
+ * <!--cms:field {key} {field} {type}--> before it and <!--/cms:field {key} {field}--> after it. Everything between
+ * the two markers, which are siblings, is the field's output.
+ */
+export interface FieldRange {
+    /** The key of the block the field belongs to. */
+    key: string;
+    field: string;
+    /** The field type: text, textarea or rich_text. */
+    type: string;
+    start: Comment;
+    end: Comment;
+}
+
+const FIELD_START = /^cms:field (\S+) (\S+) (\S+)$/;
+const FIELD_END = /^\/cms:field (\S+) (\S+)$/;
+
+/** Every marked field in the page or under the node, in document order. */
+export function findFields(root: Node): FieldRange[] {
+    const document = root.ownerDocument ?? (root as Document);
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_COMMENT);
+    const fields: FieldRange[] = [];
+    let open: Omit<FieldRange, 'end'> | null = null;
+
+    for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+        const comment = node as Comment;
+        const start = FIELD_START.exec(comment.data);
+        if (start !== null) {
+            open = { key: start[1] ?? '', field: start[2] ?? '', type: start[3] ?? '', start: comment };
+
+            continue;
+        }
+
+        // A field's output holds no other fields, so its end marker closes the one opened last
+        const end = FIELD_END.exec(comment.data);
+        if (end !== null && open !== null && open.key === end[1] && open.field === end[2] && open.start.parentNode === comment.parentNode) {
+            fields.push({ ...open, end: comment });
+            open = null;
+        }
+    }
+
+    return fields;
+}
+
+/** The nodes between the field's markers. */
+export function fieldNodes(field: FieldRange): ChildNode[] {
+    const nodes: ChildNode[] = [];
+    for (let node = field.start.nextSibling; node !== null && node !== field.end; node = node.nextSibling) {
+        nodes.push(node);
+    }
+
+    return nodes;
 }

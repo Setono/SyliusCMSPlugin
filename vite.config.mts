@@ -22,7 +22,8 @@ function scopedClassName(localName: string, filename: string): string {
 
 /**
  * Two builds into one directory: the builder app (the default mode), then the bridge script that preview mode injects
- * into the shop page (--mode bridge). The bridge is a separate script with no React, so it stays small and runs alone.
+ * into the shop page (--mode bridge). The bridge is a separate script with no React, which runs alone. It carries
+ * Tiptap, with the shared rich text schema, for typing rich text in place.
  */
 export default defineConfig(({ mode }) => ({
     root: builderRoot,

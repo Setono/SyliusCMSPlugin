@@ -1,9 +1,11 @@
 /**
  * The bridge: the script preview mode injects into the shop page in the builder's preview. It finds blocks by their
- * markers, draws the outlines and the selected block's controls, handles click-to-select, and patches blocks the
- * builder re-rendered. It talks to the builder only by postMessage (docs/spec/builder.md#the-bridge).
+ * markers, draws the outlines and the selected block's controls, handles click-to-select and typing in place, and
+ * patches blocks the builder re-rendered. It talks to the builder only by postMessage (docs/spec/builder.md#the-bridge).
  */
-import { blockContaining, blockElements, blockNodes, findBlock, rootElement, type BlockRange } from './markers';
+import type { Editor } from '@tiptap/core';
+import { caretAt, fieldAt, startTyping, type Caret, type TypingInPlace } from './inPlace';
+import { blockContaining, blockElements, blockHolds, blockNodes, findBlock, rootElement, type BlockRange, type FieldRange } from './markers';
 import { morphBlock, parseHtml } from './morph';
 import { shortcutOf } from '../shortcuts';
 import type { BridgeStrings, FromBridge, RenderedBlock, ToBridge } from './protocol';
@@ -22,6 +24,9 @@ const STYLE = `
 .toolbar { position: fixed; display: flex; gap: 2px; padding: 2px; border-radius: 4px; background: #2f6fed; transform: translate(-100%, -100%); pointer-events: auto; }
 button { all: unset; box-sizing: border-box; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 3px; color: #fff; cursor: pointer; }
 .toolbar button:hover, .toolbar button:focus-visible { background: rgba(255, 255, 255, 0.2); }
+.formatting { transform: translateY(-100%); }
+.formatting button { font: 600 13px/1 system-ui, sans-serif; }
+.formatting button[aria-pressed="true"] { background: rgba(255, 255, 255, 0.35); }
 .add { position: fixed; border-radius: 50%; background: #2f6fed; box-shadow: 0 0 0 2px #fff; transform: translate(-50%, -50%); pointer-events: auto; }
 .add:hover, .add:focus-visible { background: #1d4fc4; }
 svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
@@ -37,12 +42,24 @@ const ICONS = {
     add: '<path d="M8 3v10M3 8h10"/>',
 };
 
+/** The marks of rich text typed in place, each with its glyph, as in the right pane's toolbar. */
+const MARKS = [
+    { mark: 'bold', glyph: '<b>B</b>' },
+    { mark: 'italic', glyph: '<i>I</i>' },
+    { mark: 'underline', glyph: '<u>U</u>' },
+    { mark: 'strike', glyph: '<s>S</s>' },
+    { mark: 'code', glyph: '<code>&lt;/&gt;</code>' },
+] as const;
+
 export function createBridge(document: Document, post: (message: FromBridge) => void): Bridge {
     const window = document.defaultView;
     let strings: BridgeStrings | null = null;
     let selected: string | null = null;
     let hovered: string | null = null;
     let controls: Controls | null = null;
+    let typing: TypingInPlace | null = null;
+    // The patches of the block being typed in, held back until the typing ends, so they don't move the caret
+    const held = new Map<string, string>();
 
     post({ type: 'ready' });
 
@@ -50,21 +67,60 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
         controls?.draw(selected === null ? null : findBlock(document, selected), hovered === null || hovered === selected ? null : findBlock(document, hovered));
     };
 
+    const typeInPlace = (field: FieldRange, caret: Caret | null, at: { x: number; y: number }): void => {
+        typing?.stop();
+
+        const started = startTyping(field, {
+            caret,
+            at,
+            onChange: (value) => {
+                post({ type: 'edit', key: field.key, field: field.field, value });
+                refresh();
+            },
+            onEnd: () => {
+                typing = null;
+                controls?.format(null);
+                const patches = [...held];
+                held.clear();
+                patches.forEach(([key, html]) => patch({ key, html }));
+                refresh();
+            },
+        });
+        typing = started;
+        controls?.format(started.editor === null ? null : { host: started.host, editor: started.editor });
+    };
+
     const onClick = (event: MouseEvent): void => {
-        if (strings === null || controls?.contains(event) === true) {
+        if (strings === null || controls?.contains(event) === true || !(event.target instanceof Node)) {
             return;
         }
 
-        const block = event.target instanceof Node ? blockContaining(document, event.target) : null;
-        if (block === null) {
+        // A click in the field being typed in moves the caret, as in any text field, and follows no link around it
+        if (typing?.host.contains(event.target) === true) {
+            event.preventDefault();
+
+            return;
+        }
+
+        const caret = caretAt(document, event.clientX, event.clientY);
+        const field = fieldAt(document, event.target, caret);
+        const key = field?.key ?? blockContaining(document, event.target)?.key;
+        if (key === undefined) {
             return;
         }
 
         // In the preview a click selects, so links in blocks don't take the preview away
         event.preventDefault();
         event.stopPropagation();
-        post({ type: 'select', key: block.key });
+        post({ type: 'select', key });
+
+        if (field !== null) {
+            typeInPlace(field, caret, { x: event.clientX, y: event.clientY });
+        }
     };
+
+    // The editor went to the builder, or elsewhere, so the typing ends
+    const onBlur = (): void => typing?.stop();
 
     const onPointerOver = (event: MouseEvent): void => {
         if (strings === null || controls?.contains(event) === true) {
@@ -80,6 +136,8 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
         const shortcut = strings === null || event.defaultPrevented ? null : shortcutOf(event);
         if (shortcut !== null) {
             event.preventDefault();
+            // Undo changes the working copy, which the field being typed in shows only once the typing ends
+            typing?.stop();
             post({ type: shortcut });
         }
     };
@@ -89,11 +147,18 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
     document.addEventListener('keydown', onKeyDown);
     window?.addEventListener('scroll', refresh, { passive: true });
     window?.addEventListener('resize', refresh);
+    window?.addEventListener('blur', onBlur);
 
     const patch = ({ key, html }: RenderedBlock): void => {
         const block = findBlock(document, key);
         if (block === null) {
             post({ type: 'missing', key });
+
+            return;
+        }
+
+        if (typing !== null && blockHolds(block, typing.host)) {
+            held.set(key, html);
 
             return;
         }
@@ -127,6 +192,10 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
 
     const remove = (key: string): void => {
         const block = findBlock(document, key);
+        if (block !== null && typing !== null && blockHolds(block, typing.host)) {
+            typing.stop();
+        }
+
         if (block !== null) {
             [block.start, ...blockNodes(block), block.end].forEach((node) => node.remove());
         }
@@ -167,11 +236,13 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
         },
 
         dispose() {
+            typing?.stop();
             document.removeEventListener('click', onClick, true);
             document.removeEventListener('mouseover', onPointerOver, true);
             document.removeEventListener('keydown', onKeyDown);
             window?.removeEventListener('scroll', refresh);
             window?.removeEventListener('resize', refresh);
+            window?.removeEventListener('blur', onBlur);
             controls?.dispose();
             controls = null;
             strings = null;
@@ -198,8 +269,16 @@ function request(action: Action, key: string): FromBridge {
     return 'direction' in action ? { type: 'move', key, direction: action.direction } : { type: 'add', key, ...action };
 }
 
+/** Rich text being typed in place, which the formatting toolbar works on. */
+interface Formatting {
+    host: HTMLElement;
+    editor: Editor;
+}
+
 interface Controls {
     draw(selected: BlockRange | null, hovered: BlockRange | null): void;
+    /** Shows the formatting toolbar for rich text typed in place, or hides it. */
+    format(formatting: Formatting | null): void;
     /** Whether the event happened on the bridge's own controls. */
     contains(event: Event): boolean;
     dispose(): void;
@@ -233,7 +312,26 @@ function createControls(document: Document, strings: BridgeStrings, act: (action
     const addBefore = button(document, strings.addBefore, ICONS.add, () => add('before', addBefore), 'add');
     const addAfter = button(document, strings.addAfter, ICONS.add, () => add('after', addAfter), 'add');
 
-    layer.append(style, hover, selection, toolbar, addBefore, addAfter);
+    let formatting: Formatting | null = null;
+    const formatBar = document.createElement('div');
+    formatBar.className = 'toolbar formatting';
+    formatBar.setAttribute('role', 'toolbar');
+    formatBar.setAttribute('aria-label', strings.formatting);
+    formatBar.hidden = true;
+    const markButtons = MARKS.map(({ mark, glyph }) => {
+        const markButton = button(document, strings[mark], glyph, () => formatting?.editor.chain().focus().toggleMark(mark).run(), undefined, false);
+        // Keeps the editor's selection, which taking the focus would lose
+        markButton.addEventListener('mousedown', (event) => event.preventDefault());
+        markButton.setAttribute('aria-pressed', 'false');
+        formatBar.append(markButton);
+
+        return { mark, button: markButton };
+    });
+    const showMarks = (): void => {
+        markButtons.forEach(({ mark, button: markButton }) => markButton.setAttribute('aria-pressed', String(formatting?.editor.isActive(mark) === true)));
+    };
+
+    layer.append(style, hover, selection, toolbar, addBefore, addAfter, formatBar);
     shadow.append(layer);
     document.body.append(host);
 
@@ -253,6 +351,20 @@ function createControls(document: Document, strings: BridgeStrings, act: (action
                 Object.assign(addBefore.style, { left: middle, top: `${box.top}px` });
                 Object.assign(addAfter.style, { left: middle, top: `${box.bottom}px` });
             }
+
+            formatBar.hidden = formatting === null;
+            if (formatting !== null) {
+                const field = formatting.host.getBoundingClientRect();
+                Object.assign(formatBar.style, { left: `${field.left}px`, top: `${Math.max(field.top, 30)}px` });
+            }
+        },
+
+        format(next) {
+            formatting?.editor.off('transaction', showMarks);
+            formatting = next;
+            formatting?.editor.on('transaction', showMarks);
+            showMarks();
+            formatBar.hidden = formatting === null;
         },
 
         contains(event) {
@@ -274,12 +386,13 @@ function outline(document: Document, kind: 'hover' | 'selected'): HTMLElement {
     return element;
 }
 
-function button(document: Document, label: string, icon: string, onClick: () => void, className?: string): HTMLButtonElement {
+/** A button with an icon: the paths of an SVG icon, or else HTML of its own. */
+function button(document: Document, label: string, icon: string, onClick: () => void, className?: string, svg = true): HTMLButtonElement {
     const element = document.createElement('button');
     element.type = 'button';
     element.setAttribute('aria-label', label);
     element.title = label;
-    element.innerHTML = `<svg viewBox="0 0 16 16" aria-hidden="true">${icon}</svg>`;
+    element.innerHTML = svg ? `<svg viewBox="0 0 16 16" aria-hidden="true">${icon}</svg>` : `<span aria-hidden="true">${icon}</span>`;
     if (className !== undefined) {
         element.className = className;
     }

@@ -51,7 +51,7 @@ final class PreviewFailureTest extends BuilderApiTestCase
         self::assertStringStartsWith('<!--cms:block ' . self::BROKEN . ' broken--><div data-cms-block-error role="alert"', $broken);
         self::assertStringContainsString('>' . htmlspecialchars(self::ERROR) . '</div><!--/cms:block ' . self::BROKEN . '-->', $broken);
         self::assertStringNotContainsString('cms-broken', $broken, 'No half-printed markup is left behind');
-        self::assertStringContainsString('<h2 class="cms-heading">Still here</h2>', $heading);
+        self::assertStringContainsString('<h2 class="cms-heading"><!--cms:field ' . self::HEADING . ' text text-->Still here<!--/cms:field ' . self::HEADING . ' text--></h2>', $heading);
     }
 
     /**

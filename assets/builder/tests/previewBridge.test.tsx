@@ -106,6 +106,12 @@ describe('the bridge in the preview', () => {
                     moveUp: 'Move up',
                     moveDown: 'Move down',
                     duplicate: 'Duplicate',
+                    formatting: 'Formatting',
+                    bold: 'Bold',
+                    italic: 'Italic',
+                    underline: 'Underline',
+                    strike: 'Strikethrough',
+                    code: 'Code',
                 },
             },
             { type: 'select', key: null },
@@ -154,6 +160,21 @@ describe('the bridge in the preview', () => {
 
         await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Saved'));
         expect(api.createPreviewUrl).toHaveBeenCalledTimes(1);
+    });
+
+    it('should show in the right pane and save what the editor types in place in the preview', async () => {
+        const api = fakeApi();
+        const { sent } = await openWithBridge(api);
+        fromBridge({ type: 'select', key: 'a' });
+
+        fromBridge({ type: 'edit', key: 'a', field: 'text', value: 'Welcome back' });
+
+        expect(screen.getByLabelText('Text')).toHaveValue('Welcome back');
+        expect(treeRow('Welcome back')).toHaveAttribute('aria-pressed', 'true');
+        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Saved'));
+        expect(api.saveChanges).toHaveBeenCalledWith([{ op: 'set_value', key: 'a', field: 'text', locale: 'en_US', value: 'Welcome back' }]);
+        // Re-rendered like any edit. The bridge holds the patch back while the field is being typed in
+        await waitFor(() => expect(sent().at(-1)).toMatchObject({ type: 'patch', blocks: [{ key: 'a' }] }));
     });
 
     it('should render what changed while a render was on its way once it is back', async () => {
