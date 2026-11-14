@@ -7,7 +7,18 @@ export interface BuilderApi {
     fetchRegistry(): Promise<Registry>;
     fetchEntry(): Promise<EntryResponse>;
     saveChanges(changes: readonly Change[]): Promise<EntryStatus>;
+    /** Fails with an ApiError of status 422 and the reason when the server refuses, such as a listener's veto. */
     publish(): Promise<EntryStatus>;
+    /** Deletes the draft, and answers with the working copy that's left: the published content. */
+    discard(): Promise<EntryResponse>;
+    /** Asks for a preview token, and answers with the URL of the preview it turns on. */
+    createPreviewUrl(preview: PreviewRequest): Promise<string>;
+}
+
+/** What the preview shows the working copy in. Shown to, Date, the sample object and the placement come later. */
+export interface PreviewRequest {
+    channel: string;
+    locale: string;
 }
 
 export class ApiError extends Error {
@@ -73,16 +84,37 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) 
         async publish() {
             return entryStatus(await request(config.endpoints.publish, { method: 'POST', headers: write }));
         },
+
+        async discard() {
+            return (await request(config.endpoints.discard, { method: 'POST', headers: write })) as EntryResponse;
+        },
+
+        async createPreviewUrl({ channel, locale }) {
+            const body = await request(config.endpoints.previewToken, {
+                method: 'POST',
+                headers: { ...write, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ entry: config.entryUuid, channel, locale }),
+            });
+
+            const url = isObject(body) ? body.url : undefined;
+            if (typeof url !== 'string') {
+                throw new ApiError('The answer has no preview URL.', 200);
+            }
+
+            return url;
+        },
     };
 }
 
+const statuses: readonly unknown[] = ['never_published', 'published', 'unpublished_changes'] satisfies EntryStatus[];
+
 function entryStatus(body: unknown): EntryStatus {
     const status = isObject(body) ? body.status : undefined;
-    if (status !== 'published' && status !== 'never_published') {
+    if (!statuses.includes(status)) {
         throw new ApiError('The answer has no entry status.', 200);
     }
 
-    return status;
+    return status as EntryStatus;
 }
 
 function errorMessage(body: unknown): string | undefined {

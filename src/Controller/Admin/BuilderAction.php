@@ -8,6 +8,8 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Setono\SyliusCMSPlugin\Security\BuilderCsrfToken;
+use Sylius\Component\Channel\Model\ChannelInterface;
+use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,6 +23,9 @@ use Twig\Environment;
  */
 final readonly class BuilderAction
 {
+    /**
+     * @param ChannelRepositoryInterface<ChannelInterface> $channelRepository
+     */
     public function __construct(
         private AdminAccessChecker $adminAccessChecker,
         private EntryRepositoryInterface $entryRepository,
@@ -29,6 +34,7 @@ final readonly class BuilderAction
         private UrlGeneratorInterface $urlGenerator,
         private TranslatorInterface $translator,
         private Environment $twig,
+        private ChannelRepositoryInterface $channelRepository,
     ) {
     }
 
@@ -49,7 +55,10 @@ final readonly class BuilderAction
                     'registry' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_registry'),
                     'entry' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_show', ['uuid' => $entry->getUuid()]),
                     'publish' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_publish', ['uuid' => $entry->getUuid()]),
+                    'discard' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_discard', ['uuid' => $entry->getUuid()]),
+                    'previewToken' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_token'),
                 ],
+                'channels' => $this->channels(),
                 // The rest of the UI strings arrive with the registry, so the app shows these until it has loaded
                 'strings' => [
                     'setono_sylius_cms.builder.loading' => $this->translator->trans('setono_sylius_cms.builder.loading'),
@@ -69,6 +78,20 @@ final readonly class BuilderAction
         $locales = $entry->getTranslations()->getKeys();
 
         return in_array($default, $locales, true) || [] === $locales ? $default : (string) $locales[0];
+    }
+
+    /**
+     * The entry's channels, which the preview can show it in. Entries are in every channel until channels arrive
+     * with the on-save settings
+     *
+     * @return list<array{code: string|null, name: string|null}>
+     */
+    private function channels(): array
+    {
+        return array_values(array_map(
+            static fn (ChannelInterface $channel): array => ['code' => $channel->getCode(), 'name' => $channel->getName()],
+            $this->channelRepository->findBy([], ['id' => 'ASC']),
+        ));
     }
 
     /**

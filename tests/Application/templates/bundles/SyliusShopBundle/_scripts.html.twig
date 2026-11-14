@@ -1,1 +1,8 @@
 {{ encore_entry_script_tags('shop-entry', null, 'shop') }}
+
+{# Stands in for a theme's analytics, which it leaves out of the builder's preview (docs/spec/rendering.md#preview-mode-and-share-links) #}
+{% if cms_preview_mode() is null %}
+    <script id="test-app-analytics"></script>
+{% else %}
+    <meta name="test-app-preview-mode" content="{{ cms_preview_mode() }}">
+{% endif %}

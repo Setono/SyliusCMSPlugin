@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
+use Setono\SyliusCMSPlugin\Model\Draft;
+use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Resource\Factory\Factory;
 use Sylius\Resource\Factory\TranslatableFactory;
@@ -47,7 +50,8 @@ final class Configuration implements ConfigurationInterface
     }
 
     /**
-     * The shipped Sylius resources. A project extends a shipped content type the way it extends any Sylius model:
+     * The shipped Sylius resources. The draft has no admin screens of its own, so it has no controller.
+     * A project extends a shipped content type the way it extends any Sylius model:
      * by overriding classes.model, and translation.classes.model, with its own subclasses
      */
     private function addResourcesSection(ArrayNodeDefinition $node): void
@@ -57,6 +61,21 @@ final class Configuration implements ConfigurationInterface
                 ->arrayNode('resources')
                     ->addDefaultsIfNotSet()
                     ->children()
+                        ->arrayNode('draft')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->variableNode('options')->end()
+                                ->arrayNode('classes')
+                                    ->addDefaultsIfNotSet()
+                                    ->children()
+                                        ->scalarNode('model')->defaultValue(Draft::class)->cannotBeEmpty()->end()
+                                        ->scalarNode('interface')->defaultValue(DraftInterface::class)->cannotBeEmpty()->end()
+                                        ->scalarNode('repository')->defaultValue(DraftRepository::class)->cannotBeEmpty()->end()
+                                        ->scalarNode('factory')->defaultValue(Factory::class)->cannotBeEmpty()->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
                         ->arrayNode('page')
                             ->addDefaultsIfNotSet()
                             ->children()

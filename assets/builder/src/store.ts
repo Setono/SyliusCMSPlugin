@@ -23,6 +23,8 @@ export type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
 
 export type PublishState = 'idle' | 'publishing' | 'failed';
 
+export type DiscardState = 'idle' | 'discarding' | 'failed';
+
 export interface BuilderData {
     /** The one locale the builder edits. */
     locale: string;
@@ -39,6 +41,9 @@ export interface BuilderData {
     revision: number;
     saveState: SaveState;
     publishState: PublishState;
+    /** Why the server refused the last publish, such as a listener's veto, or null. */
+    publishRefusal: string | null;
+    discardState: DiscardState;
 }
 
 export interface BuilderActions {
@@ -54,6 +59,11 @@ export interface BuilderActions {
     selectBlock(key: string | null): void;
     /** Sets a field's value in the edited locale, or its one value when it's shared. null or '' removes it. */
     setFieldValue(key: string, field: string, value: JsonValue | null): void;
+    /**
+     * Loads a working copy from the server in place of the one being edited, such as the published content after
+     * discarding the draft. It isn't an edit: nothing is left to save or undo.
+     */
+    load(entry: Entry, status: EntryStatus): void;
 }
 
 export type BuilderState = BuilderData & BuilderActions;
@@ -119,6 +129,8 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
             revision: 0,
             saveState: 'idle',
             publishState: 'idle',
+            publishRefusal: null,
+            discardState: 'idle',
 
             addBlock(code, parent = null, index) {
                 if (!insertableIn(rules, get().entry.tree.blocks, parent).some((blockType) => blockType.code === code)) {
@@ -166,6 +178,18 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
 
             selectBlock(key) {
                 set({ selectedKey: key });
+            },
+
+            load(loaded, loadedStatus) {
+                const { selectedKey } = get();
+
+                set({
+                    entry: loaded,
+                    status: loadedStatus,
+                    selectedKey: selectedKey !== null && findBlock(loaded.tree.blocks, selectedKey) !== undefined ? selectedKey : null,
+                    history: [],
+                    unsaved: [],
+                });
             },
 
             setFieldValue(key, field, value) {

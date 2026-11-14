@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError, createApi } from '../src/api';
 import type { BuilderConfig } from '../src/config';
+import { entry } from './fixtures';
 
 const config: BuilderConfig = {
     entryUuid: 'e1',
@@ -11,7 +12,10 @@ const config: BuilderConfig = {
         registry: '/admin/cms/api/registry',
         entry: '/admin/cms/api/entries/e1',
         publish: '/admin/cms/api/entries/e1/publish',
+        discard: '/admin/cms/api/entries/e1/discard',
+        previewToken: '/admin/cms/api/preview/token',
     },
+    channels: [{ code: 'WEB', name: 'Web store' }],
 };
 
 function respond(status: number, body: unknown) {
@@ -43,6 +47,52 @@ describe('the JSON endpoints', () => {
             credentials: 'same-origin',
             headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123' },
         });
+    });
+
+    it('should answer with the status a save leaves, such as unpublished changes', async () => {
+        await expect(createApi(config, respond(200, { status: 'unpublished_changes' })).saveChanges([])).resolves.toBe('unpublished_changes');
+    });
+
+    it('should fail when the answer has a status it does not know', async () => {
+        await expect(createApi(config, respond(200, { status: 'scheduled' })).saveChanges([])).rejects.toBeInstanceOf(ApiError);
+    });
+
+    it('should discard with the CSRF token and answer with the published content', async () => {
+        const answer = { entry: entry(), status: 'published' };
+        const fetch = respond(200, answer);
+
+        await expect(createApi(config, fetch).discard()).resolves.toEqual(answer);
+
+        expect(fetch).toHaveBeenCalledWith('/admin/cms/api/entries/e1/discard', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123' },
+        });
+    });
+
+    it('should fail with the reason the server refused a publish for', async () => {
+        const fetch = respond(422, { error: 'Not on a Sunday' });
+
+        await expect(createApi(config, fetch).publish()).rejects.toEqual(new ApiError('Not on a Sunday', 422));
+    });
+
+    it('should ask for a preview token for the entry in a channel and a locale, and answer with the preview URL', async () => {
+        const fetch = respond(200, { url: 'http://admin.example/en_US/about-us?_cms_preview=abc.def' });
+
+        await expect(createApi(config, fetch).createPreviewUrl({ channel: 'WEB', locale: 'en_US' })).resolves.toBe(
+            'http://admin.example/en_US/about-us?_cms_preview=abc.def',
+        );
+
+        expect(fetch).toHaveBeenCalledWith('/admin/cms/api/preview/token', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ entry: 'e1', channel: 'WEB', locale: 'en_US' }),
+        });
+    });
+
+    it('should fail when the preview token answer has no URL', async () => {
+        await expect(createApi(config, respond(200, {})).createPreviewUrl({ channel: 'WEB', locale: 'en_US' })).rejects.toBeInstanceOf(ApiError);
     });
 
     it('should fail with the error the server gives', async () => {

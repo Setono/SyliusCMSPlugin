@@ -13,6 +13,10 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.published'
     | 'setono_sylius_cms.builder.never_published'
     | 'setono_sylius_cms.builder.publish_failed'
+    | 'setono_sylius_cms.builder.unpublished_changes'
+    | 'setono_sylius_cms.builder.discard_changes'
+    | 'setono_sylius_cms.builder.discarding'
+    | 'setono_sylius_cms.builder.discard_failed'
     | 'setono_sylius_cms.builder.blocks'
     | 'setono_sylius_cms.builder.add_block'
     | 'setono_sylius_cms.builder.add_block_inside'
@@ -23,7 +27,13 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.delete_block'
     | 'setono_sylius_cms.builder.no_blocks'
     | 'setono_sylius_cms.builder.no_selection'
-    | 'setono_sylius_cms.builder.unsupported_field_type';
+    | 'setono_sylius_cms.builder.unsupported_field_type'
+    | 'setono_sylius_cms.builder.preview'
+    | 'setono_sylius_cms.builder.preview_failed'
+    | 'setono_sylius_cms.builder.preview_channel'
+    | 'setono_sylius_cms.builder.preview_width'
+    | 'setono_sylius_cms.builder.desktop'
+    | 'setono_sylius_cms.builder.mobile';
 
 /** Values for the placeholders in a string, such as { '%block%': 'Columns' }. */
 export type TranslationParameters = Readonly<Record<string, string>>;

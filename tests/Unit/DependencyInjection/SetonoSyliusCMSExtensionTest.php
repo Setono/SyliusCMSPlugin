@@ -8,10 +8,14 @@ use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
+use Setono\SyliusCMSPlugin\Model\Draft;
+use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Repository\DraftRepository;
+use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Resource\Factory\Factory;
@@ -163,6 +167,30 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasService('setono_sylius_cms.factory.page');
         $this->assertContainerBuilderHasService('setono_sylius_cms.repository.page');
         $this->assertContainerBuilderHasService('setono_sylius_cms.factory.page_translation');
+    }
+
+    /**
+     * @test
+     */
+    public function it_registers_the_draft_as_a_sylius_resource(): void
+    {
+        $this->load();
+
+        $resources = $this->container->getParameter('sylius.resources');
+        self::assertIsArray($resources);
+        self::assertSame([
+            'driver' => 'doctrine/orm',
+            'classes' => [
+                'model' => Draft::class,
+                'interface' => DraftInterface::class,
+                'repository' => DraftRepository::class,
+                'factory' => Factory::class,
+            ],
+        ], $resources['setono_sylius_cms.draft'] ?? null);
+
+        $this->assertContainerBuilderHasService('setono_sylius_cms.factory.draft');
+        $this->assertContainerBuilderHasService('setono_sylius_cms.repository.draft', DraftRepository::class);
+        $this->assertContainerBuilderHasAlias(DraftRepositoryInterface::class, 'setono_sylius_cms.repository.draft');
     }
 
     /**

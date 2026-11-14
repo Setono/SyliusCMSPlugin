@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 
+use Doctrine\DBAL\Connection;
+use Setono\SyliusCMSPlugin\Event\EntryCreated;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final class CreateEntryTest extends WebTestCase
 {
@@ -51,6 +54,46 @@ final class CreateEntryTest extends WebTestCase
         self::assertSame('about-us', $page->getTranslation('en_US')->getSlug());
         self::assertFalse($page->isPublished());
         self::assertResponseRedirects(sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));
+    }
+
+    /**
+     * @test
+     */
+    public function it_dispatches_entry_created_after_the_entry_is_created(): void
+    {
+        $client = self::createClient();
+        $client->disableReboot();
+        $client->loginUser(self::admin(), 'admin');
+        $client->request('GET', '/admin/cms/entries/page/new');
+
+        /** @var Connection $connection */
+        $connection = self::getContainer()->get('doctrine.dbal.default_connection');
+        $outside = $connection->getTransactionNestingLevel();
+
+        /** @var list<array{EntryCreated, int, mixed}> $dispatched the event, the transaction nesting level, and the stored entry's content type */
+        $dispatched = [];
+        /** @var EventDispatcherInterface $eventDispatcher */
+        $eventDispatcher = self::getContainer()->get('event_dispatcher');
+        $eventDispatcher->addListener(EntryCreated::class, static function (EntryCreated $event) use (&$dispatched, $connection): void {
+            $dispatched[] = [$event, $connection->getTransactionNestingLevel(), $connection->fetchOne('SELECT content_type FROM setono_sylius_cms__entry WHERE uuid = ?', [$event->uuid])];
+        });
+
+        $client->submitForm('Create', [
+            'setono_sylius_cms_create_entry[title]' => 'About us',
+            'setono_sylius_cms_create_entry[slug]' => 'about-us',
+        ]);
+
+        /** @var RepositoryInterface<PageInterface> $repository */
+        $repository = self::getContainer()->get('setono_sylius_cms.repository.page');
+        $page = $repository->findOneBy([]);
+        self::assertInstanceOf(PageInterface::class, $page);
+
+        self::assertCount(1, $dispatched);
+        [[$event, $level, $stored]] = $dispatched;
+        self::assertSame($page->getUuid(), $event->uuid);
+        self::assertSame('page', $event->contentType);
+        self::assertSame($outside, $level);
+        self::assertSame('page', $stored);
     }
 
     /**

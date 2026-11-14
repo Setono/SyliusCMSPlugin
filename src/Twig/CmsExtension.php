@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig;
 
+use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
@@ -18,6 +19,7 @@ final class CmsExtension extends AbstractExtension
             new TwigFunction('cms_field', [CmsRuntime::class, 'field'], ['is_safe' => ['html']]),
             new TwigFunction('cms_block', [CmsRuntime::class, 'block'], ['is_safe' => ['html'], 'needs_context' => true]),
             new TwigFunction('cms_blocks', [CmsRuntime::class, 'blocks'], ['is_safe' => ['html'], 'needs_context' => true]),
+            new TwigFunction('cms_preview_mode', [PreviewContext::class, 'getMode']),
         ];
     }
 }

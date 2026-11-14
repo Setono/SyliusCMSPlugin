@@ -44,6 +44,22 @@ export function TrashIcon() {
     );
 }
 
+export function DesktopIcon() {
+    return (
+        <Icon>
+            <path d="M2 3h12v8H2zM6 14h4M8 11v3" />
+        </Icon>
+    );
+}
+
+export function MobileIcon() {
+    return (
+        <Icon>
+            <path d="M4.5 1.5h7v13h-7zM7 12.5h2" />
+        </Icon>
+    );
+}
+
 export function GripIcon() {
     return (
         <Icon>

@@ -6,6 +6,7 @@
         <service id="Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher" class="Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher">
             <argument type="service" id="sylius.context.channel"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookupInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider"/>
 
             <tag name="routing.condition_service" alias="setono_sylius_cms_entry_url_matcher"/>
             <tag name="kernel.reset" method="reset"/>

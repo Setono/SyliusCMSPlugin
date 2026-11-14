@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
+use Doctrine\Common\Collections\Collection;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Resource\Model\ResourceInterface;
 use Sylius\Resource\Model\TranslatableInterface;
@@ -12,6 +13,7 @@ use Sylius\Resource\Model\TranslatableInterface;
  * A single piece of content of one content type. See "Entries" in docs/spec/content-model.md
  *
  * @method EntryTranslationInterface getTranslation(?string $locale = null)
+ * @method Collection<string, EntryTranslationInterface> getTranslations() indexed by locale
  */
 interface EntryInterface extends ResourceInterface, TranslatableInterface
 {

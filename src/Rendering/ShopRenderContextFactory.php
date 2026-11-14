@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Rendering;
 
 use Psr\Clock\ClockInterface;
+use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
@@ -14,7 +15,8 @@ use Sylius\Component\Locale\Context\LocaleContextInterface;
 
 /**
  * Creates the render context of a shop request from Sylius's contexts. This is the one place the read pipeline's
- * channel, locale, currency, customer and time come from
+ * channel, locale, currency, customer, time and preview mode come from. In preview mode, the preview's channel comes
+ * through Sylius's channel context, and its locale through the URL
  */
 final readonly class ShopRenderContextFactory implements RenderContextFactoryInterface
 {
@@ -24,6 +26,7 @@ final readonly class ShopRenderContextFactory implements RenderContextFactoryInt
         private CurrencyContextInterface $currencyContext,
         private CustomerContextInterface $customerContext,
         private ClockInterface $clock,
+        private PreviewContext $previewContext,
     ) {
     }
 
@@ -47,6 +50,7 @@ final readonly class ShopRenderContextFactory implements RenderContextFactoryInt
             self::customerGroup($customer),
             $this->clock->now(),
             $hostPageContext,
+            $this->previewContext->getMode(),
         );
     }
 

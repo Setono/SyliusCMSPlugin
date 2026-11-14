@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
-use Doctrine\Persistence\ManagerRegistry;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\EntryStatus;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
+use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Setono\SyliusCMSPlugin\Security\BuilderCsrfToken;
@@ -19,7 +19,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * Autosaves a change set. Until drafts arrive (#217), it writes straight to the rows
+ * Autosaves a change set onto the working copy: the rows of a never-published entry, and otherwise its draft.
+ * Merging concurrent saves comes with #227
  */
 final readonly class SaveEntryAction
 {
@@ -27,8 +28,8 @@ final readonly class SaveEntryAction
         private AdminAccessChecker $adminAccessChecker,
         private BuilderCsrfToken $csrfToken,
         private EntryRepositoryInterface $entryRepository,
+        private WorkingCopyManagerInterface $workingCopies,
         private ChangeSetApplier $changeSetApplier,
-        private ManagerRegistry $managerRegistry,
     ) {
     }
 
@@ -42,15 +43,17 @@ final readonly class SaveEntryAction
             return new JsonResponse(['error' => 'Invalid CSRF token'], Response::HTTP_FORBIDDEN);
         }
 
+        $workingCopy = $this->workingCopies->getWorkingCopy($entry);
+
         try {
             $changeSet = ChangeSet::fromArray(CanonicalJson::decode($request->getContent()));
-            $entry->setBlockTree($this->changeSetApplier->apply($changeSet, $entry->getBlockTree()));
+            $workingCopy->setBlockTree($this->changeSetApplier->apply($changeSet, $workingCopy->getBlockTree()));
         } catch (\JsonException|InvalidChangeSetException $e) {
             return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
 
-        $this->managerRegistry->getManagerForClass($entry::class)?->flush();
+        $this->workingCopies->save($entry, $workingCopy);
 
-        return new JsonResponse(['status' => EntryStatus::of($entry)]);
+        return new JsonResponse(['status' => EntryStatus::of($entry, $this->workingCopies->hasDraft($entry))]);
     }
 }

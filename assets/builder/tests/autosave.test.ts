@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAutosave } from '../src/autosave';
 import type { Change } from '../src/changeSet';
-import { createPublish } from '../src/publishing';
-import type { EntryStatus } from '../src/types';
-import { block, storeWith } from './fixtures';
+import { ApiError } from '../src/api';
+import { createDiscard, createPublish } from '../src/publishing';
+import type { EntryResponse, EntryStatus } from '../src/types';
+import { block, entry, storeWith } from './fixtures';
 
 /** A promise to settle from the test. */
 function deferred<T>() {
@@ -18,6 +19,8 @@ function deferred<T>() {
 }
 
 const hello: Change = { op: 'set_value', key: 'a', field: 'text', locale: 'en_US', value: 'Hello' };
+
+const hello2: Change = { op: 'set_value', key: 'a', field: 'text', locale: 'en_US', value: 'Hello world' };
 
 describe('autosave', () => {
     beforeEach(() => {
@@ -161,7 +164,7 @@ describe('publishing', () => {
         autosave.dispose();
     });
 
-    it('should report a refused publish', async () => {
+    it('should report a failed publish', async () => {
         const store = storeWith();
         const autosave = createAutosave(store, vi.fn());
         const publish = createPublish(store, autosave, () => Promise.reject(new Error('Invalid')));
@@ -169,6 +172,110 @@ describe('publishing', () => {
         await publish();
 
         expect(store.getState().publishState).toBe('failed');
+        expect(store.getState().publishRefusal).toBeNull();
+        autosave.dispose();
+    });
+
+    it('should keep the reason the server refused a publish for, until a publish goes through', async () => {
+        const store = storeWith();
+        const autosave = createAutosave(store, vi.fn());
+        const send = vi.fn().mockRejectedValueOnce(new ApiError('Not on a Sunday', 422)).mockResolvedValue('published');
+        const publish = createPublish(store, autosave, send);
+
+        await publish();
+
+        expect(store.getState().publishState).toBe('failed');
+        expect(store.getState().publishRefusal).toBe('Not on a Sunday');
+
+        await publish();
+
+        expect(store.getState().publishState).toBe('idle');
+        expect(store.getState().publishRefusal).toBeNull();
+        autosave.dispose();
+    });
+});
+
+describe('discarding changes', () => {
+    const published = entry([block('a', { text: { en_US: 'Hello' } })]);
+
+    it('should drop the unsaved changes, discard the draft and load the published content', async () => {
+        const store = storeWith([block('a', { text: { en_US: 'Hello world' } })]);
+        store.setState({ status: 'unpublished_changes' });
+        const save = vi.fn(async (): Promise<EntryStatus> => 'unpublished_changes');
+        const autosave = createAutosave(store, save);
+        const send = vi.fn(async (): Promise<EntryResponse> => ({ entry: published, status: 'published' }));
+        const discard = createDiscard(store, autosave, send);
+
+        store.getState().setFieldValue('a', 'text', 'Goodbye');
+        const discarding = discard();
+
+        expect(store.getState().discardState).toBe('discarding');
+        await discarding;
+
+        expect(save).not.toHaveBeenCalled();
+        expect(send).toHaveBeenCalledTimes(1);
+        expect(store.getState().entry).toEqual(published);
+        expect(store.getState().status).toBe('published');
+        expect(store.getState().unsaved).toEqual([]);
+        expect(store.getState().saveState).toBe('idle');
+        expect(store.getState().discardState).toBe('idle');
+        autosave.dispose();
+    });
+
+    it('should wait for a save in flight before it discards', async () => {
+        const store = storeWith([block('a')]);
+        const saving = deferred<EntryStatus>();
+        const calls: string[] = [];
+        const autosave = createAutosave(store, () => {
+            calls.push('save');
+
+            return saving.promise;
+        });
+        const discard = createDiscard(store, autosave, async () => {
+            calls.push('discard');
+
+            return { entry: published, status: 'published' };
+        });
+
+        store.getState().setFieldValue('a', 'text', 'Hello world');
+        void autosave.flush();
+        const discarding = discard();
+        await Promise.resolve();
+
+        expect(calls).toEqual(['save']);
+
+        saving.resolve('unpublished_changes');
+        await discarding;
+
+        expect(calls).toEqual(['save', 'discard']);
+        expect(store.getState().status).toBe('published');
+        autosave.dispose();
+    });
+
+    it('should keep the working copy and save its unsaved changes when the discard fails', async () => {
+        const store = storeWith([block('a')]);
+        const save = vi.fn(async (): Promise<EntryStatus> => 'unpublished_changes');
+        const autosave = createAutosave(store, save);
+        const discard = createDiscard(store, autosave, () => Promise.reject(new Error('Offline')));
+
+        store.getState().setFieldValue('a', 'text', 'Hello world');
+        await discard();
+
+        expect(store.getState().discardState).toBe('failed');
+        expect(store.getState().entry.tree.blocks[0]?.fields).toEqual({ text: { en_US: 'Hello world' } });
+        await vi.waitFor(() => expect(save).toHaveBeenCalledWith([hello2]));
+        autosave.dispose();
+    });
+
+    it('should not discard twice at once', async () => {
+        const store = storeWith();
+        const autosave = createAutosave(store, vi.fn());
+        const send = vi.fn(async (): Promise<EntryResponse> => ({ entry: published, status: 'published' }));
+        const discard = createDiscard(store, autosave, send);
+
+        await Promise.all([discard(), discard()]);
+
+        expect(send).toHaveBeenCalledTimes(1);
         autosave.dispose();
     });
 });

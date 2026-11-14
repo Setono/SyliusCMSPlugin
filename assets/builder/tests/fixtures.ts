@@ -114,6 +114,10 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.published': 'Published',
     'setono_sylius_cms.builder.never_published': 'Never published',
     'setono_sylius_cms.builder.publish_failed': "Couldn't publish",
+    'setono_sylius_cms.builder.unpublished_changes': 'Unpublished changes',
+    'setono_sylius_cms.builder.discard_changes': 'Discard changes',
+    'setono_sylius_cms.builder.discarding': 'Discarding…',
+    'setono_sylius_cms.builder.discard_failed': "Couldn't discard the changes",
     'setono_sylius_cms.builder.blocks': 'Blocks',
     'setono_sylius_cms.builder.add_block': 'Add block',
     'setono_sylius_cms.builder.add_block_inside': 'Add a block inside %block%',
@@ -125,6 +129,12 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.no_blocks': 'No blocks yet',
     'setono_sylius_cms.builder.no_selection': 'Select a block to edit its fields',
     'setono_sylius_cms.builder.unsupported_field_type': "This field type isn't supported yet",
+    'setono_sylius_cms.builder.preview': 'Preview',
+    'setono_sylius_cms.builder.preview_failed': "Couldn't load the preview",
+    'setono_sylius_cms.builder.preview_channel': 'Preview channel',
+    'setono_sylius_cms.builder.preview_width': 'Preview width',
+    'setono_sylius_cms.builder.desktop': 'Desktop',
+    'setono_sylius_cms.builder.mobile': 'Mobile',
 };
 
 export const registry: Registry = { blockTypes, contentTypes: [page], strings };

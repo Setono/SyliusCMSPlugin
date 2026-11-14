@@ -41,13 +41,22 @@ setono_sylius_cms:
         blocks: Blocks
         children: Blocks inside
         delete_block: Delete block
+        desktop: Desktop
+        discard_changes: Discard changes
+        discard_failed: Couldn't discard the changes
+        discarding: Discarding…
         drop_refused: '%block% can''t go there'
         load_failed: Couldn't load the entry
         loading: Loading…
+        mobile: Mobile
         never_published: Never published
         no_blocks: No blocks yet
         no_matching_block_types: No block types match
         no_selection: Select a block to edit its fields
+        preview: Preview
+        preview_channel: Preview channel
+        preview_failed: Couldn't load the preview
+        preview_width: Preview width
         publish: Publish
         publish_failed: Couldn't publish
         published: Published
@@ -57,4 +66,5 @@ setono_sylius_cms:
         saving: Saving…
         search_block_types: Search block types
         title: Builder
+        unpublished_changes: Unpublished changes
         unsupported_field_type: This field type isn't supported yet
