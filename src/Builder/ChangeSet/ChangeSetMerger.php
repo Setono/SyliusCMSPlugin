@@ -23,68 +23,70 @@ final readonly class ChangeSetMerger
     public function merge(ChangeSet $theirs, ChangeSet $mine, StoredTree $tree): Merge
     {
         $footprint = new Footprint($theirs);
-
-        // The blocks as they are once the changes applied so far are, to tell which blocks a change finds
-        $working = clone $tree;
-        // Blocks that came with a change that isn't applied, so the changes to them aren't either
+        // Which blocks there are once the changes applied so far are
+        $outline = new Outline($tree);
+        // Blocks that came with an addition that isn't applied, so the changes to them aren't either
         $withheld = [];
 
         $changes = [];
         $clashes = [];
-        $clash = static function (Clash $clash) use (&$clashes): void {
-            $clashes[CanonicalJson::encode($clash->toArray())] = $clash;
-        };
-
         foreach ($mine->changes as $change) {
-            $missing = self::missingBlock($change, $working);
+            $missing = self::missingBlock($change, $outline);
             if (null !== $missing) {
-                if (!isset($withheld[$missing]) && !$change instanceof RemoveBlock) {
-                    $clash(BlockClash::deleted($missing));
+                // Removing a block a colleague deleted too leaves nothing to clash over
+                if (!$change instanceof RemoveBlock && !in_array($missing, $withheld, true)) {
+                    $clashes[] = BlockClash::deleted($missing);
                 }
 
                 if ($change instanceof AddBlock) {
-                    $withheld += array_fill_keys($change->block->keys(), true);
+                    $withheld = [...$withheld, ...$change->block->keys()];
                 }
 
                 continue;
             }
 
-            if ($change instanceof SetValue && $footprint->hasValue($change)) {
-                $current = self::currentValue($working, $change);
-                if (CanonicalJson::encode($current) !== CanonicalJson::encode($change->value)) {
-                    $clash(new ValueClash($change->key, $change->field, $change->locale, $change->value, $current));
-
-                    continue;
-                }
-            }
-
-            if ($change instanceof RemoveBlock && $footprint->changedWithin($working->findBlock($change->key)?->keys() ?? [])) {
-                $clash(BlockClash::changed($change->key));
+            $clash = self::clash($change, $footprint, $outline);
+            if (null !== $clash) {
+                $clashes[] = $clash;
 
                 continue;
             }
 
-            self::track($change, $working);
+            if ($change instanceof AddBlock) {
+                $outline->add($change->block, $change->parent);
+            }
+
+            if ($change instanceof MoveBlock) {
+                $outline->move($change->key, $change->parent);
+            }
+
             $changes[] = $change;
         }
 
-        return new Merge(new ChangeSet($changes), array_values($clashes));
+        // Several changes to one deleted block make one clash
+        $unique = [];
+        foreach ($clashes as $clash) {
+            $unique[CanonicalJson::encode($clash->toArray())] = $clash;
+        }
+
+        return new Merge(new ChangeSet($changes), array_values($unique));
     }
 
     /**
-     * The key of a block the change needs that the working copy doesn't have, or null
+     * The key of a block the change needs that isn't there, or null
      */
-    private static function missingBlock(Change $change, StoredTree $working): ?string
+    private static function missingBlock(Change $change, Outline $outline): ?string
     {
         $needed = match (true) {
             $change instanceof SetValue, $change instanceof RemoveBlock => [$change->key],
             $change instanceof MoveBlock => [$change->key, $change->parent],
             $change instanceof AddBlock => [$change->parent],
+            // A change the applier doesn't know, which it refuses
             default => [],
         };
 
         foreach ($needed as $key) {
-            if (null !== $key && null === $working->findBlock($key)) {
+            if (null !== $key && !$outline->has($key)) {
                 return $key;
             }
         }
@@ -93,27 +95,22 @@ final readonly class ChangeSetMerger
     }
 
     /**
-     * Keeps the working copy's blocks in step with an applied change. Where a block lands in its list doesn't matter here
+     * The clash over a value a colleague set to something else, or over removing a block they changed something in
      */
-    private static function track(Change $change, StoredTree $working): void
+    private static function clash(Change $change, Footprint $footprint, Outline $outline): ?Clash
     {
-        if ($change instanceof AddBlock) {
-            $working->insertBlock(clone $change->block, 0, $change->parent);
-        } elseif ($change instanceof MoveBlock) {
-            $block = $working->findBlock($change->key);
-            if (null !== $block && (null === $change->parent || !in_array($change->parent, $block->keys(), true))) {
-                $working->removeBlock($change->key);
-                $working->insertBlock($block, 0, $change->parent);
-            }
-        } elseif ($change instanceof RemoveBlock) {
-            $working->removeBlock($change->key);
+        if ($change instanceof SetValue && $footprint->hasValue($change)) {
+            $theirs = $footprint->valueOf($change);
+
+            return CanonicalJson::encode($theirs) === CanonicalJson::encode($change->value)
+                ? null
+                : new ValueClash($change->key, $change->field, $change->locale, $change->value, $theirs);
         }
-    }
 
-    private static function currentValue(StoredTree $tree, SetValue $change): mixed
-    {
-        $value = $tree->findBlock($change->key)?->fields[$change->field] ?? null;
+        if ($change instanceof RemoveBlock && $footprint->changedWithin($outline->keysWithin($change->key))) {
+            return BlockClash::changed($change->key);
+        }
 
-        return null === $change->locale || !is_array($value) ? $value : $value[$change->locale] ?? null;
+        return null;
     }
 }

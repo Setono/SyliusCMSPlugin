@@ -8,31 +8,36 @@ use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 
 /**
  * What colleagues' change sets touched: the values they set, the blocks they set values on or added, and the blocks
- * they moved
+ * they moved. A block they removed is gone, so a change to it shows up as a missing block instead
  *
  * @internal
  */
 final class Footprint
 {
-    /** @var array<string, true> */
+    /** @var array<string, mixed> field and locale of a block => the last value they set there */
     private array $values = [];
 
-    /** @var array<string, true> */
+    /** @var list<string> */
     private array $changed = [];
 
-    /** @var array<string, true> */
+    /** @var list<string> */
     private array $moved = [];
 
     public function __construct(ChangeSet $changeSet)
     {
         foreach ($changeSet->changes as $change) {
             if ($change instanceof SetValue) {
-                $this->values[self::valueId($change)] = true;
-                $this->changed[$change->key] = true;
-            } elseif ($change instanceof AddBlock) {
-                $this->changed += array_fill_keys($change->block->keys(), true);
-            } elseif ($change instanceof MoveBlock) {
-                $this->moved[$change->key] = true;
+                $this->values[self::valueId($change)] = $change->value;
+                $this->changed[] = $change->key;
+            }
+
+            // The blocks inside an added block stay inside it, unless they're moved
+            if ($change instanceof AddBlock) {
+                $this->changed[] = $change->block->key;
+            }
+
+            if ($change instanceof MoveBlock) {
+                $this->moved[] = $change->key;
             }
         }
     }
@@ -42,7 +47,15 @@ final class Footprint
      */
     public function hasValue(SetValue $change): bool
     {
-        return isset($this->values[self::valueId($change)]);
+        return array_key_exists(self::valueId($change), $this->values);
+    }
+
+    /**
+     * The last value they set in the same field and locale. Ask hasValue() first
+     */
+    public function valueOf(SetValue $change): mixed
+    {
+        return $this->values[self::valueId($change)];
     }
 
     /**
@@ -53,13 +66,7 @@ final class Footprint
      */
     public function changedWithin(array $keys): bool
     {
-        foreach ($keys as $i => $key) {
-            if (isset($this->changed[$key]) || ($i > 0 && isset($this->moved[$key]))) {
-                return true;
-            }
-        }
-
-        return false;
+        return [] !== array_intersect($keys, $this->changed) || [] !== array_intersect(array_slice($keys, 1), $this->moved);
     }
 
     private static function valueId(SetValue $change): string

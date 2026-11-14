@@ -94,6 +94,19 @@ final class ChangeSetApplierTest extends TestCase
     /**
      * @test
      */
+    public function it_puts_a_block_right_after_the_block_it_goes_after_in_the_middle_of_a_block_s_children(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1, children: [new StoredBlock(self::B, 'heading', 1), new StoredBlock(self::C, 'heading', 1)])]);
+        $added = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d';
+
+        $tree = $this->apply($tree, new AddBlock(self::A, 0, new StoredBlock($added, 'heading', 1), self::B));
+
+        self::assertSame([self::A, self::B, $added, self::C], $tree->keys());
+    }
+
+    /**
+     * @test
+     */
     public function it_puts_a_block_at_its_index_when_the_list_does_not_have_the_block_it_goes_after(): void
     {
         $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1, children: [new StoredBlock(self::C, 'heading', 1)])]);

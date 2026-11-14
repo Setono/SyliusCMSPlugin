@@ -30,6 +30,8 @@ final class ChangeSetMergerTest extends TestCase
 
     private const D = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d';
 
+    private const E = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4e';
+
     /**
      * @test
      */
@@ -90,12 +92,12 @@ final class ChangeSetMergerTest extends TestCase
     /**
      * @test
      */
-    public function it_returns_a_clash_on_a_shared_field_with_what_the_tree_holds_now(): void
+    public function it_returns_a_clash_on_a_shared_field_with_the_value_the_colleague_set_last(): void
     {
         $tree = self::tree(self::heading(self::A));
 
         $merge = (new ChangeSetMerger())->merge(
-            new ChangeSet([new SetValue(self::A, 'level', null, null)]),
+            new ChangeSet([new SetValue(self::A, 'level', null, 'h4'), new SetValue(self::A, 'level', null, null)]),
             new ChangeSet([new SetValue(self::A, 'level', null, 'h3')]),
             $tree,
         );
@@ -283,6 +285,94 @@ final class ChangeSetMergerTest extends TestCase
 
         self::assertEquals($mine, $merge->changeSet->changes);
         self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_one_clash_for_each_block_a_colleague_deleted_that_the_editor_added_blocks_into(): void
+    {
+        $tree = self::tree(self::heading(self::C));
+
+        $merge = self::merge([new RemoveBlock(self::A), new RemoveBlock(self::B)], [
+            new AddBlock(self::A, 0, self::heading(self::D)),
+            new AddBlock(self::B, 0, self::heading(self::E)),
+            new SetValue(self::D, 'level', null, 'h3'),
+            new SetValue(self::E, 'level', null, 'h3'),
+        ], $tree);
+
+        self::assertSame([], $merge->changeSet->changes);
+        self::assertSame([
+            ['kind' => 'deleted_block', 'key' => self::A],
+            ['kind' => 'deleted_block', 'key' => self::B],
+        ], self::clashes($merge));
+    }
+
+    /**
+     * @test
+     */
+    public function it_applies_a_move_into_a_block_the_editor_added_in_the_same_save(): void
+    {
+        $tree = self::tree(self::heading(self::A));
+        $mine = [new AddBlock(null, 1, self::heading(self::B, children: [self::heading(self::C)]), self::A), new MoveBlock(self::A, self::C, 0)];
+
+        $merge = self::merge([new SetValue(self::A, 'level', null, 'h2')], $mine, $tree);
+
+        self::assertEquals($mine, $merge->changeSet->changes);
+        self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_passes_a_move_into_the_block_itself_on_for_the_applier_to_refuse_and_keeps_finding_the_block(): void
+    {
+        $tree = self::tree(self::heading(self::A, children: [self::heading(self::B)]));
+        $mine = [new MoveBlock(self::A, self::B, 0), new SetValue(self::A, 'level', null, 'h3')];
+
+        $merge = self::merge([new SetValue(self::B, 'level', null, 'h2')], $mine, $tree);
+
+        self::assertEquals($mine, $merge->changeSet->changes);
+        self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_applies_the_removal_of_a_block_a_colleague_changed_nothing_in(): void
+    {
+        $tree = self::tree(self::heading(self::A, children: [self::heading(self::B)]), self::heading(self::C));
+        $mine = [new RemoveBlock(self::A)];
+
+        $merge = self::merge([new SetValue(self::C, 'level', null, 'h2'), new AddBlock(null, 0, self::heading(self::D))], $mine, $tree);
+
+        self::assertEquals($mine, $merge->changeSet->changes);
+        self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_a_clash_instead_of_deleting_a_block_with_a_change_deep_inside_it(): void
+    {
+        $tree = self::tree(self::heading(self::A, children: [self::heading(self::B, children: [self::heading(self::C, children: [self::heading(self::D)])])]));
+
+        $merge = self::merge([new SetValue(self::D, 'level', null, 'h2')], [new RemoveBlock(self::A)], $tree);
+
+        self::assertSame([['kind' => 'changed_block', 'key' => self::A]], self::clashes($merge));
+    }
+
+    /**
+     * @test
+     */
+    public function it_passes_a_change_it_does_not_know_on_for_the_applier_to_refuse(): void
+    {
+        $unknown = new class() implements Change {
+        };
+
+        $merge = self::merge([new SetValue(self::A, 'level', null, 'h2')], [$unknown], self::tree(self::heading(self::A)));
+
+        self::assertSame([$unknown], $merge->changeSet->changes);
     }
 
     /**

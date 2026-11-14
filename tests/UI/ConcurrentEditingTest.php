@@ -20,6 +20,9 @@ final class ConcurrentEditingTest extends UITestCase
     /** A colleague's change reaches a builder on its next presence beat, every five seconds */
     private const BEAT = 15000;
 
+    /** Whether the second builder's presence beats are held back, as if they were lost */
+    private bool $beatsHeldBack = false;
+
     /**
      * @test
      */
@@ -52,9 +55,9 @@ final class ConcurrentEditingTest extends UITestCase
 
         // They both edit the first heading before Jane's builder hears of John's change, so her save clashes. Her
         // presence beats are held back meanwhile, as if they were lost, so it can't pull his change in first
-        $janesBeat = false;
-        $janes->route('**/presence', static function (RouteInterface $route) use (&$janesBeat): void {
-            $janesBeat ? $route->fallback() : $route->abort();
+        $this->beatsHeldBack = true;
+        $janes->route('**/presence', function (RouteInterface $route): void {
+            $this->beatsHeldBack ? $route->abort() : $route->fallback();
         });
 
         self::editHeading($john, 'Heading Hello there', "John's heading");
@@ -69,7 +72,7 @@ final class ConcurrentEditingTest extends UITestCase
         Expect::locator($clash->locator('dd')->last())->toHaveText("John's heading");
 
         $clash->getByRole('button', ['name' => 'Keep mine'])->click();
-        $janesBeat = true;
+        $this->beatsHeldBack = false;
 
         Expect::locator($clash)->toHaveCount(0);
         Expect::locator($janes->getByLabel('Text'))->toHaveValue("Jane's heading");
