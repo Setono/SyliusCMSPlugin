@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
+use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
+use Setono\SyliusCMSPlugin\Attribute\Layout;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBlockTypesPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLayoutsPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterUpgradersPass;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
@@ -35,6 +39,12 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $container->registerForAutoconfiguration(FieldHandlerInterface::class)->addTag(self::FIELD_HANDLER_TAG);
         $container->registerAttributeForAutoconfiguration(BlockType::class, static function (ChildDefinition $definition): void {
             $definition->addTag(RegisterBlockTypesPass::TAG);
+        });
+        $container->registerAttributeForAutoconfiguration(Layout::class, static function (ChildDefinition $definition): void {
+            $definition->addTag(RegisterLayoutsPass::TAG);
+        });
+        $container->registerAttributeForAutoconfiguration(AsUpgrader::class, static function (ChildDefinition $definition): void {
+            $definition->addTag(RegisterUpgradersPass::TAG);
         });
     }
 

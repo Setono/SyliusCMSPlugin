@@ -17,5 +17,6 @@
         <import resource="services/routing.xml"/>
         <import resource="services/security.xml"/>
         <import resource="services/twig.xml"/>
+        <import resource="services/upgrade.xml"/>
     </imports>
 </container>
