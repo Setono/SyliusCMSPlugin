@@ -126,7 +126,11 @@ final class UpgradeTest extends BuilderApiTestCase
         self::assertIsArray($response);
         self::assertIsArray($response['blocks'] ?? null);
         self::assertIsString($response['blocks'][self::CALLOUT] ?? null);
-        self::assertStringContainsString('<p class="app-callout">Held at version 1</p>', $response['blocks'][self::CALLOUT]);
+        self::assertStringContainsString(
+            sprintf('<p class="app-callout"><!--cms:field %1$s message text-->Held at version 1<!--/cms:field %1$s message--></p>', self::CALLOUT),
+            $response['blocks'][self::CALLOUT],
+            'The old value renders, and is marked for typing in place under the field\'s current name',
+        );
     }
 
     /**
