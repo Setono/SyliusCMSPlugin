@@ -38,7 +38,8 @@
     "symfony/translation-contracts": "^2.5",
     "symfony/uid": "^6.4",
     "symfony/validator": "^6.4",
-    "twig/twig": "^3.7.1"
+    "twig/twig": "^3.7.1",
+    "ueberdosis/tiptap-php": "^2.2"
   },
   "require-dev": {
     "api-platform/core": "^2.7.16",

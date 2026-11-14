@@ -1,9 +1,12 @@
 setono_sylius_cms:
     block_type:
+        accordion: Accordion
+        accordion_item: Accordion item
         column: Column
         columns: Columns
         group: Group
         heading: Heading
+        rich_text: Rich text
         spacer: Spacer
     choice:
         heading_level:
@@ -18,11 +21,16 @@ setono_sylius_cms:
     content_type:
         page: Page
     field:
+        accordion_item:
+            content: Content
+            title: Title
         group:
             full_width: Full width
         heading:
             level: Level
             text: Text
+        rich_text:
+            content: Content
         spacer:
             size: Size
     form:

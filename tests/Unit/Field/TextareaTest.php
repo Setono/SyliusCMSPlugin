@@ -40,6 +40,24 @@ final class TextareaTest extends TestCase
     /**
      * @test
      */
+    public function it_has_the_options_every_field_has(): void
+    {
+        $optional = new Textarea(label: 'Excerpt');
+        self::assertSame('Excerpt', $optional->label);
+        self::assertNull($optional->help);
+        self::assertFalse($optional->required);
+        self::assertNull($optional->translatable);
+        self::assertNull($optional->maxLength);
+
+        $required = new Textarea(label: 'Excerpt', help: 'Shown in listings', required: true, translatable: false);
+        self::assertSame('Shown in listings', $required->help);
+        self::assertTrue($required->required);
+        self::assertFalse($required->translatable);
+    }
+
+    /**
+     * @test
+     */
     public function its_schema_is_a_string_with_its_max_length(): void
     {
         self::assertSame(

@@ -13,6 +13,7 @@
         <import resource="services/publishing.xml"/>
         <import resource="services/registry.xml"/>
         <import resource="services/rendering.xml"/>
+        <import resource="services/rich_text.xml"/>
         <import resource="services/routing.xml"/>
         <import resource="services/security.xml"/>
         <import resource="services/twig.xml"/>
