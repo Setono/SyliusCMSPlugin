@@ -43,3 +43,11 @@ export function TrashIcon() {
         </Icon>
     );
 }
+
+export function GripIcon() {
+    return (
+        <Icon>
+            <path d="M6 3.5h.01M10 3.5h.01M6 8h.01M10 8h.01M6 12.5h.01M10 12.5h.01" strokeWidth="2.5" />
+        </Icon>
+    );
+}

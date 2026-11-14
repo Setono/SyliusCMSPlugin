@@ -43,6 +43,18 @@
     border-color: var(--builder-color-focus);
 }
 
+.checkbox {
+    width: 1.125rem;
+    height: 1.125rem;
+    margin: 0;
+    accent-color: var(--builder-color-accent);
+}
+
+.checkbox:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}
+
 .select[multiple] {
     min-height: calc(var(--builder-control-height) * 3);
 }

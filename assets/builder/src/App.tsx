@@ -33,7 +33,13 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                     return;
                 }
 
-                const store = createBuilderStore({ locale: config.locale, blockTypes: registry.blockTypes, entry, status });
+                const store = createBuilderStore({
+                    locale: config.locale,
+                    blockTypes: registry.blockTypes,
+                    contentTypes: registry.contentTypes,
+                    entry,
+                    status,
+                });
                 autosave = createAutosave(store, (changes) => api.saveChanges(changes), { delay: autosaveDelay });
 
                 setPhase({

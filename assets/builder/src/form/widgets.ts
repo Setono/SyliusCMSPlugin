@@ -1,11 +1,13 @@
 import { ChoiceWidget } from './ChoiceWidget';
 import { TextWidget } from './TextWidget';
+import { ToggleWidget } from './ToggleWidget';
 import type { FieldWidget } from './types';
 
 /** The control for each field type, keyed by the schema's x-cms-type. */
 export const fieldWidgets: Readonly<Record<string, FieldWidget>> = {
     text: TextWidget,
     choice: ChoiceWidget,
+    toggle: ToggleWidget,
 };
 
 export function widgetFor(fieldType: string): FieldWidget | undefined {

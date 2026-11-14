@@ -15,16 +15,24 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.publish_failed'
     | 'setono_sylius_cms.builder.blocks'
     | 'setono_sylius_cms.builder.add_block'
+    | 'setono_sylius_cms.builder.add_block_inside'
+    | 'setono_sylius_cms.builder.search_block_types'
+    | 'setono_sylius_cms.builder.no_matching_block_types'
+    | 'setono_sylius_cms.builder.drop_refused'
+    | 'setono_sylius_cms.builder.children'
     | 'setono_sylius_cms.builder.delete_block'
     | 'setono_sylius_cms.builder.no_blocks'
     | 'setono_sylius_cms.builder.no_selection'
     | 'setono_sylius_cms.builder.unsupported_field_type';
 
-export type Translate = (key: MessageKey) => string;
+/** Values for the placeholders in a string, such as { '%block%': 'Columns' }. */
+export type TranslationParameters = Readonly<Record<string, string>>;
 
-/** Looks a key up in the strings, falling back to the key itself. */
+export type Translate = (key: MessageKey, parameters?: TranslationParameters) => string;
+
+/** Looks a key up in the strings, falling back to the key itself, and fills in its placeholders. */
 export function createTranslator(strings: Readonly<Record<string, string>>): Translate {
-    return (key) => strings[key] ?? key;
+    return (key, parameters = {}) => Object.entries(parameters).reduce((text, [placeholder, value]) => text.replaceAll(placeholder, value), strings[key] ?? key);
 }
 
 const TranslatorContext = createContext<Translate>((key) => key);
