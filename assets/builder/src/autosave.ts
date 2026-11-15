@@ -45,7 +45,7 @@ export function createAutosave(
             await inFlight;
         }
 
-        const { unsaved: changes, lockToken, saveState } = store.getState();
+        const { unsaved: changes, lockToken, saveState, entry: sent } = store.getState();
         if (changes.length === 0 && (pullTo === undefined || lockToken >= pullTo)) {
             return true;
         }
@@ -58,7 +58,8 @@ export function createAutosave(
                 (answer) => {
                     store.setState({ status: answer.status, lockToken: answer.lockToken });
                     if (answer.entry !== undefined) {
-                        store.getState().pullIn(answer.entry, answer.clashes ?? []);
+                        // Edits made while the save was in flight were made on the working copy as it was sent
+                        store.getState().pullIn(answer.entry, answer.clashes ?? [], sent);
                     }
 
                     store.setState((state) => ({ saveState: state.unsaved.length > 0 ? 'saving' : saving ? 'saved' : saveState }));

@@ -146,6 +146,30 @@ describe('autosave', () => {
         expect(store.getState().saveState).toBe('saved');
     });
 
+    it('should hold an edit made during a save to a field a colleague changed as a clash, instead of saving it over theirs', async () => {
+        const store = storeWith([block('a'), block('b', { text: { en_US: 'World' } }), block('c', { text: { en_US: 'Mine too' } })]);
+        const answer = deferred<SaveResponse>();
+        const send = vi.fn((): Promise<SaveResponse> => answer.promise);
+        createAutosave(store, send);
+
+        store.getState().setFieldValue('a', 'text', 'Hello');
+        await vi.advanceTimersByTimeAsync(500);
+        // Made while the save is in flight: one to the field the colleague changed, and one to a field they left alone
+        store.getState().setFieldValue('b', 'text', 'Mine');
+        store.getState().setFieldValue('c', 'text', 'Still mine');
+        answer.resolve({
+            status: 'never_published',
+            lockToken: 2,
+            entry: entry([block('a', { text: { en_US: 'Hello' } }), block('b', { text: { en_US: 'Theirs' } }), block('c', { text: { en_US: 'Mine too' } })]),
+            clashes: [],
+        });
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(store.getState().clashes).toEqual([{ kind: 'value', key: 'b', field: 'text', locale: 'en_US', mine: 'Mine', theirs: 'Theirs' }]);
+        expect(store.getState().entry.tree.blocks[1]!.fields.text).toEqual({ en_US: 'Theirs' });
+        expect(store.getState().unsaved).toEqual([{ op: 'set_value', key: 'c', field: 'text', locale: 'en_US', value: 'Still mine' }]);
+    });
+
     it('should pull in what colleagues saved once the working copy has moved on, sending nothing new', async () => {
         const store = storeWith([block('a')]);
         const theirs = entry([block('a', { level: 'h3' })]);

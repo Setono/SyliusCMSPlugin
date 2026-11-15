@@ -3,9 +3,10 @@
  * changes not yet saved on top, and the clashes are held for the editor to resolve one at a time. Pure functions, with
  * no React and no I/O. See "Saving" in docs/spec/builder.md
  */
+import type { Change, SetValueChange } from './changeSet';
 import { blockList, findBlock, locateBlock, pathTo } from './tree';
 import type { Clash, Entry, FieldValues, JsonValue, StoredBlock } from './types';
-import { isJsonObject, jsonEqual } from './values';
+import { isJsonObject, jsonEqual, normalizeValue, readFieldValue } from './values';
 
 /** A clash, with what keeping the editor's side needs. */
 export type HeldClash =
@@ -146,6 +147,37 @@ export function holdClashes(before: Entry, after: Entry, clashes: readonly Clash
     }
 
     return holding;
+}
+
+/**
+ * Splits the changes not yet saved into those that go on top of a working copy the server merged, and the value
+ * clashes among them: a value set in a field and locale that a colleague changed to something else since base, the
+ * working copy as it was when the save that brought their changes was sent. Those are the edits made while that save
+ * was in flight, which the server never saw, so it couldn't find the clash itself.
+ */
+export function splitValueClashes(unsaved: readonly Change[], base: Entry, merged: Entry): { kept: Change[]; clashes: Clash[] } {
+    const kept: Change[] = [];
+    const clashes: Clash[] = [];
+
+    for (const change of unsaved) {
+        const theirs = change.op === 'set_value' ? valueIn(merged, change) : undefined;
+        if (change.op !== 'set_value' || theirs === undefined || jsonEqual(theirs, valueIn(base, change) ?? null) || jsonEqual(theirs, change.value)) {
+            kept.push(change);
+
+            continue;
+        }
+
+        clashes.push({ kind: 'value', key: change.key, field: change.field, locale: change.locale, mine: change.value, theirs });
+    }
+
+    return { kept, clashes };
+}
+
+/** The value a set_value change sets, as a working copy has it, or undefined when the working copy hasn't the block. */
+function valueIn(entry: Entry, change: SetValueChange): JsonValue | null | undefined {
+    const block = findBlock(entry.tree.blocks, change.key);
+
+    return block === undefined ? undefined : normalizeValue(readFieldValue(block.fields, change.field, change.locale !== null, change.locale ?? ''));
 }
 
 /** A block to put back, without the blocks inside it that the working copy has elsewhere by now. */

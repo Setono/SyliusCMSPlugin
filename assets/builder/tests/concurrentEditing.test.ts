@@ -102,6 +102,40 @@ describe('pulling in a colleague\'s changes', () => {
         expect(shape(store.getState().entry.tree.blocks)).toEqual(['h', ['a', 'c'], 'g', ['b']]);
     });
 
+    it('should hold a value not yet saved as a clash when they changed its field and locale since the save was sent', () => {
+        const store = storeWith([block('a', { text: { en_US: 'Hello', da_DK: 'Hej' } })]);
+        const sent = store.getState().entry;
+        store.getState().setFieldValue('a', 'text', 'Mine');
+        const theirs = merged((copy) => {
+            copy.tree.blocks[0]!.fields.text = { en_US: 'Theirs', da_DK: 'Hej' };
+        }, sent);
+
+        store.getState().pullIn(theirs, [], sent);
+
+        expect(store.getState().clashes).toEqual([{ kind: 'value', key: 'a', field: 'text', locale: 'en_US', mine: 'Mine', theirs: 'Theirs' }]);
+        expect(store.getState().unsaved).toEqual([]);
+    });
+
+    it('should keep a value not yet saved when they changed another locale of its field, or set the same value', () => {
+        const store = storeWith([block('a', { text: { en_US: 'Hello', da_DK: 'Hej' } }), block('b', { text: { en_US: 'World' } })]);
+        const sent = store.getState().entry;
+        store.getState().setFieldValue('a', 'text', 'Mine');
+        store.getState().setFieldValue('b', 'text', 'Same');
+        const theirs = merged((copy) => {
+            copy.tree.blocks[0]!.fields.text = { en_US: 'Hello', da_DK: 'Deres' };
+            copy.tree.blocks[1]!.fields.text = { en_US: 'Same' };
+        }, sent);
+
+        store.getState().pullIn(theirs, [], sent);
+
+        expect(store.getState().clashes).toEqual([]);
+        expect(store.getState().entry.tree.blocks[0]!.fields.text).toEqual({ en_US: 'Mine', da_DK: 'Deres' });
+        expect(store.getState().unsaved).toEqual([
+            { op: 'set_value', key: 'a', field: 'text', locale: 'en_US', value: 'Mine' },
+            { op: 'set_value', key: 'b', field: 'text', locale: 'en_US', value: 'Same' },
+        ]);
+    });
+
     it('should drop a change not yet saved to a block they deleted, and hold it as a clash', () => {
         const store = storeWith([block('a'), block('b')]);
         store.getState().setFieldValue('b', 'text', 'Mine');

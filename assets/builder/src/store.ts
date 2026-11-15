@@ -7,7 +7,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla';
 import { applyChanges, changesFromPatches, insertBlock, mergeChanges, type Change, type TranslatableLookup } from './changeSet';
 import { emptyHistory, rebaseHistory, recordEdit, redoEdit, undoEdit, type History, type Step } from './history';
 import { canDuplicate, canMoveBlocks, createNestingRules, initialChildren, insertableIn, type NestingRules } from './nesting';
-import { holdClashes, reconcile, withoutKeysIn, type HeldClash } from './pullIn';
+import { holdClashes, reconcile, splitValueClashes, withoutKeysIn, type HeldClash } from './pullIn';
 import { copyWithNewKeys, findBlock, generateBlockKey, locateBlock, moveBlocksTo, removeBlockFrom, topmostBlocks } from './tree';
 import type { BlockTypeDefinition, Clash, ContentTypeDefinition, Entry, EntryStatus, JsonValue, StoredBlock } from './types';
 import { writeFieldValue } from './values';
@@ -108,8 +108,10 @@ export interface BuilderActions {
      * Pulls in a working copy the server merged a save onto, with colleagues' changes in it. The changes not yet saved
      * go on top, the way the server will apply them, and the undo stack keeps the edits that colleagues' changes leave
      * alone. It isn't an edit. The clashes are held for the editor, and so is a change not yet saved to a block that's gone.
+     * Given base, the working copy as it was when the save that brought the merged one was sent, a value not yet saved
+     * in a field and locale a colleague changed since is held as a clash too, instead of going on top of theirs.
      */
-    pullIn(merged: Entry, clashes?: readonly Clash[]): void;
+    pullIn(merged: Entry, clashes?: readonly Clash[], base?: Entry): void;
     /**
      * Resolves the first clash: keeping the editor's side is an edit like any other, and taking the colleague's
      * leaves the working copy as it is.
@@ -327,11 +329,12 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
                 });
             },
 
-            pullIn(merged, clashes = []) {
+            pullIn(merged, clashes = [], base) {
                 const state = get();
-                const { entry: target, applied, missing } = applyChanges(merged, state.unsaved);
+                const pending = base === undefined ? { kept: state.unsaved, clashes: [] } : splitValueClashes(state.unsaved, base, merged);
+                const { entry: target, applied, missing } = applyChanges(merged, pending.kept);
                 const [next, patches] = produceWithPatches<Entry, Entry>(state.entry, (working) => reconcile(working, target));
-                const held = holdClashes(state.entry, next, [...clashes, ...missing.map((key): Clash => ({ kind: 'deleted_block', key }))], state.clashes);
+                const held = holdClashes(state.entry, next, [...clashes, ...pending.clashes, ...missing.map((key): Clash => ({ kind: 'deleted_block', key }))], state.clashes);
 
                 if (patches.length === 0) {
                     set({ unsaved: applied, clashes: held });
