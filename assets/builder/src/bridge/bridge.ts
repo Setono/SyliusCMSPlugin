@@ -15,20 +15,23 @@ export interface Bridge {
     dispose(): void;
 }
 
-/** The bridge's controls live in a shadow root, so the shop's CSS leaves them alone and theirs stays out of the shop. */
+/**
+ * The bridge's controls live in a shadow root, so the shop's CSS leaves them alone and theirs stays out of the shop. The
+ * shop page can't read the builder's tokens, so the colours are --builder-color-accent and --builder-color-accent-hover
+ */
 const STYLE = `
 :host { all: initial; position: fixed; top: 0; left: 0; z-index: 2147483647; }
 [hidden] { display: none !important; }
-.outline { position: fixed; box-sizing: border-box; pointer-events: none; border: 2px solid #2f6fed; border-radius: 2px; }
-.outline[data-outline="hover"] { border-style: dashed; border-color: rgba(47, 111, 237, 0.6); }
-.toolbar { position: fixed; display: flex; gap: 2px; padding: 2px; border-radius: 4px; background: #2f6fed; transform: translate(-100%, -100%); pointer-events: auto; }
+.outline { position: fixed; box-sizing: border-box; pointer-events: none; border: 2px solid #1f5fd6; border-radius: 2px; }
+.outline[data-outline="hover"] { border-style: dashed; border-color: rgba(31, 95, 214, 0.6); }
+.toolbar { position: fixed; display: flex; gap: 2px; padding: 2px; border-radius: 4px; background: #1f5fd6; transform: translate(-100%, -100%); pointer-events: auto; }
 button { all: unset; box-sizing: border-box; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 3px; color: #fff; cursor: pointer; }
 .toolbar button:hover, .toolbar button:focus-visible { background: rgba(255, 255, 255, 0.2); }
 .formatting { transform: translateY(-100%); }
 .formatting button { font: 600 13px/1 system-ui, sans-serif; }
 .formatting button[aria-pressed="true"] { background: rgba(255, 255, 255, 0.35); }
-.add { position: fixed; border-radius: 50%; background: #2f6fed; box-shadow: 0 0 0 2px #fff; transform: translate(-50%, -50%); pointer-events: auto; }
-.add:hover, .add:focus-visible { background: #1d4fc4; }
+.add { position: fixed; border-radius: 50%; background: #1f5fd6; box-shadow: 0 0 0 2px #fff; transform: translate(-50%, -50%); pointer-events: auto; }
+.add:hover, .add:focus-visible { background: #194fb3; }
 svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 `;
 
@@ -37,7 +40,7 @@ const ICONS = {
     moveUp: '<path d="M8 13V3M4 7l4-4 4 4"/>',
     moveDown: '<path d="M8 3v10M4 9l4 4 4-4"/>',
     duplicate: '<path d="M5.5 5.5h8v8h-8zM10.5 5.5v-3h-8v8h3"/>',
-    settings: '<path d="M2.5 4.5h11M2.5 11.5h11"/><circle cx="6" cy="4.5" r="1.75" fill="#2f6fed"/><circle cx="10" cy="11.5" r="1.75" fill="#2f6fed"/>',
+    settings: '<path d="M2.5 4.5h11M2.5 11.5h11"/><circle cx="6" cy="4.5" r="1.75" fill="#1f5fd6"/><circle cx="10" cy="11.5" r="1.75" fill="#1f5fd6"/>',
     delete: '<path d="M2.5 4h11M6.5 4V2.5h3V4M4 4l.7 9.5h6.6L12 4"/>',
     add: '<path d="M8 3v10M3 8h10"/>',
 };
