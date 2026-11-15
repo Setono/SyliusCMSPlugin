@@ -8,8 +8,8 @@ use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 
 /**
- * Tells the page it's in preview mode, and keeps preview responses out of caches and search engines.
- * See "Preview mode and share links" in docs/spec/rendering.md
+ * Tells the page it's in preview mode, and keeps preview responses, and the token in their URL, out of caches, search
+ * engines and Referer headers. See "Preview mode and share links" in docs/spec/rendering.md
  */
 final readonly class PreviewModeListener
 {
@@ -47,5 +47,7 @@ final readonly class PreviewModeListener
         $headers = $event->getResponse()->headers;
         $headers->set('Cache-Control', 'no-store');
         $headers->set('X-Robots-Tag', 'noindex');
+        // The preview token is in the URL, so it mustn't reach what the page loads through the Referer header
+        $headers->set('Referrer-Policy', 'no-referrer');
     }
 }

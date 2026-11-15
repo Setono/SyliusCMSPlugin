@@ -66,7 +66,7 @@ final class PreviewModeTest extends WebTestCase
     /**
      * @test
      */
-    public function a_preview_is_neither_cached_nor_indexed(): void
+    public function a_preview_is_neither_cached_nor_indexed_and_sends_no_referrer(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -77,6 +77,8 @@ final class PreviewModeTest extends WebTestCase
         self::assertTrue($response->headers->hasCacheControlDirective('no-store'));
         self::assertFalse($response->headers->hasCacheControlDirective('max-age'));
         self::assertResponseHeaderSame('X-Robots-Tag', 'noindex');
+        // The token in the URL stays out of the Referer header of what the page loads
+        self::assertResponseHeaderSame('Referrer-Policy', 'no-referrer');
     }
 
     /**

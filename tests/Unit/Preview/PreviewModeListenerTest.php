@@ -74,7 +74,7 @@ final class PreviewModeListenerTest extends TestCase
     /**
      * @test
      */
-    public function a_preview_response_is_neither_cached_nor_indexed(): void
+    public function a_preview_response_is_neither_cached_nor_indexed_and_sends_no_referrer(): void
     {
         $request = $this->previewRequest();
         $response = new Response();
@@ -85,6 +85,7 @@ final class PreviewModeListenerTest extends TestCase
 
         self::assertSame('no-store, private', $response->headers->get('Cache-Control'));
         self::assertSame('noindex', $response->headers->get('X-Robots-Tag'));
+        self::assertSame('no-referrer', $response->headers->get('Referrer-Policy'));
     }
 
     /**
@@ -101,6 +102,7 @@ final class PreviewModeListenerTest extends TestCase
 
         self::assertTrue($response->headers->hasCacheControlDirective('max-age'));
         self::assertFalse($response->headers->has('X-Robots-Tag'));
+        self::assertFalse($response->headers->has('Referrer-Policy'));
     }
 
     /**
@@ -118,6 +120,7 @@ final class PreviewModeListenerTest extends TestCase
 
         self::assertTrue($response->headers->hasCacheControlDirective('max-age'));
         self::assertFalse($response->headers->has('X-Robots-Tag'));
+        self::assertFalse($response->headers->has('Referrer-Policy'));
     }
 
     private function previewRequest(): Request
