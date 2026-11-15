@@ -38,17 +38,17 @@ final readonly class Autosave implements AutosaveInterface
     {
         return $this->entryLock->read($entry, fn (): LoadedWorkingCopy => new LoadedWorkingCopy(
             $this->workingCopies->getWorkingCopy($entry),
-            $this->savedChangeSets->findLatestVersion($entry),
+            $this->savedChangeSets->findLatestLockToken($entry),
         ));
     }
 
     public function save(EntryInterface $entry, ChangeSet $changeSet, int $lockToken): SaveResult
     {
         return $this->entryLock->write($entry, function () use ($entry, $changeSet, $lockToken): SaveResult {
-            $version = $this->savedChangeSets->findLatestVersion($entry);
+            $latest = $this->savedChangeSets->findLatestLockToken($entry);
             $theirs = $this->savedChangeSets->findChangeSetsSince($entry, $lockToken);
-            if ($lockToken > $version || count($theirs) !== $version - $lockToken) {
-                throw new StaleLockTokenException(sprintf('The lock token %d is not one the working copy at version %d can merge onto', $lockToken, $version));
+            if ($lockToken > $latest || count($theirs) !== $latest - $lockToken) {
+                throw new StaleLockTokenException(sprintf('The lock token %d is not one the working copy at lock token %d can merge onto', $lockToken, $latest));
             }
 
             $workingCopy = $this->workingCopies->getWorkingCopy($entry);
@@ -61,36 +61,36 @@ final readonly class Autosave implements AutosaveInterface
             if ([] !== $merge->changeSet->changes) {
                 $workingCopy->setBlockTree($this->applier->apply($merge->changeSet, $workingCopy->getBlockTree()));
 
-                $this->number($entry, ++$version, $merge->changeSet);
+                $this->number($entry, ++$latest, $merge->changeSet);
                 $this->workingCopies->save($entry, $workingCopy);
             }
 
-            return new SaveResult(new LoadedWorkingCopy($workingCopy, $version), [] !== $theirs, $merge->clashes);
+            return new SaveResult(new LoadedWorkingCopy($workingCopy, $latest), [] !== $theirs, $merge->clashes);
         });
     }
 
     public function discard(EntryInterface $entry): LoadedWorkingCopy
     {
         return $this->entryLock->write($entry, function () use ($entry): LoadedWorkingCopy {
-            $version = $this->savedChangeSets->findLatestVersion($entry);
+            $latest = $this->savedChangeSets->findLatestLockToken($entry);
 
             if ($this->workingCopies->hasDraft($entry)) {
-                $this->number($entry, ++$version, new ChangeSet([]));
+                $this->number($entry, ++$latest, new ChangeSet([]));
                 $this->workingCopies->discard($entry);
             }
 
-            return new LoadedWorkingCopy($this->workingCopies->getWorkingCopy($entry), $version);
+            return new LoadedWorkingCopy($this->workingCopies->getWorkingCopy($entry), $latest);
         });
     }
 
     /**
-     * Records a save under its version, the lock token of the builder that made it, and forgets the saves too old to
+     * Records a save under the lock token the working copy has after it, and forgets the saves too old to
      * merge onto. It's written on the next flush
      */
-    private function number(EntryInterface $entry, int $version, ChangeSet $changeSet): void
+    private function number(EntryInterface $entry, int $lockToken, ChangeSet $changeSet): void
     {
         $now = $this->clock->now();
         $this->savedChangeSets->removeSavedBefore($entry, $now->modify('-' . self::KEPT_FOR));
-        $this->savedChangeSets->record($entry, $version, $changeSet, $now);
+        $this->savedChangeSets->record($entry, $lockToken, $changeSet, $now);
     }
 }

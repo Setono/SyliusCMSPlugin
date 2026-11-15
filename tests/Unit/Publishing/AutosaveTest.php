@@ -104,7 +104,7 @@ final class AutosaveTest extends TestCase
      */
     public function it_loads_the_working_copy_with_its_lock_token_while_no_save_runs(): void
     {
-        $this->savedChangeSets->findLatestVersion($this->entry)->willReturn(7);
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(7);
 
         $loaded = $this->autosave()->load($this->entry);
 
@@ -118,7 +118,7 @@ final class AutosaveTest extends TestCase
      */
     public function it_applies_a_save_made_on_the_latest_lock_token_and_numbers_it(): void
     {
-        $this->savedChangeSets->findLatestVersion($this->entry)->willReturn(3);
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
         $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
         $changeSet = new ChangeSet([new SetValue(self::A, 'text', 'en_US', 'Hello there')]);
 
@@ -140,7 +140,7 @@ final class AutosaveTest extends TestCase
     public function it_merges_a_save_made_on_an_older_lock_token_onto_the_saves_made_since(): void
     {
         $this->workingCopy->setBlockTree(new StoredTree(null, [self::heading(self::A, 'Theirs'), self::heading(self::B, 'World')]));
-        $this->savedChangeSets->findLatestVersion($this->entry)->willReturn(5);
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(5);
         $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([
             new ChangeSet([new SetValue(self::A, 'text', 'en_US', 'Before')]),
             new ChangeSet([new SetValue(self::A, 'text', 'en_US', 'Theirs')]),
@@ -164,7 +164,7 @@ final class AutosaveTest extends TestCase
      */
     public function it_saves_nothing_when_every_change_clashes(): void
     {
-        $this->savedChangeSets->findLatestVersion($this->entry)->willReturn(4);
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(4);
         $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([new ChangeSet([new SetValue(self::A, 'text', 'en_US', 'Theirs')])]);
 
         $result = $this->autosave()->save($this->entry, new ChangeSet([new SetValue(self::A, 'text', 'en_US', 'Mine')]), 3);
@@ -180,7 +180,7 @@ final class AutosaveTest extends TestCase
      */
     public function it_saves_nothing_for_an_empty_save(): void
     {
-        $this->savedChangeSets->findLatestVersion($this->entry)->willReturn(3);
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
         $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
 
         $result = $this->autosave()->save($this->entry, new ChangeSet([]), 3);
@@ -195,9 +195,9 @@ final class AutosaveTest extends TestCase
      *
      * @dataProvider provideStaleLockTokens
      */
-    public function it_refuses_a_lock_token_it_cannot_merge_onto_and_saves_nothing(int $lockToken, int $version, int $savesSince): void
+    public function it_refuses_a_lock_token_it_cannot_merge_onto_and_saves_nothing(int $lockToken, int $latest, int $savesSince): void
     {
-        $this->savedChangeSets->findLatestVersion($this->entry)->willReturn($version);
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn($latest);
         $this->savedChangeSets->findChangeSetsSince($this->entry, $lockToken)->willReturn(array_fill(0, $savesSince, new ChangeSet([])));
 
         try {
@@ -223,7 +223,7 @@ final class AutosaveTest extends TestCase
      */
     public function it_saves_nothing_when_the_changes_do_not_apply(): void
     {
-        $this->savedChangeSets->findLatestVersion($this->entry)->willReturn(3);
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
         $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
 
         try {
@@ -240,7 +240,7 @@ final class AutosaveTest extends TestCase
      */
     public function it_discards_the_draft_and_numbers_the_discard_as_an_empty_save(): void
     {
-        $this->savedChangeSets->findLatestVersion($this->entry)->willReturn(3);
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
         $this->workingCopies->hasDraft($this->entry)->willReturn(true);
         $this->workingCopies->discard($this->entry)->will($this->record('discard the draft'));
 
@@ -258,7 +258,7 @@ final class AutosaveTest extends TestCase
      */
     public function it_leaves_the_lock_token_when_there_is_no_draft_to_discard(): void
     {
-        $this->savedChangeSets->findLatestVersion($this->entry)->willReturn(3);
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
         $this->workingCopies->hasDraft($this->entry)->willReturn(false);
         $this->workingCopies->discard(Argument::any())->shouldNotBeCalled();
 

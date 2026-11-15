@@ -22,7 +22,7 @@ final class SavedChangeSetTest extends TestCase
 
         self::assertNull($save->getId());
         self::assertSame($page, $save->getEntry());
-        self::assertSame(4, $save->getVersion());
+        self::assertSame(4, $save->getLockToken());
         self::assertSame('{"changes":[]}', $save->getChanges());
         self::assertSame($savedAt, $save->getSavedAt());
     }

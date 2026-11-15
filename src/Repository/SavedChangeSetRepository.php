@@ -16,28 +16,28 @@ use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
  */
 class SavedChangeSetRepository extends EntityRepository implements SavedChangeSetRepositoryInterface
 {
-    public function findLatestVersion(EntryInterface $entry): int
+    public function findLatestLockToken(EntryInterface $entry): int
     {
-        $version = $this->createQueryBuilder('o')
-            ->select('MAX(o.version)')
+        $lockToken = $this->createQueryBuilder('o')
+            ->select('MAX(o.lockToken)')
             ->andWhere('o.entry = :entry')
             ->setParameter('entry', $entry)
             ->getQuery()
             ->getSingleScalarResult()
         ;
 
-        return is_numeric($version) ? (int) $version : 0;
+        return is_numeric($lockToken) ? (int) $lockToken : 0;
     }
 
-    public function findChangeSetsSince(EntryInterface $entry, int $version): array
+    public function findChangeSetsSince(EntryInterface $entry, int $lockToken): array
     {
         /** @var list<SavedChangeSetInterface> $saves */
         $saves = $this->createQueryBuilder('o')
             ->andWhere('o.entry = :entry')
-            ->andWhere('o.version > :version')
+            ->andWhere('o.lockToken > :lockToken')
             ->setParameter('entry', $entry)
-            ->setParameter('version', $version)
-            ->orderBy('o.version', 'ASC')
+            ->setParameter('lockToken', $lockToken)
+            ->orderBy('o.lockToken', 'ASC')
             ->getQuery()
             ->getResult()
         ;
@@ -45,7 +45,7 @@ class SavedChangeSetRepository extends EntityRepository implements SavedChangeSe
         return array_map(static fn (SavedChangeSetInterface $save): ChangeSet => ChangeSet::fromArray(CanonicalJson::decode($save->getChanges())), $saves);
     }
 
-    public function record(EntryInterface $entry, int $version, ChangeSet $changeSet, \DateTimeImmutable $savedAt): void
+    public function record(EntryInterface $entry, int $lockToken, ChangeSet $changeSet, \DateTimeImmutable $savedAt): void
     {
         if (!$entry instanceof Entry) {
             throw new \InvalidArgumentException(sprintf('A save belongs to an entry, which extends %s', Entry::class));
@@ -53,7 +53,7 @@ class SavedChangeSetRepository extends EntityRepository implements SavedChangeSe
 
         // The resource's model, which a project can override
         $class = $this->getClassName();
-        $this->getEntityManager()->persist(new $class($entry, $version, CanonicalJson::encode($changeSet->toArray()), $savedAt));
+        $this->getEntityManager()->persist(new $class($entry, $lockToken, CanonicalJson::encode($changeSet->toArray()), $savedAt));
     }
 
     public function removeSavedBefore(EntryInterface $entry, \DateTimeImmutable $before): void

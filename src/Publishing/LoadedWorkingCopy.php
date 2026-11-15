@@ -10,7 +10,7 @@ final readonly class LoadedWorkingCopy
 {
     /**
      * @param EntryInterface $workingCopy as WorkingCopyProviderInterface::getWorkingCopy() gives it
-     * @param int $lockToken the working copy's version, which a save made on it carries
+     * @param int $lockToken the number of saves of the working copy so far, which a save made on it carries
      */
     public function __construct(
         public EntryInterface $workingCopy,

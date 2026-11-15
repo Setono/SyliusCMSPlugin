@@ -8,26 +8,26 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 
 /**
- * The saves of entries' working copies, numbered by the version after each, which is the builder's lock token
+ * The saves of entries' working copies, numbered by the lock token the working copy has after each
  */
 interface SavedChangeSetRepositoryInterface
 {
     /**
-     * The working copy's version: the number of the last save kept, or 0 before the first
+     * The working copy's lock token: the number of the last save kept, or 0 before the first
      */
-    public function findLatestVersion(EntryInterface $entry): int;
+    public function findLatestLockToken(EntryInterface $entry): int;
 
     /**
-     * The change sets saved after the version, in order. A save that was deleted for its age leaves a gap
+     * The change sets saved after the lock token, in order. A save that was deleted for its age leaves a gap
      *
      * @return list<ChangeSet>
      */
-    public function findChangeSetsSince(EntryInterface $entry, int $version): array;
+    public function findChangeSetsSince(EntryInterface $entry, int $lockToken): array;
 
     /**
      * Records a save. It's written on the next flush
      */
-    public function record(EntryInterface $entry, int $version, ChangeSet $changeSet, \DateTimeImmutable $savedAt): void;
+    public function record(EntryInterface $entry, int $lockToken, ChangeSet $changeSet, \DateTimeImmutable $savedAt): void;
 
     /**
      * Deletes the entry's saves made before the time

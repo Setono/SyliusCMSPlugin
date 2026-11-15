@@ -13,7 +13,7 @@ class SavedChangeSet implements SavedChangeSetInterface
      */
     public function __construct(
         protected Entry $entry,
-        protected int $version,
+        protected int $lockToken,
         protected string $changes,
         protected \DateTimeImmutable $savedAt,
     ) {
@@ -29,9 +29,9 @@ class SavedChangeSet implements SavedChangeSetInterface
         return $this->entry;
     }
 
-    public function getVersion(): int
+    public function getLockToken(): int
     {
-        return $this->version;
+        return $this->lockToken;
     }
 
     public function getChanges(): string

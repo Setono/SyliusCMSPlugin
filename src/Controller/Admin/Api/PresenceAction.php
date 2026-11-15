@@ -49,7 +49,7 @@ final readonly class PresenceAction
 
         return new JsonResponse(CanonicalJson::encode(new ListedObject([
             'editors' => self::editors($this->presence->others($entry, $admin)),
-            'lockToken' => $this->savedChangeSets->findLatestVersion($entry),
+            'lockToken' => $this->savedChangeSets->findLatestLockToken($entry),
         ])), json: true);
     }
 
