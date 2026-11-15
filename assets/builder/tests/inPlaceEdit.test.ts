@@ -46,10 +46,10 @@ describe('an edit typed in place in the preview', () => {
 
         listen(store).receive({ type: 'edit', key: 'a', field: 'text', value: 'Welcome back' });
 
-        const { entry, unsaved, revision } = store.getState();
+        const { entry, unsaved, changeCount } = store.getState();
         expect(entry.tree.blocks[0]?.fields).toEqual({ text: { en_US: 'Welcome back', da_DK: 'Velkommen' }, level: 'h2' });
         expect(unsaved).toEqual([{ op: 'set_value', key: 'a', field: 'text', locale: 'en_US', value: 'Welcome back' }]);
-        expect(revision).toBe(1);
+        expect(changeCount).toBe(1);
 
         expect(store.getState().undo()).toBe(true);
         expect(store.getState().entry).toEqual(before);

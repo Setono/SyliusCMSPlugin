@@ -15,7 +15,7 @@ export function Shell() {
     const { store } = useBuilder();
 
     // Undo and redo work on the working copy wherever the focus is, also in a field: its value is the working copy's.
-    // A widget with an undo of its own, such as rich text, handles the keys first.
+    // A control with an undo of its own, such as rich text, handles the keys first.
     useEffect(() => {
         const onKeyDown = (event: KeyboardEvent): void => {
             const shortcut = shortcutOf(event);

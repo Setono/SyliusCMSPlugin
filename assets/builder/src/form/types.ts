@@ -5,7 +5,7 @@ import type { FieldSchema, JsonValue } from '../types';
  * What every field type's control gets. The shipped field types are React components; a project's own
  * field type will get the same as properties of its custom element.
  */
-export interface FieldWidgetProps {
+export interface FieldControlProps {
     /** The control's id, which its label points at. */
     id: string;
     /** The stored value, in the edited locale when the field is translatable. Undefined when it has none. */
@@ -19,4 +19,4 @@ export interface FieldWidgetProps {
     describedBy?: string | undefined;
 }
 
-export type FieldWidget = ComponentType<FieldWidgetProps>;
+export type FieldControl = ComponentType<FieldControlProps>;

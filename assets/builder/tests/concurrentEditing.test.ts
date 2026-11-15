@@ -161,11 +161,11 @@ describe('pulling in a colleague\'s changes', () => {
 
     it('should count as a change to the working copy, so the preview shows it', () => {
         const store = storeWith([block('a')]);
-        const revision = store.getState().revision;
+        const changeCount = store.getState().changeCount;
 
         store.getState().pullIn(entry([block('a', { level: 'h3' })]));
 
-        expect(store.getState().revision).toBe(revision + 1);
+        expect(store.getState().changeCount).toBe(changeCount + 1);
     });
 });
 

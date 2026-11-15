@@ -53,7 +53,7 @@ export function createValidation(store: BuilderStore, validation: ValidationStor
     const unsubscribe = store.subscribe((state, previous) => {
         const saved = state.saveState === 'saved' && previous.saveState !== 'saved';
         // A load replaces the working copy without an edit
-        const loaded = state.entry !== previous.entry && state.revision === previous.revision;
+        const loaded = state.entry !== previous.entry && state.changeCount === previous.changeCount;
         if (saved || loaded) {
             void validate();
         }

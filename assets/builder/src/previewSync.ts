@@ -137,7 +137,7 @@ export function createPreviewSync({ store, strings, render, reload, openBlockPic
         if (state.entry !== previous.entry) {
             // An entry loaded from the server rather than edited, such as the published content after discarding
             // changes, is what the server renders, so the page reloads
-            const plan: PreviewPlan = state.revision === previous.revision ? { reload: true, patch: [], insert: [], remove: [] } : planPreviewUpdate(previous.entry, state.entry);
+            const plan: PreviewPlan = state.changeCount === previous.changeCount ? { reload: true, patch: [], insert: [], remove: [] } : planPreviewUpdate(previous.entry, state.entry);
             if (plan.reload) {
                 startOver();
             } else {

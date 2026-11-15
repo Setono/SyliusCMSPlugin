@@ -1,14 +1,15 @@
 import styles from './Form.module.css';
-import type { FieldWidgetProps } from './types';
+import type { FieldControlProps } from './types';
 
-export function TextWidget({ id, value, onChange, schema, describedBy }: FieldWidgetProps) {
+/** Text over several lines, with its newlines kept. */
+export function TextareaControl({ id, value, onChange, schema, describedBy }: FieldControlProps) {
     const maxLength = schema['x-cms-options']?.maxLength;
 
     return (
-        <input
-            type="text"
+        <textarea
             id={id}
-            className={styles.input}
+            className={styles.textarea}
+            rows={4}
             value={typeof value === 'string' ? value : ''}
             maxLength={typeof maxLength === 'number' ? maxLength : undefined}
             aria-required={schema['x-cms-required'] || undefined}

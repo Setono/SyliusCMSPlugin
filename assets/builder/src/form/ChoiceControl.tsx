@@ -1,9 +1,9 @@
 import type { JsonValue } from '../types';
 import { isJsonObject } from '../values';
 import styles from './Form.module.css';
-import type { FieldWidgetProps } from './types';
+import type { FieldControlProps } from './types';
 
-export function ChoiceWidget({ id, value, onChange, schema, describedBy }: FieldWidgetProps) {
+export function ChoiceControl({ id, value, onChange, schema, describedBy }: FieldControlProps) {
     const options = schema['x-cms-options'];
     const choices = Object.entries(isJsonObject(options?.choices) ? options.choices : {});
     const fallback = schema.default;

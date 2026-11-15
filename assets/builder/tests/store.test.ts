@@ -74,14 +74,14 @@ describe('the working copy', () => {
         store.getState().removeBlock('missing');
 
         expect(store.getState().history.done).toHaveLength(0);
-        expect(store.getState().revision).toBe(0);
+        expect(store.getState().changeCount).toBe(0);
     });
 
     it('should load another working copy in place of the one it edits, with nothing left to save or undo', () => {
         const store = storeWith([block('a', { text: { en_US: 'Hello world' } }), block('b')]);
         store.getState().setFieldValue('a', 'text', 'Goodbye');
         store.getState().selectBlock('a');
-        const revision = store.getState().revision;
+        const changeCount = store.getState().changeCount;
 
         store.getState().load(entry([block('a', { text: { en_US: 'Hello' } })]), 'published', 4);
 
@@ -91,7 +91,7 @@ describe('the working copy', () => {
         expect(store.getState().unsaved).toEqual([]);
         expect(store.getState().history.done).toEqual([]);
         expect(store.getState().selectedKey).toBe('a');
-        expect(store.getState().revision).toBe(revision);
+        expect(store.getState().changeCount).toBe(changeCount);
     });
 
     it('should drop the selection when the loaded working copy does not have the selected block', () => {
@@ -434,7 +434,7 @@ describe('undo and redo', () => {
         store.getState().setFieldValue('a', 'text', 'Hello world');
         // As if autosave had sent them
         store.setState({ unsaved: [] });
-        const revision = store.getState().revision;
+        const changeCount = store.getState().changeCount;
 
         store.getState().undo();
         store.getState().undo();
@@ -443,7 +443,7 @@ describe('undo and redo', () => {
             { op: 'set_value', key: 'a', field: 'text', locale: 'en_US', value: 'Hello' },
             { op: 'remove_block', key: 'new-1' },
         ]);
-        expect(store.getState().revision).toBe(revision + 2);
+        expect(store.getState().changeCount).toBe(changeCount + 2);
 
         store.getState().redo();
 

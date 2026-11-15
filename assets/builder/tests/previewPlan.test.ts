@@ -5,7 +5,7 @@ import type { Entry, StoredBlock } from '../src/types';
 import { block, entry } from './fixtures';
 
 function withChildren(key: string, children: StoredBlock[]): StoredBlock {
-    return { ...block(key), type: 'section', children };
+    return { ...block(key), type: 'group', children };
 }
 
 /** Edits the entry the way the store does, through Immer, so what doesn't change keeps its identity. */

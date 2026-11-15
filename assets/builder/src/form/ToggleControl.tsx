@@ -1,8 +1,8 @@
 import styles from './Form.module.css';
-import type { FieldWidgetProps } from './types';
+import type { FieldControlProps } from './types';
 
 /** On or off. A toggle with no value shows its default. */
-export function ToggleWidget({ id, value, onChange, schema, describedBy }: FieldWidgetProps) {
+export function ToggleControl({ id, value, onChange, schema, describedBy }: FieldControlProps) {
     const checked = typeof value === 'boolean' ? value : schema.default === true;
 
     return (

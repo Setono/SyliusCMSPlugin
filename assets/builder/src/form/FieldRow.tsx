@@ -1,9 +1,9 @@
 import styles from './Form.module.css';
-import type { FieldWidgetProps } from './types';
-import { UnsupportedWidget } from './UnsupportedWidget';
-import { widgetFor } from './widgets';
+import type { FieldControlProps } from './types';
+import { UnsupportedControl } from './UnsupportedControl';
+import { controlFor } from './controls';
 
-export type FieldRowProps = Omit<FieldWidgetProps, 'describedBy'> & {
+export type FieldRowProps = Omit<FieldControlProps, 'describedBy'> & {
     /** What publish would refuse in the field, shown under it and describing its control. */
     errors?: readonly string[];
 };
@@ -11,7 +11,7 @@ export type FieldRowProps = Omit<FieldWidgetProps, 'describedBy'> & {
 /** One field rendered from its schema: its label, its field type's control, its help text and its errors. */
 export function FieldRow({ errors = [], ...props }: FieldRowProps) {
     const { id, schema } = props;
-    const Widget = widgetFor(schema['x-cms-type']);
+    const Control = controlFor(schema['x-cms-type']);
     const label = schema['x-cms-label'];
     const help = schema['x-cms-help'];
     const helpId = help ? `${id}-help` : undefined;
@@ -21,7 +21,7 @@ export function FieldRow({ errors = [], ...props }: FieldRowProps) {
     return (
         <div className={styles.field}>
             <div className={styles.labelRow}>
-                {Widget ? (
+                {Control ? (
                     <label htmlFor={id} className={styles.label}>
                         {label}
                     </label>
@@ -34,7 +34,7 @@ export function FieldRow({ errors = [], ...props }: FieldRowProps) {
                     </span>
                 )}
             </div>
-            {Widget ? <Widget {...props} describedBy={describedBy === '' ? undefined : describedBy} /> : <UnsupportedWidget id={id} />}
+            {Control ? <Control {...props} describedBy={describedBy === '' ? undefined : describedBy} /> : <UnsupportedControl id={id} />}
             {help ? (
                 <p id={helpId} className={styles.help}>
                     {help}

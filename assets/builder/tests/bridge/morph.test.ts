@@ -57,10 +57,10 @@ describe('morphing a block', () => {
     });
 
     it('should morph the blocks inside it, keeping their markers', () => {
-        document.body.innerHTML = marked('parent', `<section>${marked('child', '<h2>Child</h2>')}</section>`, 'section');
+        document.body.innerHTML = marked('parent', `<section>${marked('child', '<h2>Child</h2>')}</section>`, 'group');
         const child = document.querySelector('h2');
 
-        morphBlock(block('parent'), marked('parent', `<section class="wide">${marked('child', '<h2>Child changed</h2>')}</section>`, 'section'));
+        morphBlock(block('parent'), marked('parent', `<section class="wide">${marked('child', '<h2>Child changed</h2>')}</section>`, 'group'));
 
         expect(document.querySelector('h2')).toBe(child);
         expect(child).toHaveTextContent('Child changed');

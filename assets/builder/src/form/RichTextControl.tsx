@@ -7,10 +7,10 @@ import { headingLevels, isEmptyDocument, richTextExtensions, type HeadingLevel }
 import type { JsonValue } from '../types';
 import { isJsonObject, jsonEqual } from '../values';
 import styles from './Form.module.css';
-import type { FieldWidgetProps } from './types';
+import type { FieldControlProps } from './types';
 
 /** Rich text, edited with Tiptap and a toolbar for the schema's nodes and marks. An empty editor is no value. */
-export function RichTextWidget({ id, value, onChange, schema, describedBy }: FieldWidgetProps) {
+export function RichTextControl({ id, value, onChange, schema, describedBy }: FieldControlProps) {
     const onChangeRef = useRef(onChange);
     onChangeRef.current = onChange;
 

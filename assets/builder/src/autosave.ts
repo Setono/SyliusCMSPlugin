@@ -87,7 +87,7 @@ export function createAutosave(
     };
 
     const unsubscribe = store.subscribe((state, previous) => {
-        if (state.revision === previous.revision) {
+        if (state.changeCount === previous.changeCount) {
             return;
         }
 

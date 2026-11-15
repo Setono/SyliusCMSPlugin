@@ -47,7 +47,7 @@ describe('the bridge', () => {
         document.body.innerHTML = `<header><a href="/">Shop</a></header><main>${marked('a', '<h2 class="cms-heading">First</h2>')}${marked(
             'b',
             `<section class="cms-section"><a href="/elsewhere">${marked('c', '<h2 class="cms-heading">Inside</h2>')}</a></section>`,
-            'section',
+            'group',
         )}${marked('d', '<h2 class="cms-heading">Last</h2>')}</main>`;
         posted = [];
         scrolledTo = [];

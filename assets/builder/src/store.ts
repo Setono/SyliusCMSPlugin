@@ -50,7 +50,7 @@ export interface BuilderData {
      * Counts the changes to the working copy, made in the builder or pulled in from colleagues, so autosave and the
      * preview can tell them from other state changes. Loading a working copy doesn't count.
      */
-    revision: number;
+    changeCount: number;
     saveState: SaveState;
     publishState: PublishState;
     /** Why the server refused the last publish, such as a listener's veto, or null. */
@@ -166,7 +166,7 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
                 entry: next,
                 history,
                 unsaved: mergeChanges(state.unsaved, changesFromPatches(patches, state.entry, next, isTranslatable)),
-                revision: state.revision + 1,
+                changeCount: state.changeCount + 1,
             });
         };
 
@@ -211,7 +211,7 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
             lockToken,
             clashes: [],
             resolvedClashes: 0,
-            revision: 0,
+            changeCount: 0,
             saveState: 'idle',
             publishState: 'idle',
             publishRefusal: null,
@@ -351,7 +351,7 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
                     history: rebaseHistory(state.history, patches),
                     unsaved: applied,
                     clashes: held,
-                    revision: state.revision + 1,
+                    changeCount: state.changeCount + 1,
                 });
             },
 
