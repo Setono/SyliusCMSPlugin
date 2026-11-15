@@ -8,6 +8,8 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.saving'
     | 'setono_sylius_cms.builder.saved'
     | 'setono_sylius_cms.builder.save_failed'
+    | 'setono_sylius_cms.builder.save_stale'
+    | 'setono_sylius_cms.builder.reload'
     | 'setono_sylius_cms.builder.publish'
     | 'setono_sylius_cms.builder.publishing'
     | 'setono_sylius_cms.builder.published'

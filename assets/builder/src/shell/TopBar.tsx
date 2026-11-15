@@ -111,18 +111,27 @@ function UndoRedo() {
 
 function SaveState() {
     const t = useTranslator();
+    const { reload } = useBuilder();
     const saveState = useBuilderState((state) => state.saveState);
     const text = {
         idle: '',
         saving: t('setono_sylius_cms.builder.saving'),
         saved: t('setono_sylius_cms.builder.saved'),
         failed: t('setono_sylius_cms.builder.save_failed'),
+        stale: t('setono_sylius_cms.builder.save_stale'),
     }[saveState];
 
     return (
-        <span role="status" className={styles.saveState} data-state={saveState}>
-            {text}
-        </span>
+        <>
+            <span role="status" className={styles.saveState} data-state={saveState}>
+                {text}
+            </span>
+            {saveState === 'stale' && (
+                <button type="button" className={styles.discardButton} onClick={() => void reload()}>
+                    {t('setono_sylius_cms.builder.reload')}
+                </button>
+            )}
+        </>
     );
 }
 

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAutosave } from '../src/autosave';
 import type { Change } from '../src/changeSet';
 import { ApiError } from '../src/api';
-import { createDiscard, createPublish } from '../src/publishing';
+import { createDiscard, createPublish, createReload } from '../src/publishing';
 import type { Clash, EntryResponse, EntryStatus, SaveResponse } from '../src/types';
 import { block, entry, settings, storeWith } from './fixtures';
 
@@ -98,6 +98,39 @@ describe('autosave', () => {
 
         expect(send).toHaveBeenLastCalledWith([hello, { op: 'set_value', key: 'a', field: 'level', locale: null, value: 'h3' }], 0);
         expect(store.getState().saveState).toBe('saved');
+    });
+
+    it('should stop saving and offer a reload when the server cannot merge onto what colleagues saved', async () => {
+        const store = storeWith([block('a')]);
+        const send = vi.fn().mockRejectedValue(new ApiError('The lock token 0 is not one the working copy at version 9 can merge onto', 409));
+        createAutosave(store, send);
+
+        store.getState().setFieldValue('a', 'text', 'Hello');
+        await vi.advanceTimersByTimeAsync(500);
+
+        expect(store.getState().saveState).toBe('stale');
+        expect(store.getState().unsaved).toEqual([hello]);
+
+        store.getState().setFieldValue('a', 'level', 'h3');
+        await vi.advanceTimersByTimeAsync(500);
+
+        expect(send).toHaveBeenCalledTimes(1);
+        expect(store.getState().saveState).toBe('stale');
+    });
+
+    it('should reload the working copy, dropping what could not be saved', async () => {
+        const store = storeWith([block('a')]);
+        store.getState().setFieldValue('a', 'text', 'Hello');
+        store.setState({ saveState: 'stale' });
+        const loaded = entry([block('a', { text: { en_US: 'Theirs' } })]);
+        const reload = createReload(store, async (): Promise<EntryResponse> => ({ entry: loaded, settings: settings(), status: 'unpublished_changes', lockToken: 9, editors: [] }));
+
+        await reload();
+
+        expect(store.getState().entry).toEqual(loaded);
+        expect(store.getState().lockToken).toBe(9);
+        expect(store.getState().unsaved).toEqual([]);
+        expect(store.getState().saveState).toBe('idle');
     });
 
     it('should show saved when an edit cancels out the unsaved changes', () => {

@@ -1,3 +1,4 @@
+import { ApiError } from './api';
 import { mergeChanges, type Change } from './changeSet';
 import type { BuilderStore } from './store';
 import type { SaveResponse } from './types';
@@ -46,6 +47,10 @@ export function createAutosave(
         }
 
         const { unsaved: changes, lockToken, saveState, entry: sent } = store.getState();
+        if (saveState === 'stale') {
+            return false;
+        }
+
         if (changes.length === 0 && (pullTo === undefined || lockToken >= pullTo)) {
             return true;
         }
@@ -66,8 +71,10 @@ export function createAutosave(
 
                     return true;
                 },
-                () => {
-                    store.setState((state) => ({ unsaved: mergeChanges(changes, state.unsaved), saveState: saving ? 'failed' : saveState }));
+                (error: unknown) => {
+                    // A 409: the server can't merge onto what colleagues saved, so no later save can go through either
+                    const stale = error instanceof ApiError && error.status === 409;
+                    store.setState((state) => ({ unsaved: mergeChanges(changes, state.unsaved), saveState: stale ? 'stale' : saving ? 'failed' : saveState }));
 
                     return false;
                 },
@@ -81,6 +88,10 @@ export function createAutosave(
 
     const unsubscribe = store.subscribe((state, previous) => {
         if (state.revision === previous.revision) {
+            return;
+        }
+
+        if (state.saveState === 'stale') {
             return;
         }
 

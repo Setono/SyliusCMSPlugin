@@ -107,6 +107,7 @@ setono_sylius_cms:
         published: Published
         publishing: Publishing…
         redo: Redo
+        reload: Reload
         rich_text:
             blockquote: Quote
             bold: Bold
@@ -120,6 +121,7 @@ setono_sylius_cms:
             toolbar: Formatting
             underline: Underline
         save_failed: Couldn't save
+        save_stale: Colleagues' changes can't be merged with yours
         saved: Saved
         saving: Saving…
         search_block_types: Search block types

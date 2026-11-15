@@ -7,7 +7,7 @@ import { BuilderProvider, type BuilderSession } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
 import { createPresence, type Presence } from './presence';
 import { createPreviewStore } from './preview';
-import { createDiscard, createPublish } from './publishing';
+import { createDiscard, createPublish, createReload } from './publishing';
 import { createSettingsStore } from './settings';
 import { Shell } from './shell/Shell';
 import { createBuilderStore } from './store';
@@ -76,6 +76,7 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                         backUrl: config.backUrl,
                         publish: createPublish(store, autosave, () => api.publish(), validationStore),
                         discard: createDiscard(store, autosave, () => api.discard()),
+                        reload: createReload(store, () => api.fetchEntry()),
                         preview,
                         // The page renders what the server holds, so a new page waits for the unsaved changes
                         createPreviewUrl: async (request) => {

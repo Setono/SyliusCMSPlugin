@@ -136,7 +136,8 @@
     font-size: var(--builder-font-size-sm);
 }
 
-.saveState[data-state="failed"] {
+.saveState[data-state="failed"],
+.saveState[data-state="stale"] {
     color: var(--builder-color-danger);
 }
 

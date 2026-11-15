@@ -71,3 +71,15 @@ export function createDiscard(store: BuilderStore, autosave: Autosave, send: () 
         }
     };
 }
+
+/**
+ * Loads the working copy again in place of the one being edited, when the server can't merge a save onto what
+ * colleagues saved. What couldn't be saved goes with it.
+ */
+export function createReload(store: BuilderStore, fetchEntry: () => Promise<EntryResponse>): () => Promise<void> {
+    return async () => {
+        const { entry, status, lockToken } = await fetchEntry();
+        store.getState().load(entry, status, lockToken);
+        store.setState({ saveState: 'idle' });
+    };
+}

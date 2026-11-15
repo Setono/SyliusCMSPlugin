@@ -164,6 +164,23 @@ describe('the builder', () => {
         expect(api.publish).not.toHaveBeenCalled();
     });
 
+    it('should offer a reload when the server cannot merge a save onto what colleagues saved', async () => {
+        const fetchEntry = vi
+            .fn<() => Promise<EntryResponse>>()
+            .mockResolvedValueOnce({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings(), status: 'published', lockToken: 0, editors: [] })
+            .mockResolvedValue({ entry: entry([block('a', { text: { en_US: 'Their welcome' } })]), settings: settings(), status: 'unpublished_changes', lockToken: 7, editors: [] });
+        await openBuilder(fakeApi({ fetchEntry, saveChanges: vi.fn(() => Promise.reject(new ApiError('Stale lock token', 409))) }));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Delete block' }));
+
+        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent("Colleagues' changes can't be merged with yours"));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+
+        expect(await screen.findByRole('button', { name: 'Heading Their welcome' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Reload' })).not.toBeInTheDocument();
+    });
+
     it('should show unpublished changes once a published entry is saved, and discard them', async () => {
         const api = fakeApi({
             fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry([block('a', { text: { en_US: 'Welcome' } })]), settings: settings(), status: 'published', lockToken: 0, editors: [] })),

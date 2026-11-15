@@ -15,6 +15,8 @@ export interface BuilderSession {
     validation: ValidationStore;
     publish: () => Promise<void>;
     discard: () => Promise<void>;
+    /** Loads the working copy again, when the server can't merge a save onto what colleagues saved. */
+    reload: () => Promise<void>;
     backUrl: string;
     preview: PreviewStore;
     /** Asks for a preview token, and answers with the URL of the preview it turns on. */

@@ -167,6 +167,8 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.saving': 'Saving…',
     'setono_sylius_cms.builder.saved': 'Saved',
     'setono_sylius_cms.builder.save_failed': "Couldn't save",
+    'setono_sylius_cms.builder.save_stale': "Colleagues' changes can't be merged with yours",
+    'setono_sylius_cms.builder.reload': 'Reload',
     'setono_sylius_cms.builder.publish': 'Publish',
     'setono_sylius_cms.builder.publishing': 'Publishing…',
     'setono_sylius_cms.builder.published': 'Published',

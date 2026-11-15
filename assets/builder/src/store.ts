@@ -14,8 +14,11 @@ import { writeFieldValue } from './values';
 
 enablePatches();
 
-/** idle until the first edit, then saving while there are unsaved changes, then saved, or failed. */
-export type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
+/**
+ * idle until the first edit, then saving while there are unsaved changes, then saved, or failed. stale when the server
+ * can't merge a save onto what colleagues saved, so nothing saves until the working copy is loaded again.
+ */
+export type SaveState = 'idle' | 'saving' | 'saved' | 'failed' | 'stale';
 
 export type PublishState = 'idle' | 'publishing' | 'failed';
 
