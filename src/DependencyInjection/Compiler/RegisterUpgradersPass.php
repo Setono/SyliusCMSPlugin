@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\DependencyInjection\Compiler;
 
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
+use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Upgrade\Kind;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgrader;
 use Setono\SyliusCMSPlugin\Upgrade\UpgraderInterface;
@@ -16,7 +19,8 @@ use Symfony\Component\DependencyInjection\Reference;
 /**
  * Hands the services carrying #[AsUpgrader], which autoconfiguration tags, to the upgrade service, by the block type,
  * layout or content type they upgrade and the version they upgrade from. Each step has one upgrader, from a version
- * below the code's, or the container build fails. See "Upgraders" in docs/spec/extending.md
+ * below the code's, and a block type, layout or content type at version n has one for each step from 1 to n - 1, or the
+ * container build fails. See "Upgraders" in docs/spec/extending.md
  */
 final class RegisterUpgradersPass implements CompilerPassInterface
 {
@@ -67,7 +71,39 @@ final class RegisterUpgradersPass implements CompilerPassInterface
             $upgraders[$upgraderId] = new Reference($id);
         }
 
+        foreach (self::versioned($container) as $class) {
+            [$kind, $subject, $code, $version] = self::upgrades($class, $class);
+            for ($from = 1; $from < $version; ++$from) {
+                if (!isset($upgraders[$kind->upgraderId($subject, $from)])) {
+                    throw new \LogicException(sprintf('The %s "%s" is at version %d, but no upgrader upgrades it from version %d. Each version bump needs an upgrader from the version before it', str_replace('_', ' ', $kind->value), $code, $version, $from));
+                }
+            }
+        }
+
         $container->getDefinition(StoredDataUpgrader::class)->replaceArgument(3, ServiceLocatorTagPass::register($container, $upgraders));
+    }
+
+    /**
+     * The classes of the block types, layouts and content types the other passes registered, which all have a version
+     *
+     * @return list<class-string>
+     */
+    private static function versioned(ContainerBuilder $container): array
+    {
+        /** @var array<string, class-string> $blockTypes code => class */
+        $blockTypes = $container->hasDefinition(BlockTypeRegistry::class) ? $container->getDefinition(BlockTypeRegistry::class)->getArgument(0) : [];
+
+        /** @var array<string, array<string, class-string>> $layouts content type code => layout code => class */
+        $layouts = $container->hasDefinition(LayoutRegistry::class) ? $container->getDefinition(LayoutRegistry::class)->getArgument(0) : [];
+
+        /** @var array<string, array{model: class-string}> $contentTypes code => resource */
+        $contentTypes = $container->hasDefinition(ContentTypeRegistry::class) ? $container->getDefinition(ContentTypeRegistry::class)->getArgument(0) : [];
+
+        return [
+            ...array_values($blockTypes),
+            ...array_merge(...array_values(array_map(array_values(...), $layouts))),
+            ...array_values(array_map(static fn (array $contentType): string => $contentType['model'], $contentTypes)),
+        ];
     }
 
     /**

@@ -5,13 +5,21 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler;
 
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractCompilerPassTestCase;
+use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterUpgradersPass;
+use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Teaser;
+use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\Article;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\ArticleFromOne;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\DuplicateTeaserFromTwo;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\LandingFromOne;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\NotAnUpgrader;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\OfAPlainClass;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\RenameField;
+use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\TeaserFromOne;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\TeaserFromThree;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\TeaserFromTwo;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\TeaserFromZero;
@@ -186,6 +194,74 @@ final class RegisterUpgradersPassTest extends AbstractCompilerPassTestCase
         $this->compile();
 
         $this->assertContainerBuilderHasService('app.upgrader');
+    }
+
+    /**
+     * @test
+     */
+    public function it_accepts_a_version_reached_through_an_upgrader_for_every_step_from_1(): void
+    {
+        $this->registerSubjects();
+        $this->setDefinition(TeaserFromOne::class, (new Definition(TeaserFromOne::class))->addTag('setono_sylius_cms.upgrader'));
+        $this->setDefinition(TeaserFromTwo::class, (new Definition(TeaserFromTwo::class))->addTag('setono_sylius_cms.upgrader'));
+        $this->setDefinition(LandingFromOne::class, (new Definition(LandingFromOne::class))->addTag('setono_sylius_cms.upgrader'));
+        $this->setDefinition(ArticleFromOne::class, (new Definition(ArticleFromOne::class))->addTag('setono_sylius_cms.upgrader'));
+
+        $this->compile();
+
+        self::assertCount(4, $this->locatorArgument());
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideMissingSteps
+     *
+     * @param list<class-string> $upgraders
+     */
+    public function a_version_bump_without_an_upgrader_for_every_step_from_1_fails_the_build(array $upgraders, string $message): void
+    {
+        $this->registerSubjects();
+        foreach ($upgraders as $upgrader) {
+            $this->setDefinition($upgrader, (new Definition($upgrader))->addTag('setono_sylius_cms.upgrader'));
+        }
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage($message);
+
+        $this->compile();
+    }
+
+    /**
+     * @return iterable<string, array{list<class-string>, string}>
+     */
+    public static function provideMissingSteps(): iterable
+    {
+        yield 'a block type' => [
+            [TeaserFromTwo::class, LandingFromOne::class, ArticleFromOne::class],
+            'The block type "teaser" is at version 3, but no upgrader upgrades it from version 1. Each version bump needs an upgrader from the version before it',
+        ];
+        yield 'a layout' => [
+            [TeaserFromOne::class, TeaserFromTwo::class, ArticleFromOne::class],
+            'The layout "landing" is at version 2, but no upgrader upgrades it from version 1',
+        ];
+        yield 'a content type' => [
+            [TeaserFromOne::class, TeaserFromTwo::class, LandingFromOne::class],
+            'The content type "article" is at version 2, but no upgrader upgrades it from version 1',
+        ];
+    }
+
+    /**
+     * Registers the Teaser block type at version 3, the Heading block type at version 1, the Landing layout at version 2
+     * and the Article content type at version 2, as the other passes do
+     */
+    private function registerSubjects(): void
+    {
+        $this->setDefinition(BlockTypeRegistry::class, new Definition(BlockTypeRegistry::class, [['teaser' => Teaser::class, 'heading' => Heading::class]]));
+        $this->setDefinition(LayoutRegistry::class, new Definition(LayoutRegistry::class, [['page' => ['landing' => Landing::class]]]));
+        $this->setDefinition(ContentTypeRegistry::class, new Definition(ContentTypeRegistry::class, [[
+            'article' => ['model' => Article::class, 'translation' => null, 'resource' => 'app.article'],
+        ]]));
     }
 
     /**
