@@ -74,7 +74,7 @@ final class PreviewModeListenerTest extends TestCase
     /**
      * @test
      */
-    public function a_preview_response_is_neither_cached_nor_indexed_and_sends_no_referrer(): void
+    public function it_keeps_a_preview_response_out_of_caches_and_search_engines_and_sends_no_referrer(): void
     {
         $request = $this->previewRequest();
         $response = new Response();

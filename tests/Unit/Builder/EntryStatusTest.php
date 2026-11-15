@@ -25,7 +25,7 @@ final class EntryStatusTest extends TestCase
     /**
      * @test
      */
-    public function a_published_entry_with_a_draft_has_unpublished_changes(): void
+    public function it_says_a_published_entry_with_a_draft_has_unpublished_changes(): void
     {
         $page = new Page();
         $page->publish(new \DateTimeImmutable());

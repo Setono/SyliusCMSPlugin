@@ -23,7 +23,7 @@ final class BridgeTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_clicks_a_heading_in_the_preview_and_sees_it_selected_in_the_tree(): void
+    public function it_lets_an_admin_user_click_a_heading_in_the_preview_and_see_it_selected_in_the_tree(): void
     {
         [$page, $preview] = $this->openBuilder(self::twoHeadings());
 
@@ -38,7 +38,7 @@ final class BridgeTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_selects_a_block_in_the_tree_and_sees_it_outlined_in_the_preview(): void
+    public function it_lets_an_admin_user_select_a_block_in_the_tree_and_see_it_outlined_in_the_preview(): void
     {
         [$page, $preview] = $this->openBuilder(self::twoHeadings());
         $outline = $preview->locator('[data-cms-bridge] [data-outline="selected"]');
@@ -57,7 +57,7 @@ final class BridgeTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_edits_a_headings_text_and_sees_the_preview_change_without_a_reload(): void
+    public function it_lets_an_admin_user_edit_a_headings_text_and_see_the_preview_change_without_a_reload(): void
     {
         [$page, $preview] = $this->openBuilder(self::createPage('About us', 'about-us', 'Hello'));
         $body = $preview->locator('body');
@@ -80,7 +80,7 @@ final class BridgeTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_adds_a_heading_between_two_blocks_with_the_plus_of_the_block_under_the_pointer(): void
+    public function it_lets_an_admin_user_add_a_heading_between_two_blocks_with_the_plus_of_the_block_under_the_pointer(): void
     {
         [$page, $preview] = $this->openBuilder(self::twoHeadings());
 

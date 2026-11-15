@@ -15,7 +15,7 @@ final class DateWindowTest extends TestCase
     /**
      * @test
      */
-    public function show_from_is_inclusive(): void
+    public function it_includes_show_from(): void
     {
         $window = new DateWindow(self::utc('2026-11-27 00:00:00'), null);
 
@@ -27,7 +27,7 @@ final class DateWindowTest extends TestCase
     /**
      * @test
      */
-    public function show_until_is_exclusive(): void
+    public function it_excludes_show_until(): void
     {
         $window = new DateWindow(null, self::utc('2026-12-01 00:00:00'));
 
@@ -39,7 +39,7 @@ final class DateWindowTest extends TestCase
     /**
      * @test
      */
-    public function a_window_with_both_ends_contains_the_span_between_them(): void
+    public function it_contains_the_span_between_both_ends_of_a_window(): void
     {
         $window = new DateWindow(self::utc('2026-11-27 00:00:00'), self::utc('2026-12-01 00:00:00'));
 
@@ -52,7 +52,7 @@ final class DateWindowTest extends TestCase
     /**
      * @test
      */
-    public function a_window_without_ends_contains_every_time(): void
+    public function it_contains_every_time_in_a_window_without_ends(): void
     {
         $window = new DateWindow();
 
@@ -78,7 +78,7 @@ final class DateWindowTest extends TestCase
      *
      * @test
      */
-    public function its_ends_are_in_utc_to_the_second(): void
+    public function it_holds_its_ends_in_utc_to_the_second(): void
     {
         $window = new DateWindow(
             new \DateTimeImmutable('2026-11-27 01:00:00.750', new \DateTimeZone('Europe/Copenhagen')),
@@ -92,7 +92,7 @@ final class DateWindowTest extends TestCase
     /**
      * @test
      */
-    public function show_until_must_come_after_show_from(): void
+    public function it_needs_show_until_to_come_after_show_from(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('"Show until" (2026-11-27T00:00:00Z) must come after "Show from" (2026-11-27T00:00:00Z)');
@@ -103,7 +103,7 @@ final class DateWindowTest extends TestCase
     /**
      * @test
      */
-    public function windows_are_equal_when_their_ends_are_the_same_instants(): void
+    public function it_is_equal_to_a_window_whose_ends_are_the_same_instants(): void
     {
         $from = self::utc('2026-11-27 00:00:00');
         $until = self::utc('2026-12-01 00:00:00');

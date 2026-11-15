@@ -132,7 +132,7 @@ final class EntryUrlTest extends WebTestCase
     /**
      * @test
      */
-    public function a_disabled_page_answers_404(): void
+    public function it_answers_404_for_a_disabled_page(): void
     {
         $client = self::createClient();
         self::change(self::createPage('About us', 'about-us', 'Hello', published: true), static fn (PageInterface $page) => $page->setEnabled(false));
@@ -148,7 +148,7 @@ final class EntryUrlTest extends WebTestCase
      *
      * @test
      */
-    public function turning_a_page_back_on_shows_the_published_content_it_kept(): void
+    public function it_shows_the_published_content_a_page_kept_when_it_is_turned_back_on(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -164,7 +164,7 @@ final class EntryUrlTest extends WebTestCase
     /**
      * @test
      */
-    public function a_page_answers_404_before_its_date_window_and_after_it(): void
+    public function it_answers_404_for_a_page_before_its_date_window_and_after_it(): void
     {
         $client = self::createClient();
         $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
@@ -190,7 +190,7 @@ final class EntryUrlTest extends WebTestCase
      *
      * @test
      */
-    public function a_page_answers_404_in_a_channel_it_is_not_in(): void
+    public function it_answers_404_for_a_page_in_a_channel_it_is_not_in(): void
     {
         $client = self::createClient();
         self::createPage('About us', 'about-us', 'Hello', published: true, channels: ['OTHER']);
@@ -206,7 +206,7 @@ final class EntryUrlTest extends WebTestCase
      *
      * @test
      */
-    public function pages_with_no_channel_in_common_can_share_a_url(): void
+    public function it_lets_pages_with_no_channel_in_common_share_a_url(): void
     {
         $client = self::createClient();
         self::createPage('Elsewhere', 'about-us', 'In the other channel', published: true, channels: ['OTHER']);
@@ -223,7 +223,7 @@ final class EntryUrlTest extends WebTestCase
      *
      * @test
      */
-    public function a_page_answers_404_outside_its_audience_without_a_redirect_to_sign_in(): void
+    public function it_answers_404_for_a_page_outside_its_audience_without_a_redirect_to_sign_in(): void
     {
         $client = self::createClient();
         self::createCustomerGroup('wholesale', 'Wholesale');
@@ -254,7 +254,7 @@ final class EntryUrlTest extends WebTestCase
     /**
      * @test
      */
-    public function a_page_for_everyone_except_a_group_answers_404_to_that_group_only(): void
+    public function it_answers_404_for_a_page_for_everyone_except_a_group_to_that_group_only(): void
     {
         $client = self::createClient();
         self::createCustomerGroup('wholesale', 'Wholesale');

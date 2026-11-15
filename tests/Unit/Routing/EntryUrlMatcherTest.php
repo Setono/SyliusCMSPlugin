@@ -159,7 +159,7 @@ final class EntryUrlMatcherTest extends TestCase
     /**
      * @test
      */
-    public function in_the_builders_preview_it_matches_the_edited_entry_at_its_working_copys_url_first(): void
+    public function it_matches_the_edited_entry_at_its_working_copys_url_first_in_the_builders_preview(): void
     {
         $page = new Page();
         $page->setCurrentLocale('en_US');

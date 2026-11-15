@@ -36,7 +36,7 @@ final class UpgradeCommandTest extends KernelTestCase
     /**
      * @test
      */
-    public function a_dry_run_reports_what_it_would_upgrade_and_changes_nothing(): void
+    public function it_reports_what_a_dry_run_would_upgrade_and_changes_nothing(): void
     {
         self::bootKernel();
         [$rowsPage, $draftPage, $currentPage] = self::pagesToUpgrade();

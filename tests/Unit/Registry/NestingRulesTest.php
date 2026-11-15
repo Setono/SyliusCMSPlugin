@@ -28,7 +28,7 @@ final class NestingRulesTest extends TestCase
     /**
      * @test
      */
-    public function a_block_type_allows_the_block_types_it_names_with_their_min_and_max(): void
+    public function it_allows_the_block_types_a_block_type_names_with_their_min_and_max(): void
     {
         self::assertEquals([new AllowedBlockType('column', 2, 4)], self::rules()->children('columns'));
     }
@@ -36,7 +36,7 @@ final class NestingRulesTest extends TestCase
     /**
      * @test
      */
-    public function a_block_type_that_allows_no_children_allows_nothing(): void
+    public function it_allows_nothing_inside_a_block_type_that_allows_no_children(): void
     {
         self::assertSame([], self::rules()->children('heading'));
         self::assertSame([], self::rules()->children('spacer'));
@@ -45,7 +45,7 @@ final class NestingRulesTest extends TestCase
     /**
      * @test
      */
-    public function star_allows_every_block_type_except_those_that_limit_their_parents_to_others(): void
+    public function it_lets_star_allow_every_block_type_except_those_that_limit_their_parents_to_others(): void
     {
         self::assertEquals([
             new AllowedBlockType('group', null, null),
@@ -60,7 +60,7 @@ final class NestingRulesTest extends TestCase
     /**
      * @test
      */
-    public function star_allows_a_block_type_inside_the_parents_it_limits_itself_to(): void
+    public function it_lets_star_allow_a_block_type_inside_the_parents_it_limits_itself_to(): void
     {
         $codes = self::codes(self::rules()->children('gallery'));
 
@@ -71,7 +71,7 @@ final class NestingRulesTest extends TestCase
     /**
      * @test
      */
-    public function a_block_type_named_by_its_class_wins_over_star_and_is_left_out_where_its_parents_do_not_allow_it(): void
+    public function it_lets_a_block_type_named_by_its_class_win_over_star_and_leaves_it_out_where_its_parents_do_not_allow_it(): void
     {
         $children = self::rules()->children('card');
 
@@ -82,7 +82,7 @@ final class NestingRulesTest extends TestCase
     /**
      * @test
      */
-    public function a_block_type_named_by_its_class_before_star_keeps_its_min_and_max(): void
+    public function it_keeps_the_min_and_max_of_a_block_type_named_by_its_class_before_star(): void
     {
         $children = self::rules(extra: ['panel' => Panel::class])->children('panel');
 
@@ -93,7 +93,7 @@ final class NestingRulesTest extends TestCase
     /**
      * @test
      */
-    public function the_top_level_follows_the_same_rules_as_children_with_no_parent(): void
+    public function it_applies_the_same_rules_to_the_top_level_as_to_children_with_no_parent(): void
     {
         self::assertSame(['group', 'columns', 'spacer', 'heading', 'gallery', 'card'], self::codes(self::rules()->topLevel('page')));
     }
@@ -101,7 +101,7 @@ final class NestingRulesTest extends TestCase
     /**
      * @test
      */
-    public function a_content_type_without_a_block_tree_allows_nothing_at_its_top_level(): void
+    public function it_allows_nothing_at_the_top_level_of_a_content_type_without_a_block_tree(): void
     {
         self::assertSame([], self::rules()->topLevel('recipe'));
     }
@@ -109,7 +109,7 @@ final class NestingRulesTest extends TestCase
     /**
      * @test
      */
-    public function a_disabled_block_type_is_still_allowed_where_it_was_so_blocks_of_it_stay_and_keep_rendering(): void
+    public function it_still_allows_a_disabled_block_type_where_it_was_so_blocks_of_it_stay_and_keep_rendering(): void
     {
         $rules = self::rules(disabled: ['spacer']);
 

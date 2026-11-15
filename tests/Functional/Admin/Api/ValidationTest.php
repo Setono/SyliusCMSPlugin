@@ -37,7 +37,7 @@ final class ValidationTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function an_invalid_tree_autosaves(): void
+    public function it_autosaves_an_invalid_tree(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -62,7 +62,7 @@ final class ValidationTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_block_that_holds_a_block_of_a_type_the_code_no_longer_has_can_be_edited_and_duplicated(): void
+    public function it_saves_edits_to_and_copies_of_a_block_that_holds_a_block_of_a_type_the_code_no_longer_has(): void
     {
         $client = self::createClient();
         $page = self::createPageWithBlocks('About us', 'about-us', [
@@ -90,7 +90,7 @@ final class ValidationTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function entry_validate_lists_the_working_copys_errors_by_block_key_and_field(): void
+    public function it_lists_the_working_copys_errors_by_block_key_and_field_in_entry_validate(): void
     {
         $client = self::createClient();
         $page = self::createInvalidPage();
@@ -105,7 +105,7 @@ final class ValidationTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function entry_validate_answers_no_errors_for_valid_content(): void
+    public function it_answers_entry_validate_with_no_errors_for_valid_content(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -120,7 +120,7 @@ final class ValidationTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function entry_validate_lists_a_content_type_fields_errors_by_entry_field(): void
+    public function it_lists_a_content_type_fields_errors_by_entry_field_in_entry_validate(): void
     {
         $client = self::createClient();
 
@@ -144,7 +144,7 @@ final class ValidationTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function entry_validate_validates_the_draft_of_a_published_entry(): void
+    public function it_validates_the_draft_of_a_published_entry_in_entry_validate(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -161,7 +161,7 @@ final class ValidationTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function entry_validate_needs_an_admin_user(): void
+    public function it_needs_an_admin_user_for_entry_validate(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -174,7 +174,7 @@ final class ValidationTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function entry_publish_refuses_invalid_content_with_its_errors_and_changes_nothing(): void
+    public function it_refuses_to_publish_invalid_content_with_its_errors_and_changes_nothing(): void
     {
         $client = self::createClient();
         $client->disableReboot();
@@ -201,7 +201,7 @@ final class ValidationTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function entry_publish_keeps_the_draft_of_a_published_entry_it_refuses(): void
+    public function it_keeps_the_draft_of_a_published_entry_when_entry_publish_refuses_it(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);

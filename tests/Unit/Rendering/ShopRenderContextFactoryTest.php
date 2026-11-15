@@ -125,7 +125,7 @@ final class ShopRenderContextFactoryTest extends TestCase
     /**
      * @test
      */
-    public function in_the_builders_preview_it_carries_the_preview_mode(): void
+    public function it_carries_the_preview_mode_in_the_builders_preview(): void
     {
         $signer = new PreviewTokenSigner('secret', new MockClock());
         $this->requestStack->push(new Request([PreviewContext::QUERY_PARAMETER => $signer->sign(new Preview('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', 'WEB', 'da_DK'))]));
@@ -136,7 +136,7 @@ final class ShopRenderContextFactoryTest extends TestCase
     /**
      * @test
      */
-    public function in_the_builders_preview_the_locale_is_the_previews_whatever_the_request(): void
+    public function it_takes_the_previews_locale_in_the_builders_preview_whatever_the_request(): void
     {
         $signer = new PreviewTokenSigner('secret', new MockClock());
         $this->requestStack->push(new Request([PreviewContext::QUERY_PARAMETER => $signer->sign(new Preview('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', 'WEB', 'en_US'))]));

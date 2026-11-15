@@ -67,7 +67,7 @@ final class BlockTreeValidatorTest extends TestCase
     /**
      * @test
      */
-    public function a_required_translatable_field_is_missing_only_in_locales_whose_fallback_chain_finds_no_value(): void
+    public function it_finds_a_required_translatable_field_missing_only_in_locales_whose_fallback_chain_finds_no_value(): void
     {
         $danishOnly = new StoredBlock(self::A, 'heading', 1);
         $danishOnly->setValue('text', 'da_DK', 'Hej');
@@ -82,7 +82,7 @@ final class BlockTreeValidatorTest extends TestCase
     /**
      * @test
      */
-    public function an_empty_rich_text_document_and_a_value_that_is_not_a_locale_map_count_as_missing(): void
+    public function it_counts_an_empty_rich_text_document_and_a_value_that_is_not_a_locale_map_as_missing(): void
     {
         $emptyDocument = self::testimonial(self::A);
         $emptyDocument->setValue('bio', 'en_US', ['type' => 'doc', 'content' => [['type' => 'paragraph']]]);
@@ -118,7 +118,7 @@ final class BlockTreeValidatorTest extends TestCase
     /**
      * @test
      */
-    public function constraints_check_a_missing_value_too_and_a_shared_field_has_no_locale(): void
+    public function it_checks_constraints_on_a_missing_value_too_and_gives_a_shared_field_no_locale(): void
     {
         $block = self::testimonial(self::A);
         unset($block->fields['author']);
@@ -227,7 +227,7 @@ final class BlockTreeValidatorTest extends TestCase
     /**
      * @test
      */
-    public function the_top_level_follows_the_content_type_with_its_min_and_max_reported_on_the_entry(): void
+    public function it_validates_the_top_level_against_the_content_type_and_reports_its_min_and_max_on_the_entry(): void
     {
         $validator = $this->validator();
 
@@ -254,7 +254,7 @@ final class BlockTreeValidatorTest extends TestCase
     /**
      * @test
      */
-    public function a_valid_tree_has_no_errors(): void
+    public function it_finds_no_errors_in_a_valid_tree(): void
     {
         $columns = new StoredBlock(self::A, 'columns', 1, children: [
             new StoredBlock(self::B, 'column', 1, children: [self::heading(self::C, 'Hello'), self::testimonial(self::E)]),

@@ -16,7 +16,7 @@ final class BlockStylesTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_picks_the_dark_style_for_a_group_publishes_and_sees_the_dark_background_in_the_shop(): void
+    public function it_lets_an_admin_user_pick_the_dark_style_for_a_group_publish_and_see_the_dark_background_in_the_shop(): void
     {
         $this->signInAsAdmin();
         $entry = self::createPageWithBlocks('Night', 'night', [
@@ -50,7 +50,7 @@ final class BlockStylesTest extends UITestCase
     /**
      * @test
      */
-    public function a_group_with_no_style_has_no_background_in_the_shop(): void
+    public function it_shows_a_group_with_no_style_without_a_background_in_the_shop(): void
     {
         self::createPageWithBlocks('Plain', 'plain', [
             new StoredBlock('0193a5be-0000-7000-8000-000000000001', 'group', 1, children: [self::heading('0193a5be-0000-7000-8000-000000000002', 'In daylight')]),

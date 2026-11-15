@@ -91,7 +91,7 @@ final class EntrySettingsSaverTest extends TestCase
     /**
      * @test
      */
-    public function saving_the_settings_an_entry_already_has_changes_nothing(): void
+    public function it_changes_nothing_when_saving_the_settings_an_entry_already_has(): void
     {
         $page = new Page();
         $page->setChannelCodes(['WEB']);
@@ -106,7 +106,7 @@ final class EntrySettingsSaverTest extends TestCase
     /**
      * @test
      */
-    public function the_entry_must_be_managed_by_the_doctrine_orm(): void
+    public function it_needs_the_entry_managed_by_the_doctrine_orm(): void
     {
         $this->managerRegistry->getManagerForClass(Page::class)->willReturn(null);
 

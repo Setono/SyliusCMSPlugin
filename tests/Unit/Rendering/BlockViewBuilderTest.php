@@ -173,7 +173,7 @@ final class BlockViewBuilderTest extends TestCase
     /**
      * @test
      */
-    public function a_style_code_that_is_no_longer_declared_resolves_to_no_class(): void
+    public function it_resolves_a_style_code_that_is_no_longer_declared_to_no_class(): void
     {
         $views = $this->builder()->build([
             new StoredBlock(self::A, 'group', 1, style: 'retired'),

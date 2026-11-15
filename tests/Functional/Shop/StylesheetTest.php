@@ -14,7 +14,7 @@ final class StylesheetTest extends WebTestCase
     /**
      * @test
      */
-    public function the_shop_loads_the_stylesheet_in_its_head_before_its_own_styles(): void
+    public function it_loads_the_stylesheet_in_the_shops_head_before_its_own_styles(): void
     {
         $client = self::createClient();
 

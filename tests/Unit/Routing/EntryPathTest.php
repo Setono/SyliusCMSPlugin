@@ -15,7 +15,7 @@ final class EntryPathTest extends TestCase
     /**
      * @test
      */
-    public function an_empty_prefix_leaves_out_its_segment(): void
+    public function it_leaves_out_the_segment_of_an_empty_prefix(): void
     {
         self::assertSame('about/team', EntryPath::of(self::contentType(''), self::page('about/team'), 'en_US'));
     }
@@ -23,7 +23,7 @@ final class EntryPathTest extends TestCase
     /**
      * @test
      */
-    public function a_prefix_goes_before_the_slug(): void
+    public function it_puts_a_prefix_before_the_slug(): void
     {
         self::assertSame('blog/hello', EntryPath::of(self::contentType('blog'), self::page('hello'), 'en_US'));
     }
@@ -44,7 +44,7 @@ final class EntryPathTest extends TestCase
     /**
      * @test
      */
-    public function a_content_type_without_a_url_of_its_own_has_no_path(): void
+    public function it_gives_no_path_to_a_content_type_without_a_url_of_its_own(): void
     {
         self::assertNull(EntryPath::of(self::contentType(null), self::page('about-us'), 'en_US'));
     }
@@ -52,7 +52,7 @@ final class EntryPathTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_without_a_translation_in_the_locale_has_no_path(): void
+    public function it_gives_no_path_to_an_entry_without_a_translation_in_the_locale(): void
     {
         $page = self::page('about-us');
         $page->setFallbackLocale('en_US');
@@ -63,7 +63,7 @@ final class EntryPathTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_without_a_slug_has_no_path(): void
+    public function it_gives_no_path_to_an_entry_without_a_slug(): void
     {
         self::assertNull(EntryPath::of(self::contentType(''), self::page(null), 'en_US'));
         self::assertNull(EntryPath::of(self::contentType('blog'), self::page(''), 'en_US'));

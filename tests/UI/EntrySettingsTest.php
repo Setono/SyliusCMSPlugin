@@ -19,7 +19,7 @@ final class EntrySettingsTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_switches_a_published_page_off_and_the_shop_answers_404_without_a_publish(): void
+    public function it_lets_an_admin_user_switch_a_published_page_off_so_the_shop_answers_404_without_a_publish(): void
     {
         $this->signInAsAdmin();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -52,7 +52,7 @@ final class EntrySettingsTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_shows_a_page_only_to_wholesale_customers(): void
+    public function it_lets_an_admin_user_show_a_page_only_to_wholesale_customers(): void
     {
         $this->signInAsAdmin();
         self::createCustomerGroup('wholesale', 'Wholesale');

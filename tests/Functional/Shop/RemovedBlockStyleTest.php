@@ -30,7 +30,7 @@ final class RemovedBlockStyleTest extends WebTestCase
     /**
      * @test
      */
-    public function a_group_whose_style_was_removed_from_the_config_renders_plain(): void
+    public function it_renders_a_group_whose_style_was_removed_from_the_config_plain(): void
     {
         $client = self::createClient();
         self::createPageWithBlocks('Seasonal', 'seasonal', [

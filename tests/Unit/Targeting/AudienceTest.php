@@ -69,7 +69,7 @@ final class AudienceTest extends TestCase
     /**
      * @test
      */
-    public function signed_in_without_a_group_is_a_value_of_its_own(): void
+    public function it_makes_signed_in_without_a_group_a_value_of_its_own(): void
     {
         $audience = Audience::only('@no_group');
 
@@ -83,7 +83,7 @@ final class AudienceTest extends TestCase
      *
      * @test
      */
-    public function a_deleted_customer_groups_code_matches_nobody(): void
+    public function it_matches_nobody_with_a_deleted_customer_groups_code(): void
     {
         foreach (['wholesale', 'retail', 'guest', 'no group'] as $shopper) {
             $value = $this->customerGroupValueOf($shopper);
@@ -96,7 +96,7 @@ final class AudienceTest extends TestCase
     /**
      * @test
      */
-    public function an_audience_has_a_mode_and_its_groups_in_a_stable_order_without_duplicates(): void
+    public function it_has_a_mode_and_its_groups_in_a_stable_order_without_duplicates(): void
     {
         $audience = new Audience(AudienceMode::Only, ['wholesale', '@guest', 'retail', 'wholesale']);
 
@@ -111,7 +111,7 @@ final class AudienceTest extends TestCase
     /**
      * @test
      */
-    public function audiences_are_equal_when_their_modes_and_groups_are(): void
+    public function it_is_equal_to_an_audience_with_the_same_mode_and_groups(): void
     {
         self::assertTrue(Audience::only('b', 'a')->equals(Audience::only('a', 'b')));
         self::assertTrue(Audience::everyone()->equals(new Audience(AudienceMode::Everyone)));
@@ -123,7 +123,7 @@ final class AudienceTest extends TestCase
     /**
      * @test
      */
-    public function everyone_has_no_groups(): void
+    public function it_has_no_groups_for_everyone(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('An audience of everyone has no groups');
@@ -157,7 +157,7 @@ final class AudienceTest extends TestCase
     /**
      * @test
      */
-    public function the_customer_group_value_is_the_groups_code_guest_or_no_group(): void
+    public function it_gives_the_groups_code_guest_or_no_group_as_the_customer_group_value(): void
     {
         self::assertSame('@guest', CustomerGroupValue::of(null));
         self::assertSame('@no_group', $this->customerGroupValueOf('no group'));

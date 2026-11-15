@@ -22,7 +22,7 @@ final class UpgradeTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_opens_an_entry_whose_block_was_saved_with_an_older_version_and_sees_the_renamed_field_holding_its_value(): void
+    public function it_lets_an_admin_user_open_an_entry_whose_block_was_saved_with_an_older_version_and_see_the_renamed_field_holding_its_value(): void
     {
         $this->signInAsAdmin();
         $callout = new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e60', 'callout', 1, fields: ['text' => ['en_US' => 'Saved with version 1']]);

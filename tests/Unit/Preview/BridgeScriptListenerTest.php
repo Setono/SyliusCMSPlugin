@@ -83,7 +83,7 @@ final class BridgeScriptListenerTest extends TestCase
     /**
      * @test
      */
-    public function shoppers_never_get_it(): void
+    public function it_never_gives_it_to_shoppers(): void
     {
         $request = new Request();
         $this->requestStack->push($request);

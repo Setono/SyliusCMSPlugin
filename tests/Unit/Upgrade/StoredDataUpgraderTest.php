@@ -57,7 +57,7 @@ final class StoredDataUpgraderTest extends TestCase
     /**
      * @test
      */
-    public function a_block_type_upgrader_gets_the_block_without_its_children_which_are_upgraded_on_their_own(): void
+    public function it_gives_a_block_type_upgrader_the_block_without_its_children_and_upgrades_them_on_their_own(): void
     {
         $toTwo = new RenameField('title', 'headline');
         $upgrader = self::upgrader(['block_type:teaser:1' => $toTwo, 'block_type:teaser:2' => new RenameField('headline', 'heading')]);
@@ -83,7 +83,7 @@ final class StoredDataUpgraderTest extends TestCase
     /**
      * @test
      */
-    public function a_layout_upgrader_gets_the_trees_layout_array_and_the_trees_blocks_are_upgraded_too(): void
+    public function it_gives_a_layout_upgrader_the_trees_layout_array_and_upgrades_the_trees_blocks_too(): void
     {
         // Landing is a page layout at version 2: "transparent" became "transparentHeader"
         $layoutUpgrader = new RenameField('transparent', 'transparentHeader');
@@ -108,7 +108,7 @@ final class StoredDataUpgraderTest extends TestCase
     /**
      * @test
      */
-    public function a_content_type_upgrader_gets_the_entry_without_its_tree_and_the_tree_is_upgraded_as_one_of_the_entrys_content_type(): void
+    public function it_gives_a_content_type_upgrader_the_entry_without_its_tree_and_upgrades_the_tree_as_one_of_its_content_type(): void
     {
         // Article is at version 2: its shared field "image" became "featuredImage"
         $contentTypeUpgrader = new RenameField('image', 'featuredImage');
@@ -189,7 +189,7 @@ final class StoredDataUpgraderTest extends TestCase
     /**
      * @test
      */
-    public function a_removed_fields_value_and_translation_state_are_dropped_from_blocks_and_layouts_of_known_types(): void
+    public function it_drops_a_removed_fields_value_and_translation_state_from_blocks_and_layouts_of_known_types(): void
     {
         $state = ['da_DK' => ['from' => 'en_US', 'fingerprint' => 'abc']];
         $unknown = self::decode(['key' => self::CHILD_KEY, 'type' => 'removed_type', 'version' => 1, 'fields' => ['subtitle' => 'Kept'], 'translated' => ['subtitle' => $state]]);
@@ -234,7 +234,7 @@ final class StoredDataUpgraderTest extends TestCase
     /**
      * @test
      */
-    public function a_content_type_upgrader_gets_an_entrys_empty_maps_as_arrays_too(): void
+    public function it_gives_a_content_type_upgrader_an_entrys_empty_maps_as_arrays_too(): void
     {
         $contentTypeUpgrader = new RenameField('image', 'featuredImage');
 
@@ -252,7 +252,7 @@ final class StoredDataUpgraderTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_of_a_content_type_the_code_no_longer_has_is_kept_as_it_is_and_its_tree_is_upgraded(): void
+    public function it_keeps_an_entry_of_a_content_type_the_code_no_longer_has_as_it_is_and_upgrades_its_tree(): void
     {
         $upgraded = self::upgrader([
             'block_type:teaser:1' => new RenameField('title', 'headline'),
@@ -274,7 +274,7 @@ final class StoredDataUpgraderTest extends TestCase
     /**
      * @test
      */
-    public function what_isnt_in_the_stored_format_is_left_as_it_is_for_the_serializers_to_refuse(): void
+    public function it_leaves_what_isnt_in_the_stored_format_as_it_is_for_the_serializers_to_refuse(): void
     {
         $upgrader = self::upgrader(['block_type:teaser:1' => new RenameField('title', 'headline')]);
 

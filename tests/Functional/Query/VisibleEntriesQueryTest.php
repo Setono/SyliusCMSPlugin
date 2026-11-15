@@ -140,7 +140,7 @@ final class VisibleEntriesQueryTest extends KernelTestCase
      *
      * @test
      */
-    public function a_deleted_customer_groups_code_in_an_audience_matches_nobody(): void
+    public function it_matches_nobody_with_a_deleted_customer_groups_code_in_an_audience(): void
     {
         self::save(self::createPage('Only a deleted group', 'only-deleted', published: true), static fn (PageInterface $page) => $page->setAudience(Audience::only('deleted_group')));
         self::save(self::createPage('Except a deleted group', 'except-deleted', published: true), static fn (PageInterface $page) => $page->setAudience(Audience::except('deleted_group')));

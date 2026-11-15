@@ -190,7 +190,7 @@ final class CmsExtensionTest extends TestCase
     /**
      * @test
      */
-    public function templates_can_tell_they_render_in_the_builders_preview(): void
+    public function it_tells_templates_they_render_in_the_builders_preview(): void
     {
         $signer = new PreviewTokenSigner('secret', new MockClock());
         $this->requestStack->push(new Request([PreviewContext::QUERY_PARAMETER => $signer->sign(new Preview('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', 'WEB', 'en_US'))]));
@@ -201,7 +201,7 @@ final class CmsExtensionTest extends TestCase
     /**
      * @test
      */
-    public function templates_see_no_preview_mode_for_shoppers(): void
+    public function it_shows_templates_no_preview_mode_for_shoppers(): void
     {
         $this->requestStack->push(new Request());
 

@@ -18,7 +18,7 @@ final class ContentBlocksTest extends WebTestCase
     /**
      * @test
      */
-    public function a_published_rich_text_block_renders_its_html_in_cms_rich_text(): void
+    public function it_renders_the_html_of_a_published_rich_text_block_in_cms_rich_text(): void
     {
         $client = self::createClient();
         self::createPageWithBlocks('Story', 'story', [self::richText('0193a5be-0000-7000-8000-000000000001', 'A ', 'bold', ' word')], published: true);
@@ -35,7 +35,7 @@ final class ContentBlocksTest extends WebTestCase
     /**
      * @test
      */
-    public function an_accordion_renders_each_item_as_details_with_its_title_in_the_summary(): void
+    public function it_renders_each_accordion_item_as_details_with_its_title_in_the_summary(): void
     {
         $client = self::createClient();
         $item = new StoredBlock('0193a5be-0000-7000-8000-000000000002', 'accordion_item', 1, fields: [

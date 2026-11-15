@@ -64,7 +64,7 @@ final class CreateEntryTest extends WebTestCase
     /**
      * @test
      */
-    public function a_new_entry_is_enabled_for_everyone_in_every_channel(): void
+    public function it_creates_an_entry_enabled_for_everyone_in_every_channel(): void
     {
         $client = self::createClient();
         $client->loginUser(self::admin(), 'admin');
@@ -89,7 +89,7 @@ final class CreateEntryTest extends WebTestCase
     /**
      * @test
      */
-    public function an_entry_made_by_its_resource_factory_starts_in_every_channel_too(): void
+    public function it_starts_an_entry_made_by_its_resource_factory_in_every_channel_too(): void
     {
         self::bootKernel();
         self::createChannel('B2B');

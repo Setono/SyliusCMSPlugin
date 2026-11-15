@@ -14,7 +14,7 @@ final class ShopStylesheetTest extends TestCase
     /**
      * @test
      */
-    public function everything_in_it_sits_in_the_cms_cascade_layer(): void
+    public function it_puts_everything_in_the_cms_cascade_layer(): void
     {
         $css = self::css();
 
@@ -84,7 +84,7 @@ final class ShopStylesheetTest extends TestCase
     /**
      * @test
      */
-    public function the_group_styles_give_it_a_background_from_their_custom_properties(): void
+    public function it_gives_a_group_a_background_from_its_styles_custom_properties(): void
     {
         self::assertSame(['background' => 'var(--cms-muted-background)'], array_intersect_key(self::declarations('.cms-group--muted'), ['background' => true, 'color' => true]));
         self::assertSame(['background' => 'var(--cms-dark-background)', 'color' => 'var(--cms-dark-color)'], array_intersect_key(self::declarations('.cms-group--dark'), ['background' => true, 'color' => true]));
@@ -93,7 +93,7 @@ final class ShopStylesheetTest extends TestCase
     /**
      * @test
      */
-    public function a_group_with_no_style_has_no_background(): void
+    public function it_gives_a_group_with_no_style_no_background(): void
     {
         foreach (['.cms-group', '.cms-group__inner'] as $selector) {
             self::assertArrayNotHasKey('background', self::declarations($selector), $selector);

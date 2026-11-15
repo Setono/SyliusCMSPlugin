@@ -33,7 +33,7 @@ final class UpgradeTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_block_saved_with_an_older_version_renders_from_the_rows_through_its_upgrader_which_leaves_the_rows_as_they_are(): void
+    public function it_renders_a_block_saved_with_an_older_version_through_its_upgrader_and_leaves_the_rows_as_they_are(): void
     {
         $client = self::createClient();
         $page = self::createPageWithBlocks('About us', 'about-us', [self::calloutAtVersion1('Saved with version 1')], published: true);
@@ -49,7 +49,7 @@ final class UpgradeTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_block_saved_with_an_older_version_in_a_draft_is_upgraded_in_the_preview_the_builder_and_on_publish(): void
+    public function it_upgrades_a_block_saved_with_an_older_version_in_a_draft_in_the_preview_the_builder_and_on_publish(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -86,7 +86,7 @@ final class UpgradeTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_removed_fields_value_is_ignored_and_dropped_on_the_next_save_which_writes_older_blocks_upgraded(): void
+    public function it_ignores_a_removed_fields_value_and_drops_it_on_the_next_save_which_writes_older_blocks_upgraded(): void
     {
         $client = self::createClient();
         $heading = self::heading(self::HEADING, 'Hello');
@@ -112,7 +112,7 @@ final class UpgradeTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_preview_renders_a_block_the_builder_holds_at_an_older_version_through_its_upgrader(): void
+    public function it_renders_a_block_the_builder_holds_at_an_older_version_in_the_preview_through_its_upgrader(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');

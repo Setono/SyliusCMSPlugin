@@ -87,7 +87,7 @@ final class PreviewRenderTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function its_answer_is_neither_cached_nor_indexed(): void
+    public function it_keeps_its_answer_out_of_caches_and_search_engines(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -101,7 +101,7 @@ final class PreviewRenderTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_block_of_a_type_the_code_no_longer_has_renders_nothing(): void
+    public function it_renders_nothing_for_a_block_of_a_type_the_code_no_longer_has(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');

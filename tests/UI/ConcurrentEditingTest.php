@@ -26,7 +26,7 @@ final class ConcurrentEditingTest extends UITestCase
     /**
      * @test
      */
-    public function two_admin_users_edit_one_page_see_each_other_and_each_others_changes_and_resolve_a_clash(): void
+    public function it_lets_two_admin_users_edit_one_page_see_each_other_and_each_others_changes_and_resolve_a_clash(): void
     {
         $page = self::createPageWithBlocks('About us', 'about-us', [
             self::heading('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a', 'Hello'),

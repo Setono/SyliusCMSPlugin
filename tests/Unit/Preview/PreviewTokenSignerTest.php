@@ -35,7 +35,7 @@ final class PreviewTokenSignerTest extends TestCase
     /**
      * @test
      */
-    public function its_tokens_fit_in_a_query_string_unencoded(): void
+    public function it_signs_tokens_that_fit_in_a_query_string_unencoded(): void
     {
         $token = $this->signer()->sign(new Preview(self::ENTRY, 'WEB', 'en_US'));
 
@@ -46,7 +46,7 @@ final class PreviewTokenSignerTest extends TestCase
     /**
      * @test
      */
-    public function a_token_is_valid_for_an_hour(): void
+    public function it_signs_a_token_valid_for_an_hour(): void
     {
         $signer = $this->signer();
         $token = $signer->sign(new Preview(self::ENTRY, 'WEB', 'en_US'));

@@ -49,7 +49,7 @@ final class EntrySettingsTest extends TestCase
     /**
      * @test
      */
-    public function its_channels_are_sorted_codes_without_duplicates(): void
+    public function it_keeps_its_channels_as_sorted_codes_without_duplicates(): void
     {
         self::assertSame(['B2B', 'WEB'], (new EntrySettings(true, new DateWindow(), ['WEB', 'B2B', 'WEB'], Audience::everyone()))->channels);
         self::assertSame(['B2B', 'WEB'], (new EntrySettings(true, new DateWindow(), self::generate('WEB', 'B2B'), Audience::everyone()))->channels);

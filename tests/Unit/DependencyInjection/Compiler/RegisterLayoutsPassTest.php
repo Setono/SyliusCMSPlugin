@@ -64,7 +64,7 @@ final class RegisterLayoutsPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function two_layouts_of_one_content_type_with_the_same_code_fail_the_build(): void
+    public function it_fails_the_build_for_two_layouts_of_one_content_type_with_the_same_code(): void
     {
         $this->setDefinition('app.landing', (new Definition(Landing::class))->addTag('setono_sylius_cms.layout'));
         $this->setDefinition('app.second_landing', (new Definition(SecondLanding::class))->addTag('setono_sylius_cms.layout'));
@@ -78,7 +78,7 @@ final class RegisterLayoutsPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function a_layout_code_must_be_a_valid_code(): void
+    public function it_refuses_a_layout_code_that_is_not_a_valid_code(): void
     {
         $this->setDefinition('app.invalid', (new Definition(InvalidLayoutCode::class))->addTag('setono_sylius_cms.layout'));
 
@@ -91,7 +91,7 @@ final class RegisterLayoutsPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function a_layouts_content_type_must_be_a_content_type_class(): void
+    public function it_refuses_a_layouts_content_type_that_is_not_a_content_type_class(): void
     {
         $this->setDefinition('app.plain', (new Definition(LayoutOfAPlainClass::class))->addTag('setono_sylius_cms.layout'));
 

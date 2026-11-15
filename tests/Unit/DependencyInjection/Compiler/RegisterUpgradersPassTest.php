@@ -84,7 +84,7 @@ final class RegisterUpgradersPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function two_upgraders_of_the_same_step_fail_the_build(): void
+    public function it_fails_the_build_for_two_upgraders_of_the_same_step(): void
     {
         $this->setDefinition('app.teaser_upgrader', (new Definition(TeaserFromTwo::class))->addTag('setono_sylius_cms.upgrader'));
         $this->setDefinition('app.other_teaser_upgrader', (new Definition(DuplicateTeaserFromTwo::class))->addTag('setono_sylius_cms.upgrader'));
@@ -98,7 +98,7 @@ final class RegisterUpgradersPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function an_upgrader_must_upgrade_from_a_version_below_the_codes(): void
+    public function it_refuses_an_upgrader_from_a_version_that_is_not_below_the_codes(): void
     {
         $this->setDefinition('app.teaser_upgrader', (new Definition(TeaserFromThree::class))->addTag('setono_sylius_cms.upgrader'));
 
@@ -111,7 +111,7 @@ final class RegisterUpgradersPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function an_upgrader_must_upgrade_from_version_1_or_more(): void
+    public function it_refuses_an_upgrader_from_a_version_below_1(): void
     {
         $this->setDefinition('app.teaser_upgrader', (new Definition(TeaserFromZero::class))->addTag('setono_sylius_cms.upgrader'));
 
@@ -124,7 +124,7 @@ final class RegisterUpgradersPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function an_upgrader_must_upgrade_a_block_type_layout_or_content_type(): void
+    public function it_refuses_an_upgrader_of_something_other_than_a_block_type_layout_or_content_type(): void
     {
         $this->setDefinition('app.upgrader', (new Definition(OfAPlainClass::class))->addTag('setono_sylius_cms.upgrader'));
 
@@ -137,7 +137,7 @@ final class RegisterUpgradersPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function an_upgrader_must_implement_the_upgrader_interface(): void
+    public function it_refuses_an_upgrader_that_does_not_implement_the_upgrader_interface(): void
     {
         $this->setDefinition('app.upgrader', (new Definition(NotAnUpgrader::class))->addTag('setono_sylius_cms.upgrader'));
 

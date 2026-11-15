@@ -28,7 +28,7 @@ final class EditingToolsTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_duplicates_a_group_undoes_it_and_deletes_two_headings_selected_together_then_redoes_the_delete(): void
+    public function it_lets_an_admin_user_duplicate_a_group_undo_it_and_delete_two_headings_selected_together_then_redo_the_delete(): void
     {
         $entry = self::createPageWithBlocks('About us', 'about-us', [
             new StoredBlock(self::GROUP, 'group', 1, children: [self::heading(self::INSIDE, 'Inside')]),
@@ -81,7 +81,7 @@ final class EditingToolsTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_moves_a_heading_up_from_its_toolbar_in_the_preview(): void
+    public function it_lets_an_admin_user_move_a_heading_up_from_its_toolbar_in_the_preview(): void
     {
         $entry = self::createPageWithBlocks('About us', 'about-us', [self::heading(self::FIRST, 'First'), self::heading(self::SECOND, 'Second')]);
         [$page, $preview] = $this->openBuilder($entry);

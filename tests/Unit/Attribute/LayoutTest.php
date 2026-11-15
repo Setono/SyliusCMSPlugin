@@ -13,7 +13,7 @@ final class LayoutTest extends TestCase
     /**
      * @test
      */
-    public function a_layout_is_at_version_1_with_no_thumbnail_isnt_the_default_and_shows_no_entry_fields_unless_it_says_otherwise(): void
+    public function it_reads_a_layout_as_at_version_1_without_a_thumbnail_not_the_default_and_showing_no_entry_fields_unless_it_says_otherwise(): void
     {
         $layout = new Layout('landing', Page::class, 'app.landing', 'landing.html.twig');
 

@@ -13,7 +13,7 @@ final class RichTextAndAccordionTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_writes_formatted_text_and_an_accordion_that_shoppers_open(): void
+    public function it_lets_an_admin_user_write_formatted_text_and_an_accordion_that_shoppers_open(): void
     {
         $this->signInAsAdmin();
         $entry = self::createPage('Story', 'story');

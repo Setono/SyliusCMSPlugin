@@ -20,7 +20,7 @@ final class SwitchingOffWhatShipsTest extends WebTestCase
     /**
      * @test
      */
-    public function the_shop_does_not_load_the_stylesheet_when_assets_is_off(): void
+    public function it_does_not_load_the_stylesheet_in_the_shop_when_assets_is_off(): void
     {
         $client = self::createClient();
 
@@ -33,7 +33,7 @@ final class SwitchingOffWhatShipsTest extends WebTestCase
     /**
      * @test
      */
-    public function a_disabled_block_type_is_marked_for_the_picker_to_leave_out(): void
+    public function it_marks_a_disabled_block_type_for_the_picker_to_leave_out(): void
     {
         $client = self::createClient();
         $client->loginUser(self::admin(), 'admin');
@@ -52,7 +52,7 @@ final class SwitchingOffWhatShipsTest extends WebTestCase
     /**
      * @test
      */
-    public function a_block_of_a_disabled_block_type_keeps_rendering(): void
+    public function it_keeps_rendering_a_block_of_a_disabled_block_type(): void
     {
         $client = self::createClient();
         self::createPageWithBlocks('Spaced', 'spaced', [

@@ -12,7 +12,7 @@ final class PublishValidationTest extends UITestCase
     /**
      * @test
      */
-    public function publish_refuses_an_empty_heading_points_at_it_and_publishes_once_it_is_filled_in(): void
+    public function it_refuses_to_publish_an_empty_heading_points_at_it_and_publishes_once_it_is_filled_in(): void
     {
         $this->signInAsAdmin();
         $page = self::createPage('About us', 'about-us');

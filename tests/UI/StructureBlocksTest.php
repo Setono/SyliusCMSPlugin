@@ -13,7 +13,7 @@ final class StructureBlocksTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_nests_blocks_in_columns_and_the_shop_lays_them_out_side_by_side_or_stacked(): void
+    public function it_lets_an_admin_user_nest_blocks_in_columns_which_the_shop_lays_out_side_by_side_or_stacked(): void
     {
         $this->signInAsAdmin();
         $entry = self::createPage('Layout', 'layout');

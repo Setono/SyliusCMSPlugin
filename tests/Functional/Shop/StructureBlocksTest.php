@@ -15,7 +15,7 @@ final class StructureBlocksTest extends WebTestCase
     /**
      * @test
      */
-    public function a_published_page_renders_a_group_of_columns_with_a_heading_in_a_column(): void
+    public function it_renders_a_published_page_with_a_group_of_columns_with_a_heading_in_a_column(): void
     {
         $client = self::createClient();
         $group = new StoredBlock('0193a5be-0000-7000-8000-000000000001', 'group', 1, children: [
@@ -45,7 +45,7 @@ final class StructureBlocksTest extends WebTestCase
     /**
      * @test
      */
-    public function a_full_width_group_is_marked_full_width(): void
+    public function it_marks_a_full_width_group_full_width(): void
     {
         $client = self::createClient();
         $group = new StoredBlock('0193a5be-0000-7000-8000-000000000001', 'group', 1, fields: ['fullWidth' => true]);
@@ -59,7 +59,7 @@ final class StructureBlocksTest extends WebTestCase
     /**
      * @test
      */
-    public function a_spacer_renders_its_size_and_is_medium_by_default(): void
+    public function it_renders_a_spacers_size_which_is_medium_by_default(): void
     {
         $client = self::createClient();
         self::createPageWithBlocks('Layout', 'layout', [
@@ -77,7 +77,7 @@ final class StructureBlocksTest extends WebTestCase
     /**
      * @test
      */
-    public function a_published_group_with_the_dark_style_renders_the_style_class_next_to_its_own(): void
+    public function it_renders_the_dark_style_class_of_a_published_group_next_to_its_own(): void
     {
         $client = self::createClient();
         self::createPageWithBlocks('Dark', 'dark', [
@@ -93,7 +93,7 @@ final class StructureBlocksTest extends WebTestCase
     /**
      * @test
      */
-    public function a_group_renders_the_class_of_a_style_the_app_adds_in_its_config(): void
+    public function it_renders_the_class_of_a_group_style_the_app_adds_in_its_config(): void
     {
         $client = self::createClient();
         self::createPageWithBlocks('Branded', 'branded', [
@@ -108,7 +108,7 @@ final class StructureBlocksTest extends WebTestCase
     /**
      * @test
      */
-    public function a_group_with_no_style_renders_plain(): void
+    public function it_renders_a_group_with_no_style_plain(): void
     {
         $client = self::createClient();
         self::createPageWithBlocks('Plain', 'plain', [new StoredBlock('0193a5be-0000-7000-8000-000000000001', 'group', 1)], published: true);

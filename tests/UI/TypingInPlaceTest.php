@@ -21,7 +21,7 @@ final class TypingInPlaceTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_types_over_a_heading_in_the_preview_and_sees_the_right_pane_follow(): void
+    public function it_lets_an_admin_user_type_over_a_heading_in_the_preview_and_see_the_right_pane_follow(): void
     {
         [$page, $preview] = $this->openBuilder(self::createPage('About us', 'about-us', 'Hello'));
         $heading = $preview->getByRole('heading', ['name' => 'Hello']);
@@ -47,7 +47,7 @@ final class TypingInPlaceTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_bolds_a_word_of_rich_text_in_place(): void
+    public function it_lets_an_admin_user_bold_a_word_of_rich_text_in_place(): void
     {
         [$page, $preview] = $this->openBuilder(self::createPageWithBlocks('Story', 'story', [self::richText(self::RICH_TEXT, 'Hello bold world')]));
 
@@ -81,7 +81,7 @@ final class TypingInPlaceTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_types_an_accordion_items_title_in_place_without_opening_it(): void
+    public function it_lets_an_admin_user_type_an_accordion_items_title_in_place_without_opening_it(): void
     {
         $item = new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e53', 'accordion_item', 1);
         $item->setValue('title', 'en_US', 'Shipping');

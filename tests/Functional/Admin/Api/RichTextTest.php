@@ -18,7 +18,7 @@ final class RichTextTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function saving_a_document_with_content_the_schema_does_not_have_stores_the_sanitised_document(): void
+    public function it_stores_a_document_with_content_the_schema_does_not_have_sanitised(): void
     {
         $client = self::createClient();
         $page = self::createPageWithBlocks('Story', 'story', [new StoredBlock(self::KEY, 'rich_text', 1)]);
@@ -49,7 +49,7 @@ final class RichTextTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function adding_a_block_with_rich_text_stores_it_sanitised(): void
+    public function it_stores_the_rich_text_of_an_added_block_sanitised(): void
     {
         $client = self::createClient();
         $page = self::createPage('Story', 'story');

@@ -72,7 +72,7 @@ final class ConcurrentEditingTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_save_with_the_latest_lock_token_answers_without_the_working_copy(): void
+    public function it_answers_a_save_with_the_latest_lock_token_without_the_working_copy(): void
     {
         $client = self::createClient();
         $page = self::createTwoHeadings(false);
@@ -87,7 +87,7 @@ final class ConcurrentEditingTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function an_empty_save_with_an_old_lock_token_pulls_in_what_colleagues_saved(): void
+    public function it_answers_an_empty_save_with_an_old_lock_token_with_what_colleagues_saved(): void
     {
         $client = self::createClient();
         $page = self::createTwoHeadings(true);
@@ -105,7 +105,7 @@ final class ConcurrentEditingTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_clash_comes_back_with_its_details_and_is_not_saved(): void
+    public function it_answers_a_clash_with_its_details_and_saves_nothing_of_it(): void
     {
         $client = self::createClient();
         $page = self::createTwoHeadings(false);
@@ -128,7 +128,7 @@ final class ConcurrentEditingTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function an_edit_to_a_block_a_colleague_deleted_comes_back_as_a_clash(): void
+    public function it_answers_an_edit_to_a_block_a_colleague_deleted_as_a_clash(): void
     {
         $client = self::createClient();
         $page = self::createTwoHeadings(true);
@@ -146,7 +146,7 @@ final class ConcurrentEditingTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_discard_moves_the_lock_token_on_so_a_colleague_pulls_in_the_published_content_with_their_edit(): void
+    public function it_moves_the_lock_token_on_with_a_discard_so_a_colleague_pulls_in_the_published_content_with_their_edit(): void
     {
         $client = self::createClient();
         $page = self::createTwoHeadings(true);
@@ -176,7 +176,7 @@ final class ConcurrentEditingTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function an_edit_to_a_block_only_the_discarded_draft_had_comes_back_as_a_clash(): void
+    public function it_answers_an_edit_to_a_block_only_the_discarded_draft_had_as_a_clash(): void
     {
         $client = self::createClient();
         $page = self::createTwoHeadings(true);
@@ -201,7 +201,7 @@ final class ConcurrentEditingTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function discarding_an_entry_without_a_draft_leaves_the_lock_token(): void
+    public function it_leaves_the_lock_token_when_discarding_an_entry_without_a_draft(): void
     {
         $client = self::createClient();
         $page = self::createTwoHeadings(true);
@@ -216,7 +216,7 @@ final class ConcurrentEditingTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_save_needs_a_lock_token(): void
+    public function it_needs_a_lock_token_to_save(): void
     {
         $client = self::createClient();
         $page = self::createTwoHeadings(false);
@@ -241,7 +241,7 @@ final class ConcurrentEditingTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_lock_token_the_server_never_gave_is_refused(): void
+    public function it_refuses_a_lock_token_the_server_never_gave(): void
     {
         $client = self::createClient();
         $page = self::createTwoHeadings(false);
@@ -258,7 +258,7 @@ final class ConcurrentEditingTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function presence_lists_the_other_admin_users_who_have_the_entry_open(): void
+    public function it_lists_the_other_admin_users_who_have_the_entry_open_in_presence(): void
     {
         $clock = self::mockTime('2026-11-14 10:00:00');
         $client = self::createClient();
@@ -285,7 +285,7 @@ final class ConcurrentEditingTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function presence_needs_an_admin_user_and_a_valid_csrf_token(): void
+    public function it_needs_an_admin_user_and_a_valid_csrf_token_for_presence(): void
     {
         $client = self::createClient();
         $page = self::createTwoHeadings(false);

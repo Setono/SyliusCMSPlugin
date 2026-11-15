@@ -45,7 +45,7 @@ final class EntryTest extends TestCase
     /**
      * @test
      */
-    public function a_clone_is_a_copy_whose_translations_and_tree_change_without_the_original(): void
+    public function it_clones_the_translations_and_tree_so_they_change_without_the_original(): void
     {
         $page = new Page();
         $page->setCurrentLocale('en_US');
@@ -73,7 +73,7 @@ final class EntryTest extends TestCase
     /**
      * @test
      */
-    public function a_new_entry_is_enabled_shows_to_everyone_at_any_time_and_has_no_channels_until_it_is_given_some(): void
+    public function it_starts_an_entry_enabled_for_everyone_at_any_time_and_in_no_channel_until_it_is_given_some(): void
     {
         $page = new Page();
 
@@ -129,7 +129,7 @@ final class EntryTest extends TestCase
      *
      * @test
      */
-    public function changing_its_channels_and_groups_keeps_the_rows_of_the_codes_that_stay(): void
+    public function it_keeps_the_rows_of_the_codes_that_stay_when_its_channels_and_groups_change(): void
     {
         $page = new Page();
         $page->setChannelCodes(['WEB', 'B2B']);
@@ -157,7 +157,7 @@ final class EntryTest extends TestCase
      *
      * @test
      */
-    public function its_date_window_columns_hold_utc(): void
+    public function it_holds_utc_in_its_date_window_columns(): void
     {
         $page = new Page();
         $copenhagen = new \DateTimeZone('Europe/Copenhagen');
@@ -178,7 +178,7 @@ final class EntryTest extends TestCase
     /**
      * @test
      */
-    public function an_on_save_setting_bumps_changed_at_when_it_is_saved(): void
+    public function it_bumps_changed_at_when_an_on_save_setting_is_saved(): void
     {
         $page = new Page();
         $at = new \DateTimeImmutable('2026-11-14T12:00:00Z');
@@ -192,7 +192,7 @@ final class EntryTest extends TestCase
     /**
      * @test
      */
-    public function a_clone_has_the_same_settings_and_changing_them_leaves_the_original_alone(): void
+    public function it_clones_the_settings_and_leaves_the_originals_alone_when_the_clones_change(): void
     {
         $page = new Page();
         $page->setChannelCodes(['WEB']);

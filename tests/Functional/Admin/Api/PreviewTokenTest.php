@@ -26,7 +26,7 @@ final class PreviewTokenTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function its_url_shows_the_working_copy_of_a_never_published_page_in_the_channel_whatever_the_host(): void
+    public function it_answers_a_url_that_shows_the_working_copy_of_a_never_published_page_in_the_channel_whatever_the_host(): void
     {
         $client = self::createClient(server: ['HTTP_HOST' => 'admin.example']);
         $page = self::createPage('About us', 'about-us', 'Hello');

@@ -25,7 +25,7 @@ final class DraftTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_save_before_the_first_publish_writes_the_rows_and_makes_no_draft(): void
+    public function it_writes_the_rows_on_a_save_before_the_first_publish_and_makes_no_draft(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -41,7 +41,7 @@ final class DraftTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_save_after_a_publish_creates_a_draft_while_the_shop_still_shows_the_published_content(): void
+    public function it_creates_a_draft_on_a_save_after_a_publish_while_the_shop_still_shows_the_published_content(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -100,7 +100,7 @@ final class DraftTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function publishing_copies_the_draft_onto_the_rows_and_deletes_it(): void
+    public function it_copies_the_draft_onto_the_rows_on_publish_and_deletes_it(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -121,7 +121,7 @@ final class DraftTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_vetoing_listener_blocks_the_publish_and_the_endpoint_answers_with_its_message(): void
+    public function it_answers_a_vetoed_publish_with_the_listeners_message(): void
     {
         $client = self::createClient();
         $client->disableReboot();
@@ -144,7 +144,7 @@ final class DraftTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function discarding_deletes_the_draft_and_answers_with_the_published_content(): void
+    public function it_deletes_the_draft_on_discard_and_answers_with_the_published_content(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -171,7 +171,7 @@ final class DraftTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function discarding_needs_a_valid_csrf_token(): void
+    public function it_needs_a_valid_csrf_token_to_discard(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -187,7 +187,7 @@ final class DraftTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function discarding_needs_an_admin_user(): void
+    public function it_needs_an_admin_user_to_discard(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -200,7 +200,7 @@ final class DraftTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_publish_bumps_changed_at_and_a_draft_save_does_not(): void
+    public function it_bumps_changed_at_on_a_publish_and_not_on_a_draft_save(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -223,7 +223,7 @@ final class DraftTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function events_are_dispatched_after_the_publish_commits_and_a_draft_save_dispatches_none(): void
+    public function it_dispatches_before_entry_publish_in_the_publish_and_entry_published_after_it_commits_and_none_on_a_draft_save(): void
     {
         $client = self::createClient();
         $client->disableReboot();

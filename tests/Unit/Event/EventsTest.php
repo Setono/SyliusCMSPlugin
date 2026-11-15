@@ -20,7 +20,7 @@ final class EventsTest extends TestCase
     /**
      * @test
      */
-    public function a_publish_goes_ahead_unless_a_listener_vetoes_it(): void
+    public function it_lets_a_publish_go_ahead_unless_a_listener_vetoes_it(): void
     {
         $page = new Page();
         $event = new BeforeEntryPublish($page, false);
@@ -35,7 +35,7 @@ final class EventsTest extends TestCase
     /**
      * @test
      */
-    public function a_veto_stops_the_publish_and_the_listeners_after_it(): void
+    public function it_stops_the_publish_and_the_listeners_after_a_veto(): void
     {
         $dispatcher = new EventDispatcher();
         $dispatcher->addListener(BeforeEntryPublish::class, static fn (BeforeEntryPublish $event) => $event->veto('Not on a Sunday'), 10);
@@ -52,7 +52,7 @@ final class EventsTest extends TestCase
     /**
      * @test
      */
-    public function a_publish_changes_shopper_output_for_the_published_entry(): void
+    public function it_changes_shopper_output_for_the_published_entry_on_a_publish(): void
     {
         $event = new EntryPublished(self::UUID, 'page', ['en_US' => 'about'], ['en_US' => 'about-us'], false);
 
@@ -67,7 +67,7 @@ final class EventsTest extends TestCase
     /**
      * @test
      */
-    public function creating_an_entry_changes_no_shopper_output(): void
+    public function it_changes_no_shopper_output_when_it_creates_an_entry(): void
     {
         $event = new EntryCreated(self::UUID, 'page');
 
@@ -79,7 +79,7 @@ final class EventsTest extends TestCase
     /**
      * @test
      */
-    public function saving_on_save_settings_changes_shopper_output_for_the_entry_and_says_what_changed(): void
+    public function it_changes_shopper_output_for_the_entry_on_saving_on_save_settings_and_says_what_changed(): void
     {
         $event = new EntrySettingsChanged(self::UUID, [EntrySettingsChanged::ENABLED, EntrySettingsChanged::AUDIENCE]);
 

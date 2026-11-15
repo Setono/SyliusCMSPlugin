@@ -37,7 +37,7 @@ final class ToggleHandlerTest extends TestCase
     /**
      * @test
      */
-    public function its_schema_is_a_boolean(): void
+    public function it_describes_a_boolean_in_its_schema(): void
     {
         self::assertSame(['type' => 'boolean'], (new ToggleHandler())->schema(new Toggle(label: 'Full width')));
     }

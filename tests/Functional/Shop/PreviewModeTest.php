@@ -25,7 +25,7 @@ final class PreviewModeTest extends WebTestCase
     /**
      * @test
      */
-    public function a_never_published_page_renders_its_working_copy_with_a_valid_token(): void
+    public function it_renders_the_working_copy_of_a_never_published_page_with_a_valid_token(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -42,7 +42,7 @@ final class PreviewModeTest extends WebTestCase
     /**
      * @test
      */
-    public function a_published_page_renders_its_draft_with_a_valid_token_while_shoppers_see_the_rows(): void
+    public function it_renders_the_draft_of_a_published_page_with_a_valid_token_while_shoppers_see_the_rows(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -66,7 +66,7 @@ final class PreviewModeTest extends WebTestCase
     /**
      * @test
      */
-    public function a_preview_is_neither_cached_nor_indexed_and_sends_no_referrer(): void
+    public function it_keeps_a_preview_out_of_caches_and_search_engines_and_sends_no_referrer(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -84,7 +84,7 @@ final class PreviewModeTest extends WebTestCase
     /**
      * @test
      */
-    public function a_never_published_page_answers_404_without_a_token(): void
+    public function it_answers_404_for_a_never_published_page_without_a_token(): void
     {
         $client = self::createClient();
         self::createPage('About us', 'about-us', 'Hello');
@@ -99,7 +99,7 @@ final class PreviewModeTest extends WebTestCase
     /**
      * @test
      */
-    public function an_expired_token_is_ignored(): void
+    public function it_ignores_an_expired_token(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -115,7 +115,7 @@ final class PreviewModeTest extends WebTestCase
     /**
      * @test
      */
-    public function a_tampered_token_is_ignored(): void
+    public function it_ignores_a_tampered_token(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -133,7 +133,7 @@ final class PreviewModeTest extends WebTestCase
      *
      * @test
      */
-    public function the_edited_entry_ignores_its_enabled_switch_date_window_and_audience(): void
+    public function it_ignores_the_edited_entrys_enabled_switch_date_window_and_audience(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -155,7 +155,7 @@ final class PreviewModeTest extends WebTestCase
     /**
      * @test
      */
-    public function other_entries_render_as_they_do_for_shoppers(): void
+    public function it_renders_other_entries_as_they_do_for_shoppers(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -169,7 +169,7 @@ final class PreviewModeTest extends WebTestCase
     /**
      * @test
      */
-    public function templates_can_tell_they_render_in_the_builders_preview(): void
+    public function it_tells_templates_they_render_in_the_builders_preview(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -184,7 +184,7 @@ final class PreviewModeTest extends WebTestCase
     /**
      * @test
      */
-    public function templates_see_no_preview_mode_for_shoppers(): void
+    public function it_shows_templates_no_preview_mode_for_shoppers(): void
     {
         $client = self::createClient();
         self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -200,7 +200,7 @@ final class PreviewModeTest extends WebTestCase
     /**
      * @test
      */
-    public function the_preview_brackets_each_blocks_output_with_markers_that_carry_its_key(): void
+    public function it_brackets_each_blocks_output_in_the_preview_with_markers_that_carry_its_key(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -216,7 +216,7 @@ final class PreviewModeTest extends WebTestCase
     /**
      * @test
      */
-    public function the_preview_gets_the_bridge_script(): void
+    public function it_gives_the_preview_the_bridge_script(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -230,7 +230,7 @@ final class PreviewModeTest extends WebTestCase
     /**
      * @test
      */
-    public function a_shoppers_response_has_no_markers_and_no_bridge(): void
+    public function it_gives_a_shoppers_response_no_markers_and_no_bridge(): void
     {
         $client = self::createClient();
         self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -247,7 +247,7 @@ final class PreviewModeTest extends WebTestCase
     /**
      * @test
      */
-    public function the_token_forces_the_channel_whatever_the_host(): void
+    public function it_forces_the_tokens_channel_whatever_the_host(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');

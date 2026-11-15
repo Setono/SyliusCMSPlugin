@@ -56,7 +56,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function settings_left_out_keep_their_values(): void
+    public function it_keeps_the_values_of_settings_left_out(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', channels: ['WEB']);
@@ -81,7 +81,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_working_copy_comes_with_the_settings(): void
+    public function it_answers_the_working_copy_with_the_settings(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true, channels: ['WEB']);
@@ -99,7 +99,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function saving_settings_leaves_the_draft_and_the_published_content_alone(): void
+    public function it_leaves_the_draft_and_the_published_content_alone_when_saving_settings(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -127,7 +127,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
      *
      * @test
      */
-    public function turning_enabled_off_unpublishes_the_entry_and_turning_it_on_shows_its_published_content_again(): void
+    public function it_unpublishes_an_entry_when_enabled_is_turned_off_and_shows_its_published_content_again_when_it_is_turned_on(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -149,7 +149,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function saving_settings_bumps_changed_at(): void
+    public function it_bumps_changed_at_when_saving_settings(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -210,7 +210,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function saving_the_settings_it_already_has_changes_nothing(): void
+    public function it_changes_nothing_when_saving_the_settings_it_already_has(): void
     {
         $client = self::createClient();
         $client->disableReboot();

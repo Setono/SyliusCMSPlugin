@@ -104,7 +104,7 @@ final class RegisterBlockTypesPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function a_block_style_code_must_be_a_valid_code(): void
+    public function it_refuses_a_block_style_code_that_is_not_a_valid_code(): void
     {
         $this->setDefinition('app.invalid_style', (new Definition(InvalidStyleCode::class))->addTag('setono_sylius_cms.block_type'));
 
@@ -129,7 +129,7 @@ final class RegisterBlockTypesPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function two_block_styles_of_a_block_type_with_the_same_code_fail_the_build(): void
+    public function it_fails_the_build_for_two_block_styles_of_a_block_type_with_the_same_code(): void
     {
         $this->setDefinition('app.same_style_twice', (new Definition(SameStyleTwice::class))->addTag('setono_sylius_cms.block_type'));
 
@@ -142,7 +142,7 @@ final class RegisterBlockTypesPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function block_styles_added_in_config_to_a_block_type_that_does_not_exist_fail_the_build(): void
+    public function it_fails_the_build_for_block_styles_added_in_config_to_a_block_type_that_does_not_exist(): void
     {
         $this->setParameter('setono_sylius_cms.block_styles', [
             'heading' => ['outlined' => ['label' => 'app.outlined', 'class' => 'app-heading--outlined']],
@@ -159,7 +159,7 @@ final class RegisterBlockTypesPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function block_styles_added_in_config_to_existing_block_types_pass(): void
+    public function it_accepts_block_styles_added_in_config_to_existing_block_types(): void
     {
         $this->setParameter('setono_sylius_cms.block_styles', ['heading' => ['outlined' => ['label' => 'app.outlined', 'class' => 'app-heading--outlined']]]);
         $this->setDefinition('app.heading', (new Definition(Heading::class))->addTag('setono_sylius_cms.block_type'));

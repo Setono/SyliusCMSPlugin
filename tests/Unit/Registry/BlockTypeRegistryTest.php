@@ -169,7 +169,7 @@ final class BlockTypeRegistryTest extends TestCase
     /**
      * @test
      */
-    public function a_block_type_holds_nothing_sits_anywhere_and_has_no_thumbnail_unless_it_says_otherwise(): void
+    public function it_reads_a_block_type_as_holding_nothing_sitting_anywhere_and_without_a_thumbnail_unless_it_says_otherwise(): void
     {
         $plain = (new BlockTypeRegistry(['plain' => Plain::class], new FieldReader()))->get('plain');
 
@@ -199,7 +199,7 @@ final class BlockTypeRegistryTest extends TestCase
     /**
      * @test
      */
-    public function a_style_added_in_config_with_the_code_of_a_declared_one_replaces_it_in_its_place(): void
+    public function it_replaces_a_declared_style_in_its_place_with_one_added_in_config_with_its_code(): void
     {
         $registry = new BlockTypeRegistry(['group' => Group::class], new FieldReader(), [], [
             'group' => ['muted' => ['label' => 'app.cms.block_style.soft', 'class' => 'app-group--soft']],
@@ -214,7 +214,7 @@ final class BlockTypeRegistryTest extends TestCase
     /**
      * @test
      */
-    public function a_block_type_offers_no_styles_unless_it_or_the_config_adds_some(): void
+    public function it_offers_no_styles_for_a_block_type_unless_it_or_the_config_adds_some(): void
     {
         self::assertSame([], (new BlockTypeRegistry(['plain' => Plain::class], new FieldReader()))->get('plain')->styles);
     }

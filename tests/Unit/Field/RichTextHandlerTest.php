@@ -44,7 +44,7 @@ final class RichTextHandlerTest extends TestCase
     /**
      * @test
      */
-    public function its_schema_is_a_prosemirror_document(): void
+    public function it_describes_a_prosemirror_document_in_its_schema(): void
     {
         self::assertSame(
             [

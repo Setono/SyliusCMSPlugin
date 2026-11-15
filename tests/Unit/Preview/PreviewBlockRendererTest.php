@@ -24,7 +24,7 @@ final class PreviewBlockRendererTest extends TestCase
     /**
      * @test
      */
-    public function in_the_builders_preview_it_brackets_a_blocks_output_with_markers_that_carry_its_key(): void
+    public function it_brackets_a_blocks_output_with_markers_that_carry_its_key_in_the_builders_preview(): void
     {
         $html = $this->renderer('<h2 class="cms-heading">Hello</h2>')->render($this->view(), $this->context(RenderContext::PREVIEW_MODE_BUILDER));
 
@@ -37,7 +37,7 @@ final class PreviewBlockRendererTest extends TestCase
     /**
      * @test
      */
-    public function shoppers_get_no_markers(): void
+    public function it_gives_shoppers_no_markers(): void
     {
         $html = $this->renderer('<h2 class="cms-heading">Hello</h2>')->render($this->view(), $this->context(null));
 
@@ -47,7 +47,7 @@ final class PreviewBlockRendererTest extends TestCase
     /**
      * @test
      */
-    public function share_links_get_no_markers(): void
+    public function it_gives_share_links_no_markers(): void
     {
         $html = $this->renderer('<h2 class="cms-heading">Hello</h2>')->render($this->view(), $this->context(RenderContext::PREVIEW_MODE_SHARE));
 
@@ -57,7 +57,7 @@ final class PreviewBlockRendererTest extends TestCase
     /**
      * @test
      */
-    public function in_the_builders_preview_a_block_that_throws_shows_its_error_message_on_that_block(): void
+    public function it_shows_the_error_message_of_a_block_that_throws_on_that_block_in_the_builders_preview(): void
     {
         $html = $this->throwingRenderer(new \RuntimeException('The <product> is gone'))->render($this->view(), $this->context(RenderContext::PREVIEW_MODE_BUILDER));
 
@@ -120,7 +120,7 @@ final class PreviewBlockRendererTest extends TestCase
     /**
      * @test
      */
-    public function outside_the_builders_preview_the_exception_is_left_to_the_shop(): void
+    public function it_leaves_the_exception_to_the_shop_outside_the_builders_preview(): void
     {
         $exception = new \RuntimeException('Boom');
         $renderer = $this->throwingRenderer($exception);

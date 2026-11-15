@@ -32,7 +32,7 @@ final class PreviewContextTest extends TestCase
     /**
      * @test
      */
-    public function a_valid_token_on_the_main_request_turns_on_builder_preview_mode(): void
+    public function it_turns_on_builder_preview_mode_for_a_valid_token_on_the_main_request(): void
     {
         $this->requestStack->push(self::request(['_cms_preview' => $this->token()]));
 
@@ -45,7 +45,7 @@ final class PreviewContextTest extends TestCase
     /**
      * @test
      */
-    public function a_shopper_request_has_no_preview(): void
+    public function it_gives_a_shopper_request_no_preview(): void
     {
         $this->requestStack->push(self::request());
 
@@ -56,7 +56,7 @@ final class PreviewContextTest extends TestCase
     /**
      * @test
      */
-    public function there_is_no_preview_outside_a_request(): void
+    public function it_has_no_preview_outside_a_request(): void
     {
         self::assertNull($this->context()->getPreview());
         self::assertNull($this->context()->getMode());
@@ -122,7 +122,7 @@ final class PreviewContextTest extends TestCase
     /**
      * @test
      */
-    public function a_request_keeps_the_preview_it_started_with_even_when_its_token_expires_meanwhile(): void
+    public function it_keeps_the_preview_a_request_started_with_even_when_its_token_expires_meanwhile(): void
     {
         $this->requestStack->push(self::request(['_cms_preview' => $this->token()]));
         $context = $this->context();
@@ -136,7 +136,7 @@ final class PreviewContextTest extends TestCase
     /**
      * @test
      */
-    public function each_main_request_has_its_own_preview(): void
+    public function it_gives_each_main_request_its_own_preview(): void
     {
         $context = $this->context();
         $this->requestStack->push(self::request(['_cms_preview' => $this->token()]));
@@ -151,7 +151,7 @@ final class PreviewContextTest extends TestCase
     /**
      * @test
      */
-    public function a_request_without_a_preview_stays_without_one(): void
+    public function it_keeps_a_request_without_a_preview_without_one(): void
     {
         $request = self::request();
         $this->requestStack->push($request);

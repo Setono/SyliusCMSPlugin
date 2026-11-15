@@ -52,7 +52,7 @@ final class WorkingCopyManagerTest extends TestCase
     /**
      * @test
      */
-    public function a_never_published_entry_is_its_own_working_copy_and_saving_it_writes_the_rows(): void
+    public function it_makes_a_never_published_entry_its_own_working_copy_and_writes_its_rows_on_save(): void
     {
         $page = self::page('Hello');
 
@@ -68,7 +68,7 @@ final class WorkingCopyManagerTest extends TestCase
     /**
      * @test
      */
-    public function a_published_entry_without_a_draft_has_a_copy_of_its_rows_as_its_working_copy(): void
+    public function it_makes_a_copy_of_the_rows_the_working_copy_of_a_published_entry_without_a_draft(): void
     {
         $page = self::page('Hello', published: true);
         $this->drafts->findOneByEntry($page)->willReturn(null);
@@ -85,7 +85,7 @@ final class WorkingCopyManagerTest extends TestCase
     /**
      * @test
      */
-    public function the_first_save_after_a_publish_creates_the_draft_and_leaves_the_rows(): void
+    public function it_creates_the_draft_on_the_first_save_after_a_publish_and_leaves_the_rows(): void
     {
         $page = self::page('Hello', published: true);
         $rows = self::json($page);
@@ -107,7 +107,7 @@ final class WorkingCopyManagerTest extends TestCase
     /**
      * @test
      */
-    public function a_published_entry_with_a_draft_has_the_draft_as_its_working_copy_and_saving_updates_it(): void
+    public function it_makes_the_draft_of_a_published_entry_its_working_copy_and_updates_it_on_save(): void
     {
         $page = self::page('Hello', published: true);
         $draft = $this->draft($page, 'Hello world');
@@ -143,7 +143,7 @@ final class WorkingCopyManagerTest extends TestCase
     /**
      * @test
      */
-    public function discarding_deletes_the_draft(): void
+    public function it_deletes_the_draft_on_discard(): void
     {
         $page = self::page('Hello', published: true);
         $draft = $this->draft($page, 'Hello world');
@@ -160,7 +160,7 @@ final class WorkingCopyManagerTest extends TestCase
     /**
      * @test
      */
-    public function discarding_without_a_draft_changes_nothing(): void
+    public function it_changes_nothing_when_discarding_without_a_draft(): void
     {
         $page = self::page('Hello', published: true);
         $this->drafts->findOneByEntry($page)->willReturn(null);
@@ -211,7 +211,7 @@ final class WorkingCopyManagerTest extends TestCase
     /**
      * @test
      */
-    public function a_never_published_entrys_working_copy_holds_its_rows_upgraded(): void
+    public function it_holds_the_rows_upgraded_in_a_never_published_entrys_working_copy(): void
     {
         $page = self::page('Hello');
         $page->setBlockTree(self::teaserAtVersion1('Hello'));
@@ -226,7 +226,7 @@ final class WorkingCopyManagerTest extends TestCase
     /**
      * @test
      */
-    public function a_published_entrys_working_copy_holds_its_rows_upgraded_and_leaves_the_rows_as_they_are(): void
+    public function it_holds_the_rows_upgraded_in_a_published_entrys_working_copy_and_leaves_the_rows_as_they_are(): void
     {
         $page = self::page('Hello', published: true);
         $page->setBlockTree(self::teaserAtVersion1('Hello'));
@@ -242,7 +242,7 @@ final class WorkingCopyManagerTest extends TestCase
     /**
      * @test
      */
-    public function a_draft_is_upgraded_when_it_is_read_so_its_working_copy_goes_onto_the_rows_upgraded(): void
+    public function it_upgrades_a_draft_when_it_reads_it_so_its_working_copy_goes_onto_the_rows_upgraded(): void
     {
         $page = self::page('Hello', published: true);
         $copy = clone $page;

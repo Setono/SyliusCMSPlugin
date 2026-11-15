@@ -24,7 +24,7 @@ final class EntryDenormalizerTest extends TestCase
     /**
      * @test
      */
-    public function the_entry_format_round_trips_with_its_translations_and_tree_in_the_listed_key_order(): void
+    public function it_round_trips_the_entry_format_with_its_translations_and_tree_in_the_listed_key_order(): void
     {
         $rows = self::page(['en_US' => ['About us', 'about-us']]);
 
@@ -92,7 +92,7 @@ final class EntryDenormalizerTest extends TestCase
     /**
      * @test
      */
-    public function a_translation_without_a_title_or_a_slug_has_none(): void
+    public function it_leaves_a_translation_without_a_title_or_a_slug_without_them(): void
     {
         $page = self::page(['en_US' => ['About us', 'about-us']]);
         $data = CanonicalJson::decode(CanonicalJson::encode($this->normalizer()->normalize($page)));

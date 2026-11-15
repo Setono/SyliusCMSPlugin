@@ -11,7 +11,7 @@ final class PreviewTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_types_a_heading_and_sees_it_in_the_preview(): void
+    public function it_lets_an_admin_user_type_a_heading_and_see_it_in_the_preview(): void
     {
         $this->signInAsAdmin();
         $entry = self::createPage('About us', 'about-us');
@@ -34,7 +34,7 @@ final class PreviewTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_switches_the_preview_to_mobile_and_sees_it_narrow(): void
+    public function it_lets_an_admin_user_switch_the_preview_to_mobile_and_see_it_narrow(): void
     {
         $this->signInAsAdmin();
         $entry = self::createPage('About us', 'about-us', 'Hello');

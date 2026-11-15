@@ -116,7 +116,7 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
-    public function a_project_switches_off_shipped_block_types_by_code(): void
+    public function it_lets_a_project_switch_off_shipped_block_types_by_code(): void
     {
         $this->assertProcessedConfigurationEquals([
             ['disabled' => ['block_types' => ['spacer']]],
@@ -127,7 +127,7 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
-    public function a_project_stops_loading_the_shipped_stylesheet(): void
+    public function it_lets_a_project_stop_loading_the_shipped_stylesheet(): void
     {
         $this->assertProcessedConfigurationEquals([['assets' => false]], ['assets' => false], 'assets');
     }
@@ -135,7 +135,7 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
-    public function assets_is_a_boolean(): void
+    public function it_takes_a_boolean_for_assets(): void
     {
         $this->assertConfigurationIsInvalid([['assets' => 'no']], 'Invalid type for path "setono_sylius_cms.assets"');
     }
@@ -143,7 +143,7 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
-    public function a_project_adds_block_styles_to_any_block_type_by_code(): void
+    public function it_lets_a_project_add_block_styles_to_any_block_type_by_code(): void
     {
         $this->assertProcessedConfigurationEquals([
             ['block_styles' => ['banner' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-banner--brand']]]],
@@ -226,7 +226,7 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
-    public function a_project_overrides_the_draft_model(): void
+    public function it_lets_a_project_override_the_draft_model(): void
     {
         $this->assertProcessedConfigurationEquals([
             ['resources' => ['draft' => ['classes' => ['model' => 'App\Entity\Draft']]]],

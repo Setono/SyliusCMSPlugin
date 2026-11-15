@@ -58,7 +58,7 @@ final class TextareaTest extends TestCase
     /**
      * @test
      */
-    public function its_schema_is_a_string_with_its_max_length(): void
+    public function it_describes_a_string_with_its_max_length_in_its_schema(): void
     {
         self::assertSame(
             ['type' => 'string', 'maxLength' => 160, 'x-cms-options' => ['maxLength' => 160]],

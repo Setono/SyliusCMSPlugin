@@ -31,7 +31,7 @@ final class PreviewFailureTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function preview_render_answers_a_throwing_blocks_error_under_its_key_and_html_for_the_others(): void
+    public function it_answers_preview_render_with_a_throwing_blocks_error_under_its_key_and_html_for_the_others(): void
     {
         $client = self::createClient();
         $page = self::createPageWithBlocks('About us', 'about-us', []);
@@ -57,7 +57,7 @@ final class PreviewFailureTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_preview_shows_a_throwing_blocks_error_on_it_and_renders_the_rest(): void
+    public function it_shows_a_throwing_blocks_error_on_it_in_the_preview_and_renders_the_rest(): void
     {
         $client = self::createClient();
         $broken = new StoredBlock(self::BROKEN, 'broken', 1);

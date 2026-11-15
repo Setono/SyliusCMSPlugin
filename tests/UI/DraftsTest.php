@@ -12,7 +12,7 @@ final class DraftsTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_edits_a_published_page_in_a_draft_publishes_it_and_discards_later_changes(): void
+    public function it_lets_an_admin_user_edit_a_published_page_in_a_draft_publish_it_and_discard_later_changes(): void
     {
         $this->signInAsAdmin();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);

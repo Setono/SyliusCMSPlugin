@@ -15,7 +15,7 @@ final class RichTextSchemaTest extends TestCase
     /**
      * @test
      */
-    public function its_nodes_marks_and_attributes_are_the_ones_the_builders_editor_shares(): void
+    public function it_has_the_nodes_marks_and_attributes_the_builders_editor_shares(): void
     {
         /** @var array{nodes: list<string>, marks: list<string>, attributes: array<string, list<string>>, headingLevels: list<int>} $shared */
         $shared = json_decode((string) file_get_contents(dirname(__DIR__, 2) . '/Fixture/rich-text-schema.json'), true, 512, \JSON_THROW_ON_ERROR);
@@ -30,7 +30,7 @@ final class RichTextSchemaTest extends TestCase
     /**
      * @test
      */
-    public function sanitising_drops_an_unknown_node_with_everything_in_it(): void
+    public function it_drops_an_unknown_node_with_everything_in_it_when_sanitising(): void
     {
         $sanitized = (new RichTextSchema())->sanitize(self::doc(
             ['type' => 'paragraph', 'content' => [self::text('Kept'), ['type' => 'mention', 'attrs' => ['id' => 'jane']]]],
@@ -43,7 +43,7 @@ final class RichTextSchemaTest extends TestCase
     /**
      * @test
      */
-    public function sanitising_drops_an_unknown_mark_and_keeps_its_text_and_the_known_marks(): void
+    public function it_drops_an_unknown_mark_when_sanitising_and_keeps_its_text_and_the_known_marks(): void
     {
         $sanitized = (new RichTextSchema())->sanitize(self::doc(['type' => 'paragraph', 'content' => [
             self::text('Hello', [['type' => 'bold'], ['type' => 'highlight', 'attrs' => ['color' => 'red']], ['type' => 'italic']]),
@@ -59,7 +59,7 @@ final class RichTextSchemaTest extends TestCase
     /**
      * @test
      */
-    public function sanitising_drops_a_level_1_heading_and_keeps_its_text_in_a_paragraph(): void
+    public function it_drops_a_level_1_heading_when_sanitising_and_keeps_its_text_in_a_paragraph(): void
     {
         $schema = new RichTextSchema();
 
@@ -99,7 +99,7 @@ final class RichTextSchemaTest extends TestCase
     /**
      * @test
      */
-    public function sanitising_drops_a_heading_whose_level_is_not_a_level(): void
+    public function it_drops_a_heading_whose_level_is_not_a_level_when_sanitising(): void
     {
         $schema = new RichTextSchema();
 
@@ -111,7 +111,7 @@ final class RichTextSchemaTest extends TestCase
     /**
      * @test
      */
-    public function sanitising_drops_unknown_attributes_and_attribute_values_that_do_not_fit(): void
+    public function it_drops_unknown_attributes_and_attribute_values_that_do_not_fit_when_sanitising(): void
     {
         $sanitized = (new RichTextSchema())->sanitize(self::doc(
             ['type' => 'paragraph', 'attrs' => ['textAlign' => 'center', 'onclick' => 'alert(1)'], 'content' => [self::text('Hi')]],
@@ -135,7 +135,7 @@ final class RichTextSchemaTest extends TestCase
     /**
      * @test
      */
-    public function sanitising_answers_null_for_a_value_that_is_not_a_document(): void
+    public function it_sanitises_a_value_that_is_not_a_document_to_null(): void
     {
         $schema = new RichTextSchema();
 
@@ -148,7 +148,7 @@ final class RichTextSchemaTest extends TestCase
     /**
      * @test
      */
-    public function sanitising_gives_a_document_without_a_list_of_content_an_empty_one(): void
+    public function it_gives_a_document_without_a_list_of_content_an_empty_one_when_sanitising(): void
     {
         $schema = new RichTextSchema();
 
@@ -159,7 +159,7 @@ final class RichTextSchemaTest extends TestCase
     /**
      * @test
      */
-    public function sanitising_drops_malformed_nodes_and_keys_a_node_does_not_have(): void
+    public function it_drops_malformed_nodes_and_keys_a_node_does_not_have_when_sanitising(): void
     {
         $sanitized = (new RichTextSchema())->sanitize(self::doc(
             ['type' => 'paragraph', 'id' => 'p1', 'content' => [

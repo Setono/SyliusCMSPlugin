@@ -68,7 +68,7 @@ final class EntrySettingsNormalizerTest extends TestCase
     /**
      * @test
      */
-    public function settings_left_out_keep_their_current_values(): void
+    public function it_keeps_the_current_values_of_settings_left_out(): void
     {
         $current = new EntrySettings(false, new DateWindow(new \DateTimeImmutable('2026-11-27T00:00:00Z'), new \DateTimeImmutable('2026-12-01T00:00:00Z')), ['WEB'], Audience::only('wholesale'));
         $normalizer = new EntrySettingsNormalizer();

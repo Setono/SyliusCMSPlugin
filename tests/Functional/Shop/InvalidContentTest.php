@@ -19,7 +19,7 @@ final class InvalidContentTest extends WebTestCase
     /**
      * @test
      */
-    public function a_tree_with_a_block_of_a_type_the_code_no_longer_has_renders_everything_else(): void
+    public function it_renders_everything_else_in_a_tree_with_a_block_of_a_type_the_code_no_longer_has(): void
     {
         $client = self::createClient();
         self::createPageWithBlocks('About us', 'about-us', [
@@ -40,7 +40,7 @@ final class InvalidContentTest extends WebTestCase
     /**
      * @test
      */
-    public function a_stored_value_that_does_not_fit_its_field_type_counts_as_missing(): void
+    public function it_counts_a_stored_value_that_does_not_fit_its_field_type_as_missing(): void
     {
         $client = self::createClient();
         $heading = self::heading('0193a5be-0000-7000-8000-000000000001', 'Hello');
