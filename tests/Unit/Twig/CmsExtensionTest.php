@@ -205,7 +205,8 @@ final class CmsExtensionTest extends TestCase
     {
         $this->requestStack->push(new Request());
 
-        self::assertSame('none', $this->render('{{ cms_preview_mode() ?? "none" }}', []));
+        // Assigned first, because older Twig, such as the lowest 3.7 allowed, compiles ?? to a defined test, which takes only a variable
+        self::assertSame('none', $this->render('{% set mode = cms_preview_mode() %}{{ mode ?? "none" }}', []));
     }
 
     /**
