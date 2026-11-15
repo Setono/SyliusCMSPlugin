@@ -17,6 +17,7 @@ import { Paragraph } from '@tiptap/extension-paragraph';
 import { Strike } from '@tiptap/extension-strike';
 import { Text } from '@tiptap/extension-text';
 import { Underline } from '@tiptap/extension-underline';
+import type { JsonValue } from '../types';
 
 /** A page's own headings are Heading blocks, so rich text starts at level 2. */
 export const headingLevels = [2, 3, 4] as const;
@@ -53,4 +54,9 @@ export const richTextExtensions: Extensions = [
 /** Whether the editor holds nothing but empty blocks, whitespace and line breaks, which counts as no value. */
 export function isEmptyDocument(editor: Editor): boolean {
     return isNodeEmpty(editor.state.doc, { ignoreWhitespace: true });
+}
+
+/** What a rich text field stores for the editor's content, in the right pane or typed in place: its document, or null when it's empty. */
+export function documentValue(editor: Editor): JsonValue {
+    return isEmptyDocument(editor) ? null : (editor.getJSON() as JsonValue);
 }

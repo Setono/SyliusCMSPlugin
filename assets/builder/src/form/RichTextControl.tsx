@@ -3,7 +3,7 @@ import { UndoRedo } from '@tiptap/extensions';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useTranslator, type MessageKey } from '../i18n';
-import { headingLevels, isEmptyDocument, richTextExtensions, type HeadingLevel } from '../richText/schema';
+import { documentValue, headingLevels, richTextExtensions, type HeadingLevel } from '../richText/schema';
 import type { JsonValue } from '../types';
 import { isJsonObject, jsonEqual } from '../values';
 import styles from './Form.module.css';
@@ -28,13 +28,13 @@ export function RichTextControl({ id, value, onChange, schema, describedBy }: Fi
                 class: styles.richTextEditor ?? '',
             },
         },
-        onUpdate: ({ editor: updated }) => onChangeRef.current(valueOf(updated)),
+        onUpdate: ({ editor: updated }) => onChangeRef.current(documentValue(updated)),
     });
 
     // A value changed elsewhere, such as the same field in another locale, replaces what the editor shows. It isn't an
     // edit, so it's neither reported nor undoable.
     useEffect(() => {
-        if (!jsonEqual(normalized(value), valueOf(editor))) {
+        if (!jsonEqual(normalized(value), documentValue(editor))) {
             editor.chain().setMeta('addToHistory', false).setContent(documentOf(value), { emitUpdate: false }).run();
         }
     }, [editor, value]);
@@ -139,10 +139,6 @@ function documentOf(value: JsonValue | undefined): JSONContent | null {
     return isJsonObject(value) ? (value as JSONContent) : null;
 }
 
-/** What the field stores for the editor's content: its document, or null when it's empty. */
-function valueOf(editor: Editor): JsonValue {
-    return isEmptyDocument(editor) ? null : (editor.getJSON() as JsonValue);
-}
 
 function normalized(value: JsonValue | undefined): JsonValue {
     return isJsonObject(value) ? value : null;

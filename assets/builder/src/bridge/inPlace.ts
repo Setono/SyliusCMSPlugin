@@ -5,7 +5,7 @@
  */
 import { Editor } from '@tiptap/core';
 import { UndoRedo } from '@tiptap/extensions';
-import { isEmptyDocument, richTextExtensions } from '../richText/schema';
+import { documentValue, isEmptyDocument, richTextExtensions } from '../richText/schema';
 import type { JsonValue } from '../types';
 import { fieldNodes, findFields, type FieldRange } from './markers';
 import { parseHtml } from './morph';
@@ -156,7 +156,7 @@ function typeRichText(host: HTMLElement, { at, onChange }: TypingOptions): Typin
         extensions: [...richTextExtensions, UndoRedo],
         content,
         editorProps: { attributes: { 'aria-multiline': 'true' } },
-        onUpdate: ({ editor: updated }) => onChange(isEmptyDocument(updated) ? null : (updated.getJSON() as JsonValue)),
+        onUpdate: ({ editor: updated }) => onChange(documentValue(updated)),
     });
 
     let position: number | null = null;
