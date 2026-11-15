@@ -30,6 +30,13 @@
             <tag name="sylius.context.channel" priority="128"/>
         </service>
 
+        <!-- Ahead of Sylius's admin-based locale context (128) and its request-based one (64) -->
+        <service id="Setono\SyliusCMSPlugin\Preview\PreviewLocaleContext" class="Setono\SyliusCMSPlugin\Preview\PreviewLocaleContext">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
+
+            <tag name="sylius.context.locale" priority="256"/>
+        </service>
+
         <!-- Adds the markers, and shows a block's error in place of its output, in the builder's preview -->
         <service id="Setono\SyliusCMSPlugin\Preview\PreviewBlockRenderer" class="Setono\SyliusCMSPlugin\Preview\PreviewBlockRenderer"
                  decorates="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface">

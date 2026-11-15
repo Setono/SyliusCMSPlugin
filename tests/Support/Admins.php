@@ -17,7 +17,7 @@ trait Admins
 {
     abstract protected static function getContainer(): ContainerInterface;
 
-    protected static function createAdmin(string $username, string $firstName, string $lastName): AdminUserInterface&UserInterface
+    protected static function createAdmin(string $username, string $firstName, string $lastName, string $localeCode = 'en_US'): AdminUserInterface&UserInterface
     {
         /** @var ExampleFactoryInterface $factory */
         $factory = self::getContainer()->get('sylius.fixture.example_factory.admin_user');
@@ -27,7 +27,7 @@ trait Admins
             'password' => $username,
             'first_name' => $firstName,
             'last_name' => $lastName,
-            'locale_code' => 'en_US',
+            'locale_code' => $localeCode,
         ]);
         self::assertInstanceOf(AdminUserInterface::class, $admin);
         self::assertInstanceOf(UserInterface::class, $admin);

@@ -2,3 +2,4 @@ app:
     cms:
         block_style:
             brand: Brand
+        greeting: Hello
