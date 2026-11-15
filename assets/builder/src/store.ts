@@ -4,11 +4,11 @@
  */
 import { enablePatches, produceWithPatches, type Patch } from 'immer';
 import { createStore, type StoreApi } from 'zustand/vanilla';
-import { applyChanges, changesFromPatches, insertBlock, mergeChanges, type Change, type TranslatableLookup } from './changeSet';
+import { applyChanges, changesFromPatches, mergeChanges, type Change, type TranslatableLookup } from './changeSet';
 import { emptyHistory, rebaseHistory, recordEdit, redoEdit, undoEdit, type History, type Step } from './history';
 import { canDuplicate, canMoveBlocks, createNestingRules, initialChildren, insertableIn, type NestingRules } from './nesting';
 import { holdClashes, reconcile, splitValueClashes, withoutKeysIn, type HeldClash } from './pullIn';
-import { copyWithNewKeys, findBlock, generateBlockKey, locateBlock, moveBlocksTo, removeBlockFrom, topmostBlocks } from './tree';
+import { copyWithNewKeys, findBlock, generateBlockKey, insertBlock, listOf, locateBlock, moveBlocksTo, removeBlockFrom, shiftWithin, topmostBlocks } from './tree';
 import type { BlockTypeDefinition, Clash, ContentTypeDefinition, Entry, EntryStatus, JsonValue, StoredBlock } from './types';
 import { writeFieldValue } from './values';
 
@@ -227,7 +227,7 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
 
                 edit(
                     (working) => {
-                        const list = listIn(working, parent);
+                        const list = listOf(working.tree.blocks, parent);
                         list?.splice(index ?? list.length, 0, block);
                     },
                     only(block.key),
@@ -258,7 +258,7 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
 
                 edit((working) => {
                     for (const parent of new Set([...moved].map((key) => locateBlock(working.tree.blocks, key)?.parent ?? null))) {
-                        shifted = shiftWithin(listIn(working, parent) ?? [], moved, direction) || shifted;
+                        shifted = shiftWithin(listOf(working.tree.blocks, parent) ?? [], moved, direction) || shifted;
                     }
                 });
 
@@ -291,7 +291,7 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
                         copies.forEach((copy, i) => {
                             const spot = locateBlock(working.tree.blocks, originals[i]?.key ?? '');
                             if (spot !== undefined) {
-                                listIn(working, spot.parent)?.splice(spot.index + 1, 0, copy);
+                                listOf(working.tree.blocks, spot.parent)?.splice(spot.index + 1, 0, copy);
                             }
                         });
                     },
@@ -432,32 +432,6 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
     });
 }
 
-/** One list of blocks of the working copy: the top level when the parent is null, and otherwise the parent's children. */
-function listIn(working: Entry, parent: string | null): StoredBlock[] | undefined {
-    return parent === null ? working.tree.blocks : findBlock(working.tree.blocks, parent)?.children;
-}
-
-/**
- * Moves each of the blocks in a list one place up or down, past the block next to it that isn't moved too. A block
- * at the end of the list it moves towards stays. Returns whether any block moved.
- */
-function shiftWithin(list: StoredBlock[], moved: ReadonlySet<string>, direction: 'up' | 'down'): boolean {
-    const order = direction === 'up' ? list.map((_, i) => i) : list.map((_, i) => list.length - 1 - i);
-    let shifted = false;
-
-    for (const [step, i] of order.entries()) {
-        const neighbour = order[step - 1];
-        const block = list[i];
-        const other = neighbour === undefined ? undefined : list[neighbour];
-        if (neighbour !== undefined && block !== undefined && other !== undefined && moved.has(block.key) && !moved.has(other.key)) {
-            list[neighbour] = block;
-            list[i] = other;
-            shifted = true;
-        }
-    }
-
-    return shifted;
-}
 
 /** The blocks acting on a block takes along: the whole selection when the block is part of it, and otherwise the block alone. */
 export function actedOn(selection: readonly string[], key: string): readonly string[] {

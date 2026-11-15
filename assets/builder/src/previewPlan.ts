@@ -4,6 +4,7 @@
  * Immer's structural sharing: a block that didn't change is the same object before and after.
  * See "Updating the preview" in docs/spec/builder.md
  */
+import { longestIncreasing } from './sequence';
 import type { Entry, StoredBlock } from './types';
 
 export interface PreviewPlan {
@@ -33,7 +34,10 @@ export function planPreviewUpdate(before: Entry, after: Entry): PreviewPlan {
     const keysBefore = keysIn(treeBefore.blocks);
     const keysAfter = keysIn(treeAfter.blocks);
     const kept = keysAfter.filter((key) => keysBefore.includes(key));
-    const staying = new Set(longestIncreasing(kept.map((key) => keysBefore.indexOf(key))).map((index) => keysBefore[index]));
+    // Of the longest runs of blocks that keep their order, the first stays put, so a block moved down is the one that
+    // moves. Read from the end, that run is a longest increasing one
+    const fromTheEnd = longestIncreasing(kept.map((key) => -keysBefore.indexOf(key)).reverse());
+    const staying = new Set([...fromTheEnd].map((i) => kept[kept.length - 1 - i]));
 
     plan.remove = keysBefore.filter((key) => !keysAfter.includes(key));
     // New blocks and those that changed places with the others; the most blocks that keep their order stay put
@@ -45,16 +49,6 @@ export function planPreviewUpdate(before: Entry, after: Entry): PreviewPlan {
 }
 
 /** The longest run of the numbers, in their order, that only goes up. */
-function longestIncreasing(numbers: readonly number[]): number[] {
-    // runs[i] is the longest increasing run that ends with numbers[i]
-    const runs: number[][] = [];
-    numbers.forEach((number, i) => {
-        const longest = runs.slice(0, i).reduce<number[]>((best, run) => ((run.at(-1) ?? Infinity) < number && run.length > best.length ? run : best), []);
-        runs.push([...longest, number]);
-    });
-
-    return runs.reduce<number[]>((best, run) => (run.length > best.length ? run : best), []);
-}
 
 function keysIn(blocks: readonly StoredBlock[]): string[] {
     return blocks.map((block) => block.key);

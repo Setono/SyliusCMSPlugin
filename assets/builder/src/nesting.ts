@@ -2,7 +2,7 @@
  * What each spot in the block tree may hold. The registry resolves the rules ('*', parents) per block type
  * and per content type; these functions apply them to the working copy. Pure functions, with no React.
  */
-import { findBlock, topmostBlocks } from './tree';
+import { findBlock, listOf, locateBlock, topmostBlocks } from './tree';
 import type { AllowedBlockType, BlockTypeDefinition, StoredBlock } from './types';
 
 export interface NestingRules {
@@ -165,23 +165,12 @@ export function initialChildren(rules: NestingRules, type: string, createBlock: 
 }
 
 /** The key of the block whose children hold the block, or null when it's at the top level or missing. */
-export function parentOf(tree: readonly StoredBlock[], key: string, parent: string | null = null): string | null {
-    for (const block of tree) {
-        if (block.key === key) {
-            return parent;
-        }
-
-        const found = parentOf(block.children, key, block.key);
-        if (found !== null) {
-            return found;
-        }
-    }
-
-    return null;
+export function parentOf(tree: readonly StoredBlock[], key: string): string | null {
+    return locateBlock(tree, key)?.parent ?? null;
 }
 
 function blocksIn(tree: readonly StoredBlock[], parent: string | null): readonly StoredBlock[] {
-    return parent === null ? tree : (findBlock(tree, parent)?.children ?? []);
+    return listOf(tree, parent) ?? [];
 }
 
 function isFull(allowed: AllowedBlockType, list: readonly StoredBlock[]): boolean {

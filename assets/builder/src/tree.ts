@@ -28,7 +28,7 @@ export function findBlock<B extends TreeBlock<B>>(blocks: readonly B[], key: str
 }
 
 /** Where a block is in the block tree: its parent's key, or null at the top level, and its index there. */
-export function locateBlock<B extends TreeBlock<B>>(blocks: B[], key: string, parent: string | null = null): BlockSpot | undefined {
+export function locateBlock<B extends TreeBlock<B>>(blocks: readonly B[], key: string, parent: string | null = null): BlockSpot | undefined {
     const index = blocks.findIndex((block) => block.key === key);
     if (index !== -1) {
         return { parent, index };
@@ -74,13 +74,27 @@ export function moveBlocksTo<B extends TreeBlock<B>>(blocks: B[], keys: readonly
     return true;
 }
 
-/** The blocks of one list: the top level when the parent is null, and otherwise the parent's children. */
-export function blockList(entry: Entry, parent: string | null): StoredBlock[] {
-    if (parent === null) {
-        return entry.tree.blocks;
-    }
+/**
+ * One list of blocks: the top level when the parent is null, and otherwise the parent's children, or undefined when
+ * the tree hasn't the parent.
+ */
+export function listOf<B extends TreeBlock<B>>(blocks: B[], parent: string | null): B[] | undefined;
+export function listOf<B extends TreeBlock<B>>(blocks: readonly B[], parent: string | null): readonly B[] | undefined;
+export function listOf<B extends TreeBlock<B>>(blocks: readonly B[], parent: string | null): readonly B[] | undefined {
+    return parent === null ? blocks : findBlock(blocks, parent)?.children;
+}
 
-    return findBlock(entry.tree.blocks, parent)?.children ?? [];
+/** The blocks of one list of the entry's tree: the top level when the parent is null, and otherwise the parent's children. */
+export function blockList(entry: Entry, parent: string | null): StoredBlock[] {
+    return listOf(entry.tree.blocks, parent) ?? [];
+}
+
+/** Inserts a block right after the block it names when the list has that block, and otherwise at its index. */
+export function insertBlock(blocks: StoredBlock[], block: StoredBlock, parent: string | null, index: number, after?: string): void {
+    const list = listOf(blocks, parent) ?? [];
+    const anchor = after === undefined ? -1 : list.findIndex((sibling) => sibling.key === after);
+
+    list.splice(anchor === -1 ? Math.min(Math.max(index, 0), list.length) : anchor + 1, 0, block);
 }
 
 /**
@@ -115,15 +129,32 @@ export function pathTo<B extends TreeBlock<B>>(blocks: readonly B[], key: string
  */
 export function canShift<B extends TreeBlock<B>>(blocks: readonly B[], keys: readonly string[], direction: 'up' | 'down'): boolean {
     const moved = new Set(topmostBlocks(blocks, keys).map((block) => block.key));
-    const step = direction === 'up' ? -1 : 1;
-    const shifts = (list: readonly B[]): boolean =>
-        list.some((block, i) => {
-            const neighbour = list[i + step];
-
-            return (moved.has(block.key) && neighbour !== undefined && !moved.has(neighbour.key)) || shifts(block.children);
-        });
+    // Shifting a copy of each list tells whether shifting the list moves anything
+    const shifts = (list: readonly B[]): boolean => shiftWithin([...list], moved, direction) || list.some((block) => shifts(block.children));
 
     return shifts(blocks);
+}
+
+/**
+ * Moves each of the blocks in a list one place up or down, past the block next to it that isn't moved too. A block
+ * at the end of the list it moves towards stays. Returns whether any block moved.
+ */
+export function shiftWithin<B extends TreeBlock<B>>(list: B[], moved: ReadonlySet<string>, direction: 'up' | 'down'): boolean {
+    const order = direction === 'up' ? list.map((_, i) => i) : list.map((_, i) => list.length - 1 - i);
+    let shifted = false;
+
+    for (const [step, i] of order.entries()) {
+        const neighbour = order[step - 1];
+        const block = list[i];
+        const other = neighbour === undefined ? undefined : list[neighbour];
+        if (neighbour !== undefined && block !== undefined && other !== undefined && moved.has(block.key) && !moved.has(other.key)) {
+            list[neighbour] = block;
+            list[i] = other;
+            shifted = true;
+        }
+    }
+
+    return shifted;
 }
 
 /** A copy of a block with a new key for it and for every block inside it. */

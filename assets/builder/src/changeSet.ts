@@ -3,7 +3,8 @@
  * patches of each edit. Pure functions, with no React and no I/O.
  */
 import { produce, type Patch } from 'immer';
-import { blockList, findBlock, removeBlockFrom } from './tree';
+import { longestIncreasing } from './sequence';
+import { blockList, findBlock, insertBlock, removeBlockFrom } from './tree';
 import type { Entry, FieldValues, JsonValue, StoredBlock } from './types';
 import { isJsonObject, jsonEqual, normalizeValue, writeFieldValue } from './values';
 
@@ -227,13 +228,6 @@ function applyChange(blocks: StoredBlock[], change: Change): boolean {
     }
 }
 
-/** Inserts a block right after the block it names when the list has that block, and otherwise at its index. */
-export function insertBlock(blocks: StoredBlock[], block: StoredBlock, parent: string | null, index: number, after?: string): void {
-    const list = parent === null ? blocks : (findBlock(blocks, parent)?.children ?? []);
-    const anchor = after === undefined ? -1 : list.findIndex((sibling) => sibling.key === after);
-
-    list.splice(anchor === -1 ? Math.min(Math.max(index, 0), list.length) : anchor + 1, 0, block);
-}
 
 /**
  * Appends later changes to earlier ones, keeping only what the server still needs: the last value per
@@ -493,35 +487,6 @@ class ServerTree {
     }
 }
 
-/** The indexes of a longest strictly increasing subsequence of the values. */
-function longestIncreasing(values: readonly number[]): Set<number> {
-    // tails[n] is the index of the smallest value that ends an increasing subsequence of length n + 1.
-    const tails: number[] = [];
-    const previous: number[] = [];
-
-    values.forEach((value, i) => {
-        let low = 0;
-        let high = tails.length;
-        while (low < high) {
-            const middle = (low + high) >> 1;
-            if ((values[tails[middle] ?? 0] ?? 0) < value) {
-                low = middle + 1;
-            } else {
-                high = middle;
-            }
-        }
-
-        previous[i] = low > 0 ? (tails[low - 1] ?? -1) : -1;
-        tails[low] = i;
-    });
-
-    const indexes = new Set<number>();
-    for (let i = tails[tails.length - 1] ?? -1; i !== -1; i = previous[i] ?? -1) {
-        indexes.add(i);
-    }
-
-    return indexes;
-}
 
 function parentsOf(blocks: readonly StoredBlock[], parent: string | null = null, parents = new Map<string, string | null>()): Map<string, string | null> {
     for (const block of blocks) {
