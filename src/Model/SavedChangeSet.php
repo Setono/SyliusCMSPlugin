@@ -4,15 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
-/**
- * One save of an entry's working copy: the change set the server applied, numbered by the working copy's version after
- * it. That number is the lock token the builder carries, so the server can tell what colleagues saved since the
- * builder last loaded and merge onto it. See "Saving" in docs/spec/publishing.md. Old ones are deleted as later saves
- * come in
- *
- * @internal
- */
-class SavedChangeSet
+class SavedChangeSet implements SavedChangeSetInterface
 {
     protected ?int $id = null;
 

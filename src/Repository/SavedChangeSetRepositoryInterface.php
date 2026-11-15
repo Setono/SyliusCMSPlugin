@@ -27,7 +27,7 @@ interface SavedChangeSetRepositoryInterface
     /**
      * Records a save. It's written on the next flush
      */
-    public function add(EntryInterface $entry, int $version, ChangeSet $changeSet, \DateTimeImmutable $savedAt): void;
+    public function record(EntryInterface $entry, int $version, ChangeSet $changeSet, \DateTimeImmutable $savedAt): void;
 
     /**
      * Deletes the entry's saves made before the time

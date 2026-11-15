@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Repository;
 
-use Doctrine\ORM\EntityRepository;
 use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
-use Setono\SyliusCMSPlugin\Model\EntryPresence;
+use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
+use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
 /**
- * @extends EntityRepository<EntryPresence>
+ * The entry presence resource's repository
+ *
+ * @extends EntityRepository<EntryPresenceInterface>
  */
 class EntryPresenceRepository extends EntityRepository implements EntryPresenceRepositoryInterface
 {
@@ -21,10 +23,12 @@ class EntryPresenceRepository extends EntityRepository implements EntryPresenceR
         }
 
         $presence = $this->findOneBy(['entry' => $entry, 'editor' => $editor]);
-        if ($presence instanceof EntryPresence) {
+        if ($presence instanceof EntryPresenceInterface) {
             $presence->see($name, $seenAt);
         } else {
-            $presence = new EntryPresence($entry, $editor, $name, $seenAt);
+            // The resource's model, which a project can override
+            $class = $this->getClassName();
+            $presence = new $class($entry, $editor, $name, $seenAt);
             $this->getEntityManager()->persist($presence);
         }
 

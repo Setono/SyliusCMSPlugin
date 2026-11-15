@@ -8,8 +8,8 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
-use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
-use Setono\SyliusCMSPlugin\Model\EntryChannel;
+use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
+use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
@@ -51,7 +51,7 @@ final readonly class VisibleEntriesQuery implements VisibleEntriesQueryInterface
             // 4. In the channel
             ->andWhere(sprintf(
                 'EXISTS (SELECT cms_visible_channel.id FROM %s cms_visible_channel WHERE cms_visible_channel.entry = entry AND cms_visible_channel.code = :cms_visible_channel)',
-                EntryChannel::class,
+                EntryChannelInterface::class,
             ))
             ->setParameter('cms_visible_channel', (string) $context->channel->getCode())
             // 5. With a translation in the locale. Held-back translations come with #232
@@ -83,7 +83,7 @@ final readonly class VisibleEntriesQuery implements VisibleEntriesQueryInterface
         return sprintf(
             'SELECT %1$s.id FROM %2$s %1$s WHERE %1$s.entry = entry AND %1$s.code = :cms_visible_customer_group',
             $alias,
-            EntryAudienceGroup::class,
+            EntryAudienceGroupInterface::class,
         );
     }
 }

@@ -7,7 +7,7 @@ namespace Setono\SyliusCMSPlugin\Rendering;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Setono\SyliusCMSPlugin\Model\Entry;
-use Setono\SyliusCMSPlugin\Model\EntryChannel;
+use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -42,7 +42,7 @@ final readonly class EntryUrlLookup implements EntryUrlLookupInterface
             ->select('entry.uuid', 'entry.content_type')
             ->from($manager->getClassMetadata(Entry::class)->getTableName(), 'entry')
             ->innerJoin('entry', $manager->getClassMetadata(EntryTranslation::class)->getTableName(), 'translation', 'translation.translatable_id = entry.id')
-            ->innerJoin('entry', $manager->getClassMetadata(EntryChannel::class)->getTableName(), 'entry_channel', 'entry_channel.entry_id = entry.id')
+            ->innerJoin('entry', $manager->getClassMetadata(EntryChannelInterface::class)->getTableName(), 'entry_channel', 'entry_channel.entry_id = entry.id')
             ->andWhere('translation.locale = :locale')
             ->andWhere('entry_channel.code = :channel')
             ->setParameter('locale', $localeCode)

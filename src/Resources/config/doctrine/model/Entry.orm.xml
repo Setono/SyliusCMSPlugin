@@ -43,14 +43,14 @@
             </cascade>
         </one-to-many>
 
-        <one-to-many field="channels" target-entity="Setono\SyliusCMSPlugin\Model\EntryChannel" mapped-by="entry" orphan-removal="true">
+        <one-to-many field="channels" target-entity="Setono\SyliusCMSPlugin\Model\EntryChannelInterface" mapped-by="entry" orphan-removal="true">
             <cascade>
                 <cascade-persist/>
                 <cascade-remove/>
             </cascade>
         </one-to-many>
 
-        <one-to-many field="audienceGroups" target-entity="Setono\SyliusCMSPlugin\Model\EntryAudienceGroup" mapped-by="entry" orphan-removal="true">
+        <one-to-many field="audienceGroups" target-entity="Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface" mapped-by="entry" orphan-removal="true">
             <cascade>
                 <cascade-persist/>
                 <cascade-remove/>

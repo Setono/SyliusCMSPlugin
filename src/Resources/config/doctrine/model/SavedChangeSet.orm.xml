@@ -5,12 +5,9 @@
                   xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
                                       http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
     <!--
-    The saves of an entry's working copy, numbered by the version after each, which is the builder's lock token.
-    An internal row of the entry, mapped as an entity like its root, not a Sylius resource of its own
+    The saves of an entry's working copy, numbered by the version after each, which is the builder's lock token
     -->
-    <entity name="Setono\SyliusCMSPlugin\Model\SavedChangeSet"
-            table="setono_sylius_cms__saved_change_set"
-            repository-class="Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository">
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\SavedChangeSet" table="setono_sylius_cms__saved_change_set">
         <unique-constraints>
             <unique-constraint name="setono_sylius_cms__saved_change_set_uniq" columns="entry_id,version"/>
         </unique-constraints>
@@ -27,5 +24,5 @@
         <many-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\Entry">
             <join-column name="entry_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
         </many-to-one>
-    </entity>
+    </mapped-superclass>
 </doctrine-mapping>

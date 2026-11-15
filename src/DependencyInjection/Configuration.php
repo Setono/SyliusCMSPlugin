@@ -6,12 +6,23 @@ namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
+use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
+use Setono\SyliusCMSPlugin\Model\EntryChannel;
+use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
+use Setono\SyliusCMSPlugin\Model\EntryPresence;
+use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
+use Setono\SyliusCMSPlugin\Model\SavedChangeSetInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
+use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
+use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
+use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 use Sylius\Resource\Factory\Factory;
 use Sylius\Resource\Factory\TranslatableFactory;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
@@ -104,7 +115,8 @@ final class Configuration implements ConfigurationInterface
     }
 
     /**
-     * The shipped Sylius resources. The draft has no admin screens of its own, so it has no controller.
+     * The shipped Sylius resources. The draft and the rows beside an entry (its channels, its audience groups, who has
+     * it open and its saves) have no admin screens of their own, so they have no controller.
      * A project extends a shipped content type the way it extends any Sylius model:
      * by overriding classes.model, and translation.classes.model, with its own subclasses
      */
@@ -114,22 +126,12 @@ final class Configuration implements ConfigurationInterface
             ->children()
                 ->arrayNode('resources')
                     ->addDefaultsIfNotSet()
+                    ->append(self::resourceWithoutController('draft', Draft::class, DraftInterface::class, DraftRepository::class))
+                    ->append(self::resourceWithoutController('entry_channel', EntryChannel::class, EntryChannelInterface::class))
+                    ->append(self::resourceWithoutController('entry_audience_group', EntryAudienceGroup::class, EntryAudienceGroupInterface::class))
+                    ->append(self::resourceWithoutController('entry_presence', EntryPresence::class, EntryPresenceInterface::class, EntryPresenceRepository::class))
+                    ->append(self::resourceWithoutController('saved_change_set', SavedChangeSet::class, SavedChangeSetInterface::class, SavedChangeSetRepository::class))
                     ->children()
-                        ->arrayNode('draft')
-                            ->addDefaultsIfNotSet()
-                            ->children()
-                                ->variableNode('options')->end()
-                                ->arrayNode('classes')
-                                    ->addDefaultsIfNotSet()
-                                    ->children()
-                                        ->scalarNode('model')->defaultValue(Draft::class)->cannotBeEmpty()->end()
-                                        ->scalarNode('interface')->defaultValue(DraftInterface::class)->cannotBeEmpty()->end()
-                                        ->scalarNode('repository')->defaultValue(DraftRepository::class)->cannotBeEmpty()->end()
-                                        ->scalarNode('factory')->defaultValue(Factory::class)->cannotBeEmpty()->end()
-                                    ->end()
-                                ->end()
-                            ->end()
-                        ->end()
                         ->arrayNode('page')
                             ->addDefaultsIfNotSet()
                             ->children()
@@ -166,5 +168,32 @@ final class Configuration implements ConfigurationInterface
                 ->end()
             ->end()
         ;
+    }
+
+    /**
+     * @param class-string $model
+     * @param class-string $interface
+     * @param class-string $repository
+     */
+    private static function resourceWithoutController(string $name, string $model, string $interface, string $repository = EntityRepository::class): ArrayNodeDefinition
+    {
+        $node = new ArrayNodeDefinition($name);
+        $node
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->variableNode('options')->end()
+                ->arrayNode('classes')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('model')->defaultValue($model)->cannotBeEmpty()->end()
+                        ->scalarNode('interface')->defaultValue($interface)->cannotBeEmpty()->end()
+                        ->scalarNode('repository')->defaultValue($repository)->cannotBeEmpty()->end()
+                        ->scalarNode('factory')->defaultValue(Factory::class)->cannotBeEmpty()->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+
+        return $node;
     }
 }

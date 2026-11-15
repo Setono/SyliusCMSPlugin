@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Repository;
 
-use Doctrine\ORM\EntityRepository;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
-use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
+use Setono\SyliusCMSPlugin\Model\SavedChangeSetInterface;
+use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
 /**
- * @extends EntityRepository<SavedChangeSet>
+ * The saved change set resource's repository
+ *
+ * @extends EntityRepository<SavedChangeSetInterface>
  */
 class SavedChangeSetRepository extends EntityRepository implements SavedChangeSetRepositoryInterface
 {
@@ -31,7 +33,7 @@ class SavedChangeSetRepository extends EntityRepository implements SavedChangeSe
 
     public function findChangeSetsSince(EntryInterface $entry, int $version): array
     {
-        /** @var list<SavedChangeSet> $saves */
+        /** @var list<SavedChangeSetInterface> $saves */
         $saves = $this->createQueryBuilder('o')
             ->andWhere('o.entry = :entry')
             ->andWhere('o.version > :version')
@@ -42,16 +44,18 @@ class SavedChangeSetRepository extends EntityRepository implements SavedChangeSe
             ->getResult()
         ;
 
-        return array_map(static fn (SavedChangeSet $save): ChangeSet => ChangeSet::fromArray(CanonicalJson::decode($save->getChanges())), $saves);
+        return array_map(static fn (SavedChangeSetInterface $save): ChangeSet => ChangeSet::fromArray(CanonicalJson::decode($save->getChanges())), $saves);
     }
 
-    public function add(EntryInterface $entry, int $version, ChangeSet $changeSet, \DateTimeImmutable $savedAt): void
+    public function record(EntryInterface $entry, int $version, ChangeSet $changeSet, \DateTimeImmutable $savedAt): void
     {
         if (!$entry instanceof Entry) {
             throw new \InvalidArgumentException(sprintf('A save belongs to an entry, which extends %s', Entry::class));
         }
 
-        $this->getEntityManager()->persist(new SavedChangeSet($entry, $version, CanonicalJson::encode($changeSet->toArray()), $savedAt));
+        // The resource's model, which a project can override
+        $class = $this->getClassName();
+        $this->getEntityManager()->persist(new $class($entry, $version, CanonicalJson::encode($changeSet->toArray()), $savedAt));
     }
 
     public function removeSavedBefore(EntryInterface $entry, \DateTimeImmutable $before): void

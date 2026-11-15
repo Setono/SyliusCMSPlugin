@@ -96,7 +96,7 @@ final class AutosaveTest extends TestCase
 
         $this->savedChangeSets = $this->prophesize(SavedChangeSetRepositoryInterface::class);
         $this->savedChangeSets->removeSavedBefore(Argument::cetera())->will($this->record('forget old saves'));
-        $this->savedChangeSets->add(Argument::cetera())->will($this->record('number the save'));
+        $this->savedChangeSets->record(Argument::cetera())->will($this->record('number the save'));
     }
 
     /**
@@ -131,7 +131,7 @@ final class AutosaveTest extends TestCase
         self::assertSame(['Hello there', 'World'], self::texts($this->workingCopy));
         self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'forget old saves', 'number the save', 'save working copy', 'flush', 'commit'], $this->calls);
         $this->savedChangeSets->removeSavedBefore($this->entry, new \DateTimeImmutable('2026-11-13 10:00:00'))->shouldHaveBeenCalledOnce();
-        $this->savedChangeSets->add($this->entry, 4, $changeSet, new \DateTimeImmutable('2026-11-14 10:00:00'))->shouldHaveBeenCalledOnce();
+        $this->savedChangeSets->record($this->entry, 4, $changeSet, new \DateTimeImmutable('2026-11-14 10:00:00'))->shouldHaveBeenCalledOnce();
     }
 
     /**
@@ -156,7 +156,7 @@ final class AutosaveTest extends TestCase
             array_map(static fn (Clash $clash): array => $clash->toArray(), $result->clashes),
         );
         self::assertSame(['Theirs', 'Wide world'], self::texts($this->workingCopy));
-        $this->savedChangeSets->add($this->entry, 6, new ChangeSet([$mine]), Argument::any())->shouldHaveBeenCalledOnce();
+        $this->savedChangeSets->record($this->entry, 6, new ChangeSet([$mine]), Argument::any())->shouldHaveBeenCalledOnce();
     }
 
     /**
@@ -250,7 +250,7 @@ final class AutosaveTest extends TestCase
         self::assertSame($this->workingCopy, $loaded->workingCopy);
         self::assertSame(['begin', 'lock to write', 'read again', 'forget old saves', 'number the save', 'discard the draft', 'get working copy', 'flush', 'commit'], $this->calls);
         $this->savedChangeSets->removeSavedBefore($this->entry, new \DateTimeImmutable('2026-11-13 10:00:00'))->shouldHaveBeenCalledOnce();
-        $this->savedChangeSets->add($this->entry, 4, new ChangeSet([]), new \DateTimeImmutable('2026-11-14 10:00:00'))->shouldHaveBeenCalledOnce();
+        $this->savedChangeSets->record($this->entry, 4, new ChangeSet([]), new \DateTimeImmutable('2026-11-14 10:00:00'))->shouldHaveBeenCalledOnce();
     }
 
     /**

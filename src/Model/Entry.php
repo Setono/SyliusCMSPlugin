@@ -53,13 +53,13 @@ abstract class Entry implements EntryInterface
     /** In UTC */
     protected ?\DateTimeImmutable $showUntil = null;
 
-    /** @var Collection<array-key, EntryChannel> */
+    /** @var Collection<array-key, EntryChannelInterface> */
     protected Collection $channels;
 
     /** @see AudienceMode */
     protected string $audienceMode = 'everyone';
 
-    /** @var Collection<array-key, EntryAudienceGroup> */
+    /** @var Collection<array-key, EntryAudienceGroupInterface> */
     protected Collection $audienceGroups;
 
     public function __construct()
@@ -247,7 +247,7 @@ abstract class Entry implements EntryInterface
     }
 
     /**
-     * @template T of EntryChannel|EntryAudienceGroup
+     * @template T of EntryChannelInterface|EntryAudienceGroupInterface
      *
      * @param Collection<array-key, T> $rows
      *
@@ -255,7 +255,7 @@ abstract class Entry implements EntryInterface
      */
     private static function codes(Collection $rows): array
     {
-        $codes = $rows->map(static fn (EntryChannel|EntryAudienceGroup $row): string => $row->getCode())->toArray();
+        $codes = $rows->map(static fn (EntryChannelInterface|EntryAudienceGroupInterface $row): string => $row->getCode())->toArray();
         sort($codes, \SORT_STRING);
 
         return $codes;

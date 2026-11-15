@@ -4,13 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
-/**
- * An admin user who has an entry open in the builder, as of the last time their builder said so. See "Saving" in
- * docs/spec/publishing.md
- *
- * @internal
- */
-class EntryPresence
+class EntryPresence implements EntryPresenceInterface
 {
     protected ?int $id = null;
 

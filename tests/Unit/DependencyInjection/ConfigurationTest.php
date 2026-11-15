@@ -9,12 +9,23 @@ use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\DependencyInjection\Configuration;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
+use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
+use Setono\SyliusCMSPlugin\Model\EntryChannel;
+use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
+use Setono\SyliusCMSPlugin\Model\EntryPresence;
+use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
+use Setono\SyliusCMSPlugin\Model\SavedChangeSetInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
+use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
+use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
+use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 use Sylius\Resource\Factory\Factory;
 use Sylius\Resource\Factory\TranslatableFactory;
 
@@ -33,7 +44,7 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
-    public function it_declares_page_and_the_draft_as_resources_by_default(): void
+    public function it_declares_page_the_draft_and_the_rows_beside_an_entry_as_resources_by_default(): void
     {
         $this->assertProcessedConfigurationEquals([
             [],
@@ -47,6 +58,38 @@ final class ConfigurationTest extends TestCase
                         'model' => Draft::class,
                         'interface' => DraftInterface::class,
                         'repository' => DraftRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'entry_channel' => [
+                    'classes' => [
+                        'model' => EntryChannel::class,
+                        'interface' => EntryChannelInterface::class,
+                        'repository' => EntityRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'entry_audience_group' => [
+                    'classes' => [
+                        'model' => EntryAudienceGroup::class,
+                        'interface' => EntryAudienceGroupInterface::class,
+                        'repository' => EntityRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'entry_presence' => [
+                    'classes' => [
+                        'model' => EntryPresence::class,
+                        'interface' => EntryPresenceInterface::class,
+                        'repository' => EntryPresenceRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'saved_change_set' => [
+                    'classes' => [
+                        'model' => SavedChangeSet::class,
+                        'interface' => SavedChangeSetInterface::class,
+                        'repository' => SavedChangeSetRepository::class,
                         'factory' => Factory::class,
                     ],
                 ],

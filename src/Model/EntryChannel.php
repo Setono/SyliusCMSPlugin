@@ -4,13 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
-/**
- * One channel an entry is in, by the channel's code (ADR 0002), as a row beside the entry so the visible-entries query
- * and the URL lookup filter on it in SQL. Read and change an entry's channels through EntryInterface
- *
- * @internal
- */
-class EntryChannel
+class EntryChannel implements EntryChannelInterface
 {
     protected ?int $id = null;
 

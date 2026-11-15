@@ -15,19 +15,9 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface" alias="Setono\SyliusCMSPlugin\Repository\EntryRepository"/>
 
-        <service id="Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository" class="Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository">
-            <factory service="doctrine" method="getRepository"/>
-            <argument>Setono\SyliusCMSPlugin\Model\SavedChangeSet</argument>
-        </service>
-        <service id="Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface" alias="Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository"/>
-
-        <service id="Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository" class="Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository">
-            <factory service="doctrine" method="getRepository"/>
-            <argument>Setono\SyliusCMSPlugin\Model\EntryPresence</argument>
-        </service>
-        <service id="Setono\SyliusCMSPlugin\Repository\EntryPresenceRepositoryInterface" alias="Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository"/>
-
-        <!-- setono_sylius_cms.repository.draft is registered with the draft resource -->
+        <!-- The repositories of the shipped resources are registered with them -->
         <service id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface" alias="setono_sylius_cms.repository.draft"/>
+        <service id="Setono\SyliusCMSPlugin\Repository\EntryPresenceRepositoryInterface" alias="setono_sylius_cms.repository.entry_presence"/>
+        <service id="Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface" alias="setono_sylius_cms.repository.saved_change_set"/>
     </services>
 </container>

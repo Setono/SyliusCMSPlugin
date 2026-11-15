@@ -91,6 +91,6 @@ final readonly class Autosave implements AutosaveInterface
     {
         $now = $this->clock->now();
         $this->savedChangeSets->removeSavedBefore($entry, $now->modify('-' . self::KEPT_FOR));
-        $this->savedChangeSets->add($entry, $version, $changeSet, $now);
+        $this->savedChangeSets->record($entry, $version, $changeSet, $now);
     }
 }
