@@ -349,7 +349,7 @@ function createControls(document: Document, strings: BridgeStrings, act: (action
         draw(selected, hovered) {
             const hoverBox = hovered === null ? null : boxOf(hovered);
             place(hover, hoverBox);
-            placeAdds(hoverAddBefore, hoverAddAfter, hoverBox);
+            placeAdds(hoverAddBefore, hoverAddAfter, hoverBox, 'left');
 
             const box = selected === null ? null : boxOf(selected);
             place(selection, box);
@@ -412,14 +412,17 @@ function button(document: Document, label: string, icon: string, onClick: () => 
     return element;
 }
 
-/** Puts + buttons in the middle of the top and the bottom edge of a block's box, or hides them. */
-function placeAdds(before: HTMLElement, after: HTMLElement, box: DOMRect | null): void {
+/**
+ * Puts + buttons on the top and the bottom edge of a block's box, or hides them: in the middle for the selected block,
+ * and at the left for the block under the pointer, so they stay clear of what the editor points at to click or type in
+ */
+function placeAdds(before: HTMLElement, after: HTMLElement, box: DOMRect | null, at: 'middle' | 'left' = 'middle'): void {
     before.hidden = box === null;
     after.hidden = box === null;
     if (box !== null) {
-        const middle = `${box.left + box.width / 2}px`;
-        Object.assign(before.style, { left: middle, top: `${box.top}px` });
-        Object.assign(after.style, { left: middle, top: `${box.bottom}px` });
+        const left = `${at === 'middle' ? box.left + box.width / 2 : box.left}px`;
+        Object.assign(before.style, { left, top: `${box.top}px` });
+        Object.assign(after.style, { left, top: `${box.bottom}px` });
     }
 }
 
