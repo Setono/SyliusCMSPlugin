@@ -14,6 +14,7 @@ use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
+use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
@@ -317,12 +318,12 @@ final class BlockTreeValidatorTest extends TestCase
                 'landing' => ['model' => Landing::class, 'translation' => LandingTranslation::class, 'resource' => 'app.landing'],
                 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
             ])),
-            new FieldHandlerLocator(new ServiceLocator([
+            $handlers = new FieldHandlerLocator(new ServiceLocator([
                 TextHandler::class => static fn (): TextHandler => new TextHandler(),
                 RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
                 ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator),
             ])),
-            $fallbackChain->reveal(),
+            new FallbackValues($handlers, $fallbackChain->reveal()),
             Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator(),
             $translator,
         );

@@ -6,7 +6,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\NestingRulesInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
             <argument type="service" id="validator"/>
             <argument type="service" id="translator"/>
         </service>

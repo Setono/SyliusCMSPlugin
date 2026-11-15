@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
+use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
@@ -92,11 +93,11 @@ final class EntryValidatorTest extends TestCase
             new BlockTreeValidator(
                 $blockTypes,
                 new NestingRules($blockTypes, $contentTypes),
-                new FieldHandlerLocator(new ServiceLocator([
+                $handlers = new FieldHandlerLocator(new ServiceLocator([
                     TextHandler::class => static fn (): TextHandler => new TextHandler(),
                     ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator),
                 ])),
-                $fallbackChain->reveal(),
+                new FallbackValues($handlers, $fallbackChain->reveal()),
                 $validator,
                 $translator,
             ),

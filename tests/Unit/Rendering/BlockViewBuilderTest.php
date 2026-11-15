@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
+use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
@@ -204,7 +205,7 @@ final class BlockViewBuilderTest extends TestCase
                 new FieldReader(),
                 styles: ['group' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-group--brand']]],
             ),
-            new BlockHydrator($handlers, $fallbackChain->reveal()),
+            new BlockHydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal())),
         );
     }
 

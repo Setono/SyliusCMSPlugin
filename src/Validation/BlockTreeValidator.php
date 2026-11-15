@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Validation;
 
-use Setono\SyliusCMSPlugin\Field\EmptinessCheckingFieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
-use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
+use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Registry\AllowedBlockType;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
@@ -29,7 +28,7 @@ final readonly class BlockTreeValidator
         private BlockTypeRegistryInterface $blockTypes,
         private NestingRulesInterface $nestingRules,
         private FieldHandlerLocator $fieldHandlers,
-        private FallbackChainInterface $fallbackChain,
+        private FallbackValues $fallbackValues,
         private ValidatorInterface $validator,
         private TranslatorInterface $translator,
     ) {
@@ -122,12 +121,10 @@ final readonly class BlockTreeValidator
             );
         }
 
-        $values = is_array($stored) ? $stored : [];
-
         $errors = [];
         $found = [];
         foreach ($locales as $locale) {
-            [$source, $value] = $this->resolve($field, $values, $locale);
+            [$source, $value] = $this->resolve($field, $stored, $locale);
             foreach ($this->validateValue($blockType, $field, $value) as $message) {
                 $error = new ValidationError($block->key, $field->name, $source, $message);
 
@@ -146,17 +143,14 @@ final readonly class BlockTreeValidator
      * The value a translatable field renders in a locale, and the locale it's from: the first value the fallback
      * chain finds that isn't missing, or null in the locale itself
      *
-     * @param array<array-key, mixed> $values locale => value
+     * @param mixed $stored the field's locale map
      *
      * @return array{string, mixed}
      */
-    private function resolve(FieldMetadata $field, array $values, string $locale): array
+    private function resolve(FieldMetadata $field, mixed $stored, string $locale): array
     {
-        foreach ($this->fallbackChain->localesFor($locale) as $candidate) {
-            $value = $values[$candidate] ?? null;
-            if (!$this->isMissing($field, $value)) {
-                return [$candidate, $value];
-            }
+        foreach ($this->fallbackValues->inFallbackOrder($field->field, $stored, $locale) as $source => $value) {
+            return [$source, $value];
         }
 
         return [$locale, null];
@@ -170,7 +164,7 @@ final readonly class BlockTreeValidator
      */
     private function validateValue(BlockTypeMetadata $blockType, FieldMetadata $field, mixed $value): array
     {
-        if ($this->isMissing($field, $value)) {
+        if ($this->fallbackValues->isMissing($field->field, $value)) {
             if ($field->field->required) {
                 return [$this->translator->trans('setono_sylius_cms.field.required', [], 'validators')];
             }
@@ -188,20 +182,6 @@ final readonly class BlockTreeValidator
         }
 
         return self::messages($violations);
-    }
-
-    /**
-     * Null, '' and [] are missing, and so is what the field type handler counts as empty, such as an empty rich text document
-     */
-    private function isMissing(FieldMetadata $field, mixed $value): bool
-    {
-        if (null === $value || '' === $value || [] === $value) {
-            return true;
-        }
-
-        $handler = $this->fieldHandlers->get($field->field);
-
-        return $handler instanceof EmptinessCheckingFieldHandlerInterface && $handler->isEmpty($field->field, $value);
     }
 
     /**
