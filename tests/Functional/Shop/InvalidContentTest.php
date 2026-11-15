@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * Published content that's no longer valid, such as after a code change, still renders what it can.
@@ -33,7 +34,7 @@ final class InvalidContentTest extends WebTestCase
         $crawler = $client->request('GET', '/en_US/about-us');
 
         self::assertResponseIsSuccessful();
-        self::assertSame(['Before', 'After'], $crawler->filter('.cms-tree .cms-heading')->each(static fn ($heading): string => $heading->text()));
+        self::assertSame(['Before', 'After'], $crawler->filter('.cms-tree .cms-heading')->each(static fn (Crawler $heading): string => $heading->text()));
         self::assertStringNotContainsString('Winter sale', (string) $client->getResponse()->getContent());
     }
 

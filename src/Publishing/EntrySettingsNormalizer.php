@@ -96,13 +96,16 @@ final class EntrySettingsNormalizer
             throw new InvalidEntrySettingsException('"channels" must be a list of channel codes');
         }
 
+        $codes = [];
         foreach ($value as $code) {
             if (!is_string($code) || '' === $code) {
                 throw new InvalidEntrySettingsException('"channels" must be a list of channel codes');
             }
+
+            $codes[] = $code;
         }
 
-        return $value;
+        return $codes;
     }
 
     private static function audience(mixed $value): Audience

@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Admins;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 /**
@@ -261,6 +262,8 @@ final class ConcurrentEditingTest extends BuilderApiTestCase
     public function it_lists_the_other_admin_users_who_have_the_entry_open_in_presence(): void
     {
         $clock = self::mockTime('2026-11-14 10:00:00');
+        // Symfony 6.4 declares it returns a ClockInterface, which has no sleep()
+        self::assertInstanceOf(MockClock::class, $clock);
         $client = self::createClient();
         $page = self::createTwoHeadings(false);
         $jane = self::createAdmin('jane', 'Jane', 'Roe');
