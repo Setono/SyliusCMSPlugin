@@ -12,6 +12,8 @@ use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 /**
  * Reads and writes the on-save settings as JSON, in the shape of the export format's "settings"
  * (docs/spec/transfer.md#export-format). Encode the result with CanonicalJson
+ *
+ * @internal
  */
 final class EntrySettingsNormalizer
 {

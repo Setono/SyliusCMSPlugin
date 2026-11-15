@@ -14,6 +14,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Validates a block tree as publish does. See "Validation" in docs/spec/publishing.md
+ *
+ * @internal
  */
 final readonly class BlockTreeValidator
 {

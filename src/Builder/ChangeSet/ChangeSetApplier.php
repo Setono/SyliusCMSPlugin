@@ -15,6 +15,8 @@ use Setono\SyliusCMSPlugin\Tree\StoredTree;
 /**
  * Applies a change set to a block tree, all or nothing. The values themselves aren't validated,
  * because invalid content saves: publish validates. They're sanitised by field types that sanitise, such as rich text
+ *
+ * @internal
  */
 final readonly class ChangeSetApplier
 {

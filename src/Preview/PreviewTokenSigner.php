@@ -9,6 +9,8 @@ use Psr\Clock\ClockInterface;
 /**
  * Signs and verifies the short-lived tokens that turn preview mode on. A token is the preview as base64url JSON,
  * a dot, and an HMAC-SHA256 of it with the app's secret. Its format is internal: only this class reads it
+ *
+ * @internal
  */
 final readonly class PreviewTokenSigner
 {

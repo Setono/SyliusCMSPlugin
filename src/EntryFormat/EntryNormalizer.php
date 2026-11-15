@@ -12,6 +12,8 @@ use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 /**
  * Writes an entry in the entry format, a contract shared by drafts, revisions and exports.
  * See "Entry format" in docs/spec/content-model.md. Encode the result with CanonicalJson
+ *
+ * @internal
  */
 final readonly class EntryNormalizer
 {

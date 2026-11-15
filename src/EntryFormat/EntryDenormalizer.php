@@ -17,6 +17,8 @@ use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
  *
  * The UUID, the content type and createdAt identify the entry and aren't drafted, so they're checked, not copied.
  * Holding back translations (shown), translation state and the content type's own fields come with their tickets
+ *
+ * @internal
  */
 final readonly class EntryDenormalizer
 {

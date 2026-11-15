@@ -13,6 +13,8 @@ use Setono\SyliusCMSPlugin\Tree\StoredTree;
  * applied: the same field in the same locale, an edit to a block a colleague deleted, or deleting a block a colleague
  * changed something in.
  * See "Saving" in docs/spec/publishing.md
+ *
+ * @internal
  */
 final readonly class ChangeSetMerger
 {

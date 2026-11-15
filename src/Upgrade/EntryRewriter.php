@@ -19,6 +19,8 @@ use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
  *
  * What was saved with a newer version than the code's is kept as it is. A draft saved with a newer version of its
  * content type is left as it is, because writing it back would drop the fields the code doesn't know
+ *
+ * @internal
  */
 final readonly class EntryRewriter
 {

@@ -14,6 +14,8 @@ use Setono\SyliusCMSPlugin\Routing\EntryPath;
 /**
  * The entry the builder's preview edits. It renders its working copy at the working copy's URL, ignoring its own
  * publish state, while everything else on the page shows what shoppers see. See "Preview mode" in docs/spec/builder.md
+ *
+ * @internal
  */
 final readonly class PreviewedEntryProvider
 {

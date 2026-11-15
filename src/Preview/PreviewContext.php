@@ -12,6 +12,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
  * The preview the current page shows, from the signed token in the main request's _cms_preview query parameter.
  * It's read from the main request, so slots rendered in sub-requests preview too, and an invalid or expired token
  * is ignored, so the request gets the shopper's response. See "Preview mode and share links" in docs/spec/rendering.md
+ *
+ * @internal
  */
 final class PreviewContext
 {
