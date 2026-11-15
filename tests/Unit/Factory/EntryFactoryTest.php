@@ -20,14 +20,14 @@ final class EntryFactoryTest extends TestCase
     /**
      * @test
      */
-    public function it_starts_a_new_entry_in_every_channel(): void
+    public function it_starts_a_new_entry_in_every_channel_with_a_code(): void
     {
         $page = new Page();
         $decorated = $this->prophesize(FactoryInterface::class);
         $decorated->createNew()->willReturn($page);
 
         $channels = $this->prophesize(ChannelRepositoryInterface::class);
-        $channels->findAll()->willReturn([self::channel('WEB'), self::channel('B2B')]);
+        $channels->findAll()->willReturn([self::channel('WEB'), self::channel('B2B'), new Channel()]);
 
         $entry = (new EntryFactory($decorated->reveal(), $channels->reveal()))->createNew();
 

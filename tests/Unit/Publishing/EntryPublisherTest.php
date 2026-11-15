@@ -139,6 +139,7 @@ final class EntryPublisherTest extends TestCase
     {
         $page = $this->page;
         $page->getTranslation('da_DK')->setTitle('Om os');
+        $page->getTranslation('da_DK')->setSlug('om');
         $page->publish(new \DateTimeImmutable('2026-11-01 10:00:00', new \DateTimeZone('UTC')));
         $this->workingCopies->applyToRows($page, $this->workingCopy)->will(static function () use ($page): void {
             $page->setSlug('about');
@@ -149,7 +150,7 @@ final class EntryPublisherTest extends TestCase
 
         $published = $this->events[1];
         self::assertInstanceOf(EntryPublished::class, $published);
-        self::assertSame(['en_US' => 'about-us'], $published->oldSlugs);
+        self::assertSame(['en_US' => 'about-us', 'da_DK' => 'om'], $published->oldSlugs);
         self::assertSame(['en_US' => 'about', 'da_DK' => 'om-os'], $published->newSlugs);
         self::assertSame('2026-11-14T11:30:00+00:00', $page->getChangedAt()->format(\DATE_ATOM));
     }

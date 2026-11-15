@@ -79,9 +79,9 @@ final class RegisterUpgradersPass implements CompilerPassInterface
     /**
      * The classes of the block types, layouts and content types the other passes registered, which all have a version
      *
-     * @return list<class-string>
+     * @return \Generator<class-string>
      */
-    private static function versioned(ContainerBuilder $container): array
+    private static function versioned(ContainerBuilder $container): \Generator
     {
         /** @var array<string, class-string> $blockTypes code => class */
         $blockTypes = $container->hasDefinition(BlockTypeRegistry::class) ? $container->getDefinition(BlockTypeRegistry::class)->getArgument(0) : [];
@@ -92,11 +92,15 @@ final class RegisterUpgradersPass implements CompilerPassInterface
         /** @var array<string, array{model: class-string}> $contentTypes code => resource */
         $contentTypes = $container->hasDefinition(ContentTypeRegistry::class) ? $container->getDefinition(ContentTypeRegistry::class)->getArgument(0) : [];
 
-        return [
-            ...array_values($blockTypes),
-            ...array_merge(...array_values(array_map(array_values(...), $layouts))),
-            ...array_values(array_map(static fn (array $contentType): string => $contentType['model'], $contentTypes)),
-        ];
+        yield from $blockTypes;
+
+        foreach ($layouts as $layoutsOfAContentType) {
+            yield from $layoutsOfAContentType;
+        }
+
+        foreach ($contentTypes as $contentType) {
+            yield $contentType['model'];
+        }
     }
 
     /**

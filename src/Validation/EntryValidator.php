@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Validation;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -31,33 +32,45 @@ final readonly class EntryValidator implements EntryValidatorInterface
         $contentType = $this->contentTypes->getByEntry($entry);
         $translations = $entry->getTranslations()->toArray();
         ksort($translations);
-        $locales = array_map(strval(...), array_keys($translations));
+        $locales = array_keys($translations);
 
-        $errors = [];
+        $fields = $this->fieldReader->readContentType($contentType->modelClass, false);
+        $translationClass = $contentType->translationModelClass;
+        $translationFields = null === $translationClass ? [] : $this->fieldReader->readContentType($translationClass, true);
 
-        $entryClass = $contentType->modelClass;
-        $fields = $this->fieldReader->readContentType($entryClass, false);
-        foreach ($fields as $name => $field) {
-            $errors = [...$errors, ...$this->fieldValidator->validateShared($entryClass, $field, self::value($entry, $entryClass, $name))];
+        $errors = $this->validateFields($entry, $translations, $contentType->modelClass, $fields);
+        if (null !== $translationClass) {
+            $errors = [...$errors, ...$this->validateFields($entry, $translations, $translationClass, $translationFields)];
         }
 
         $errors = [...$errors, ...$this->violations($entry, null, array_keys($fields))];
-
-        $translationFields = [];
-        $translationClass = $contentType->translationModelClass;
-        if (null !== $translationClass) {
-            $translationFields = $this->fieldReader->readContentType($translationClass, true);
-            foreach ($translationFields as $name => $field) {
-                $stored = array_map(static fn (object $translation): mixed => self::value($translation, $translationClass, $name), $translations);
-                $errors = [...$errors, ...$this->fieldValidator->validateTranslatable($translationClass, $field, $stored, $locales)];
-            }
-        }
-
         foreach ($translations as $locale => $translation) {
-            $errors = [...$errors, ...$this->violations($translation, (string) $locale, array_keys($translationFields))];
+            $errors = [...$errors, ...$this->violations($translation, $locale, array_keys($translationFields))];
         }
 
         return [...$errors, ...$this->blockTreeValidator->validate($entry->getBlockTree(), $contentType->code, $locales)];
+    }
+
+    /**
+     * Validates the fields one class of the content type declares: a shared field's value on the entry, and a
+     * translatable field's values on the translations
+     *
+     * @param array<string, object> $translations by locale
+     * @param class-string $class
+     * @param array<string, FieldMetadata> $fields
+     *
+     * @return list<ValidationError>
+     */
+    private function validateFields(EntryInterface $entry, array $translations, string $class, array $fields): array
+    {
+        $errors = [];
+        foreach ($fields as $name => $field) {
+            $errors = [...$errors, ...($field->translatable
+                ? $this->fieldValidator->validateTranslatable($class, $field, array_map(static fn (object $translation): mixed => self::value($translation, $class, $name), $translations), array_keys($translations))
+                : $this->fieldValidator->validateShared($class, $field, self::value($entry, $class, $name)))];
+        }
+
+        return $errors;
     }
 
     /**
@@ -83,10 +96,10 @@ final readonly class EntryValidator implements EntryValidatorInterface
     /**
      * A field's value, which a mapped property can hold privately
      *
-     * @param class-string $class the class that declares the field
+     * @param class-string $class the class that declares the field, which the object is
      */
     private static function value(object $object, string $class, string $property): mixed
     {
-        return $object instanceof $class ? (new \ReflectionProperty($class, $property))->getValue($object) : null;
+        return (new \ReflectionProperty($class, $property))->getValue($object);
     }
 }

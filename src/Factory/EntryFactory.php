@@ -39,7 +39,8 @@ final readonly class EntryFactory implements TranslatableFactoryInterface
             throw new \LogicException(sprintf('A content type\'s factory must create %s, not %s', EntryInterface::class, get_debug_type($entry)));
         }
 
-        $entry->setChannelCodes(array_map(static fn (ChannelInterface $channel): string => (string) $channel->getCode(), $this->channelRepository->findAll()));
+        $codes = array_map(static fn (ChannelInterface $channel): ?string => $channel->getCode(), $this->channelRepository->findAll());
+        $entry->setChannelCodes(array_filter($codes, static fn (?string $code): bool => null !== $code));
 
         return $entry;
     }

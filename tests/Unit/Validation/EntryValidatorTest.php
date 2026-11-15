@@ -16,6 +16,7 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\LandingTranslation;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -48,9 +49,9 @@ final class EntryValidatorTest extends TestCase
         self::assertEquals(
             [
                 new ValidationError(null, 'subtitle', null, 'This field is required.'),
-                new ValidationError(null, 'campaign', null, 'This value should not be blank.'),
                 new ValidationError(null, 'headline', 'da_DK', 'This field is required.'),
                 new ValidationError(null, 'headline', 'en_US', 'This field is required.'),
+                new ValidationError(null, 'campaign', null, 'This value should not be blank.'),
                 new ValidationError(null, 'teaser', 'da_DK', 'This value is too long. It should have 10 characters or less.'),
                 new ValidationError(null, 'teaser', 'da_DK', 'This value is not valid.'),
                 new ValidationError(null, 'teaser', 'en_US', 'This value is too long. It should have 10 characters or less.'),
@@ -98,6 +99,18 @@ final class EntryValidatorTest extends TestCase
     /**
      * @test
      */
+    public function it_validates_an_entry_of_a_content_type_without_translatable_fields(): void
+    {
+        $entry = new Recipe();
+        $entry->setCurrentLocale('en_US');
+        $entry->setTitle('Pancakes');
+
+        self::assertSame([], $this->validator()->validate($entry));
+    }
+
+    /**
+     * @test
+     */
     public function it_finds_no_errors_in_a_valid_entry(): void
     {
         self::assertSame([], $this->validator()->validate(self::validEntry()));
@@ -136,6 +149,7 @@ final class EntryValidatorTest extends TestCase
         $blockTypes = new BlockTypeRegistry(['heading' => Heading::class], new FieldReader());
         $contentTypes = new ContentTypeRegistry([
             'landing' => ['model' => Landing::class, 'translation' => LandingTranslation::class, 'resource' => 'app.landing'],
+            'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
         ]);
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
