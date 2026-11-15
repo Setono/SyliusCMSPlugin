@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional;
 
-use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
-use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
-use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api\BuilderApiTestCase;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\UpgradesKernel;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -57,7 +54,7 @@ final class UpgradeTest extends BuilderApiTestCase
         self::assertStringContainsString('"type":"callout","version":1,', (string) self::draftOf($page)?->getContent());
 
         // The preview renders the draft
-        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::previewToken($page));
         self::assertSelectorTextSame('.cms-tree .app-callout', 'Drafted with version 1');
 
         // The builder gets it upgraded
@@ -94,7 +91,7 @@ final class UpgradeTest extends BuilderApiTestCase
         $page = self::createPageWithBlocks('About us', 'about-us', [$heading, self::calloutAtVersion1('Saved with version 1')]);
         self::assertStringContainsString('"subtitle"', $page->getBlockTreeJson());
 
-        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::previewToken($page));
         self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello');
 
         $csrfToken = self::openBuilder($client, $page);
@@ -118,7 +115,7 @@ final class UpgradeTest extends BuilderApiTestCase
         $page = self::createPage('About us', 'about-us', 'Hello');
         $csrfToken = self::openBuilder($client, $page);
 
-        $response = self::json($client, 'POST', '/admin/cms/api/preview/render?_cms_preview=' . self::token($page), ['blocks' => [
+        $response = self::json($client, 'POST', '/admin/cms/api/preview/render?_cms_preview=' . self::previewToken($page), ['blocks' => [
             ['key' => self::CALLOUT, 'type' => 'callout', 'version' => 1, 'style' => null, 'fields' => ['text' => ['en_US' => 'Held at version 1']], 'translated' => (object) [], 'conditions' => [], 'children' => []],
         ]], $csrfToken);
 
@@ -153,21 +150,5 @@ final class UpgradeTest extends BuilderApiTestCase
         $workingCopy = $workingCopies->getWorkingCopy($page);
         $workingCopy->setBlockTree(new StoredTree($workingCopy->getBlockTree()->layout, $blocks));
         $workingCopies->save($page, $workingCopy);
-    }
-
-    private static function draftOf(PageInterface $page): ?DraftInterface
-    {
-        /** @var DraftRepositoryInterface $drafts */
-        $drafts = self::getContainer()->get('setono_sylius_cms.repository.draft');
-
-        return $drafts->findOneByEntry(self::reloadPage($page));
-    }
-
-    private static function token(PageInterface $page): string
-    {
-        /** @var PreviewTokenSigner $signer */
-        $signer = self::getContainer()->get(PreviewTokenSigner::class);
-
-        return $signer->sign(new Preview($page->getUuid(), 'WEB', 'en_US'));
     }
 }

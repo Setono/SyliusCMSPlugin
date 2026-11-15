@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional;
 
 use Doctrine\Persistence\ObjectManager;
-use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
-use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\UpgradesKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -156,13 +154,5 @@ final class UpgradeCommandTest extends KernelTestCase
     private static function calloutAtVersion1(string $text): StoredBlock
     {
         return new StoredBlock(self::CALLOUT, 'callout', 1, fields: ['text' => ['en_US' => $text]]);
-    }
-
-    private static function draftOf(PageInterface $page): ?DraftInterface
-    {
-        /** @var DraftRepositoryInterface $drafts */
-        $drafts = self::getContainer()->get('setono_sylius_cms.repository.draft');
-
-        return $drafts->findOneByEntry(self::reloadPage($page));
     }
 }

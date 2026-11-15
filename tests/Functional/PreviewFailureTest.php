@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional;
 
-use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
-use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api\BuilderApiTestCase;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\BrokenBlockKernel;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -37,7 +35,7 @@ final class PreviewFailureTest extends BuilderApiTestCase
         $page = self::createPageWithBlocks('About us', 'about-us', []);
         $csrfToken = self::openBuilder($client, $page);
 
-        $response = self::json($client, 'POST', '/admin/cms/api/preview/render?_cms_preview=' . self::token($page), ['blocks' => [
+        $response = self::json($client, 'POST', '/admin/cms/api/preview/render?_cms_preview=' . self::previewToken($page), ['blocks' => [
             self::stored(self::BROKEN, 'broken'),
             self::stored(self::HEADING, 'heading', ['text' => ['en_US' => 'Still here']]),
         ]], $csrfToken);
@@ -63,21 +61,13 @@ final class PreviewFailureTest extends BuilderApiTestCase
         $broken = new StoredBlock(self::BROKEN, 'broken', 1);
         $page = self::createPageWithBlocks('About us', 'about-us', [self::heading(self::HEADING, 'Still here'), $broken]);
 
-        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::previewToken($page));
 
         self::assertResponseStatusCodeSame(200);
         self::assertSelectorTextSame('.cms-tree .cms-heading', 'Still here');
         self::assertSelectorTextSame('.cms-tree [data-cms-block-error]', self::ERROR);
         self::assertSelectorNotExists('.cms-broken');
         self::assertSelectorExists('#footer');
-    }
-
-    private static function token(PageInterface $page): string
-    {
-        /** @var PreviewTokenSigner $signer */
-        $signer = self::getContainer()->get(PreviewTokenSigner::class);
-
-        return $signer->sign(new Preview($page->getUuid(), 'WEB', 'en_US'));
     }
 
     /**

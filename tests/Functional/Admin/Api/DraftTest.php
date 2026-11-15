@@ -9,9 +9,7 @@ use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Event\BeforeEntryPublish;
 use Setono\SyliusCMSPlugin\Event\EntryCreated;
 use Setono\SyliusCMSPlugin\Event\EntryPublished;
-use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
@@ -290,21 +288,6 @@ final class DraftTest extends BuilderApiTestCase
         self::assertIsArray($data);
 
         return $data;
-    }
-
-    private static function draftOf(PageInterface $page): ?DraftInterface
-    {
-        self::pageManager()->clear();
-
-        return self::drafts()->findOneByEntry(self::reloadPage($page));
-    }
-
-    private static function drafts(): DraftRepositoryInterface
-    {
-        /** @var DraftRepositoryInterface $drafts */
-        $drafts = self::getContainer()->get('setono_sylius_cms.repository.draft');
-
-        return $drafts;
     }
 
     private static function pageManager(): ObjectManager

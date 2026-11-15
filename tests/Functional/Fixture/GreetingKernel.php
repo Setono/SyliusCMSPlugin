@@ -4,23 +4,17 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Fixture;
 
-use Setono\SyliusCMSPlugin\Tests\Application\Kernel;
+use Setono\SyliusCMSPlugin\Tests\Support\FixtureKernel;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
- * The test application plus the Greeting block type, whose template translates its text. It has a cache of its own,
- * so the block type stays out of every other test
+ * The test application plus the Greeting block type, whose template translates its text
  */
-final class GreetingKernel extends Kernel
+final class GreetingKernel extends FixtureKernel
 {
-    public function getProjectDir(): string
+    protected function cacheSuffix(): string
     {
-        return dirname(__DIR__, 2) . '/Application';
-    }
-
-    public function getCacheDir(): string
-    {
-        return parent::getCacheDir() . '_greeting';
+        return 'greeting';
     }
 
     protected function build(ContainerBuilder $container): void

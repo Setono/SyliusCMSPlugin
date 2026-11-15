@@ -166,7 +166,7 @@ final class PreviewRenderTest extends BuilderApiTestCase
         $page = self::createPage('About us', 'about-us');
         $csrfToken = self::openBuilder($client, $page);
 
-        self::json($client, 'POST', '/admin/cms/api/preview/render?_cms_preview=' . self::token('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e'), ['blocks' => []], $csrfToken);
+        self::json($client, 'POST', '/admin/cms/api/preview/render?_cms_preview=' . self::previewToken('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e'), ['blocks' => []], $csrfToken);
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -217,15 +217,7 @@ final class PreviewRenderTest extends BuilderApiTestCase
 
     private static function uri(PageInterface $page): string
     {
-        return '/admin/cms/api/preview/render?_cms_preview=' . self::token($page->getUuid());
-    }
-
-    private static function token(string $entryUuid): string
-    {
-        /** @var PreviewTokenSigner $signer */
-        $signer = self::getContainer()->get(PreviewTokenSigner::class);
-
-        return $signer->sign(new Preview($entryUuid, 'WEB', 'en_US'));
+        return '/admin/cms/api/preview/render?_cms_preview=' . self::previewToken($page->getUuid());
     }
 
     /**

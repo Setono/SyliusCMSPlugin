@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Event\EntryCreated;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
-use Sylius\Bundle\CoreBundle\Fixture\Factory\ExampleFactoryInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -169,26 +167,5 @@ final class CreateEntryTest extends WebTestCase
         $client->request('GET', '/admin/cms/entries/recipe/new');
 
         self::assertResponseStatusCodeSame(404);
-    }
-
-    private static function createChannel(string $code): void
-    {
-        /** @var ExampleFactoryInterface $factory */
-        $factory = self::getContainer()->get('sylius.fixture.example_factory.channel');
-        $channel = $factory->create([
-            'code' => $code,
-            'name' => $code,
-            'hostname' => strtolower($code) . '.localhost',
-            'locales' => ['en_US'],
-            'default_locale' => 'en_US',
-            'currencies' => ['USD'],
-            'base_currency' => 'USD',
-            'menu_taxon' => null,
-        ]);
-
-        /** @var ObjectManager $manager */
-        $manager = self::getContainer()->get('sylius.manager.channel');
-        $manager->persist($channel);
-        $manager->flush();
     }
 }

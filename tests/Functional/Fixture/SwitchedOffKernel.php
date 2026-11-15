@@ -4,23 +4,18 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Fixture;
 
-use Setono\SyliusCMSPlugin\Tests\Application\Kernel;
+use Setono\SyliusCMSPlugin\Tests\Support\FixtureKernel;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * The test application with the shipped stylesheet off and the Spacer block type disabled,
- * as a project sets them in its own config. It has its own cache, so it's built once and reused
+ * as a project sets them in its own config
  */
-final class SwitchedOffKernel extends Kernel
+final class SwitchedOffKernel extends FixtureKernel
 {
-    public function getProjectDir(): string
+    protected function cacheSuffix(): string
     {
-        return dirname(__DIR__, 2) . '/Application';
-    }
-
-    public function getCacheDir(): string
-    {
-        return parent::getCacheDir() . '_switched_off';
+        return 'switched_off';
     }
 
     protected function build(ContainerBuilder $container): void

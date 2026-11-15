@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 
-use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
-use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\GreetingKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Admins;
 
@@ -34,7 +32,7 @@ final class PreviewRenderLocaleTest extends BuilderApiTestCase
         $page = self::createPage('About us', 'about-us');
         $csrfToken = self::openBuilder($client, $page, self::createAdmin('jane', 'Jane', 'Roe', 'da_DK'));
 
-        $response = self::json($client, 'POST', '/admin/cms/api/preview/render?_cms_preview=' . self::token($page), ['blocks' => [[
+        $response = self::json($client, 'POST', '/admin/cms/api/preview/render?_cms_preview=' . self::previewToken($page), ['blocks' => [[
             'key' => self::GREETING, 'type' => 'greeting', 'version' => 1, 'style' => null, 'fields' => [], 'translated' => [], 'conditions' => [], 'children' => [],
         ]]], $csrfToken);
 
@@ -46,13 +44,5 @@ final class PreviewRenderLocaleTest extends BuilderApiTestCase
             '<p class="app-greeting" data-request-locale="en_US" data-sylius-locale="en_US">Hello</p>',
             $response['blocks'][self::GREETING],
         );
-    }
-
-    private static function token(PageInterface $page): string
-    {
-        /** @var PreviewTokenSigner $signer */
-        $signer = self::getContainer()->get(PreviewTokenSigner::class);
-
-        return $signer->sign(new Preview($page->getUuid(), 'WEB', 'en_US'));
     }
 }

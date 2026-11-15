@@ -4,23 +4,17 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Fixture;
 
-use Setono\SyliusCMSPlugin\Tests\Application\Kernel;
+use Setono\SyliusCMSPlugin\Tests\Support\FixtureKernel;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
- * The test application plus the Broken block type, whose template always throws. It has a cache of its own,
- * so the block type stays out of every other test
+ * The test application plus the Broken block type, whose template always throws
  */
-final class BrokenBlockKernel extends Kernel
+final class BrokenBlockKernel extends FixtureKernel
 {
-    public function getProjectDir(): string
+    protected function cacheSuffix(): string
     {
-        return dirname(__DIR__, 2) . '/Application';
-    }
-
-    public function getCacheDir(): string
-    {
-        return parent::getCacheDir() . '_broken_block';
+        return 'broken_block';
     }
 
     protected function build(ContainerBuilder $container): void

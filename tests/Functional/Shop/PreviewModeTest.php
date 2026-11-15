@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
 use Doctrine\Persistence\ObjectManager;
-use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
@@ -13,8 +12,6 @@ use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
-use Sylius\Bundle\CoreBundle\Fixture\Factory\ExampleFactoryInterface;
-use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Clock\MockClock;
 
@@ -30,7 +27,7 @@ final class PreviewModeTest extends WebTestCase
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
 
-        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::previewToken($page));
 
         self::assertResponseStatusCodeSame(200);
         self::assertRouteSame('setono_sylius_cms_shop_entry');
@@ -56,7 +53,7 @@ final class PreviewModeTest extends WebTestCase
         $workingCopy->setBlockTree(new StoredTree($workingCopy->getBlockTree()->layout, [$block]));
         $workingCopies->save($page, $workingCopy);
 
-        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::previewToken($page));
         self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello world');
 
         $client->request('GET', '/en_US/about-us');
@@ -71,7 +68,7 @@ final class PreviewModeTest extends WebTestCase
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
 
-        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::previewToken($page));
 
         $response = $client->getResponse();
         self::assertTrue($response->headers->hasCacheControlDirective('no-store'));
@@ -147,7 +144,7 @@ final class PreviewModeTest extends WebTestCase
         $client->request('GET', '/en_US/about-us');
         self::assertResponseStatusCodeSame(404);
 
-        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::previewToken($page));
         self::assertResponseStatusCodeSame(200);
         self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello');
     }
@@ -161,7 +158,7 @@ final class PreviewModeTest extends WebTestCase
         $page = self::createPage('About us', 'about-us', 'Hello');
         self::createPage('Imprint', 'imprint', 'Who we are');
 
-        $client->request('GET', '/en_US/imprint?_cms_preview=' . self::token($page));
+        $client->request('GET', '/en_US/imprint?_cms_preview=' . self::previewToken($page));
 
         self::assertResponseStatusCodeSame(404, 'Only the edited entry ignores its publish state');
     }
@@ -174,7 +171,7 @@ final class PreviewModeTest extends WebTestCase
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
 
-        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::previewToken($page));
 
         self::assertSame('builder', $client->getRequest()->attributes->get('_cms_preview_mode'));
         self::assertSelectorNotExists('#test-app-analytics');
@@ -205,7 +202,7 @@ final class PreviewModeTest extends WebTestCase
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
 
-        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::previewToken($page));
 
         self::assertMatchesRegularExpression(
             '#<!--cms:block 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f heading--><h2 class="cms-heading"><!--cms:field 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f text text-->Hello<!--/cms:field 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f text--></h2>\s*<!--/cms:block 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f-->#',
@@ -221,7 +218,7 @@ final class PreviewModeTest extends WebTestCase
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
 
-        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page));
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::previewToken($page));
 
         self::assertSame('/bundles/setonosyliuscmsplugin/builder/bridge.js', $client->getCrawler()->filter('body > script[data-cms-bridge]')->attr('src'));
         self::assertSame('module', $client->getCrawler()->filter('script[data-cms-bridge]')->attr('type'));
@@ -253,18 +250,10 @@ final class PreviewModeTest extends WebTestCase
         $page = self::createPage('About us', 'about-us', 'Hello');
         self::createChannel('OTHER', 'Other Store', 'other.example');
 
-        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::token($page, 'OTHER'));
+        $client->request('GET', '/en_US/about-us?_cms_preview=' . self::previewToken($page, 'OTHER'));
 
         self::assertResponseStatusCodeSame(200);
         self::assertSelectorTextSame('title', 'Other Store', 'The shop layout titles the page with the channel name');
-    }
-
-    private static function token(PageInterface $page, string $channel = 'WEB', string $locale = 'en_US'): string
-    {
-        /** @var PreviewTokenSigner $signer */
-        $signer = self::getContainer()->get(PreviewTokenSigner::class);
-
-        return $signer->sign(new Preview($page->getUuid(), $channel, $locale));
     }
 
     private static function secret(): string
@@ -273,29 +262,5 @@ final class PreviewModeTest extends WebTestCase
         self::assertIsString($secret);
 
         return $secret;
-    }
-
-    private static function createChannel(string $code, string $name, string $hostname): void
-    {
-        /** @var ExampleFactoryInterface $factory */
-        $factory = self::getContainer()->get('sylius.fixture.example_factory.channel');
-        $channel = $factory->create([
-            'code' => $code,
-            'name' => $name,
-            'hostname' => $hostname,
-            'enabled' => true,
-            'locales' => ['en_US'],
-            'default_locale' => 'en_US',
-            'currencies' => ['USD'],
-            'base_currency' => 'USD',
-            'menu_taxon' => null,
-            'default_tax_zone' => null,
-        ]);
-        self::assertInstanceOf(ChannelInterface::class, $channel);
-
-        /** @var ObjectManager $manager */
-        $manager = self::getContainer()->get('sylius.manager.channel');
-        $manager->persist($channel);
-        $manager->flush();
     }
 }

@@ -4,23 +4,18 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Fixture;
 
-use Setono\SyliusCMSPlugin\Tests\Application\Kernel;
+use Setono\SyliusCMSPlugin\Tests\Support\FixtureKernel;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * The test application with one more block style in its config, a seasonal look for the Group,
- * as a project adds one for a while. It has its own cache, so it's built once and reused
+ * as a project adds one for a while
  */
-final class SeasonalStyleKernel extends Kernel
+final class SeasonalStyleKernel extends FixtureKernel
 {
-    public function getProjectDir(): string
+    protected function cacheSuffix(): string
     {
-        return dirname(__DIR__, 2) . '/Application';
-    }
-
-    public function getCacheDir(): string
-    {
-        return parent::getCacheDir() . '_seasonal_style';
+        return 'seasonal_style';
     }
 
     protected function build(ContainerBuilder $container): void
