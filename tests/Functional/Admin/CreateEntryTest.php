@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Sylius\Bundle\CoreBundle\Fixture\Factory\ExampleFactoryInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
+use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
@@ -83,6 +84,20 @@ final class CreateEntryTest extends WebTestCase
         self::assertTrue($page->isEnabled());
         self::assertTrue($page->getAudience()->equals(Audience::everyone()));
         self::assertTrue($page->getDateWindow()->equals(new DateWindow()));
+    }
+
+    /**
+     * @test
+     */
+    public function an_entry_made_by_its_resource_factory_starts_in_every_channel_too(): void
+    {
+        self::bootKernel();
+        self::createChannel('B2B');
+
+        /** @var FactoryInterface<PageInterface> $factory */
+        $factory = self::getContainer()->get('setono_sylius_cms.factory.page');
+
+        self::assertSame(['B2B', 'WEB'], $factory->createNew()->getChannelCodes());
     }
 
     /**

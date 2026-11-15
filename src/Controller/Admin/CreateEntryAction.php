@@ -11,8 +11,6 @@ use Setono\SyliusCMSPlugin\Form\Type\CreateEntryType;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
-use Sylius\Component\Channel\Model\ChannelInterface;
-use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Resource\Factory\FactoryInterface;
 use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Component\Form\FormFactoryInterface;
@@ -31,7 +29,6 @@ final readonly class CreateEntryAction
 {
     /**
      * @param ContainerInterface $entryFactories the content types' resource factories, keyed by content type code
-     * @param ChannelRepositoryInterface<ChannelInterface> $channelRepository
      */
     public function __construct(
         private AdminAccessChecker $adminAccessChecker,
@@ -43,7 +40,6 @@ final readonly class CreateEntryAction
         private UrlGeneratorInterface $urlGenerator,
         private Environment $twig,
         private EventDispatcherInterface $eventDispatcher,
-        private ChannelRepositoryInterface $channelRepository,
     ) {
     }
 
@@ -100,9 +96,6 @@ final readonly class CreateEntryAction
         $localeCode = $this->translationLocaleProvider->getDefaultLocaleCode();
         $entry->setCurrentLocale($localeCode);
         $entry->setFallbackLocale($localeCode);
-
-        // A new entry starts in every channel. Picking them when creating comes with the create dialog
-        $entry->setChannelCodes(array_map(static fn (ChannelInterface $channel): string => (string) $channel->getCode(), $this->channelRepository->findAll()));
 
         return $entry;
     }

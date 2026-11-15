@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractCompilerPassTestCase;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\Doctrine\DiscriminatorMapListener;
+use Setono\SyliusCMSPlugin\Factory\EntryFactory;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
@@ -64,6 +65,24 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
             'page' => new ServiceClosureArgument(new Reference('setono_sylius_cms.factory.page')),
             'recipe' => new ServiceClosureArgument(new Reference('app.factory.recipe.v2')),
         ], $locator->getArgument(0));
+    }
+
+    /**
+     * @test
+     */
+    public function it_decorates_each_content_types_factory_so_a_new_entry_starts_in_every_channel(): void
+    {
+        $this->setParameter('sylius.resources', ['setono_sylius_cms.page' => self::PAGE, 'app.recipe.v2' => ['classes' => ['model' => Recipe::class]]]);
+
+        $this->compile();
+
+        foreach (['page' => 'setono_sylius_cms.factory.page', 'recipe' => 'app.factory.recipe.v2'] as $code => $factory) {
+            $decorator = 'setono_sylius_cms.entry_factory.' . $code;
+            $this->assertContainerBuilderHasService($decorator, EntryFactory::class);
+            $this->assertContainerBuilderHasServiceDefinitionWithArgument($decorator, 0, new Reference($decorator . '.inner'));
+            $this->assertContainerBuilderHasServiceDefinitionWithArgument($decorator, 1, new Reference('sylius.repository.channel'));
+            self::assertSame([$factory, null, 0], $this->container->getDefinition($decorator)->getDecoratedService());
+        }
     }
 
     /**

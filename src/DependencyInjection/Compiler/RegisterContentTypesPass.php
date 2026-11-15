@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\DependencyInjection\Compiler;
 
 use Setono\SyliusCMSPlugin\Doctrine\DiscriminatorMapListener;
+use Setono\SyliusCMSPlugin\Factory\EntryFactory;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
@@ -16,7 +17,7 @@ use Symfony\Component\DependencyInjection\Reference;
 /**
  * Content types are the Sylius resources whose model is an entry carrying #[ContentType] (ADR 0020).
  * This pass finds them in the registered resources and hands them to the content type registry,
- * the discriminator map listener and the create action's factory locator
+ * the discriminator map listener and the create action's factory locator, and decorates their factories
  */
 final class RegisterContentTypesPass implements CompilerPassInterface
 {
@@ -63,7 +64,15 @@ final class RegisterContentTypesPass implements CompilerPassInterface
             ];
 
             [$applicationName, $resourceName] = explode('.', $alias, 2);
-            $factories[$code] = new Reference(sprintf('%s.factory.%s', $applicationName, $resourceName));
+            $factory = sprintf('%s.factory.%s', $applicationName, $resourceName);
+            $factories[$code] = new Reference($factory);
+
+            // However an entry is created, it starts in every channel
+            $decorator = sprintf('setono_sylius_cms.entry_factory.%s', $code);
+            $container->register($decorator, EntryFactory::class)
+                ->setDecoratedService($factory)
+                ->setArguments([new Reference($decorator . '.inner'), new Reference('sylius.repository.channel')])
+            ;
         }
 
         $container->getDefinition(ContentTypeRegistry::class)->replaceArgument(0, $contentTypes);

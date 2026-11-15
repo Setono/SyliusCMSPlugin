@@ -9,7 +9,6 @@ use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Component\Core\Model\AdminUserInterface;
-use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -25,7 +24,7 @@ trait Entries
 
     /**
      * Creates a page in en_US through the page resource's own factory, with a heading block when $heading is given.
-     * Like a page created in the admin, it's in every channel unless $channels says otherwise
+     * Like any new entry, it's in every channel unless $channels says otherwise
      *
      * @param list<string>|null $channels channel codes
      */
@@ -36,7 +35,7 @@ trait Entries
 
     /**
      * Creates a page in en_US through the page resource's own factory, with these top-level blocks.
-     * Like a page created in the admin, it's in every channel unless $channels says otherwise
+     * Like any new entry, it's in every channel unless $channels says otherwise
      *
      * @param list<StoredBlock> $blocks
      * @param list<string>|null $channels channel codes
@@ -53,7 +52,9 @@ trait Entries
         $page->setSlug($slug);
         $page->setBlockTree(new StoredTree($page->getBlockTree()->layout, $blocks));
 
-        $page->setChannelCodes($channels ?? self::channelCodes());
+        if (null !== $channels) {
+            $page->setChannelCodes($channels);
+        }
 
         if ($published) {
             $page->publish(new \DateTimeImmutable());
@@ -90,19 +91,6 @@ trait Entries
         self::assertInstanceOf(PageInterface::class, $reloaded);
 
         return $reloaded;
-    }
-
-    /**
-     * The codes of every channel in the store
-     *
-     * @return list<string>
-     */
-    protected static function channelCodes(): array
-    {
-        /** @var RepositoryInterface<ChannelInterface> $repository */
-        $repository = self::getContainer()->get('sylius.repository.channel');
-
-        return array_values(array_map(static fn (ChannelInterface $channel): string => (string) $channel->getCode(), $repository->findAll()));
     }
 
     /**
