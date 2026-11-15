@@ -5,16 +5,13 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Builder\EntryStatus;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface;
 use Setono\SyliusCMSPlugin\Publishing\InvalidEntryException;
 use Setono\SyliusCMSPlugin\Publishing\PublishVetoedException;
-use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
-use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
-use Setono\SyliusCMSPlugin\Security\BuilderCsrfToken;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -24,9 +21,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 final readonly class PublishEntryAction
 {
     public function __construct(
-        private AdminAccessChecker $adminAccessChecker,
-        private BuilderCsrfToken $csrfToken,
-        private EntryRepositoryInterface $entryRepository,
+        private BuilderRequest $builderRequest,
         private EntryPublisherInterface $entryPublisher,
         private TranslatorInterface $translator,
     ) {
@@ -34,14 +29,11 @@ final readonly class PublishEntryAction
 
     public function __invoke(Request $request, string $uuid): JsonResponse
     {
-        $this->adminAccessChecker->denyUnlessAdmin();
+        return $this->builderRequest->change($request, $uuid, $this->publish(...));
+    }
 
-        $entry = $this->entryRepository->findOneByUuid($uuid) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $uuid));
-
-        if (!$this->csrfToken->isValid($request)) {
-            return new JsonResponse(['error' => 'Invalid CSRF token'], Response::HTTP_FORBIDDEN);
-        }
-
+    private function publish(EntryInterface $entry): JsonResponse
+    {
         try {
             $this->entryPublisher->publish($entry);
         } catch (InvalidEntryException $e) {

@@ -11,16 +11,13 @@ use Setono\SyliusCMSPlugin\Builder\EntryStatus;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Json\ListedObject;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Publishing\AutosaveInterface;
 use Setono\SyliusCMSPlugin\Publishing\StaleLockTokenException;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
-use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
-use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
-use Setono\SyliusCMSPlugin\Security\BuilderCsrfToken;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Autosaves a change set onto the working copy: the rows of a never-published entry, and otherwise its draft. The body
@@ -30,9 +27,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 final readonly class SaveEntryAction
 {
     public function __construct(
-        private AdminAccessChecker $adminAccessChecker,
-        private BuilderCsrfToken $csrfToken,
-        private EntryRepositoryInterface $entryRepository,
+        private BuilderRequest $builderRequest,
         private WorkingCopyManagerInterface $workingCopies,
         private AutosaveInterface $autosave,
         private EntryNormalizer $entryNormalizer,
@@ -41,20 +36,17 @@ final readonly class SaveEntryAction
 
     public function __invoke(Request $request, string $uuid): JsonResponse
     {
-        $this->adminAccessChecker->denyUnlessAdmin();
+        return $this->builderRequest->change($request, $uuid, fn (EntryInterface $entry): JsonResponse => $this->save($request, $entry));
+    }
 
-        $entry = $this->entryRepository->findOneByUuid($uuid) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $uuid));
-
-        if (!$this->csrfToken->isValid($request)) {
-            return new JsonResponse(['error' => 'Invalid CSRF token'], Response::HTTP_FORBIDDEN);
-        }
-
+    private function save(Request $request, EntryInterface $entry): JsonResponse
+    {
         try {
             $body = CanonicalJson::decode($request->getContent());
             $changeSet = ChangeSet::fromArray($body);
             $result = $this->autosave->save($entry, $changeSet, self::lockToken($body));
         } catch (\JsonException|InvalidChangeSetException $e) {
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+            return BuilderRequest::badRequest($e->getMessage());
         } catch (StaleLockTokenException $e) {
             return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
         }

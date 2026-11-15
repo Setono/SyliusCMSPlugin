@@ -6,18 +6,14 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Json\ListedObject;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettings;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettingsNormalizer;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaverInterface;
 use Setono\SyliusCMSPlugin\Publishing\InvalidEntrySettingsException;
-use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
-use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
-use Setono\SyliusCMSPlugin\Security\BuilderCsrfToken;
 use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Saves the on-save settings the body holds, outside the draft, and answers with all of them. A setting the body
@@ -26,9 +22,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 final readonly class SaveEntrySettingsAction
 {
     public function __construct(
-        private AdminAccessChecker $adminAccessChecker,
-        private BuilderCsrfToken $csrfToken,
-        private EntryRepositoryInterface $entryRepository,
+        private BuilderRequest $builderRequest,
         private EntrySettingsNormalizer $normalizer,
         private EntrySettingsSaverInterface $saver,
     ) {
@@ -36,18 +30,15 @@ final readonly class SaveEntrySettingsAction
 
     public function __invoke(Request $request, string $uuid): JsonResponse
     {
-        $this->adminAccessChecker->denyUnlessAdmin();
+        return $this->builderRequest->change($request, $uuid, fn (EntryInterface $entry): JsonResponse => $this->save($request, $entry));
+    }
 
-        $entry = $this->entryRepository->findOneByUuid($uuid) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $uuid));
-
-        if (!$this->csrfToken->isValid($request)) {
-            return new JsonResponse(['error' => 'Invalid CSRF token'], Response::HTTP_FORBIDDEN);
-        }
-
+    private function save(Request $request, EntryInterface $entry): JsonResponse
+    {
         try {
             $settings = $this->normalizer->denormalize($request->toArray(), EntrySettings::of($entry));
         } catch (JsonException|InvalidEntrySettingsException $e) {
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+            return BuilderRequest::badRequest($e->getMessage());
         }
 
         $this->saver->save($entry, $settings);
