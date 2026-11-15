@@ -2,6 +2,7 @@ import { useBuilder, useBuilderState, usePresenceState, usePreviewState } from '
 import { useTranslator, type MessageKey } from '../i18n';
 import type { EntryStatus } from '../types';
 import { ArrowLeftIcon, DesktopIcon, MobileIcon, RedoIcon, UndoIcon } from './icons';
+import { saveStateText } from './saveStateText';
 import styles from './TopBar.module.css';
 
 const statusLabels: Record<EntryStatus, MessageKey> = {
@@ -35,7 +36,7 @@ export function TopBar() {
             <PreviewChannel />
             <PreviewWidth />
             <UndoRedo />
-            <SaveState />
+            <SaveStatus />
             <Editors />
             <Publish />
         </div>
@@ -109,22 +110,15 @@ function UndoRedo() {
     );
 }
 
-function SaveState() {
+function SaveStatus() {
     const t = useTranslator();
     const { reload } = useBuilder();
     const saveState = useBuilderState((state) => state.saveState);
-    const text = {
-        idle: '',
-        saving: t('setono_sylius_cms.builder.saving'),
-        saved: t('setono_sylius_cms.builder.saved'),
-        failed: t('setono_sylius_cms.builder.save_failed'),
-        stale: t('setono_sylius_cms.builder.save_stale'),
-    }[saveState];
 
     return (
         <>
             <span role="status" className={styles.saveState} data-state={saveState}>
-                {text}
+                {saveStateText(t, saveState)}
             </span>
             {saveState === 'stale' && (
                 <button type="button" className={styles.discardButton} onClick={() => void reload()}>

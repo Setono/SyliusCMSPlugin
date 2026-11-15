@@ -5,10 +5,11 @@
  */
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { ApiError } from './api';
+import type { SaveState } from './store';
 import type { EntrySettings } from './types';
 
-/** idle until the first change, then saving while saves are in flight, then saved, or failed. */
-export type SettingsSaveState = 'idle' | 'saving' | 'saved' | 'failed';
+/** idle until the first change, then saving while saves are in flight, then saved, or failed. Settings never go stale. */
+export type SettingsSaveState = Exclude<SaveState, 'stale'>;
 
 export interface SettingsState {
     settings: EntrySettings;

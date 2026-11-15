@@ -5,6 +5,7 @@ import formStyles from '../form/Form.module.css';
 import { useTranslator, type MessageKey } from '../i18n';
 import type { AudienceMode } from '../types';
 import { entryMessages } from '../validation';
+import { saveStateText } from './saveStateText';
 import styles from './SettingsPane.module.css';
 
 /**
@@ -30,7 +31,7 @@ export function SettingsPane() {
                 <DateWindow />
                 <Channels />
                 <Audience />
-                <SaveState />
+                <SaveStatus />
             </div>
         </div>
     );
@@ -228,21 +229,14 @@ function Audience() {
     );
 }
 
-function SaveState() {
+function SaveStatus() {
     const t = useTranslator();
     const saveState = useSettingsState((state) => state.saveState);
     const error = useSettingsState((state) => state.error);
-    const failed = t('setono_sylius_cms.builder.save_failed');
-    const text = {
-        idle: '',
-        saving: t('setono_sylius_cms.builder.saving'),
-        saved: t('setono_sylius_cms.builder.saved'),
-        failed: error === null ? failed : `${failed}: ${error}`,
-    }[saveState];
 
     return (
         <p className={styles.saveState} data-state={saveState} aria-live="polite">
-            {text}
+            {saveStateText(t, saveState, error)}
         </p>
     );
 }
