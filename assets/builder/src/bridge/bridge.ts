@@ -1,6 +1,6 @@
 /**
  * The bridge: the script preview mode injects into the shop page in the builder's preview. It finds blocks by their
- * markers, draws the outlines and the selected block's controls, handles click-to-select and typing in place, and
+ * markers, draws the outlines, the selected block's controls and + between blocks, handles click-to-select and typing in place, and
  * patches blocks the builder re-rendered. It talks to the builder only by postMessage (docs/spec/builder.md#the-bridge).
  */
 import type { Editor } from '@tiptap/core';
@@ -206,9 +206,10 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
             switch (message.type) {
                 case 'init':
                     strings = message.strings;
-                    controls ??= createControls(document, strings, (action) => {
-                        if (selected !== null) {
-                            post(request(action, selected));
+                    controls ??= createControls(document, strings, (action, target) => {
+                        const key = target === 'hovered' ? hovered : selected;
+                        if (key !== null) {
+                            post(request(action, key));
                         }
                     });
                     break;
@@ -284,7 +285,11 @@ interface Controls {
     dispose(): void;
 }
 
-function createControls(document: Document, strings: BridgeStrings, act: (action: Action) => void): Controls {
+/**
+ * The controls: the outlines, the selected block's toolbar, and + above and below both the selected block and the block
+ * under the pointer, so there's a + between any two blocks. act() is told which of the two blocks a control is for
+ */
+function createControls(document: Document, strings: BridgeStrings, act: (action: Action, target: 'selected' | 'hovered') => void): Controls {
     const host = document.createElement('div');
     host.setAttribute('data-cms-bridge', '');
     const shadow = host.attachShadow({ mode: 'open' });
@@ -298,19 +303,21 @@ function createControls(document: Document, strings: BridgeStrings, act: (action
     toolbar.className = 'toolbar';
     toolbar.setAttribute('role', 'toolbar');
     toolbar.append(
-        button(document, strings.selectParent, ICONS.selectParent, () => act('select_parent')),
-        button(document, strings.moveUp, ICONS.moveUp, () => act({ direction: 'up' })),
-        button(document, strings.moveDown, ICONS.moveDown, () => act({ direction: 'down' })),
-        button(document, strings.duplicate, ICONS.duplicate, () => act('duplicate')),
-        button(document, strings.settings, ICONS.settings, () => act('settings')),
-        button(document, strings.delete, ICONS.delete, () => act('delete')),
+        button(document, strings.selectParent, ICONS.selectParent, () => act('select_parent', 'selected')),
+        button(document, strings.moveUp, ICONS.moveUp, () => act({ direction: 'up' }, 'selected')),
+        button(document, strings.moveDown, ICONS.moveDown, () => act({ direction: 'down' }, 'selected')),
+        button(document, strings.duplicate, ICONS.duplicate, () => act('duplicate', 'selected')),
+        button(document, strings.settings, ICONS.settings, () => act('settings', 'selected')),
+        button(document, strings.delete, ICONS.delete, () => act('delete', 'selected')),
     );
-    const add = (position: 'before' | 'after', element: HTMLElement): void => {
+    const add = (position: 'before' | 'after', element: HTMLElement, target: 'selected' | 'hovered'): void => {
         const { left, top, width, height } = element.getBoundingClientRect();
-        act({ position, x: left + width / 2, y: top + height / 2 });
+        act({ position, x: left + width / 2, y: top + height / 2 }, target);
     };
-    const addBefore = button(document, strings.addBefore, ICONS.add, () => add('before', addBefore), 'add');
-    const addAfter = button(document, strings.addAfter, ICONS.add, () => add('after', addAfter), 'add');
+    const addBefore = button(document, strings.addBefore, ICONS.add, () => add('before', addBefore, 'selected'), 'add');
+    const addAfter = button(document, strings.addAfter, ICONS.add, () => add('after', addAfter, 'selected'), 'add');
+    const hoverAddBefore = button(document, strings.addBefore, ICONS.add, () => add('before', hoverAddBefore, 'hovered'), 'add');
+    const hoverAddAfter = button(document, strings.addAfter, ICONS.add, () => add('after', hoverAddAfter, 'hovered'), 'add');
 
     let formatting: Formatting | null = null;
     const formatBar = document.createElement('div');
@@ -331,25 +338,22 @@ function createControls(document: Document, strings: BridgeStrings, act: (action
         markButtons.forEach(({ mark, button: markButton }) => markButton.setAttribute('aria-pressed', String(formatting?.editor.isActive(mark) === true)));
     };
 
-    layer.append(style, hover, selection, toolbar, addBefore, addAfter, formatBar);
+    layer.append(style, hover, selection, hoverAddBefore, hoverAddAfter, toolbar, addBefore, addAfter, formatBar);
     shadow.append(layer);
     document.body.append(host);
 
     return {
         draw(selected, hovered) {
-            place(hover, hovered === null ? null : boxOf(hovered));
+            const hoverBox = hovered === null ? null : boxOf(hovered);
+            place(hover, hoverBox);
+            placeAdds(hoverAddBefore, hoverAddAfter, hoverBox);
 
             const box = selected === null ? null : boxOf(selected);
             place(selection, box);
-            [toolbar, addBefore, addAfter].forEach((element) => {
-                element.hidden = box === null;
-            });
-
+            placeAdds(addBefore, addAfter, box);
+            toolbar.hidden = box === null;
             if (box !== null) {
                 Object.assign(toolbar.style, { left: `${box.right}px`, top: `${Math.max(box.top, 30)}px` });
-                const middle = `${box.left + box.width / 2}px`;
-                Object.assign(addBefore.style, { left: middle, top: `${box.top}px` });
-                Object.assign(addAfter.style, { left: middle, top: `${box.bottom}px` });
             }
 
             formatBar.hidden = formatting === null;
@@ -403,6 +407,17 @@ function button(document: Document, label: string, icon: string, onClick: () => 
     });
 
     return element;
+}
+
+/** Puts + buttons in the middle of the top and the bottom edge of a block's box, or hides them. */
+function placeAdds(before: HTMLElement, after: HTMLElement, box: DOMRect | null): void {
+    before.hidden = box === null;
+    after.hidden = box === null;
+    if (box !== null) {
+        const middle = `${box.left + box.width / 2}px`;
+        Object.assign(before.style, { left: middle, top: `${box.top}px` });
+        Object.assign(after.style, { left: middle, top: `${box.bottom}px` });
+    }
 }
 
 function place(element: HTMLElement, box: DOMRect | null): void {

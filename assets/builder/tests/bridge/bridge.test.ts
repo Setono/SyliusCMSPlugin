@@ -161,6 +161,29 @@ describe('the bridge', () => {
             ]);
         });
 
+        it('should offer + above and below the block under the pointer too, so there is one between any two blocks', () => {
+            bridge.receive({ type: 'select', key: 'a' });
+            fireEvent.mouseOver(document.querySelectorAll('h2')[2]!);
+
+            const hoverAdds = within(controls()).getAllByRole('button', { name: 'Add block above' });
+            expect(hoverAdds).toHaveLength(2);
+            // The hovered block's come first, under the selected block's where they overlap
+            fireEvent.click(hoverAdds[0]!);
+            fireEvent.click(within(controls()).getAllByRole('button', { name: 'Add block below' })[0]!);
+
+            expect(posted).toEqual([
+                { type: 'add', key: 'd', position: 'before', x: 0, y: 0 },
+                { type: 'add', key: 'd', position: 'after', x: 0, y: 0 },
+            ]);
+        });
+
+        it('should offer only the selected block\'s + when the pointer is over the selected block', () => {
+            bridge.receive({ type: 'select', key: 'a' });
+            fireEvent.mouseOver(document.querySelectorAll('h2')[0]!);
+
+            expect(within(controls()).getAllByRole('button', { name: 'Add block above' })).toHaveLength(1);
+        });
+
         it('should patch a block with its new HTML and dispatch a bubbling cms:render from its root element', () => {
             const rendered: Array<{ target: EventTarget | null; detail: unknown }> = [];
             document.addEventListener('cms:render', (event) => rendered.push({ target: event.target, detail: (event as CustomEvent).detail }));

@@ -80,11 +80,12 @@ final class BridgeTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_adds_a_heading_between_two_blocks_with_plus_in_the_preview(): void
+    public function an_admin_user_adds_a_heading_between_two_blocks_with_the_plus_of_the_block_under_the_pointer(): void
     {
         [$page, $preview] = $this->openBuilder(self::twoHeadings());
 
-        $preview->getByRole('heading', ['name' => 'First'])->click();
+        // Nothing is selected: the + is the one of the block under the pointer
+        $preview->getByRole('heading', ['name' => 'First'])->hover();
         $preview->getByRole('button', ['name' => 'Add block below'])->click();
         $page->getByRole('dialog', ['name' => 'Add block'])->getByRole('button', ['name' => 'Heading', 'exact' => true])->click();
         $page->getByLabel('Text')->fill('Middle');
