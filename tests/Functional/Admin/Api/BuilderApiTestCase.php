@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -20,7 +21,7 @@ abstract class BuilderApiTestCase extends WebTestCase
      *
      * @return string the CSRF token
      */
-    protected static function openBuilder(KernelBrowser $client, PageInterface $page, ?UserInterface $admin = null): string
+    protected static function openBuilder(KernelBrowser $client, EntryInterface $page, ?UserInterface $admin = null): string
     {
         $client->loginUser($admin ?? self::admin(), 'admin');
         $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));

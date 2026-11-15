@@ -2,18 +2,25 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="Setono\SyliusCMSPlugin\Validation\BlockTreeValidator" class="Setono\SyliusCMSPlugin\Validation\BlockTreeValidator">
-            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\NestingRulesInterface"/>
+        <service id="Setono\SyliusCMSPlugin\Validation\FieldValidator" class="Setono\SyliusCMSPlugin\Validation\FieldValidator">
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
             <argument type="service" id="validator"/>
             <argument type="service" id="translator"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Validation\BlockTreeValidator" class="Setono\SyliusCMSPlugin\Validation\BlockTreeValidator">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\NestingRulesInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\FieldValidator"/>
+            <argument type="service" id="translator"/>
+        </service>
+
         <!-- What publish validates, and entry_validate answers. Decorate it to add checks of your own -->
         <service id="Setono\SyliusCMSPlugin\Validation\EntryValidator" class="Setono\SyliusCMSPlugin\Validation\EntryValidator">
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\BlockTreeValidator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\FieldValidator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\FieldReader"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="validator"/>
         </service>

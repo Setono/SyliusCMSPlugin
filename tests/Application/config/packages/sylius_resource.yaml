@@ -1,0 +1,10 @@
+# The test application's own content type, registered as a project registers one (docs/spec/extending.md#content-types)
+sylius_resource:
+    resources:
+        app.announcement:
+            classes:
+                model: Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement
+                factory: Sylius\Resource\Factory\TranslatableFactory
+            translation:
+                classes:
+                    model: Setono\SyliusCMSPlugin\Model\EntryTranslation

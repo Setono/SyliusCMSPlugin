@@ -29,6 +29,7 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Testimonial;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Validation\BlockTreeValidator;
+use Setono\SyliusCMSPlugin\Validation\FieldValidator;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\Loader\YamlFileLoader;
@@ -310,6 +311,11 @@ final class BlockTreeValidatorTest extends TestCase
             'column' => Column::class,
             'testimonial' => Testimonial::class,
         ], new FieldReader());
+        $handlers = new FieldHandlerLocator(new ServiceLocator([
+            TextHandler::class => static fn (): TextHandler => new TextHandler(),
+            RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
+            ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator),
+        ]));
 
         return new BlockTreeValidator(
             $blockTypes,
@@ -318,13 +324,12 @@ final class BlockTreeValidatorTest extends TestCase
                 'landing' => ['model' => Landing::class, 'translation' => LandingTranslation::class, 'resource' => 'app.landing'],
                 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
             ])),
-            $handlers = new FieldHandlerLocator(new ServiceLocator([
-                TextHandler::class => static fn (): TextHandler => new TextHandler(),
-                RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
-                ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator),
-            ])),
-            new FallbackValues($handlers, $fallbackChain->reveal()),
-            Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator(),
+            new FieldValidator(
+                $handlers,
+                new FallbackValues($handlers, $fallbackChain->reveal()),
+                Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator(),
+                $translator,
+            ),
             $translator,
         );
     }

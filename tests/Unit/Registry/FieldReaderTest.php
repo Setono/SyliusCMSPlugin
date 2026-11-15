@@ -32,6 +32,30 @@ final class FieldReaderTest extends TestCase
 
     /**
      * @test
+     *
+     * @dataProvider provideContentTypeClasses
+     */
+    public function it_reads_a_content_types_fields_of_any_visibility_translatable_where_they_sit(bool $translation): void
+    {
+        $fields = (new FieldReader())->readContentType(Teaser::class, $translation);
+
+        self::assertSame(['heading', 'code', 'size', 'private'], array_keys($fields));
+        foreach ($fields as $field) {
+            self::assertSame($translation, $field->translatable);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{bool}>
+     */
+    public static function provideContentTypeClasses(): iterable
+    {
+        yield 'the entry class' => [false];
+        yield 'the translation class' => [true];
+    }
+
+    /**
+     * @test
      */
     public function it_resolves_translatability_from_the_field_or_else_the_field_type(): void
     {

@@ -4,19 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Validation;
 
-use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
-use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Registry\AllowedBlockType;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
-use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Registry\NestingRulesInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
-use Symfony\Component\Validator\Constraints\Callback;
-use Symfony\Component\Validator\ConstraintViolationListInterface;
-use Symfony\Component\Validator\Context\ExecutionContextInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -27,9 +20,7 @@ final readonly class BlockTreeValidator
     public function __construct(
         private BlockTypeRegistryInterface $blockTypes,
         private NestingRulesInterface $nestingRules,
-        private FieldHandlerLocator $fieldHandlers,
-        private FallbackValues $fallbackValues,
-        private ValidatorInterface $validator,
+        private FieldValidator $fieldValidator,
         private TranslatorInterface $translator,
     ) {
     }
@@ -74,8 +65,11 @@ final readonly class BlockTreeValidator
                 $errors[] = new ValidationError($block->key, null, null, $this->translator->trans('setono_sylius_cms.block.not_allowed', ['%block%' => $this->label($blockType)], 'validators'));
             }
 
-            foreach ($blockType->fields as $field) {
-                $errors = [...$errors, ...$this->validateField($blockType, $field, $block, $locales)];
+            foreach ($blockType->fields as $name => $field) {
+                $stored = $block->fields[$name] ?? null;
+                $errors = [...$errors, ...($field->translatable
+                    ? $this->fieldValidator->validateTranslatable($blockType->class, $field, $stored, $locales, $block->key)
+                    : $this->fieldValidator->validateShared($blockType->class, $field, $stored, $block->key))];
             }
 
             $errors = [...$errors, ...$this->validateList($block->children, $this->nestingRules->children($block->type), $block->key, $locales)];
@@ -100,100 +94,5 @@ final readonly class BlockTreeValidator
     private function label(BlockTypeMetadata $blockType): string
     {
         return $this->translator->trans($blockType->label);
-    }
-
-    /**
-     * A shared field has one value. A translatable field is validated in each locale, with the value that renders
-     * there: its own, or the one its fallback chain finds. Each error is reported in the locale whose value it is, once
-     *
-     * @param list<string> $locales
-     *
-     * @return list<ValidationError>
-     */
-    private function validateField(BlockTypeMetadata $blockType, FieldMetadata $field, StoredBlock $block, array $locales): array
-    {
-        $stored = $block->fields[$field->name] ?? null;
-
-        if (!$field->translatable) {
-            return array_map(
-                static fn (string|\Stringable $message): ValidationError => new ValidationError($block->key, $field->name, null, $message),
-                $this->validateValue($blockType, $field, $stored),
-            );
-        }
-
-        $errors = [];
-        $found = [];
-        foreach ($locales as $locale) {
-            [$source, $value] = $this->resolve($field, $stored, $locale);
-            foreach ($this->validateValue($blockType, $field, $value) as $message) {
-                $error = new ValidationError($block->key, $field->name, $source, $message);
-
-                // The same error can be found again through another locale's fallback chain
-                if (!in_array([$source, $error->message], $found, true)) {
-                    $found[] = [$source, $error->message];
-                    $errors[] = $error;
-                }
-            }
-        }
-
-        return $errors;
-    }
-
-    /**
-     * The value a translatable field renders in a locale, and the locale it's from: the first value the fallback
-     * chain finds that isn't missing, or null in the locale itself
-     *
-     * @param mixed $stored the field's locale map
-     *
-     * @return array{string, mixed}
-     */
-    private function resolve(FieldMetadata $field, mixed $stored, string $locale): array
-    {
-        foreach ($this->fallbackValues->inFallbackOrder($field->field, $stored, $locale) as $source => $value) {
-            return [$source, $value];
-        }
-
-        return [$locale, null];
-    }
-
-    /**
-     * A missing value fails a required field, and otherwise goes on to the constraints as null. A value that's there
-     * goes through the field type handler's validation first, and to the constraints only when the handler accepts it
-     *
-     * @return list<string|\Stringable> the messages
-     */
-    private function validateValue(BlockTypeMetadata $blockType, FieldMetadata $field, mixed $value): array
-    {
-        if ($this->fallbackValues->isMissing($field->field, $value)) {
-            if ($field->field->required) {
-                return [$this->translator->trans('setono_sylius_cms.field.required', [], 'validators')];
-            }
-
-            $violations = $this->validator->validatePropertyValue($blockType->class, $field->name, null);
-        } else {
-            $handler = $this->fieldHandlers->get($field->field);
-            $violations = $this->validator->validate($value, new Callback(
-                static fn (mixed $value, ExecutionContextInterface $context) => $handler->validate($field->field, $value, $context),
-            ));
-
-            if (0 === count($violations)) {
-                $violations = $this->validator->validatePropertyValue($blockType->class, $field->name, $value);
-            }
-        }
-
-        return self::messages($violations);
-    }
-
-    /**
-     * @return list<string|\Stringable>
-     */
-    private static function messages(ConstraintViolationListInterface $violations): array
-    {
-        $messages = [];
-        foreach ($violations as $violation) {
-            $messages[] = $violation->getMessage();
-        }
-
-        return $messages;
     }
 }

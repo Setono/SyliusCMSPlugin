@@ -8,7 +8,9 @@ use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Event\BeforeEntryPublish;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -113,6 +115,30 @@ final class ValidationTest extends BuilderApiTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame(['errors' => []], $response);
+    }
+
+    /**
+     * @test
+     */
+    public function entry_validate_lists_a_content_type_fields_errors_by_entry_field(): void
+    {
+        $client = self::createClient();
+
+        /** @var FactoryInterface<Announcement> $factory */
+        $factory = self::getContainer()->get('app.factory.announcement');
+        $announcement = $factory->createNew();
+        $announcement->setTitle('Winter sale');
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('app.manager.announcement');
+        $manager->persist($announcement);
+        $manager->flush();
+
+        self::openBuilder($client, $announcement);
+        $response = self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/validate', $announcement->getUuid()));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['errors' => [['block' => null, 'field' => 'subtitle', 'locale' => null, 'message' => 'This field is required.']]], $response);
     }
 
     /**

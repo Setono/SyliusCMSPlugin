@@ -3,3 +3,7 @@ app:
         block_style:
             brand: Brand
         greeting: Hello
+        content_type:
+            announcement: Announcement
+        field:
+            subtitle: Subtitle

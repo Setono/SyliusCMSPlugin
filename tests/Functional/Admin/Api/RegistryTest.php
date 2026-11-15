@@ -143,7 +143,8 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertSame('/bundles/setonosyliuscmsplugin/thumbnail/block/columns.svg', $blockTypes['columns']['thumbnail']);
         self::assertFalse($blockTypes['spacer']['disabled']);
 
-        self::assertSame([['code' => 'page', 'label' => 'Page', 'blocks' => $all]], $registry['contentTypes']);
+        // The test application adds a content type of its own
+        self::assertSame([['code' => 'announcement', 'label' => 'Announcement', 'blocks' => $all], ['code' => 'page', 'label' => 'Page', 'blocks' => $all]], $registry['contentTypes']);
     }
 
     /**
