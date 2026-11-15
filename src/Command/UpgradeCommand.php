@@ -7,7 +7,7 @@ namespace Setono\SyliusCMSPlugin\Command;
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
-use Setono\SyliusCMSPlugin\Upgrade\EntryRewriter;
+use Setono\SyliusCMSPlugin\Upgrade\EntryRewriterInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -29,7 +29,7 @@ final class UpgradeCommand extends Command
      */
     public function __construct(
         private readonly EntryRepositoryInterface $entries,
-        private readonly EntryRewriter $rewriter,
+        private readonly EntryRewriterInterface $rewriter,
         private readonly ContentTypeRegistryInterface $contentTypes,
         private readonly ObjectManager $manager,
     ) {
@@ -47,7 +47,7 @@ final class UpgradeCommand extends Command
         $dryRun = true === $input->getOption('dry-run');
         $verb = $dryRun ? 'Would upgrade' : 'Upgraded';
 
-        $blockTrees = $drafts = $entries = 0;
+        $blockTrees = $drafts = $batched = 0;
         foreach ($this->entries->iterateAll() as $entry) {
             $rewrite = $this->rewriter->rewrite($entry);
             $what = sprintf('the %s %s', $this->contentTypes->getByEntry($entry)->code, $entry->getUuid());
@@ -63,11 +63,12 @@ final class UpgradeCommand extends Command
             }
 
             foreach ($rewrite->newer as $newer) {
-                $io->warning(sprintf('In %s: %s. It\'s kept as it is', $what, (string) $newer));
+                $io->warning(sprintf('In %s: %s. It\'s kept as it is', $what, $newer));
             }
 
-            if (0 === ++$entries % self::BATCH_SIZE) {
+            if (self::BATCH_SIZE === ++$batched) {
                 $this->writeBatch($dryRun);
+                $batched = 0;
             }
         }
 

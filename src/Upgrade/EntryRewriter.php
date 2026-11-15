@@ -22,7 +22,7 @@ use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
  *
  * @internal
  */
-final readonly class EntryRewriter
+final readonly class EntryRewriter implements EntryRewriterInterface
 {
     public function __construct(
         private StoredDataUpgraderInterface $upgrader,

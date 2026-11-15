@@ -20,5 +20,6 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer"/>
         </service>
+        <service id="Setono\SyliusCMSPlugin\Upgrade\EntryRewriterInterface" alias="Setono\SyliusCMSPlugin\Upgrade\EntryRewriter"/>
     </services>
 </container>
