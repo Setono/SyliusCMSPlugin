@@ -80,7 +80,11 @@ final readonly class RichTextSchema
     }
 
     /**
-     * Sanitises a ProseMirror document against the schema, dropping what the schema doesn't have
+     * Sanitises a ProseMirror document against the schema, dropping what the schema doesn't have.
+     *
+     * It walks the document itself, because tiptap-php can't sanitise JSON against a schema: for a document given as
+     * an array, Editor::sanitize() only runs Schema::apply(), which strips the marks of nodes that allow none and keeps
+     * unknown nodes, marks and attributes
      *
      * @return array{type: 'doc', content: list<array<string, mixed>>}|null null when the value isn't a document at all
      */
