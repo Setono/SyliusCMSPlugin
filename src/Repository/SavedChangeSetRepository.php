@@ -13,8 +13,6 @@ use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
 /**
  * The saved change set resource's repository
- *
- * @extends EntityRepository<SavedChangeSetInterface>
  */
 class SavedChangeSetRepository extends EntityRepository implements SavedChangeSetRepositoryInterface
 {

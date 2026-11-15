@@ -11,8 +11,6 @@ use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
 /**
  * The entry presence resource's repository
- *
- * @extends EntityRepository<EntryPresenceInterface>
  */
 class EntryPresenceRepository extends EntityRepository implements EntryPresenceRepositoryInterface
 {

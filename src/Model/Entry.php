@@ -53,13 +53,13 @@ abstract class Entry implements EntryInterface
     /** In UTC */
     protected ?\DateTimeImmutable $showUntil = null;
 
-    /** @var Collection<array-key, EntryChannelInterface> */
+    /** @var Collection<array-key, EntryChannel> */
     protected Collection $channels;
 
     /** @see AudienceMode */
     protected string $audienceMode = 'everyone';
 
-    /** @var Collection<array-key, EntryAudienceGroupInterface> */
+    /** @var Collection<array-key, EntryAudienceGroup> */
     protected Collection $audienceGroups;
 
     public function __construct()

@@ -23,11 +23,9 @@ final class EntryFactoryTest extends TestCase
     public function it_starts_a_new_entry_in_every_channel(): void
     {
         $page = new Page();
-        /** @var FactoryInterface<Page> $decorated */
         $decorated = $this->prophesize(FactoryInterface::class);
         $decorated->createNew()->willReturn($page);
 
-        /** @var ChannelRepositoryInterface<ChannelInterface> $channels */
         $channels = $this->prophesize(ChannelRepositoryInterface::class);
         $channels->findAll()->willReturn([self::channel('WEB'), self::channel('B2B')]);
 
@@ -42,7 +40,6 @@ final class EntryFactoryTest extends TestCase
      */
     public function it_needs_the_factory_it_decorates_to_create_an_entry(): void
     {
-        /** @var FactoryInterface<\stdClass> $decorated */
         $decorated = $this->prophesize(FactoryInterface::class);
         $decorated->createNew()->willReturn(new \stdClass());
 

@@ -76,13 +76,13 @@ final class EntryLockTest extends TestCase
         $failure = new \RuntimeException('Failed');
 
         try {
-            (new EntryLock($this->managerRegistry->reveal()))->write($this->entry, static fn () => throw $failure);
+            (new EntryLock($this->managerRegistry->reveal()))->write($this->entry, $this->work('fail', $failure));
             self::fail('The failure was not rethrown');
         } catch (\RuntimeException $e) {
             self::assertSame($failure, $e);
         }
 
-        self::assertSame(['begin', 'lock to write', 'read again', 'roll back'], $this->calls);
+        self::assertSame(['begin', 'lock to write', 'read again', 'fail', 'roll back'], $this->calls);
     }
 
     /**
@@ -109,12 +109,18 @@ final class EntryLockTest extends TestCase
         yield 'an object manager' => [$this->prophesize(ObjectManager::class)->reveal()];
     }
 
-    private function work(string $call): \Closure
+    /**
+     * Work that records it ran, and then fails when given a failure
+     */
+    private function work(string $call, ?\Throwable $failure = null): \Closure
     {
         $calls = &$this->calls;
 
-        return static function () use ($call, &$calls): string {
+        return static function () use ($call, $failure, &$calls): string {
             $calls[] = $call;
+            if (null !== $failure) {
+                throw $failure;
+            }
 
             return 'done';
         };
