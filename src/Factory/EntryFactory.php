@@ -17,15 +17,15 @@ use Sylius\Resource\Factory\TranslatableFactoryInterface;
  * @template T of EntryInterface
  * @implements TranslatableFactoryInterface<T>
  */
-final class EntryFactory implements TranslatableFactoryInterface
+final readonly class EntryFactory implements TranslatableFactoryInterface
 {
     /**
      * @param FactoryInterface<T> $decorated
      * @param ChannelRepositoryInterface<ChannelInterface> $channelRepository
      */
     public function __construct(
-        private readonly FactoryInterface $decorated,
-        private readonly ChannelRepositoryInterface $channelRepository,
+        private FactoryInterface $decorated,
+        private ChannelRepositoryInterface $channelRepository,
     ) {
     }
 
