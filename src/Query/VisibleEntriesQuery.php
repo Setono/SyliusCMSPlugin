@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Query;
 
 use Doctrine\DBAL\Types\Types;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
 use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
@@ -32,10 +32,7 @@ final readonly class VisibleEntriesQuery implements VisibleEntriesQueryInterface
     {
         $modelClass = $this->contentTypes->get($contentType)->modelClass;
 
-        $manager = $this->managerRegistry->getManagerForClass($modelClass);
-        if (!$manager instanceof EntityManagerInterface) {
-            throw new \LogicException(sprintf('%s must be managed by the Doctrine ORM', $modelClass));
-        }
+        $manager = EntityManagers::of($this->managerRegistry, $modelClass);
 
         return $manager->createQueryBuilder()
             ->select('entry')

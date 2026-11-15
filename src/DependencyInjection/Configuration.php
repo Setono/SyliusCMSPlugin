@@ -18,6 +18,7 @@ use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSetInterface;
+use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
@@ -31,8 +32,6 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 final class Configuration implements ConfigurationInterface
 {
-    private const CODE_PATTERN = '/^[a-z][a-z0-9_]*$/';
-
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder('setono_sylius_cms');
@@ -109,8 +108,8 @@ final class Configuration implements ConfigurationInterface
 
     private static function assertCode(string $kind, string $code): void
     {
-        if (1 !== preg_match(self::CODE_PATTERN, $code)) {
-            throw new \InvalidArgumentException(sprintf('The %s code "%s" must match %s', $kind, $code, trim(self::CODE_PATTERN, '/')));
+        if (!Code::isValid($code)) {
+            throw new \InvalidArgumentException(sprintf('The %s code "%s" must match %s', $kind, $code, trim(Code::PATTERN, '/')));
         }
     }
 

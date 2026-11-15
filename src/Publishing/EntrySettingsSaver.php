@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Publishing;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
+use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Event\EntrySettingsChanged;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -26,10 +26,7 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
 
     public function save(EntryInterface $entry, EntrySettings $settings): void
     {
-        $manager = $this->managerRegistry->getManagerForClass($entry::class);
-        if (!$manager instanceof EntityManagerInterface) {
-            throw new \LogicException(sprintf('No Doctrine entity manager manages %s', $entry::class));
-        }
+        $manager = EntityManagers::of($this->managerRegistry, $entry::class);
 
         $changed = $settings->changesFrom(EntrySettings::of($entry));
         if ([] === $changed) {

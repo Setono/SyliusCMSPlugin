@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\DependencyInjection\Compiler;
 
 use Setono\SyliusCMSPlugin\Attribute\Layout;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
+use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -19,8 +20,6 @@ final class RegisterLayoutsPass implements CompilerPassInterface
 {
     public const TAG = 'setono_sylius_cms.layout';
 
-    private const CODE_PATTERN = '/^[a-z][a-z0-9_]*$/';
-
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasDefinition(LayoutRegistry::class)) {
@@ -30,18 +29,11 @@ final class RegisterLayoutsPass implements CompilerPassInterface
         /** @var array<string, array<string, class-string>> $classes */
         $classes = [];
 
-        foreach (array_keys($container->findTaggedServiceIds(self::TAG)) as $id) {
-            $class = $container->getParameterBag()->resolveValue($container->getDefinition($id)->getClass() ?? $id);
-            $reflection = is_string($class) ? $container->getReflectionClass($class) : null;
-            if (null === $reflection) {
-                throw new \LogicException(sprintf('The layout service "%s" must have an existing class', $id));
-            }
-
-            $class = $reflection->getName();
+        foreach (TaggedClasses::of($container, self::TAG, 'layout') as $id => $class) {
             $layout = AttributeReader::layout($class) ?? throw new \LogicException(sprintf('The service "%s" is tagged "%s", but its class %s has no #[Layout]', $id, self::TAG, $class));
 
-            if (1 !== preg_match(self::CODE_PATTERN, $layout->code)) {
-                throw new \LogicException(sprintf('The layout code "%s" of %s must match %s', $layout->code, $class, self::CODE_PATTERN));
+            if (!Code::isValid($layout->code)) {
+                throw new \LogicException(sprintf('The layout code "%s" of %s must match %s', $layout->code, $class, Code::PATTERN));
             }
 
             $contentType = self::contentType($layout, $class);

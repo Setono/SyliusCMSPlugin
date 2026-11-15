@@ -38,15 +38,8 @@ final class RegisterUpgradersPass implements CompilerPassInterface
         /** @var array<string, class-string> $classes */
         $classes = [];
 
-        foreach (array_keys($container->findTaggedServiceIds(self::TAG)) as $id) {
-            $class = $container->getParameterBag()->resolveValue($container->getDefinition($id)->getClass() ?? $id);
-            $reflection = is_string($class) ? $container->getReflectionClass($class) : null;
-            if (null === $reflection) {
-                throw new \LogicException(sprintf('The upgrader service "%s" must have an existing class', $id));
-            }
-
-            $class = $reflection->getName();
-            if (!$reflection->implementsInterface(UpgraderInterface::class)) {
+        foreach (TaggedClasses::of($container, self::TAG, 'upgrader') as $id => $class) {
+            if (!is_a($class, UpgraderInterface::class, true)) {
                 throw new \LogicException(sprintf('The upgrader %s must implement %s', $class, UpgraderInterface::class));
             }
 

@@ -8,6 +8,7 @@ use Setono\SyliusCMSPlugin\Doctrine\DiscriminatorMapListener;
 use Setono\SyliusCMSPlugin\Factory\EntryFactory;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
+use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
@@ -22,8 +23,6 @@ use Symfony\Component\DependencyInjection\Reference;
 final class RegisterContentTypesPass implements CompilerPassInterface
 {
     public const ENTRY_FACTORIES = 'setono_sylius_cms.entry_factories';
-
-    private const CODE_PATTERN = '/^[a-z][a-z0-9_]*$/';
 
     public function process(ContainerBuilder $container): void
     {
@@ -47,8 +46,8 @@ final class RegisterContentTypesPass implements CompilerPassInterface
             $attribute = AttributeReader::contentType($model) ?? throw new \LogicException(sprintf('The resource "%s" is an entry, so its model %s must carry #[ContentType]', $alias, $model));
             $code = $attribute->code;
 
-            if (1 !== preg_match(self::CODE_PATTERN, $code)) {
-                throw new \LogicException(sprintf('The content type code "%s" of %s must match %s', $code, $model, self::CODE_PATTERN));
+            if (!Code::isValid($code)) {
+                throw new \LogicException(sprintf('The content type code "%s" of %s must match %s', $code, $model, Code::PATTERN));
             }
 
             if (isset($contentTypes[$code])) {

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Publishing;
 
 use Doctrine\DBAL\LockMode;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 
 /**
@@ -60,10 +60,7 @@ final readonly class EntryLock
      */
     private function run(EntryInterface $entry, int $lockMode, callable $work, bool $flush = false): mixed
     {
-        $manager = $this->managerRegistry->getManagerForClass($entry::class);
-        if (!$manager instanceof EntityManagerInterface) {
-            throw new \LogicException(sprintf('No Doctrine entity manager manages %s', $entry::class));
-        }
+        $manager = EntityManagers::of($this->managerRegistry, $entry::class);
 
         $connection = $manager->getConnection();
         $connection->beginTransaction();

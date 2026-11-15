@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Rendering;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
@@ -32,10 +32,7 @@ final readonly class EntryUrlLookup implements EntryUrlLookupInterface
             return null;
         }
 
-        $manager = $this->managerRegistry->getManagerForClass(Entry::class);
-        if (!$manager instanceof EntityManagerInterface) {
-            throw new \LogicException(sprintf('%s must be managed by the Doctrine ORM', Entry::class));
-        }
+        $manager = EntityManagers::of($this->managerRegistry, Entry::class);
 
         // A URL is unique per channel and locale, so entries with no channel in common can share one
         $query = $manager->getConnection()->createQueryBuilder()
