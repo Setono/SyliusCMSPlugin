@@ -26,8 +26,8 @@ It also needs the preview to be the real shop page, rendered by the storefront's
 
 - **Look.** The builder has its own full-screen layout and CSS, with no Semantic UI or jQuery, so it ports to Sylius 2.x unchanged. Only preview mode's hooks into the shop and the links into the builder need a 2.x adapter.
 - **Assets.** The plugin ships the builder prebuilt, as compiled assets committed to the repo and checked in CI. A host project needs no Node, Encore or Stimulus setup. We maintain a JS toolchain and JS tests alongside the PHP.
-- **Fields.** Every entry is edited in the builder, including entries whose content type has no block tree. Block types and content types declare their fields with field types. The registry exports them to the builder's widgets as a JSON schema, and the server validates on save from the same declarations.
-- **Custom field types.** A project's own field type is a PHP class plus a widget written as a custom element, loaded from a script the project lists in the plugin's config.
+- **Fields.** Every entry is edited in the builder, including entries whose content type has no block tree. Block types and content types declare their fields with field types. The registry exports them to the builder's field controls as a JSON schema, and the server validates on save from the same declarations.
+- **Custom field types.** A project's own field type is a PHP class plus a field control written as a custom element, loaded from a script the project lists in the plugin's config.
 - **Server endpoints.** The builder talks to plain JSON controllers under the admin firewall, not to API Platform. The future headless API is a separate design.
 - **Markers.** In preview mode, the plugin brackets each block's output with HTML comment markers that carry its key. Fields printed through the plugin's Twig field helper can be typed in place. Block templates need no code specific to preview mode.
 - **Storefront JS.** The preview patches only the changed blocks into the page. So block types with storefront JavaScript, such as carousels, must also initialise on the bridge's event, not only on page load.

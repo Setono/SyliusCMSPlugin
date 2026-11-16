@@ -298,7 +298,7 @@ Rich text uses one schema, shared by the field's editor, typing in place and the
 - **`cmsBinding`** is an inline atom node: `{"attrs": {"fallback": "this product", "params": {}, "property": "product.name"}, "type": "cmsBinding"}`.
 - **`cmsLink`** is a mark whose `attrs` are a link without its label: `{"anchor": null, "ref": "t_shirt_red", "target": "product"}`, and a plain string `ref` for a `url` target. A link that doesn't resolve renders as plain text.
 
-`ueberdosis/tiptap-php` renders rich text and sanitises it on save. There are no blocks inside rich text in v2.0.
+On save, the plugin sanitises rich text against this schema, which it builds from `ueberdosis/tiptap-php`'s extensions: it walks the document and drops every node, mark and attribute the schema doesn't have. tiptap-php can't do that for a JSON document itself, because its `sanitize()` keeps unknown nodes, marks and attributes. tiptap-php renders rich text to HTML. There are no blocks inside rich text in v2.0.
 
 ### Visibility conditions
 
