@@ -313,8 +313,9 @@ final class CreateEntryTest extends WebTestCase
         $repository = self::getContainer()->get('setono_sylius_cms.repository.page');
         $pages = $repository->findAll();
         self::assertCount(1, $pages);
-        self::assertInstanceOf(PageInterface::class, $pages[0]);
+        $page = reset($pages);
+        self::assertInstanceOf(PageInterface::class, $page);
 
-        return $pages[0];
+        return $page;
     }
 }

@@ -374,7 +374,8 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         foreach ($this->container->getExtensionConfig('sylius_ui') as $config) {
             self::assertIsArray($config['events'] ?? null);
             foreach ($config['events'] as $name => $event) {
-                self::assertArrayNotHasKey($name, $events, sprintf('The template event %s is prepended once', (string) $name));
+                self::assertIsString($name);
+                self::assertArrayNotHasKey($name, $events, sprintf('The template event %s is prepended once', $name));
                 $events[$name] = $event;
             }
         }
