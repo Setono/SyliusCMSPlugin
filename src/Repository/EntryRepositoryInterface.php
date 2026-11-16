@@ -53,4 +53,15 @@ interface EntryRepositoryInterface
      * @return list<EntryInterface>
      */
     public function findByCustomerGroupCodes(array $codes): array;
+
+    /**
+     * The entries that may refer to one of the records, by their codes or UUIDs, in their rows' block tree or their
+     * draft. As both are JSON, it's the entries that hold one of them as a JSON string anywhere, which can be more than
+     * those that refer to it
+     *
+     * @param list<string> $ids
+     *
+     * @return list<EntryInterface>
+     */
+    public function findReferencing(array $ids): array;
 }

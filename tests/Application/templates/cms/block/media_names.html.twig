@@ -1,0 +1,9 @@
+{# The template of the Media names test block type (tests/Functional/Fixture/MediaNames.php) #}
+{% set image = cms_value(block, 'image') %}
+{% set gallery = cms_value(block, 'gallery') %}
+<div class="app-media-names">
+    <p class="app-media-names__image">{{ image is null ? 'No image' : image.name }}</p>
+    <ul class="app-media-names__gallery" data-count="{{ gallery|length }}">
+        {%- for mediaItem in gallery %}<li>{{ mediaItem.name }}</li>{% endfor -%}
+    </ul>
+</div>

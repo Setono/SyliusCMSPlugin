@@ -48,21 +48,12 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
             ->setParameter('codes', $codes)
         ;
 
-        // A condition's groups are JSON strings in the tree, in the rows or the draft, so they're found with LIKE, as
-        // MySQL and PostgreSQL both run it
-        $inTree = $inDraft = [];
-        foreach (array_values($codes) as $index => $code) {
-            $inTree[] = sprintf("o.blockTree LIKE :code_%d ESCAPE '!'", $index);
-            $inDraft[] = sprintf("cms_draft.content LIKE :code_%d ESCAPE '!'", $index);
-            $queryBuilder->setParameter('code_' . $index, '%' . strtr(CanonicalJson::encode($code), ['!' => '!!', '%' => '!%', '_' => '!_']) . '%');
-        }
-
         /** @var list<EntryInterface> $entries */
         $entries = $queryBuilder
             ->andWhere(implode(' OR ', [
                 sprintf('EXISTS (SELECT cms_audience_group.id FROM %s cms_audience_group WHERE cms_audience_group.entry = o AND cms_audience_group.code IN (:codes))', EntryAudienceGroupInterface::class),
-                ...$inTree,
-                sprintf('EXISTS (SELECT cms_draft.id FROM %s cms_draft WHERE cms_draft.entry = o AND (%s))', DraftInterface::class, implode(' OR ', $inDraft)),
+                // A condition's groups are JSON strings in the tree
+                ...$this->holdingJsonStrings($queryBuilder, $codes),
             ]))
             ->orderBy('o.id')
             ->getQuery()
@@ -70,6 +61,48 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         ;
 
         return $entries;
+    }
+
+    public function findReferencing(array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        $queryBuilder = $this->createQueryBuilder('o');
+
+        /** @var list<EntryInterface> $entries */
+        $entries = $queryBuilder
+            ->andWhere(implode(' OR ', $this->holdingJsonStrings($queryBuilder, $ids)))
+            ->orderBy('o.id')
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $entries;
+    }
+
+    /**
+     * The conditions on the entry "o" that its rows' block tree, or its draft, holds one of the strings as a JSON string.
+     * JSON is found with LIKE, as MySQL and PostgreSQL both run it
+     *
+     * @param list<string> $strings
+     *
+     * @return list<string> to join with OR
+     */
+    private function holdingJsonStrings(QueryBuilder $queryBuilder, array $strings): array
+    {
+        $inTree = $inDraft = [];
+        foreach (array_values($strings) as $index => $string) {
+            $inTree[] = sprintf("o.blockTree LIKE :json_string_%d ESCAPE '!'", $index);
+            $inDraft[] = sprintf("cms_draft.content LIKE :json_string_%d ESCAPE '!'", $index);
+            $queryBuilder->setParameter('json_string_' . $index, '%' . strtr(CanonicalJson::encode($string), ['!' => '!!', '%' => '!%', '_' => '!_']) . '%');
+        }
+
+        return [
+            ...$inTree,
+            sprintf('EXISTS (SELECT cms_draft.id FROM %s cms_draft WHERE cms_draft.entry = o AND (%s))', DraftInterface::class, implode(' OR ', $inDraft)),
+        ];
     }
 
     public function createListQueryBuilder(?string $contentType = null): QueryBuilder
