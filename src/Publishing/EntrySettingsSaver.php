@@ -52,20 +52,21 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
             }
         }
 
-        $homepageChanged = in_array(EntrySettingsChanged::HOMEPAGE, $changed, true);
-        if ($homepageChanged && !$entry instanceof PageInterface) {
-            throw new InvalidEntrySettingsException('Only a page can be a channel\'s homepage');
+        // The page whose homepages change, if they do
+        $homepage = null;
+        if (in_array(EntrySettingsChanged::HOMEPAGE, $changed, true)) {
+            $homepage = $entry instanceof PageInterface ? $entry : throw new InvalidEntrySettingsException('Only a page can be a channel\'s homepage');
         }
 
         $now = $this->clock->now()->setTimezone(new \DateTimeZone('UTC'));
 
         /** @var list<PageInterface> $takenFrom */
         $takenFrom = [];
-        $manager->wrapInTransaction(function () use ($manager, $entry, $settings, $homepageChanged, $now, &$takenFrom): void {
+        $manager->wrapInTransaction(function () use ($manager, $entry, $settings, $homepage, $now, &$takenFrom): void {
             // A channel has one homepage, which the rows' unique channel code holds to, and Doctrine inserts rows before
             // it deletes others: the pages that were the chosen channels' homepages lose them in a flush of their own
-            if ($homepageChanged && $entry instanceof PageInterface) {
-                $takenFrom = $this->homepageModifier->takeOffOtherPages($entry, $settings->homepageOf);
+            if (null !== $homepage) {
+                $takenFrom = $this->homepageModifier->takeOffOtherPages($homepage, $settings->homepageOf);
                 foreach ($takenFrom as $page) {
                     $page->setChangedAt($now);
                 }

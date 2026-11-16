@@ -29,7 +29,7 @@ final readonly class HomepageResolver
     public function resolve(RenderContext $context): ?PageInterface
     {
         $previewed = $this->previewedEntryProvider->getWorkingCopy($context->localeCode);
-        if ($previewed instanceof PageInterface && $previewed->isHomepageOf((string) $context->channel->getCode())) {
+        if ($previewed instanceof PageInterface && $previewed->isHomepageOf($context->channel->getCode() ?? '')) {
             return $previewed;
         }
 

@@ -67,14 +67,15 @@ final class ChannelHomepagesTest extends TestCase
     public function it_lists_a_deleted_channel_the_page_is_still_the_homepage_of(): void
     {
         $page = new Page();
-        Homepages::modifier()->setHomepageOf($page, ['WEB', 'GONE']);
-        $this->homepages->findByChannelCodes(['WEB', 'B2B', 'MOBILE', 'GONE'])->willReturn([...$page->getHomepages()]);
+        Homepages::modifier()->setHomepageOf($page, ['OLD', 'B2B', 'GONE']);
+        $this->homepages->findByChannelCodes(['WEB', 'B2B', 'MOBILE', 'GONE', 'OLD'])->willReturn([...$page->getHomepages()]);
 
         self::assertEquals([
-            new ChannelHomepage('WEB', 'Web store', $page, true),
-            new ChannelHomepage('B2B', 'Wholesale', null, false),
+            new ChannelHomepage('WEB', 'Web store', null, false),
+            new ChannelHomepage('B2B', 'Wholesale', $page, true),
             new ChannelHomepage('MOBILE', 'MOBILE', null, false),
             new ChannelHomepage('GONE', 'GONE', $page, true),
+            new ChannelHomepage('OLD', 'OLD', $page, true),
         ], $this->channelHomepages()->of($page));
     }
 

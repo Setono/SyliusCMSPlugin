@@ -138,10 +138,41 @@ final class HomepageModifierTest extends TestCase
         $page = new Page();
         $web = self::homepage($page, 'WEB');
         $page->addHomepage($web);
-        $this->repository->findByChannelCodes(['WEB'])->willReturn([$web]);
+        $sale = new Page();
+        $saleB2b = self::homepage($sale, 'B2B');
+        $sale->addHomepage($saleB2b);
+        $this->repository->findByChannelCodes(['WEB', 'B2B'])->willReturn([$web, $saleB2b]);
 
-        self::assertSame([], $this->modifier()->takeOffOtherPages($page, ['WEB']));
+        self::assertSame([$sale], $this->modifier()->takeOffOtherPages($page, ['WEB', 'B2B']));
         self::assertTrue($page->hasHomepage($web));
+        self::assertFalse($sale->hasHomepage($saleB2b));
+    }
+
+    /**
+     * @test
+     */
+    public function it_takes_the_channel_codes_from_any_iterable(): void
+    {
+        $page = new Page();
+        $sale = new Page();
+        $saleB2b = self::homepage($sale, 'B2B');
+        $sale->addHomepage($saleB2b);
+        $this->repository->findByChannelCodes(['B2B'])->willReturn([$saleB2b]);
+
+        self::assertSame([$sale], $this->modifier()->takeOffOtherPages($page, self::generate('B2B')));
+        $this->modifier()->setHomepageOf($page, self::generate('B2B', 'WEB'));
+
+        self::assertSame(['B2B', 'WEB'], $page->getHomepageChannelCodes());
+    }
+
+    /**
+     * @return \Generator<int, string>
+     */
+    private static function generate(string ...$codes): \Generator
+    {
+        foreach ($codes as $code) {
+            yield $code;
+        }
     }
 
     /**

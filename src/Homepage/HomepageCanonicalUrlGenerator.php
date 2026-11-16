@@ -25,7 +25,7 @@ final readonly class HomepageCanonicalUrlGenerator implements CanonicalUrlGenera
 
     public function generate(EntryInterface $entry, ChannelInterface $channel, string $localeCode): ?string
     {
-        if ($entry instanceof PageInterface && $entry->isHomepageOf((string) $channel->getCode())) {
+        if ($entry instanceof PageInterface && $entry->isHomepageOf($channel->getCode() ?? '')) {
             return $this->urlGenerator->generate('sylius_shop_homepage', ['_locale' => $localeCode], UrlGeneratorInterface::ABSOLUTE_URL);
         }
 
