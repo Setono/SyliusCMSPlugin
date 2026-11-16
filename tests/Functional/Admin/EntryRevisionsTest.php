@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ObjectManager;
+use Setono\SyliusCMSPlugin\Publishing\EntryDeleterInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\Revisions;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -172,6 +174,24 @@ final class EntryRevisionsTest extends WebTestCase
 
         $client->request('POST', sprintf('/admin/cms/entry/%s/revisions/%d/restore', $page->getUuid(), (int) $revision->getId()));
         self::assertResponseRedirects('http://localhost/admin/login');
+    }
+
+    /**
+     * @test
+     */
+    public function deleting_an_entry_deletes_its_revisions(): void
+    {
+        self::createClient();
+        $page = self::createPage('About us', 'about-us', 'Hello', published: true);
+        self::storeRevision($page, [self::heading(self::KEY, 'Hello')]);
+
+        /** @var EntryDeleterInterface $deleter */
+        $deleter = self::getContainer()->get(EntryDeleterInterface::class);
+        $deleter->delete($page);
+
+        /** @var Connection $connection */
+        $connection = self::getContainer()->get('doctrine.dbal.default_connection');
+        self::assertEquals(0, $connection->fetchOne('SELECT COUNT(*) FROM setono_sylius_cms__revision'));
     }
 
     private static function signedInClient(): KernelBrowser
