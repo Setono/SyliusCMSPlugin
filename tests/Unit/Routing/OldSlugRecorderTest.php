@@ -94,7 +94,7 @@ final class OldSlugRecorderTest extends TestCase
     {
         $this->oldSlugs->findByEntry($this->page)->willReturn([self::oldSlug('en_US', 'about'), self::oldSlug('da_DK', 'about-us')]);
 
-        $this->recorder()->record($this->page, ['da_DK' => 'om', 'en_US' => 'about'], ['da_DK' => 'om-os', 'en_US' => 'about-us']);
+        $this->recorder()->record($this->page, ['en_US' => 'about', 'da_DK' => 'om'], ['en_US' => 'about-us', 'da_DK' => 'om-os']);
 
         self::assertSame([['da_DK', 'om']], $this->persistedSlugs());
     }
@@ -108,14 +108,15 @@ final class OldSlugRecorderTest extends TestCase
     {
         $again = self::oldSlug('en_US', 'about');
         $other = self::oldSlug('en_US', 'about-our-shop');
-        $otherLocale = self::oldSlug('da_DK', 'about');
+        $otherLocale = self::oldSlug('da_DK', 'om');
         $this->oldSlugs->findByEntry($this->page)->willReturn([$again, $other, $otherLocale]);
         $this->manager->remove($again)->shouldBeCalledOnce();
         $this->manager->remove($other)->shouldNotBeCalled();
         $this->manager->remove($otherLocale)->shouldNotBeCalled();
 
-        $this->recorder()->record($this->page, ['en_US' => 'about-us'], ['en_US' => 'about']);
+        $this->recorder()->record($this->page, ['en_US' => 'about-us', 'da_DK' => 'om'], ['en_US' => 'about', 'da_DK' => 'om-os']);
 
+        // The Danish slug is an old one already
         self::assertSame([['en_US', 'about-us']], $this->persistedSlugs());
     }
 

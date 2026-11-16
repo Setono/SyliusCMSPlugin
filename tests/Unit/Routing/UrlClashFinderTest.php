@@ -124,6 +124,19 @@ final class UrlClashFinderTest extends TestCase
     /**
      * @test
      */
+    public function it_checks_each_slug_with_a_url(): void
+    {
+        $this->published[] = $other = self::claim('page', 'en_US', 'about-us', ['WEB']);
+
+        self::assertEquals(
+            [new UrlClash('en_US', 'about-us', $other, ['WEB'])],
+            $this->finder()->findPublished($this->page, ['da_DK' => '', 'en_US' => 'about-us'], ['WEB']),
+        );
+    }
+
+    /**
+     * @test
+     */
     public function it_finds_all_the_entries_that_have_a_url(): void
     {
         $this->published[] = $web = self::claim('page', 'en_US', 'about-us', ['WEB']);

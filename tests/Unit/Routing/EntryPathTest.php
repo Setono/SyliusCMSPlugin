@@ -87,10 +87,10 @@ final class EntryPathTest extends TestCase
     public function it_finds_the_slug_a_path_holds_for_each_content_type_whose_prefix_fits_it(): void
     {
         $contentTypes = [
+            self::contentType(null, 'snippet'),
             self::contentType('', 'page'),
             self::contentType('blog', 'blog_post'),
             self::contentType('blog/category', 'blog_category'),
-            self::contentType(null, 'snippet'),
         ];
 
         self::assertSame(['page' => 'about-us'], EntryPath::slugs($contentTypes, 'about-us'));

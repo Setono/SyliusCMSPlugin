@@ -33,7 +33,7 @@ final class TakenUrlFinder implements TakenUrlFinderInterface, ResetInterface
     {
         $contentType = $this->contentTypes->getByEntry($entry);
 
-        $channels = [] === $channelCodes ? [null] : array_values(array_intersect_key($this->channels(), array_flip($channelCodes)));
+        $channels = [] === $channelCodes ? [null] : array_intersect_key($this->channels(), array_flip($channelCodes));
 
         $taken = [];
         foreach ($channels as $channel) {

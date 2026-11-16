@@ -340,6 +340,7 @@ final class ConfigurationTest extends TestCase
         yield 'two slashes in a row' => [['page' => ['prefix' => 'a//b']], 'The prefix "a//b" must be empty'];
         yield 'not a string' => [['page' => ['prefix' => 7]], 'The prefix int must be empty'];
         yield 'an invalid code' => [['Page' => ['prefix' => 'pg']], 'The content type code "Page" must match ^[a-z][a-z0-9_]*$'];
+        yield 'a number as a code' => [[7 => ['prefix' => 'pg']], 'The content type code "7" must match ^[a-z][a-z0-9_]*$'];
     }
 
     /**

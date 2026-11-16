@@ -261,6 +261,20 @@ final class AutosaveTest extends TestCase
     /**
      * @test
      */
+    public function it_checks_no_block_field_named_slug(): void
+    {
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
+        $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
+        $this->urlValidator->refuse(Argument::cetera())->shouldNotBeCalled();
+
+        $this->expectException(InvalidChangeSetException::class);
+
+        $this->autosave()->save($this->entry, new ChangeSet([new SetValue(self::A, 'slug', 'en_US', 'cart')]), 3);
+    }
+
+    /**
+     * @test
+     */
     public function it_checks_no_slug_a_save_empties(): void
     {
         $this->workingCopy->setCurrentLocale('en_US');

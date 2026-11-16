@@ -51,7 +51,7 @@ final class EntryUrlValidatorTest extends TestCase
         /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $channels */
         $channels = $this->prophesize(ChannelRepositoryInterface::class);
         $this->channels = $channels;
-        $this->channels->findAll()->willReturn([self::channel('WEB', 'Web store'), self::channel('B2B', null)]);
+        $this->channels->findAll()->willReturn([self::channel('WEB', 'Web store'), self::channel('B2B', 'Wholesale'), self::channel('MOBILE', null)]);
 
         $this->page = self::page(['en_US' => 'about-us', 'da_DK' => 'om-os'], ['WEB', 'B2B']);
     }
@@ -109,14 +109,14 @@ final class EntryUrlValidatorTest extends TestCase
     {
         $this->takenUrls->find(Argument::cetera())->willReturn([new TakenUrl('WEB', 'en_US', 'about-us', 'app_about')]);
         $this->clashes->findPublished($this->page, Argument::cetera())->willReturn([
-            new UrlClash('en_US', 'about-us', self::claim('About', 'en_US', 'about-us'), ['WEB', 'B2B', 'GONE']),
+            new UrlClash('en_US', 'about-us', self::claim('About', 'en_US', 'about-us'), ['WEB', 'B2B', 'MOBILE', 'GONE']),
             new UrlClash('da_DK', 'om-os', self::claim(null, 'da_DK', 'om-os'), ['B2B']),
         ]);
 
         self::assertEquals([
             new ValidationError(null, 'slug', 'en_US', 'The URL /en_US/about-us is taken by the route app_about.'),
-            new ValidationError(null, 'slug', 'en_US', 'The URL /en_US/about-us is already the URL of "About" in Web store, B2B, GONE.'),
-            new ValidationError(null, 'slug', 'da_DK', 'The URL /da_DK/om-os is already the URL of "' . self::OTHER . '" in B2B.'),
+            new ValidationError(null, 'slug', 'en_US', 'The URL /en_US/about-us is already the URL of "About" in Web store, Wholesale, MOBILE, GONE.'),
+            new ValidationError(null, 'slug', 'da_DK', 'The URL /da_DK/om-os is already the URL of "' . self::OTHER . '" in Wholesale.'),
         ], $this->validator()->validate($this->page));
     }
 

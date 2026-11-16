@@ -48,11 +48,11 @@ final readonly class UrlTakenByRoute implements ProblemKindInterface
 
         $found = [];
         foreach ($this->takenUrls->find($entry, $slugs, $entry->getChannelCodes()) as $taken) {
-            if (isset($found[$taken->localeCode])) {
+            if (in_array($taken->localeCode, $found, true)) {
                 continue;
             }
 
-            $found[$taken->localeCode] = true;
+            $found[] = $taken->localeCode;
 
             yield new Problem(
                 self::CODE,

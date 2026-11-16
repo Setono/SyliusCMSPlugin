@@ -91,14 +91,14 @@ final class TakenUrlFinderTest extends TestCase
      */
     public function it_checks_only_where_a_url_shows_when_asked(): void
     {
-        $taken = $this->finder()->find(new Page(), ['en_US' => 'cart', 'da_DK' => 'login'], ['WEB', 'B2B'], true);
+        $taken = $this->finder()->find(new Page(), ['da_DK' => 'login', 'en_US' => 'cart'], ['WEB', 'B2B'], true);
 
         self::assertEquals([
             new TakenUrl('B2B', 'en_US', 'cart', 'sylius_shop_cart_summary'),
-            new TakenUrl('WEB', 'en_US', 'cart', 'sylius_shop_cart_summary'),
             new TakenUrl('WEB', 'da_DK', 'login', 'sylius_shop_login'),
+            new TakenUrl('WEB', 'en_US', 'cart', 'sylius_shop_cart_summary'),
         ], $taken);
-        self::assertSame([['B2B', 'en_US', 'cart'], ['WEB', 'en_US', 'cart'], ['WEB', 'da_DK', 'login']], $this->checked);
+        self::assertSame([['B2B', 'en_US', 'cart'], ['WEB', 'da_DK', 'login'], ['WEB', 'en_US', 'cart']], $this->checked);
     }
 
     /**
@@ -129,8 +129,11 @@ final class TakenUrlFinderTest extends TestCase
     public function an_entry_without_a_url_of_its_own_or_a_slug_has_no_url_to_take(): void
     {
         self::assertSame([], $this->finder()->find(new Recipe(), ['en_US' => 'cart'], ['WEB']));
-        self::assertSame([], $this->finder()->find(new Page(), ['en_US' => ''], ['WEB']));
-        self::assertSame([], $this->checked);
+        self::assertEquals(
+            [new TakenUrl('WEB', 'en_US', 'cart', 'sylius_shop_cart_summary')],
+            $this->finder()->find(new Page(), ['da_DK' => '', 'en_US' => 'cart'], ['WEB']),
+        );
+        self::assertSame([['WEB', 'en_US', 'cart']], $this->checked);
     }
 
     /**
