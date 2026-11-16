@@ -42,6 +42,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionRecorderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Routing\OldSlugRecorderInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntryPublisher"/>
 

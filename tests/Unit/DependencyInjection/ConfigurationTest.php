@@ -19,6 +19,8 @@ use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
+use Setono\SyliusCMSPlugin\Model\OldSlug;
+use Setono\SyliusCMSPlugin\Model\OldSlugInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
@@ -30,6 +32,7 @@ use Setono\SyliusCMSPlugin\Model\SavedChangeSetInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
+use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
@@ -118,6 +121,14 @@ final class ConfigurationTest extends TestCase
                         'model' => Revision::class,
                         'interface' => RevisionInterface::class,
                         'repository' => RevisionRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'old_slug' => [
+                    'classes' => [
+                        'model' => OldSlug::class,
+                        'interface' => OldSlugInterface::class,
+                        'repository' => OldSlugRepository::class,
                         'factory' => Factory::class,
                     ],
                 ],

@@ -10,12 +10,13 @@ use Setono\SyliusCMSPlugin\Event\EntryPublished;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Revision\RevisionRecorderInterface;
+use Setono\SyliusCMSPlugin\Routing\OldSlugRecorderInterface;
 use Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
- * Publishes now. See "Publishing now" in docs/spec/publishing.md. Old slugs (#234), the reference table and the media
- * usage index join the steps with their tickets
+ * Publishes now. See "Publishing now" in docs/spec/publishing.md. The reference table and the media usage index join
+ * the steps with their tickets
  */
 final readonly class EntryPublisher implements EntryPublisherInterface
 {
@@ -27,6 +28,7 @@ final readonly class EntryPublisher implements EntryPublisherInterface
         private ContentTypeRegistryInterface $contentTypes,
         private EntryValidatorInterface $entryValidator,
         private RevisionRecorderInterface $revisions,
+        private OldSlugRecorderInterface $oldSlugs,
     ) {
     }
 
@@ -55,6 +57,9 @@ final readonly class EntryPublisher implements EntryPublisherInterface
 
             // 3. Copy the working copy onto the rows and delete the draft
             $this->workingCopies->applyToRows($entry, $workingCopy);
+
+            // 4. Record the old slug of every translation whose slug changed, so it redirects
+            $this->oldSlugs->record($entry, $oldSlugs, self::slugs($entry));
 
             // 7. Store what the rows hold now as a revision
             $now = $this->clock->now()->setTimezone(new \DateTimeZone('UTC'));

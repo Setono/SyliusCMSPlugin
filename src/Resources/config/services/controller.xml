@@ -13,6 +13,7 @@
             <argument type="service" id="twig"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="router"/>
 
             <tag name="controller.service_arguments"/>
         </service>

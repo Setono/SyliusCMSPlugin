@@ -11,5 +11,13 @@
             <tag name="routing.condition_service" alias="setono_sylius_cms_entry_url_matcher"/>
             <tag name="kernel.reset" method="reset"/>
         </service>
+
+        <!-- Keeps the slugs a publish changes, so their URLs redirect -->
+        <service id="Setono\SyliusCMSPlugin\Routing\OldSlugRecorder" class="Setono\SyliusCMSPlugin\Routing\OldSlugRecorder">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.factory.old_slug"/>
+            <argument type="service" id="setono_sylius_cms.manager.old_slug"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Routing\OldSlugRecorderInterface" alias="Setono\SyliusCMSPlugin\Routing\OldSlugRecorder"/>
     </services>
 </container>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    A slug an entry had in a locale before a publish changed it, kept so its URL redirects. The URL is looked up by the
+    locale and the slug, like a translation's. Deleting the entry deletes its old slugs
+    -->
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\OldSlug" table="setono_sylius_cms__old_slug">
+        <unique-constraints>
+            <unique-constraint name="setono_sylius_cms__old_slug_uniq" columns="entry_id,locale,slug"/>
+        </unique-constraints>
+
+        <indexes>
+            <index name="setono_sylius_cms__old_slug_url_idx" columns="locale,slug"/>
+        </indexes>
+
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="localeCode" column="locale" type="string"/>
+        <field name="slug" type="string"/>
+
+        <many-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\Entry">
+            <join-column name="entry_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
+        </many-to-one>
+    </mapped-superclass>
+</doctrine-mapping>
