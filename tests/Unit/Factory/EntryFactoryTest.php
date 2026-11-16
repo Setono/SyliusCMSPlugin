@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Factory;
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Factory\EntryFactory;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
@@ -93,16 +94,17 @@ final class EntryFactoryTest extends TestCase
     }
 
     /**
-     * @param FactoryInterface<object> $decorated
+     * @template T of EntryInterface
      *
-     * @return EntryFactory<Page|Recipe>
+     * @param FactoryInterface<T> $decorated
+     *
+     * @return EntryFactory<T>
      */
     private function factory(FactoryInterface $decorated, string $contentType): EntryFactory
     {
         $channels = $this->prophesize(ChannelRepositoryInterface::class);
         $channels->findAll()->willReturn([]);
 
-        /** @var EntryFactory<Page|Recipe> */
         return new EntryFactory($decorated, $channels->reveal(), $this->prophesize(ChannelsAndAudienceModifierInterface::class)->reveal(), self::layouts(), $contentType);
     }
 
