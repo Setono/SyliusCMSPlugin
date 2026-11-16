@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Twig;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Admin\ChannelHomepages;
 use Setono\SyliusCMSPlugin\Admin\EntryRevisions;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\EntryShareLinks;
@@ -19,6 +20,7 @@ use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
+use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Revision;
@@ -33,6 +35,7 @@ use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
@@ -40,6 +43,7 @@ use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
 use Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface;
 use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
+use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Translation\TranslatableValues;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -76,6 +80,9 @@ final class AdminExtensionTest extends IntegrationTestCase
     use ProphecyTrait;
 
     private Page $storesEntry;
+
+    /** @var list<Homepage> the store's homepage rows */
+    private array $homepages = [];
 
     /** @var ObjectProphecy<RepositoryInterface<CustomerGroupInterface>> */
     private ObjectProphecy $customerGroups;
@@ -128,6 +135,20 @@ final class AdminExtensionTest extends IntegrationTestCase
     {
         $page = $this->aPage($title)['page'];
         ChannelsAndAudience::modifier()->setChannels($page, ['WEB']);
+
+        return ['page' => $page];
+    }
+
+    /**
+     * The homepage of the store's channel WEB
+     *
+     * @return array{page: Page}
+     */
+    public function aHomepage(string $title): array
+    {
+        $page = $this->aPage($title)['page'];
+        Homepages::modifier()->setHomepageOf($page, ['WEB']);
+        $this->homepages = $page->getHomepages()->getValues();
 
         return ['page' => $page];
     }
@@ -209,8 +230,25 @@ final class AdminExtensionTest extends IntegrationTestCase
         $entries = $this->prophesize(EntryRepositoryInterface::class);
         $entries->iterateAll()->willReturn([$this->aPageWithABlockOfATypeTheCodeNoLongerHas('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a')['page']]);
         $problemSummaries = new ProblemSummaryProvider($entries->reveal(), $problemFinder, new ArrayAdapter());
+        $homepages = $this->prophesize(HomepageRepositoryInterface::class);
+        // Prophecy binds a closure to the double, so a static one reads the rows a --DATA-- section sets through a reference
+        $rows = &$this->homepages;
+        $homepages->findByChannelCodes(Argument::any())->will(static function () use (&$rows): array {
+            return $rows;
+        });
+        $web = new Channel();
+        $web->setCode('WEB');
+        $web->setName('Web store');
+        $b2b = new Channel();
+        $b2b->setCode('B2B');
+        $b2b->setName('Wholesale');
+        /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $channels */
+        $channels = $this->prophesize(ChannelRepositoryInterface::class);
+        $channels->findBy([], ['id' => 'ASC'])->willReturn([$web, $b2b]);
+        $channelHomepages = new ChannelHomepages($channels->reveal(), $homepages->reveal());
 
         return [new FactoryRuntimeLoader([
+            ChannelHomepages::class => static fn (): ChannelHomepages => $channelHomepages,
             EntryRows::class => static fn (): EntryRows => $entryRows,
             EntryUrls::class => static fn (): EntryUrls => $entryUrls,
             TranslationChips::class => static fn (): TranslationChips => $translationChips,

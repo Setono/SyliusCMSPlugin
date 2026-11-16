@@ -107,4 +107,25 @@ describe('the on-save settings', () => {
         expect(store.getState().saveState).toBe('saved');
         expect(store.getState().error).toBeNull();
     });
+
+    it('should settle once every save in flight has, even one that failed', async () => {
+        const first = deferred<EntrySettings>();
+        const second = deferred<EntrySettings>();
+        const send = vi.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+        const store = createSettingsStore(settings(), send);
+        await store.getState().settled();
+
+        void store.getState().save({ enabled: false });
+        void store.getState().save({ homepageOf: ['WEB'] });
+        let settled = false;
+        void store.getState().settled().then(() => (settled = true));
+
+        first.reject(new ApiError('Not now', 400));
+        await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(2));
+        expect(settled).toBe(false);
+
+        second.resolve(settings({ homepageOf: ['WEB'] }));
+        await vi.waitFor(() => expect(settled).toBe(true));
+        expect(store.getState().settings.homepageOf).toEqual(['WEB']);
+    });
 });

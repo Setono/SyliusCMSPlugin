@@ -8,9 +8,8 @@ use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
-use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
-use Setono\SyliusCMSPlugin\Routing\EntryPath;
+use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface;
 use Setono\SyliusCMSPlugin\Targeting\CustomerGroupValue;
 use Sylius\Component\Channel\Model\ChannelInterface as BaseChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
@@ -20,12 +19,11 @@ use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Creates a preview token for an entry, a channel, a locale, Shown to and Date, and answers with the URL the builder
- * loads in its preview iframe: the working copy's URL, on the admin's own host. The sample object and the placement
- * join it with their tickets. See "Preview mode" in docs/spec/builder.md
+ * loads in its preview iframe: the working copy's canonical URL, on the admin's own host, which is the channel's root for
+ * its homepage. The sample object and the placement join it with their tickets. See "Preview mode" in docs/spec/builder.md
  */
 final readonly class PreviewTokenAction
 {
@@ -39,9 +37,8 @@ final readonly class PreviewTokenAction
         private EntryRepositoryInterface $entryRepository,
         private ChannelRepositoryInterface $channelRepository,
         private WorkingCopyProviderInterface $workingCopyProvider,
-        private ContentTypeRegistryInterface $contentTypes,
         private PreviewTokenSigner $signer,
-        private UrlGeneratorInterface $urlGenerator,
+        private CanonicalUrlGeneratorInterface $canonicalUrls,
     ) {
     }
 
@@ -92,17 +89,15 @@ final readonly class PreviewTokenAction
             return BuilderRequest::badRequest(sprintf('The date must be null or a UTC date and time such as 2026-12-01T00:00:00Z, got %s', json_encode($date)));
         }
 
-        $workingCopy = $this->workingCopyProvider->getWorkingCopy($entry);
-        $path = EntryPath::of($this->contentTypes->getByEntry($workingCopy), $workingCopy, $localeCode);
-        if (null === $path) {
+        // Where the working copy's page lives in the channel and locale, such as a homepage's channel's root
+        $url = $this->canonicalUrls->generate($this->workingCopyProvider->getWorkingCopy($entry), $channel, $localeCode);
+        if (null === $url) {
             return BuilderRequest::badRequest(sprintf('The entry has no URL in %s', $localeCode));
         }
 
-        return new JsonResponse(['url' => $this->urlGenerator->generate('setono_sylius_cms_shop_entry', [
-            '_locale' => $localeCode,
-            'path' => $path,
+        return new JsonResponse(['url' => $url . '?' . http_build_query([
             PreviewContext::QUERY_PARAMETER => $this->signer->sign(new Preview($entry->getUuid(), $channelCode, $localeCode, null, $shownTo, $at)),
-        ], UrlGeneratorInterface::ABSOLUTE_URL)]);
+        ])]);
     }
 
     /**

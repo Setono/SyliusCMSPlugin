@@ -11,6 +11,8 @@ use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
+use Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement;
+use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
@@ -41,7 +43,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame(
-            '{"settings":{"enabled":false,"showFrom":"2026-11-27T00:00:00Z","showUntil":"2026-12-01T00:00:00Z","channels":["B2B","WEB"],"audience":{"mode":"only","groups":["@guest","wholesale"]}}}',
+            '{"settings":{"enabled":false,"showFrom":"2026-11-27T00:00:00Z","showUntil":"2026-12-01T00:00:00Z","channels":["B2B","WEB"],"audience":{"mode":"only","groups":["@guest","wholesale"]},"homepageOf":[]}}',
             $client->getResponse()->getContent(),
         );
         self::assertIsArray($response);
@@ -66,14 +68,14 @@ final class EntrySettingsTest extends BuilderApiTestCase
         self::saveSettings($client, $page, ['enabled' => false, 'showUntil' => '2026-12-01T00:00:00Z'], $csrfToken);
 
         self::assertSame(
-            '{"settings":{"enabled":false,"showFrom":"2026-11-27T00:00:00Z","showUntil":"2026-12-01T00:00:00Z","channels":["WEB"],"audience":{"mode":"except","groups":["retail"]}}}',
+            '{"settings":{"enabled":false,"showFrom":"2026-11-27T00:00:00Z","showUntil":"2026-12-01T00:00:00Z","channels":["WEB"],"audience":{"mode":"except","groups":["retail"]},"homepageOf":[]}}',
             $client->getResponse()->getContent(),
         );
 
         self::saveSettings($client, $page, ['showFrom' => null, 'audience' => ['mode' => 'everyone', 'groups' => []]], $csrfToken);
 
         self::assertSame(
-            '{"settings":{"enabled":false,"showFrom":null,"showUntil":"2026-12-01T00:00:00Z","channels":["WEB"],"audience":{"mode":"everyone","groups":[]}}}',
+            '{"settings":{"enabled":false,"showFrom":null,"showUntil":"2026-12-01T00:00:00Z","channels":["WEB"],"audience":{"mode":"everyone","groups":[]},"homepageOf":[]}}',
             $client->getResponse()->getContent(),
         );
     }
@@ -92,7 +94,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
 
         self::assertIsArray($response);
         self::assertSame(['entry', 'lockToken', 'settings', 'status', 'schedule', 'editors', 'completeness'], array_keys($response));
-        self::assertSame(['enabled' => true, 'showFrom' => null, 'showUntil' => null, 'channels' => ['WEB'], 'audience' => ['mode' => 'only', 'groups' => ['wholesale']]], $response['settings']);
+        self::assertSame(['enabled' => true, 'showFrom' => null, 'showUntil' => null, 'channels' => ['WEB'], 'audience' => ['mode' => 'only', 'groups' => ['wholesale']], 'homepageOf' => []], $response['settings']);
         self::assertSame('published', $response['status']);
     }
 
@@ -208,6 +210,91 @@ final class EntrySettingsTest extends BuilderApiTestCase
     }
 
     /**
+     * "Homepage of" takes effect on save. See "Homepage" in docs/spec/urls-and-seo.md
+     *
+     * @test
+     */
+    public function it_makes_a_page_the_homepage_of_channels(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('Home', 'home', 'Welcome', channels: ['WEB']);
+        $csrfToken = self::openBuilder($client, $page);
+
+        $response = self::saveSettings($client, $page, ['homepageOf' => ['WEB', 'B2B']], $csrfToken);
+
+        self::assertResponseIsSuccessful();
+        self::assertIsArray($response);
+        self::assertIsArray($response['settings'] ?? null);
+        self::assertSame(['B2B', 'WEB'], $response['settings']['homepageOf'] ?? null);
+        self::assertSame(['B2B', 'WEB'], self::reloadPage($page)->getHomepageChannelCodes());
+
+        self::saveSettings($client, $page, ['homepageOf' => ['B2B']], $csrfToken);
+
+        self::assertSame(['B2B'], self::reloadPage($page)->getHomepageChannelCodes());
+    }
+
+    /**
+     * A channel has at most one homepage, so choosing a page for a channel takes the channel off any other page. Both
+     * pages' "Homepage of" changed, so the event is dispatched for each, after the save commits
+     *
+     * @test
+     */
+    public function choosing_a_second_page_as_a_channels_homepage_takes_the_channel_off_the_first(): void
+    {
+        $client = self::createClient();
+        $client->disableReboot();
+        $first = self::createPage('Home', 'home', 'Welcome', published: true);
+        $second = self::createPage('Sale', 'sale', 'Everything must go', published: true);
+        $csrfToken = self::openBuilder($client, $first);
+        self::saveSettings($client, $first, ['homepageOf' => ['WEB', 'B2B']], $csrfToken);
+        $firstChangedAt = new \DateTimeImmutable('2026-01-01 10:00:00', new \DateTimeZone('UTC'));
+        self::reloadPage($first)->setChangedAt($firstChangedAt);
+        self::pageManager()->flush();
+
+        /** @var Connection $connection */
+        $connection = self::getContainer()->get('doctrine.dbal.default_connection');
+        $outside = $connection->getTransactionNestingLevel();
+        /** @var \ArrayObject<int, array{EntrySettingsChanged, int}> $dispatched */
+        $dispatched = new \ArrayObject();
+        self::eventDispatcher()->addListener(EntrySettingsChanged::class, static function (EntrySettingsChanged $event) use ($dispatched, $connection): void {
+            $dispatched->append([$event, $connection->getTransactionNestingLevel()]);
+        });
+
+        self::saveSettings($client, $second, ['homepageOf' => ['WEB']], $csrfToken);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['WEB'], self::reloadPage($second)->getHomepageChannelCodes());
+        self::assertSame(['B2B'], self::reloadPage($first)->getHomepageChannelCodes());
+        self::assertGreaterThan($firstChangedAt, self::reloadPage($first)->getChangedAt());
+
+        self::assertCount(2, $dispatched);
+        [[$secondEvent, $secondLevel], [$firstEvent, $firstLevel]] = $dispatched->getArrayCopy();
+        self::assertSame($second->getUuid(), $secondEvent->uuid);
+        self::assertSame(['homepage'], $secondEvent->changed);
+        self::assertSame($first->getUuid(), $firstEvent->uuid);
+        self::assertSame(['homepage'], $firstEvent->changed);
+        self::assertSame($outside, $secondLevel);
+        self::assertSame($outside, $firstLevel);
+    }
+
+    /**
+     * Only a page can be a channel's homepage
+     *
+     * @test
+     */
+    public function it_refuses_homepages_for_an_entry_other_than_a_page(): void
+    {
+        $client = self::createClient();
+        $announcement = self::createAnnouncement();
+        $csrfToken = self::openBuilder($client, self::createPage('About us', 'about-us'));
+
+        $response = self::json($client, 'PUT', sprintf('/admin/cms/api/entries/%s/settings', $announcement->getUuid()), ['homepageOf' => ['WEB']], $csrfToken);
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertSame(['error' => 'Only a page can be a channel\'s homepage'], $response);
+    }
+
+    /**
      * @test
      */
     public function it_changes_nothing_when_saving_the_settings_it_already_has(): void
@@ -257,6 +344,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
         yield 'an end before the start' => [['showFrom' => '2026-12-01T00:00:00Z', 'showUntil' => '2026-11-27T00:00:00Z'], '"Show until" (2026-11-27T00:00:00Z) must come after "Show from" (2026-12-01T00:00:00Z)'];
         yield 'a date that is no date' => [['showFrom' => 'tomorrow'], '"showFrom" must be a date and time such as 2026-11-27T00:00:00Z, or null'];
         yield 'channels that are no list of codes' => [['channels' => ['WEB', 7]], '"channels" must be a list of channel codes'];
+        yield 'homepages that are no list of codes' => [['homepageOf' => 'WEB'], '"homepageOf" must be a list of channel codes'];
         yield 'an unknown audience mode' => [['audience' => ['mode' => 'some', 'groups' => []]], '"audience" must have a "mode" of everyone, only or except, and "groups" as a list of customer group values'];
         yield 'an audience group that is no customer group value' => [['audience' => ['mode' => 'only', 'groups' => ['@admin']]], '"@admin" is neither a customer group code, "@guest" nor "@no_group"'];
         yield 'groups for everyone' => [['audience' => ['mode' => 'everyone', 'groups' => ['wholesale']]], 'An audience of everyone has no groups'];
@@ -332,6 +420,23 @@ final class EntrySettingsTest extends BuilderApiTestCase
         $drafts = self::getContainer()->get('setono_sylius_cms.repository.draft');
 
         return $drafts->findOneByEntry(self::reloadPage($page))?->getContent();
+    }
+
+    private static function createAnnouncement(): Announcement
+    {
+        /** @var FactoryInterface<Announcement> $factory */
+        $factory = self::getContainer()->get('app.factory.announcement');
+        $announcement = $factory->createNew();
+        $announcement->setCurrentLocale('en_US');
+        $announcement->setFallbackLocale('en_US');
+        $announcement->setTitle('Free shipping');
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('app.manager.announcement');
+        $manager->persist($announcement);
+        $manager->flush();
+
+        return $announcement;
     }
 
     private static function pageManager(): ObjectManager

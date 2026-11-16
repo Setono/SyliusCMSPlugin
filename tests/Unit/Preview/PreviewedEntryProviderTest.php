@@ -119,7 +119,8 @@ final class PreviewedEntryProviderTest extends TestCase
     {
         $this->previewing($this->entry->getUuid(), 'en_US');
 
-        self::assertEquals(new EntryUrlMatch($this->workingCopy->getUuid(), 'page'), $this->provider()->match('en_US', 'about-us'));
+        // It renders there, with no redirect to a current slug or to its channel's root as a homepage
+        self::assertEquals(new EntryUrlMatch($this->workingCopy->getUuid(), 'page', null, false), $this->provider()->match('en_US', 'about-us'));
         self::assertEquals(new EntryUrlMatch($this->workingCopy->getUuid(), 'page'), $this->provider('pg')->match('en_US', 'pg/about-us'));
     }
 

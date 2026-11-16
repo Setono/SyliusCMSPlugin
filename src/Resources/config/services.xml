@@ -11,6 +11,7 @@
         <import resource="services/doctrine.xml"/>
         <import resource="services/field.xml"/>
         <import resource="services/form.xml"/>
+        <import resource="services/homepage.xml"/>
         <import resource="services/layout.xml"/>
         <import resource="services/localization.xml"/>
         <import resource="services/preview.xml"/>

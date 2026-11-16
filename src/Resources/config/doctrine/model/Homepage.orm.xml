@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    "Homepage of": the channels pages are the homepages of, by channel code (ADR 0002), so a deleted channel leaves a
+    code that matches nothing. A channel has at most one homepage, which the unique channel code holds to.
+    Deleting the page deletes its rows
+    -->
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\Homepage" table="setono_sylius_cms__homepage">
+        <unique-constraints>
+            <unique-constraint name="setono_sylius_cms__homepage_channel_uniq" columns="channel_code"/>
+        </unique-constraints>
+
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="channelCode" column="channel_code" type="string"/>
+
+        <many-to-one field="page" target-entity="Setono\SyliusCMSPlugin\Model\PageInterface" inversed-by="homepages">
+            <join-column name="page_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
+        </many-to-one>
+    </mapped-superclass>
+</doctrine-mapping>
