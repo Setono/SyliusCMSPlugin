@@ -90,7 +90,7 @@ trait Entries
      * working copy, which Doctrine doesn't manage, the translation is only added. A locale the page has a translation
      * in already must go through that translation, since Sylius's getTranslation() falls back to another locale's
      */
-    protected static function addTranslation(PageInterface $page, string $localeCode, ?string $title, ?string $slug = null, bool $shown = true): PageTranslationInterface
+    protected static function addTranslation(EntryInterface $page, string $localeCode, ?string $title, ?string $slug = null, bool $shown = true): PageTranslationInterface
     {
         /** @var FactoryInterface<PageTranslationInterface> $factory */
         $factory = self::getContainer()->get('setono_sylius_cms.factory.page_translation');
