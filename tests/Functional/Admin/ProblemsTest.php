@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -72,6 +73,101 @@ final class ProblemsTest extends WebTestCase
     }
 
     /**
+     * @test
+     */
+    public function the_lists_mark_an_entry_with_a_problem_and_link_the_marker_to_its_problems(): void
+    {
+        $client = self::signedInClient();
+        self::addLocales('WEB', 'da_DK');
+        $errors = self::pageWithProblems();
+        $warnings = self::createPageWithBlocks('Contact', 'contact', [new StoredBlock(self::PROMO, 'promo', 1)]);
+        // Missing translations are never problems
+        $clean = self::createPage('Clean', 'clean', 'Hello', published: true);
+
+        foreach (['/admin/cms/entries/page', '/admin/cms/entries'] as $list) {
+            $crawler = $client->request('GET', $list);
+            self::assertResponseIsSuccessful();
+
+            $marker = self::row($crawler, $errors)->filter('[data-column="problems"] a');
+            self::assertSame('error', $marker->attr('data-problems'));
+            self::assertSame('2', trim($marker->text()));
+            self::assertSame('1 error, 1 warning', $marker->attr('title'));
+            self::assertSame(sprintf('/admin/cms/entry/%s#cms-section-problems', $errors->getUuid()), $marker->attr('href'));
+
+            $marker = self::row($crawler, $warnings)->filter('[data-column="problems"] a');
+            self::assertSame('warning', $marker->attr('data-problems'));
+            self::assertSame('1', trim($marker->text()));
+            self::assertSame('No errors, 1 warning', $marker->attr('title'));
+
+            self::assertSame('', trim(self::row($crawler, $clean)->filter('[data-column="problems"]')->text()));
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function the_needs_attention_filter_lists_the_entries_with_a_problem(): void
+    {
+        $client = self::signedInClient();
+        $errors = self::pageWithProblems();
+        $warnings = self::createPageWithBlocks('Contact', 'contact', [new StoredBlock(self::PROMO, 'promo', 1)]);
+        self::createPage('Clean', 'clean', 'Hello', published: true);
+
+        $crawler = $client->request('GET', '/admin/cms/entries/page?' . http_build_query(['criteria' => ['status' => 'needs_attention']]));
+
+        self::assertResponseIsSuccessful();
+        self::assertEqualsCanonicalizing([$errors->getUuid(), $warnings->getUuid()], self::listedUuids($crawler));
+        self::assertSame('Needs attention', $crawler->filter('#criteria_status option')->eq(1)->text(), 'It\'s the first status the filter offers');
+
+        $crawler = $client->request('GET', '/admin/cms/entries?' . http_build_query(['criteria' => ['status' => 'needs_attention']]));
+        self::assertEqualsCanonicalizing([$errors->getUuid(), $warnings->getUuid()], self::listedUuids($crawler));
+    }
+
+    /**
+     * @test
+     */
+    public function the_needs_attention_filter_lists_nothing_when_nothing_needs_attention(): void
+    {
+        $client = self::signedInClient();
+        self::createPage('Clean', 'clean', 'Hello');
+
+        $crawler = $client->request('GET', '/admin/cms/entries/page?' . http_build_query(['criteria' => ['status' => 'needs_attention']]));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame([], self::listedUuids($crawler));
+    }
+
+    /**
+     * @test
+     */
+    public function the_content_badge_counts_the_errors_and_warnings_that_need_attention_on_every_admin_page(): void
+    {
+        $client = self::signedInClient();
+        self::createPage('Clean', 'clean', 'Hello');
+
+        $crawler = $client->request('GET', '/admin/');
+        self::assertResponseIsSuccessful();
+        $content = $crawler->filter('.sylius-admin-menu a[href="/admin/cms"]');
+        self::assertCount(1, $content);
+        self::assertNull($content->attr('data-cms-problem-count'));
+        // The stylesheet that shows the badge loads on every admin page
+        self::assertCount(1, $crawler->filter('link[rel="stylesheet"][href="/bundles/setonosyliuscmsplugin/admin/menu.css"]'));
+
+        self::pageWithProblems();
+        self::createPageWithBlocks('Contact', 'contact', [new StoredBlock(self::PROMO, 'promo', 1)]);
+
+        foreach (['/admin/', '/admin/products/', '/admin/cms'] as $page) {
+            $crawler = $client->request('GET', $page);
+            self::assertResponseIsSuccessful();
+            $content = $crawler->filter('.sylius-admin-menu a[href="/admin/cms"]');
+            self::assertSame('3', $content->attr('data-cms-problem-count'));
+            self::assertSame('error', $content->attr('data-cms-problems'));
+            self::assertSame('1 error, 2 warnings', $content->attr('title'));
+            self::assertCount(1, $crawler->filter('link[rel="stylesheet"][href="/bundles/setonosyliuscmsplugin/admin/menu.css"]'));
+        }
+    }
+
+    /**
      * A never-published page in en_US and da_DK, with a heading whose Danish text doesn't fit and a block of a type
      * the code no longer has
      */
@@ -89,5 +185,30 @@ final class ProblemsTest extends WebTestCase
         $client->loginUser(self::admin(), 'admin');
 
         return $client;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function listedUuids(Crawler $crawler): array
+    {
+        $uuids = [];
+        foreach ($crawler->filter('table tbody [data-entry]') as $title) {
+            self::assertInstanceOf(\DOMElement::class, $title);
+            $uuids[] = $title->getAttribute('data-entry');
+        }
+
+        return $uuids;
+    }
+
+    /**
+     * The grid's row of the entry, whose title cell names it
+     */
+    private static function row(Crawler $crawler, EntryInterface $entry): Crawler
+    {
+        $row = $crawler->filterXPath(sprintf('//table/tbody/tr[.//*[@data-entry="%s"]]', $entry->getUuid()));
+        self::assertCount(1, $row);
+
+        return $row;
     }
 }

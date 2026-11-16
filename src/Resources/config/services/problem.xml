@@ -15,6 +15,28 @@
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemFinder"/>
 
         <!--
+        The problems across the store, counted per entry, which the lists' marker (through cms_admin_problem_summary()),
+        their Needs attention filter and the Content badge read. The count is kept in the cache pool
+        setono_sylius_cms.cache.problems, and dropped when a flush writes an entry or its draft
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProvider" class="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProvider">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface"/>
+            <argument type="service" id="setono_sylius_cms.cache.problems"/>
+
+            <tag name="twig.runtime"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProviderInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProvider"/>
+
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemSummaryListener" class="Setono\SyliusCMSPlugin\Problem\ProblemSummaryListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProviderInterface"/>
+
+            <tag name="doctrine.event_listener" event="onFlush"/>
+            <tag name="doctrine.event_listener" event="postFlush"/>
+        </service>
+
+        <!--
         The problem kinds. A kind is a service tagged setono_sylius_cms.problem_kind, which autoconfiguration adds to a
         ProblemKindInterface. setono:cms:lint reports the kinds whose tag has lint="true"
         -->

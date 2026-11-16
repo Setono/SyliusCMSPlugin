@@ -6,10 +6,13 @@ namespace Setono\SyliusCMSPlugin\Admin;
 
 /**
  * The statuses an entry list filters on, in the order the filter offers them. See "Entry lists" in docs/spec/admin.md.
- * Needs attention (#231) and Scheduled (#241) join with their tickets
+ * Scheduled (#241) joins with its ticket
  */
 enum EntryStatusFilter: string
 {
+    /** With an error or a warning. See "Problems" in docs/spec/admin.md */
+    case NeedsAttention = 'needs_attention';
+
     /** Published, with a draft */
     case UnpublishedChanges = 'unpublished_changes';
 

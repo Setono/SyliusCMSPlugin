@@ -223,6 +223,33 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_keeps_the_problem_summary_in_a_cache_pool_on_the_apps_adapter_for_five_minutes(): void
+    {
+        $this->load();
+
+        self::assertSame(
+            [['cache' => ['pools' => ['setono_sylius_cms.cache.problems' => ['adapter' => 'cache.app', 'default_lifetime' => 300]]]]],
+            $this->container->getExtensionConfig('framework'),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_loads_the_stylesheet_of_the_content_badge_on_every_admin_page_after_sylius_own_styles(): void
+    {
+        $this->load();
+
+        self::assertSame([
+            'blocks' => [
+                'setono_sylius_cms_menu' => ['template' => '@SetonoSyliusCMSPlugin/admin/menu/stylesheet.html.twig', 'priority' => 5],
+            ],
+        ], $this->templateEvents()['sylius.admin.layout.stylesheets'] ?? null);
+    }
+
+    /**
+     * @test
+     */
     public function it_registers_page_as_a_sylius_resource(): void
     {
         $this->load();

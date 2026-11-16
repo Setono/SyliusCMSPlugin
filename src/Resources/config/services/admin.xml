@@ -4,6 +4,9 @@
     <services>
         <!-- The Content item in the Sylius admin menu -->
         <service id="Setono\SyliusCMSPlugin\Admin\MainMenuListener" class="Setono\SyliusCMSPlugin\Admin\MainMenuListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProviderInterface"/>
+            <argument type="service" id="translator"/>
+
             <tag name="kernel.event_listener" event="sylius.menu.admin.main"/>
         </service>
 
@@ -70,6 +73,7 @@
         <!-- The entry lists' grid filters -->
         <service id="Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter" class="Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter">
             <argument type="service" id="clock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProviderInterface"/>
 
             <tag name="sylius.grid_filter" type="setono_sylius_cms_entry_status" form_type="Setono\SyliusCMSPlugin\Form\Type\Filter\EntryStatusFilterType"/>
         </service>
