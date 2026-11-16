@@ -4,15 +4,21 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Problem;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 
+/**
+ * A kind that fails on an entry is logged, and the entry keeps the counts it had, so a project's kind never fails a
+ * save, nor the admin page that counts stale entries again
+ */
 final readonly class ProblemCountUpdater implements ProblemCountUpdaterInterface
 {
-    /** How many stale entries are counted at a time */
+    /** How many stale entries a request counts again at most */
     private const BATCH_SIZE = 100;
 
     /**
@@ -24,6 +30,7 @@ final readonly class ProblemCountUpdater implements ProblemCountUpdaterInterface
         private WorkingCopyProviderInterface $workingCopies,
         private ProblemCountsQueryInterface $query,
         private ProblemCountFingerprintInterface $fingerprint,
+        private LoggerInterface $logger = new NullLogger(),
     ) {
     }
 
@@ -36,63 +43,61 @@ final readonly class ProblemCountUpdater implements ProblemCountUpdaterInterface
     }
 
     /**
-     * It runs on an admin page, so it leaves the entity manager as it is, and it never overwrites what a write that
-     * ran meanwhile counted
+     * It runs on an admin page, so it counts one batch, which the next request after it follows with the next
      */
     public function updateStale(): void
     {
-        $fingerprint = $this->fingerprint->get();
-
-        $after = 0;
-        while ([] !== $entries = $this->query->findStale($fingerprint, self::BATCH_SIZE, $after)) {
-            $counts = $this->count($entries);
-            if ([] === $counts) {
-                // Only a saved entry, which has an id, is stale, but a batch it can't count must never come again
-                return;
-            }
-
-            $this->query->store($counts, $fingerprint, true);
-            $after = max(array_keys($counts));
-        }
+        $this->query->countStale($this->fingerprint->get(), self::BATCH_SIZE, $this->count(...));
     }
 
     /**
      * @param iterable<EntryInterface> $entries
      *
-     * @return array<int, ProblemCount> by the entry's id
+     * @return array<int, ProblemCount> by the entry's id, of the saved entries every kind could check
      */
     private function count(iterable $entries): array
     {
         $counts = [];
         foreach ($entries as $entry) {
             $id = $entry->getId();
-            if (null !== $id) {
-                $counts[$id] = $this->countOf($entry);
+            $count = null === $id ? null : $this->countOf($entry);
+            if (null !== $count) {
+                $counts[$id] = $count;
             }
         }
 
         return $counts;
     }
 
-    private function countOf(EntryInterface $entry): ProblemCount
+    private function countOf(EntryInterface $entry): ?ProblemCount
     {
         try {
             // A never-published entry's working copy is the entry itself, upgraded as it's read, and Doctrine manages
             // the entry, so a copy is read, which no later flush writes
-            return ProblemCount::of($this->problemsOf($this->workingCopies->getWorkingCopy(clone $entry)));
+            $workingCopy = $this->workingCopies->getWorkingCopy(clone $entry);
         } catch (InvalidStoredTreeException|InvalidEntryFormatException) {
-            // Content that can't be read at all fails where it's opened, not in the counts
-            return new ProblemCount();
+            // Content that can't be read at all is one error, which setono:cms:lint reports
+            return new ProblemCount(1, 0);
         }
-    }
 
-    /**
-     * @return \Generator<Problem>
-     */
-    private function problemsOf(EntryInterface $workingCopy): \Generator
-    {
+        $problems = [];
         foreach ($this->kinds as $kind) {
-            yield from $kind->findIn($workingCopy);
+            try {
+                foreach ($kind->findIn($workingCopy) as $problem) {
+                    $problems[] = $problem;
+                }
+            } catch (\Throwable $exception) {
+                $this->logger->error('The problem kind {kind} failed on the entry {uuid}, which keeps the problem counts it had: {message}', [
+                    'kind' => $kind::class,
+                    'uuid' => $entry->getUuid(),
+                    'message' => $exception->getMessage(),
+                    'exception' => $exception,
+                ]);
+
+                return null;
+            }
         }
+
+        return ProblemCount::of($problems);
     }
 }

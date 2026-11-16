@@ -17,6 +17,7 @@
         <!-- The problem counts stored with the entries -->
         <service id="Setono\SyliusCMSPlugin\Query\ProblemCountsQuery" class="Setono\SyliusCMSPlugin\Query\ProblemCountsQuery">
             <argument type="service" id="doctrine"/>
+            <argument type="service" id="clock"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface" alias="Setono\SyliusCMSPlugin\Query\ProblemCountsQuery"/>
     </services>

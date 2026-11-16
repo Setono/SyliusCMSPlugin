@@ -8,6 +8,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
@@ -26,61 +27,80 @@ final readonly class ProblemCountsQuery implements ProblemCountsQueryInterface
     /** How many entries one update names at most */
     private const CHUNK_SIZE = 500;
 
-    public function __construct(private ManagerRegistry $managerRegistry)
-    {
+    /**
+     * A claim is held in the fingerprint column as "claim:<when it lapses, in seconds since the epoch>:<a random token>",
+     * so a claim that lapsed compares as less than "claim:<now>"
+     */
+    private const CLAIM = 'claim:';
+
+    /** How long a claim holds, in seconds */
+    private const CLAIM_LIFETIME = 300;
+
+    public function __construct(
+        private ManagerRegistry $managerRegistry,
+        private ClockInterface $clock,
+    ) {
     }
 
-    public function store(array $counts, string $fingerprint, bool $onlyStale = false): void
+    public function store(array $counts, string $fingerprint): void
     {
-        // One update per count, as most entries share one, such as no problems
-        $groups = [];
-        foreach ($counts as $id => $count) {
-            $groups[sprintf('%d:%d', $count->errors, $count->warnings)][] = $id;
-        }
+        $this->write($counts, $fingerprint, null);
+    }
 
+    public function countStale(string $fingerprint, int $limit, callable $count): void
+    {
         $manager = $this->manager();
-        foreach ($groups as $group => $ids) {
-            [$errors, $warnings] = array_map(intval(...), explode(':', $group));
-
-            foreach (array_chunk($ids, self::CHUNK_SIZE) as $chunk) {
-                $query = $manager->createQueryBuilder()
-                    ->update(Entry::class, 'entry')
-                    ->set('entry.problemErrors', ':errors')
-                    ->set('entry.problemWarnings', ':warnings')
-                    ->set('entry.problemsCountedWith', ':fingerprint')
-                    ->andWhere('entry.id IN (:ids)')
-                    ->setParameter('errors', $errors, Types::INTEGER)
-                    ->setParameter('warnings', $warnings, Types::INTEGER)
-                    ->setParameter('fingerprint', $fingerprint, Types::STRING)
-                    ->setParameter('ids', $chunk)
-                ;
-
-                if ($onlyStale) {
-                    $query->andWhere('(entry.problemsCountedWith IS NULL OR entry.problemsCountedWith <> :fingerprint)');
-                }
-
-                $query->getQuery()->execute();
-            }
+        $classes = array_values($manager->getClassMetadata(Entry::class)->discriminatorMap);
+        if ([] === $classes) {
+            return;
         }
-    }
 
-    public function findStale(string $fingerprint, int $limit, int $afterId): array
-    {
-        /** @var list<Entry> $entries */
-        $entries = $this->manager()->createQueryBuilder()
-            ->select('entry')
-            ->from(Entry::class, 'entry')
-            ->andWhere('entry.problemsCountedWith IS NULL OR entry.problemsCountedWith <> :fingerprint')
-            ->andWhere('entry.id > :after')
-            ->setParameter('fingerprint', $fingerprint, Types::STRING)
-            ->setParameter('after', $afterId, Types::INTEGER)
+        $ids = array_map(self::int(...), $this->stale($manager->createQueryBuilder()->select('entry.id')->from(Entry::class, 'entry'), $fingerprint)
+            // The content types the code has
+            ->andWhere(sprintf('entry INSTANCE OF (%s)', implode(', ', $classes)))
             ->orderBy('entry.id')
             ->setMaxResults($limit)
             ->getQuery()
-            ->getResult()
-        ;
+            ->getSingleColumnResult());
+        if ([] === $ids) {
+            return;
+        }
 
-        return $entries;
+        $claim = sprintf('%s%010d:%s', self::CLAIM, $this->clock->now()->getTimestamp() + self::CLAIM_LIFETIME, bin2hex(random_bytes(8)));
+
+        // Another request may have claimed some of them since
+        $claimed = $this->stale($manager->createQueryBuilder()->update(Entry::class, 'entry')->set('entry.problemsCountedWith', ':claim'), $fingerprint)
+            ->andWhere('entry.id IN (:ids)')
+            ->setParameter('claim', $claim, Types::STRING)
+            ->setParameter('ids', $ids)
+            ->getQuery()
+            ->execute();
+        if (0 === $claimed) {
+            return;
+        }
+
+        $unitOfWork = $manager->getUnitOfWork();
+        $loadedAlready = array_filter($ids, static fn (int $id): bool => false !== $unitOfWork->tryGetById($id, Entry::class));
+
+        /** @var list<Entry> $entries */
+        $entries = $manager->createQueryBuilder()
+            ->select('entry')
+            ->from(Entry::class, 'entry')
+            ->andWhere('entry.problemsCountedWith = :claim')
+            ->setParameter('claim', $claim, Types::STRING)
+            ->orderBy('entry.id')
+            ->getQuery()
+            ->getResult();
+
+        try {
+            $this->write($count($entries), $fingerprint, $claim);
+        } finally {
+            foreach ($entries as $entry) {
+                if (!in_array($entry->getId(), $loadedAlready, true)) {
+                    $manager->detach($entry);
+                }
+            }
+        }
     }
 
     public function ofEntries(array $entries, iterable $kinds, \DateTimeImmutable $now): array
@@ -119,6 +139,60 @@ final readonly class ProblemCountsQuery implements ProblemCountsQueryInterface
         $row = $query->getQuery()->getSingleResult();
 
         return self::count($row, $severities);
+    }
+
+    /**
+     * Writes the counts, made with the fingerprint, of the entries that still hold the claim when it's given
+     *
+     * @param array<int, ProblemCount> $counts by the entry's id
+     */
+    private function write(array $counts, string $fingerprint, ?string $claim): void
+    {
+        // One update per count, as most entries share one, such as no problems
+        $groups = [];
+        foreach ($counts as $id => $count) {
+            $groups[sprintf('%d:%d', $count->errors, $count->warnings)][] = $id;
+        }
+
+        $manager = $this->manager();
+        foreach ($groups as $group => $ids) {
+            [$errors, $warnings] = array_map(intval(...), explode(':', $group));
+
+            foreach (array_chunk($ids, self::CHUNK_SIZE) as $chunk) {
+                $query = $manager->createQueryBuilder()
+                    ->update(Entry::class, 'entry')
+                    ->set('entry.problemErrors', ':errors')
+                    ->set('entry.problemWarnings', ':warnings')
+                    ->set('entry.problemsCountedWith', ':fingerprint')
+                    ->andWhere('entry.id IN (:ids)')
+                    ->setParameter('errors', $errors, Types::INTEGER)
+                    ->setParameter('warnings', $warnings, Types::INTEGER)
+                    ->setParameter('fingerprint', $fingerprint, Types::STRING)
+                    ->setParameter('ids', $chunk)
+                ;
+
+                // A write that counted the entry meanwhile took the claim off it
+                if (null !== $claim) {
+                    $query->andWhere('entry.problemsCountedWith = :claim')->setParameter('claim', $claim, Types::STRING);
+                }
+
+                $query->getQuery()->execute();
+            }
+        }
+    }
+
+    /**
+     * Keeps the entries whose counts were made with another fingerprint, or never, that no other request holds a claim
+     * on that hasn't lapsed
+     */
+    private function stale(QueryBuilder $query, string $fingerprint): QueryBuilder
+    {
+        return $query
+            ->andWhere('entry.problemsCountedWith IS NULL OR (entry.problemsCountedWith <> :fingerprint AND (entry.problemsCountedWith NOT LIKE :claimed OR entry.problemsCountedWith < :lapsed))')
+            ->setParameter('fingerprint', $fingerprint, Types::STRING)
+            ->setParameter('claimed', self::CLAIM . '%', Types::STRING)
+            ->setParameter('lapsed', sprintf('%s%010d', self::CLAIM, $this->clock->now()->getTimestamp()), Types::STRING)
+        ;
     }
 
     /**

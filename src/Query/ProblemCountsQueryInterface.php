@@ -18,19 +18,21 @@ interface ProblemCountsQueryInterface
      * Stores the entries' counts, made with the fingerprint
      *
      * @param array<int, ProblemCount> $counts by the entry's id
-     * @param bool $onlyStale whether to leave an entry whose counts were made with the fingerprint since, so counting
-     *                        stale entries never overwrites what a write counted meanwhile
      */
-    public function store(array $counts, string $fingerprint, bool $onlyStale = false): void;
+    public function store(array $counts, string $fingerprint): void;
 
     /**
-     * Entries whose counts were made with another fingerprint, or never, in the order of their ids
+     * Has $count count up to $limit entries again whose counts were made with another fingerprint, or never, in the
+     * order of their ids, and stores what it counts. It claims them first, so two requests never count the same
+     * entries, and a claim lapses after a few minutes, in case a request stops before it stores. A write that counts
+     * one of them meanwhile wins. Only entries of the content types the code has are counted: one whose content type
+     * was removed can't be loaded. The entries it loads are detached once they're counted, except those the request
+     * had loaded already
      *
-     * @param int $afterId the id the entries come after
-     *
-     * @return list<EntryInterface> at most $limit
+     * @param callable(list<EntryInterface>): array<int, ProblemCount> $count the counts of the entries, by id. An entry
+     *                                                                       it leaves out keeps its counts, and stays stale
      */
-    public function findStale(string $fingerprint, int $limit, int $afterId): array;
+    public function countStale(string $fingerprint, int $limit, callable $count): void;
 
     /**
      * The entries' stored counts, with one error or warning for each time-dependent kind an entry has a problem of

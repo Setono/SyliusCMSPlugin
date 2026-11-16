@@ -8,6 +8,8 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -37,11 +39,14 @@ final class ProblemCountUpdaterTest extends TestCase
     /** @var ObjectProphecy<ProblemCountFingerprintInterface> */
     private ObjectProphecy $fingerprint;
 
-    /** @var list<array{array<int, ProblemCount>, string, bool}> the arguments of each store() */
+    /** @var list<array{array<int, ProblemCount>, string}> the arguments of each store() */
     private array $stored = [];
 
     /** @var array<int, list<Problem>> the problems of each working copy, by object id */
     private array $problems = [];
+
+    /** @var array<int, EntryInterface> the working copy of each entry, by the entry's object id */
+    private array $workingCopyOf = [];
 
     protected function setUp(): void
     {
@@ -52,8 +57,8 @@ final class ProblemCountUpdaterTest extends TestCase
 
         $stored = &$this->stored;
         $this->query->store(Argument::cetera())->will(static function (array $arguments) use (&$stored): void {
-            /** @var array{array<int, ProblemCount>, string, bool} $arguments */
-            $stored[] = [$arguments[0], $arguments[1], $arguments[2] ?? false];
+            /** @var array{array<int, ProblemCount>, string} $arguments */
+            $stored[] = [$arguments[0], $arguments[1]];
         });
     }
 
@@ -67,32 +72,46 @@ final class ProblemCountUpdaterTest extends TestCase
 
         $this->updater()->update([$withProblems, $clean]);
 
-        self::assertEquals([[[7 => new ProblemCount(2, 1), 9 => new ProblemCount()], 'f1', false]], $this->stored);
+        self::assertEquals([[[7 => new ProblemCount(2, 1), 9 => new ProblemCount()], 'f1']], $this->stored);
     }
 
     /**
      * @test
      */
-    public function it_counts_content_it_cant_read_as_no_problems_as_that_fails_where_its_opened(): void
+    public function it_counts_content_it_cant_read_as_one_error(): void
     {
         $brokenTree = $this->unreadable(3, new InvalidStoredTreeException('Not a block tree'));
         $brokenDraft = $this->unreadable(4, new InvalidEntryFormatException('Not an entry'));
 
         $this->updater()->update([$brokenTree, $brokenDraft]);
 
-        self::assertEquals([[[3 => new ProblemCount(), 4 => new ProblemCount()], 'f1', false]], $this->stored);
+        self::assertEquals([[[3 => new ProblemCount(1, 0), 4 => new ProblemCount(1, 0)], 'f1']], $this->stored);
     }
 
     /**
+     * A project's kind that fails never fails the save that counts. The entry keeps the counts it had
+     *
      * @test
      */
-    public function it_stops_at_a_batch_of_stale_entries_it_cant_count_rather_than_reading_it_again(): void
+    public function it_logs_a_kind_that_fails_on_an_entry_and_leaves_that_entrys_counts_as_they_were(): void
     {
-        $this->query->findStale('f1', 100, 0)->willReturn([new Page()])->shouldBeCalledOnce();
+        $failing = $this->entry(3, [Severity::Error]);
+        $clean = $this->entry(4, []);
+        $kind = $this->prophesize(ProblemKindInterface::class);
+        $failingCopy = $this->workingCopyOf($failing);
+        $kind->findIn(Argument::any())->will(static function (array $arguments) use ($failingCopy): \Generator {
+            if ($arguments[0] === $failingCopy) {
+                throw new \RuntimeException('The API is down');
+            }
 
-        $this->updater()->updateStale();
+            yield from [];
+        });
+        $logger = $this->prophesize(LoggerInterface::class);
 
-        self::assertSame([], $this->stored);
+        $this->updater([$kind->reveal()], $logger->reveal())->update([$failing, $clean]);
+
+        self::assertEquals([[[4 => new ProblemCount()], 'f1']], $this->stored);
+        $logger->error(Argument::containingString('failed on the entry'), Argument::withEntry('message', 'The API is down'))->shouldHaveBeenCalledOnce();
     }
 
     /**
@@ -118,7 +137,7 @@ final class ProblemCountUpdaterTest extends TestCase
         $this->updater()->update([$page]);
 
         self::assertCount(1, $page->getBlockTree()->blocks);
-        self::assertEquals([[[5 => new ProblemCount()], 'f1', false]], $this->stored);
+        self::assertEquals([[[5 => new ProblemCount()], 'f1']], $this->stored);
     }
 
     /**
@@ -133,35 +152,25 @@ final class ProblemCountUpdaterTest extends TestCase
     }
 
     /**
+     * It runs on an admin page, so it counts one batch of 100 a request, which the query claims and stores
+     *
      * @test
      */
-    public function it_counts_again_the_entries_counted_with_other_code_or_never_batch_by_batch_without_overwriting_what_a_write_counted_meanwhile(): void
+    public function it_counts_a_batch_of_the_entries_counted_with_other_code_or_never_again(): void
     {
         $first = $this->entry(3, [Severity::Warning]);
         $second = $this->entry(8, []);
-        $third = $this->entry(12, [Severity::Error]);
-        $this->query->findStale('f1', 100, 0)->willReturn([$first, $second]);
-        $this->query->findStale('f1', 100, 8)->willReturn([$third]);
-        $this->query->findStale('f1', 100, 12)->willReturn([]);
+        $unsaved = new Page();
+        $counted = null;
+        $this->query->countStale('f1', 100, Argument::type('callable'))->will(static function (array $arguments) use ($first, $second, $unsaved, &$counted): void {
+            /** @var callable(list<EntryInterface>): array<int, ProblemCount> $count */
+            $count = $arguments[2];
+            $counted = $count([$first, $second, $unsaved]);
+        })->shouldBeCalledOnce();
 
         $this->updater()->updateStale();
 
-        self::assertEquals([
-            [[3 => new ProblemCount(0, 1), 8 => new ProblemCount()], 'f1', true],
-            [[12 => new ProblemCount(1, 0)], 'f1', true],
-        ], $this->stored);
-    }
-
-    /**
-     * @test
-     */
-    public function it_counts_nothing_again_when_every_entry_was_counted_with_the_code(): void
-    {
-        $this->query->findStale('f1', 100, 0)->willReturn([])->shouldBeCalledOnce();
-
-        $this->updater()->updateStale();
-
-        self::assertSame([], $this->stored);
+        self::assertEquals([3 => new ProblemCount(0, 1), 8 => new ProblemCount()], $counted);
     }
 
     /**
@@ -171,16 +180,23 @@ final class ProblemCountUpdaterTest extends TestCase
     {
         $entry = $this->prophesize(EntryInterface::class);
         $entry->getId()->willReturn($id);
+        $entry->getUuid()->willReturn(sprintf('entry-%d', $id));
         $entry = $entry->reveal();
 
         $workingCopy = $this->prophesize(EntryInterface::class)->reveal();
         $this->workingCopies->getWorkingCopy($entry)->willReturn($workingCopy);
+        $this->workingCopyOf[spl_object_id($entry)] = $workingCopy;
         $this->problems[spl_object_id($workingCopy)] = array_map(
             static fn (Severity $severity): Problem => new Problem('some', $severity, $workingCopy, new AnyMessage()),
             $severities,
         );
 
         return $entry;
+    }
+
+    private function workingCopyOf(EntryInterface $entry): EntryInterface
+    {
+        return $this->workingCopyOf[spl_object_id($entry)];
     }
 
     private function unreadable(int $id, \Throwable $exception): EntryInterface
@@ -193,7 +209,10 @@ final class ProblemCountUpdaterTest extends TestCase
         return $entry;
     }
 
-    private function updater(): ProblemCountUpdater
+    /**
+     * @param list<ProblemKindInterface>|null $kinds
+     */
+    private function updater(?array $kinds = null, ?LoggerInterface $logger = null): ProblemCountUpdater
     {
         $problems = &$this->problems;
         $kind = $this->prophesize(ProblemKindInterface::class);
@@ -212,6 +231,6 @@ final class ProblemCountUpdaterTest extends TestCase
             yield from array_slice($problems[spl_object_id($workingCopy)] ?? [], 1);
         });
 
-        return new ProblemCountUpdater([$kind->reveal(), $otherKinds->reveal()], $this->workingCopies->reveal(), $this->query->reveal(), $this->fingerprint->reveal());
+        return new ProblemCountUpdater($kinds ?? [$kind->reveal(), $otherKinds->reveal()], $this->workingCopies->reveal(), $this->query->reveal(), $this->fingerprint->reveal(), $logger ?? new NullLogger());
     }
 }

@@ -25,7 +25,8 @@ interface ProblemCountUpdaterInterface
 
     /**
      * Counts the entries again whose counts were made with other code, such as before a deploy that removed a block
-     * type, and those never counted
+     * type, and those never counted: a batch of them, which no other request counts at the same time, so an admin page
+     * that reads the counts stays quick, and the requests after it count the rest
      */
     public function updateStale(): void;
 }
