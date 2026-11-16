@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
+use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -141,6 +142,17 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.block_styles', $blockStyles);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(BlockTypeRegistry::class, 3, '%setono_sylius_cms.block_styles%');
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_the_fallback_locales_to_the_fallback_chain(): void
+    {
+        $this->load(['fallback_locales' => ['de_CH' => ['de_DE']]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.fallback_locales', ['de_CH' => ['de_DE']]);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(FallbackChain::class, 1, '%setono_sylius_cms.fallback_locales%');
     }
 
     /**

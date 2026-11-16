@@ -3,3 +3,7 @@ setono_sylius_cms:
     block_styles:
         group:
             brand: { label: 'app.cms.block_style.brand', class: 'app-group--brand' }
+
+    # Swiss German falls back to German before the store's fallback locale
+    fallback_locales:
+        de_CH: [de_DE]

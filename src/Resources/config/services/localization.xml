@@ -4,6 +4,7 @@
     <services>
         <service id="Setono\SyliusCMSPlugin\Localization\FallbackChain" class="Setono\SyliusCMSPlugin\Localization\FallbackChain">
             <argument type="service" id="sylius.translation_locale_provider"/>
+            <argument>%setono_sylius_cms.fallback_locales%</argument>
         </service>
         <service id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface" alias="Setono\SyliusCMSPlugin\Localization\FallbackChain"/>
 
