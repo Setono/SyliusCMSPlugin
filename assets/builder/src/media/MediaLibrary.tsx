@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type DragEvent } from 'react';
+import { useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import { useTranslator, type Translate } from '../i18n';
 import { useMediaLibrary, useMediaLibraryContext } from './context';
+import { Field } from './Field';
 import { FolderTree } from './FolderTree';
 import styles from './MediaLibrary.module.css';
 import { MediaItemDetails } from './MediaItemDetails';
@@ -47,6 +48,7 @@ function Toolbar() {
     const uploading = useMediaLibrary((state) => state.uploading);
     const [search, setSearch] = useState(filters.search);
     const fileInput = useRef<HTMLInputElement>(null);
+    const missingAltId = useId();
 
     useEffect(() => {
         if (search === store.getState().filters.search) {
@@ -66,35 +68,44 @@ function Toolbar() {
 
     return (
         <div className={styles.toolbar}>
-            <label className={styles.searchField}>
-                <span className={styles.label}>{t('setono_sylius_cms.builder.media.search')}</span>
+            <Field label={t('setono_sylius_cms.builder.media.search')} className={styles.searchField}>
+                {(id) => (
+                    <input
+                        id={id}
+                        type="search"
+                        className={styles.input}
+                        value={search}
+                        placeholder={t('setono_sylius_cms.builder.media.search_placeholder')}
+                        onChange={(event) => setSearch(event.target.value)}
+                    />
+                )}
+            </Field>
+            <Field label={t('setono_sylius_cms.builder.media.kind')}>
+                {(id) => (
+                    <select
+                        id={id}
+                        className={styles.select}
+                        value={filters.kind ?? ''}
+                        onChange={(event) => void store.getState().setFilters({ kind: event.target.value === '' ? null : (event.target.value as MediaKind) })}
+                    >
+                        <option value="">{t('setono_sylius_cms.builder.media.any_kind')}</option>
+                        {MEDIA_KINDS.map((kind) => (
+                            <option key={kind} value={kind}>
+                                {kindLabels[kind]}
+                            </option>
+                        ))}
+                    </select>
+                )}
+            </Field>
+            <div className={styles.checkboxField}>
                 <input
-                    type="search"
-                    className={styles.input}
-                    value={search}
-                    placeholder={t('setono_sylius_cms.builder.media.search_placeholder')}
-                    onChange={(event) => setSearch(event.target.value)}
+                    id={missingAltId}
+                    type="checkbox"
+                    checked={filters.missingAlt}
+                    onChange={(event) => void store.getState().setFilters({ missingAlt: event.target.checked })}
                 />
-            </label>
-            <label className={styles.field}>
-                <span className={styles.label}>{t('setono_sylius_cms.builder.media.kind')}</span>
-                <select
-                    className={styles.select}
-                    value={filters.kind ?? ''}
-                    onChange={(event) => void store.getState().setFilters({ kind: event.target.value === '' ? null : (event.target.value as MediaKind) })}
-                >
-                    <option value="">{t('setono_sylius_cms.builder.media.any_kind')}</option>
-                    {MEDIA_KINDS.map((kind) => (
-                        <option key={kind} value={kind}>
-                            {kindLabels[kind]}
-                        </option>
-                    ))}
-                </select>
-            </label>
-            <label className={styles.checkboxField}>
-                <input type="checkbox" checked={filters.missingAlt} onChange={(event) => void store.getState().setFilters({ missingAlt: event.target.checked })} />
-                {t('setono_sylius_cms.builder.media.missing_alt')}
-            </label>
+                <label htmlFor={missingAltId}>{t('setono_sylius_cms.builder.media.missing_alt')}</label>
+            </div>
             <button type="button" className={styles.primary} disabled={uploading} onClick={() => fileInput.current?.click()}>
                 {uploading ? t('setono_sylius_cms.builder.media.uploading') : t('setono_sylius_cms.builder.media.upload')}
             </button>

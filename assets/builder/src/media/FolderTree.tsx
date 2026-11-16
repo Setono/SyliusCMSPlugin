@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslator } from '../i18n';
 import { useMediaLibrary, useMediaLibraryContext } from './context';
+import { Field } from './Field';
 import { flattenTree, folderAndDescendants, folderTree } from './folders';
 import styles from './MediaLibrary.module.css';
 import { ALL_MEDIA, UNSORTED } from './types';
@@ -92,24 +93,24 @@ export function FolderTree() {
             ) : (
                 <form className={styles.folderForm} onSubmit={(event) => void submit(event)}>
                     {editing === 'move' ? (
-                        <label className={styles.field}>
-                            <span className={styles.label}>{t('setono_sylius_cms.builder.media.move_to')}</span>
-                            <select className={styles.select} value={parent} onChange={(event) => setParent(event.target.value)}>
-                                <option value="">{t('setono_sylius_cms.builder.media.top_level')}</option>
-                                {nodes
-                                    .filter(({ folder }) => !unavailable.has(folder.uuid))
-                                    .map(({ folder, depth }) => (
-                                        <option key={folder.uuid} value={folder.uuid}>
-                                            {`${' '.repeat(depth)}${folder.name}`}
-                                        </option>
-                                    ))}
-                            </select>
-                        </label>
+                        <Field label={t('setono_sylius_cms.builder.media.move_to')}>
+                            {(id) => (
+                                <select id={id} className={styles.select} value={parent} onChange={(event) => setParent(event.target.value)}>
+                                    <option value="">{t('setono_sylius_cms.builder.media.top_level')}</option>
+                                    {nodes
+                                        .filter(({ folder }) => !unavailable.has(folder.uuid))
+                                        .map(({ folder, depth }) => (
+                                            <option key={folder.uuid} value={folder.uuid}>
+                                                {`${' '.repeat(depth)}${folder.name}`}
+                                            </option>
+                                        ))}
+                                </select>
+                            )}
+                        </Field>
                     ) : (
-                        <label className={styles.field}>
-                            <span className={styles.label}>{t('setono_sylius_cms.builder.media.folder_name')}</span>
-                            <input className={styles.input} value={name} required autoFocus onChange={(event) => setName(event.target.value)} />
-                        </label>
+                        <Field label={t('setono_sylius_cms.builder.media.folder_name')}>
+                            {(id) => <input id={id} className={styles.input} value={name} required autoFocus onChange={(event) => setName(event.target.value)} />}
+                        </Field>
                     )}
                     <div className={styles.actions}>
                         <button type="submit" className={styles.primary}>

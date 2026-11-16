@@ -1,6 +1,7 @@
 import { useId, useState, type FormEvent } from 'react';
 import { useTranslator } from '../i18n';
 import { useMediaLibrary, useMediaLibraryContext } from './context';
+import { Field } from './Field';
 import { FocalPointEditor } from './FocalPointEditor';
 import { flattenTree, folderTree } from './folders';
 import styles from './MediaLibrary.module.css';
@@ -44,31 +45,30 @@ export function MediaItemDetails({ item }: { item: MediaItem }) {
             {image && <FocalPointEditor src={item.url} value={focalPoint} onChange={setFocalPoint} />}
 
             <form className={styles.form} onSubmit={save}>
-                <label className={styles.field}>
-                    <span className={styles.label}>{t('setono_sylius_cms.builder.media.name')}</span>
-                    <input className={styles.input} value={name} required onChange={(event) => setName(event.target.value)} />
-                </label>
+                <Field label={t('setono_sylius_cms.builder.media.name')}>
+                    {(fieldId) => <input id={fieldId} className={styles.input} value={name} required onChange={(event) => setName(event.target.value)} />}
+                </Field>
 
-                <label className={styles.field}>
-                    <span className={styles.label}>{t('setono_sylius_cms.builder.media.credit')}</span>
-                    <input className={styles.input} value={credit} onChange={(event) => setCredit(event.target.value)} />
-                    <span className={styles.help}>{t('setono_sylius_cms.builder.media.credit_help')}</span>
-                </label>
+                <Field label={t('setono_sylius_cms.builder.media.credit')} help={t('setono_sylius_cms.builder.media.credit_help')}>
+                    {(fieldId) => <input id={fieldId} className={styles.input} value={credit} onChange={(event) => setCredit(event.target.value)} />}
+                </Field>
 
                 {image && (
                     <fieldset className={styles.fieldset}>
                         <legend className={styles.label}>{t('setono_sylius_cms.builder.media.alt_text')}</legend>
                         <span className={styles.help}>{t('setono_sylius_cms.builder.media.alt_text_help')}</span>
                         {config.locales.map(({ code, name: localeName }) => (
-                            <label key={code} className={styles.field}>
-                                <span className={styles.locale}>{localeName}</span>
-                                <textarea
-                                    className={styles.textarea}
-                                    rows={2}
-                                    value={altTexts[code] ?? ''}
-                                    onChange={(event) => setAltTexts((current) => ({ ...current, [code]: event.target.value }))}
-                                />
-                            </label>
+                            <Field key={code} label={localeName} variant="locale">
+                                {(fieldId) => (
+                                    <textarea
+                                        id={fieldId}
+                                        className={styles.textarea}
+                                        rows={2}
+                                        value={altTexts[code] ?? ''}
+                                        onChange={(event) => setAltTexts((current) => ({ ...current, [code]: event.target.value }))}
+                                    />
+                                )}
+                            </Field>
                         ))}
                     </fieldset>
                 )}
@@ -87,17 +87,18 @@ export function MediaItemDetails({ item }: { item: MediaItem }) {
             </form>
 
             <div className={styles.move}>
-                <label className={styles.field}>
-                    <span className={styles.label}>{t('setono_sylius_cms.builder.media.move_to')}</span>
-                    <select className={styles.select} value={moveTo} onChange={(event) => setMoveTo(event.target.value)}>
-                        <option value="">{t('setono_sylius_cms.builder.media.unsorted')}</option>
-                        {flattenTree(folderTree(folders)).map(({ folder, depth }) => (
-                            <option key={folder.uuid} value={folder.uuid}>
-                                {`${' '.repeat(depth)}${folder.name}`}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+                <Field label={t('setono_sylius_cms.builder.media.move_to')}>
+                    {(fieldId) => (
+                        <select id={fieldId} className={styles.select} value={moveTo} onChange={(event) => setMoveTo(event.target.value)}>
+                            <option value="">{t('setono_sylius_cms.builder.media.unsorted')}</option>
+                            {flattenTree(folderTree(folders)).map(({ folder, depth }) => (
+                                <option key={folder.uuid} value={folder.uuid}>
+                                    {`${' '.repeat(depth)}${folder.name}`}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+                </Field>
                 <button
                     type="button"
                     className={styles.secondary}
