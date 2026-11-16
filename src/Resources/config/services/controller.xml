@@ -22,7 +22,7 @@
         <service id="Setono\SyliusCMSPlugin\Controller\Shop\HomepageAction" class="Setono\SyliusCMSPlugin\Controller\Shop\HomepageAction"
                  decorates="sylius.controller.shop.homepage" decoration-on-invalid="ignore">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Shop\HomepageAction.inner"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Homepage\HomepageResolver"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Homepage\HomepageResolverInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\LayoutRendererInterface"/>
 
@@ -89,7 +89,7 @@
             <argument type="service" id="setono_sylius_cms.entry_factories"/>
             <argument type="service" id="doctrine"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolverInterface"/>
             <argument type="service" id="form.factory"/>
             <argument type="service" id="router"/>
             <argument type="service" id="twig"/>
@@ -311,7 +311,7 @@
 
         <!-- Share links: the builder's endpoints and the overview page's forms -->
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkAnswer" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkAnswer">
-            <argument type="service" id="Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGeneratorInterface"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkIndexAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkIndexAction">

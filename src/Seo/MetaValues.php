@@ -12,7 +12,7 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
  * The meta title and meta description an entry shows in a locale. Each falls back through the fallback chain first, and
  * only when that leaves it empty to the field it names. See "SEO fields" in docs/spec/urls-and-seo.md
  */
-final readonly class MetaValues
+final readonly class MetaValues implements MetaValuesInterface
 {
     public function __construct(
         private ContentTypeRegistryInterface $contentTypes,

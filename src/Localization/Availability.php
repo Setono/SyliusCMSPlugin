@@ -12,7 +12,9 @@ use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
  * that translation has a title, and that translation isn't held back. Whole entries never fall back to another locale.
  * VisibleEntriesQuery filters on the same rule in SQL; the head tags' hreflang links and the overview page's Where it
  * shows read it here. See "Availability" in docs/spec/localization.md and "When an entry shows" in
- * docs/spec/content-model.md
+ * docs/spec/content-model.md. It's internal: the rule must stay the one the query has in SQL
+ *
+ * @internal
  */
 final readonly class Availability
 {

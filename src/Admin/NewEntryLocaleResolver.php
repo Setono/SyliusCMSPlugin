@@ -16,7 +16,7 @@ use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
  * of the entry's channels has it, and otherwise the default locale of the first of the entry's channels that has one,
  * or else the store's default locale. See "Create dialog" in docs/spec/admin.md
  */
-final readonly class NewEntryLocaleResolver
+final readonly class NewEntryLocaleResolver implements NewEntryLocaleResolverInterface
 {
     /**
      * @param LocaleContextInterface $localeContext in the admin, the admin user's locale

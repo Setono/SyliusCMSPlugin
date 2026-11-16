@@ -6,7 +6,7 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Container\ContainerInterface;
-use Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver;
+use Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolverInterface;
 use Setono\SyliusCMSPlugin\Event\EntryCreated;
 use Setono\SyliusCMSPlugin\Form\Type\CreateEntryType;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
@@ -50,7 +50,7 @@ final readonly class CreateEntryAction
         private ContainerInterface $entryFactories,
         private ManagerRegistry $managerRegistry,
         private ChannelsAndAudienceModifierInterface $channelsAndAudienceModifier,
-        private NewEntryLocaleResolver $localeResolver,
+        private NewEntryLocaleResolverInterface $localeResolver,
         private FormFactoryInterface $formFactory,
         private UrlGeneratorInterface $urlGenerator,
         private Environment $twig,

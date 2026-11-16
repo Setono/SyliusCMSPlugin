@@ -11,7 +11,7 @@ use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
 use Setono\SyliusCMSPlugin\Routing\EntryPath;
-use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator;
+use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGeneratorInterface;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\ChannelInterface as CoreChannelInterface;
@@ -28,7 +28,7 @@ final readonly class EntryShareLinks
      */
     public function __construct(
         private ShareLinkRepositoryInterface $shareLinks,
-        private ShareLinkUrlGenerator $urlGenerator,
+        private ShareLinkUrlGeneratorInterface $urlGenerator,
         private ChannelRepositoryInterface $channelRepository,
         private WorkingCopyProviderInterface $workingCopyProvider,
         private ContentTypeRegistryInterface $contentTypes,

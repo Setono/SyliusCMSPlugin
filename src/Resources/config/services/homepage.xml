@@ -27,5 +27,6 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Homepage\HomepageProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider"/>
         </service>
+        <service id="Setono\SyliusCMSPlugin\Homepage\HomepageResolverInterface" alias="Setono\SyliusCMSPlugin\Homepage\HomepageResolver"/>
     </services>
 </container>

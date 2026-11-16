@@ -11,7 +11,7 @@ use Setono\SyliusCMSPlugin\Seo\AlternateLink;
 use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface;
 use Setono\SyliusCMSPlugin\Seo\HeadTags;
 use Setono\SyliusCMSPlugin\Seo\Hreflang;
-use Setono\SyliusCMSPlugin\Seo\MetaValues;
+use Setono\SyliusCMSPlugin\Seo\MetaValuesInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Twig\Extension\RuntimeExtensionInterface;
 
@@ -22,7 +22,7 @@ use Twig\Extension\RuntimeExtensionInterface;
 final readonly class HeadTagsRuntime implements RuntimeExtensionInterface
 {
     public function __construct(
-        private MetaValues $metaValues,
+        private MetaValuesInterface $metaValues,
         private CanonicalUrlGeneratorInterface $canonicalUrls,
         private Availability $availability,
     ) {

@@ -7,6 +7,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
         </service>
+        <service id="Setono\SyliusCMSPlugin\Seo\MetaValuesInterface" alias="Setono\SyliusCMSPlugin\Seo\MetaValues"/>
 
         <!-- The one place an entry's canonical URL comes from, for its canonical and hreflang links. A homepage decorates it -->
         <service id="Setono\SyliusCMSPlugin\Seo\CanonicalUrlGenerator" class="Setono\SyliusCMSPlugin\Seo\CanonicalUrlGenerator">

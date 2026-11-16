@@ -14,7 +14,9 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
  * context. A block's conditions combine with AND, and the values within one condition with OR, which its kind decides.
  * A condition's `negate` gives "is not one of": the plugin negates, so kinds never do. A condition of a kind the code
  * no longer has never matches, so its block stays hidden rather than showing to shoppers it was meant to be hidden from.
- * See "Visibility conditions" in docs/spec/targeting.md
+ * See "Visibility conditions" in docs/spec/targeting.md. Projects add condition kinds rather than change how they combine
+ *
+ * @internal
  */
 final readonly class ConditionMatcher
 {

@@ -22,5 +22,6 @@
             <argument type="service" id="sylius.repository.channel"/>
             <argument type="service" id="router"/>
         </service>
+        <service id="Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGeneratorInterface" alias="Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator"/>
     </services>
 </container>

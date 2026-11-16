@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Shop;
 
-use Setono\SyliusCMSPlugin\Homepage\HomepageResolver;
+use Setono\SyliusCMSPlugin\Homepage\HomepageResolverInterface;
 use Setono\SyliusCMSPlugin\Rendering\LayoutRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,7 +24,7 @@ final readonly class HomepageAction
      */
     public function __construct(
         private object $storeHomepage,
-        private HomepageResolver $homepageResolver,
+        private HomepageResolverInterface $homepageResolver,
         private RenderContextFactoryInterface $renderContextFactory,
         private LayoutRendererInterface $layoutRenderer,
     ) {

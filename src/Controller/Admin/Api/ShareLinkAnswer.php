@@ -6,7 +6,7 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Json\ListedObject;
 use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
-use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator;
+use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGeneratorInterface;
 
 /**
  * A share link as the share_link_* endpoints answer with it: its id, its URL (null once the entry's draft has no URL in
@@ -19,7 +19,7 @@ final readonly class ShareLinkAnswer
 {
     private const DATE_FORMAT = 'Y-m-d\TH:i:s\Z';
 
-    public function __construct(private ShareLinkUrlGenerator $urlGenerator)
+    public function __construct(private ShareLinkUrlGeneratorInterface $urlGenerator)
     {
     }
 

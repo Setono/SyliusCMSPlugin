@@ -18,7 +18,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  * _cms_share query parameter. It's the URL of the entry's draft, which is what the link shows, so it follows the draft's
  * slug. The router's context is put back afterwards. See "Share links" in docs/spec/publishing.md
  */
-final readonly class ShareLinkUrlGenerator
+final readonly class ShareLinkUrlGenerator implements ShareLinkUrlGeneratorInterface
 {
     /**
      * @param ChannelRepositoryInterface<ChannelInterface> $channelRepository

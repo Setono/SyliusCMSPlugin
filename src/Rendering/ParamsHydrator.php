@@ -14,6 +14,8 @@ use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
  * Hydrates the parameters class of a condition kind from the parameter values stored with a condition: each of its
  * fields is hydrated by its field type's handler. Parameter values are shared by all translations. A missing value, or
  * one that doesn't fit, leaves the property at its default. See "The model" in docs/spec/extending.md
+ *
+ * @internal
  */
 final readonly class ParamsHydrator
 {
