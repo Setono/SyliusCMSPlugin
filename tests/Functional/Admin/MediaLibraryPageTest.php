@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * The hub's Library has Media, the media library's screen, which mounts the library app with its config. See
@@ -25,7 +26,7 @@ final class MediaLibraryPageTest extends WebTestCase
         self::addLocales('WEB', 'de_DE');
 
         $crawler = $client->request('GET', '/admin/cms');
-        $link = $crawler->filter('[data-hub-menu] a.item')->reduce(static fn ($item): bool => 'Media' === trim($item->text()));
+        $link = $crawler->filter('[data-hub-menu] a.item')->reduce(static fn (Crawler $item): bool => 'Media' === trim($item->text()));
         self::assertCount(1, $link);
         $crawler = $client->click($link->link());
 
