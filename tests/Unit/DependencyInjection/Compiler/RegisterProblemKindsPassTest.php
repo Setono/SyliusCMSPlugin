@@ -9,6 +9,8 @@ use Setono\SyliusCMSPlugin\Command\LintCommand;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterProblemKindsPass;
 use Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue;
 use Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprint;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
 use Symfony\Component\DependencyInjection\Argument\IteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -51,7 +53,27 @@ final class RegisterProblemKindsPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function it_does_nothing_without_the_finder_and_the_command(): void
+    public function it_hands_the_kinds_whose_problems_are_stored_to_the_count_updater_and_their_classes_to_the_fingerprint(): void
+    {
+        $this->setDefinition(ProblemCountUpdater::class, new Definition(ProblemCountUpdater::class, [[], null, null, null]));
+        $this->setDefinition(ProblemCountFingerprint::class, new Definition(ProblemCountFingerprint::class, [[], null, null, null, null]));
+        $this->setParameter('app.kind.class', MisfitValue::class);
+        $this->setDefinition('app.unknown', (new Definition(UnknownBlockType::class))->addTag('setono_sylius_cms.problem_kind'));
+        $this->setDefinition('app.misfit', (new Definition('%app.kind.class%'))->addTag('setono_sylius_cms.problem_kind', ['priority' => 10]));
+
+        $this->compile();
+
+        self::assertEquals(
+            new IteratorArgument([new Reference('app.misfit'), new Reference('app.unknown')]),
+            $this->container->getDefinition(ProblemCountUpdater::class)->getArgument(0),
+        );
+        self::assertSame([MisfitValue::class, UnknownBlockType::class], $this->container->getDefinition(ProblemCountFingerprint::class)->getArgument(0));
+    }
+
+    /**
+     * @test
+     */
+    public function it_does_nothing_without_the_services_it_hands_the_kinds_to(): void
     {
         $this->setDefinition('app.kind', (new Definition(UnknownBlockType::class))->addTag('setono_sylius_cms.problem_kind', ['lint' => true]));
 
@@ -59,5 +81,7 @@ final class RegisterProblemKindsPassTest extends AbstractCompilerPassTestCase
 
         $this->assertContainerBuilderNotHasService(ProblemFinder::class);
         $this->assertContainerBuilderNotHasService(LintCommand::class);
+        $this->assertContainerBuilderNotHasService(ProblemCountUpdater::class);
+        $this->assertContainerBuilderNotHasService(ProblemCountFingerprint::class);
     }
 }

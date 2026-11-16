@@ -9,8 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Admin\MainMenuListener;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
-use Setono\SyliusCMSPlugin\Problem\ProblemSummary;
-use Setono\SyliusCMSPlugin\Problem\ProblemSummaryProviderInterface;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Sylius\Bundle\UiBundle\Menu\Event\MenuBuilderEvent;
 use Symfony\Component\Translation\Loader\YamlFileLoader;
 use Symfony\Component\Translation\Translator;
@@ -71,7 +70,7 @@ final class MainMenuListenerTest extends TestCase
      */
     public function its_badge_counts_the_errors_and_warnings_that_need_attention_marked_as_an_error_when_there_is_one(): void
     {
-        $content = $this->syliusMenu(['configuration'], new ProblemSummary(['0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a' => new ProblemCount(1, 1), '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4b' => new ProblemCount(0, 1)]))->getChild('setono_sylius_cms')?->getChild('content');
+        $content = $this->syliusMenu(['configuration'], new ProblemCount(1, 2))->getChild('setono_sylius_cms')?->getChild('content');
         self::assertNotNull($content);
 
         self::assertSame([
@@ -86,7 +85,7 @@ final class MainMenuListenerTest extends TestCase
      */
     public function its_badge_is_a_warning_when_only_warnings_need_attention(): void
     {
-        $content = $this->syliusMenu(['configuration'], new ProblemSummary(['0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4b' => new ProblemCount(0, 1)]))->getChild('setono_sylius_cms')?->getChild('content');
+        $content = $this->syliusMenu(['configuration'], new ProblemCount(0, 1))->getChild('setono_sylius_cms')?->getChild('content');
         self::assertNotNull($content);
 
         self::assertSame([
@@ -99,7 +98,7 @@ final class MainMenuListenerTest extends TestCase
     /**
      * @param list<string> $sections
      */
-    private function syliusMenu(array $sections, ProblemSummary $summary = new ProblemSummary()): ItemInterface
+    private function syliusMenu(array $sections, ProblemCount $problems = new ProblemCount()): ItemInterface
     {
         $factory = MenuFactory::create();
         $menu = $factory->createItem('root');
@@ -107,14 +106,14 @@ final class MainMenuListenerTest extends TestCase
             $menu->addChild($section);
         }
 
-        $summaries = $this->prophesize(ProblemSummaryProviderInterface::class);
-        $summaries->getSummary()->willReturn($summary);
+        $problemCounts = $this->prophesize(ProblemCountProviderInterface::class);
+        $problemCounts->getTotal()->willReturn($problems);
 
         $translator = new Translator('en');
         $translator->addLoader('yaml', new YamlFileLoader());
         $translator->addResource('yaml', dirname(__DIR__, 3) . '/src/Resources/translations/messages.en.yaml', 'en');
 
-        (new MainMenuListener($summaries->reveal(), $translator))(new MenuBuilderEvent($factory, $menu));
+        (new MainMenuListener($problemCounts->reveal(), $translator))(new MenuBuilderEvent($factory, $menu));
 
         return $menu;
     }

@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
@@ -54,6 +55,8 @@ final class EntryIndexListenerTest extends TestCase
         $localeContext->getLocaleCode()->willReturn('en_US');
         $scheduledPublishes = $this->prophesize(ScheduledPublishRepositoryInterface::class);
         $scheduledPublishes->findByEntries(Argument::any())->willReturn([]);
+        $problemCounts = $this->prophesize(ProblemCountProviderInterface::class);
+        $problemCounts->getCounts(Argument::any())->willReturn([]);
 
         $this->entryRows = new EntryRows(
             $this->drafts->reveal(),
@@ -64,6 +67,7 @@ final class EntryIndexListenerTest extends TestCase
             $localeContext->reveal(),
             $scheduledPublishes->reveal(),
             new MockClock(),
+            $problemCounts->reveal(),
         );
     }
 

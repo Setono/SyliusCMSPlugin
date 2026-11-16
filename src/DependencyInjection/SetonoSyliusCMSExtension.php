@@ -128,22 +128,13 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     }
 
     /**
-     * The problem summary's cache pool, setono_sylius_cms.cache.problems, which keeps the count of every entry's problems
-     * for five minutes on the app's cache adapter (see Problem\ProblemSummaryProvider), and the stylesheet of the Content
-     * badge on every admin page, after Sylius's own styles (10). Admin\MainMenuListener puts the count on the Content
-     * item's link, because Sylius's menu template has no place for a badge of its own, and the stylesheet shows it.
-     * Projects change either in their own framework or sylius_ui config. See "Navigation" and "Problems" in docs/spec/admin.md
+     * The stylesheet of the Content badge on every admin page, after Sylius's own styles (10). Admin\MainMenuListener
+     * puts the count on the Content item's link, because Sylius's menu template has no place for a badge of its own,
+     * and the stylesheet shows it. Projects change it in their own sylius_ui config. See "Navigation" and "Problems" in
+     * docs/spec/admin.md
      */
     private function prependProblems(ContainerBuilder $container): void
     {
-        $container->prependExtensionConfig('framework', [
-            'cache' => [
-                'pools' => [
-                    'setono_sylius_cms.cache.problems' => ['adapter' => 'cache.app', 'default_lifetime' => 300],
-                ],
-            ],
-        ]);
-
         $container->prependExtensionConfig('sylius_ui', [
             'events' => [
                 'sylius.admin.layout.stylesheets' => [

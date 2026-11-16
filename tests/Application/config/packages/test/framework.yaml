@@ -5,8 +5,3 @@ framework:
     # In debug, Symfony sends "X-Robots-Tag: noindex" on every response. Off, as in production, the tests see only
     # the one the plugin sends on preview responses (docs/spec/rendering.md#preview-mode-and-share-links)
     disallow_search_engine_index: false
-    cache:
-        pools:
-            # Every request counts the problems again, so a test sees the entries it made, and none from the tests before it
-            setono_sylius_cms.cache.problems:
-                adapter: cache.adapter.array

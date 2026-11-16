@@ -294,26 +294,12 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
-    public function it_keeps_the_problem_summary_in_a_cache_pool_on_the_apps_adapter_for_five_minutes(): void
-    {
-        $this->load();
-
-        self::assertContains(
-            ['cache' => ['pools' => ['setono_sylius_cms.cache.problems' => ['adapter' => 'cache.app', 'default_lifetime' => 300]]]],
-            $this->container->getExtensionConfig('framework'),
-        );
-    }
-
-    /**
-     * @test
-     */
     public function it_routes_the_message_that_runs_a_scheduled_publish_to_sylius_main_transport(): void
     {
         $this->load();
 
         $framework = $this->container->getExtensionConfig('framework');
-        self::assertContains(['messenger' => ['routing' => [ScheduledPublishDue::class => 'main']]], $framework);
-        self::assertCount(2, $framework);
+        self::assertSame([['messenger' => ['routing' => [ScheduledPublishDue::class => 'main']]]], $framework);
     }
 
     /**

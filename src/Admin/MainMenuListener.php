@@ -4,22 +4,23 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Admin;
 
-use Setono\SyliusCMSPlugin\Problem\ProblemSummaryProviderInterface;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Sylius\Bundle\UiBundle\Menu\Event\MenuBuilderEvent;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Gives the Sylius admin menu (sylius.menu.admin.main) one item, Content, which opens the hub. It sits before
  * Configuration, and is current on every page of the hub. Its badge counts the errors and warnings that need
- * attention: Sylius's menu template has no place for a badge, so the count and the worst severity go on the item's
- * link, which admin/menu.css shows as a label. See "Navigation" and "Problems" in docs/spec/admin.md
+ * attention, read from the counts stored with the entries. Sylius's menu template has no place for a badge, so the
+ * count and the worst severity go on the item's link, which admin/menu.css shows as a label. See "Navigation" and
+ * "Problems" in docs/spec/admin.md
  */
 final readonly class MainMenuListener
 {
     public const SECTION = 'setono_sylius_cms';
 
     public function __construct(
-        private ProblemSummaryProviderInterface $problemSummaries,
+        private ProblemCountProviderInterface $problemCounts,
         private TranslatorInterface $translator,
     ) {
     }
@@ -39,7 +40,7 @@ final readonly class MainMenuListener
             ->setLabelAttribute('icon', 'pencil alternate')
         ;
 
-        $problems = $this->problemSummaries->getSummary()->total();
+        $problems = $this->problemCounts->getTotal();
         if ($problems->total() > 0) {
             $content
                 ->setLinkAttribute('data-cms-problems', $problems->errors > 0 ? 'error' : 'warning')

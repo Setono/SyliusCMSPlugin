@@ -13,5 +13,11 @@
             <argument type="service" id="doctrine"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Query\UrlClaimsQueryInterface" alias="Setono\SyliusCMSPlugin\Query\UrlClaimsQuery"/>
+
+        <!-- The problem counts stored with the entries -->
+        <service id="Setono\SyliusCMSPlugin\Query\ProblemCountsQuery" class="Setono\SyliusCMSPlugin\Query\ProblemCountsQuery">
+            <argument type="service" id="doctrine"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface" alias="Setono\SyliusCMSPlugin\Query\ProblemCountsQuery"/>
     </services>
 </container>

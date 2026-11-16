@@ -21,6 +21,8 @@ use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
+use Setono\SyliusCMSPlugin\Problem\ProblemCount;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
@@ -43,12 +45,22 @@ final class EntryRowsTest extends TestCase
     /** @var ObjectProphecy<UrlGeneratorInterface> */
     private ObjectProphecy $urlGenerator;
 
+    /** @var ObjectProphecy<ProblemCountProviderInterface> */
+    private ObjectProphecy $problemCounts;
+
     protected function setUp(): void
     {
         $this->drafts = $this->prophesize(DraftRepositoryInterface::class);
         $this->drafts->findByEntries(Argument::any())->willReturn([]);
         $this->scheduledPublishes = $this->prophesize(ScheduledPublishRepositoryInterface::class);
         $this->scheduledPublishes->findByEntries(Argument::any())->willReturn([]);
+        $this->problemCounts = $this->prophesize(ProblemCountProviderInterface::class);
+        $this->problemCounts->getCounts(Argument::any())->will(static function (array $arguments): array {
+            /** @var list<EntryInterface> $entries */
+            $entries = $arguments[0];
+
+            return array_fill_keys(array_map(static fn (EntryInterface $entry): string => $entry->getUuid(), $entries), new ProblemCount());
+        });
 
         $this->urlGenerator = $this->prophesize(UrlGeneratorInterface::class);
         $this->urlGenerator->generate('setono_sylius_cms_shop_entry', Argument::type('array'))->will(static function (array $arguments): string {
@@ -255,10 +267,26 @@ final class EntryRowsTest extends TestCase
     /**
      * @test
      */
+    public function it_reads_the_problem_counts_of_a_page_of_entries_at_once_for_the_problem_marker(): void
+    {
+        $about = self::page(['en_US' => ['About us', 'about-us']]);
+        $contact = self::page(['en_US' => ['Contact', 'contact']]);
+        $this->problemCounts->getCounts([$about, $contact])->willReturn([$about->getUuid() => new ProblemCount(1, 2), $contact->getUuid() => new ProblemCount()])->shouldBeCalledOnce();
+
+        [$aboutRow, $contactRow] = $this->rows([$about, $contact]);
+
+        self::assertEquals(new ProblemCount(1, 2), $aboutRow->problems);
+        self::assertEquals(new ProblemCount(), $contactRow->problems);
+    }
+
+    /**
+     * @test
+     */
     public function it_loads_nothing_for_a_page_without_entries(): void
     {
         $this->drafts->findByEntries(Argument::any())->shouldNotBeCalled();
         $this->scheduledPublishes->findByEntries(Argument::any())->shouldNotBeCalled();
+        $this->problemCounts->getCounts(Argument::any())->shouldNotBeCalled();
 
         $this->entryRows()->load(self::pageOf([]));
     }
@@ -348,6 +376,7 @@ final class EntryRowsTest extends TestCase
             $localeContext->reveal(),
             $this->scheduledPublishes->reveal(),
             new MockClock('2026-11-16 12:00:00', 'UTC'),
+            $this->problemCounts->reveal(),
         );
     }
 

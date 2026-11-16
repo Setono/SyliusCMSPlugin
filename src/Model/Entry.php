@@ -71,6 +71,18 @@ abstract class Entry implements EntryInterface
     /** @var Collection<array-key, EntryAudienceGroup> */
     protected Collection $audienceGroups;
 
+    /*
+     * How many errors and warnings the working copy has, and the fingerprint of the code they were counted with, or
+     * null until they're counted. They're written and read in SQL (Problem\ProblemCountUpdater and
+     * Problem\ProblemCountProvider), never through the entry, so what an entry holds here can be out of date
+     */
+
+    protected int $problemErrors = 0;
+
+    protected int $problemWarnings = 0;
+
+    protected ?string $problemsCountedWith = null;
+
     public function __construct()
     {
         $this->initializeTranslationsCollection();

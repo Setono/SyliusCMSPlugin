@@ -10,7 +10,7 @@ use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Admin\EntryStatusFilter;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
-use Setono\SyliusCMSPlugin\Problem\ProblemSummaryProviderInterface;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Sylius\Bundle\GridBundle\Doctrine\DataSourceInterface as DoctrineDataSourceInterface;
 use Sylius\Component\Grid\Data\DataSourceInterface;
 use Sylius\Component\Grid\Filtering\FilterInterface;
@@ -26,7 +26,7 @@ final readonly class StatusFilter implements FilterInterface
 
     public function __construct(
         private ClockInterface $clock,
-        private ProblemSummaryProviderInterface $problemSummaries,
+        private ProblemCountProviderInterface $problemCounts,
     ) {
     }
 
@@ -48,7 +48,7 @@ final readonly class StatusFilter implements FilterInterface
         $entry = $queryBuilder->getRootAliases()[0];
 
         match ($status) {
-            EntryStatusFilter::NeedsAttention => $this->needsAttention($queryBuilder, $entry),
+            EntryStatusFilter::NeedsAttention => $queryBuilder->andWhere($this->problemCounts->getNeedsAttentionCondition($queryBuilder, $entry)),
             EntryStatusFilter::UnpublishedChanges => $queryBuilder->andWhere(sprintf(
                 'EXISTS (SELECT cms_status_draft.id FROM %s cms_status_draft WHERE cms_status_draft.entry = %s)',
                 DraftInterface::class,
@@ -66,20 +66,5 @@ final readonly class StatusFilter implements FilterInterface
                 ->setParameter('cms_status_disabled', false, Types::BOOLEAN)
                 ->setParameter('cms_status_now', $this->clock->now()->setTimezone(new \DateTimeZone('UTC')), Types::DATETIME_IMMUTABLE),
         };
-    }
-
-    /**
-     * The entries with a problem, which the problem summary finds outside SQL, by their UUIDs
-     */
-    private function needsAttention(QueryBuilder $queryBuilder, string $entry): void
-    {
-        $uuids = $this->problemSummaries->getSummary()->entryUuids();
-        if ([] === $uuids) {
-            $queryBuilder->andWhere('1 = 0');
-
-            return;
-        }
-
-        $queryBuilder->andWhere(sprintf('%s.uuid IN (:cms_status_needs_attention)', $entry))->setParameter('cms_status_needs_attention', $uuids);
     }
 }

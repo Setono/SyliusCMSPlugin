@@ -3,8 +3,8 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <!--
-        Finds an entry's problems, of every kind, which its overview page gets through cms_admin_entry_problems().
-        RegisterProblemKindsPass hands it the kinds
+        Finds an entry's problems, of every kind, as they are now, which its overview page gets through
+        cms_admin_entry_problems(). RegisterProblemKindsPass hands it the kinds
         -->
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemFinder" class="Setono\SyliusCMSPlugin\Problem\ProblemFinder">
             <argument type="collection"/>
@@ -15,25 +15,44 @@
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemFinder"/>
 
         <!--
-        The problems across the store, counted per entry, which the lists' marker (through cms_admin_problem_summary()),
-        their Needs attention filter and the Content badge read. The count is kept in the cache pool
-        setono_sylius_cms.cache.problems, and dropped when a flush writes an entry or its draft
+        The errors and warnings of each entry, counted when the entry is written and stored with it, which the lists'
+        marker, their Needs attention filter and the Content badge read. RegisterProblemKindsPass hands the updater
+        the kinds whose problems are stored, and the fingerprint their classes
         -->
-        <service id="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProvider" class="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProvider">
-            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface"/>
-            <argument type="service" id="setono_sylius_cms.cache.problems"/>
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater" class="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater">
+            <argument type="collection"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprintInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater"/>
 
-            <tag name="twig.runtime"/>
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprint" class="Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprint">
+            <argument type="collection"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+
             <tag name="kernel.reset" method="reset"/>
         </service>
-        <service id="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProviderInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProvider"/>
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprintInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprint"/>
 
-        <service id="Setono\SyliusCMSPlugin\Problem\ProblemSummaryListener" class="Setono\SyliusCMSPlugin\Problem\ProblemSummaryListener">
-            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProviderInterface"/>
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountProvider" class="Setono\SyliusCMSPlugin\Problem\ProblemCountProvider">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface"/>
+
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemCountProvider"/>
+
+        <!-- Has the entries a flush writes counted again once it's done -->
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountListener" class="Setono\SyliusCMSPlugin\Problem\ProblemCountListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface"/>
 
             <tag name="doctrine.event_listener" event="onFlush"/>
             <tag name="doctrine.event_listener" event="postFlush"/>
+            <tag name="kernel.reset" method="reset"/>
         </service>
 
         <!--

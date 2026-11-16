@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\DependencyInjection\Compiler;
 
 use Setono\SyliusCMSPlugin\Command\LintCommand;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprint;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
 use Symfony\Component\DependencyInjection\Argument\IteratorArgument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -13,9 +15,10 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
- * Hands the problem kinds, the services tagged setono_sylius_cms.problem_kind, to the problem finder, which the admin
- * reads every kind through, and those whose tag has `lint: true` to setono:cms:lint. A tag's `priority` orders them.
- * See "Problems" in docs/spec/admin.md
+ * Hands the problem kinds, the services tagged setono_sylius_cms.problem_kind, to the problem finder, which the
+ * overview page reads every kind through, and those whose tag has `lint: true` to setono:cms:lint. The kinds whose
+ * problems are stored go to the problem count updater, and their classes to the fingerprint of what the counts depend
+ * on. A tag's `priority` orders them. See "Problems" in docs/spec/admin.md
  */
 final class RegisterProblemKindsPass implements CompilerPassInterface
 {
@@ -34,6 +37,16 @@ final class RegisterProblemKindsPass implements CompilerPassInterface
         if ($container->hasDefinition(LintCommand::class)) {
             $linted = array_values(array_filter($kinds, static fn (Reference $kind): bool => self::isLinted($container, (string) $kind)));
             $container->getDefinition(LintCommand::class)->setArgument(5, new IteratorArgument($linted));
+        }
+
+        $classes = TaggedClasses::of($container, self::TAG, 'problem kind');
+
+        if ($container->hasDefinition(ProblemCountUpdater::class)) {
+            $container->getDefinition(ProblemCountUpdater::class)->setArgument(0, new IteratorArgument($kinds));
+        }
+
+        if ($container->hasDefinition(ProblemCountFingerprint::class)) {
+            $container->getDefinition(ProblemCountFingerprint::class)->setArgument(0, array_map(static fn (Reference $kind): string => $classes[(string) $kind], $kinds));
         }
     }
 

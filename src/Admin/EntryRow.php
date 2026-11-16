@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Admin;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
+use Setono\SyliusCMSPlugin\Problem\ProblemCount;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 
 /**
@@ -26,6 +27,7 @@ final readonly class EntryRow
      *                                                        null when it has none
      * @param string|null $scheduledPublishStatus its state, an EntryStatus: publishes at a time, overdue or failed, or
      *                                           null when there's none
+     * @param ProblemCount $problems its errors and warnings, as the lists' problem marker shows them
      */
     public function __construct(
         public EntryInterface $entry,
@@ -37,6 +39,7 @@ final readonly class EntryRow
         public ?DraftInterface $draft = null,
         public ?ScheduledPublishInterface $scheduledPublish = null,
         public ?string $scheduledPublishStatus = null,
+        public ProblemCount $problems = new ProblemCount(),
     ) {
     }
 }

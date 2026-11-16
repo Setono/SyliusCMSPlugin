@@ -20,15 +20,14 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Revision;
 use Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
-use Setono\SyliusCMSPlugin\Problem\ProblemSummaryProvider;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
-use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
@@ -48,7 +47,6 @@ use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Component\Locale\Model\Locale;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
-use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -63,14 +61,11 @@ final class AdminExtensionTest extends IntegrationTestCase
 {
     use ProphecyTrait;
 
-    private Page $storesEntry;
-
     /** @var ObjectProphecy<RepositoryInterface<CustomerGroupInterface>> */
     private ObjectProphecy $customerGroups;
 
     protected function setUp(): void
     {
-        $this->storesEntry = new Page();
         /** @var ObjectProphecy<RepositoryInterface<CustomerGroupInterface>> $customerGroups */
         $customerGroups = $this->prophesize(RepositoryInterface::class);
         $this->customerGroups = $customerGroups;
@@ -121,13 +116,11 @@ final class AdminExtensionTest extends IntegrationTestCase
     }
 
     /**
-     * The store's one entry
-     *
      * @return array{page: Page}
      */
     public function aPageWithABlockOfATypeTheCodeNoLongerHas(string $key): array
     {
-        $page = $this->storesEntry;
+        $page = new Page();
         $page->setBlockTree(new StoredTree(null, [new StoredBlock($key, 'promo', 1)]));
 
         return ['page' => $page];
@@ -167,6 +160,8 @@ final class AdminExtensionTest extends IntegrationTestCase
 
         $scheduledPublishes = $this->prophesize(ScheduledPublishRepositoryInterface::class);
         $scheduledPublishes->findByEntries(Argument::any())->willReturn([]);
+        $problemCounts = $this->prophesize(ProblemCountProviderInterface::class);
+        $problemCounts->getCounts(Argument::any())->willReturn([]);
 
         $entryRows = new EntryRows(
             $drafts->reveal(),
@@ -177,6 +172,7 @@ final class AdminExtensionTest extends IntegrationTestCase
             $localeContext->reveal(),
             $scheduledPublishes->reveal(),
             new MockClock(),
+            $problemCounts->reveal(),
         );
         $oldSlugs = $this->prophesize(OldSlugRepositoryInterface::class);
         $oldSlugs->findByEntry(Argument::any())->willReturn([]);
@@ -192,9 +188,6 @@ final class AdminExtensionTest extends IntegrationTestCase
         $workingCopies = $this->prophesize(WorkingCopyProviderInterface::class);
         $workingCopies->getWorkingCopy(Argument::any())->willReturnArgument(0);
         $problemFinder = new ProblemFinder([new UnknownBlockType(new BlockTypeRegistry([], new FieldReader()))], $workingCopies->reveal());
-        $entries = $this->prophesize(EntryRepositoryInterface::class);
-        $entries->iterateAll()->willReturn([$this->aPageWithABlockOfATypeTheCodeNoLongerHas('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a')['page']]);
-        $problemSummaries = new ProblemSummaryProvider($entries->reveal(), $problemFinder, new ArrayAdapter());
 
         return [new FactoryRuntimeLoader([
             EntryRows::class => static fn (): EntryRows => $entryRows,
@@ -203,7 +196,6 @@ final class AdminExtensionTest extends IntegrationTestCase
             EntryRevisions::class => static fn (): EntryRevisions => $entryRevisions,
             AdminRuntime::class => static fn (): AdminRuntime => $runtime,
             ProblemFinder::class => static fn (): ProblemFinder => $problemFinder,
-            ProblemSummaryProvider::class => static fn (): ProblemSummaryProvider => $problemSummaries,
         ])];
     }
 
