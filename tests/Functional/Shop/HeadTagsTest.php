@@ -147,9 +147,7 @@ final class HeadTagsTest extends WebTestCase
     {
         $page = self::reloadPage($page);
         $translation = $page->getTranslations()->get($locale);
-        if (null === $translation) {
-            $translation = self::addTranslation($page, $locale, null);
-        }
+        $translation ??= self::addTranslation($page, $locale, null);
 
         $translation->setTitle($fields['title'] ?? $translation->getTitle());
         $translation->setSlug($fields['slug'] ?? $translation->getSlug());

@@ -128,9 +128,7 @@ final class TranslationsTest extends WebTestCase
     {
         $page = self::reloadPage($page);
         $translation = $page->getTranslations()->get($locale);
-        if (null === $translation) {
-            $translation = self::addTranslation($page, $locale, $title, $slug, $shown);
-        }
+        $translation ??= self::addTranslation($page, $locale, $title, $slug, $shown);
 
         $translation->setTitle($title);
         $translation->setSlug($slug);
