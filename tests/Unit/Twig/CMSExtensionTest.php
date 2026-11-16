@@ -9,6 +9,7 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\RichText;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -132,6 +133,7 @@ final class CMSExtensionTest extends IntegrationTestCase
             HeadTagsRuntime::class => static fn (): HeadTagsRuntime => new HeadTagsRuntime(
                 new MetaValues($contentTypes, $fallbackValues),
                 new CanonicalUrlGenerator($contentTypes, new UrlGenerator($shopRoutes, new RequestContext(host: 'shop.example', scheme: 'https'))),
+                new Availability(),
             ),
         ]);
         $blockTwig->addRuntimeLoader($runtimes);
