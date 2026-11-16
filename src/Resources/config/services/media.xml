@@ -64,6 +64,12 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface" alias="Setono\SyliusCMSPlugin\Media\MediaUrlGenerator"/>
 
+        <!-- The locales media items have alt text in, which the library's screen and the builder's media picker list -->
+        <service id="Setono\SyliusCMSPlugin\Media\MediaLocales" class="Setono\SyliusCMSPlugin\Media\MediaLocales">
+            <argument type="service" id="sylius.translation_locale_provider"/>
+            <argument type="service" id="sylius.repository.locale"/>
+        </service>
+
         <!-- The media items Media and Media list fields refer to, loaded before a tree renders -->
         <service id="Setono\SyliusCMSPlugin\Media\MediaItemReferenceLoader" class="Setono\SyliusCMSPlugin\Media\MediaItemReferenceLoader">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>

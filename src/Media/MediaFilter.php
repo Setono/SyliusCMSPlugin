@@ -14,15 +14,19 @@ final readonly class MediaFilter
 {
     /**
      * @param string|null $search matches the name, the original filename and the alt text in every locale
+     * @param list<MediaKind> $kinds the kinds to show, or none to show every kind. The builder's media picker shows only
+     *                               the kinds its field takes
      * @param list<string>|null $missingAltIn the store's locales, to show only images without alt text in one or more of
      *                                        them, or null to show media items with alt text or without
+     * @param list<string>|null $uuids only the media items with these UUIDs, such as those a field holds, or null for any
      */
     public function __construct(
         public ?MediaFolderInterface $folder = null,
         public bool $unsorted = false,
         public ?string $search = null,
-        public ?MediaKind $kind = null,
+        public array $kinds = [],
         public ?array $missingAltIn = null,
+        public ?array $uuids = null,
     ) {
     }
 }

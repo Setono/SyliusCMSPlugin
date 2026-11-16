@@ -86,8 +86,12 @@ class MediaItemRepository extends EntityRepository implements MediaItemRepositor
             $queryBuilder->andWhere('o.folder IS NULL');
         }
 
-        if (null !== $filter->kind) {
-            $queryBuilder->andWhere('o.kind = :kind')->setParameter('kind', $filter->kind->value);
+        if ([] !== $filter->kinds) {
+            $queryBuilder->andWhere('o.kind IN (:kinds)')->setParameter('kinds', array_map(static fn (MediaKind $kind): string => $kind->value, $filter->kinds));
+        }
+
+        if (null !== $filter->uuids) {
+            $queryBuilder->andWhere('o.uuid IN (:uuids)')->setParameter('uuids', [] === $filter->uuids ? [''] : $filter->uuids);
         }
 
         $search = null === $filter->search ? '' : trim($filter->search);

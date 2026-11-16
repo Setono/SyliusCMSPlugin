@@ -14,12 +14,14 @@ use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * The media items the library shows, newest first, a page at a time: in the folder whose UUID is in `folder`, or in
- * Unsorted for `folder=unsorted`, or else in All media, matching the search in `q`, of the kind in `kind`, and only the
- * images missing alt text in one or more of the store's locales with `missingAlt=1`. See "Search and filters" in
- * docs/spec/media.md
+ * Unsorted for `folder=unsorted`, or else in All media, matching the search in `q`, of the kinds in `kind` (such as
+ * `image,document` for a media field that takes both), only the images missing alt text in one or more of the store's
+ * locales with `missingAlt=1`, and only the media items with the UUIDs in `uuids`, which the builder's media fields look
+ * up the media items they hold with. See "Search and filters" in docs/spec/media.md
  */
 final readonly class MediaIndexAction
 {
@@ -42,17 +44,29 @@ final readonly class MediaIndexAction
 
         $query = $request->query->all();
         $folder = is_string($query['folder'] ?? null) ? $query['folder'] : '';
-        $kind = MediaKind::tryFrom(is_string($query['kind'] ?? null) ? $query['kind'] : '');
-        if (null === $kind && '' !== ($query['kind'] ?? '')) {
-            return BuilderRequest::badRequest('The kind must be image, video or document');
+
+        $kinds = [];
+        foreach (self::list($query['kind'] ?? null) as $code) {
+            $kind = MediaKind::tryFrom($code);
+            if (null === $kind) {
+                return BuilderRequest::badRequest('The kind must be image, video or document, or several of them separated by commas');
+            }
+
+            $kinds[] = $kind;
+        }
+
+        $uuids = isset($query['uuids']) ? self::list($query['uuids']) : null;
+        if (null !== $uuids && [] !== array_filter($uuids, static fn (string $uuid): bool => !Uuid::isValid($uuid))) {
+            return BuilderRequest::badRequest('The uuids must be media item UUIDs separated by commas');
         }
 
         $filter = new MediaFilter(
             folder: '' === $folder || self::UNSORTED === $folder ? null : $this->folderRepository->findOneByUuid($folder) ?? throw new NotFoundHttpException(sprintf('There is no media folder %s', $folder)),
             unsorted: self::UNSORTED === $folder,
             search: is_string($query['q'] ?? null) ? $query['q'] : null,
-            kind: $kind,
+            kinds: $kinds,
             missingAltIn: $request->query->getBoolean('missingAlt') ? array_values($this->translationLocaleProvider->getDefinedLocalesCodes()) : null,
+            uuids: $uuids,
         );
 
         $paginator = $this->mediaItemRepository->createLibraryPaginator($filter);
@@ -68,5 +82,15 @@ final readonly class MediaIndexAction
             'pages' => $paginator->getNbPages(),
             'total' => $paginator->getNbResults(),
         ]);
+    }
+
+    /**
+     * The values of a parameter that lists them separated by commas, without empty ones
+     *
+     * @return list<string>
+     */
+    private static function list(mixed $parameter): array
+    {
+        return is_string($parameter) ? array_values(array_filter(explode(',', $parameter), static fn (string $value): bool => '' !== $value)) : [];
     }
 }

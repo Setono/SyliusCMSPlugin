@@ -113,6 +113,7 @@
             <argument type="service" id="sylius.repository.customer_group"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\StartingValuesInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaLocales"/>
 
             <tag name="controller.service_arguments"/>
         </service>
@@ -356,8 +357,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\BuilderCsrfToken"/>
             <argument type="service" id="router"/>
-            <argument type="service" id="sylius.translation_locale_provider"/>
-            <argument type="service" id="sylius.repository.locale"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaLocales"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\UploadLimit"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaTypes"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\UiStrings"/>
