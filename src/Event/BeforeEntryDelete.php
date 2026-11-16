@@ -12,31 +12,12 @@ use Symfony\Contracts\EventDispatcher\Event;
  */
 final class BeforeEntryDelete extends Event
 {
-    private ?string $vetoMessage = null;
+    use VetoTrait;
 
     /**
      * @param EntryInterface $entry the entry about to be deleted. Listeners read it and leave it as it is
      */
     public function __construct(public readonly EntryInterface $entry)
     {
-    }
-
-    /**
-     * Stops the delete, and the listeners after this one
-     */
-    public function veto(string $message): void
-    {
-        $this->vetoMessage = $message;
-        $this->stopPropagation();
-    }
-
-    public function isVetoed(): bool
-    {
-        return null !== $this->vetoMessage;
-    }
-
-    public function getVetoMessage(): ?string
-    {
-        return $this->vetoMessage;
     }
 }
