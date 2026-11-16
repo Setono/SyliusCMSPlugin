@@ -1,0 +1,10 @@
+--TEST--
+cms_field() prints an entry field that's empty in the locale from the first locale the fallback chain reaches that has it, escaped
+--TEMPLATE--
+<h1>{{ cms_field(entry, "title") }}</h1>
+<h1>{{ cms_field(other, "title") }}</h1>
+--DATA--
+return $this->rendering(['entry' => $this->page(['en_US' => 'About us', 'de_DE' => 'Über uns', 'de_CH' => '']), 'other' => $this->page(['en_US' => 'About <us>'])], locale: 'de_CH')
+--EXPECT--
+<h1>Über uns</h1>
+<h1>About &lt;us&gt;</h1>

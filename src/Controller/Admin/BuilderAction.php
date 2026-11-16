@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin;
 
+use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Setono\SyliusCMSPlugin\Security\BuilderCsrfToken;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
+use Sylius\Component\Core\Model\ChannelInterface as CoreChannelInterface;
 use Sylius\Component\Customer\Model\CustomerGroupInterface;
+use Sylius\Component\Locale\Model\LocaleInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -39,6 +42,7 @@ final readonly class BuilderAction
         private Environment $twig,
         private ChannelRepositoryInterface $channelRepository,
         private RepositoryInterface $customerGroupRepository,
+        private FallbackChainInterface $fallbackChain,
     ) {
     }
 
@@ -47,6 +51,7 @@ final readonly class BuilderAction
         $this->adminAccessChecker->denyUnlessAdmin();
 
         $entry = $this->entryRepository->findOneByUuid($uuid) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $uuid));
+        $channels = $this->channels();
 
         return new Response($this->twig->render('@SetonoSyliusCMSPlugin/admin/builder.html.twig', [
             'entry' => $entry,
@@ -66,7 +71,12 @@ final readonly class BuilderAction
                     'previewRender' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_render'),
                     'presence' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_presence', ['uuid' => $entry->getUuid()]),
                 ],
-                'channels' => $this->channels(),
+                'channels' => array_map(static fn (array $channel): array => [
+                    'code' => $channel['channel']->getCode(),
+                    'name' => $channel['channel']->getName(),
+                    'locales' => array_keys($channel['locales']),
+                ], $channels),
+                'locales' => $this->locales($channels, $request->getLocale()),
                 'customerGroups' => $this->customerGroups(),
                 // The rest of the UI strings arrive with the registry, so the app shows these until it has loaded
                 'strings' => [
@@ -78,8 +88,8 @@ final readonly class BuilderAction
     }
 
     /**
-     * The builder edits one locale at a time: the store's default locale, or else the entry's first translation.
-     * The locale switcher comes with translations (#232)
+     * The builder edits one locale at a time, and opens in the store's default locale, or else the entry's first
+     * translation. The locale switcher picks another
      */
     private function editedLocale(EntryInterface $entry): string
     {
@@ -90,16 +100,50 @@ final readonly class BuilderAction
     }
 
     /**
-     * The store's channels, which the settings pick the entry's channels from. The preview picks from the entry's
+     * The store's channels, which the settings pick the entry's channels from, with their locales, the channel's default
+     * locale first and then the others by code. The preview picks from the entry's channels, and the locale switcher
+     * offers their locales
      *
-     * @return list<array{code: string|null, name: string|null}>
+     * @return list<array{channel: ChannelInterface, locales: array<string, LocaleInterface>}>
      */
     private function channels(): array
     {
-        return array_values(array_map(
-            static fn (ChannelInterface $channel): array => ['code' => $channel->getCode(), 'name' => $channel->getName()],
-            $this->channelRepository->findBy([], ['id' => 'ASC']),
-        ));
+        return array_values(array_map(static function (ChannelInterface $channel): array {
+            $locales = [];
+            if ($channel instanceof CoreChannelInterface) {
+                foreach ($channel->getLocales() as $locale) {
+                    $locales[(string) $locale->getCode()] = $locale;
+                }
+
+                ksort($locales);
+                $default = $channel->getDefaultLocale()?->getCode();
+                if (null !== $default && isset($locales[$default])) {
+                    $locales = [$default => $locales[$default]] + $locales;
+                }
+            }
+
+            return ['channel' => $channel, 'locales' => $locales];
+        }, $this->channelRepository->findBy([], ['id' => 'ASC'])));
+    }
+
+    /**
+     * Every locale the locale switcher can offer, those of the store's channels in their order, with its name in the
+     * admin user's locale and its fallback chain
+     *
+     * @param list<array{channel: ChannelInterface, locales: array<string, LocaleInterface>}> $channels
+     *
+     * @return list<array{code: string, name: string, fallbackChain: list<string>}>
+     */
+    private function locales(array $channels, string $displayLocale): array
+    {
+        $locales = [];
+        foreach ($channels as $channel) {
+            foreach ($channel['locales'] as $code => $locale) {
+                $locales[$code] ??= ['code' => $code, 'name' => $locale->getName($displayLocale) ?? $code, 'fallbackChain' => $this->fallbackChain->localesFor($code)];
+            }
+        }
+
+        return array_values($locales);
     }
 
     /**
