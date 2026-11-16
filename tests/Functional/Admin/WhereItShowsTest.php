@@ -145,9 +145,7 @@ final class WhereItShowsTest extends WebTestCase
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', published: true);
-        self::channelsAndAudience()->setAudience($page, Audience::only('@guest', '@no_group'));
-        self::save($page, static function (): void {
-        });
+        self::save($page, static fn (PageInterface $page) => self::channelsAndAudience()->setAudience($page, Audience::only('@guest', '@no_group')));
 
         $section = $client->request('GET', sprintf('/admin/cms/entry/%s', $page->getUuid()))->filter('[data-section="where_it_shows"]');
 
