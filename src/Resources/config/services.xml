@@ -18,6 +18,7 @@
         <import resource="services/rich_text.xml"/>
         <import resource="services/routing.xml"/>
         <import resource="services/security.xml"/>
+        <import resource="services/targeting.xml"/>
         <import resource="services/twig.xml"/>
         <import resource="services/upgrade.xml"/>
         <import resource="services/validation.xml"/>

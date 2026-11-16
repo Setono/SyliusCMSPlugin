@@ -7,6 +7,8 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection;
 use Matthias\SymfonyConfigTest\PhpUnit\ConfigurationTestCaseTrait;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\DependencyInjection\Configuration;
+use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
+use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
@@ -67,7 +69,7 @@ final class ConfigurationTest extends TestCase
                         'model' => EntryChannel::class,
                         'interface' => EntryChannelInterface::class,
                         'repository' => EntityRepository::class,
-                        'factory' => Factory::class,
+                        'factory' => EntryChannelFactory::class,
                     ],
                 ],
                 'entry_audience_group' => [
@@ -75,7 +77,7 @@ final class ConfigurationTest extends TestCase
                         'model' => EntryAudienceGroup::class,
                         'interface' => EntryAudienceGroupInterface::class,
                         'repository' => EntityRepository::class,
-                        'factory' => Factory::class,
+                        'factory' => EntryAudienceGroupFactory::class,
                     ],
                 ],
                 'entry_presence' => [
@@ -276,6 +278,43 @@ final class ConfigurationTest extends TestCase
                 ],
             ],
         ], 'resources.draft');
+    }
+
+    /**
+     * A project's own row models are created by the shipped factories, which create the configured model
+     *
+     * @test
+     */
+    public function it_lets_a_project_override_the_models_of_the_channel_and_audience_group_rows(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['resources' => ['entry_channel' => ['classes' => ['model' => 'App\\Entity\\EntryChannel']]]],
+        ], [
+            'resources' => [
+                'entry_channel' => [
+                    'classes' => [
+                        'model' => 'App\\Entity\\EntryChannel',
+                        'interface' => EntryChannelInterface::class,
+                        'repository' => EntityRepository::class,
+                        'factory' => EntryChannelFactory::class,
+                    ],
+                ],
+            ],
+        ], 'resources.entry_channel');
+        $this->assertProcessedConfigurationEquals([
+            ['resources' => ['entry_audience_group' => ['classes' => ['model' => 'App\\Entity\\EntryAudienceGroup']]]],
+        ], [
+            'resources' => [
+                'entry_audience_group' => [
+                    'classes' => [
+                        'model' => 'App\\Entity\\EntryAudienceGroup',
+                        'interface' => EntryAudienceGroupInterface::class,
+                        'repository' => EntityRepository::class,
+                        'factory' => EntryAudienceGroupFactory::class,
+                    ],
+                ],
+            ],
+        ], 'resources.entry_audience_group');
     }
 
     /**
