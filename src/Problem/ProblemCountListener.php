@@ -25,9 +25,6 @@ final class ProblemCountListener implements ResetInterface
     /** @var array<int, EntryInterface> by object id */
     private array $written = [];
 
-    /** @var array<int, true> by object id */
-    private array $deleted = [];
-
     /** @var array<int, object> what the flush wrote of the referenced classes, by object id */
     private array $referenced = [];
 
@@ -46,21 +43,21 @@ final class ProblemCountListener implements ResetInterface
     public function onFlush(OnFlushEventArgs $args): void
     {
         $unitOfWork = $args->getObjectManager()->getUnitOfWork();
+        $deletions = $unitOfWork->getScheduledEntityDeletions();
 
-        foreach ($unitOfWork->getScheduledEntityDeletions() as $entity) {
-            if ($entity instanceof EntryInterface) {
-                $this->deleted[spl_object_id($entity)] = true;
-            }
+        foreach ([...$unitOfWork->getScheduledEntityInsertions(), ...$unitOfWork->getScheduledEntityUpdates(), ...$deletions] as $entity) {
+            $this->write($entity);
         }
 
-        foreach ([...$unitOfWork->getScheduledEntityInsertions(), ...$unitOfWork->getScheduledEntityUpdates(), ...$unitOfWork->getScheduledEntityDeletions()] as $entity) {
-            $this->write($entity);
+        // An entry the flush deletes has nothing to count
+        foreach ($deletions as $entity) {
+            unset($this->written[spl_object_id($entity)]);
         }
     }
 
     public function postFlush(): void
     {
-        $entries = array_diff_key($this->written, $this->deleted);
+        $entries = $this->written;
         $referenced = $this->referenced;
         $this->reset();
 
@@ -78,7 +75,7 @@ final class ProblemCountListener implements ResetInterface
 
     public function reset(): void
     {
-        $this->written = $this->deleted = $this->referenced = [];
+        $this->written = $this->referenced = [];
     }
 
     private function write(object $entity): void

@@ -21,6 +21,8 @@ use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\AnyMessage;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
+use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 final class ProblemCountUpdaterTest extends TestCase
 {
@@ -79,6 +81,44 @@ final class ProblemCountUpdaterTest extends TestCase
         $this->updater()->update([$brokenTree, $brokenDraft]);
 
         self::assertEquals([[[3 => new ProblemCount(), 4 => new ProblemCount()], 'f1', false]], $this->stored);
+    }
+
+    /**
+     * @test
+     */
+    public function it_stops_at_a_batch_of_stale_entries_it_cant_count_rather_than_reading_it_again(): void
+    {
+        $this->query->findStale('f1', 100, 0)->willReturn([new Page()])->shouldBeCalledOnce();
+
+        $this->updater()->updateStale();
+
+        self::assertSame([], $this->stored);
+    }
+
+    /**
+     * The working copy of a never-published entry is the entry itself, upgraded where it's read, and the entry is
+     * counted while Doctrine manages it, so it counts a copy, which a later flush never writes
+     *
+     * @test
+     */
+    public function it_counts_a_copy_of_the_entry_so_reading_its_working_copy_changes_nothing_a_flush_would_write(): void
+    {
+        $page = new Page();
+        (new \ReflectionProperty(Page::class, 'id'))->setValue($page, 5);
+        $page->setBlockTree(new StoredTree(null, [new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a', 'heading', 1)]));
+        $this->workingCopies->getWorkingCopy(Argument::type(Page::class))->will(static function (array $arguments): Page {
+            /** @var Page $entry */
+            $entry = $arguments[0];
+            // As an upgrade does
+            $entry->setBlockTree(new StoredTree(null, []));
+
+            return $entry;
+        });
+
+        $this->updater()->update([$page]);
+
+        self::assertCount(1, $page->getBlockTree()->blocks);
+        self::assertEquals([[[5 => new ProblemCount()], 'f1', false]], $this->stored);
     }
 
     /**

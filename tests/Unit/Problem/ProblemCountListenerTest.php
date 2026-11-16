@@ -29,6 +29,7 @@ use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\Taxon;
 use Sylius\Component\Customer\Model\CustomerGroup;
 use Sylius\Component\Customer\Model\CustomerGroupInterface;
+use Sylius\Component\Product\Model\Product;
 use Sylius\Component\Taxonomy\Model\TaxonInterface;
 
 final class ProblemCountListenerTest extends TestCase
@@ -46,9 +47,9 @@ final class ProblemCountListenerTest extends TestCase
         $this->updater = $this->prophesize(ProblemCountUpdaterInterface::class);
         $updated = &$this->updated;
         $this->updater->update(Argument::any())->will(static function (array $arguments) use (&$updated): void {
-            /** @var iterable<EntryInterface> $entries */
+            /** @var list<EntryInterface> $entries */
             $entries = $arguments[0];
-            $updated[] = [...$entries];
+            $updated[] = $entries;
         });
     }
 
@@ -116,6 +117,22 @@ final class ProblemCountListenerTest extends TestCase
         $listener = new ProblemCountListener($this->updater->reveal());
 
         $listener->onFlush($this->flushing([], [self::draftOf($page)], [self::translationOf($page), $page, new EntryChannel($page, 'WEB')]));
+        $listener->postFlush();
+
+        self::assertSame([], $this->updated);
+    }
+
+    /**
+     * @test
+     */
+    public function it_counts_nothing_of_a_translation_of_something_other_than_an_entry(): void
+    {
+        $translation = new PageTranslation();
+        $translation->setLocale('en_US');
+        (new Product())->addTranslation($translation);
+        $listener = new ProblemCountListener($this->updater->reveal());
+
+        $listener->onFlush($this->flushing([$translation], [], []));
         $listener->postFlush();
 
         self::assertSame([], $this->updated);

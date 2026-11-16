@@ -91,10 +91,13 @@ final class ProblemCountFingerprintTest extends TestCase
         $conditionKinds->all()->willReturn([new ConditionKindMetadata('signed_in', 'Signed in', [], null, null, [], $kind)]);
         $otherParams = $this->prophesize(ConditionKindRegistryInterface::class);
         $otherParams->all()->willReturn([new ConditionKindMetadata('signed_in', 'Signed in', [], null, \stdClass::class, [], $kind)]);
+        $otherCode = $this->prophesize(ConditionKindRegistryInterface::class);
+        $otherCode->all()->willReturn([new ConditionKindMetadata('logged_in', 'Signed in', [], null, null, [], $kind)]);
 
         $fingerprint = self::fingerprint(conditionKinds: $conditionKinds->reveal())->get();
 
         self::assertNotSame($fingerprint, self::fingerprint(conditionKinds: $otherParams->reveal())->get());
+        self::assertNotSame($fingerprint, self::fingerprint(conditionKinds: $otherCode->reveal())->get());
     }
 
     /**

@@ -53,7 +53,11 @@ final class ProblemCountProviderTest extends TestCase
         $this->updater->updateStale()->shouldBeCalledOnce();
         $this->query->ofEntries([$counted, $unsaved], $this->kinds, $this->clock->now())->willReturn([$counted->getUuid() => new ProblemCount(1, 2)]);
 
-        $counts = $this->provider()->getCounts((static fn () => yield from [$counted, $unsaved])());
+        // A page of entries as Pagerfanta gives one, whose keys don't matter
+        $counts = $this->provider()->getCounts((static function () use ($counted, $unsaved): \Generator {
+            yield 'entry' => $counted;
+            yield 'entry' => $unsaved;
+        })());
 
         self::assertEquals([$counted->getUuid() => new ProblemCount(1, 2), $unsaved->getUuid() => new ProblemCount()], $counts);
     }

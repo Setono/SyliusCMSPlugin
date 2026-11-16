@@ -45,8 +45,14 @@ final readonly class ProblemCountUpdater implements ProblemCountUpdaterInterface
 
         $after = 0;
         while ([] !== $entries = $this->query->findStale($fingerprint, self::BATCH_SIZE, $after)) {
-            $this->query->store($this->count($entries), $fingerprint, true);
-            $after = max(array_map(static fn (EntryInterface $entry): int => (int) $entry->getId(), $entries));
+            $counts = $this->count($entries);
+            if ([] === $counts) {
+                // Only a saved entry, which has an id, is stale, but a batch it can't count must never come again
+                return;
+            }
+
+            $this->query->store($counts, $fingerprint, true);
+            $after = max(array_keys($counts));
         }
     }
 
@@ -71,7 +77,9 @@ final readonly class ProblemCountUpdater implements ProblemCountUpdaterInterface
     private function countOf(EntryInterface $entry): ProblemCount
     {
         try {
-            return ProblemCount::of($this->problemsOf($this->workingCopies->getWorkingCopy($entry)));
+            // A never-published entry's working copy is the entry itself, upgraded as it's read, and Doctrine manages
+            // the entry, so a copy is read, which no later flush writes
+            return ProblemCount::of($this->problemsOf($this->workingCopies->getWorkingCopy(clone $entry)));
         } catch (InvalidStoredTreeException|InvalidEntryFormatException) {
             // Content that can't be read at all fails where it's opened, not in the counts
             return new ProblemCount();
