@@ -97,13 +97,19 @@ function describe(clash: HeldClash, blockType: BlockTypeDefinition | undefined, 
     }
 }
 
-/** The label of an entry field: a translation's title or slug. */
+/** The label of an entry field: a translation's title, slug, meta title or meta description, or "Hide from search engines". */
 export function entryFieldLabel(field: string, t: Translate): string {
     switch (field) {
         case 'title':
             return t('setono_sylius_cms.builder.entry_title');
         case 'slug':
             return t('setono_sylius_cms.builder.slug');
+        case 'metaTitle':
+            return t('setono_sylius_cms.builder.meta_title');
+        case 'metaDescription':
+            return t('setono_sylius_cms.builder.meta_description');
+        case 'noindex':
+            return t('setono_sylius_cms.builder.noindex');
         default:
             return field;
     }

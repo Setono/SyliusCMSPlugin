@@ -129,6 +129,12 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.slug_help_none'
     | 'setono_sylius_cms.builder.old_urls'
     | 'setono_sylius_cms.builder.old_urls_help'
+    | 'setono_sylius_cms.builder.meta_title'
+    | 'setono_sylius_cms.builder.meta_title_help'
+    | 'setono_sylius_cms.builder.meta_description'
+    | 'setono_sylius_cms.builder.meta_description_help'
+    | 'setono_sylius_cms.builder.noindex'
+    | 'setono_sylius_cms.builder.noindex_help'
     | 'setono_sylius_cms.builder.url_and_seo'
     | 'setono_sylius_cms.builder.clash_entry_value';
 

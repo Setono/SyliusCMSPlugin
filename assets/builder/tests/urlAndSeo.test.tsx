@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { BuilderApi, UrlsApi } from '../src/api';
 import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
-import type { EntryResponse, EntryStatus, EntryUrlsResponse, PresenceResponse, Registry, SaveResponse, ValidationError } from '../src/types';
+import type { Entry, EntryResponse, EntryStatus, EntryUrlsResponse, PresenceResponse, Registry, SaveResponse, ValidationError } from '../src/types';
 import { entry, page, registry, settings, strings } from './fixtures';
 
 const config: BuilderConfig = {
@@ -31,8 +31,31 @@ const config: BuilderConfig = {
 const withUrls: Registry = {
     ...registry,
     contentTypes: [{ ...page, prefix: '' }],
-    strings: { ...strings, 'setono_sylius_cms.builder.entry_title': 'Title' },
+    strings: {
+        ...strings,
+        'setono_sylius_cms.builder.entry_title': 'Title',
+        'setono_sylius_cms.builder.meta_title': 'Meta title',
+        'setono_sylius_cms.builder.meta_title_help': 'Leave it empty to use the title.',
+        'setono_sylius_cms.builder.meta_description': 'Meta description',
+        'setono_sylius_cms.builder.meta_description_help': 'Search engines may show it under the title.',
+        'setono_sylius_cms.builder.noindex': 'Hide from search engines',
+        'setono_sylius_cms.builder.noindex_help': 'Asks search engines not to list it, in every language.',
+        'setono_sylius_cms.builder.falls_back_to': 'Falls back to %locale%',
+        'setono_sylius_cms.builder.copy_it_here': 'Copy it here',
+        'setono_sylius_cms.builder.all_languages': 'All languages',
+    },
 };
+
+/** A page with SEO fields in English, as the server sends one. */
+function seoEntry(): Entry {
+    const base = entry();
+
+    return {
+        ...base,
+        fields: { noindex: false },
+        translations: { en_US: { shown: true, fields: { metaDescription: 'All about us', metaTitle: 'About us | Shop', slug: 'about-us', title: 'About us' }, translated: {} } },
+    };
+}
 
 function fakeApi(overrides: Partial<BuilderApi> = {}) {
     return {
@@ -99,6 +122,58 @@ describe('the URL & SEO tab', () => {
 
         expect(slug).toHaveAccessibleDescription('Generated from the title until you change it. The URL: /en_US/about/team');
         await waitFor(() => expect(api.saveChanges).toHaveBeenCalledWith([{ op: 'set_entry_value', field: 'slug', locale: 'en_US', value: 'about/team' }], 0));
+    });
+
+    it('should show the SEO fields of the edited locale, and save what the editor changes', async () => {
+        const api = fakeApi({ fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: seoEntry(), settings: settings(), status: 'published', lockToken: 0, editors: [] })) });
+        const panel = await openUrlTab(api);
+        const metaTitle = panel.getByLabelText('Meta title');
+        const metaDescription = panel.getByLabelText('Meta description');
+        const noindex = panel.getByLabelText('Hide from search engines');
+
+        expect(metaTitle).toHaveValue('About us | Shop');
+        expect(metaTitle).toHaveAccessibleDescription('Leave it empty to use the title.');
+        expect(metaDescription).toHaveValue('All about us');
+        expect(metaDescription).toHaveAccessibleDescription('Search engines may show it under the title.');
+        expect(noindex).not.toBeChecked();
+        expect(noindex).toHaveAccessibleDescription('Asks search engines not to list it, in every language.');
+
+        fireEvent.change(metaTitle, { target: { value: 'About our shop' } });
+        fireEvent.change(metaDescription, { target: { value: '' } });
+        fireEvent.click(noindex);
+
+        expect(noindex).toBeChecked();
+        await waitFor(() =>
+            expect(api.saveChanges).toHaveBeenCalledWith(
+                [
+                    { op: 'set_entry_value', field: 'metaTitle', locale: 'en_US', value: 'About our shop' },
+                    { op: 'set_entry_value', field: 'metaDescription', locale: 'en_US', value: null },
+                    { op: 'set_entry_value', field: 'noindex', locale: null, value: true },
+                ],
+                0,
+            ),
+        );
+    });
+
+    it('should show the meta title another locale has as the one an empty one falls back to', async () => {
+        const base = seoEntry();
+        const danish: Entry = { ...base, translations: { ...base.translations, da_DK: { shown: true, fields: { slug: 'om-os', title: 'Om os' }, translated: {} } } };
+        const api = fakeApi({ fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: danish, settings: settings(), status: 'published', lockToken: 0, editors: [] })) });
+        render(
+            <App
+                config={{ ...config, locale: 'da_DK', locales: [{ code: 'en_US', name: 'English', fallbackChain: ['en_US'] }, { code: 'da_DK', name: 'Danish', fallbackChain: ['da_DK', 'en_US'] }], channels: [{ code: 'WEB', name: 'Web store', locales: ['en_US', 'da_DK'] }] }}
+                api={api}
+                urlsApi={fakeUrlsApi()}
+            />,
+        );
+        await screen.findByRole('heading', { level: 1 });
+        fireEvent.click(pane().getByRole('tab', { name: 'URL & SEO' }));
+        const panel = within(pane().getByRole('tabpanel', { name: 'URL & SEO' }));
+
+        expect(panel.getByLabelText('Meta title')).toHaveValue('');
+        expect(panel.getByLabelText('Meta title')).toHaveAttribute('placeholder', 'About us | Shop');
+        expect(panel.getByLabelText('Meta title')).toHaveAccessibleDescription(/Falls back to English/);
+        expect(panel.getByLabelText('Meta description')).toHaveAttribute('placeholder', 'All about us');
     });
 
     it('should put the prefix of the content type in the URL', async () => {

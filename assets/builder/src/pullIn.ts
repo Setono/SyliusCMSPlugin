@@ -200,7 +200,7 @@ function valueIn(entry: Entry, change: SetValueChange): JsonValue | null | undef
 
 /** The value a set_entry_value change sets, as a working copy has it: null when it has none. */
 function entryValueIn(entry: Entry, change: SetEntryValueChange): JsonValue | null {
-    return change.locale === null ? null : normalizeValue(entry.translations[change.locale]?.fields[change.field]);
+    return normalizeValue(change.locale === null ? entry.fields[change.field] : entry.translations[change.locale]?.fields[change.field]);
 }
 
 /** A block to put back, without the blocks inside it that the working copy has elsewhere by now. */

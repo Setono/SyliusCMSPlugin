@@ -208,9 +208,25 @@ describe('building the change set', () => {
         ]);
     });
 
-    it('should ignore changes outside the block tree and the translations', () => {
-        const changes = changesOf(entry(), (working) => {
+    it('should send a value of the entry that all translations share with no locale', () => {
+        const changes = changesOf({ ...entry(), fields: { noindex: false } }, (working) => {
             working.fields.noindex = true;
+        });
+
+        expect(changes).toEqual([{ op: 'set_entry_value', field: 'noindex', locale: null, value: true }]);
+    });
+
+    it('should send every shared value of the entry that changed when its fields are replaced as a whole', () => {
+        const changes = changesOf({ ...entry(), fields: { noindex: true, featured: true } }, (working) => {
+            working.fields = { noindex: true, featured: false };
+        });
+
+        expect(changes).toEqual([{ op: 'set_entry_value', field: 'featured', locale: null, value: false }]);
+    });
+
+    it('should ignore changes outside the block tree, the translations and the entry\'s shared values', () => {
+        const changes = changesOf(entry(), (working) => {
+            working.createdAt = '2026-11-15T10:00:00Z';
         });
 
         expect(changes).toEqual([]);

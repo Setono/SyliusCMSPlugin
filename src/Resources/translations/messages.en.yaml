@@ -237,6 +237,10 @@ setono_sylius_cms:
         locale_outdated: '%count% outdated'
         locale_untranslated: '%count% untranslated'
         mark_up_to_date: Mark as up to date
+        meta_description: Meta description
+        meta_description_help: Search engines may show it under the title in their results.
+        meta_title: Meta title
+        meta_title_help: The page's title in search results and the browser tab. Leave it empty to use the title.
         mobile: Mobile
         more: More
         more_help: Publishing history, revisions, share links and placements are on the entry's overview page.
@@ -247,6 +251,8 @@ setono_sylius_cms:
         not_shown_in_layout: Not shown in this layout
         no_group: Signed in without a group
         no_matching_block_types: No block types match
+        noindex: Hide from search engines
+        noindex_help: Asks search engines not to list this page, in every language. It takes effect when you publish.
         no_style: None
         no_translation: 'This entry has no translation in %locale% yet.'
         old_urls: Redirects from
