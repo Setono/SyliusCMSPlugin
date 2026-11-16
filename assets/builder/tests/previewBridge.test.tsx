@@ -12,6 +12,7 @@ const config: BuilderConfig = {
     locale: 'en_US',
     csrfToken: 'abc123',
     backUrl: '/admin/',
+    overviewUrl: '/admin/cms/entry/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e',
     endpoints: {
         registry: '/registry',
         entry: '/entry',
@@ -341,6 +342,18 @@ describe('the bridge in the preview', () => {
 
         expect(screen.queryByText('Welcome')).not.toBeInTheDocument();
         expect(sent().at(-1)).toEqual({ type: 'remove', key: 'a' });
+    });
+
+    it('should leave the builder when the bridge passes on Esc pressed in the page', async () => {
+        const navigate = vi.fn();
+        render(<App config={config} api={fakeApi()} autosaveDelay={10} navigate={navigate} />);
+        await screen.findByRole('heading', { level: 1 });
+        await waitFor(() => expect(frame()).toHaveAttribute('src'));
+        connectBridge();
+
+        fromBridge({ type: 'leave' });
+
+        await waitFor(() => expect(navigate).toHaveBeenCalledWith('/admin/'));
     });
 });
 

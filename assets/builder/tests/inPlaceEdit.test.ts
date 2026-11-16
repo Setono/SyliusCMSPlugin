@@ -24,7 +24,7 @@ const strings: BridgeStrings = {
 
 /** Hears what the bridge in the preview sends, as the builder does. */
 function listen(store: BuilderStore) {
-    return createPreviewSync({ store, strings, render: vi.fn(async () => ({})), reload: vi.fn(), openBlockPicker: vi.fn(), openSettings: vi.fn() });
+    return createPreviewSync({ store, strings, render: vi.fn(async () => ({})), reload: vi.fn(), openBlockPicker: vi.fn(), openSettings: vi.fn(), leave: vi.fn() });
 }
 
 function doc(text: string, marks: string[] = []): JsonObject {

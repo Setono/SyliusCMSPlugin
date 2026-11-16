@@ -160,6 +160,8 @@ setono_sylius_cms:
         loading: Loading…
         locale: Language
         mobile: Mobile
+        more: More
+        more_help: Publishing history, revisions, share links and placements are on the entry's overview page.
         move_down: Move down
         move_up: Move up
         never_published: Never published
@@ -168,6 +170,7 @@ setono_sylius_cms:
         no_matching_block_types: No block types match
         no_style: None
         no_translation: 'This entry has no translation in %locale% yet.'
+        open_overview: Open the overview page
         path: Path
         preview: Preview
         preview_channel: Preview channel

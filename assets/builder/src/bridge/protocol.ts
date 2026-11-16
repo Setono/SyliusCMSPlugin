@@ -56,6 +56,8 @@ export type FromBridge =
     /** ⌘Z or ⇧⌘Z pressed in the page. */
     | { type: 'undo' }
     | { type: 'redo' }
+    /** Esc pressed in the page, outside a field: the editor leaves the builder. */
+    | { type: 'leave' }
     /** + next to a block: the editor wants to add a block at that spot. x and y are where the + is in the page's viewport. */
     | { type: 'add'; key: string; position: 'before' | 'after'; x: number; y: number }
     /** A block the builder patched or inserted has no place in the page, so only a reload shows it. */

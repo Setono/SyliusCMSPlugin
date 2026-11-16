@@ -8,6 +8,7 @@ const config: BuilderConfig = {
     locale: 'en_US',
     csrfToken: 'abc123',
     backUrl: '/admin/',
+    overviewUrl: '/admin/cms/entry/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e',
     endpoints: {
         registry: '/admin/cms/api/registry',
         entry: '/admin/cms/api/entries/e1',

@@ -22,6 +22,8 @@ export interface PreviewSyncOptions {
     openBlockPicker(spot: BlockSpot, at: { x: number; y: number }): void;
     /** Takes the editor to the selected block's settings in the right pane. */
     openSettings(): void;
+    /** Leaves the builder, on Esc pressed in the page. */
+    leave(): void;
 }
 
 export interface PreviewSync {
@@ -33,7 +35,7 @@ export interface PreviewSync {
     dispose(): void;
 }
 
-export function createPreviewSync({ store, strings, render, reload, openBlockPicker, openSettings }: PreviewSyncOptions): PreviewSync {
+export function createPreviewSync({ store, strings, render, reload, openBlockPicker, openSettings, leave }: PreviewSyncOptions): PreviewSync {
     let bridge: { post: (message: ToBridge) => void; token: string } | null = null;
     // Counts the pages, so an answer for a page that's gone is dropped
     let page = 0;
@@ -210,6 +212,9 @@ export function createPreviewSync({ store, strings, render, reload, openBlockPic
                     break;
                 case 'redo':
                     state.redo();
+                    break;
+                case 'leave':
+                    leave();
                     break;
                 case 'add': {
                     const spot = locateBlock(blocks, message.key);

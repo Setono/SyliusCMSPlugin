@@ -111,3 +111,19 @@
 .saveState[data-state="failed"] {
     color: var(--builder-color-danger);
 }
+
+/* The More tab's link to the overview page */
+.link {
+    align-self: flex-start;
+    color: var(--builder-color-accent);
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.link:hover {
+    color: var(--builder-color-accent-hover);
+}
+
+.link:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}

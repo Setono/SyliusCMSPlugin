@@ -32,7 +32,7 @@ export interface PreviewProps {
  */
 export function Preview({ className, onOpenSettings }: PreviewProps) {
     const t = useTranslator();
-    const { store, createPreviewUrl, renderPreview } = useBuilder();
+    const { store, createPreviewUrl, renderPreview, leave } = useBuilder();
     const channel = usePreviewState((state) => state.channel);
     const width = usePreviewState((state) => state.width);
     const locale = useBuilderState((state) => state.locale);
@@ -79,6 +79,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
                 setPicker({ spot, x: (box?.left ?? 0) + at.x, y: (box?.top ?? 0) + at.y });
             },
             openSettings: () => openSettings.current?.(),
+            leave,
         });
         sync.current = created;
 
@@ -86,7 +87,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
             created.dispose();
             sync.current = null;
         };
-    }, [store, renderPreview, t]);
+    }, [store, renderPreview, leave, t]);
 
     useEffect(() => {
         if (channel === null) {

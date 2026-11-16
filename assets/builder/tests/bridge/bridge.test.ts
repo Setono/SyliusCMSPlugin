@@ -148,6 +148,25 @@ describe('the bridge', () => {
             expect(other.defaultPrevented).toBe(false);
         });
 
+        it('should pass Esc pressed in the page on to the builder, which leaves, but not Esc pressed in a field or that the page handled', () => {
+            document.body.insertAdjacentHTML('beforeend', '<form><input name="q"><textarea></textarea><select><option>A</option></select></form><div contenteditable="true">Note</div>');
+            const escape = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+            const handled = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+            const withModifier = new KeyboardEvent('keydown', { key: 'Escape', altKey: true, bubbles: true, cancelable: true });
+
+            document.querySelector('h2')?.dispatchEvent(escape);
+            for (const field of document.querySelectorAll('input, textarea, select, [contenteditable]')) {
+                field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+            }
+            handled.preventDefault();
+            document.body.dispatchEvent(handled);
+            document.body.dispatchEvent(withModifier);
+
+            expect(posted).toEqual([{ type: 'leave' }]);
+            expect(escape.defaultPrevented).toBe(true);
+            expect(withModifier.defaultPrevented).toBe(false);
+        });
+
         it('should offer + above and below the selected block, which asks the builder for the block picker at that spot', () => {
             bridge.receive({ type: 'select', key: 'a' });
 

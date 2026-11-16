@@ -18,12 +18,23 @@ export interface AppProps {
     api: BuilderApi;
     /** How long after the last edit autosave sends the changes, in milliseconds. */
     autosaveDelay?: number;
+    /** Goes to another page, which leaving the builder does. */
+    navigate?: (url: string) => void;
+}
+
+const goTo = (url: string): void => window.location.assign(url);
+
+/** Leaves the builder once the changes not sent yet are, without waiting on a save that fails. */
+function leaving(autosave: Autosave, go: () => void): () => void {
+    return () => {
+        void autosave.flush().finally(go);
+    };
 }
 
 type Phase = { name: 'loading' } | { name: 'failed' } | { name: 'ready'; session: BuilderSession; translate: Translate };
 
 /** Loads the registry and the entry, then opens the entry in the builder. */
-export function App({ config, api, autosaveDelay }: AppProps) {
+export function App({ config, api, autosaveDelay, navigate = goTo }: AppProps) {
     const [phase, setPhase] = useState<Phase>({ name: 'loading' });
     const initialTranslate = useMemo(() => createTranslator(config.strings ?? {}), [config]);
 
@@ -74,6 +85,8 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                         store,
                         validation: validationStore,
                         backUrl: config.backUrl,
+                        leave: leaving(autosave, () => navigate(config.backUrl)),
+                        overviewUrl: config.overviewUrl,
                         publish: createPublish(store, autosave, () => api.publish(), validationStore),
                         discard: createDiscard(store, autosave, () => api.discard()),
                         reload: createReload(store, () => api.fetchEntry()),
@@ -107,7 +120,7 @@ export function App({ config, api, autosaveDelay }: AppProps) {
             validation?.dispose();
             unsubscribeSettings?.();
         };
-    }, [api, config, autosaveDelay]);
+    }, [api, config, autosaveDelay, navigate]);
 
     if (phase.name !== 'ready') {
         return (

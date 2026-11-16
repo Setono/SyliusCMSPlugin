@@ -14,7 +14,7 @@ const statusLabels: Record<EntryStatus, MessageKey> = {
 
 export function TopBar() {
     const t = useTranslator();
-    const { backUrl, locales } = useBuilder();
+    const { backUrl, leave, locales } = useBuilder();
     // The title in the edited locale, or the one it falls back to
     const title = useBuilderState((state) => {
         for (const locale of localeOf(locales, state.locale).fallbackChain) {
@@ -30,7 +30,17 @@ export function TopBar() {
 
     return (
         <div className={styles.bar}>
-            <a href={backUrl} className={styles.back}>
+            <a
+                href={backUrl}
+                className={styles.back}
+                onClick={(event) => {
+                    // A click with a modifier key opens the link elsewhere, which the browser does
+                    if (event.button === 0 && !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)) {
+                        event.preventDefault();
+                        leave();
+                    }
+                }}
+            >
                 <ArrowLeftIcon />
                 {t('setono_sylius_cms.builder.back')}
             </a>

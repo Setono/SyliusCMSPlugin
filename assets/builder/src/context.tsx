@@ -17,7 +17,12 @@ export interface BuilderSession {
     discard: () => Promise<void>;
     /** Loads the working copy again, when the server can't merge a save onto what colleagues saved. */
     reload: () => Promise<void>;
+    /** Where the back button and Esc go: where the builder was opened from. */
     backUrl: string;
+    /** Leaves the builder for backUrl, once the unsaved changes are sent. */
+    leave: () => void;
+    /** The entry's overview page, for publishing history, revisions, share links and placements. */
+    overviewUrl: string;
     preview: PreviewStore;
     /** Asks for a preview token, and answers with the URL of the preview it turns on. */
     createPreviewUrl: (preview: PreviewRequest) => Promise<string>;

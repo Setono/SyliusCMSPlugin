@@ -27,7 +27,10 @@ export interface BuilderConfig {
     /** The locale the builder opens in. It edits one locale at a time. */
     locale: string;
     csrfToken: string;
+    /** Where the back button and Esc go: where the builder was opened from. */
     backUrl: string;
+    /** The entry's overview page, which the settings' More tab links to. */
+    overviewUrl: string;
     endpoints: {
         registry: string;
         entry: string;

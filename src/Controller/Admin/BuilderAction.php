@@ -59,7 +59,8 @@ final readonly class BuilderAction
                 'entryUuid' => $entry->getUuid(),
                 'locale' => $this->editedLocale($entry),
                 'csrfToken' => $this->csrfToken->value(),
-                'backUrl' => $this->backUrl($request),
+                'backUrl' => $this->backUrl($request, $entry),
+                'overviewUrl' => $this->urlGenerator->generate('setono_sylius_cms_admin_entry_show', ['uuid' => $entry->getUuid()]),
                 'endpoints' => [
                     'registry' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_registry'),
                     'entry' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_show', ['uuid' => $entry->getUuid()]),
@@ -160,15 +161,17 @@ final readonly class BuilderAction
     }
 
     /**
-     * Back returns to where the builder was opened from, when that's a path on this host, and otherwise to the dashboard
+     * Back, and Esc, return to where the builder was opened from, when that's a path on this host passed as `back`, and
+     * otherwise to the entry's overview page, which the builder opens from, as it does straight after the entry's created.
+     * See "Into and out of the builder" in docs/spec/admin.md
      */
-    private function backUrl(Request $request): string
+    private function backUrl(Request $request, EntryInterface $entry): string
     {
         $back = $request->query->get('back');
         if (is_string($back) && 1 === preg_match('#^/(?![/\\\\])#', $back)) {
             return $back;
         }
 
-        return $this->urlGenerator->generate('sylius_admin_dashboard');
+        return $this->urlGenerator->generate('setono_sylius_cms_admin_entry_show', ['uuid' => $entry->getUuid()]);
     }
 }

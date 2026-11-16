@@ -7,7 +7,7 @@ import type { Editor } from '@tiptap/core';
 import { caretAt, fieldAt, startTyping, type Caret, type TypingInPlace } from './inPlace';
 import { blockContaining, blockElements, blockHolds, blockNodes, findBlock, rootElement, type BlockRange, type FieldRange } from './markers';
 import { morphBlock, parseHtml } from './morph';
-import { shortcutOf } from '../shortcuts';
+import { leavesOn, shortcutOf } from '../shortcuts';
 import type { BridgeStrings, FromBridge, RenderedBlock, ToBridge } from './protocol';
 
 export interface Bridge {
@@ -134,14 +134,21 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
         refresh();
     };
 
-    // Undo and redo work wherever the editor is, so the keys pressed in the page go to the builder
+    // Undo, redo and Esc work wherever the editor is, so the keys pressed in the page go to the builder
     const onKeyDown = (event: KeyboardEvent): void => {
-        const shortcut = strings === null || event.defaultPrevented ? null : shortcutOf(event);
+        if (strings === null) {
+            return;
+        }
+
+        const shortcut = event.defaultPrevented ? null : shortcutOf(event);
         if (shortcut !== null) {
             event.preventDefault();
             // Undo changes the working copy, which the field being typed in shows only once the typing ends
             typing?.stop();
             post({ type: shortcut });
+        } else if (leavesOn(event)) {
+            event.preventDefault();
+            post({ type: 'leave' });
         }
     };
 

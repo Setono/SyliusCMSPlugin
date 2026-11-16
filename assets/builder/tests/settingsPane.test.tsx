@@ -11,6 +11,7 @@ const config: BuilderConfig = {
     locale: 'en_US',
     csrfToken: 'abc123',
     backUrl: '/admin/',
+    overviewUrl: '/admin/cms/entry/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e',
     endpoints: {
         registry: '/registry',
         entry: '/entry',
@@ -79,6 +80,51 @@ describe('the entry settings', () => {
         expect(panel.getByLabelText('Show until')).toHaveValue('');
         expect(panel.getByRole('group', { name: 'Channels' })).toBeInTheDocument();
         expect(panel.getByRole('combobox', { name: 'Audience' })).toHaveValue('everyone');
+    });
+
+    it("should link to the entry's overview page from a More tab, for publishing history, revisions, share links and placements", async () => {
+        await openBuilder();
+
+        fireEvent.click(pane().getByRole('tab', { name: 'More' }));
+
+        expect(pane().getByRole('tab', { name: 'More', selected: true })).toBeInTheDocument();
+        expect(pane().getByRole('tab', { name: 'Settings', selected: false })).toBeInTheDocument();
+        expect(pane().queryByRole('tabpanel', { name: 'Settings' })).not.toBeInTheDocument();
+        const panel = within(pane().getByRole('tabpanel', { name: 'More' }));
+        expect(panel.getByText("Publishing history, revisions, share links and placements are on the entry's overview page.")).toBeInTheDocument();
+        expect(panel.getByRole('link', { name: 'Open the overview page' })).toHaveAttribute('href', '/admin/cms/entry/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e');
+
+        fireEvent.click(pane().getByRole('tab', { name: 'Settings' }));
+
+        expect(pane().getByRole('tabpanel', { name: 'Settings' })).toBeInTheDocument();
+        expect(pane().queryByRole('tabpanel', { name: 'More' })).not.toBeInTheDocument();
+    });
+
+    it('should move between the tabs with the arrow keys, which only the selected tab takes the focus for', async () => {
+        await openBuilder();
+        const settingsTab = pane().getByRole('tab', { name: 'Settings' });
+        const moreTab = pane().getByRole('tab', { name: 'More' });
+        expect(settingsTab).toHaveAttribute('tabindex', '0');
+        expect(moreTab).toHaveAttribute('tabindex', '-1');
+
+        fireEvent.keyDown(settingsTab, { key: 'ArrowRight' });
+
+        expect(moreTab).toHaveAttribute('aria-selected', 'true');
+        expect(moreTab).toHaveFocus();
+        expect(moreTab).toHaveAttribute('tabindex', '0');
+
+        // Past the last tab comes the first again
+        fireEvent.keyDown(moreTab, { key: 'ArrowRight' });
+        expect(settingsTab).toHaveAttribute('aria-selected', 'true');
+        expect(settingsTab).toHaveFocus();
+
+        fireEvent.keyDown(settingsTab, { key: 'ArrowLeft' });
+        expect(moreTab).toHaveAttribute('aria-selected', 'true');
+
+        fireEvent.keyDown(moreTab, { key: 'Home' });
+        expect(settingsTab).toHaveAttribute('aria-selected', 'true');
+        fireEvent.keyDown(settingsTab, { key: 'End' });
+        expect(moreTab).toHaveAttribute('aria-selected', 'true');
     });
 
     it('should say beside each setting that it takes effect on save', async () => {

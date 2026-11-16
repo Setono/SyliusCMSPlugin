@@ -49,7 +49,9 @@ final class BuilderTest extends WebTestCase
         self::assertSame('en_US', $config['locale']);
         self::assertIsString($config['csrfToken']);
         self::assertNotSame('', $config['csrfToken']);
-        self::assertSame('/admin/', $config['backUrl']);
+        // Opened from nowhere else, it goes back to the entry's overview page, which its More tab links to too
+        self::assertSame(sprintf('/admin/cms/entry/%s', $uuid), $config['backUrl']);
+        self::assertSame(sprintf('/admin/cms/entry/%s', $uuid), $config['overviewUrl']);
         self::assertSame([
             'registry' => '/admin/cms/api/registry',
             'entry' => sprintf('/admin/cms/api/entries/%s', $uuid),
@@ -123,7 +125,7 @@ final class BuilderTest extends WebTestCase
     /**
      * @test
      */
-    public function its_back_button_returns_to_a_local_url_it_was_opened_from(): void
+    public function its_back_button_returns_to_a_local_url_it_was_opened_from_or_else_to_the_overview_page(): void
     {
         $client = self::createClient();
         $client->loginUser(self::admin(), 'admin');
@@ -137,7 +139,7 @@ final class BuilderTest extends WebTestCase
         $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s/builder?back=%s', $page->getUuid(), urlencode('//evil.example/')));
         $config = json_decode((string) $crawler->filter('#cms-builder')->attr('data-config'), true, 512, \JSON_THROW_ON_ERROR);
         self::assertIsArray($config);
-        self::assertSame('/admin/', $config['backUrl']);
+        self::assertSame(sprintf('/admin/cms/entry/%s', $page->getUuid()), $config['backUrl']);
     }
 
     /**

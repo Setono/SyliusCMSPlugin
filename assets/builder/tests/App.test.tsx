@@ -12,6 +12,7 @@ const config: BuilderConfig = {
     locale: 'en_US',
     csrfToken: 'abc123',
     backUrl: '/admin/',
+    overviewUrl: '/admin/cms/entry/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e',
     endpoints: {
         registry: '/registry',
         entry: '/entry',
@@ -345,5 +346,79 @@ describe('the block tree and the block picker', () => {
         expect(accepted).toBe(true);
         expect(screen.getByRole('alert')).toHaveTextContent("Column can't go there");
         expect(within(treeItem('Columns')).getAllByRole('button', { name: 'Column' })).toHaveLength(2);
+    });
+});
+
+describe('leaving the builder', () => {
+    async function openBuilderToLeave(api: BuilderApi = fakeApi()) {
+        const navigate = vi.fn();
+        render(<App config={config} api={api} autosaveDelay={60_000} navigate={navigate} />);
+        await screen.findByRole('heading', { level: 1 });
+
+        return navigate;
+    }
+
+    it('should go back to where it was opened from on Esc, once the unsaved changes are saved', async () => {
+        const saveChanges = vi.fn(async (): Promise<SaveResponse> => ({ status: 'never_published', lockToken: 1 }));
+        const navigate = await openBuilderToLeave(fakeApi({ saveChanges }));
+        fireEvent.click(screen.getByRole('button', { name: 'Delete block' }));
+
+        const escape = fireEvent.keyDown(document.body, { key: 'Escape' });
+
+        expect(escape).toBe(false);
+        await waitFor(() => expect(navigate).toHaveBeenCalledWith('/admin/'));
+        expect(saveChanges).toHaveBeenCalledTimes(1);
+        expect(saveChanges.mock.invocationCallOrder[0]).toBeLessThan(navigate.mock.invocationCallOrder[0] ?? 0);
+    });
+
+    it('should go back on Esc even when the unsaved changes could not be saved', async () => {
+        const navigate = await openBuilderToLeave(fakeApi({ saveChanges: vi.fn(() => Promise.reject(new Error('Offline'))) }));
+        fireEvent.click(screen.getByRole('button', { name: 'Delete block' }));
+
+        fireEvent.keyDown(document.body, { key: 'Escape' });
+
+        await waitFor(() => expect(navigate).toHaveBeenCalledWith('/admin/'));
+    });
+
+    it('should go back from the back button the same way', async () => {
+        const navigate = await openBuilderToLeave();
+
+        const click = fireEvent.click(screen.getByRole('link', { name: 'Back' }));
+
+        expect(click).toBe(false);
+        await waitFor(() => expect(navigate).toHaveBeenCalledWith('/admin/'));
+    });
+
+    it('should leave a back button clicked with a modifier key to the browser, which opens it elsewhere', async () => {
+        const navigate = await openBuilderToLeave();
+        // Notes whether the builder left the click to the browser, then stops jsdom, which can't open links
+        let leftToBrowser: boolean | undefined;
+        const note = (event: MouseEvent): void => {
+            leftToBrowser = !event.defaultPrevented;
+            event.preventDefault();
+        };
+        window.addEventListener('click', note);
+
+        fireEvent.click(screen.getByRole('link', { name: 'Back' }), { metaKey: true });
+
+        window.removeEventListener('click', note);
+        expect(leftToBrowser).toBe(true);
+        expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('should leave Esc to the field it is pressed in, to the dialog it closes, and Esc with a modifier key alone', async () => {
+        const navigate = await openBuilderToLeave();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Heading Welcome' }));
+        fireEvent.keyDown(screen.getByRole('textbox', { name: 'Text' }), { key: 'Escape' });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Add block' }));
+        fireEvent.keyDown(screen.getByRole('dialog', { name: 'Add block' }), { key: 'Escape' });
+        await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Add block' })).not.toBeInTheDocument());
+
+        fireEvent.keyDown(document.body, { key: 'Escape', shiftKey: true });
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        expect(navigate).not.toHaveBeenCalled();
     });
 });
