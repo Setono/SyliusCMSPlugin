@@ -63,7 +63,7 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
         ];
     }
 
-    public function warn(EntryInterface $entry): array
+    public function warnOfDraftedUrls(EntryInterface $entry): array
     {
         if (!$this->contentTypes->getByEntry($entry)->hasOwnUrl()) {
             return [];
@@ -72,7 +72,7 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
         return $this->clashErrors($this->clashes->findDrafted($entry, $this->validSlugsOf($entry), $entry->getChannelCodes()), 'setono_sylius_cms.slug.drafted_elsewhere');
     }
 
-    public function warnTakenLiveUrls(EntryInterface $entry): array
+    public function warnOfLiveUrlsTakenByRoutes(EntryInterface $entry): array
     {
         if (!$this->contentTypes->getByEntry($entry)->hasOwnUrl()) {
             return [];
@@ -81,7 +81,7 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
         return array_values($this->takenByRoutes($this->takenUrls->findLive($entry), 'setono_sylius_cms.slug.live_url_taken_by_route'));
     }
 
-    public function refuse(EntryInterface $entry, array $slugs): array
+    public function refuseUrlsTakenByRoutes(EntryInterface $entry, array $slugs): array
     {
         if (!$this->contentTypes->getByEntry($entry)->hasOwnUrl()) {
             return [];

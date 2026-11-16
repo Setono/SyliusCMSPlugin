@@ -98,7 +98,7 @@ final class EntryUrlValidatorTest extends TestCase
         }
 
         self::assertSame([], $this->validator()->validate($page));
-        self::assertSame([], $this->validator()->warn($page));
+        self::assertSame([], $this->validator()->warnOfDraftedUrls($page));
         $this->takenUrls->find($page, ['en_US' => 'about-us'], ['WEB'])->shouldHaveBeenCalledOnce();
         $this->clashes->findPublished($page, ['en_US' => 'about-us'], ['WEB'])->shouldHaveBeenCalledOnce();
         $this->clashes->findDrafted($page, ['en_US' => 'about-us'], ['WEB'])->shouldHaveBeenCalledOnce();
@@ -163,7 +163,7 @@ final class EntryUrlValidatorTest extends TestCase
 
         self::assertEquals(
             [new ValidationError(null, 'slug', 'en_US', '"Contact" has the URL /en_US/contact in its draft too, in Web store. Only one of them can be published there.')],
-            $this->validator()->warn($page),
+            $this->validator()->warnOfDraftedUrls($page),
         );
     }
 
@@ -176,7 +176,7 @@ final class EntryUrlValidatorTest extends TestCase
 
         self::assertEquals(
             [new ValidationError(null, 'slug', 'en_US', 'Shoppers don\'t see this at /en_US/about-us: the route app_about takes the URL.')],
-            $this->validator()->warnTakenLiveUrls($this->page),
+            $this->validator()->warnOfLiveUrlsTakenByRoutes($this->page),
         );
     }
 
@@ -191,7 +191,7 @@ final class EntryUrlValidatorTest extends TestCase
 
         self::assertEquals(
             ['en_US' => new ValidationError(null, 'slug', 'en_US', 'The URL /en_US/cart is taken by the route sylius_shop_cart_summary.')],
-            $this->validator()->refuse($this->page, ['en_US' => 'cart', 'de_DE' => '/cart', 'da_DK' => 'om']),
+            $this->validator()->refuseUrlsTakenByRoutes($this->page, ['en_US' => 'cart', 'de_DE' => '/cart', 'da_DK' => 'om']),
         );
     }
 
@@ -241,9 +241,9 @@ final class EntryUrlValidatorTest extends TestCase
 
         $validator = $this->validator();
         self::assertSame([], $validator->validate($recipe));
-        self::assertSame([], $validator->warn($recipe));
-        self::assertSame([], $validator->warnTakenLiveUrls($recipe));
-        self::assertSame([], $validator->refuse($recipe, ['en_US' => 'cart']));
+        self::assertSame([], $validator->warnOfDraftedUrls($recipe));
+        self::assertSame([], $validator->warnOfLiveUrlsTakenByRoutes($recipe));
+        self::assertSame([], $validator->refuseUrlsTakenByRoutes($recipe, ['en_US' => 'cart']));
         self::assertSame([], $validator->validateChannels($recipe, ['MOBILE', 'WEB']));
     }
 

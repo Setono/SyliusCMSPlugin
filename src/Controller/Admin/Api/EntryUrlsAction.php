@@ -31,7 +31,7 @@ final readonly class EntryUrlsAction
     public function __invoke(string $uuid): JsonResponse
     {
         $entry = $this->builderRequest->entry($uuid);
-        $warnings = [...$this->urlValidator->warn($this->workingCopies->getWorkingCopy($entry)), ...$this->urlValidator->warnTakenLiveUrls($entry)];
+        $warnings = [...$this->urlValidator->warnOfDraftedUrls($this->workingCopies->getWorkingCopy($entry)), ...$this->urlValidator->warnOfLiveUrlsTakenByRoutes($entry)];
 
         return new JsonResponse(CanonicalJson::encode(new ListedObject([
             'warnings' => array_map(static fn (ValidationError $warning): ListedObject => new ListedObject($warning->jsonSerialize()), $warnings),

@@ -31,7 +31,7 @@ interface EntryUrlValidatorInterface
      *
      * @return list<ValidationError>
      */
-    public function warn(EntryInterface $entry): array;
+    public function warnOfDraftedUrls(EntryInterface $entry): array;
 
     /**
      * The URLs a published entry shows at that another route matches now, such as a route added after it was published.
@@ -41,7 +41,7 @@ interface EntryUrlValidatorInterface
      *
      * @return list<ValidationError>
      */
-    public function warnTakenLiveUrls(EntryInterface $entry): array;
+    public function warnOfLiveUrlsTakenByRoutes(EntryInterface $entry): array;
 
     /**
      * The slugs whose URL another route matches, which a save refuses, the one exception to a draft saving while invalid
@@ -51,7 +51,7 @@ interface EntryUrlValidatorInterface
      *
      * @return array<string, ValidationError> by locale, for the slugs refused
      */
-    public function refuse(EntryInterface $entry, array $slugs): array;
+    public function refuseUrlsTakenByRoutes(EntryInterface $entry, array $slugs): array;
 
     /**
      * The published URLs of the entry that another entry has published in a channel the entry would be added to,

@@ -157,7 +157,7 @@ final readonly class Autosave implements AutosaveInterface
 
         $slugs = array_filter($slugs, static fn (string $slug): bool => '' !== $slug);
 
-        return [] === $slugs ? [] : $this->urlValidator->refuse($workingCopy, $slugs);
+        return [] === $slugs ? [] : $this->urlValidator->refuseUrlsTakenByRoutes($workingCopy, $slugs);
     }
 
     /**

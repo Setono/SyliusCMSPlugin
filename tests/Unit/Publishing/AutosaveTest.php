@@ -138,7 +138,7 @@ final class AutosaveTest extends TestCase
         $this->scheduledPublishes = $this->prophesize(ScheduledPublishRepositoryInterface::class);
         $this->scheduledPublishes->findOneByEntry($this->entry)->willReturn(null);
         $this->urlValidator = $this->prophesize(EntryUrlValidatorInterface::class);
-        $this->urlValidator->refuse(Argument::cetera())->willReturn([]);
+        $this->urlValidator->refuseUrlsTakenByRoutes(Argument::cetera())->willReturn([]);
 
         // The store's one channel has English and Danish
         $channel = new Channel();
@@ -238,7 +238,7 @@ final class AutosaveTest extends TestCase
         $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
         $refused = new ValidationError(null, 'slug', 'en_US', 'The URL /en_US/cart is taken by the route sylius_shop_cart_summary.');
         // The slug a locale ends with is the one checked
-        $this->urlValidator->refuse($this->workingCopy, ['en_US' => 'cart', 'da_DK' => 'om-os'])->willReturn(['en_US' => $refused]);
+        $this->urlValidator->refuseUrlsTakenByRoutes($this->workingCopy, ['en_US' => 'cart', 'da_DK' => 'om-os'])->willReturn(['en_US' => $refused]);
         $text = new SetValue(self::A, 'text', 'en_US', 'Hello there');
         $danish = new SetEntryValue('slug', 'da_DK', 'om-os');
         $title = new SetEntryValue('title', 'en_US', 'Cart');
@@ -268,7 +268,7 @@ final class AutosaveTest extends TestCase
         $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
         $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
         $refused = new ValidationError(null, 'slug', 'en_US', 'The URL /en_US/cart is taken by the route sylius_shop_cart_summary.');
-        $this->urlValidator->refuse($this->workingCopy, ['en_US' => 'cart'])->willReturn(['en_US' => $refused]);
+        $this->urlValidator->refuseUrlsTakenByRoutes($this->workingCopy, ['en_US' => 'cart'])->willReturn(['en_US' => $refused]);
 
         $result = $this->autosave()->save($this->entry, new ChangeSet([new SetEntryValue('slug', 'en_US', 'cart')]), 3);
 
@@ -284,7 +284,7 @@ final class AutosaveTest extends TestCase
     {
         $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
         $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
-        $this->urlValidator->refuse(Argument::cetera())->shouldNotBeCalled();
+        $this->urlValidator->refuseUrlsTakenByRoutes(Argument::cetera())->shouldNotBeCalled();
 
         $this->expectException(InvalidChangeSetException::class);
 
@@ -298,7 +298,7 @@ final class AutosaveTest extends TestCase
     {
         $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
         $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
-        $this->urlValidator->refuse(Argument::cetera())->shouldNotBeCalled();
+        $this->urlValidator->refuseUrlsTakenByRoutes(Argument::cetera())->shouldNotBeCalled();
 
         $this->expectException(InvalidChangeSetException::class);
 
@@ -314,7 +314,7 @@ final class AutosaveTest extends TestCase
         $this->workingCopy->setSlug('about-us');
         $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
         $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
-        $this->urlValidator->refuse(Argument::cetera())->shouldNotBeCalled();
+        $this->urlValidator->refuseUrlsTakenByRoutes(Argument::cetera())->shouldNotBeCalled();
 
         $result = $this->autosave()->save($this->entry, new ChangeSet([new SetEntryValue('slug', 'en_US', 'cart'), new SetEntryValue('slug', 'en_US', null), new SetEntryValue('title', 'en_US', 'Cart')]), 3);
 
