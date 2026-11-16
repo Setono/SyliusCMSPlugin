@@ -8,8 +8,10 @@ use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractCompilerPassTestCase
 use Setono\SyliusCMSPlugin\Command\LintCommand;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterProblemKindsPass;
 use Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue;
+use Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishOverdue;
 use Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprint;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountProvider;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
 use Symfony\Component\DependencyInjection\Argument\IteratorArgument;
@@ -53,12 +55,14 @@ final class RegisterProblemKindsPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function it_hands_the_kinds_whose_problems_are_stored_to_the_count_updater_and_their_classes_to_the_fingerprint(): void
+    public function it_hands_the_kinds_whose_problems_are_stored_to_the_count_updater_and_their_classes_to_the_fingerprint_and_the_time_dependent_ones_to_the_count_provider(): void
     {
         $this->setDefinition(ProblemCountUpdater::class, new Definition(ProblemCountUpdater::class, [[], null, null, null]));
         $this->setDefinition(ProblemCountFingerprint::class, new Definition(ProblemCountFingerprint::class, [[], null, null, null, null]));
+        $this->setDefinition(ProblemCountProvider::class, new Definition(ProblemCountProvider::class, [null, null, [], null]));
         $this->setParameter('app.kind.class', MisfitValue::class);
         $this->setDefinition('app.unknown', (new Definition(UnknownBlockType::class))->addTag('setono_sylius_cms.problem_kind'));
+        $this->setDefinition('app.overdue', (new Definition(ScheduledPublishOverdue::class))->addTag('setono_sylius_cms.problem_kind'));
         $this->setDefinition('app.misfit', (new Definition('%app.kind.class%'))->addTag('setono_sylius_cms.problem_kind', ['priority' => 10]));
 
         $this->compile();
@@ -68,6 +72,7 @@ final class RegisterProblemKindsPassTest extends AbstractCompilerPassTestCase
             $this->container->getDefinition(ProblemCountUpdater::class)->getArgument(0),
         );
         self::assertSame([MisfitValue::class, UnknownBlockType::class], $this->container->getDefinition(ProblemCountFingerprint::class)->getArgument(0));
+        self::assertEquals(new IteratorArgument([new Reference('app.overdue')]), $this->container->getDefinition(ProblemCountProvider::class)->getArgument(2));
     }
 
     /**
@@ -83,5 +88,6 @@ final class RegisterProblemKindsPassTest extends AbstractCompilerPassTestCase
         $this->assertContainerBuilderNotHasService(LintCommand::class);
         $this->assertContainerBuilderNotHasService(ProblemCountUpdater::class);
         $this->assertContainerBuilderNotHasService(ProblemCountFingerprint::class);
+        $this->assertContainerBuilderNotHasService(ProblemCountProvider::class);
     }
 }

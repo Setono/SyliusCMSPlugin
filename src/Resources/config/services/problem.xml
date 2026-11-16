@@ -38,9 +38,12 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprintInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprint"/>
 
+        <!-- RegisterProblemKindsPass hands it the time-dependent kinds -->
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountProvider" class="Setono\SyliusCMSPlugin\Problem\ProblemCountProvider">
             <argument type="service" id="Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface"/>
+            <argument type="collection"/>
+            <argument type="service" id="clock"/>
 
             <tag name="kernel.reset" method="reset"/>
         </service>

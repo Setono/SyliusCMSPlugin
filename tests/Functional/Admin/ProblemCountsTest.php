@@ -10,11 +10,14 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprintInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
+use Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface;
 use Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Clock\Test\ClockSensitiveTrait;
+use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * The lists' problem marker, their Needs attention filter and the Content badge read counts stored with the entries,
@@ -23,6 +26,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  */
 final class ProblemCountsTest extends WebTestCase
 {
+    use ClockSensitiveTrait;
     use Entries;
 
     private const PROMO = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e50';
@@ -46,6 +50,39 @@ final class ProblemCountsTest extends WebTestCase
         self::assertEquals(new ProblemCount(), self::storedCount($saved));
         self::assertEquals(new ProblemCount(5, 4), self::storedCount($other));
         self::assertFalse(self::manager()->getUnitOfWork()->tryGetById($other->getId(), Entry::class), 'The other entry isn\'t loaded');
+    }
+
+    /**
+     * Nothing is written when a scheduled publish becomes overdue, so the lists and the Content badge find it as of now
+     *
+     * @test
+     */
+    public function a_scheduled_publish_that_becomes_overdue_needs_attention_without_anything_written(): void
+    {
+        self::mockTime('2026-11-20 10:00:00');
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        $page = self::createPage('About us', 'about-us', 'Hello');
+        /** @var PublishSchedulerInterface $scheduler */
+        $scheduler = self::getContainer()->get(PublishSchedulerInterface::class);
+        $scheduler->schedule($page, new \DateTimeImmutable('2026-11-20 11:30:00', new \DateTimeZone('UTC')));
+
+        // Four minutes after its time it isn't overdue yet
+        self::mockTime('2026-11-20 11:34:59');
+        $crawler = $client->request('GET', '/admin/cms/entries/page');
+        self::assertNull($crawler->filter('.sylius-admin-menu a[href="/admin/cms"]')->attr('data-cms-problem-count'));
+        self::assertCount(0, $crawler->filter('[data-column="problems"] a'));
+
+        self::mockTime('2026-11-20 11:35:00');
+        $crawler = $client->request('GET', '/admin/cms/entries/page');
+
+        $content = $crawler->filter('.sylius-admin-menu a[href="/admin/cms"]');
+        self::assertSame(['1', 'error'], [$content->attr('data-cms-problem-count'), $content->attr('data-cms-problems')]);
+        $marker = $crawler->filter('[data-column="problems"] a');
+        self::assertSame(['1', '1 error, no warnings'], [trim($marker->text()), $marker->attr('title')]);
+
+        $crawler = $client->request('GET', '/admin/cms/entries/page?' . http_build_query(['criteria' => ['status' => 'needs_attention']]));
+        self::assertSame([$page->getUuid()], $crawler->filter('table tbody [data-entry]')->each(static fn (Crawler $title): ?string => $title->attr('data-entry')));
     }
 
     private static function storedCount(EntryInterface $entry): ProblemCount

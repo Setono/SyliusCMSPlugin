@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Query;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
+use Setono\SyliusCMSPlugin\Problem\TimeDependentProblemKindInterface;
 
 /**
  * Reads and writes the problem counts stored with the entries, in SQL, so no admin page goes through every entry.
@@ -23,16 +24,21 @@ interface ProblemCountsQueryInterface
     public function store(array $counts, string $fingerprint, bool $onlyStale = false): void;
 
     /**
-     * The entries' stored counts
+     * The entries' stored counts, with one error or warning for each time-dependent kind an entry has a problem of
+     * at $now
      *
      * @param list<EntryInterface> $entries
+     * @param iterable<TimeDependentProblemKindInterface> $kinds
      *
      * @return array<string, ProblemCount> by the entry's UUID, of the entries that are saved
      */
-    public function ofEntries(array $entries): array;
+    public function ofEntries(array $entries, iterable $kinds, \DateTimeImmutable $now): array;
 
     /**
-     * The stored counts of every entry, added up
+     * The stored counts of every entry added up, with one error or warning for each entry with a problem of each
+     * time-dependent kind at $now
+     *
+     * @param iterable<TimeDependentProblemKindInterface> $kinds
      */
-    public function total(): ProblemCount;
+    public function total(iterable $kinds, \DateTimeImmutable $now): ProblemCount;
 }

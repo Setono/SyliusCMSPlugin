@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Problem\Kind;
 
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishFailed;
 use Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishOverdue;
@@ -73,6 +77,31 @@ final class ScheduledPublishProblemsTest extends TestCase
         $this->scheduledPublish('2026-11-16 11:55:01');
 
         self::assertSame([], [...$this->overdue('2026-11-16 12:00:00')]);
+    }
+
+    /**
+     * The lists and the Content badge find it with a query condition, as nothing is written when it becomes overdue
+     *
+     * @test
+     */
+    public function an_overdue_error_is_found_in_queries_as_of_now_as_the_time_it_becomes_overdue_writes_nothing(): void
+    {
+        $kind = new ScheduledPublishOverdue($this->scheduledPublishes->reveal(), new MockClock());
+        $queryBuilder = new QueryBuilder($this->prophesize(EntityManagerInterface::class)->reveal());
+
+        $condition = $kind->getCondition($queryBuilder, 'o', new \DateTimeImmutable('2026-11-16 13:00:00', new \DateTimeZone('Europe/Copenhagen')));
+
+        self::assertSame(Severity::Error, $kind->getSeverity());
+        self::assertSame(sprintf(
+            'EXISTS (SELECT cms_problem_overdue.id FROM %s cms_problem_overdue WHERE cms_problem_overdue.entry = o AND cms_problem_overdue.failureReason IS NULL AND cms_problem_overdue.publishAt <= :cms_problem_overdue_before)',
+            ScheduledPublishInterface::class,
+        ), $condition);
+        $before = $queryBuilder->getParameter('cms_problem_overdue_before');
+        self::assertNotNull($before);
+        // The column holds UTC
+        self::assertEquals(new \DateTimeImmutable('2026-11-16 11:55:00', new \DateTimeZone('UTC')), $before->getValue());
+        self::assertSame('UTC', $before->getValue()->getTimezone()->getName());
+        self::assertSame(Types::DATETIME_IMMUTABLE, $before->getType());
     }
 
     /**

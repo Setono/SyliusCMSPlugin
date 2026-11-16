@@ -6,11 +6,14 @@ namespace Setono\SyliusCMSPlugin\Query;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
+use Setono\SyliusCMSPlugin\Problem\Severity;
+use Setono\SyliusCMSPlugin\Problem\TimeDependentProblemKindInterface;
 
 /**
  * DQL on the entries' problem count columns, which MySQL and PostgreSQL both run. A list of ids is bound with the
@@ -61,43 +64,92 @@ final readonly class ProblemCountsQuery implements ProblemCountsQueryInterface
         }
     }
 
-    public function ofEntries(array $entries): array
+    public function ofEntries(array $entries, iterable $kinds, \DateTimeImmutable $now): array
     {
         $ids = array_values(array_filter(array_map(static fn (EntryInterface $entry): ?int => $entry->getId(), $entries), is_int(...)));
         if ([] === $ids) {
             return [];
         }
 
-        /** @var list<array{uuid: string, errors: int|string, warnings: int|string}> $rows */
-        $rows = $this->manager()->createQueryBuilder()
+        $query = $this->manager()->createQueryBuilder()
             ->select('entry.uuid', 'entry.problemErrors AS errors', 'entry.problemWarnings AS warnings')
             ->from(Entry::class, 'entry')
             ->andWhere('entry.id IN (:ids)')
             ->setParameter('ids', $ids)
-            ->getQuery()
-            ->getScalarResult()
         ;
+        $severities = $this->selectTimeDependent($query, $kinds, $now, 'CASE WHEN %s THEN 1 ELSE 0 END');
 
         $counts = [];
-        foreach ($rows as $row) {
-            $counts[$row['uuid']] = new ProblemCount((int) $row['errors'], (int) $row['warnings']);
+        /** @var array<string, mixed> $row */
+        foreach ($query->getQuery()->getScalarResult() as $row) {
+            $counts[self::string($row['uuid'])] = self::count($row, $severities);
         }
 
         return $counts;
     }
 
-    public function total(): ProblemCount
+    public function total(iterable $kinds, \DateTimeImmutable $now): ProblemCount
     {
-        /** @var array{errors: int|string|null, warnings: int|string|null} $row */
-        $row = $this->manager()->createQueryBuilder()
+        $query = $this->manager()->createQueryBuilder()
             ->select('SUM(entry.problemErrors) AS errors', 'SUM(entry.problemWarnings) AS warnings')
             ->from(Entry::class, 'entry')
-            ->getQuery()
-            ->getSingleResult()
         ;
+        $severities = $this->selectTimeDependent($query, $kinds, $now, 'SUM(CASE WHEN %s THEN 1 ELSE 0 END)');
 
-        // Without entries, the sums are null
-        return new ProblemCount((int) $row['errors'], (int) $row['warnings']);
+        /** @var array<string, mixed> $row */
+        $row = $query->getQuery()->getSingleResult();
+
+        return self::count($row, $severities);
+    }
+
+    /**
+     * Selects, for each time-dependent kind, whether an entry has a problem of it, as $select says
+     *
+     * @param iterable<TimeDependentProblemKindInterface> $kinds
+     *
+     * @return array<string, Severity> the severity of each kind, by the name of what's selected for it
+     */
+    private function selectTimeDependent(QueryBuilder $query, iterable $kinds, \DateTimeImmutable $now, string $select): array
+    {
+        $severities = [];
+        foreach ($kinds as $kind) {
+            $name = sprintf('time_dependent_%d', count($severities));
+            $query->addSelect(sprintf('%s AS %s', sprintf($select, $kind->getCondition($query, 'entry', $now)), $name));
+            $severities[$name] = $kind->getSeverity();
+        }
+
+        return $severities;
+    }
+
+    /**
+     * The stored counts in a row, with what it selected of each time-dependent kind. Without entries, a sum is null
+     *
+     * @param array<string, mixed> $row
+     * @param array<string, Severity> $severities
+     */
+    private static function count(array $row, array $severities): ProblemCount
+    {
+        $errors = self::int($row['errors']);
+        $warnings = self::int($row['warnings']);
+        foreach ($severities as $name => $severity) {
+            if (Severity::Error === $severity) {
+                $errors += self::int($row[$name]);
+            } else {
+                $warnings += self::int($row[$name]);
+            }
+        }
+
+        return new ProblemCount($errors, $warnings);
+    }
+
+    private static function int(mixed $value): int
+    {
+        return is_numeric($value) ? (int) $value : 0;
+    }
+
+    private static function string(mixed $value): string
+    {
+        return is_string($value) ? $value : throw new \UnexpectedValueException('An entry\'s UUID must be a string');
     }
 
     private function manager(): EntityManagerInterface
