@@ -16,9 +16,12 @@ use Setono\SyliusCMSPlugin\Publishing\EditRecorder;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettings;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver;
 use Setono\SyliusCMSPlugin\Publishing\InvalidEntrySettingsException;
+use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
+use Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
+use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
 use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Symfony\Component\Clock\MockClock;
@@ -42,6 +45,9 @@ final class EntrySettingsSaverTest extends TestCase
     /** @var ObjectProphecy<EntryUrlValidatorInterface> */
     private ObjectProphecy $urlValidator;
 
+    /** @var ObjectProphecy<HomepageRepositoryInterface> */
+    private ObjectProphecy $homepageRepository;
+
     /** @var list<string> what happened, in order */
     private array $calls = [];
 
@@ -64,6 +70,9 @@ final class EntrySettingsSaverTest extends TestCase
 
         $this->urlValidator = $this->prophesize(EntryUrlValidatorInterface::class);
         $this->urlValidator->validateChannels(Argument::cetera())->willReturn([]);
+
+        $this->homepageRepository = $this->prophesize(HomepageRepositoryInterface::class);
+        $this->homepageRepository->findByChannelCodes(Argument::any())->willReturn([]);
 
         $this->eventDispatcher = new EventDispatcher();
         $this->eventDispatcher->addListener(EntrySettingsChanged::class, function (EntrySettingsChanged $event): void {
@@ -172,6 +181,87 @@ final class EntrySettingsSaverTest extends TestCase
     }
 
     /**
+     * A channel has one homepage, which the homepage rows' unique channel code holds to, and Doctrine inserts rows before
+     * it deletes others. So the page that was a chosen channel's homepage loses it in a flush of its own, before the
+     * transaction adds the page's rows
+     *
+     * @test
+     */
+    public function it_takes_the_chosen_channels_off_the_page_that_was_their_homepage_in_a_flush_of_its_own(): void
+    {
+        $page = new Page();
+        $about = new Page();
+        $aboutWeb = Homepages::factory()->createForPage($about, 'WEB');
+        $about->addHomepage($aboutWeb);
+        $about->addHomepage(Homepages::factory()->createForPage($about, 'MOBILE'));
+        $this->homepageRepository->findByChannelCodes(['B2B', 'WEB'])->willReturn([$aboutWeb]);
+        $calls = &$this->calls;
+        $this->manager->flush()->will(static function () use (&$calls, $page, $about): void {
+            $calls[] = sprintf('flush: the page is the homepage of %s, the other page of %s', implode(', ', $page->getHomepageChannelCodes()) ?: 'none', implode(', ', $about->getHomepageChannelCodes()));
+        });
+
+        $this->saver()->save($page, new EntrySettings(true, new DateWindow(), [], Audience::everyone(), ['WEB', 'B2B']));
+
+        self::assertSame([
+            'begin',
+            'flush: the page is the homepage of none, the other page of MOBILE',
+            'commit',
+            $page->getUuid() . ': homepage',
+            $about->getUuid() . ': homepage',
+        ], $this->calls);
+        self::assertSame(['B2B', 'WEB'], $page->getHomepageChannelCodes());
+        self::assertEquals(new \DateTimeImmutable('2026-11-14T11:00:00Z'), $about->getChangedAt(), 'Its "Homepage of" changed');
+        self::assertNull($about->getLastEditedBy(), 'Nobody edited it');
+    }
+
+    /**
+     * @test
+     */
+    public function it_flushes_nothing_more_when_no_other_page_was_the_homepage_of_the_chosen_channels(): void
+    {
+        $page = new Page();
+
+        $this->saver()->save($page, new EntrySettings(true, new DateWindow(), [], Audience::everyone(), ['WEB']));
+
+        self::assertSame(['begin', 'commit', $page->getUuid() . ': homepage'], $this->calls);
+        $this->manager->flush()->shouldNotHaveBeenCalled();
+        self::assertSame(['WEB'], $page->getHomepageChannelCodes());
+    }
+
+    /**
+     * @test
+     */
+    public function it_looks_for_no_other_homepage_when_the_homepages_stay(): void
+    {
+        $page = new Page();
+
+        $this->saver()->save($page, new EntrySettings(false, new DateWindow(), [], Audience::everyone()));
+
+        $this->homepageRepository->findByChannelCodes(Argument::any())->shouldNotHaveBeenCalled();
+    }
+
+    /**
+     * Only a page can be a channel's homepage. See "Homepage" in docs/spec/urls-and-seo.md
+     *
+     * @test
+     */
+    public function it_refuses_homepages_for_an_entry_other_than_a_page(): void
+    {
+        $announcement = new Announcement();
+        $this->managerRegistry->getManagerForClass(Announcement::class)->willReturn($this->manager->reveal());
+
+        try {
+            $this->saver()->save($announcement, new EntrySettings(false, new DateWindow(), [], Audience::everyone(), ['WEB']));
+            self::fail('The homepage was not refused');
+        } catch (InvalidEntrySettingsException $e) {
+            self::assertSame('Only a page can be a channel\'s homepage', $e->getMessage());
+        }
+
+        self::assertSame([], $this->calls);
+        self::assertTrue($announcement->isEnabled(), 'Nothing is saved');
+    }
+
+    /**
      * @test
      */
     public function it_needs_the_entry_managed_by_the_doctrine_orm(): void
@@ -197,6 +287,7 @@ final class EntrySettingsSaverTest extends TestCase
             ChannelsAndAudience::modifier(),
             new EditRecorder($tokenStorage, $clock),
             $this->urlValidator->reveal(),
+            Homepages::modifier($this->homepageRepository->reveal()),
         );
     }
 }

@@ -27,10 +27,11 @@ final class EntrySettingsNormalizerTest extends TestCase
             new DateWindow(new \DateTimeImmutable('2026-11-27T01:00:00+01:00'), new \DateTimeImmutable('2026-12-01T00:00:00Z')),
             ['WEB', 'B2B'],
             Audience::only('wholesale', '@guest'),
+            ['WEB'],
         );
 
         self::assertSame(
-            '{"enabled":false,"showFrom":"2026-11-27T00:00:00Z","showUntil":"2026-12-01T00:00:00Z","channels":["B2B","WEB"],"audience":{"mode":"only","groups":["@guest","wholesale"]}}',
+            '{"enabled":false,"showFrom":"2026-11-27T00:00:00Z","showUntil":"2026-12-01T00:00:00Z","channels":["B2B","WEB"],"audience":{"mode":"only","groups":["@guest","wholesale"]},"homepageOf":["WEB"]}',
             CanonicalJson::encode((new EntrySettingsNormalizer())->normalize($settings)),
         );
     }
@@ -41,7 +42,7 @@ final class EntrySettingsNormalizerTest extends TestCase
     public function it_writes_an_open_date_window_and_an_audience_of_everyone_as_null_and_an_empty_list(): void
     {
         self::assertSame(
-            '{"enabled":true,"showFrom":null,"showUntil":null,"channels":[],"audience":{"mode":"everyone","groups":[]}}',
+            '{"enabled":true,"showFrom":null,"showUntil":null,"channels":[],"audience":{"mode":"everyone","groups":[]},"homepageOf":[]}',
             CanonicalJson::encode((new EntrySettingsNormalizer())->normalize(self::current())),
         );
     }
@@ -57,12 +58,14 @@ final class EntrySettingsNormalizerTest extends TestCase
             'showUntil' => '2026-12-01T00:00:00.500Z',
             'channels' => ['WEB', 'B2B'],
             'audience' => ['mode' => 'except', 'groups' => ['retail', '@no_group']],
+            'homepageOf' => ['WEB', 'B2B'],
         ], self::current());
 
         self::assertFalse($settings->enabled);
         self::assertTrue($settings->dateWindow->equals(new DateWindow(new \DateTimeImmutable('2026-11-27T00:00:00Z'), new \DateTimeImmutable('2026-12-01T00:00:00Z'))));
         self::assertSame(['B2B', 'WEB'], $settings->channels);
         self::assertTrue($settings->audience->equals(Audience::except('@no_group', 'retail')));
+        self::assertSame(['B2B', 'WEB'], $settings->homepageOf);
     }
 
     /**
@@ -70,7 +73,7 @@ final class EntrySettingsNormalizerTest extends TestCase
      */
     public function it_keeps_the_current_values_of_settings_left_out(): void
     {
-        $current = new EntrySettings(false, new DateWindow(new \DateTimeImmutable('2026-11-27T00:00:00Z'), new \DateTimeImmutable('2026-12-01T00:00:00Z')), ['WEB'], Audience::only('wholesale'));
+        $current = new EntrySettings(false, new DateWindow(new \DateTimeImmutable('2026-11-27T00:00:00Z'), new \DateTimeImmutable('2026-12-01T00:00:00Z')), ['WEB'], Audience::only('wholesale'), ['WEB']);
         $normalizer = new EntrySettingsNormalizer();
 
         self::assertEquals($current, $normalizer->denormalize([], $current));
@@ -80,6 +83,9 @@ final class EntrySettingsNormalizerTest extends TestCase
         self::assertFalse($onlyFrom->enabled);
         self::assertSame(['WEB'], $onlyFrom->channels);
         self::assertTrue($onlyFrom->audience->equals(Audience::only('wholesale')));
+        self::assertSame(['WEB'], $onlyFrom->homepageOf);
+
+        self::assertSame([], $normalizer->denormalize(['homepageOf' => []], $current)->homepageOf);
 
         $onlyUntil = $normalizer->denormalize(['showUntil' => null, 'enabled' => true], $current);
         self::assertTrue($onlyUntil->dateWindow->equals(new DateWindow(new \DateTimeImmutable('2026-11-27T00:00:00Z'))));
@@ -118,6 +124,10 @@ final class EntrySettingsNormalizerTest extends TestCase
         yield 'channels as a map' => [['channels' => ['web' => 'WEB']], '"channels" must be a list of channel codes'];
         yield 'an empty channel code' => [['channels' => ['WEB', '']], '"channels" must be a list of channel codes'];
         yield 'a channel code that is no string' => [['channels' => [7]], '"channels" must be a list of channel codes'];
+        yield 'homepage of a string' => [['homepageOf' => 'WEB'], '"homepageOf" must be a list of channel codes'];
+        yield 'homepage of a map' => [['homepageOf' => ['web' => 'WEB']], '"homepageOf" must be a list of channel codes'];
+        yield 'homepage of an empty channel code' => [['homepageOf' => ['']], '"homepageOf" must be a list of channel codes'];
+        yield 'homepage of a channel code that is no string' => [['homepageOf' => [null]], '"homepageOf" must be a list of channel codes'];
         yield 'an audience that is no object' => [['audience' => 'everyone'], '"audience" must have a "mode" of everyone, only or except, and "groups" as a list of customer group values'];
         yield 'an audience without groups' => [['audience' => ['mode' => 'only']], '"audience" must have a "mode" of everyone, only or except, and "groups" as a list of customer group values'];
         yield 'an audience without a mode' => [['audience' => ['groups' => []]], '"audience" must have a "mode" of everyone, only or except, and "groups" as a list of customer group values'];
