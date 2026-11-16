@@ -15,7 +15,8 @@ use Symfony\Component\Translation\TranslatableMessage;
 
 /**
  * An entry whose layout was removed from code or disabled, a warning. It keeps the layout's code in its tree and
- * renders in its content type's default layout. It's fixed by picking a layout in the builder's entry settings.
+ * renders in its content type's default layout. It's fixed by picking a layout in the builder's entry settings. A
+ * project may turn a layout off on purpose through `disabled.layouts`, so setono:cms:lint doesn't report it.
  * See "A removed layout" in docs/spec/layouts-and-presets.md and "Problems" in docs/spec/admin.md
  */
 final readonly class RemovedLayout implements ProblemKindInterface

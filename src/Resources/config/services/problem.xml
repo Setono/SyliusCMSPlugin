@@ -73,11 +73,12 @@
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
         </service>
 
+        <!-- A layout a project removed or turned off on purpose: a warning in the admin, so lint leaves it out -->
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\RemovedLayout" class="Setono\SyliusCMSPlugin\Problem\Kind\RemovedLayout">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
 
-            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+            <tag name="setono_sylius_cms.problem_kind"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue" class="Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue">

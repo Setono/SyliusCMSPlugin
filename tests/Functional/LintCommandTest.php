@@ -6,8 +6,10 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional;
 
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
+use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\DisabledLayoutKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -86,6 +88,34 @@ final class LintCommandTest extends KernelTestCase
         self::assertContains(sprintf('%s published %s A block of the type "promo", which the code no longer has, isn\'t shown.', $page->getUuid(), self::PROMO), $lines);
         self::assertContains(sprintf('%s draft %s text da_DK Text in the Heading block holds a value that doesn\'t fit its field type, so it counts as empty.', $page->getUuid(), self::HEADING), $lines);
         self::assertStringContainsString('[ERROR] Found 2 problems in 1 entry.', self::display($tester));
+    }
+
+    /**
+     * A project turns a layout off on purpose, and its pages render in the default layout, so it's a warning in the
+     * admin only, and lint, which reports what's wrong with the stored content, leaves it out
+     *
+     * @test
+     */
+    public function it_leaves_out_an_entry_whose_layout_is_disabled(): void
+    {
+        static::$class = DisabledLayoutKernel::class;
+        self::bootKernel();
+        $page = self::createPage('About us', 'about-us', 'Hello', published: true);
+        $page->setBlockTree(new StoredTree(new StoredLayout('landing', 1, []), $page->getBlockTree()->blocks));
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
+        $manager->flush();
+
+        $tester = self::lint();
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), self::display($tester));
+    }
+
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        static::$class = null;
     }
 
     private static function lint(): CommandTester
