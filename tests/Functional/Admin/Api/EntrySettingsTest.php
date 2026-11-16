@@ -91,7 +91,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
         $response = self::json($client, 'GET', '/admin/cms/api/entries/' . $page->getUuid());
 
         self::assertIsArray($response);
-        self::assertSame(['entry', 'lockToken', 'settings', 'status', 'editors'], array_keys($response));
+        self::assertSame(['entry', 'lockToken', 'settings', 'status', 'editors', 'completeness'], array_keys($response));
         self::assertSame(['enabled' => true, 'showFrom' => null, 'showUntil' => null, 'channels' => ['WEB'], 'audience' => ['mode' => 'only', 'groups' => ['wholesale']]], $response['settings']);
         self::assertSame('published', $response['status']);
     }

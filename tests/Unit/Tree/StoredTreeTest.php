@@ -161,6 +161,27 @@ final class StoredTreeTest extends TestCase
     /**
      * @test
      */
+    public function it_sets_and_clears_where_a_value_was_translated_from_per_locale(): void
+    {
+        $source = ['from' => 'en_US', 'fingerprint' => hash('sha256', '"Hello"')];
+        $block = new StoredBlock(self::A, 'heading', 1);
+        $block->translated = ['subtitle' => 'not a locale map'];
+
+        $block->setTranslated('text', 'da_DK', $source);
+        $block->setTranslated('text', 'de_DE', $source);
+        $block->setTranslated('subtitle', 'da_DK', $source);
+
+        self::assertSame(['subtitle' => ['da_DK' => $source], 'text' => ['da_DK' => $source, 'de_DE' => $source]], $block->translated);
+
+        $block->setTranslated('text', 'da_DK', null);
+        $block->setTranslated('subtitle', 'da_DK', null);
+
+        self::assertSame(['text' => ['de_DE' => $source]], $block->translated);
+    }
+
+    /**
+     * @test
+     */
     public function it_lists_every_key_in_the_tree(): void
     {
         $parent = new StoredBlock(self::A, 'columns', 1);

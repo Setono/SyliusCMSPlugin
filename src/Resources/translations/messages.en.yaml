@@ -147,6 +147,14 @@ setono_sylius_cms:
             shows_until: 'Shows until %until%'
             unpublished_changes: Unpublished changes
         title: Title
+        translation_chip:
+            complete: complete
+            held_back: held back
+            no_translation: no translation
+            outdated: '%count% outdated'
+            untranslated: '%count% untranslated'
+        translations: Translations
+        translations_help: Translating happens in the builder, one language at a time.
         type: Type
         untitled: Untitled
         url: URL
@@ -205,6 +213,10 @@ setono_sylius_cms:
         load_failed: Couldn't load the entry
         loading: Loading…
         locale: Language
+        locale_no_translation: no translation
+        locale_outdated: '%count% outdated'
+        locale_untranslated: '%count% untranslated'
+        mark_up_to_date: Mark as up to date
         mobile: Mobile
         more: More
         more_help: Publishing history, revisions, share links and placements are on the entry's overview page.
@@ -217,6 +229,7 @@ setono_sylius_cms:
         no_style: None
         no_translation: 'This entry has no translation in %locale% yet.'
         open_overview: Open the overview page
+        outdated: 'The %locale% text it was translated from has changed. It now reads:'
         path: Path
         preview: Preview
         preview_channel: Preview channel

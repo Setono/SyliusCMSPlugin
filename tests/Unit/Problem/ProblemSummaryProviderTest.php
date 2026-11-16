@@ -15,9 +15,9 @@ use Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemSummaryProvider;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\AnyMessage;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
-use Symfony\Component\Translation\TranslatableMessage;
 
 final class ProblemSummaryProviderTest extends TestCase
 {
@@ -107,6 +107,6 @@ final class ProblemSummaryProviderTest extends TestCase
 
     private static function problem(Severity $severity): Problem
     {
-        return new Problem('kind', $severity, new Page(), new TranslatableMessage('Wrong'));
+        return new Problem('kind', $severity, new Page(), new AnyMessage());
     }
 }

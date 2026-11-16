@@ -124,6 +124,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsNormalizer"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\PresenceTrackerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Translation\TranslatableValues"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction">

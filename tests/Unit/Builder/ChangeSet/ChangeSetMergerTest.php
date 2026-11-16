@@ -14,9 +14,11 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\Merge;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetConditions;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetShown;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -498,6 +500,48 @@ final class ChangeSetMergerTest extends TestCase
 
         self::assertEquals([$mine], $merge->changeSet->changes);
         self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * Translation state isn't a value an editor types, so the editor's last wins, as for a style
+     *
+     * @test
+     */
+    public function it_applies_the_translation_state_the_editor_set_last_when_both_set_it(): void
+    {
+        $source = ['from' => 'en_US', 'fingerprint' => hash('sha256', '"Hello"')];
+        $mine = [new SetTranslated(self::A, 'text', 'da_DK', $source), new SetEntryTranslated('title', 'da_DK', $source)];
+
+        $merge = self::merge(
+            [new SetTranslated(self::A, 'text', 'da_DK', null), new SetEntryTranslated('title', 'da_DK', null)],
+            $mine,
+            self::tree(self::heading(self::A)),
+        );
+
+        self::assertEquals($mine, $merge->changeSet->changes);
+        self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_a_clash_instead_of_setting_the_translation_state_of_a_block_a_colleague_deleted(): void
+    {
+        $merge = self::merge([new RemoveBlock(self::A)], [new SetTranslated(self::A, 'text', 'da_DK', null)], self::tree(self::heading(self::B)));
+
+        self::assertSame([], $merge->changeSet->changes);
+        self::assertSame([['kind' => 'deleted_block', 'key' => self::A]], self::clashes($merge));
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_a_clash_instead_of_deleting_a_block_a_colleague_set_the_translation_state_in(): void
+    {
+        $merge = self::merge([new SetTranslated(self::B, 'text', 'da_DK', null)], [new RemoveBlock(self::A)], self::tree(self::heading(self::A, children: [self::heading(self::B)])));
+
+        self::assertSame([], $merge->changeSet->changes);
+        self::assertSame([['kind' => 'changed_block', 'key' => self::A]], self::clashes($merge));
     }
 
     /**

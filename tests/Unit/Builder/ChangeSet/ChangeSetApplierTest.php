@@ -16,9 +16,11 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetConditions;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetShown;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\DateTimeHandler;
@@ -423,6 +425,69 @@ final class ChangeSetApplierTest extends TestCase
 
     /**
      * @test
+     */
+    public function it_sets_and_removes_where_a_translations_values_were_translated_from(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+        $page->getTranslation('en_US')->setTranslated(['slug' => ['from' => 'da_DK', 'fingerprint' => self::fingerprint('om-os')]]);
+
+        self::applier()->apply(new ChangeSet([new SetEntryTranslated('title', 'en_US', ['from' => 'da_DK', 'fingerprint' => self::fingerprint('Om os')])]), $page);
+
+        self::assertSame([
+            'slug' => ['from' => 'da_DK', 'fingerprint' => self::fingerprint('om-os')],
+            'title' => ['from' => 'da_DK', 'fingerprint' => self::fingerprint('Om os')],
+        ], $page->getTranslation('en_US')->getTranslated());
+
+        self::applier()->apply(new ChangeSet([new SetEntryTranslated('slug', 'en_US', null)]), $page);
+
+        self::assertSame(['title' => ['from' => 'da_DK', 'fingerprint' => self::fingerprint('Om os')]], $page->getTranslation('en_US')->getTranslated());
+    }
+
+    /**
+     * @test
+     */
+    public function it_adds_a_translation_with_where_its_value_was_translated_from(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+
+        self::applier()->apply(new ChangeSet([
+            new SetEntryValue('title', 'da_DK', 'Om os'),
+            new SetEntryTranslated('title', 'da_DK', ['from' => 'en_US', 'fingerprint' => self::fingerprint('About us')]),
+        ]), $page);
+
+        self::assertSame('Om os', $page->getTranslation('da_DK')->getTitle());
+        self::assertSame(['title' => ['from' => 'en_US', 'fingerprint' => self::fingerprint('About us')]], $page->getTranslation('da_DK')->getTranslated());
+    }
+
+    /**
+     * @test
+     */
+    public function it_sets_and_removes_where_a_block_s_values_were_translated_from(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1, fields: ['text' => ['en_US' => 'Hello', 'da_DK' => 'Hej', 'de_DE' => 'Hallo']])]);
+
+        $tree = $this->apply(
+            $tree,
+            new SetTranslated(self::A, 'text', 'da_DK', ['from' => 'en_US', 'fingerprint' => self::fingerprint('Hello')]),
+            new SetTranslated(self::A, 'text', 'de_DE', ['from' => 'en_US', 'fingerprint' => self::fingerprint('Hello')]),
+        );
+
+        self::assertSame(['text' => [
+            'da_DK' => ['from' => 'en_US', 'fingerprint' => self::fingerprint('Hello')],
+            'de_DE' => ['from' => 'en_US', 'fingerprint' => self::fingerprint('Hello')],
+        ]], $tree->blocks[0]->translated);
+
+        $tree = $this->apply($tree, new SetTranslated(self::A, 'text', 'da_DK', null));
+
+        self::assertSame(['text' => ['de_DE' => ['from' => 'en_US', 'fingerprint' => self::fingerprint('Hello')]]], $tree->blocks[0]->translated);
+
+        $tree = $this->apply($tree, new SetTranslated(self::A, 'text', 'de_DE', null));
+
+        self::assertSame([], $tree->blocks[0]->translated);
+    }
+
+    /**
+     * @test
      *
      * @dataProvider provideInvalidEntryChanges
      */
@@ -446,6 +511,8 @@ final class ChangeSetApplierTest extends TestCase
         yield 'a slug of a content type without its own URL' => [$recipe, new SetEntryValue('slug', 'en_US', 'pancakes'), 'The content type "recipe" has no entry field "slug"'];
         yield 'a translatable field without a locale' => [$page, new SetEntryValue('title', null, 'About'), 'The entry field "title" is translatable, so a value needs a locale'];
         yield 'a title that is not a string' => [$page, new SetEntryValue('title', 'en_US', ['About']), 'The entry field "title" must be a string or null'];
+        yield 'the translation state of a field the entry does not have' => [$page, new SetEntryTranslated('subtitle', 'en_US', null), 'The content type "page" has no entry field "subtitle"'];
+        yield 'the translation state of a slug of a content type without its own URL' => [$recipe, new SetEntryTranslated('slug', 'en_US', null), 'The content type "recipe" has no entry field "slug"'];
     }
 
     /**
@@ -490,6 +557,15 @@ final class ChangeSetApplierTest extends TestCase
         yield 'setting the style of a block the tree does not have' => [new SetStyle($other, 'dark'), $other];
         yield 'setting the style of a block of an unknown type' => [new SetStyle(self::B, 'dark'), '"removed"'];
         yield 'setting a style the block type does not offer' => [new SetStyle(self::A, 'dark'), 'The block type "heading" has no block style "dark"'];
+        yield 'setting the translation state of a block the tree does not have' => [new SetTranslated($other, 'text', 'en_US', null), 'The tree has no block with the key ' . $other];
+        yield 'setting the translation state of a block of an unknown type' => [new SetTranslated(self::B, 'text', 'en_US', null), 'There is no block type with the code "removed"'];
+        yield 'setting the translation state of a field the block type does not have' => [new SetTranslated(self::A, 'subtitle', 'en_US', null), 'The block type "heading" has no field "subtitle"'];
+        yield 'setting the translation state of a shared field' => [new SetTranslated(self::A, 'level', 'en_US', null), 'The field "level" is shared by all translations, so it has no translation state'];
+    }
+
+    private static function fingerprint(string $value): string
+    {
+        return hash('sha256', json_encode($value, \JSON_THROW_ON_ERROR));
     }
 
     private function apply(StoredTree $tree, Change ...$changes): StoredTree

@@ -13,7 +13,7 @@ use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
-use Symfony\Component\Translation\TranslatableMessage;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\AnyMessage;
 
 final class ProblemFinderTest extends TestCase
 {
@@ -77,6 +77,6 @@ final class ProblemFinderTest extends TestCase
 
     private static function problem(EntryInterface $entry, string $kind, Severity $severity): Problem
     {
-        return new Problem($kind, $severity, $entry, new TranslatableMessage($kind));
+        return new Problem($kind, $severity, $entry, new AnyMessage());
     }
 }

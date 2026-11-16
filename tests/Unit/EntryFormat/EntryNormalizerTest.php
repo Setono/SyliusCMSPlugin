@@ -53,6 +53,23 @@ final class EntryNormalizerTest extends TestCase
     /**
      * @test
      */
+    public function it_writes_the_translation_state_of_a_translation_s_fields_in_the_listed_key_order(): void
+    {
+        $fingerprint = hash('sha256', '"About us"');
+        $page = new Page();
+        $page->setCurrentLocale('da_DK');
+        $page->setTitle('Om os');
+        $page->getTranslation('da_DK')->setTranslated(['title' => ['fingerprint' => $fingerprint, 'from' => 'en_US']]);
+
+        self::assertStringContainsString(
+            sprintf('"translations":{"da_DK":{"shown":true,"fields":{"slug":null,"title":"Om os"},"translated":{"title":{"from":"en_US","fingerprint":"%s"}}}}', $fingerprint),
+            CanonicalJson::encode($this->normalizer()->normalize($page)),
+        );
+    }
+
+    /**
+     * @test
+     */
     public function it_writes_created_at_in_utc(): void
     {
         $page = new Page();

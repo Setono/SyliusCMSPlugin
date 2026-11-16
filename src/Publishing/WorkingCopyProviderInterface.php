@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Publishing;
 
+use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 
 /**
@@ -19,4 +20,12 @@ interface WorkingCopyProviderInterface
      * has no draft, so changing it never changes what shoppers see. Changes are saved through WorkingCopyManagerInterface
      */
     public function getWorkingCopy(EntryInterface $entry): EntryInterface;
+
+    /**
+     * The working copy of an entry whose draft is loaded already, as getWorkingCopy() gives it, without loading the
+     * draft again. The entry lists load the drafts of a page of entries in one query
+     *
+     * @param DraftInterface|null $draft the entry's draft, or null when it has none
+     */
+    public function getWorkingCopyWithDraft(EntryInterface $entry, ?DraftInterface $draft): EntryInterface;
 }

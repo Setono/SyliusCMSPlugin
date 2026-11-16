@@ -72,6 +72,31 @@ final class StoredBlock
     }
 
     /**
+     * Sets where a translatable field's value in a locale was translated from, or that it has no source when $source is null
+     *
+     * @param array{from: string, fingerprint: string}|null $source
+     */
+    public function setTranslated(string $field, string $localeCode, ?array $source): void
+    {
+        $locales = $this->translated[$field] ?? [];
+        if (!is_array($locales)) {
+            $locales = [];
+        }
+
+        if (null === $source) {
+            unset($locales[$localeCode]);
+        } else {
+            $locales[$localeCode] = $source;
+        }
+
+        if ([] === $locales) {
+            unset($this->translated[$field]);
+        } else {
+            $this->translated[$field] = $locales;
+        }
+    }
+
+    /**
      * @return list<string> the keys of this block and of every block below it
      */
     public function keys(): array
