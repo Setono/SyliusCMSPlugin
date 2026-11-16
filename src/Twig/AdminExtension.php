@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig;
 
+use Setono\SyliusCMSPlugin\Admin\ChannelHomepages;
 use Setono\SyliusCMSPlugin\Admin\EntryRevisions;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\EntryUrls;
@@ -26,6 +27,7 @@ final class AdminExtension extends AbstractExtension
         return [
             new TwigFunction('cms_admin_entry_row', [EntryRows::class, 'get']),
             new TwigFunction('cms_admin_entry_urls', [EntryUrls::class, 'of']),
+            new TwigFunction('cms_admin_channel_homepages', [ChannelHomepages::class, 'of']),
             new TwigFunction('cms_admin_translation_chips', [TranslationChips::class, 'of']),
             new TwigFunction('cms_admin_entry_problems', [ProblemFinder::class, 'findByEntry']),
             new TwigFunction('cms_admin_problem_summary', [ProblemSummaryProvider::class, 'getSummary']),

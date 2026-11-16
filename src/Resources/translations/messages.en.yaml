@@ -110,6 +110,9 @@ setono_sylius_cms:
         discard_changes: Discard changes
         error_count: '{0} No errors|{1} 1 error|]1,Inf[ %count% errors'
         fix_in_builder: Fix in builder
+        homepage_now: Homepage now
+        homepage_of: Homepage of
+        homepage_of_help: The page each channel shows at its root URL in place of the store's own homepage. Choose the channels in the builder's settings.
         language: Language
         last_edited: Last edited
         last_published: 'Last published %date%'
@@ -146,6 +149,7 @@ setono_sylius_cms:
             disabled_or_outside_date_window: Disabled or outside its date window
             never_published: Never published
             unpublished_changes: Unpublished changes
+        store_homepage: The store's own homepage
         status_label:
             date_window: 'Shows %from%–%until%'
             disabled: Disabled
@@ -155,6 +159,7 @@ setono_sylius_cms:
             shows_from: 'Shows from %from%'
             shows_until: 'Shows until %until%'
             unpublished_changes: Unpublished changes
+        this_page: This page
         title: Title
         translation_chip:
             complete: complete
@@ -223,6 +228,8 @@ setono_sylius_cms:
         guests: Guests
         has_errors: Has errors
         hidden_in_preview: Hidden in this channel and language
+        homepage_of: Homepage of
+        homepage_of_help: It shows at each of these channels' root URL in place of the store's own homepage. A channel has one homepage, so choosing it here takes it off any other page.
         is_inside: is inside
         is_not_one_of: is not one of
         is_one_of: is one of
