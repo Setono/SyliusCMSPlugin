@@ -26,7 +26,7 @@ final readonly class HomepageResolver implements HomepageResolverInterface
      */
     public function resolve(RenderContext $context): ?PageInterface
     {
-        $previewed = $this->previewedEntryProvider->getWorkingCopy($context->localeCode);
+        $previewed = $this->previewedEntryProvider->getPreviewedContent($context->localeCode);
         if ($previewed instanceof PageInterface && $previewed->isHomepageOf($context->channel->getCode() ?? '')) {
             return $previewed;
         }

@@ -33,10 +33,10 @@ final readonly class PreviewedEntryProvider
     }
 
     /**
-     * The working copy of the entry the main request previews, when it previews one in this locale, or the content of
-     * the revision it previews
+     * The content the main request previews, when it previews one in this locale: the working copy of the entry the
+     * builder edits, or the content of the revision it previews
      */
-    public function getWorkingCopy(string $localeCode): ?EntryInterface
+    public function getPreviewedContent(string $localeCode): ?EntryInterface
     {
         $preview = $this->previewContext->getPreview();
         if (null === $preview || $preview->localeCode !== $localeCode) {
@@ -59,7 +59,7 @@ final readonly class PreviewedEntryProvider
      */
     public function match(string $localeCode, string $path): ?EntryUrlMatch
     {
-        $entry = $this->getWorkingCopy($localeCode);
+        $entry = $this->getPreviewedContent($localeCode);
         if (null === $entry) {
             return null;
         }

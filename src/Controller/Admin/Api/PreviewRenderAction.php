@@ -66,7 +66,7 @@ final readonly class PreviewRenderAction
             return BuilderRequest::badRequest($e->getMessage());
         }
 
-        $workingCopy = $this->previewedEntry->getWorkingCopy($preview->localeCode) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $preview->entryUuid));
+        $workingCopy = $this->previewedEntry->getPreviewedContent($preview->localeCode) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $preview->entryUuid));
         $renderContext = $this->renderContextFactory->create(['entry' => $workingCopy]);
 
         $html = [];

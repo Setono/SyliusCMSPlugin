@@ -82,7 +82,7 @@ final readonly class ShowEntryAction
             return null;
         }
 
-        $workingCopy = $this->previewedEntryProvider->getWorkingCopy($localeCode);
+        $workingCopy = $this->previewedEntryProvider->getPreviewedContent($localeCode);
 
         return null !== $workingCopy && $workingCopy->getUuid() === $match->uuid ? $workingCopy : null;
     }
