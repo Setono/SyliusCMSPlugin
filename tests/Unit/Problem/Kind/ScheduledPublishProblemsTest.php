@@ -57,13 +57,12 @@ final class ScheduledPublishProblemsTest extends TestCase
         $this->scheduledPublish('2026-11-16 11:55:00');
 
         self::assertEquals([new Problem(
-            ScheduledPublishOverdue::CODE,
+            'scheduled_publish_overdue',
             Severity::Error,
             $this->page,
             new TranslatableMessage('setono_sylius_cms.problem.scheduled_publish_overdue', ['%at%' => '2026-11-16 12:55']),
             Fix::inPublishing($this->page),
         )], [...$this->overdue('2026-11-16 12:00:00')]);
-        self::assertSame('scheduled_publish_overdue', ScheduledPublishOverdue::CODE);
     }
 
     /**
@@ -93,13 +92,12 @@ final class ScheduledPublishProblemsTest extends TestCase
         $this->scheduledPublish('2026-11-16 11:00:00')->fail('Not on a Sunday');
 
         self::assertEquals([new Problem(
-            ScheduledPublishFailed::CODE,
+            'scheduled_publish_failed',
             Severity::Error,
             $this->page,
             new TranslatableMessage('setono_sylius_cms.problem.scheduled_publish_failed', ['%at%' => '2026-11-16 12:00', '%reason%' => 'Not on a Sunday']),
             Fix::inPublishing($this->page),
         )], [...$this->failed()]);
-        self::assertSame('scheduled_publish_failed', ScheduledPublishFailed::CODE);
         self::assertSame([], [...$this->overdue('2026-11-16 12:00:00')]);
     }
 

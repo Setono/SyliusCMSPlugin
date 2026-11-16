@@ -9,16 +9,16 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\EventListener\StopWorkerOnMessageLimitListener;
 use Symfony\Component\Messenger\MessageBusInterface;
-use Symfony\Component\Messenger\Stamp\BusNameStamp;
-use Symfony\Component\Messenger\Stamp\ConsumedByWorkerStamp;
-use Symfony\Component\Messenger\Stamp\ReceivedStamp;
+use Symfony\Component\Messenger\Worker;
 
 /**
  * Helpers for functional and UI tests of scheduled publishes. In the tests, Sylius's main transport is kept in memory
- * (KeptInMemoryTransportFactory), so a test reads the delayed messages that scheduling sent, and runs them as the
- * Messenger worker would, without waiting for their delay
+ * (KeptInMemoryTransportFactory), and a delayed message becomes available by the clock, which tests mock. So a test
+ * reads the messages that scheduling sent, moves the clock on, and runs a Messenger worker on what's due
  */
 trait ScheduledPublishes
 {
@@ -33,32 +33,49 @@ trait ScheduledPublishes
     }
 
     /**
-     * The messages sent to Sylius's main transport and not consumed yet
+     * Every message sent to Sylius's main transport since it was last forgotten, consumed or not
      *
      * @return list<Envelope>
      */
     protected static function sentMessages(): array
     {
-        return array_values([...KeptInMemoryTransportFactory::transport('main')->get()]);
+        return array_values(KeptInMemoryTransportFactory::transport('main')->getSent());
     }
 
     /**
-     * Runs the messages sent to Sylius's main transport, on the bus each was sent on, as the Messenger worker does when
-     * their time comes, and acknowledges them
+     * Runs a Messenger worker on Sylius's main transport until it has handled the messages that are due by the clock,
+     * on the bus each was sent on, as a project's worker does. It has a dispatcher of its own, so what one run adds to it,
+     * such as when to stop, doesn't stay for the next
+     *
+     * @return int how many messages it handled
      */
-    protected static function consumeMessages(): void
+    protected static function consumeMessages(): int
     {
         $transport = KeptInMemoryTransportFactory::transport('main');
-        foreach (self::sentMessages() as $envelope) {
-            $busName = $envelope->last(BusNameStamp::class)?->getBusName();
-            self::assertNotNull($busName, 'A message is sent on a bus');
-
-            $bus = self::getContainer()->get($busName);
-            self::assertInstanceOf(MessageBusInterface::class, $bus);
-
-            $bus->dispatch($envelope->with(new ReceivedStamp('main'), new ConsumedByWorkerStamp()));
-            $transport->ack($envelope);
+        $due = count([...$transport->get()]);
+        if (0 === $due) {
+            return 0;
         }
+
+        $bus = self::getContainer()->get('messenger.routable_message_bus');
+        self::assertInstanceOf(MessageBusInterface::class, $bus);
+
+        $eventDispatcher = new EventDispatcher();
+        $eventDispatcher->addSubscriber(new StopWorkerOnMessageLimitListener($due));
+        (new Worker(['main' => $transport], $bus, $eventDispatcher))->run(['sleep' => 0]);
+
+        return $due;
+    }
+
+    /**
+     * The messages a worker acknowledged, which it handled without an error, and so doesn't retry. One it couldn't
+     * handle is rejected, or sent again to retry
+     *
+     * @return list<Envelope>
+     */
+    protected static function acknowledgedMessages(): array
+    {
+        return array_values(KeptInMemoryTransportFactory::transport('main')->getAcknowledged());
     }
 
     /**
@@ -72,9 +89,8 @@ trait ScheduledPublishes
 
         /** @var ScheduledPublishRepositoryInterface $scheduledPublishes */
         $scheduledPublishes = self::getContainer()->get('setono_sylius_cms.repository.scheduled_publish');
-        /** @var EntryInterface|null $reloaded */
-        $reloaded = $manager->getRepository($entry::class)->findOneBy(['uuid' => $entry->getUuid()]);
-        self::assertNotNull($reloaded);
+        $reloaded = $manager->find($entry::class, $entry->getId());
+        self::assertInstanceOf(EntryInterface::class, $reloaded);
 
         return $scheduledPublishes->findOneByEntry($reloaded);
     }

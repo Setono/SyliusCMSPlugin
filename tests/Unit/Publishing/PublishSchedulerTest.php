@@ -31,14 +31,17 @@ use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Sylius\Component\Core\Model\AdminUser;
+use Sylius\Component\Core\Model\AdminUserInterface;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
+use Symfony\Component\Messenger\Stamp\StampInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 final class PublishSchedulerTest extends TestCase
 {
@@ -103,14 +106,18 @@ final class PublishSchedulerTest extends TestCase
 
         $this->scheduledPublishes = $this->prophesize(ScheduledPublishRepositoryInterface::class);
         $this->scheduledPublishes->findOneByEntry($this->page)->willReturn(null);
-        $this->scheduledPublishFactory = $this->prophesize(FactoryInterface::class);
+        /** @var ObjectProphecy<FactoryInterface<ScheduledPublishInterface>> $scheduledPublishFactory */
+        $scheduledPublishFactory = $this->prophesize(FactoryInterface::class);
+        $this->scheduledPublishFactory = $scheduledPublishFactory;
         $this->scheduledPublishFactory->createNew()->willReturn(new ScheduledPublish());
 
         $sent = &$this->sent;
         $this->messageBus = $this->prophesize(MessageBusInterface::class);
         $this->messageBus->dispatch(Argument::cetera())->will(static function (array $arguments) use (&$calls, &$sent): Envelope {
             $calls[] = 'send the message';
-            $envelope = Envelope::wrap($arguments[0], $arguments[1] ?? []);
+            /** @var array{object, list<StampInterface>} $sentArguments */
+            $sentArguments = $arguments;
+            $envelope = Envelope::wrap($sentArguments[0], $sentArguments[1]);
             $sent[] = $envelope;
 
             return $envelope;
@@ -124,10 +131,12 @@ final class PublishSchedulerTest extends TestCase
             });
         }
 
-        $admin = new AdminUser();
+        $admin = self::newAdmin();
         $admin->setUsername('jane');
         $admin->setFirstName('Jane');
         $admin->setLastName('Roe');
+        // Sylius's admin user is a Symfony user through a polyfill that static analysis doesn't follow
+        self::assertInstanceOf(UserInterface::class, $admin);
         $this->tokenStorage = new TokenStorage();
         $this->tokenStorage->setToken(new UsernamePasswordToken($admin, 'admin', []));
     }
@@ -363,6 +372,11 @@ final class PublishSchedulerTest extends TestCase
 
         self::assertSame(['begin', 'lock to write', 'read again', 'flush', 'commit'], $this->calls);
         self::assertSame([], $this->events);
+    }
+
+    private static function newAdmin(): AdminUserInterface
+    {
+        return new AdminUser();
     }
 
     private function scheduler(): PublishScheduler
