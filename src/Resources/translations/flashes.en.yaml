@@ -3,3 +3,4 @@ setono_sylius_cms:
     entry_deleted: The entry has been deleted.
     entry_publish_invalid: '{1} It wasn''t published: one error needs fixing.|]1,Inf[ It wasn''t published: %count% errors need fixing.'
     entry_published: The entry has been published.
+    revision_restored: The revision has been restored into the draft. Review it, then publish it.

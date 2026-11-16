@@ -20,6 +20,8 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionReader"/>
         </service>
 
         <!-- Ahead of Sylius's hostname-based channel context, which has the default priority 0 -->

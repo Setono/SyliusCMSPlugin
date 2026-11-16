@@ -24,6 +24,7 @@ use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Revision\RevisionPruner;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\LandingFromOne;
@@ -151,6 +152,17 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_hands_how_many_revisions_each_entry_keeps_to_the_pruner(): void
+    {
+        $this->load(['revisions' => ['keep' => 10]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.revisions.keep', 10);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(RevisionPruner::class, 1, '%setono_sylius_cms.revisions.keep%');
+    }
+
+    /**
+     * @test
+     */
     public function it_hands_the_fallback_locales_to_the_fallback_chain(): void
     {
         $this->load(['fallback_locales' => ['de_CH' => ['de_DE']]]);
@@ -201,6 +213,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         self::assertSame([
             'blocks' => [
                 'publishing' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_publishing.html.twig', 'priority' => 100],
+                'revisions' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_revisions.html.twig', 'priority' => 60],
                 'urls' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_urls.html.twig', 'priority' => 40],
                 'translations' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_translations.html.twig', 'priority' => 20],
             ],

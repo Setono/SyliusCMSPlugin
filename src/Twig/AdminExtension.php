@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig;
 
+use Setono\SyliusCMSPlugin\Admin\EntryRevisions;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\EntryUrls;
 use Setono\SyliusCMSPlugin\Admin\TranslationChips;
@@ -24,6 +25,7 @@ final class AdminExtension extends AbstractExtension
             new TwigFunction('cms_admin_entry_row', [EntryRows::class, 'get']),
             new TwigFunction('cms_admin_entry_urls', [EntryUrls::class, 'of']),
             new TwigFunction('cms_admin_translation_chips', [TranslationChips::class, 'of']),
+            new TwigFunction('cms_admin_entry_revisions', [EntryRevisions::class, 'of']),
             new TwigFunction('cms_admin_content_type', [AdminRuntime::class, 'contentType']),
             new TwigFunction('cms_admin_content_types', [AdminRuntime::class, 'contentTypes']),
             new TwigFunction('cms_admin_customer_group_names', [AdminRuntime::class, 'customerGroupNames']),

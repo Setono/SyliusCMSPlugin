@@ -16,8 +16,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
- * Runs the upgraders over all stored data and writes it back: the rows and drafts of every entry. Revisions (#240)
- * and editor presets (#270) join with their tickets. See "Console commands" in docs/spec/extending.md
+ * Runs the upgraders over all stored data and writes it back: the rows, drafts and revisions of every entry. Editor
+ * presets (#270) join with their ticket. See "Console commands" in docs/spec/extending.md
  */
 #[AsCommand(name: 'setono:cms:upgrade', description: 'Runs the upgraders over all stored CMS data and writes it back')]
 final class UpgradeCommand extends Command
@@ -25,7 +25,7 @@ final class UpgradeCommand extends Command
     private const BATCH_SIZE = 100;
 
     /**
-     * @param ObjectManager $manager the manager of entries and drafts
+     * @param ObjectManager $manager the manager of entries, drafts and revisions
      */
     public function __construct(
         private readonly EntryRepositoryInterface $entries,
@@ -47,7 +47,7 @@ final class UpgradeCommand extends Command
         $dryRun = true === $input->getOption('dry-run');
         $verb = $dryRun ? 'Would upgrade' : 'Upgraded';
 
-        $blockTrees = $drafts = $batched = 0;
+        $blockTrees = $drafts = $revisions = $batched = 0;
         foreach ($this->entries->iterateAll() as $entry) {
             $rewrite = $this->rewriter->rewrite($entry);
             $what = sprintf('the %s %s', $this->contentTypes->getByEntry($entry)->code, $entry->getUuid());
@@ -62,6 +62,11 @@ final class UpgradeCommand extends Command
                 $io->writeln(sprintf('%s the draft of %s', $verb, $what));
             }
 
+            if ($rewrite->revisions > 0) {
+                $revisions += $rewrite->revisions;
+                $io->writeln(sprintf('%s %s of %s', $verb, self::count($rewrite->revisions, 'revision'), $what));
+            }
+
             foreach ($rewrite->newer as $newer) {
                 $io->warning(sprintf('In %s: %s. It\'s kept as it is', $what, $newer));
             }
@@ -74,8 +79,12 @@ final class UpgradeCommand extends Command
 
         $this->writeBatch($dryRun);
 
-        $counts = sprintf('%s and %s', self::count($blockTrees, 'block tree'), self::count($drafts, 'draft'));
-        if (0 === $blockTrees + $drafts) {
+        $counts = self::list(array_filter([
+            0 === $blockTrees ? null : self::count($blockTrees, 'block tree'),
+            0 === $drafts ? null : self::count($drafts, 'draft'),
+            0 === $revisions ? null : self::count($revisions, 'revision'),
+        ], static fn (?string $count): bool => null !== $count));
+        if ('' === $counts) {
             $io->success('Everything is up to date.');
         } elseif ($dryRun) {
             $io->success(sprintf('Dry run: %s would be upgraded. Nothing was written.', $counts));
@@ -96,6 +105,16 @@ final class UpgradeCommand extends Command
         }
 
         $this->manager->clear();
+    }
+
+    /**
+     * @param array<array-key, string> $items
+     */
+    private static function list(array $items): string
+    {
+        $last = array_pop($items);
+
+        return [] === $items ? (string) $last : sprintf('%s and %s', implode(', ', $items), $last);
     }
 
     private static function count(int $count, string $noun): string

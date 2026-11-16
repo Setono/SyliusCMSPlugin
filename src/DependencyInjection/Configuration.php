@@ -20,12 +20,15 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\Revision;
+use Setono\SyliusCMSPlugin\Model\RevisionInterface;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSetInterface;
 use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
+use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
@@ -63,6 +66,7 @@ final class Configuration implements ConfigurationInterface
 
         $this->addBlockStylesSection($rootNode);
         $this->addFallbackLocalesSection($rootNode);
+        $this->addRevisionsSection($rootNode);
         $this->addResourcesSection($rootNode);
 
         return $treeBuilder;
@@ -116,6 +120,27 @@ final class Configuration implements ConfigurationInterface
     }
 
     /**
+     * How many revisions per entry setono:cms:revisions:prune keeps. See "Revisions" in docs/spec/publishing.md
+     */
+    private function addRevisionsSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('revisions')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->integerNode('keep')
+                            ->info('The revisions kept per entry, newest first. setono:cms:revisions:prune deletes older ones')
+                            ->min(1)
+                            ->defaultValue(50)
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
      * @param array<array-key, array<array-key, array{label: string, class: string}>> $blockStyles
      *
      * @return array<array-key, array<array-key, array{label: string, class: string}>>
@@ -141,7 +166,7 @@ final class Configuration implements ConfigurationInterface
 
     /**
      * The shipped Sylius resources. The draft and the rows beside an entry (its channels, its audience groups, who has
-     * it open and its saves) have no admin screens of their own, so they have no controller.
+     * it open, its saves and its revisions) have no admin screens of their own, so they have no controller.
      * A project extends a shipped content type the way it extends any Sylius model:
      * by overriding classes.model, and translation.classes.model, with its own subclasses.
      * The channel and audience group rows always belong to an entry, so their factories create them for one
@@ -158,6 +183,7 @@ final class Configuration implements ConfigurationInterface
                     ->append(self::resourceWithoutController('entry_audience_group', EntryAudienceGroup::class, EntryAudienceGroupInterface::class, factory: EntryAudienceGroupFactory::class))
                     ->append(self::resourceWithoutController('entry_presence', EntryPresence::class, EntryPresenceInterface::class, EntryPresenceRepository::class))
                     ->append(self::resourceWithoutController('saved_change_set', SavedChangeSet::class, SavedChangeSetInterface::class, SavedChangeSetRepository::class))
+                    ->append(self::resourceWithoutController('revision', Revision::class, RevisionInterface::class, RevisionRepository::class))
                     ->children()
                         ->arrayNode('page')
                             ->addDefaultsIfNotSet()

@@ -269,6 +269,11 @@ final class TranslationStateTest extends TestCase
             {
                 return $this->load($entry);
             }
+
+            public function replace(EntryInterface $entry, array $content): LoadedWorkingCopy
+            {
+                return $this->load($entry);
+            }
         };
     }
 

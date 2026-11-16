@@ -5,9 +5,12 @@ declare(strict_types=1);
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DiscardEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PresenceAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRenderAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRevisionAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewTokenAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PublishEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RegistryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\RestoreRevisionAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\RevisionIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntrySettingsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction;
@@ -18,7 +21,9 @@ use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction as DiscardEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\PreviewRevisionAction as PreviewRevisionPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PublishEntryAction as PublishEntryPageAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\RestoreRevisionAction as RestoreRevisionPageAction;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Routing\Requirement\Requirement;
 
@@ -91,6 +96,19 @@ return static function (RoutingConfigurator $routes): void {
         ->controller(DiscardEntryPageAction::class)
         ->methods(['POST'])
         ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    // The overview page's Preview and Restore of a revision. Preview changes nothing, so it's a link
+    $routes->add('setono_sylius_cms_admin_entry_revision_preview', '/cms/entry/{uuid}/revisions/{id}/preview')
+        ->controller(PreviewRevisionPageAction::class)
+        ->methods(['GET'])
+        ->requirements(['uuid' => Requirement::UUID, 'id' => Requirement::DIGITS])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_entry_revision_restore', '/cms/entry/{uuid}/revisions/{id}/restore')
+        ->controller(RestoreRevisionPageAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID, 'id' => Requirement::DIGITS])
     ;
 
     $routes->add('setono_sylius_cms_admin_entry_delete', '/cms/entry/{uuid}')
@@ -166,5 +184,23 @@ return static function (RoutingConfigurator $routes): void {
     $routes->add('setono_sylius_cms_admin_api_preview_render', '/cms/api/preview/render')
         ->controller(PreviewRenderAction::class)
         ->methods(['POST'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_revision_index', '/cms/api/entries/{uuid}/revisions')
+        ->controller(RevisionIndexAction::class)
+        ->methods(['GET'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_revision_restore', '/cms/api/revisions/{id}/restore')
+        ->controller(RestoreRevisionAction::class)
+        ->methods(['POST'])
+        ->requirements(['id' => Requirement::DIGITS])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_revision_preview', '/cms/api/revisions/{id}/preview')
+        ->controller(PreviewRevisionAction::class)
+        ->methods(['POST'])
+        ->requirements(['id' => Requirement::DIGITS])
     ;
 };
