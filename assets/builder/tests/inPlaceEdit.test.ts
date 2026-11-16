@@ -1,3 +1,4 @@
+import { fingerprint } from '../src/fingerprint';
 import { describe, expect, it, vi } from 'vitest';
 import type { BridgeStrings } from '../src/bridge/protocol';
 import { createPreviewSync } from '../src/previewSync';
@@ -63,7 +64,10 @@ describe('an edit typed in place in the preview', () => {
         listen(store).receive({ type: 'edit', key: 'a', field: 'text', value: 'Velkommen' });
 
         expect(store.getState().entry.tree.blocks[0]?.fields).toEqual({ text: { en_US: 'Welcome', da_DK: 'Velkommen' } });
-        expect(store.getState().unsaved).toEqual([{ op: 'set_value', key: 'a', field: 'text', locale: 'da_DK', value: 'Velkommen' }]);
+        expect(store.getState().unsaved).toEqual([
+            { op: 'set_value', key: 'a', field: 'text', locale: 'da_DK', value: 'Velkommen' },
+            { op: 'set_translated', key: 'a', field: 'text', locale: 'da_DK', translated: { from: 'en_US', fingerprint: fingerprint('Welcome') } },
+        ]);
     });
 
     it('should undo what was typed in one field in one step, as typing in the right pane does', () => {

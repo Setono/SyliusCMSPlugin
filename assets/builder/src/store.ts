@@ -408,9 +408,9 @@ export function createBuilderStore({
             setEntryValue(field, value, locale) {
                 const { locale: shown, status: current, entry: before } = get();
                 const edited = locale ?? shown;
-                // Slugs never fall back, so a slug typed has no fallback value it's translated from
-                const chain = field === 'slug' ? [edited] : chainOf(edited);
-                const source = sourceOfTyped(entryValues(before, field), before.translations[edited]?.translated[field], normalizeValue(value), chain);
+                // Slugs never fall back, so a slug typed isn't translated from another locale's, unless it was before
+                const translatedFrom = before.translations[edited]?.translated[field];
+                const source = field === 'slug' && translatedFrom === undefined ? null : sourceOfTyped(entryValues(before, field), translatedFrom, normalizeValue(value), chainOf(edited));
 
                 edit(
                     (working) => {

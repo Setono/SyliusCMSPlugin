@@ -6,7 +6,7 @@
  */
 import type { TranslatableLookup } from './changeSet';
 import { hiddenInPreview } from './conditions';
-import { fallbackValue, isMissing } from './fallback';
+import { isMissing } from './fallback';
 import { fingerprint } from './fingerprint';
 import type { Entry, JsonObject, JsonValue, LayoutDefinition, StoredBlock, TranslationSource } from './types';
 import { isJsonObject } from './values';
@@ -68,10 +68,11 @@ export function outdatedSource(values: JsonValue | undefined, translated: Readon
 }
 
 /**
- * Where a translatable value typed in the edited locale is translated from once it's typed: the locale whose value the
- * fallback placeholder showed, when it's typed over the placeholder or copied from it, with the fingerprint of that
- * value. A value that had a source keeps it, with the fingerprint of the source's value now, because updating a value
- * brings it up to date. A value typed without a source, and an emptied one, have none.
+ * Where a translatable value typed in the edited locale is translated from once it's typed over a missing value: the
+ * locale an untranslated value is translated from, as the server finds it, with the fingerprint of its value. That's
+ * the one whose value the fallback placeholder showed, or else the first locale by code with a value. A value that had
+ * a source keeps it, with the fingerprint of the source's value now, because updating a value brings it up to date. A
+ * value typed while no other locale has one, and an emptied one, have none.
  *
  * @param values what the field stores before the edit: a map from locale to value
  * @param current where the edited locale's value was translated from before the edit
@@ -88,9 +89,25 @@ export function sourceOfTyped(values: JsonValue | undefined, current: Translatio
     }
 
     const typedOver = chain[0] === undefined || isMissing(localeMap(values)[chain[0]]);
-    const fallback = typedOver ? fallbackValue(values, chain) : undefined;
+    const source = typedOver ? untranslatedSource(values, chain) : undefined;
 
-    return fallback === undefined ? null : { from: fallback.locale, fingerprint: fingerprint(fallback.value) };
+    return source === undefined ? null : { from: source.locale, fingerprint: fingerprint(source.value) };
+}
+
+/**
+ * The locale a value missing in the first locale of the chain is translated from: the first the chain reaches that has
+ * a value, or else the first by code that has one, as the server's TranslatableValues::untranslatedSource(). Undefined
+ * when no other locale has a value.
+ */
+function untranslatedSource(values: JsonValue | undefined, chain: readonly string[]): LocaleValue | undefined {
+    const byLocale = localeMap(values);
+    const others = Object.keys(byLocale)
+        .filter((locale) => locale !== chain[0] && !isMissing(byLocale[locale]))
+        .sort();
+    const locale = chain.slice(1).find((chained) => others.includes(chained)) ?? others[0];
+    const value = locale === undefined ? undefined : byLocale[locale];
+
+    return locale === undefined || value === undefined ? undefined : { locale, value };
 }
 
 /**

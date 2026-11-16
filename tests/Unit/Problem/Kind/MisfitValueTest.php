@@ -220,7 +220,6 @@ final class MisfitValueTest extends TestCase
             new BlockTypeRegistry(['heading' => Heading::class, 'group' => Group::class, 'rich_text' => RichText::class, 'store' => Store::class, 'testimonial' => Testimonial::class], new FieldReader()),
             new LayoutRegistry(['page' => ['wide' => Wide::class]], new FieldReader(), disabled: $disabledLayouts),
             new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
-            $handlers,
             new FallbackValues($handlers, $this->prophesize(FallbackChainInterface::class)->reveal()),
         );
     }

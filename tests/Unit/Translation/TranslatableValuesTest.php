@@ -106,6 +106,23 @@ final class TranslatableValuesTest extends TestCase
     }
 
     /**
+     * A stored value that doesn't fit its field type counts as missing. See "Values that don't fit" in
+     * docs/spec/content-model.md
+     *
+     * @test
+     */
+    public function it_counts_a_value_that_does_not_fit_its_field_type_as_missing(): void
+    {
+        $page = self::page([self::heading(self::A, ['da_DK' => 42, 'en_US' => 'Hello', 'sv_SE' => ['not' => 'text']])]);
+
+        self::assertEquals(
+            [new TranslatableValue('block.' . self::A . '.text', ValueState::Untranslated, 'en_US', 'Hello', Fingerprint::of('Hello'), null)],
+            $this->blockValues($page, 'da_DK'),
+        );
+        self::assertSame([], $this->blockValues(self::page([self::heading(self::A, ['da_DK' => 42, 'en_US' => ''])]), 'en_US'));
+    }
+
+    /**
      * @test
      */
     public function it_leaves_out_a_value_no_locale_has(): void

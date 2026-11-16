@@ -86,8 +86,14 @@ describe('where a typed value is translated from', () => {
         expect(sourceOfTyped({ en_US: 'Hello', da_DK: '' }, undefined, 'Hello', chain)).toEqual(from('en_US', 'Hello'));
     });
 
-    it('should be nothing for a value typed without a fallback value, or over a value the locale had, or emptied', () => {
-        expect(sourceOfTyped({ de_DE: 'Hallo' }, undefined, 'Hej', chain)).toBeNull();
+    // As the server's untranslatedSource() finds it, so the builder and the admin agree on what a value is translated from
+    it("should be the first locale by code with a value when the fallback chain reaches none, as the server's", () => {
+        expect(sourceOfTyped({ sv_SE: 'Hej', de_DE: 'Hallo', en_US: '' }, undefined, 'Hej', chain)).toEqual(from('de_DE', 'Hallo'));
+        expect(sourceOfTyped({ de_DE: 'Hallo', en_US: 'Hello' }, undefined, 'Hej', chain)).toEqual(from('en_US', 'Hello'));
+    });
+
+    it('should be nothing for a value typed while no other locale has one, or over a value the locale had, or emptied', () => {
+        expect(sourceOfTyped({ en_US: '' }, undefined, 'Hej', chain)).toBeNull();
         expect(sourceOfTyped(undefined, undefined, 'Hej', chain)).toBeNull();
         expect(sourceOfTyped({ en_US: 'Hello', da_DK: 'Hej' }, undefined, 'Hej!', chain)).toBeNull();
         expect(sourceOfTyped({ en_US: 'Hello', da_DK: 'Hej' }, from('en_US', 'Hello'), null, chain)).toBeNull();
@@ -180,14 +186,14 @@ describe("recording where the edited locale's values are translated from", () =>
         expect(store.getState().entry.tree.blocks[0]?.fields.text).toEqual({ en_US: 'Hello' });
     });
 
-    it('should record nothing for a value typed without a fallback value, or in a shared field', () => {
+    it('should record where a value typed without a fallback value is translated from, as the server finds it, and nothing in a shared field', () => {
         const store = storeOn(danish([block('a', { text: { de_DE: 'Hallo' } })]));
 
         store.getState().setFieldValue('a', 'text', 'Hej');
         store.getState().setFieldValue('a', 'level', 'h3');
 
-        expect(store.getState().entry.tree.blocks[0]?.translated).toEqual({});
-        expect(store.getState().unsaved.map((change) => change.op)).toEqual(['set_value', 'set_value']);
+        expect(store.getState().entry.tree.blocks[0]?.translated).toEqual({ text: { da_DK: from('de_DE', 'Hallo') } });
+        expect(store.getState().unsaved.map((change) => change.op)).toEqual(['set_value', 'set_translated', 'set_value']);
     });
 
     it('should forget where an emptied value was translated from', () => {

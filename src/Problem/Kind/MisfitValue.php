@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Problem\Kind;
 
-use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
-use Setono\SyliusCMSPlugin\Field\FitCheckingFieldHandlerInterface;
-use Setono\SyliusCMSPlugin\Json\SchemaType;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\Fix;
@@ -36,7 +33,6 @@ final readonly class MisfitValue implements ProblemKindInterface
         private BlockTypeRegistryInterface $blockTypes,
         private LayoutRegistryInterface $layouts,
         private ContentTypeRegistryInterface $contentTypes,
-        private FieldHandlerLocator $fieldHandlers,
         private FallbackValues $fallbackValues,
     ) {
     }
@@ -114,7 +110,7 @@ final readonly class MisfitValue implements ProblemKindInterface
         foreach ($fields as $name => $field) {
             $stored = $values[$name] ?? null;
             if (!$field->translatable) {
-                if (!$this->fits($field, $stored)) {
+                if (!$this->fallbackValues->fits($field->field, $stored)) {
                     yield [$field, null];
                 }
 
@@ -132,26 +128,10 @@ final readonly class MisfitValue implements ProblemKindInterface
             }
 
             foreach ($stored as $locale => $value) {
-                if (!$this->fits($field, $value)) {
+                if (!$this->fallbackValues->fits($field->field, $value)) {
                     yield [$field, (string) $locale];
                 }
             }
         }
-    }
-
-    /**
-     * A missing value fits, because it's missing anyway
-     */
-    private function fits(FieldMetadata $field, mixed $value): bool
-    {
-        if ($this->fallbackValues->isMissing($field->field, $value)) {
-            return true;
-        }
-
-        $handler = $this->fieldHandlers->get($field->field);
-
-        return $handler instanceof FitCheckingFieldHandlerInterface
-            ? $handler->fits($field->field, $value)
-            : SchemaType::allows($handler->schema($field->field), $value);
     }
 }

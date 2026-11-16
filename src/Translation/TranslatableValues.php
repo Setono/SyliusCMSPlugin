@@ -201,8 +201,12 @@ final readonly class TranslatableValues
         return $others[0] ?? null;
     }
 
+    /**
+     * A value that doesn't fit its field type counts as missing, so a locale that holds one has it untranslated, and a
+     * value isn't translated from it
+     */
     private function isMissing(?Field $field, mixed $value): bool
     {
-        return null === $field ? null === $value || '' === $value : $this->fallbackValues->isMissing($field, $value);
+        return null === $field ? null === $value || '' === $value : $this->fallbackValues->isMissing($field, $value) || !$this->fallbackValues->fits($field, $value);
     }
 }

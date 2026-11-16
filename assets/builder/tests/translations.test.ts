@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyChanges, mergeChanges, type Change } from '../src/changeSet';
 import { fallbackValue, isMissing } from '../src/fallback';
+import { fingerprint } from '../src/fingerprint';
 import { holdClashes, splitValueClashes } from '../src/pullIn';
 import { createBuilderStore } from '../src/store';
 import type { Entry, EntryStatus, JsonValue } from '../src/types';
@@ -29,7 +30,10 @@ describe('editing one locale at a time', () => {
         store.getState().setFieldValue('a', 'text', 'Hej');
 
         expect(store.getState().entry.tree.blocks[0]?.fields.text).toEqual({ en_US: 'Hello', da_DK: 'Hej' });
-        expect(store.getState().unsaved).toEqual([{ op: 'set_value', key: 'a', field: 'text', locale: 'da_DK', value: 'Hej' }]);
+        expect(store.getState().unsaved).toEqual([
+            { op: 'set_value', key: 'a', field: 'text', locale: 'da_DK', value: 'Hej' },
+            { op: 'set_translated', key: 'a', field: 'text', locale: 'da_DK', translated: { from: 'en_US', fingerprint: fingerprint('Hello') } },
+        ]);
     });
 
     it('should switch the edited locale without an edit to save or undo', () => {
@@ -82,10 +86,13 @@ describe('a translation in the edited locale', () => {
 
         store.getState().setEntryValue('title', 'Om os');
 
-        expect(store.getState().entry.translations.da_DK).toEqual({ shown: true, fields: { title: 'Om os' }, translated: {} });
+        // Translated from English, the one other locale with a title
+        const fromEnglish = { from: 'en_US', fingerprint: fingerprint('About us') };
+        expect(store.getState().entry.translations.da_DK).toEqual({ shown: true, fields: { title: 'Om os' }, translated: { title: fromEnglish } });
         expect(store.getState().unsaved).toEqual([
             { op: 'set_shown', locale: 'da_DK', shown: true },
             { op: 'set_entry_value', field: 'title', locale: 'da_DK', value: 'Om os' },
+            { op: 'set_entry_translated', field: 'title', locale: 'da_DK', translated: fromEnglish },
         ]);
     });
 
