@@ -15,9 +15,11 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
  * the preview's Shown to sets. A deleted group's code matches nobody. See "Condition kinds" and "Deleted customer
  * groups" in docs/spec/targeting.md
  */
-#[AsConditionKind(code: 'customer_group', label: 'setono_sylius_cms.condition_kind.customer_group', reads: [Reads::Customer], params: CustomerGroupParams::class)]
+#[AsConditionKind(code: self::CODE, label: 'setono_sylius_cms.condition_kind.customer_group', reads: [Reads::Customer], params: CustomerGroupParams::class)]
 final class CustomerGroupKind implements ConditionKindInterface
 {
+    public const CODE = 'customer_group';
+
     public function matches(object $params, RenderContext $context): bool
     {
         if (!$params instanceof CustomerGroupParams) {

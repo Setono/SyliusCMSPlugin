@@ -14,9 +14,11 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
  * 2026-12-01T00:00:00Z shows until the last second of 30 November. Either end is optional. It compares the time from
  * the render context, which the preview's Date sets. See "Condition kinds" in docs/spec/targeting.md
  */
-#[AsConditionKind(code: 'date_window', label: 'setono_sylius_cms.condition_kind.date_window', reads: [Reads::Time], params: DateWindowParams::class)]
+#[AsConditionKind(code: self::CODE, label: 'setono_sylius_cms.condition_kind.date_window', reads: [Reads::Time], params: DateWindowParams::class)]
 final class DateWindowKind implements TimeDependentConditionKindInterface
 {
+    public const CODE = 'date_window';
+
     public function matches(object $params, RenderContext $context): bool
     {
         $params = self::params($params);

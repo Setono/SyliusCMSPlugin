@@ -95,6 +95,13 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\SearchAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\SearchAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="tagged_locator" tag="setono_sylius_cms.search" index-by="kind"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\SlugAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\SlugAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
             <argument type="service" id="sylius.generator.slug"/>

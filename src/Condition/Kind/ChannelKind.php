@@ -12,9 +12,11 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 /**
  * Matches when the shop's channel is one of the channels. See "Condition kinds" in docs/spec/targeting.md
  */
-#[AsConditionKind(code: 'channel', label: 'setono_sylius_cms.condition_kind.channel', reads: [Reads::Channel], params: ChannelParams::class)]
+#[AsConditionKind(code: self::CODE, label: 'setono_sylius_cms.condition_kind.channel', reads: [Reads::Channel], params: ChannelParams::class)]
 final class ChannelKind implements ConditionKindInterface
 {
+    public const CODE = 'channel';
+
     public function matches(object $params, RenderContext $context): bool
     {
         if (!$params instanceof ChannelParams) {

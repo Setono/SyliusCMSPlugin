@@ -76,6 +76,8 @@ setono_sylius_cms:
             title: Title
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
+        deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
+        deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'

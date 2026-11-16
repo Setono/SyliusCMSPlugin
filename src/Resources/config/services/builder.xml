@@ -19,6 +19,13 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
         </service>
 
+        <!-- What the search endpoint searches, by the kind tagged: what pickers pick from -->
+        <service id="setono_sylius_cms.search.customer_group" class="Setono\SyliusCMSPlugin\Builder\Search\ChoicesSearch">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Targeting\CustomerGroupChoicesProvider"/>
+
+            <tag name="setono_sylius_cms.search" kind="customer_group"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger" class="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger"/>
 
         <service id="Setono\SyliusCMSPlugin\Builder\PresenceTracker" class="Setono\SyliusCMSPlugin\Builder\PresenceTracker">
