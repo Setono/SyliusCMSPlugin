@@ -183,7 +183,7 @@ final class RegistryExporterTest extends TestCase
     /**
      * @test
      */
-    public function it_exports_the_layouts_editors_can_pick_for_each_content_type_with_their_field_schemas_and_the_default_marked(): void
+    public function it_exports_the_layouts_of_each_content_type_with_their_field_schemas_and_the_default_and_disabled_ones_marked(): void
     {
         $contentTypes = $this->exporter(disabledLayouts: ['page.wide'])->export()['contentTypes'];
 
@@ -194,6 +194,7 @@ final class RegistryExporterTest extends TestCase
                 'version' => 2,
                 'thumbnail' => null,
                 'default' => true,
+                'disabled' => false,
                 'shows' => [],
                 'fields' => [[
                     'name' => 'transparentHeader',
@@ -214,6 +215,7 @@ final class RegistryExporterTest extends TestCase
                 'version' => 1,
                 'thumbnail' => '/build/app/standard.svg',
                 'default' => false,
+                'disabled' => false,
                 'shows' => ['title'],
                 'fields' => [[
                     'name' => 'showTitle',
@@ -228,7 +230,17 @@ final class RegistryExporterTest extends TestCase
                     ],
                 ]],
             ],
-        ], $contentTypes[0]['layouts'], 'The default the config names comes first, marked, and a disabled layout is left out');
+            [
+                'code' => 'wide',
+                'label' => '[app.wide]',
+                'version' => 1,
+                'thumbnail' => null,
+                'default' => false,
+                'disabled' => true,
+                'shows' => [],
+                'fields' => [],
+            ],
+        ], $contentTypes[0]['layouts'], 'The default the config names comes first, marked, and a disabled layout is marked too');
     }
 
     /**

@@ -95,14 +95,15 @@ final readonly class RegistryExporter
     }
 
     /**
-     * The layouts editors can pick, in the order they were registered. A disabled one is left out, so the builder flags
-     * an entry in it as it flags one in a layout the code no longer has
+     * The content type's layouts, the default first and marked. A disabled one is marked too: the picker leaves it out,
+     * and an entry in it is flagged as one in a layout the code no longer has, but its fields are known, so values carry
+     * over from it when an editor picks another
      *
      * @return list<array<string, mixed>>
      */
     private function layouts(string $contentType): array
     {
-        $layouts = array_values(array_filter($this->layouts->all($contentType), static fn (LayoutMetadata $layout): bool => !$layout->disabled));
+        $layouts = $this->layouts->all($contentType);
         $default = [] === $layouts ? null : $this->layouts->getDefault($contentType)->code;
 
         return array_map(fn (LayoutMetadata $layout): array => [
@@ -111,6 +112,7 @@ final readonly class RegistryExporter
             'version' => $layout->version,
             'thumbnail' => $layout->thumbnail,
             'default' => $layout->code === $default,
+            'disabled' => $layout->disabled,
             'shows' => $layout->shows,
             'fields' => $this->fields($layout->fields),
         ], $layouts);
