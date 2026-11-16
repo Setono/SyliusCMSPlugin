@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Factory\HomepageFactoryInterface;
 use Setono\SyliusCMSPlugin\Homepage\HomepageModifier;
 use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
 
@@ -28,7 +29,13 @@ final class HomepageModifierTest extends TestCase
     protected function setUp(): void
     {
         $this->factory = $this->prophesize(HomepageFactoryInterface::class);
-        $this->factory->createForPage(Argument::cetera())->will(static fn (array $arguments): Homepage => Homepages::factory()->createForPage(...$arguments));
+        $this->factory->createForPage(Argument::cetera())->will(static function (array $arguments): Homepage {
+            [$page, $channelCode] = $arguments;
+            self::assertInstanceOf(Page::class, $page);
+            self::assertIsString($channelCode);
+
+            return Homepages::factory()->createForPage($page, $channelCode);
+        });
         $this->repository = $this->prophesize(HomepageRepositoryInterface::class);
         $this->repository->findByChannelCodes(Argument::any())->willReturn([]);
     }
@@ -81,6 +88,21 @@ final class HomepageModifierTest extends TestCase
         $this->modifier()->setHomepageOf($page, []);
 
         self::assertSame([], $page->getHomepageChannelCodes());
+    }
+
+    /**
+     * The rows refer to the shipped Page, which the page resource's model is or extends
+     *
+     * @test
+     */
+    public function it_needs_a_page_that_extends_the_shipped_page(): void
+    {
+        $page = $this->prophesize(PageInterface::class)->reveal();
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf('The page %s must extend %s, which its homepage rows refer to', get_debug_type($page), Page::class));
+
+        $this->modifier()->setHomepageOf($page, ['WEB']);
     }
 
     /**

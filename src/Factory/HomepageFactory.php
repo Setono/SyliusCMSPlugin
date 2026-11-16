@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Factory;
 
 use Setono\SyliusCMSPlugin\Model\Homepage;
-use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Model\Page;
 use Sylius\Resource\Exception\UnsupportedMethodException;
 
 final readonly class HomepageFactory implements HomepageFactoryInterface
@@ -27,7 +27,7 @@ final readonly class HomepageFactory implements HomepageFactoryInterface
         throw new UnsupportedMethodException('createNew');
     }
 
-    public function createForPage(PageInterface $page, string $channelCode): Homepage
+    public function createForPage(Page $page, string $channelCode): Homepage
     {
         return new $this->className($page, $channelCode);
     }

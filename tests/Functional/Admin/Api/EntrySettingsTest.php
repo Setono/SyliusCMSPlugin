@@ -224,6 +224,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
 
         self::assertResponseIsSuccessful();
         self::assertIsArray($response);
+        self::assertIsArray($response['settings'] ?? null);
         self::assertSame(['B2B', 'WEB'], $response['settings']['homepageOf'] ?? null);
         self::assertSame(['B2B', 'WEB'], self::reloadPage($page)->getHomepageChannelCodes());
 

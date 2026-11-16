@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Factory;
 
 use Setono\SyliusCMSPlugin\Model\Homepage;
-use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Model\Page;
 use Sylius\Resource\Factory\FactoryInterface;
 
 /**
@@ -20,5 +20,5 @@ interface HomepageFactoryInterface extends FactoryInterface
     /**
      * The row that makes $page the homepage of the channel with the code $channelCode
      */
-    public function createForPage(PageInterface $page, string $channelCode): Homepage;
+    public function createForPage(Page $page, string $channelCode): Homepage;
 }

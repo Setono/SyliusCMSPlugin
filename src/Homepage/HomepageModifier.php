@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Homepage;
 
 use Setono\SyliusCMSPlugin\Factory\HomepageFactoryInterface;
+use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 
@@ -22,6 +23,7 @@ final readonly class HomepageModifier implements HomepageModifierInterface
 
     public function setHomepageOf(PageInterface $page, iterable $channelCodes): void
     {
+        $page = self::page($page);
         $codes = [...$channelCodes];
 
         $kept = [];
@@ -57,5 +59,17 @@ final readonly class HomepageModifier implements HomepageModifierInterface
         }
 
         return array_values($takenFrom);
+    }
+
+    /**
+     * The rows refer to the shipped Page, which the page resource's model is or extends
+     */
+    private static function page(PageInterface $page): Page
+    {
+        if (!$page instanceof Page) {
+            throw new \LogicException(sprintf('The page %s must extend %s, which its homepage rows refer to', get_debug_type($page), Page::class));
+        }
+
+        return $page;
     }
 }

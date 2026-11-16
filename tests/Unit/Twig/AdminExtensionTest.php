@@ -135,7 +135,7 @@ final class AdminExtensionTest extends IntegrationTestCase
     {
         $page = $this->aPage($title)['page'];
         Homepages::modifier()->setHomepageOf($page, ['WEB']);
-        $this->homepages = [...$page->getHomepages()];
+        $this->homepages = $page->getHomepages()->getValues();
 
         return ['page' => $page];
     }

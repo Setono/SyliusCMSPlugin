@@ -197,7 +197,7 @@ final class EntrySettingsSaverTest extends TestCase
         $this->homepageRepository->findByChannelCodes(['B2B', 'WEB'])->willReturn([$aboutWeb]);
         $calls = &$this->calls;
         $this->manager->flush()->will(static function () use (&$calls, $page, $about): void {
-            $calls[] = sprintf('flush: the page is the homepage of %s, the other page of %s', implode(', ', $page->getHomepageChannelCodes()) ?: 'none', implode(', ', $about->getHomepageChannelCodes()));
+            $calls[] = sprintf('flush: the page is the homepage of %s, the other page of %s', [] === $page->getHomepageChannelCodes() ? 'none' : implode(', ', $page->getHomepageChannelCodes()), implode(', ', $about->getHomepageChannelCodes()));
         });
 
         $this->saver()->save($page, new EntrySettings(true, new DateWindow(), [], Audience::everyone(), ['WEB', 'B2B']));

@@ -34,7 +34,9 @@ final class ChannelHomepagesTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->channels = $this->prophesize(ChannelRepositoryInterface::class);
+        /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $channels */
+        $channels = $this->prophesize(ChannelRepositoryInterface::class);
+        $this->channels = $channels;
         $this->channels->findBy([], ['id' => 'ASC'])->willReturn([self::channel('WEB', 'Web store'), self::channel('B2B', 'Wholesale'), self::channel('MOBILE', null)]);
         $this->homepages = $this->prophesize(HomepageRepositoryInterface::class);
     }
