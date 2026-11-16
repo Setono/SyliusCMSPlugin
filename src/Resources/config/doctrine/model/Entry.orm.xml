@@ -31,6 +31,8 @@
         <!-- Who saved last and when (in UTC), for the admin's lists. The name, not a reference, so it outlives the admin user -->
         <field name="lastEditedAt" column="last_edited_at" type="datetime_immutable"/>
         <field name="lastEditedBy" column="last_edited_by" type="string" nullable="true"/>
+        <!-- "Hide from search engines", for a content type with its own URL. Drafted, so the column holds the published value -->
+        <field name="noindex" type="boolean"/>
 
         <!-- The on-save settings, as columns and rows the visible-entries query filters on. The date window is in UTC -->
         <field name="enabled" type="boolean"/>
