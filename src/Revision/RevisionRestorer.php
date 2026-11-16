@@ -10,8 +10,7 @@ use Setono\SyliusCMSPlugin\Publishing\LoadedWorkingCopy;
 
 /**
  * Restores the revision's content, upgraded, through autosave, so it's saved like any change to the working copy and
- * builders that have the entry open pull it in. Restoring is refused while a scheduled publish locks the draft once
- * scheduled publishes (#241) add that lock
+ * builders that have the entry open pull it in. Autosave refuses it while a scheduled publish locks the draft
  */
 final readonly class RevisionRestorer implements RevisionRestorerInterface
 {

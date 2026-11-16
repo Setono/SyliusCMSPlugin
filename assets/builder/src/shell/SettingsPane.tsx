@@ -6,6 +6,7 @@ import formStyles from '../form/Form.module.css';
 import { useTranslator, type MessageKey } from '../i18n';
 import { isRemovedLayout, layoutOf, pickableLayouts, renderedLayout } from '../layouts';
 import { fieldFallback, localeOf, outdatedValue } from '../locales';
+import { locks } from '../store';
 import { entryTranslated, entryValues } from '../translationState';
 import type { AudienceMode, FieldSchema } from '../types';
 import { slugMessages } from '../urls';
@@ -111,11 +112,16 @@ export function SettingsPane() {
 }
 
 function SettingsTab() {
+    // A scheduled publish locks what's drafted, but not the on-save settings, which aren't part of the draft
+    const locked = useBuilderState((state) => locks(state.schedule));
+
     return (
         <>
-            <Title />
-            <Shown />
-            <Layout />
+            <fieldset className={styles.locked} disabled={locked}>
+                <Title />
+                <Shown />
+                <Layout />
+            </fieldset>
             <Enabled />
             <DateWindow />
             <Channels />
@@ -127,13 +133,19 @@ function SettingsTab() {
 }
 
 function UrlAndSeoTab() {
+    const locked = useBuilderState((state) => locks(state.schedule));
+
     return (
         <>
-            <Slug />
+            <fieldset className={styles.locked} disabled={locked}>
+                <Slug />
+            </fieldset>
             <OldUrls />
-            <MetaField field="metaTitle" type="text" label="setono_sylius_cms.builder.meta_title" help="setono_sylius_cms.builder.meta_title_help" />
-            <MetaField field="metaDescription" type="textarea" label="setono_sylius_cms.builder.meta_description" help="setono_sylius_cms.builder.meta_description_help" />
-            <Noindex />
+            <fieldset className={styles.locked} disabled={locked}>
+                <MetaField field="metaTitle" type="text" label="setono_sylius_cms.builder.meta_title" help="setono_sylius_cms.builder.meta_title_help" />
+                <MetaField field="metaDescription" type="textarea" label="setono_sylius_cms.builder.meta_description" help="setono_sylius_cms.builder.meta_description_help" />
+                <Noindex />
+            </fieldset>
         </>
     );
 }

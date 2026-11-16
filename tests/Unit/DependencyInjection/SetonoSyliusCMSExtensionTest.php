@@ -23,6 +23,7 @@ use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
+use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
@@ -277,6 +278,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         self::assertSame([
             'blocks' => [
                 'open_in_builder' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_open_in_builder.html.twig', 'priority' => 20],
+                'share_draft' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_share_draft.html.twig', 'priority' => 10],
             ],
         ], $events['setono_sylius_cms.admin.entry.show.header_actions'] ?? null);
         self::assertSame([
@@ -284,6 +286,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
                 'publishing' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_publishing.html.twig', 'priority' => 100],
                 'problems' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_problems.html.twig', 'priority' => 90],
                 'revisions' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_revisions.html.twig', 'priority' => 60],
+                'share_links' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_share_links.html.twig', 'priority' => 50],
                 'urls' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_urls.html.twig', 'priority' => 40],
                 'translations' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_translations.html.twig', 'priority' => 20],
             ],
@@ -297,10 +300,22 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     {
         $this->load();
 
-        self::assertSame(
-            [['cache' => ['pools' => ['setono_sylius_cms.cache.problems' => ['adapter' => 'cache.app', 'default_lifetime' => 300]]]]],
+        self::assertContains(
+            ['cache' => ['pools' => ['setono_sylius_cms.cache.problems' => ['adapter' => 'cache.app', 'default_lifetime' => 300]]]],
             $this->container->getExtensionConfig('framework'),
         );
+    }
+
+    /**
+     * @test
+     */
+    public function it_routes_the_message_that_runs_a_scheduled_publish_to_sylius_main_transport(): void
+    {
+        $this->load();
+
+        $framework = $this->container->getExtensionConfig('framework');
+        self::assertContains(['messenger' => ['routing' => [ScheduledPublishDue::class => 'main']]], $framework);
+        self::assertCount(2, $framework);
     }
 
     /**

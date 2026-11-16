@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterUpgradersPass;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
+use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Symfony\Component\Config\FileLocator;
@@ -90,6 +91,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $this->prependGrids($container);
         $this->prependEntryOverviewEvents($container);
         $this->prependProblems($container);
+        $this->prependMessenger($container);
 
         /** @var array{assets: bool} $config */
         $config = $this->processConfiguration(new Configuration(), $container->getExtensionConfig($this->getAlias()));
@@ -104,6 +106,22 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                     'blocks' => [
                         'setono_sylius_cms_stylesheet' => ['template' => '@SetonoSyliusCMSPlugin/shop/stylesheet.html.twig', 'priority' => 20],
                     ],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Routes the delayed message that runs a scheduled publish to Sylius's main transport, the way Sylius routes the
+     * messages that schedule catalog promotions, so the shop's Messenger worker runs it. Projects route it elsewhere in
+     * their own framework config. See "Scheduled publishes" in docs/spec/publishing.md
+     */
+    private function prependMessenger(ContainerBuilder $container): void
+    {
+        $container->prependExtensionConfig('framework', [
+            'messenger' => [
+                'routing' => [
+                    ScheduledPublishDue::class => 'main',
                 ],
             ],
         ]);
@@ -141,7 +159,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
      * The entry overview page is built from two Sylius template events, whose blocks get the entry (`entry`) and its
      * row (`row`, an Admin\EntryRow). A block that has nothing to show for an entry renders nothing:
      *
-     * - setono_sylius_cms.admin.entry.show.header_actions: the header's buttons, Open in builder first
+     * - setono_sylius_cms.admin.entry.show.header_actions: the header's buttons, Open in builder (20) first, then
+     *   Share draft (10)
      * - setono_sylius_cms.admin.entry.show.sections: the sections, in the spec's order, which the priorities leave
      *   room in: publishing (100), problems (90), placements (80), where_it_shows (70), revisions (60),
      *   share_links (50), urls (40), used_in (30) and translations (20)
@@ -161,6 +180,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 'setono_sylius_cms.admin.entry.show.header_actions' => [
                     'blocks' => [
                         'open_in_builder' => $block('_open_in_builder', 20),
+                        'share_draft' => $block('_share_draft', 10),
                     ],
                 ],
                 'setono_sylius_cms.admin.entry.show.sections' => [
@@ -168,6 +188,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                         'publishing' => $block('_publishing', 100),
                         'problems' => $block('_problems', 90),
                         'revisions' => $block('_revisions', 60),
+                        'share_links' => $block('_share_links', 50),
                         'urls' => $block('_urls', 40),
                         'translations' => $block('_translations', 20),
                     ],

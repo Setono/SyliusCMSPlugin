@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
 use Doctrine\Persistence\ObjectManager;
+use Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Support\Customers;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\ScheduledPublishes;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -24,6 +26,7 @@ final class ShownToAndDateTest extends WebTestCase
 {
     use Customers;
     use Entries;
+    use ScheduledPublishes;
 
     private const EVERYONE = '0193a5be-0000-7000-8000-000000000001';
 
@@ -158,10 +161,23 @@ final class ShownToAndDateTest extends WebTestCase
         $workingCopy->setBlockTree(new StoredTree($workingCopy->getBlockTree()->layout, [self::heading('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 'We ship faster')]));
         $workingCopies->save($other, $workingCopy);
 
+        // A publish scheduled for tomorrow, which the scheduled publish's worker runs by the real clock, not by the preview's Date
+        $scheduled = self::createPage('Returns', 'returns', 'Return within 14 days', published: true);
+        $workingCopy = $workingCopies->getWorkingCopy($scheduled);
+        $workingCopy->setBlockTree(new StoredTree($workingCopy->getBlockTree()->layout, [self::heading('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 'Return within 30 days')]));
+        $workingCopies->save($scheduled, $workingCopy);
+        /** @var PublishSchedulerInterface $scheduler */
+        $scheduler = self::getContainer()->get(PublishSchedulerInterface::class);
+        $scheduler->schedule($scheduled, (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->modify('+1 day'));
+
         $client->request('GET', '/en_US/imprint?_cms_preview=' . self::previewToken($edited, date: $nextWeek));
         self::assertResponseStatusCodeSame(404);
 
         self::assertSame(['We ship'], self::headings($client->request('GET', '/en_US/shipping?_cms_preview=' . self::previewToken($edited, date: $nextWeek))));
+        self::assertSame(['Return within 14 days'], self::headings($client->request('GET', '/en_US/returns?_cms_preview=' . self::previewToken($edited, date: $nextWeek))));
+        $scheduledPublish = self::scheduledPublishOf($scheduled);
+        self::assertNotNull($scheduledPublish, 'It still waits');
+        self::assertFalse($scheduledPublish->isFailed());
     }
 
     /**

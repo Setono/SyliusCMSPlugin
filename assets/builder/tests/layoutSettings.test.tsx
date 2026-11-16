@@ -18,6 +18,7 @@ const config: BuilderConfig = {
         validate: '/validate',
         publish: '/publish',
         discard: '/discard',
+        schedule: '/schedule',
         settings: '/settings',
         previewToken: '/preview/token',
         previewRender: '/preview/render',
@@ -49,6 +50,8 @@ function fakeApi(edited: Entry = inLayout({ code: 'standard', version: 1, fields
         saveSettings: vi.fn(async () => settings()),
         createPreviewUrl: vi.fn(async () => `http://admin.example/en_US/about-us?_cms_preview=token-${++previews}`),
         renderPreview: vi.fn(async (): Promise<Record<string, string>> => ({})),
+        schedule: vi.fn(() => Promise.reject(new Error('Not scheduled in this test'))),
+        cancelSchedule: vi.fn(() => Promise.reject(new Error('Not scheduled in this test'))),
         presence: vi.fn(async (): Promise<PresenceResponse> => ({ editors: [], lockToken: 0 })),
     } satisfies BuilderApi;
 }

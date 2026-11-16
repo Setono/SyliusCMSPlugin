@@ -7,6 +7,7 @@ import { createPreviewSync, type PreviewSync } from '../previewSync';
 import type { BlockSpot } from '../tree';
 import { BlockPickerAt, soleBlockType } from './BlockPicker';
 import styles from './Preview.module.css';
+import { ScheduleBanner } from './ScheduleBanner';
 import { TranslationBanner } from './TranslationBanner';
 
 type Frame = { state: 'waiting' } | { state: 'loaded'; url: string; version: number } | { state: 'failed' };
@@ -159,6 +160,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
 
     return (
         <main className={[className, styles.preview].filter(Boolean).join(' ')} data-width={width}>
+            <ScheduleBanner />
             <TranslationBanner />
             {frame.state === 'loaded' && <iframe ref={iframe} key={frame.version} className={styles.frame} title={t('setono_sylius_cms.builder.preview')} src={frame.url} />}
             {frame.state === 'failed' && (

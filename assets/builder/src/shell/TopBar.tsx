@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import * as Popover from '@radix-ui/react-popover';
+import { useEffect, useId, useState, type FormEvent } from 'react';
 import { useBuilder, useBuilderState, usePresenceState, usePreviewState, useSettingsState } from '../context';
-import { fromLocalInput, toLocalInput } from '../dates';
-import { useTranslator, type MessageKey } from '../i18n';
+import { formatDateTime, fromLocalInput, toLocalInput } from '../dates';
+import { useTranslator, type MessageKey, type Translate } from '../i18n';
 import { hasTranslation, localeOf, offeredLocales } from '../locales';
 import { isRemovedLayout, layoutOf } from '../layouts';
+import { locks } from '../store';
 import { localeCounts } from '../translationState';
-import type { EntryStatus } from '../types';
-import { ArrowLeftIcon, DesktopIcon, MobileIcon, RedoIcon, UndoIcon } from './icons';
+import type { EntryStatus, Schedule } from '../types';
+import { ArrowLeftIcon, ChevronDownIcon, DesktopIcon, MobileIcon, RedoIcon, UndoIcon } from './icons';
 import { saveStateText } from './saveStateText';
 import styles from './TopBar.module.css';
 
@@ -15,6 +17,18 @@ const statusLabels: Record<EntryStatus, MessageKey> = {
     published: 'setono_sylius_cms.builder.published',
     unpublished_changes: 'setono_sylius_cms.builder.unpublished_changes',
 };
+
+/** The status label of the entry's scheduled publish, the same the entry lists show. */
+export function scheduleLabel(t: Translate, schedule: Schedule): string {
+    switch (schedule.status) {
+        case 'publishes_at_a_time':
+            return t('setono_sylius_cms.builder.publishes_at', { '%at%': formatDateTime(schedule.at) });
+        case 'scheduled_publish_overdue':
+            return t('setono_sylius_cms.builder.scheduled_publish_overdue');
+        case 'scheduled_publish_failed':
+            return t('setono_sylius_cms.builder.scheduled_publish_failed');
+    }
+}
 
 export function TopBar() {
     const t = useTranslator();
@@ -31,6 +45,7 @@ export function TopBar() {
         return '';
     });
     const status = useBuilderState((state) => state.status);
+    const schedule = useBuilderState((state) => state.schedule);
 
     return (
         <div className={styles.bar}>
@@ -53,6 +68,11 @@ export function TopBar() {
                 <span className={styles.status} data-status={status}>
                     {t(statusLabels[status])}
                 </span>
+                {schedule !== null && (
+                    <span className={styles.status} data-status={schedule.status}>
+                        {scheduleLabel(t, schedule)}
+                    </span>
+                )}
             </div>
             <LocaleSwitcher />
             <PreviewChannel />
@@ -300,7 +320,10 @@ export function initials(name: string): string {
     return (first + last).toUpperCase();
 }
 
-/** Publish, and Discard changes when the entry has a draft. */
+/**
+ * Publish, with a menu to schedule the publish instead, and Discard changes when the entry has a draft. While a
+ * scheduled publish locks the working copy, Cancel the schedule in their place.
+ */
 function Publish() {
     const t = useTranslator();
     const { publish, discard } = useBuilder();
@@ -308,8 +331,13 @@ function Publish() {
     const publishRefusal = useBuilderState((state) => state.publishRefusal);
     const discardState = useBuilderState((state) => state.discardState);
     const hasDraft = useBuilderState((state) => state.status === 'unpublished_changes');
+    const locked = useBuilderState((state) => locks(state.schedule));
     const publishing = publishState === 'publishing';
     const discarding = discardState === 'discarding';
+
+    if (locked) {
+        return <CancelSchedule />;
+    }
 
     return (
         <div className={styles.publish}>
@@ -329,8 +357,92 @@ function Publish() {
                     {discarding ? t('setono_sylius_cms.builder.discarding') : t('setono_sylius_cms.builder.discard_changes')}
                 </button>
             )}
-            <button type="button" className={styles.publishButton} disabled={publishing || discarding} onClick={() => void publish()}>
-                {publishing ? t('setono_sylius_cms.builder.publishing') : t('setono_sylius_cms.builder.publish')}
+            <div className={styles.split}>
+                <button type="button" className={styles.publishButton} disabled={publishing || discarding} onClick={() => void publish()}>
+                    {publishing ? t('setono_sylius_cms.builder.publishing') : t('setono_sylius_cms.builder.publish')}
+                </button>
+                <SchedulePublish disabled={publishing || discarding} />
+            </div>
+        </div>
+    );
+}
+
+/**
+ * The Publish button's menu, which schedules the publish for a time instead, entered in the editor's own time zone.
+ * Once it's scheduled, the working copy is locked. See "Scheduled publishes" in docs/spec/publishing.md
+ */
+function SchedulePublish({ disabled }: { disabled: boolean }) {
+    const t = useTranslator();
+    const { schedule } = useBuilder();
+    const scheduleState = useBuilderState((state) => state.scheduleState);
+    const scheduleRefusal = useBuilderState((state) => state.scheduleRefusal);
+    const [open, setOpen] = useState(false);
+    const [at, setAt] = useState('');
+    const inputId = useId();
+    const menu = t('setono_sylius_cms.builder.schedule_menu');
+    const scheduling = scheduleState === 'scheduling';
+    const utc = fromLocalInput(at);
+
+    const submit = (event: FormEvent): void => {
+        event.preventDefault();
+        if (utc === null) {
+            return;
+        }
+
+        void schedule(utc).then((scheduled) => {
+            if (scheduled) {
+                setOpen(false);
+                setAt('');
+            }
+        });
+    };
+
+    return (
+        <Popover.Root open={open} onOpenChange={setOpen}>
+            <Popover.Trigger asChild>
+                <button type="button" className={styles.publishMenuButton} aria-label={menu} title={menu} disabled={disabled}>
+                    <ChevronDownIcon />
+                </button>
+            </Popover.Trigger>
+            <Popover.Portal>
+                <Popover.Content className={styles.schedule} aria-label={t('setono_sylius_cms.builder.schedule_publish')} align="end" sideOffset={4} collisionPadding={8}>
+                    <form className={styles.scheduleForm} onSubmit={submit}>
+                        <label htmlFor={inputId} className={styles.scheduleLabel}>
+                            {t('setono_sylius_cms.builder.schedule_at')}
+                        </label>
+                        <input id={inputId} type="datetime-local" className={styles.scheduleInput} required value={at} onChange={(event) => setAt(event.currentTarget.value)} />
+                        {scheduleState === 'failed' && (
+                            <p role="alert" className={styles.failed}>
+                                {t('setono_sylius_cms.builder.schedule_failed')}
+                                {scheduleRefusal !== null && `: ${scheduleRefusal}`}
+                            </p>
+                        )}
+                        <button type="submit" className={styles.publishButton} disabled={scheduling || utc === null}>
+                            {scheduling ? t('setono_sylius_cms.builder.scheduling') : t('setono_sylius_cms.builder.schedule_publish')}
+                        </button>
+                    </form>
+                </Popover.Content>
+            </Popover.Portal>
+        </Popover.Root>
+    );
+}
+
+/** In place of Publish while a scheduled publish locks the working copy: Cancel the schedule, which unlocks it. */
+function CancelSchedule() {
+    const t = useTranslator();
+    const { cancelSchedule } = useBuilder();
+    const cancelScheduleState = useBuilderState((state) => state.cancelScheduleState);
+    const cancelling = cancelScheduleState === 'cancelling';
+
+    return (
+        <div className={styles.publish}>
+            {cancelScheduleState === 'failed' && (
+                <span role="alert" className={styles.failed}>
+                    {t('setono_sylius_cms.builder.cancel_schedule_failed')}
+                </span>
+            )}
+            <button type="button" className={styles.discardButton} disabled={cancelling} onClick={() => void cancelSchedule()}>
+                {cancelling ? t('setono_sylius_cms.builder.cancelling_schedule') : t('setono_sylius_cms.builder.cancel_schedule')}
             </button>
         </div>
     );

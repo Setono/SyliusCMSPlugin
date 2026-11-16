@@ -87,10 +87,15 @@ setono_sylius_cms:
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
         removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
+        scheduled_publish_failed: 'The publish scheduled for %at% was stopped: %reason%'
+        scheduled_publish_overdue: 'The publish scheduled for %at% hasn''t run. The Messenger worker may not be running.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
         url_taken_by_route: 'URL taken by a Sylius route: shoppers get the page of the route %route% at %url%.'
     publish:
         invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'
+    # Why a scheduled publish was stopped when it ran, which the overview page shows and EntryPublishFailed carries
+    scheduled_publish:
+        invalid: '{1} Validation found an error to fix: %errors%|]1,Inf[ Validation found %count% errors to fix: %errors%'
     ui:
         all_entries: All entries
         any_channel: Any channel
@@ -101,25 +106,37 @@ setono_sylius_cms:
             no_group: Signed in without a group
             only: 'Only %groups%'
         by: 'by %name%'
+        cancel_schedule: Cancel the schedule
         channel: Channel
         close: Close
         content: Content
         content_description: Pages and everything else shoppers read that isn't a product
+        copied: Copied
+        copy: Copy
         create: Create
         create_dialog_load_failed: Couldn't load the form. Try again.
+        create_share_link: Create link
+        date: Date
         discard_changes: Discard changes
+        dismiss: Dismiss
         error_count: '{0} No errors|{1} 1 error|]1,Inf[ %count% errors'
         fix_in_builder: Fix in builder
+        fix_in_publishing: Go to Publishing
         homepage_now: Homepage now
         homepage_of: Homepage of
         homepage_of_help: The page each channel shows at its root URL in place of the store's own homepage. Choose the channels in the builder's settings.
         language: Language
         last_edited: Last edited
         last_published: 'Last published %date%'
+        link: Link
+        made_by: Made by
         new_entry: 'New %content_type%'
         new_entry_heading: New entry
+        new_share_link: New
         no_revisions: Every publish stores a revision, which you can preview and restore. There are none yet.
+        no_share_links: Share the draft with anyone, as a link that shows it in the shop without signing in. There are none yet.
         no_urls: It has no URL yet, because it has no slug.
+        now: Now
         old_urls: 'Redirects from:'
         open_in_builder: Open in builder
         other_content_type: Another content type
@@ -131,6 +148,7 @@ setono_sylius_cms:
             warning: Warning
         problems: Problems
         publish: Publish
+        publish_now: Publish now
         published_at: Published
         published_by: By
         publishing: Publishing
@@ -141,13 +159,35 @@ setono_sylius_cms:
         restore: Restore
         revisions: Revisions
         revisions_help: Every publish stores a revision. Preview one as it was, or restore it into the draft to review and publish it.
+        revoke: Revoke
+        schedule: Schedule
+        schedule_again: Schedule again
+        schedule_at: Publish at
         scheduled: Scheduled
+        scheduled_publish:
+            by: 'Scheduled by %name%.'
+            failed: 'The publish scheduled for %at% was stopped when it ran'
+            locked: The draft is locked until then. Cancel the schedule to change it.
+            overdue: 'The publish scheduled for %at% hasn''t run'
+            overdue_help: The Messenger worker may not be running. Publish now, or cancel the schedule.
+            waiting: 'Publishes %at%'
         search: Search
+        share_draft: Share draft
+        share_draft_help: 'Anyone with the link sees the draft in the shop, in the channel and language you pick, without signing in. Shown to and Date are fixed now, as the builder''s preview starts them, and the link works until you revoke it.'
+        share_draft_target: Channel and language
+        share_draft_without_url: It has no URL to share yet. Give it a slug in a language of its channels first.
+        share_link_without_url: The draft has no URL in this language anymore.
+        share_links: Share links
+        share_links_help: Anyone with a share link sees the draft in the shop, without signing in, until you revoke it.
+        shown_to: Shown to
+        shown_to_guest: Guest
+        shown_to_no_group: Signed in without a group
         status: Status
         status_filter:
             needs_attention: Needs attention
             disabled_or_outside_date_window: Disabled or outside its date window
             never_published: Never published
+            scheduled: Scheduled
             unpublished_changes: Unpublished changes
         store_homepage: The store's own homepage
         status_label:
@@ -156,6 +196,10 @@ setono_sylius_cms:
             ended: 'Ended %until%'
             never_published: Never published
             published: Published
+            publishes_at_a_time: 'Publishes %at%'
+            scheduled_for: 'Scheduled for %at%'
+            scheduled_publish_failed: Scheduled publish failed
+            scheduled_publish_overdue: Scheduled publish overdue
             shows_from: 'Shows from %from%'
             shows_until: 'Shows until %until%'
             unpublished_changes: Unpublished changes
@@ -196,6 +240,9 @@ setono_sylius_cms:
         block_style: Style
         blocks: Blocks
         blocks_selected: '%count% blocks selected'
+        cancel_schedule: Cancel the schedule
+        cancel_schedule_failed: Couldn't cancel the schedule
+        cancelling_schedule: Cancelling…
         channels: Channels
         children: Blocks inside
         condition: 'Condition %number%'
@@ -240,6 +287,8 @@ setono_sylius_cms:
         load_failed: Couldn't load the entry
         loading: Loading…
         locale: Language
+        locked: 'The draft is locked: it publishes %at%. Cancel the schedule to edit it.'
+        locked_overdue: 'The draft is locked: its publish was scheduled for %at% and hasn''t run. The Messenger worker may not be running.'
         locale_no_translation: no translation
         locale_outdated: '%count% outdated'
         locale_untranslated: '%count% untranslated'
@@ -277,6 +326,7 @@ setono_sylius_cms:
         publish: Publish
         publish_failed: Couldn't publish
         published: Published
+        publishes_at: 'Publishes %at%'
         publishing: Publishing…
         redo: Redo
         reload: Reload
@@ -294,9 +344,19 @@ setono_sylius_cms:
             toolbar: Formatting
             underline: Underline
         save_failed: Couldn't save
+        save_locked: A scheduled publish locks the draft, so your changes weren't saved
         save_stale: Colleagues' changes can't be merged with yours
         saved: Saved
         saving: Saving…
+        schedule_at: Publish at
+        schedule_failed: Couldn't schedule
+        schedule_in_the_past: Pick a time in the future.
+        schedule_menu: Schedule…
+        schedule_publish: Schedule the publish
+        schedule_stopped: 'The publish scheduled for %at% was stopped when it ran: %reason%'
+        scheduled_publish_failed: Scheduled publish failed
+        scheduled_publish_overdue: Scheduled publish overdue
+        scheduling: Scheduling…
         search_block_types: Search block types
         select_parent: Select parent
         settings: Settings

@@ -69,6 +69,20 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\ScheduleEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\ScheduleEntryAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\CancelScheduleAction" class="Setono\SyliusCMSPlugin\Controller\Admin\CancelScheduleAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
@@ -139,6 +153,8 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsNormalizer"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\PresenceTrackerInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Translation\TranslatableValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+            <argument type="service" id="clock"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction">
@@ -195,6 +211,25 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface"/>
             <argument type="service" id="translator"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ScheduleEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ScheduleEntryAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\WorkingCopyAnswer"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\CancelScheduleAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\CancelScheduleAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\WorkingCopyAnswer"/>
 
             <tag name="controller.service_arguments"/>
         </service>
@@ -268,6 +303,48 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionPreviewUrlGenerator"/>
             <argument type="service" id="router"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <!-- Share links: the builder's endpoints and the overview page's forms -->
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkAnswer" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkAnswer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkIndexAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkIndexAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkAnswer"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateShareLinkAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateShareLinkAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\ShareLink\ShareLinkCreatorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkAnswer"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\RevokeShareLinkAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\RevokeShareLinkAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\CreateShareLinkAction" class="Setono\SyliusCMSPlugin\Controller\Admin\CreateShareLinkAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\ShareLink\ShareLinkCreatorInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\RevokeShareLinkAction" class="Setono\SyliusCMSPlugin\Controller\Admin\RevokeShareLinkAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface"/>
 
             <tag name="controller.service_arguments"/>
         </service>

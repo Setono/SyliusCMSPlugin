@@ -7,7 +7,7 @@
 import type { BridgeStrings, FromBridge, RenderedBlock, ToBridge } from './bridge/protocol';
 import { renderedLayout } from './layouts';
 import { planPreviewUpdate, type PreviewPlan } from './previewPlan';
-import { actedOn, type BuilderStore } from './store';
+import { actedOn, locks, type BuilderStore } from './store';
 import { blockList, findBlock, locateBlock, type BlockSpot } from './tree';
 import type { JsonValue, StoredBlock } from './types';
 import { isJsonObject } from './values';
@@ -153,6 +153,11 @@ export function createPreviewSync({ store, strings, render, reload, openBlockPic
         if (state.selectedKey !== previous.selectedKey) {
             bridge?.post({ type: 'select', key: state.selectedKey });
         }
+
+        // A scheduled publish locks the working copy, or cancelling it unlocks it, so the page is read-only or editable
+        if (locks(state.schedule) !== locks(previous.schedule)) {
+            bridge?.post({ type: 'init', strings, readOnly: locks(state.schedule) });
+        }
     });
 
     return {
@@ -160,7 +165,7 @@ export function createPreviewSync({ store, strings, render, reload, openBlockPic
             bridge = { post, token };
             page++;
             rendering = false;
-            post({ type: 'init', strings });
+            post({ type: 'init', strings, readOnly: locks(store.getState().schedule) });
             post({ type: 'select', key: store.getState().selectedKey });
             flush();
         },

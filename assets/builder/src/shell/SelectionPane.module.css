@@ -261,3 +261,12 @@
     clip: rect(0 0 0 0);
     white-space: nowrap;
 }
+
+/* Holds what changes the block, which a scheduled publish disables while it locks the working copy */
+.locked {
+    display: contents;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}

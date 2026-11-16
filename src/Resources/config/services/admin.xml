@@ -33,6 +33,8 @@
             <argument type="service" id="sylius.translation_locale_provider"/>
             <!-- In the admin, the admin user's locale -->
             <argument type="service" id="sylius.context.locale"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+            <argument type="service" id="clock"/>
 
             <tag name="twig.runtime"/>
             <tag name="kernel.reset" method="reset"/>
@@ -84,6 +86,18 @@
         <!-- The revisions of an entry, which its overview page gets through cms_admin_entry_revisions() -->
         <service id="Setono\SyliusCMSPlugin\Admin\EntryRevisions" class="Setono\SyliusCMSPlugin\Admin\EntryRevisions">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
+        <!-- The share links of an entry and where its Share draft offers to share it, which its overview page gets
+             through cms_admin_entry_share_links() and cms_admin_share_link_targets() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryShareLinks" class="Setono\SyliusCMSPlugin\Admin\EntryShareLinks">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator"/>
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
 
             <tag name="twig.runtime"/>
         </service>

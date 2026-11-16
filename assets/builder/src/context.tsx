@@ -16,6 +16,10 @@ export interface BuilderSession {
     validation: ValidationStore;
     publish: () => Promise<void>;
     discard: () => Promise<void>;
+    /** Schedules a publish at a time in UTC, and resolves to whether it was scheduled. */
+    schedule: (at: string) => Promise<boolean>;
+    /** Cancels the scheduled publish, which unlocks the working copy. */
+    cancelSchedule: () => Promise<void>;
     /** Loads the working copy again, when the server can't merge a save onto what colleagues saved. */
     reload: () => Promise<void>;
     /** Where the back button and Esc go: where the builder was opened from. */

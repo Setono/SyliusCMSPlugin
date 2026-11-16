@@ -31,7 +31,11 @@ export interface RenderedBlock {
 
 /** From the builder to the bridge. */
 export type ToBridge =
-    | { type: 'init'; strings: BridgeStrings }
+    /**
+     * Sent when the page is ready, and again when it changes whether the working copy is read-only, as while a scheduled
+     * publish locks it: then blocks are only selected, not typed in, moved, added or deleted in the page.
+     */
+    | { type: 'init'; strings: BridgeStrings; readOnly?: boolean }
     /** Outlines the block, or nothing when the key is null, and scrolls to it. */
     | { type: 'select'; key: string | null }
     /** Morphs blocks that are in the page into their new HTML. */

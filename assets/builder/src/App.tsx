@@ -7,7 +7,7 @@ import { BuilderProvider, type BuilderSession } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
 import { createPresence, type Presence } from './presence';
 import { createPreviewStore } from './preview';
-import { createDiscard, createPublish, createReload } from './publishing';
+import { createCancelSchedule, createDiscard, createPublish, createReload, createSchedule } from './publishing';
 import { createSettingsStore } from './settings';
 import { createSlugFollower, type SlugFollower } from './slugs';
 import { Shell } from './shell/Shell';
@@ -52,9 +52,10 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: Ap
         let urlsSync: UrlsSync | undefined;
         let slugFollower: SlugFollower | undefined;
         let unsubscribeSettings: (() => void) | undefined;
+        let unsubscribeLock: (() => void) | undefined;
 
         Promise.all([api.fetchRegistry(), api.fetchEntry()]).then(
-            ([registry, { entry, settings: entrySettings, status, lockToken, editors }]) => {
+            ([registry, { entry, settings: entrySettings, status, lockToken, editors, schedule }]) => {
                 if (!active) {
                     return;
                 }
@@ -68,6 +69,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: Ap
                     entry,
                     status,
                     lockToken,
+                    schedule: schedule ?? null,
                 });
                 // Opened at a block, such as where a problem is fixed, it starts with that block selected
                 const opened = config.block ?? null;
@@ -105,6 +107,14 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: Ap
                     }
                 });
 
+                // A save refused because a colleague scheduled a publish loads the working copy again, read-only
+                const reload = createReload(store, () => api.fetchEntry());
+                unsubscribeLock = store.subscribe((state, previous) => {
+                    if (state.saveState === 'locked' && previous.saveState !== 'locked') {
+                        void reload();
+                    }
+                });
+
                 setPhase({
                     name: 'ready',
                     translate: createTranslator({ ...config.strings, ...registry.strings }),
@@ -116,7 +126,9 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: Ap
                         overviewUrl: config.overviewUrl,
                         publish: createPublish(store, autosave, () => api.publish(), validationStore),
                         discard: createDiscard(store, autosave, () => api.discard()),
-                        reload: createReload(store, () => api.fetchEntry()),
+                        schedule: createSchedule(store, autosave, (at) => api.schedule(at), validationStore),
+                        cancelSchedule: createCancelSchedule(store, () => api.cancelSchedule()),
+                        reload,
                         preview,
                         // The page renders what the server holds, so a new page waits for the unsaved changes, and for
                         // the settings in flight, which decide where it lives, such as at its channel's root as a homepage
@@ -154,6 +166,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: Ap
             urlsSync?.dispose();
             slugFollower?.dispose();
             unsubscribeSettings?.();
+            unsubscribeLock?.();
         };
     }, [api, urlsEndpoints, config, autosaveDelay, navigate]);
 

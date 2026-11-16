@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Builder;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Builder\EntryStatus;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
 
 final class EntryStatusTest extends TestCase
 {
@@ -31,5 +32,29 @@ final class EntryStatusTest extends TestCase
         $page->publish(new \DateTimeImmutable());
 
         self::assertSame('unpublished_changes', EntryStatus::of($page, true));
+    }
+
+    /**
+     * @test
+     */
+    public function a_scheduled_publish_publishes_at_a_time_until_it_is_overdue_five_minutes_after(): void
+    {
+        $scheduledPublish = new ScheduledPublish();
+        $scheduledPublish->schedule(new \DateTimeImmutable('2026-11-20 08:00:00', new \DateTimeZone('UTC')), 'Jane Roe');
+
+        self::assertSame('publishes_at_a_time', EntryStatus::ofScheduledPublish($scheduledPublish, new \DateTimeImmutable('2026-11-20 08:04:59', new \DateTimeZone('UTC'))));
+        self::assertSame('scheduled_publish_overdue', EntryStatus::ofScheduledPublish($scheduledPublish, new \DateTimeImmutable('2026-11-20 08:05:00', new \DateTimeZone('UTC'))));
+    }
+
+    /**
+     * @test
+     */
+    public function a_scheduled_publish_stopped_when_it_ran_failed(): void
+    {
+        $scheduledPublish = new ScheduledPublish();
+        $scheduledPublish->schedule(new \DateTimeImmutable('2026-11-20 08:00:00', new \DateTimeZone('UTC')), 'Jane Roe');
+        $scheduledPublish->fail('Not on a Sunday');
+
+        self::assertSame('scheduled_publish_failed', EntryStatus::ofScheduledPublish($scheduledPublish, new \DateTimeImmutable('2026-11-20 08:00:00', new \DateTimeZone('UTC'))));
     }
 }

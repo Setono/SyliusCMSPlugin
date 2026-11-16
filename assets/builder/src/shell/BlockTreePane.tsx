@@ -3,7 +3,7 @@ import { hiddenInPreview } from '../conditions';
 import { useBuilder, useBuilderState, usePreviewState, useValidationState } from '../context';
 import { useTranslator, type Translate } from '../i18n';
 import { canMove, canMoveBlocks, placement, type DropZone } from '../nesting';
-import { actedOn } from '../store';
+import { actedOn, locks } from '../store';
 import { findBlock } from '../tree';
 import type { BlockTypeDefinition, StoredBlock } from '../types';
 import { blockHasErrors } from '../validation';
@@ -42,6 +42,7 @@ export function BlockTreePane({ headingId }: { headingId: string }) {
     const blocks = useBuilderState((state) => state.entry.tree.blocks);
     const settingsSelected = useBuilderState((state) => state.selectedKey === null);
     const entryInvalid = useValidationState((state) => state.errors.some((error) => error.block === null));
+    const locked = useBuilderState((state) => locks(state.schedule));
     // The drag as it is now, which drag events read; the state copies only re-render the rows.
     const current = useRef<DragState>({ dragged: null, target: null });
     const [dragged, setDragged] = useState<string | null>(null);
@@ -118,10 +119,12 @@ export function BlockTreePane({ headingId }: { headingId: string }) {
                     <BlockList blocks={blocks} />
                 </DraggingContext.Provider>
             )}
-            <AddBlockButton parent={null} className={styles.add}>
-                <PlusIcon />
-                {t('setono_sylius_cms.builder.add_block')}
-            </AddBlockButton>
+            {!locked && (
+                <AddBlockButton parent={null} className={styles.add}>
+                    <PlusIcon />
+                    {t('setono_sylius_cms.builder.add_block')}
+                </AddBlockButton>
+            )}
         </div>
     );
 }
@@ -163,6 +166,8 @@ function BlockRow({ block, hidden }: { block: StoredBlock; hidden: boolean }) {
     const hint = blockHint(block, blockType, locale);
     const holdsBlocks = (blockType?.children.length ?? 0) > 0;
     const target = dragging?.target?.key === block.key ? dragging.target : null;
+    // While a scheduled publish locks the working copy, blocks are only selected
+    const locked = useBuilderState((state) => locks(state.schedule));
 
     const onDragOver = (event: DragEvent<HTMLDivElement>): void => {
         const { dragged, target: previous } = dragging?.now() ?? { dragged: null, target: null };
@@ -195,7 +200,7 @@ function BlockRow({ block, hidden }: { block: StoredBlock; hidden: boolean }) {
             data-dragged={moving || undefined}
             data-drop={target?.zone}
             data-refused={(target !== null && !target.allowed) || undefined}
-            draggable
+            draggable={!locked}
             onDragStart={(event) => {
                 event.stopPropagation();
                 event.dataTransfer.effectAllowed = 'move';
@@ -238,23 +243,25 @@ function BlockRow({ block, hidden }: { block: StoredBlock; hidden: boolean }) {
             </button>
             {hidden && <HiddenFlag />}
             {invalid && <InvalidFlag />}
-            {holdsBlocks && (
+            {holdsBlocks && !locked && (
                 <AddBlockButton parent={block.key} className={styles.action} label={t('setono_sylius_cms.builder.add_block_inside', { '%block%': label })}>
                     <PlusIcon />
                 </AddBlockButton>
             )}
-            <button
-                type="button"
-                className={`${styles.action} ${styles.delete}`}
-                aria-label={t('setono_sylius_cms.builder.delete_block')}
-                title={t('setono_sylius_cms.builder.delete_block')}
-                onClick={() => {
-                    const state = store.getState();
-                    state.removeBlocks(actedOn(state.selection, block.key));
-                }}
-            >
-                <TrashIcon />
-            </button>
+            {!locked && (
+                <button
+                    type="button"
+                    className={`${styles.action} ${styles.delete}`}
+                    aria-label={t('setono_sylius_cms.builder.delete_block')}
+                    title={t('setono_sylius_cms.builder.delete_block')}
+                    onClick={() => {
+                        const state = store.getState();
+                        state.removeBlocks(actedOn(state.selection, block.key));
+                    }}
+                >
+                    <TrashIcon />
+                </button>
+            )}
         </div>
     );
 }

@@ -47,6 +47,8 @@ export interface BuilderConfig {
         validate: string;
         publish: string;
         discard: string;
+        /** POST schedules a publish, and DELETE cancels it. */
+        schedule: string;
         settings: string;
         previewToken: string;
         previewRender: string;

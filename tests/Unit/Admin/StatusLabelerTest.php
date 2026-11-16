@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Admin\StatusLabel;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\CustomerGroupValue;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
@@ -151,11 +152,71 @@ final class StatusLabelerTest extends TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_labels_a_scheduled_publish_that_waits_with_its_time_after_the_state(): void
+    {
+        $scheduledPublish = self::scheduledPublish('2026-11-16 11:56:00');
+
+        self::assertEquals(
+            [new StatusLabel(StatusLabel::PUBLISHED), new StatusLabel(StatusLabel::UNPUBLISHED_CHANGES), new StatusLabel(StatusLabel::PUBLISHES_AT_A_TIME, ['at' => self::utc('2026-11-16 11:56:00')])],
+            $this->labelsOf(self::published(), true, $scheduledPublish),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_labels_a_scheduled_publish_that_has_not_run_five_minutes_after_its_time_as_overdue(): void
+    {
+        self::assertEquals(
+            [new StatusLabel(StatusLabel::NEVER_PUBLISHED), new StatusLabel(StatusLabel::SCHEDULED_PUBLISH_OVERDUE, ['at' => self::utc('2026-11-16 11:55:00')])],
+            $this->labelsOf(new Page(), false, self::scheduledPublish('2026-11-16 11:55:00')),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_labels_a_failed_scheduled_publish_with_its_reason(): void
+    {
+        $scheduledPublish = self::scheduledPublish('2026-11-16 11:00:00');
+        $scheduledPublish->fail('Not on a Sunday');
+
+        self::assertEquals(
+            [new StatusLabel(StatusLabel::NEVER_PUBLISHED), new StatusLabel(StatusLabel::SCHEDULED_PUBLISH_FAILED, ['at' => self::utc('2026-11-16 11:00:00'), 'reason' => 'Not on a Sunday'])],
+            $this->labelsOf(new Page(), false, $scheduledPublish),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_lists_the_scheduled_publish_before_the_on_save_settings(): void
+    {
+        $page = new Page();
+        $page->setEnabled(false);
+
+        self::assertSame(
+            [StatusLabel::NEVER_PUBLISHED, StatusLabel::PUBLISHES_AT_A_TIME, StatusLabel::DISABLED],
+            array_map(static fn (StatusLabel $label): string => $label->code, $this->labelsOf($page, false, self::scheduledPublish('2026-11-17 08:00:00'))),
+        );
+    }
+
+    /**
      * @return list<StatusLabel>
      */
-    private function labelsOf(Page $page, bool $hasDraft): array
+    private function labelsOf(Page $page, bool $hasDraft, ?ScheduledPublish $scheduledPublish = null): array
     {
-        return (new StatusLabeler(new MockClock(self::NOW, 'UTC')))->labelsOf($page, $hasDraft);
+        return (new StatusLabeler(new MockClock(self::NOW, 'UTC')))->labelsOf($page, $hasDraft, $scheduledPublish);
+    }
+
+    private static function scheduledPublish(string $at): ScheduledPublish
+    {
+        $scheduledPublish = new ScheduledPublish();
+        $scheduledPublish->schedule(new \DateTimeImmutable($at, new \DateTimeZone('UTC')), 'Jane Roe');
+
+        return $scheduledPublish;
     }
 
     private static function published(): Page

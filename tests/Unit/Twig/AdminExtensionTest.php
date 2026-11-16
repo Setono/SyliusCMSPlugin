@@ -10,6 +10,7 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Admin\ChannelHomepages;
 use Setono\SyliusCMSPlugin\Admin\EntryRevisions;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
+use Setono\SyliusCMSPlugin\Admin\EntryShareLinks;
 use Setono\SyliusCMSPlugin\Admin\EntryUrls;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
 use Setono\SyliusCMSPlugin\Admin\TranslationChips;
@@ -21,6 +22,7 @@ use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Revision;
+use Setono\SyliusCMSPlugin\Model\ShareLink;
 use Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
 use Setono\SyliusCMSPlugin\Problem\ProblemSummaryProvider;
@@ -34,6 +36,9 @@ use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
+use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
@@ -54,7 +59,11 @@ use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\DependencyInjection\ServiceLocator;
+use Symfony\Component\Routing\Generator\UrlGenerator;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\RequestContext;
+use Symfony\Component\Routing\Route;
+use Symfony\Component\Routing\RouteCollection;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\Test\IntegrationTestCase;
 
@@ -185,6 +194,9 @@ final class AdminExtensionTest extends IntegrationTestCase
         $localeContext = $this->prophesize(LocaleContextInterface::class);
         $localeContext->getLocaleCode()->willReturn('en_US');
 
+        $scheduledPublishes = $this->prophesize(ScheduledPublishRepositoryInterface::class);
+        $scheduledPublishes->findByEntries(Argument::any())->willReturn([]);
+
         $entryRows = new EntryRows(
             $drafts->reveal(),
             self::contentTypes(),
@@ -192,6 +204,8 @@ final class AdminExtensionTest extends IntegrationTestCase
             $urlGenerator->reveal(),
             $translationLocaleProvider->reveal(),
             $localeContext->reveal(),
+            $scheduledPublishes->reveal(),
+            new MockClock(),
         );
         $oldSlugs = $this->prophesize(OldSlugRepositoryInterface::class);
         $oldSlugs->findByEntry(Argument::any())->willReturn([]);
@@ -202,6 +216,7 @@ final class AdminExtensionTest extends IntegrationTestCase
             self::revision('2026-11-01 10:00:00', 'John Doe'),
         ]);
         $entryRevisions = new EntryRevisions($revisions->reveal());
+        $entryShareLinks = $this->entryShareLinks();
         $runtime = $this->runtime();
         $translationChips = $this->translationChips();
         $workingCopies = $this->prophesize(WorkingCopyProviderInterface::class);
@@ -233,6 +248,7 @@ final class AdminExtensionTest extends IntegrationTestCase
             EntryUrls::class => static fn (): EntryUrls => $entryUrls,
             TranslationChips::class => static fn (): TranslationChips => $translationChips,
             EntryRevisions::class => static fn (): EntryRevisions => $entryRevisions,
+            EntryShareLinks::class => static fn (): EntryShareLinks => $entryShareLinks,
             AdminRuntime::class => static fn (): AdminRuntime => $runtime,
             ProblemFinder::class => static fn (): ProblemFinder => $problemFinder,
             ProblemSummaryProvider::class => static fn (): ProblemSummaryProvider => $problemSummaries,
@@ -268,6 +284,49 @@ final class AdminExtensionTest extends IntegrationTestCase
                 $fallbackChain->reveal(),
             ),
             $channels->reveal(),
+        );
+    }
+
+    /**
+     * The store has one channel, WEB, named Web store on shop.example.com, and every page has one share link there in
+     * en_US, whose token is abc
+     */
+    private function entryShareLinks(): EntryShareLinks
+    {
+        $english = new Locale();
+        $english->setCode('en_US');
+        $web = new Channel();
+        $web->setCode('WEB');
+        $web->setName('Web store');
+        $web->setHostname('shop.example.com');
+        $web->addLocale($english);
+        $web->setDefaultLocale($english);
+        /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $channels */
+        $channels = $this->prophesize(ChannelRepositoryInterface::class);
+        $channels->findOneByCode('WEB')->willReturn($web);
+        $shareLinks = $this->prophesize(ShareLinkRepositoryInterface::class);
+        $shareLinks->findByEntry(Argument::type(Page::class))->will(static function (array $arguments): array {
+            $page = $arguments[0];
+            self::assertInstanceOf(Page::class, $page);
+            $shareLink = new ShareLink();
+            $shareLink->setEntry($page);
+            $shareLink->setChannelCode('WEB');
+            $shareLink->setLocaleCode('en_US');
+            $shareLink->setToken('abc');
+
+            return [$shareLink];
+        });
+        $workingCopies = $this->prophesize(WorkingCopyProviderInterface::class);
+        $workingCopies->getWorkingCopy(Argument::any())->willReturnArgument(0);
+        $routes = new RouteCollection();
+        $routes->add('setono_sylius_cms_shop_entry', new Route('/{_locale}/{path}', requirements: ['path' => '.+']));
+
+        return new EntryShareLinks(
+            $shareLinks->reveal(),
+            new ShareLinkUrlGenerator($workingCopies->reveal(), self::contentTypes(), $channels->reveal(), new UrlGenerator($routes, new RequestContext(host: 'admin.example.com', scheme: 'https'))),
+            $channels->reveal(),
+            $workingCopies->reveal(),
+            self::contentTypes(),
         );
     }
 

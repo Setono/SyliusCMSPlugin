@@ -70,8 +70,25 @@ export interface Entry {
     tree: StoredBlockTree;
 }
 
-/** The entry states of docs/spec/publishing.md#entry-states that the builder shows so far. */
+/** The state of the entry's draft, of the entry states of docs/spec/publishing.md#entry-states. */
 export type EntryStatus = 'never_published' | 'published' | 'unpublished_changes';
+
+/**
+ * The state of the entry's scheduled publish, of the entry states of docs/spec/publishing.md#entry-states: it waits,
+ * which locks the working copy, it's overdue, which locks it too, or it was stopped when it ran.
+ */
+export type ScheduleStatus = 'publishes_at_a_time' | 'scheduled_publish_overdue' | 'scheduled_publish_failed';
+
+/** The entry's scheduled publish. */
+export interface Schedule {
+    /** When it publishes, in UTC, such as 2026-11-27T08:00:00Z. */
+    at: string;
+    /** Who scheduled it, or null when no one is known. */
+    by: string | null;
+    status: ScheduleStatus;
+    /** Why it was stopped when it ran, or null. */
+    reason: string | null;
+}
 
 export type AudienceMode = 'everyone' | 'only' | 'except';
 
@@ -118,6 +135,8 @@ export interface EntryResponse {
     lockToken: number;
     settings: EntrySettings;
     status: EntryStatus;
+    /** The entry's scheduled publish, or null when it has none. */
+    schedule?: Schedule | null;
     /** Who else has the entry open. */
     editors: Editor[];
     /**

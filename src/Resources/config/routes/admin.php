@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\CancelScheduleAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateShareLinkAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DiscardEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PresenceAction;
@@ -12,20 +14,27 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\PublishEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RegistryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RestoreRevisionAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RevisionIndexAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\RevokeShareLinkAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntrySettingsAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\ScheduleEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SearchAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SlugAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ValidateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\CancelScheduleAction as CancelSchedulePageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\CreateShareLinkAction as CreateShareLinkPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction as DiscardEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PreviewRevisionAction as PreviewRevisionPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PublishEntryAction as PublishEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\RestoreRevisionAction as RestoreRevisionPageAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\RevokeShareLinkAction as RevokeShareLinkPageAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\ScheduleEntryAction as ScheduleEntryPageAction;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Routing\Requirement\Requirement;
 
@@ -100,6 +109,19 @@ return static function (RoutingConfigurator $routes): void {
         ->requirements(['uuid' => Requirement::UUID])
     ;
 
+    // The overview page's Schedule and Cancel the schedule, which come back to it. A form posts, so cancel is a POST too
+    $routes->add('setono_sylius_cms_admin_entry_schedule', '/cms/entry/{uuid}/schedule')
+        ->controller(ScheduleEntryPageAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_entry_schedule_cancel', '/cms/entry/{uuid}/schedule/cancel')
+        ->controller(CancelSchedulePageAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
     // The overview page's Preview and Restore of a revision. Preview changes nothing, so it's a link
     $routes->add('setono_sylius_cms_admin_entry_revision_preview', '/cms/entry/{uuid}/revisions/{id}/preview')
         ->controller(PreviewRevisionPageAction::class)
@@ -109,6 +131,19 @@ return static function (RoutingConfigurator $routes): void {
 
     $routes->add('setono_sylius_cms_admin_entry_revision_restore', '/cms/entry/{uuid}/revisions/{id}/restore')
         ->controller(RestoreRevisionPageAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID, 'id' => Requirement::DIGITS])
+    ;
+
+    // The overview page's Share draft and the Revoke of a share link
+    $routes->add('setono_sylius_cms_admin_entry_share_link_create', '/cms/entry/{uuid}/share-links')
+        ->controller(CreateShareLinkPageAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_entry_share_link_revoke', '/cms/entry/{uuid}/share-links/{id}/revoke')
+        ->controller(RevokeShareLinkPageAction::class)
         ->methods(['POST'])
         ->requirements(['uuid' => Requirement::UUID, 'id' => Requirement::DIGITS])
     ;
@@ -179,6 +214,18 @@ return static function (RoutingConfigurator $routes): void {
         ->requirements(['uuid' => Requirement::UUID])
     ;
 
+    $routes->add('setono_sylius_cms_admin_api_entry_schedule', '/cms/api/entries/{uuid}/schedule')
+        ->controller(ScheduleEntryAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_entry_schedule_cancel', '/cms/api/entries/{uuid}/schedule')
+        ->controller(CancelScheduleAction::class)
+        ->methods(['DELETE'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
     $routes->add('setono_sylius_cms_admin_api_entry_discard', '/cms/api/entries/{uuid}/discard')
         ->controller(DiscardEntryAction::class)
         ->methods(['POST'])
@@ -216,6 +263,24 @@ return static function (RoutingConfigurator $routes): void {
     $routes->add('setono_sylius_cms_admin_api_revision_preview', '/cms/api/revisions/{id}/preview')
         ->controller(PreviewRevisionAction::class)
         ->methods(['POST'])
+        ->requirements(['id' => Requirement::DIGITS])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_share_link_index', '/cms/api/entries/{uuid}/share-links')
+        ->controller(ShareLinkIndexAction::class)
+        ->methods(['GET'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_share_link_create', '/cms/api/entries/{uuid}/share-links')
+        ->controller(CreateShareLinkAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_share_link_revoke', '/cms/api/share-links/{id}')
+        ->controller(RevokeShareLinkAction::class)
+        ->methods(['DELETE'])
         ->requirements(['id' => Requirement::DIGITS])
     ;
 };

@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Admin;
 
 /**
- * The statuses an entry list filters on, in the order the filter offers them. See "Entry lists" in docs/spec/admin.md.
- * Scheduled (#241) joins with its ticket
+ * The statuses an entry list filters on, in the order the filter offers them. See "Entry lists" in docs/spec/admin.md
  */
 enum EntryStatusFilter: string
 {
@@ -17,6 +16,9 @@ enum EntryStatusFilter: string
     case UnpublishedChanges = 'unpublished_changes';
 
     case NeverPublished = 'never_published';
+
+    /** With a scheduled publish that waits, overdue or not. A failed one needs attention instead */
+    case Scheduled = 'scheduled';
 
     /** Disabled, or outside its date window: it hasn't started, or it has ended */
     case DisabledOrOutsideDateWindow = 'disabled_or_outside_date_window';

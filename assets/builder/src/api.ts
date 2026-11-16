@@ -23,6 +23,14 @@ export interface BuilderApi {
     /** Deletes the draft, and answers with the working copy that's left: the published content. */
     discard(): Promise<EntryResponse>;
     /**
+     * Schedules a publish of the working copy at a time in UTC, and answers with the working copy, which it locks. Fails
+     * with an ApiError of status 422 and the reason when the server refuses, as for a publish, or for a time that isn't
+     * in the future.
+     */
+    schedule(at: string): Promise<EntryResponse>;
+    /** Cancels the scheduled publish, and answers with the working copy, unlocked. */
+    cancelSchedule(): Promise<EntryResponse>;
+    /**
      * Saves the on-save settings that changed, outside the draft, and answers with all of them. Fails with an ApiError
      * of status 400 and the reason when the server refuses, such as a date window that ends before it starts.
      */
@@ -54,7 +62,7 @@ export class ApiError extends Error {
 type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
 interface Request {
-    method?: 'GET' | 'PATCH' | 'POST' | 'PUT';
+    method?: 'GET' | 'PATCH' | 'POST' | 'PUT' | 'DELETE';
     headers?: Record<string, string>;
     body?: string;
 }
@@ -137,6 +145,18 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = defaultFetch):
 
         async discard() {
             return (await request(config.endpoints.discard, { method: 'POST', headers: write })) as EntryResponse;
+        },
+
+        async schedule(at) {
+            return (await request(config.endpoints.schedule, {
+                method: 'POST',
+                headers: { ...write, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ at }),
+            })) as EntryResponse;
+        },
+
+        async cancelSchedule() {
+            return (await request(config.endpoints.schedule, { method: 'DELETE', headers: write })) as EntryResponse;
         },
 
         async saveSettings(changes) {

@@ -224,3 +224,12 @@
     outline: 2px solid var(--builder-color-focus);
     outline-offset: 2px;
 }
+
+/* Holds the drafted settings, which a scheduled publish disables while it locks the working copy */
+.locked {
+    display: contents;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}

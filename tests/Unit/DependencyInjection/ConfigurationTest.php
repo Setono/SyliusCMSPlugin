@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\DependencyInjection\Configuration;
 use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Factory\HomepageFactory;
+use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
@@ -32,6 +33,10 @@ use Setono\SyliusCMSPlugin\Model\Revision;
 use Setono\SyliusCMSPlugin\Model\RevisionInterface;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSetInterface;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
+use Setono\SyliusCMSPlugin\Model\ShareLink;
+use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
@@ -39,6 +44,8 @@ use Setono\SyliusCMSPlugin\Repository\HomepageRepository;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
+use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepository;
+use Setono\SyliusCMSPlugin\Repository\ShareLinkRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 use Sylius\Resource\Factory\Factory;
@@ -134,6 +141,22 @@ final class ConfigurationTest extends TestCase
                         'interface' => OldSlugInterface::class,
                         'repository' => OldSlugRepository::class,
                         'factory' => Factory::class,
+                    ],
+                ],
+                'scheduled_publish' => [
+                    'classes' => [
+                        'model' => ScheduledPublish::class,
+                        'interface' => ScheduledPublishInterface::class,
+                        'repository' => ScheduledPublishRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'share_link' => [
+                    'classes' => [
+                        'model' => ShareLink::class,
+                        'interface' => ShareLinkInterface::class,
+                        'repository' => ShareLinkRepository::class,
+                        'factory' => ShareLinkFactory::class,
                     ],
                 ],
                 'homepage' => [
