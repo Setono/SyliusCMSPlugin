@@ -215,11 +215,30 @@ export interface BlockTypeDefinition {
     fields: FieldDefinition[];
 }
 
+/** A frame around the entry's tree, with presentation fields of its own. See docs/spec/layouts-and-presets.md */
+export interface LayoutDefinition {
+    code: string;
+    label: string;
+    version: number;
+    /** A public path to its wireframe card, or null. */
+    thumbnail: string | null;
+    /** The content type's default layout, which an entry in a layout that was removed or disabled renders in. */
+    default: boolean;
+    /** Switched off in the config: the picker leaves it out, and an entry in it renders in the default layout. */
+    disabled: boolean;
+    /** The entry fields its template prints, by name. The others are "Not shown in this layout". */
+    shows: string[];
+    /** In display order. */
+    fields: FieldDefinition[];
+}
+
 export interface ContentTypeDefinition {
     code: string;
     label: string;
     /** What the top level of its tree may hold, or null when it has no block tree. */
     blocks: AllowedBlockType[] | null;
+    /** Its layouts, the default first, or none for a content type without its own URL. */
+    layouts: LayoutDefinition[];
 }
 
 export interface Registry {

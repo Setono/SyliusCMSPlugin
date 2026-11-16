@@ -5,7 +5,7 @@ import { fingerprint } from '../src/fingerprint';
 import { createBuilderStore } from '../src/store';
 import { entryTranslated, entryValues, localeCounts, outdatedSource, sourceOfTyped, upToDate, valueState } from '../src/translationState';
 import type { Entry, EntryStatus, JsonValue, StoredBlock, TranslationSource } from '../src/types';
-import { block, blockOf, blockTypes, entry, page } from './fixtures';
+import { block, blockOf, blockTypes, entry, page, standard } from './fixtures';
 
 const locales: Locale[] = [
     { code: 'en_US', name: 'English (United States)', fallbackChain: ['en_US'] },
@@ -123,21 +123,21 @@ describe('the counts of a locale', () => {
             'About',
         );
 
-        expect(localeCounts(edited, 'da_DK', isTranslatable)).toEqual({ untranslated: 1, outdated: 2 });
-        expect(localeCounts(edited, 'en_US', isTranslatable)).toEqual({ untranslated: 0, outdated: 0 });
+        expect(localeCounts(edited, 'da_DK', isTranslatable, standard)).toEqual({ untranslated: 1, outdated: 2 });
+        expect(localeCounts(edited, 'en_US', isTranslatable, standard)).toEqual({ untranslated: 0, outdated: 0 });
     });
 
     it('should leave out shared fields and fields of blocks of types the code no longer has', () => {
         const edited = danish([blockOf('removed', 'a', [], { text: { en_US: 'Hello' } }), block('b', { level: 'h3' })]);
 
-        expect(localeCounts(edited, 'da_DK', isTranslatable)).toEqual({ untranslated: 0, outdated: 0 });
+        expect(localeCounts(edited, 'da_DK', isTranslatable, standard)).toEqual({ untranslated: 0, outdated: 0 });
     });
 
     it('should count an entry field that one translation is missing', () => {
         const edited = danish([]);
         edited.translations.da_DK = { shown: true, fields: { title: 'Om os', slug: null }, translated: {} };
 
-        expect(localeCounts(edited, 'da_DK', isTranslatable)).toEqual({ untranslated: 1, outdated: 0 });
+        expect(localeCounts(edited, 'da_DK', isTranslatable, standard)).toEqual({ untranslated: 1, outdated: 0 });
         expect(entryValues(edited, 'slug')).toEqual({ en_US: 'about-us', da_DK: null });
         expect(entryTranslated(danish([]), 'title')).toEqual({ da_DK: from('en_US', 'About us') });
     });

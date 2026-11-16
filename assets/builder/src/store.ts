@@ -4,15 +4,16 @@
  */
 import { enablePatches, produceWithPatches, type Patch } from 'immer';
 import { createStore, type StoreApi } from 'zustand/vanilla';
-import { applyChanges, changesFromPatches, mergeChanges, type Change, type TranslatableLookup } from './changeSet';
+import { applyChanges, changesFromPatches, mergeChanges, type Change, type LayoutTranslatableLookup, type TranslatableLookup } from './changeSet';
 import { emptyHistory, rebaseHistory, recordEdit, redoEdit, undoEdit, type History, type Step } from './history';
 import { canDuplicate, canMoveBlocks, createNestingRules, initialChildren, insertableIn, type NestingRules } from './nesting';
 import { holdClashes, reconcile, splitValueClashes, withoutKeysIn, type HeldClash } from './pullIn';
 import { copyWithNewKeys, findBlock, generateBlockKey, insertBlock, listOf, locateBlock, moveBlocksTo, removeBlockFrom, shiftWithin, topmostBlocks } from './tree';
 import type { Locale } from './config';
+import { isRemovedLayout, layoutOf, switchLayout } from './layouts';
 import { localeOf } from './locales';
 import { entryValues, sourceOfTyped, upToDate } from './translationState';
-import type { BlockTypeDefinition, Clash, ContentTypeDefinition, Entry, EntryStatus, FieldValues, JsonValue, StoredBlock, TranslationSource } from './types';
+import type { BlockTypeDefinition, Clash, ContentTypeDefinition, Entry, EntryStatus, FieldValues, JsonValue, LayoutDefinition, StoredBlock, TranslationSource } from './types';
 import { normalizeValue, writeEntryTranslated, writeEntryValue, writeFieldValue, writeTranslated } from './values';
 
 enablePatches();
@@ -33,6 +34,8 @@ export interface BuilderData {
     blockTypes: BlockTypeDefinition[];
     /** What each spot in the tree may hold. */
     rules: NestingRules;
+    /** The entry's content type's layouts, the default first, disabled ones too, or none for a content type without its own URL. */
+    layouts: LayoutDefinition[];
     entry: Entry;
     status: EntryStatus;
     /** The block the right pane and the preview's toolbar show: the one selected last, or null. */
@@ -105,6 +108,20 @@ export interface BuilderActions {
     markValueUpToDate(key: string, field: string): void;
     /** Picks one of the block type's styles for a block, by its code, or none when the style is null. */
     setBlockStyle(key: string, style: string | null): void;
+    /**
+     * Switches the entry to another of its content type's layouts, by its code, leaving the blocks and the entry fields as
+     * they are. The layout's values carry over to fields of the new layout with the same name and field type, with their
+     * translation state, and the rest are dropped, which undo brings back. Picking a layout clears the flag of one that
+     * was removed or disabled. See "Picking and switching" in docs/spec/layouts-and-presets.md
+     */
+    setLayout(code: string): void;
+    /**
+     * Sets a field of the entry's layout in the edited locale, or its one value when it's shared, recording where it's
+     * translated from as for a block's value. It does nothing in a layout that was removed or disabled.
+     */
+    setLayoutValue(field: string, value: JsonValue | null): void;
+    /** Records that a layout field's outdated value in the edited locale is up to date with the value it was translated from. */
+    markLayoutValueUpToDate(field: string): void;
     /** Edits another locale. It isn't an edit to the working copy: nothing is saved or undone. */
     setLocale(locale: string): void;
     /**
@@ -167,7 +184,9 @@ export interface BuilderStoreOptions {
 export function createBuilderStore({ locale, locales = [], blockTypes, contentTypes, entry, status, lockToken = 0, generateKey = generateBlockKey }: BuilderStoreOptions): BuilderStore {
     const chainOf = (code: string): string[] => localeOf(locales, code).fallbackChain;
     const blockTypesByCode = new Map(blockTypes.map((blockType) => [blockType.code, blockType]));
-    const rules = createNestingRules(blockTypes, contentTypes.find((contentType) => contentType.code === entry.contentType)?.blocks ?? null);
+    const contentType = contentTypes.find((candidate) => candidate.code === entry.contentType);
+    const rules = createNestingRules(blockTypes, contentType?.blocks ?? null);
+    const layouts = contentType?.layouts ?? [];
     const createBlock = (type: string): StoredBlock => ({
         key: generateKey(),
         type,
@@ -180,6 +199,14 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
     });
     const isTranslatable: TranslatableLookup = (blockType, field) =>
         blockTypesByCode.get(blockType)?.fields.find((definition) => definition.name === field)?.schema['x-cms-translatable'] === true;
+    const isLayoutTranslatable: LayoutTranslatableLookup = (layout, field) =>
+        layouts.find(({ code }) => code === layout)?.fields.find((definition) => definition.name === field)?.schema['x-cms-translatable'] === true;
+    /** The schema of a field of the layout the entry is in, unless that one was removed or disabled. */
+    const layoutField = (working: Entry, field: string) => {
+        const stored = working.tree.layout;
+
+        return isRemovedLayout(layouts, stored) ? undefined : layoutOf(layouts, stored)?.fields.find(({ name }) => name === field)?.schema;
+    };
 
     return createStore<BuilderState>()((set, get) => {
         /**
@@ -194,7 +221,7 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
                 ...selectedIn(next, extra.selection ?? state.selection, extra.selectedKey === undefined ? state.selectedKey : extra.selectedKey),
                 entry: next,
                 history,
-                unsaved: mergeChanges(state.unsaved, changesFromPatches(patches, state.entry, next, isTranslatable)),
+                unsaved: mergeChanges(state.unsaved, changesFromPatches(patches, state.entry, next, isTranslatable, isLayoutTranslatable)),
                 changeCount: state.changeCount + 1,
             });
         };
@@ -231,6 +258,7 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
             locale,
             blockTypes,
             rules,
+            layouts,
             entry,
             status,
             selectedKey: null,
@@ -515,6 +543,61 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
                     const target = findBlock(working.tree.blocks, key);
                     if (target !== undefined) {
                         writeTranslated(target.translated, field, edited, source);
+                    }
+                });
+            },
+
+            setLayout(code) {
+                const stored = get().entry.tree.layout;
+                const to = layouts.find((layout) => layout.code === code);
+                if (to === undefined || (stored?.code === code && !isRemovedLayout(layouts, stored))) {
+                    return;
+                }
+
+                const next = switchLayout(stored, layoutOf(layouts, stored), to);
+                edit((working) => {
+                    working.tree.layout = next;
+                });
+            },
+
+            setLayoutValue(field, value) {
+                const { entry: before, locale: edited } = get();
+                const schema = layoutField(before, field);
+                const stored = before.tree.layout;
+                if (schema === undefined || stored === null) {
+                    return;
+                }
+
+                const translatable = schema['x-cms-translatable'];
+                const source = translatable ? sourceOfTyped(stored.fields[field], stored.translated[field]?.[edited], normalizeValue(value), chainOf(edited)) : null;
+                edit(
+                    (working) => {
+                        const layout = working.tree.layout;
+                        if (layout !== null) {
+                            writeFieldValue(layout.fields, field, translatable, edited, value);
+                            if (translatable) {
+                                writeTranslated(layout.translated, field, edited, source);
+                            }
+                        }
+                    },
+                    {},
+                    JSON.stringify(['set_layout_value', field]),
+                );
+            },
+
+            markLayoutValueUpToDate(field) {
+                const { entry: before, locale: edited } = get();
+                const stored = before.tree.layout;
+                const current = stored?.translated[field]?.[edited];
+                const source = current === undefined || layoutField(before, field) === undefined ? undefined : upToDate(stored?.fields[field], current);
+                if (source === undefined) {
+                    return;
+                }
+
+                edit((working) => {
+                    const layout = working.tree.layout;
+                    if (layout !== null) {
+                        writeTranslated(layout.translated, field, edited, source);
                     }
                 });
             },
