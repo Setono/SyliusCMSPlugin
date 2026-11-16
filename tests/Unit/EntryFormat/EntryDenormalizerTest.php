@@ -83,6 +83,42 @@ final class EntryDenormalizerTest extends TestCase
     /**
      * @test
      */
+    public function it_copies_the_translation_state_of_each_translation_s_fields(): void
+    {
+        $fingerprint = hash('sha256', '"About us"');
+        $rows = self::page(['en_US' => ['About us', 'about-us'], 'da_DK' => ['Om os', 'om-os']]);
+        $rows->getTranslation('en_US')->setTranslated(['title' => ['from' => 'da_DK', 'fingerprint' => $fingerprint]]);
+        $draft = clone $rows;
+        $draft->getTranslation('en_US')->setTranslated([]);
+        $draft->getTranslation('da_DK')->setTranslated(['title' => ['from' => 'en_US', 'fingerprint' => $fingerprint]]);
+
+        $this->denormalizer()->denormalize(CanonicalJson::decode(CanonicalJson::encode($this->normalizer()->normalize($draft))), $rows);
+
+        self::assertSame([], $rows->getTranslation('en_US')->getTranslated());
+        self::assertSame(['title' => ['from' => 'en_US', 'fingerprint' => $fingerprint]], $rows->getTranslation('da_DK')->getTranslated());
+    }
+
+    /**
+     * Drafts saved before translation state was kept have none
+     *
+     * @test
+     */
+    public function it_reads_a_translation_without_translation_state_as_having_none(): void
+    {
+        $page = self::page(['en_US' => ['About us', 'about-us']]);
+        $page->getTranslation('en_US')->setTranslated(['title' => ['from' => 'da_DK', 'fingerprint' => hash('sha256', '"Om os"')]]);
+        $data = CanonicalJson::decode(CanonicalJson::encode($this->normalizer()->normalize($page)));
+        self::assertIsArray($data);
+        $data['translations'] = ['en_US' => ['shown' => true, 'fields' => ['title' => 'About us']]];
+
+        $this->denormalizer()->denormalize($data, $page);
+
+        self::assertSame([], $page->getTranslation('en_US')->getTranslated());
+    }
+
+    /**
+     * @test
+     */
     public function it_removes_the_translations_the_entry_format_does_not_have(): void
     {
         $rows = self::page(['en_US' => ['About us', 'about-us'], 'da_DK' => ['Om os', 'om-os']]);
@@ -185,6 +221,16 @@ final class EntryDenormalizerTest extends TestCase
         yield 'a slug that is a list' => [static fn (array $data): array => ['translations' => ['en_US' => ['fields' => ['slug' => ['about-us']]]]] + $data, 'The slug of the translation en_US must be a string or null'];
         yield 'a translation without a shown switch' => [static fn (array $data): array => ['translations' => ['en_US' => ['fields' => ['title' => 'About us']]]] + $data, 'The shown switch of the translation en_US must be true or false'];
         yield 'a shown switch that is a string' => [static fn (array $data): array => ['translations' => ['en_US' => ['shown' => 'yes', 'fields' => ['title' => 'About us']]]] + $data, 'The shown switch of the translation en_US must be true or false'];
+        $translation = static fn (mixed $translated): array => ['translations' => ['en_US' => ['shown' => true, 'fields' => ['title' => 'About us'], 'translated' => $translated]]];
+        $fingerprint = hash('sha256', '"Om os"');
+        yield 'translation state that is a list' => [static fn (array $data): array => $translation(['title']) + $data, 'The translation state of the translation en_US must be a JSON object'];
+        yield 'translation state of a field that is a string' => [static fn (array $data): array => $translation(['title' => 'da_DK']) + $data, 'The translation state of the title of the translation en_US must be a JSON object'];
+        yield 'translation state without a locale' => [static fn (array $data): array => $translation(['title' => ['fingerprint' => $fingerprint]]) + $data, 'The translation state of the title of the translation en_US must have the locale it was translated from and a fingerprint'];
+        yield 'translation state with an empty locale' => [static fn (array $data): array => $translation(['title' => ['from' => '', 'fingerprint' => $fingerprint]]) + $data, 'must have the locale it was translated from and a fingerprint'];
+        yield 'translation state with a locale that is a number' => [static fn (array $data): array => $translation(['title' => ['from' => 1, 'fingerprint' => $fingerprint]]) + $data, 'must have the locale it was translated from and a fingerprint'];
+        yield 'translation state without a fingerprint' => [static fn (array $data): array => $translation(['title' => ['from' => 'da_DK']]) + $data, 'must have the locale it was translated from and a fingerprint'];
+        yield 'translation state with a fingerprint that is a number' => [static fn (array $data): array => $translation(['title' => ['from' => 'da_DK', 'fingerprint' => 1]]) + $data, 'must have the locale it was translated from and a fingerprint'];
+        yield 'translation state with a fingerprint that is not a SHA-256' => [static fn (array $data): array => $translation(['title' => ['from' => 'da_DK', 'fingerprint' => 'abc']]) + $data, 'must have the locale it was translated from and a fingerprint'];
         yield 'a tree without blocks' => [static fn (array $data): array => ['tree' => ['layout' => null]] + $data, 'The tree is invalid: The block tree must have a list of blocks'];
     }
 
