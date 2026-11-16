@@ -60,7 +60,7 @@ final readonly class TranslationState implements TranslationStateInterface
 
         if (1 === preg_match('/^layout\.(\w+)$/D', $path, $matches)) {
             // Set in the layout the draft is in, as the builder sets an editor's change
-            $layout = $workingCopy->getBlockTree()->layout?->code
+            $layout = $workingCopy->getBlockTree()->layout->code
                 ?? throw new \InvalidArgumentException(sprintf('The path "%s" is a layout field, but the entry\'s draft has no layout', $path));
 
             return [new SetLayoutValue($layout, $matches[1], $localeCode, $value), new SetLayoutTranslated($layout, $matches[1], $localeCode, $source)];

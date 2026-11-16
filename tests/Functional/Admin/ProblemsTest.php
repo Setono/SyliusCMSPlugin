@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 
+use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
@@ -68,7 +69,9 @@ final class ProblemsTest extends WebTestCase
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
         $page->setBlockTree(new StoredTree(new StoredLayout('gone', 1), $page->getBlockTree()->blocks));
-        self::getContainer()->get('setono_sylius_cms.manager.page')->flush();
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
+        $manager->flush();
 
         $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s', $page->getUuid()));
 

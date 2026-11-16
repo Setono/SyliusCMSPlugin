@@ -122,7 +122,7 @@ final class Configuration implements ConfigurationInterface
                             ->scalarNode('default_layout')
                                 ->info('A layout code, which overrides #[Layout(default: true)]')
                                 ->cannotBeEmpty()
-                                ->validate()->always(static fn (mixed $code): mixed => self::assertCode('layout', (string) $code))->end()
+                                ->validate()->always(static fn (mixed $code): string => self::assertCode('layout', is_scalar($code) ? (string) $code : ''))->end()
                             ->end()
                         ->end()
                     ->end()
@@ -206,12 +206,13 @@ final class Configuration implements ConfigurationInterface
 
     private static function assertDisabledLayout(mixed $layout): string
     {
-        $parts = explode('.', (string) $layout);
+        $layout = is_scalar($layout) ? (string) $layout : '';
+        $parts = explode('.', $layout);
         if (2 !== count($parts) || !Code::isValid($parts[0]) || !Code::isValid($parts[1])) {
-            throw new \InvalidArgumentException(sprintf('A disabled layout must be "<content type code>.<layout code>", such as page.standard, not "%s"', (string) $layout));
+            throw new \InvalidArgumentException(sprintf('A disabled layout must be "<content type code>.<layout code>", such as page.standard, not "%s"', $layout));
         }
 
-        return (string) $layout;
+        return $layout;
     }
 
     private static function assertCode(string $kind, string $code): string

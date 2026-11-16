@@ -260,8 +260,6 @@ final class RegistryExporterTest extends TestCase
      * @param list<string> $disabled
      * @param array<string, array<string, array{label: string, class: string}>> $styles
      * @param array<string, class-string> $blockTypes block types besides the shipped Columns, Column and Heading
-     */
-    /**
      * @param list<string> $disabledLayouts
      */
     private function exporter(array $disabled = [], array $styles = [], array $blockTypes = [], array $disabledLayouts = []): RegistryExporter

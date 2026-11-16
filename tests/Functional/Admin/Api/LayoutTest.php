@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 
+use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Translation\Fingerprint;
 use Setono\SyliusCMSPlugin\Translation\TranslationStateInterface;
@@ -71,7 +72,9 @@ final class LayoutTest extends BuilderApiTestCase
         $page = self::createPage('About us', 'about-us', 'Hello');
         self::addLocales('WEB', 'da_DK');
         $page->setBlockTree(new StoredTree(new StoredLayout('landing', 1, ['tagline' => ['en_US' => 'Big news']]), $page->getBlockTree()->blocks));
-        self::getContainer()->get('setono_sylius_cms.manager.page')->flush();
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
+        $manager->flush();
 
         /** @var TranslationStateInterface $translationState */
         $translationState = self::getContainer()->get(TranslationStateInterface::class);

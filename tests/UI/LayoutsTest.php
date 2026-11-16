@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\UI;
 
+use Doctrine\Persistence\ObjectManager;
 use Playwright\Assertions\Expect;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
@@ -74,7 +75,9 @@ final class LayoutsTest extends UITestCase
         $this->signInAsAdmin();
         $page = self::createPage('About us', 'about-us', 'Hello');
         $page->setBlockTree(new StoredTree(new StoredLayout('gone', 1), $page->getBlockTree()->blocks));
-        self::getContainer()->get('setono_sylius_cms.manager.page')->flush();
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
+        $manager->flush();
 
         $browser = $this->visit(sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));
         $settings = $browser->getByRole('tabpanel', ['name' => 'Settings']);
@@ -93,7 +96,9 @@ final class LayoutsTest extends UITestCase
     {
         /** @var RepositoryInterface<PageInterface> $pages */
         $pages = self::getContainer()->get('setono_sylius_cms.repository.page');
-        self::getContainer()->get('setono_sylius_cms.manager.page')->clear();
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
+        $manager->clear();
         foreach ($pages->findAll() as $page) {
             if ($page->getTranslation('en_US')->getSlug() === $slug) {
                 return $page;

@@ -150,10 +150,16 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($page);
         self::assertSame(['page', 'Page', $all], [$page['code'], $page['label'], $page['blocks']]);
         self::assertIsArray($page['layouts']);
+        $layouts = [];
+        foreach ($page['layouts'] as $layout) {
+            self::assertIsArray($layout);
+            self::assertIsArray($layout['fields']);
+            $layouts[] = [$layout['code'], $layout['label'], $layout['thumbnail'], $layout['default'], $layout['shows'], array_column($layout['fields'], 'name')];
+        }
         self::assertSame([
             ['standard', 'Standard', '/bundles/setonosyliuscmsplugin/thumbnail/layout/page/standard.svg', true, ['title'], ['showTitle']],
             ['landing', 'Landing', null, false, [], ['tagline', 'transparentHeader']],
-        ], array_map(static fn (array $layout): array => [$layout['code'], $layout['label'], $layout['thumbnail'], $layout['default'], $layout['shows'], array_column($layout['fields'], 'name')], $page['layouts']));
+        ], $layouts);
     }
 
     /**

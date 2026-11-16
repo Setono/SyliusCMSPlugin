@@ -94,11 +94,9 @@ final class EntryFactoryTest extends TestCase
     }
 
     /**
-     * @template T of EntryInterface
+     * @param FactoryInterface<EntryInterface> $decorated
      *
-     * @param FactoryInterface<T> $decorated
-     *
-     * @return EntryFactory<T>
+     * @return EntryFactory<EntryInterface>
      */
     private function factory(FactoryInterface $decorated, string $contentType): EntryFactory
     {
