@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Command;
 
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Routing\Slug;
 use Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface;
@@ -18,8 +19,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 /**
  * A route added after an entry was published silently wins over the entry. This runs every published URL, in each
  * channel and locale it shows in, through the router, lists each one another route now matches, and exits non-zero
- * when it finds any, for CI and deploys. See "Routes added later" in docs/spec/urls-and-seo.md and "Console commands"
- * in docs/spec/extending.md
+ * when it finds any, for CI and deploys. It counts the problems of the published entries again too, as the lists and
+ * the Content badge read them, since a route added since may take a URL. See "Routes added later" in
+ * docs/spec/urls-and-seo.md, "Console commands" in docs/spec/extending.md and "Problems" in docs/spec/admin.md
  */
 #[AsCommand(name: 'setono:cms:check-routes', description: 'Lists every entry URL that another route now matches')]
 final class CheckRoutesCommand extends Command
@@ -33,6 +35,7 @@ final class CheckRoutesCommand extends Command
         private readonly EntryRepositoryInterface $entries,
         private readonly TakenUrlFinderInterface $takenUrls,
         private readonly ObjectManager $manager,
+        private readonly ProblemCountUpdaterInterface $problemCounts,
     ) {
         parent::__construct();
     }
@@ -43,17 +46,26 @@ final class CheckRoutesCommand extends Command
 
         $rows = [];
         $batched = 0;
+        $published = [];
         foreach ($this->entries->iterateAll() as $entry) {
             foreach ($this->takenUrls->find($entry, self::publishedSlugs($entry), $entry->getChannelCodes(), true) as $taken) {
                 $rows[] = [$taken->channelCode ?? '', $taken->localeCode, sprintf('/%s/%s', $taken->localeCode, $taken->path), $taken->route];
             }
 
-            // Nothing is written, so a batch is dropped as it's done
+            if ($entry->isPublished()) {
+                $published[] = $entry;
+            }
+
+            // A batch's problems are counted again, and then it's dropped, as nothing else is written
             if (self::BATCH_SIZE === ++$batched) {
+                $this->countProblems($published);
+                $published = [];
                 $this->manager->clear();
                 $batched = 0;
             }
         }
+
+        $this->countProblems($published);
 
         if ([] === $rows) {
             $io->success('No other route matches an entry URL.');
@@ -65,6 +77,16 @@ final class CheckRoutesCommand extends Command
         $io->error(sprintf('Another route matches %d entry %s, so shoppers get the route\'s page there.', count($rows), 1 === count($rows) ? 'URL' : 'URLs'));
 
         return Command::FAILURE;
+    }
+
+    /**
+     * @param list<EntryInterface> $entries
+     */
+    private function countProblems(array $entries): void
+    {
+        if ([] !== $entries) {
+            $this->problemCounts->update($entries);
+        }
     }
 
     /**

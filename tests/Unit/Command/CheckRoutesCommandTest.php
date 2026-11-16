@@ -11,7 +11,9 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Command\CheckRoutesCommand;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Routing\TakenUrl;
 use Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface;
@@ -32,12 +34,34 @@ final class CheckRoutesCommandTest extends TestCase
     /** @var ObjectProphecy<ObjectManager> */
     private ObjectProphecy $manager;
 
+    /** @var ObjectProphecy<ProblemCountUpdaterInterface> */
+    private ObjectProphecy $problemCounts;
+
+    /** @var list<string> what happened to the entries, in order: "counted <n>" and "cleared" */
+    private array $happened = [];
+
+    /** @var list<list<EntryInterface>> the entries of each update() */
+    private array $counted = [];
+
     protected function setUp(): void
     {
         $this->entries = $this->prophesize(EntryRepositoryInterface::class);
         $this->takenUrls = $this->prophesize(TakenUrlFinderInterface::class);
         $this->takenUrls->find(Argument::cetera())->willReturn([]);
         $this->manager = $this->prophesize(ObjectManager::class);
+        $this->problemCounts = $this->prophesize(ProblemCountUpdaterInterface::class);
+
+        $happened = &$this->happened;
+        $counted = &$this->counted;
+        $this->problemCounts->update(Argument::any())->will(static function (array $arguments) use (&$happened, &$counted): void {
+            /** @var list<EntryInterface> $entries */
+            $entries = $arguments[0];
+            $happened[] = sprintf('counted %d', count($entries));
+            $counted[] = $entries;
+        });
+        $this->manager->clear()->will(static function () use (&$happened): void {
+            $happened[] = 'cleared';
+        });
     }
 
     /**
@@ -125,9 +149,45 @@ final class CheckRoutesCommandTest extends TestCase
         self::assertSame(Command::SUCCESS, $this->check()->getStatusCode());
     }
 
+    /**
+     * A route added since may take a published entry's URL, so the entries it checks are counted again, a batch at a
+     * time, before the batch is dropped. See "Problems" in docs/spec/admin.md
+     *
+     * @test
+     */
+    public function it_counts_the_problems_of_the_published_entries_again_a_batch_at_a_time_before_dropping_it(): void
+    {
+        $pages = [];
+        for ($i = 0; $i < 150; ++$i) {
+            $pages[] = self::page([], ['WEB'], true);
+        }
+        $first = $pages[0];
+        array_splice($pages, 10, 0, [self::page(['en_US' => 'cart'], ['WEB'], false)]);
+        $this->entries->iterateAll()->willReturn($pages);
+
+        $this->check();
+
+        // The never-published entry has no URL to take
+        self::assertSame(['counted 99', 'cleared', 'counted 51'], $this->happened);
+        self::assertSame($first, $this->counted[0][0]);
+        self::assertSame($pages[100], $this->counted[1][0]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_counts_nothing_again_without_published_entries(): void
+    {
+        $this->entries->iterateAll()->willReturn([self::page(['en_US' => 'cart'], ['WEB'], false)]);
+
+        $this->check();
+
+        self::assertSame([], $this->happened);
+    }
+
     private function check(): CommandTester
     {
-        $tester = new CommandTester(new CheckRoutesCommand($this->entries->reveal(), $this->takenUrls->reveal(), $this->manager->reveal()));
+        $tester = new CommandTester(new CheckRoutesCommand($this->entries->reveal(), $this->takenUrls->reveal(), $this->manager->reveal(), $this->problemCounts->reveal()));
         $tester->execute([], ['decorated' => false]);
 
         return $tester;

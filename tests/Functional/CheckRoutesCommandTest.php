@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional;
 
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Problem\ProblemCount;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
+use Setono\SyliusCMSPlugin\Tests\Application\Kernel;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\AddedRouteKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -58,6 +62,38 @@ final class CheckRoutesCommandTest extends KernelTestCase
         self::assertStringContainsString('WEB en_US /en_US/stores app_store_locator', $display);
         self::assertStringNotContainsString('about-us', $display);
         self::assertStringContainsString('Another route matches 1 entry URL', $display);
+    }
+
+    /**
+     * The lists and the Content badge read the problems counted when an entry was written, so a route added since
+     * shows there once the command ran, as at a deploy. See "Problems" in docs/spec/admin.md
+     *
+     * @test
+     */
+    public function it_counts_the_published_entries_again_so_the_admin_warns_of_a_url_a_route_added_since_takes(): void
+    {
+        // Published before the route was added
+        static::$class = Kernel::class;
+        self::bootKernel();
+        $stores = self::createPage('Stores', 'stores', 'Our stores', published: true);
+        self::assertEquals(new ProblemCount(), self::storedCount($stores));
+
+        self::ensureKernelShutdown();
+        static::$class = AddedRouteKernel::class;
+        self::bootKernel();
+        self::assertEquals(new ProblemCount(), self::storedCount($stores), 'Nothing counts it again by itself');
+
+        self::checkRoutes();
+
+        self::assertEquals(new ProblemCount(0, 1), self::storedCount($stores));
+    }
+
+    private static function storedCount(EntryInterface $entry): ProblemCount
+    {
+        /** @var ProblemCountProviderInterface $provider */
+        $provider = self::getContainer()->get(ProblemCountProviderInterface::class);
+
+        return $provider->getCounts([$entry])[$entry->getUuid()];
     }
 
     private static function checkRoutes(): CommandTester
