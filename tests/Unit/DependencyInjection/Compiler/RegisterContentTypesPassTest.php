@@ -97,12 +97,17 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
      */
     public function it_hands_the_registry_the_prefixes_set_in_config(): void
     {
-        $this->setParameter('sylius.resources', ['setono_sylius_cms.page' => self::PAGE, 'app.article' => ['classes' => ['model' => Article::class]]]);
-        $this->setParameter(RegisterContentTypesPass::CONFIG_PARAMETER, ['page' => ['prefix' => 'pg'], 'article' => []]);
+        $this->setParameter('sylius.resources', [
+            'setono_sylius_cms.page' => self::PAGE,
+            'app.article' => ['classes' => ['model' => Article::class]],
+            'app.recipe' => ['classes' => ['model' => Recipe::class]],
+        ]);
+        // A content type the config sets no prefix for keeps the attribute's, even one without a URL of its own
+        $this->setParameter(RegisterContentTypesPass::CONFIG_PARAMETER, ['recipe' => [], 'page' => ['prefix' => 'pg'], 'article' => ['prefix' => '']]);
 
         $this->compile();
 
-        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ContentTypeRegistry::class, 1, ['page' => 'pg']);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ContentTypeRegistry::class, 1, ['page' => 'pg', 'article' => '']);
     }
 
     /**

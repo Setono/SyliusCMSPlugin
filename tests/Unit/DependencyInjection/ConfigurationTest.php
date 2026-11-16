@@ -341,6 +341,7 @@ final class ConfigurationTest extends TestCase
         yield 'not a string' => [['page' => ['prefix' => 7]], 'The prefix int must be empty'];
         yield 'an invalid code' => [['Page' => ['prefix' => 'pg']], 'The content type code "Page" must match ^[a-z][a-z0-9_]*$'];
         yield 'a number as a code' => [[7 => ['prefix' => 'pg']], 'The content type code "7" must match ^[a-z][a-z0-9_]*$'];
+        yield 'a dash in the code, which is kept' => [['blog-post' => ['prefix' => 'pg']], 'The content type code "blog-post" must match ^[a-z][a-z0-9_]*$'];
     }
 
     /**
