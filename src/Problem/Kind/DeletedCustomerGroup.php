@@ -8,9 +8,10 @@ use Setono\SyliusCMSPlugin\Condition\Kind\CustomerGroupKind;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\Problem;
-use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
+use Setono\SyliusCMSPlugin\Problem\ReferenceProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\CustomerGroupValue;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Sylius\Component\Customer\Model\CustomerGroupInterface;
@@ -22,10 +23,11 @@ use Symfony\Contracts\Service\ResetInterface;
  * A deleted customer group in a block's customer group condition or in the entry's audience: a broken reference, an
  * error. Its code is left dangling (ADR 0002) and matches nobody, so "is one of" and "Only these" no longer let anyone
  * in through it, and "is not one of" and "Everyone except these" no longer keep anyone out through it. It's fixed in the
- * builder: at the block, or in the entry's settings. See "Deleted customer groups" in docs/spec/targeting.md and
- * "Problems" in docs/spec/admin.md
+ * builder: at the block, or in the entry's settings. A customer group deleted, or added again with its code, has the
+ * entries that may name it counted again. See "Deleted customer groups" in docs/spec/targeting.md and "Problems" in
+ * docs/spec/admin.md
  */
-final class DeletedCustomerGroup implements ProblemKindInterface, ResetInterface
+final class DeletedCustomerGroup implements ReferenceProblemKindInterface, ResetInterface
 {
     public const CODE = 'deleted_customer_group';
 
@@ -38,7 +40,29 @@ final class DeletedCustomerGroup implements ProblemKindInterface, ResetInterface
     public function __construct(
         private readonly RepositoryInterface $customerGroupRepository,
         private readonly BlockTypeRegistryInterface $blockTypes,
+        private readonly EntryRepositoryInterface $entries,
     ) {
+    }
+
+    public static function getReferencedClasses(): array
+    {
+        return [CustomerGroupInterface::class];
+    }
+
+    public function findEntriesReferencing(array $referenced): iterable
+    {
+        // The store's groups changed
+        $this->reset();
+
+        $codes = [];
+        foreach ($referenced as $customerGroup) {
+            $code = $customerGroup instanceof CustomerGroupInterface ? $customerGroup->getCode() : null;
+            if (null !== $code) {
+                $codes[] = $code;
+            }
+        }
+
+        return [] === $codes ? [] : $this->entries->findByCustomerGroupCodes($codes);
     }
 
     public function findIn(EntryInterface $entry): iterable

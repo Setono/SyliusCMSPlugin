@@ -7,13 +7,20 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractCompilerPassTestCase;
 use Setono\SyliusCMSPlugin\Command\LintCommand;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterProblemKindsPass;
+use Setono\SyliusCMSPlugin\Problem\Kind\DeletedCustomerGroup;
 use Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue;
 use Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishOverdue;
 use Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprint;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountListener;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProvider;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\ChannelAndTaxonReferences;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\CustomerGroupReferences;
+use Sylius\Component\Channel\Model\ChannelInterface;
+use Sylius\Component\Customer\Model\CustomerGroupInterface;
+use Sylius\Component\Taxonomy\Model\TaxonInterface;
 use Symfony\Component\DependencyInjection\Argument\IteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -78,6 +85,28 @@ final class RegisterProblemKindsPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
+    public function it_hands_the_kinds_about_what_entries_reference_and_what_they_reference_to_the_count_listener(): void
+    {
+        $this->setDefinition(ProblemCountListener::class, new Definition(ProblemCountListener::class, [null, [], []]));
+        $this->setDefinition('app.unknown', (new Definition(UnknownBlockType::class))->addTag('setono_sylius_cms.problem_kind'));
+        $this->setDefinition('app.customer_groups', (new Definition(CustomerGroupReferences::class))->addTag('setono_sylius_cms.problem_kind', ['priority' => 10]));
+        $this->setDefinition('app.channels_and_taxons', (new Definition(ChannelAndTaxonReferences::class))->addTag('setono_sylius_cms.problem_kind'));
+        $this->setDefinition('app.deleted_customer_group', (new Definition(DeletedCustomerGroup::class))->addTag('setono_sylius_cms.problem_kind', ['priority' => 5]));
+
+        $this->compile();
+
+        $listener = $this->container->getDefinition(ProblemCountListener::class);
+        self::assertEquals(
+            new IteratorArgument([new Reference('app.customer_groups'), new Reference('app.deleted_customer_group'), new Reference('app.channels_and_taxons')]),
+            $listener->getArgument(1),
+        );
+        // Each once
+        self::assertSame([CustomerGroupInterface::class, ChannelInterface::class, TaxonInterface::class], $listener->getArgument(2));
+    }
+
+    /**
+     * @test
+     */
     public function it_does_nothing_without_the_services_it_hands_the_kinds_to(): void
     {
         $this->setDefinition('app.kind', (new Definition(UnknownBlockType::class))->addTag('setono_sylius_cms.problem_kind', ['lint' => true]));
@@ -89,5 +118,6 @@ final class RegisterProblemKindsPassTest extends AbstractCompilerPassTestCase
         $this->assertContainerBuilderNotHasService(ProblemCountUpdater::class);
         $this->assertContainerBuilderNotHasService(ProblemCountFingerprint::class);
         $this->assertContainerBuilderNotHasService(ProblemCountProvider::class);
+        $this->assertContainerBuilderNotHasService(ProblemCountListener::class);
     }
 }

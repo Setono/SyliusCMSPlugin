@@ -5,17 +5,24 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprintInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface;
+use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\GreetingKernel;
+use Setono\SyliusCMSPlugin\Tests\Support\Customers;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Sylius\Component\Customer\Model\CustomerGroupInterface;
+use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\DomCrawler\Crawler;
@@ -28,6 +35,7 @@ use Symfony\Component\DomCrawler\Crawler;
 final class ProblemCountsTest extends WebTestCase
 {
     use ClockSensitiveTrait;
+    use Customers;
     use Entries;
 
     private const PROMO = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e50';
@@ -111,6 +119,67 @@ final class ProblemCountsTest extends WebTestCase
         $content = $crawler->filter('.sylius-admin-menu a[href="/admin/cms"]');
         self::assertSame(['1', 'warning'], [$content->attr('data-cms-problem-count'), $content->attr('data-cms-problems')]);
         self::assertEquals(new ProblemCount(0, 1), self::storedCount($page));
+    }
+
+    /**
+     * See "Deleted customer groups" in docs/spec/targeting.md
+     *
+     * @test
+     */
+    public function deleting_a_customer_group_counts_the_entries_that_name_it_again_and_no_other(): void
+    {
+        self::bootKernel();
+        self::createCustomerGroup('wholesale', 'Wholesale');
+        $inAudience = self::createPage('Prices', 'prices', 'Hello', published: true);
+        self::channelsAndAudience()->setAudience($inAudience, Audience::only('wholesale'));
+        self::manager()->flush();
+        $inDraft = self::createPage('Offers', 'offers', 'Hello', published: true);
+        self::draftWithACondition($inDraft, ['kind' => 'customer_group', 'negate' => false, 'params' => ['groups' => ['retail', 'wholesale']]]);
+        $other = self::createPage('Contact', 'contact-us', 'Hello');
+        self::query()->store([(int) $other->getId() => new ProblemCount(5, 4)], self::fingerprint());
+        self::assertEquals(new ProblemCount(), self::storedCount($inAudience));
+        self::assertEquals(new ProblemCount(1, 0), self::storedCount($inDraft), 'The group "retail" doesn\'t exist');
+
+        self::deleteCustomerGroup('wholesale');
+
+        self::assertEquals(new ProblemCount(1, 0), self::storedCount($inAudience));
+        self::assertEquals(new ProblemCount(2, 0), self::storedCount($inDraft));
+        self::assertEquals(new ProblemCount(5, 4), self::storedCount($other), 'An entry that doesn\'t name it isn\'t counted again');
+
+        // Added again with its code, it's no longer missing
+        self::createCustomerGroup('wholesale', 'Wholesale');
+
+        self::assertEquals(new ProblemCount(), self::storedCount($inAudience));
+        self::assertEquals(new ProblemCount(1, 0), self::storedCount($inDraft));
+    }
+
+    /**
+     * Saves a draft of the published entry whose heading has the condition
+     *
+     * @param array<string, mixed> $condition
+     */
+    private static function draftWithACondition(EntryInterface $entry, array $condition): void
+    {
+        /** @var WorkingCopyManagerInterface $workingCopies */
+        $workingCopies = self::getContainer()->get(WorkingCopyManagerInterface::class);
+        $workingCopy = $workingCopies->getWorkingCopy($entry);
+        $heading = $workingCopy->getBlockTree()->blocks[0];
+        $heading->conditions = [$condition];
+        $workingCopy->setBlockTree(new StoredTree(null, [$heading]));
+        $workingCopies->save($entry, $workingCopy);
+    }
+
+    private static function deleteCustomerGroup(string $code): void
+    {
+        /** @var RepositoryInterface<CustomerGroupInterface> $repository */
+        $repository = self::getContainer()->get('sylius.repository.customer_group');
+        $group = $repository->findOneBy(['code' => $code]);
+        self::assertNotNull($group);
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('sylius.manager.customer_group');
+        $manager->remove($group);
+        $manager->flush();
     }
 
     private static function storedCount(EntryInterface $entry): ProblemCount

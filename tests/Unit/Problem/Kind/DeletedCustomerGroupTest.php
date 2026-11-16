@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -93,13 +94,68 @@ final class DeletedCustomerGroupTest extends TestCase
     {
         $repository = $this->repository();
         $repository->findAll()->shouldBeCalledTimes(2);
-        $kind = new DeletedCustomerGroup($repository->reveal(), self::blockTypes());
+        $kind = new DeletedCustomerGroup($repository->reveal(), self::blockTypes(), $this->prophesize(EntryRepositoryInterface::class)->reveal());
 
         [...$kind->findIn(self::page())];
         [...$kind->findIn(self::page(self::block(self::A, 'heading', [self::groups(['gone'])])))];
         [...$kind->findIn(self::page(self::block(self::A, 'heading', [self::groups(['gone'])])))];
         $kind->reset();
         self::assertCount(1, [...$kind->findIn(self::page(self::block(self::A, 'heading', [self::groups(['gone', 'gone'])])))]);
+    }
+
+    /**
+     * A customer group written, such as one deleted or added again, has the entries that may name it counted again
+     *
+     * @test
+     */
+    public function it_reads_customer_groups_and_finds_the_entries_that_may_name_those_written(): void
+    {
+        $page = new Page();
+        $entries = $this->prophesize(EntryRepositoryInterface::class);
+        $entries->findByCustomerGroupCodes(['wholesale', 'retail'])->willReturn([$page]);
+        $kind = new DeletedCustomerGroup($this->repository()->reveal(), self::blockTypes(), $entries->reveal());
+
+        self::assertSame([CustomerGroupInterface::class], DeletedCustomerGroup::getReferencedClasses());
+        self::assertSame([$page], [...$kind->findEntriesReferencing([self::customerGroup('wholesale'), self::customerGroup(null), self::customerGroup('retail')])]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_finds_no_entry_for_a_group_without_a_code(): void
+    {
+        $entries = $this->prophesize(EntryRepositoryInterface::class);
+        $entries->findByCustomerGroupCodes([])->shouldNotBeCalled();
+        $kind = new DeletedCustomerGroup($this->repository()->reveal(), self::blockTypes(), $entries->reveal());
+
+        self::assertSame([], [...$kind->findEntriesReferencing([self::customerGroup(null), new \stdClass()])]);
+    }
+
+    /**
+     * What it read of the store's groups is out of date once a group is written
+     *
+     * @test
+     */
+    public function it_reads_the_stores_groups_again_once_a_group_is_written(): void
+    {
+        $repository = $this->repository();
+        $repository->findAll()->shouldBeCalledTimes(2);
+        $entries = $this->prophesize(EntryRepositoryInterface::class);
+        $entries->findByCustomerGroupCodes(['gone'])->willReturn([]);
+        $kind = new DeletedCustomerGroup($repository->reveal(), self::blockTypes(), $entries->reveal());
+        $page = self::page(self::block(self::A, 'heading', [self::groups(['gone'])]));
+
+        [...$kind->findIn($page)];
+        [...$kind->findEntriesReferencing([self::customerGroup('gone')])];
+        [...$kind->findIn($page)];
+    }
+
+    private static function customerGroup(?string $code): CustomerGroup
+    {
+        $customerGroup = new CustomerGroup();
+        $customerGroup->setCode($code);
+
+        return $customerGroup;
     }
 
     /**
@@ -146,7 +202,7 @@ final class DeletedCustomerGroupTest extends TestCase
 
     private function kind(): DeletedCustomerGroup
     {
-        return new DeletedCustomerGroup($this->repository()->reveal(), self::blockTypes());
+        return new DeletedCustomerGroup($this->repository()->reveal(), self::blockTypes(), $this->prophesize(EntryRepositoryInterface::class)->reveal());
     }
 
     /**

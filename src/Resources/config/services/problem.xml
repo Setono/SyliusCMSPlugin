@@ -49,9 +49,14 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemCountProvider"/>
 
-        <!-- Has the entries a flush writes counted again once it's done -->
+        <!--
+        Has the entries a flush writes counted again once it's done, and those that reference what it writes.
+        RegisterProblemKindsPass hands it the kinds about references and what they reference
+        -->
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountListener" class="Setono\SyliusCMSPlugin\Problem\ProblemCountListener">
             <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface"/>
+            <argument type="collection"/>
+            <argument type="collection"/>
 
             <tag name="doctrine.event_listener" event="onFlush"/>
             <tag name="doctrine.event_listener" event="postFlush"/>
@@ -89,6 +94,7 @@
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\DeletedCustomerGroup" class="Setono\SyliusCMSPlugin\Problem\Kind\DeletedCustomerGroup">
             <argument type="service" id="sylius.repository.customer_group"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
 
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
             <tag name="kernel.reset" method="reset"/>

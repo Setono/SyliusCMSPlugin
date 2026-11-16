@@ -6,9 +6,11 @@ namespace Setono\SyliusCMSPlugin\DependencyInjection\Compiler;
 
 use Setono\SyliusCMSPlugin\Command\LintCommand;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprint;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountListener;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProvider;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
+use Setono\SyliusCMSPlugin\Problem\ReferenceProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\TimeDependentProblemKindInterface;
 use Symfony\Component\DependencyInjection\Argument\IteratorArgument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -21,7 +23,8 @@ use Symfony\Component\DependencyInjection\Reference;
  * overview page reads every kind through, and those whose tag has `lint: true` to setono:cms:lint. The time-dependent
  * kinds go to the problem count provider, which finds their problems when it reads the counts, and the others to the
  * problem count updater, which stores theirs, with their classes to the fingerprint of what the counts depend on.
- * A tag's `priority` orders them. See "Problems" in docs/spec/admin.md
+ * Those of them about references go to the problem count listener, with the classes they reference. A tag's
+ * `priority` orders them. See "Problems" in docs/spec/admin.md
  */
 final class RegisterProblemKindsPass implements CompilerPassInterface
 {
@@ -63,6 +66,23 @@ final class RegisterProblemKindsPass implements CompilerPassInterface
 
         if ($container->hasDefinition(ProblemCountProvider::class)) {
             $container->getDefinition(ProblemCountProvider::class)->setArgument(2, new IteratorArgument($timeDependent));
+        }
+
+        // What the kinds about references read is known now, so a flush is checked without building a kind
+        if ($container->hasDefinition(ProblemCountListener::class)) {
+            $referenceKinds = $referencedClasses = [];
+            foreach ($stored as $kind) {
+                $class = $classes[(string) $kind];
+                if (is_a($class, ReferenceProblemKindInterface::class, true)) {
+                    $referenceKinds[] = $kind;
+                    $referencedClasses = [...$referencedClasses, ...$class::getReferencedClasses()];
+                }
+            }
+
+            $container->getDefinition(ProblemCountListener::class)
+                ->setArgument(1, new IteratorArgument($referenceKinds))
+                ->setArgument(2, array_values(array_unique($referencedClasses)))
+            ;
         }
     }
 

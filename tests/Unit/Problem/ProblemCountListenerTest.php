@@ -22,6 +22,14 @@ use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountListener;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\ChannelAndTaxonReferences;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\CustomerGroupReferences;
+use Sylius\Component\Channel\Model\ChannelInterface;
+use Sylius\Component\Core\Model\Channel;
+use Sylius\Component\Core\Model\Taxon;
+use Sylius\Component\Customer\Model\CustomerGroup;
+use Sylius\Component\Customer\Model\CustomerGroupInterface;
+use Sylius\Component\Taxonomy\Model\TaxonInterface;
 
 final class ProblemCountListenerTest extends TestCase
 {
@@ -131,15 +139,81 @@ final class ProblemCountListenerTest extends TestCase
     /**
      * @test
      */
+    public function it_counts_the_entries_that_reference_what_a_flush_writes_as_the_kinds_about_it_find_them(): void
+    {
+        $page = new Page();
+        $referencing = new Page();
+        $deleted = self::customerGroup('wholesale');
+        $added = self::customerGroup('retail');
+        $customerGroups = new CustomerGroupReferences([$referencing, $page]);
+        $channelsAndTaxons = new ChannelAndTaxonReferences([new Page()]);
+        $listener = new ProblemCountListener($this->updater->reveal(), [$customerGroups, $channelsAndTaxons], [CustomerGroupInterface::class, ChannelInterface::class, TaxonInterface::class]);
+
+        $listener->onFlush($this->flushing([$added], [$page], [$deleted]));
+        self::assertSame([], $customerGroups->asked, 'Nothing is asked before the flush is done');
+        $listener->postFlush();
+
+        self::assertSame([[$added, $deleted]], $customerGroups->asked);
+        self::assertSame([], $channelsAndTaxons->asked, 'A kind is asked only about what it references');
+        self::assertSame([[$page, $referencing]], $this->updated);
+
+        // A flush that writes a taxon asks the kind about it
+        $taxon = new Taxon();
+        $listener->onFlush($this->flushing([], [$taxon, new Channel()], []));
+        $listener->postFlush();
+        self::assertSame([[$added, $deleted]], $customerGroups->asked);
+        self::assertCount(1, $channelsAndTaxons->asked);
+        self::assertCount(2, $channelsAndTaxons->asked[0]);
+        self::assertSame($taxon, $channelsAndTaxons->asked[0][0]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_asks_no_kind_when_a_flush_writes_nothing_they_reference(): void
+    {
+        $page = new Page();
+        $kinds = new class([new CustomerGroupReferences([new Page()])]) implements \IteratorAggregate {
+            public int $built = 0;
+
+            /**
+             * @param list<CustomerGroupReferences> $kinds
+             */
+            public function __construct(private readonly array $kinds)
+            {
+            }
+
+            public function getIterator(): \Iterator
+            {
+                ++$this->built;
+
+                return new \ArrayIterator($this->kinds);
+            }
+        };
+        $listener = new ProblemCountListener($this->updater->reveal(), $kinds, [CustomerGroupInterface::class]);
+
+        $listener->onFlush($this->flushing([], [$page, new Channel()], []));
+        $listener->postFlush();
+        $listener->postFlush();
+
+        self::assertSame(0, $kinds->built, 'No kind is even built');
+        self::assertSame([[$page]], $this->updated);
+    }
+
+    /**
+     * @test
+     */
     public function it_forgets_what_a_flush_that_failed_wrote(): void
     {
-        $listener = new ProblemCountListener($this->updater->reveal());
-        $listener->onFlush($this->flushing([new Page()], [], []));
+        $customerGroups = new CustomerGroupReferences([new Page()]);
+        $listener = new ProblemCountListener($this->updater->reveal(), [$customerGroups], [CustomerGroupInterface::class]);
+        $listener->onFlush($this->flushing([new Page(), self::customerGroup('wholesale')], [], []));
 
         $listener->reset();
         $listener->postFlush();
 
         self::assertSame([], $this->updated);
+        self::assertSame([], $customerGroups->asked);
     }
 
     /**
@@ -158,6 +232,14 @@ final class ProblemCountListenerTest extends TestCase
         $manager->getUnitOfWork()->willReturn($unitOfWork->reveal());
 
         return new OnFlushEventArgs($manager->reveal());
+    }
+
+    private static function customerGroup(string $code): CustomerGroup
+    {
+        $customerGroup = new CustomerGroup();
+        $customerGroup->setCode($code);
+
+        return $customerGroup;
     }
 
     private static function translationOf(Page $page): PageTranslation

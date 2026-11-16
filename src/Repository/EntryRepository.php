@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Repository;
 
 use Doctrine\ORM\QueryBuilder;
+use Setono\SyliusCMSPlugin\Json\CanonicalJson;
+use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
@@ -24,6 +27,40 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
     {
         /** @var iterable<EntryInterface> $entries */
         $entries = $this->createQueryBuilder('entry')->orderBy('entry.id')->getQuery()->toIterable();
+
+        return $entries;
+    }
+
+    public function findByCustomerGroupCodes(array $codes): array
+    {
+        if ([] === $codes) {
+            return [];
+        }
+
+        $queryBuilder = $this->createQueryBuilder('o')
+            ->setParameter('codes', $codes)
+        ;
+
+        // A condition's groups are JSON strings in the tree, in the rows or the draft, so they're found with LIKE, as
+        // MySQL and PostgreSQL both run it
+        $inTree = $inDraft = [];
+        foreach (array_values($codes) as $index => $code) {
+            $inTree[] = sprintf("o.blockTree LIKE :code_%d ESCAPE '!'", $index);
+            $inDraft[] = sprintf("cms_draft.content LIKE :code_%d ESCAPE '!'", $index);
+            $queryBuilder->setParameter('code_' . $index, '%' . strtr(CanonicalJson::encode($code), ['!' => '!!', '%' => '!%', '_' => '!_']) . '%');
+        }
+
+        /** @var list<EntryInterface> $entries */
+        $entries = $queryBuilder
+            ->andWhere(implode(' OR ', [
+                sprintf('EXISTS (SELECT cms_audience_group.id FROM %s cms_audience_group WHERE cms_audience_group.entry = o AND cms_audience_group.code IN (:codes))', EntryAudienceGroupInterface::class),
+                ...$inTree,
+                sprintf('EXISTS (SELECT cms_draft.id FROM %s cms_draft WHERE cms_draft.entry = o AND (%s))', DraftInterface::class, implode(' OR ', $inDraft)),
+            ]))
+            ->orderBy('o.id')
+            ->getQuery()
+            ->getResult()
+        ;
 
         return $entries;
     }
