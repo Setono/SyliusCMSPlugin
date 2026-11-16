@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import { useBuilder, useBuilderState, useSettingsState, useValidationState } from '../context';
+import { useBuilder, useBuilderState, useSettingsState, useUrlsState, useValidationState, type BuilderSession } from '../context';
 import { fromLocalInput, toLocalInput } from '../dates';
 import { FieldRow } from '../form/FieldRow';
 import formStyles from '../form/Form.module.css';
@@ -7,6 +7,7 @@ import { useTranslator, type MessageKey } from '../i18n';
 import { fieldFallback, localeOf, outdatedValue } from '../locales';
 import { entryTranslated, entryValues } from '../translationState';
 import type { AudienceMode, FieldSchema } from '../types';
+import { slugMessages } from '../urls';
 import { entryMessages } from '../validation';
 import { saveStateText } from './saveStateText';
 import styles from './SettingsPane.module.css';
@@ -16,15 +17,27 @@ interface Tab {
     code: string;
     label: MessageKey;
     panel: () => ReactNode;
+    /** Whether the entry has the tab. Without it, every entry has it. */
+    shown?: (session: BuilderSession) => boolean;
+    /** The entry fields the panel shows with their errors, which the errors above the tabs leave out while it's open. */
+    fields?: readonly string[];
 }
 
 /**
  * The tabs of the entry's settings. The Settings tab holds the edited locale's title and its shown switch, which are
- * drafted, and the on-save settings, which take effect as soon as they're saved, outside the draft. The More tab links
- * to the overview page. The URL & SEO tab joins them with its ticket, between the two.
+ * drafted, and the on-save settings, which take effect as soon as they're saved, outside the draft. The URL & SEO tab,
+ * for a content type with its own URL, holds the edited locale's slug, which is drafted, and its old URLs. The SEO
+ * fields join it with their ticket. The More tab links to the overview page.
  */
 const tabs: Tab[] = [
     { code: 'settings', label: 'setono_sylius_cms.builder.settings', panel: () => <SettingsTab /> },
+    {
+        code: 'url_and_seo',
+        label: 'setono_sylius_cms.builder.url_and_seo',
+        panel: () => <UrlAndSeoTab />,
+        shown: ({ urlPrefix }) => urlPrefix !== null,
+        fields: ['slug'],
+    },
     { code: 'more', label: 'setono_sylius_cms.builder.more', panel: () => <MoreTab /> },
 ];
 
@@ -35,12 +48,14 @@ const tabs: Tab[] = [
 export function SettingsPane() {
     const t = useTranslator();
     const id = useId();
+    const session = useBuilder();
     const [selected, setSelected] = useState(0);
     const tabList = useRef<HTMLDivElement>(null);
-    const tab = tabs[selected] ?? tabs[0];
+    const shownTabs = tabs.filter(({ shown }) => shown?.(session) ?? true);
+    const tab = shownTabs[selected] ?? shownTabs[0];
 
     const select = (index: number): void => {
-        const next = (index + tabs.length) % tabs.length;
+        const next = (index + shownTabs.length) % shownTabs.length;
         setSelected(next);
         tabList.current?.querySelectorAll<HTMLElement>('[role="tab"]')[next]?.focus();
     };
@@ -49,12 +64,12 @@ export function SettingsPane() {
         ArrowRight: () => select(selected + 1),
         ArrowLeft: () => select(selected - 1),
         Home: () => select(0),
-        End: () => select(tabs.length - 1),
+        End: () => select(shownTabs.length - 1),
     };
 
     return (
         <div className={styles.pane}>
-            <EntryErrors />
+            <EntryErrors shownElsewhere={tab?.fields ?? []} />
             <div
                 ref={tabList}
                 role="tablist"
@@ -68,7 +83,7 @@ export function SettingsPane() {
                     }
                 }}
             >
-                {tabs.map(({ code, label }, index) => (
+                {shownTabs.map(({ code, label }, index) => (
                     <button
                         key={code}
                         type="button"
@@ -107,6 +122,87 @@ function SettingsTab() {
     );
 }
 
+function UrlAndSeoTab() {
+    return (
+        <>
+            <Slug />
+            <OldUrls />
+        </>
+    );
+}
+
+/**
+ * The edited locale's slug, with the URL it gives, and why the URL can't be published or saved: the errors publish
+ * would refuse, a slug the server didn't save because another route takes its URL, and warnings, such as another
+ * entry that has drafted the URL too. A slug never falls back. See "Slugs" in docs/spec/urls-and-seo.md
+ */
+function Slug() {
+    const t = useTranslator();
+    const { store, urlPrefix } = useBuilder();
+    const locale = useBuilderState((state) => state.locale);
+    const slug = useBuilderState((state) => state.entry.translations[state.locale]?.fields.slug);
+    const refused = useBuilderState((state) => state.refusedSlugs[state.locale]);
+    const errors = useValidationState((state) => state.errors);
+    const warnings = useUrlsState((state) => state.warnings);
+    const url = typeof slug === 'string' && slug !== '' ? `/${locale}/${urlPrefix === null || urlPrefix === '' ? '' : `${urlPrefix}/`}${slug}` : null;
+    const warned = slugMessages(warnings, locale);
+    const schema: FieldSchema = {
+        'x-cms-type': 'text',
+        'x-cms-label': t('setono_sylius_cms.builder.slug'),
+        'x-cms-help': url === null ? t('setono_sylius_cms.builder.slug_help_none') : t('setono_sylius_cms.builder.slug_help', { '%url%': url }),
+        'x-cms-required': true,
+        'x-cms-translatable': true,
+    };
+
+    return (
+        <div className={styles.setting}>
+            <FieldRow
+                id="cms-entry-slug"
+                schema={schema}
+                locale={locale}
+                value={slug ?? undefined}
+                onChange={(value) => store.getState().setEntryValue('slug', value)}
+                errors={[...(refused === undefined ? [] : [refused]), ...slugMessages(errors, locale)]}
+            />
+            {warned.length === 0 ? null : (
+                <ul className={styles.warnings}>
+                    {warned.map((message) => (
+                        <li key={message}>{message}</li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+}
+
+/** The URLs of the edited locale's old slugs, which redirect to its URL. See "Old slugs" in docs/spec/urls-and-seo.md */
+function OldUrls() {
+    const t = useTranslator();
+    const headingId = useId();
+    const locale = useBuilderState((state) => state.locale);
+    const oldUrls = useUrlsState((state) => state.oldUrls)[locale] ?? [];
+
+    if (oldUrls.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className={styles.setting}>
+            <h3 id={headingId} className={formStyles.label}>
+                {t('setono_sylius_cms.builder.old_urls')}
+            </h3>
+            <p className={formStyles.help}>{t('setono_sylius_cms.builder.old_urls_help')}</p>
+            <ul className={styles.oldUrls} aria-labelledby={headingId}>
+                {oldUrls.map((oldUrl) => (
+                    <li key={oldUrl}>
+                        <code>{oldUrl}</code>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
 /** Points to the entry's overview page, for publishing history, revisions, share links and placements. */
 function MoreTab() {
     const t = useTranslator();
@@ -123,13 +219,17 @@ function MoreTab() {
 }
 
 /**
- * What publish would refuse in the entry itself: its fields, and what its top level holds. The entry's fields get
- * forms of their own with their tickets, so each error names its field for now
+ * What publish would refuse in the entry itself: its fields, and what its top level holds, except in the fields the open
+ * tab shows with their errors. The entry's fields get forms of their own with their tickets, so each error names its
+ * field for now
  */
-function EntryErrors() {
+function EntryErrors({ shownElsewhere }: { shownElsewhere: readonly string[] }) {
     const errors = useValidationState((state) => state.errors);
     const locale = useBuilderState((state) => state.locale);
-    const messages = entryMessages(errors, locale);
+    const messages = entryMessages(
+        errors.filter(({ field }) => field === null || !shownElsewhere.includes(field)),
+        locale,
+    );
 
     if (messages.length === 0) {
         return null;
@@ -147,7 +247,7 @@ function EntryErrors() {
 /** The edited locale's title, which shows the title it falls back to while it's empty. Typing one adds a translation. */
 function Title() {
     const t = useTranslator();
-    const { store, locales } = useBuilder();
+    const { store, locales, titleChanged } = useBuilder();
     const locale = useBuilderState((state) => state.locale);
     const translations = useBuilderState((state) => state.entry.translations);
     const titles = entryValues({ translations }, 'title');
@@ -165,7 +265,11 @@ function Title() {
             schema={schema}
             locale={locale}
             value={titles[locale] ?? undefined}
-            onChange={(value) => store.getState().setEntryValue('title', value)}
+            onChange={(value) => {
+                const before = titles[locale];
+                store.getState().setEntryValue('title', value);
+                titleChanged(locale, typeof before === 'string' ? before : null);
+            }}
             fallback={fieldFallback(locales, titles, locale)}
             outdated={outdatedValue(locales, titles, entryTranslated({ translations }, 'title'), locale, () => store.getState().markEntryValueUpToDate('title'))}
         />
