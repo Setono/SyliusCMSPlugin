@@ -67,15 +67,19 @@ final class EntryIndexListenerTest extends TestCase
      */
     public function it_loads_the_rows_of_the_page_of_entries_a_list_shows(): void
     {
-        $pages = [self::page('About us'), self::page('Contact'), self::page('Imprint')];
+        $pages = [self::page('About us'), self::page('Contact'), self::page('Imprint'), self::page('Jobs')];
         $paginator = new Pagerfanta(new ArrayAdapter($pages));
         $paginator->setMaxPerPage(2);
         $paginator->setCurrentPage(2);
-        $this->drafts->findByEntries([$pages[2]])->willReturn([])->shouldBeCalledOnce();
+        // The page's drafts in one query, and no entry's alone
+        $this->drafts->findByEntries([$pages[2], $pages[3]])->willReturn([])->shouldBeCalledOnce();
+        $this->drafts->findByEntries([$pages[2]])->shouldNotBeCalled();
+        $this->drafts->findByEntries([$pages[3]])->shouldNotBeCalled();
 
         $this->listener()(new ResourceControllerEvent(new GridView($paginator, self::grid(), new Parameters())));
 
         self::assertSame('Imprint', $this->entryRows->get($pages[2])->title);
+        self::assertSame('Jobs', $this->entryRows->get($pages[3])->title);
     }
 
     /**

@@ -293,17 +293,38 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         ], $grid['driver']);
         self::assertSame(['lastEdited' => 'desc'], $grid['sorting']);
         self::assertSame([25, 50, 100], $grid['limits']);
-        self::assertIsArray($grid['fields']);
-        self::assertSame(['title', 'status', 'lastEdited', 'problems'], array_keys($grid['fields']));
-        self::assertIsArray($grid['filters']);
-        self::assertSame(['search', 'status', 'channel'], array_keys($grid['filters']));
+        self::assertSame([
+            'title' => self::twigField('setono_sylius_cms.ui.title', 'title', 10),
+            'status' => self::twigField('setono_sylius_cms.ui.status', 'status', 30),
+            'lastEdited' => ['sortable' => 'lastEditedAt'] + self::twigField('setono_sylius_cms.ui.last_edited', 'last_edited', 50),
+            'problems' => self::twigField('setono_sylius_cms.ui.problems', 'problems', 60),
+        ], $grid['fields']);
+        self::assertSame([
+            'search' => [
+                'type' => 'string',
+                'label' => 'setono_sylius_cms.ui.search',
+                'options' => ['fields' => ['translation.title', 'translation.slug']],
+                'form_options' => ['type' => 'contains'],
+            ],
+            'status' => ['type' => 'setono_sylius_cms_entry_status', 'label' => 'setono_sylius_cms.ui.status'],
+            'channel' => ['type' => 'setono_sylius_cms_entry_channel', 'label' => 'setono_sylius_cms.ui.channel'],
+        ], $grid['filters']);
+        self::assertSame([
+            'main' => [
+                'create' => ['type' => 'create', 'options' => ['link' => ['route' => 'setono_sylius_cms_admin_entry_create', 'parameters' => ['contentType' => '$contentType']]]],
+            ],
+            'item' => [
+                'delete' => ['type' => 'delete', 'options' => ['link' => ['route' => 'setono_sylius_cms_admin_entry_delete', 'parameters' => ['uuid' => 'resource.uuid']]]],
+            ],
+        ], $grid['actions']);
 
-        $all = $config['grids']['setono_sylius_cms_admin_entry_all'];
-        self::assertSame('setono_sylius_cms_admin_entry', $all['extends']);
-        self::assertSame(['lastEdited' => 'desc'], $all['sorting']);
-        self::assertSame([25, 50, 100], $all['limits']);
-        self::assertIsArray($all['fields']);
-        self::assertSame(['type'], array_keys($all['fields']));
+        self::assertSame([
+            'extends' => 'setono_sylius_cms_admin_entry',
+            'sorting' => ['lastEdited' => 'desc'],
+            'limits' => [25, 50, 100],
+            'fields' => ['type' => self::twigField('setono_sylius_cms.ui.type', 'type', 20)],
+            'actions' => ['main' => ['create' => ['type' => 'create', 'enabled' => false]]],
+        ], $config['grids']['setono_sylius_cms_admin_entry_all']);
 
         self::assertSame([
             'setono_sylius_cms_entry_status' => '@SyliusUi/Grid/Filter/select.html.twig',
@@ -322,5 +343,19 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $resources = $this->container->getParameter('sylius.resources');
 
         self::assertSame('App\\Entity\\Page', $resources['setono_sylius_cms.page']['classes']['model']);
+    }
+
+    /**
+     * @return array{type: string, label: string, path: string, position: int, options: array{template: string}}
+     */
+    private static function twigField(string $label, string $template, int $position): array
+    {
+        return [
+            'type' => 'twig',
+            'label' => $label,
+            'path' => '.',
+            'position' => $position,
+            'options' => ['template' => sprintf('@SetonoSyliusCMSPlugin/admin/entry/grid/field/%s.html.twig', $template)],
+        ];
     }
 }
