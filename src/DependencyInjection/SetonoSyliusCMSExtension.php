@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
+use Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter;
+use Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
@@ -22,6 +24,11 @@ use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 final class SetonoSyliusCMSExtension extends AbstractResourceExtension implements PrependExtensionInterface
 {
     public const FIELD_HANDLER_TAG = 'setono_sylius_cms.field_handler';
+
+    /** The entry lists show the entries edited last first */
+    private const GRID_SORTING = ['lastEdited' => 'desc'];
+
+    private const GRID_LIMITS = [25, 50, 100];
 
     public function load(array $configs, ContainerBuilder $container): void
     {
@@ -56,6 +63,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
      */
     public function prepend(ContainerBuilder $container): void
     {
+        $this->prependGrids($container);
+
         /** @var array{assets: bool} $config */
         $config = $this->processConfiguration(new Configuration(), $container->getExtensionConfig($this->getAlias()));
 
@@ -69,6 +78,87 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                     'blocks' => [
                         'setono_sylius_cms_stylesheet' => ['template' => '@SetonoSyliusCMSPlugin/shop/stylesheet.html.twig', 'priority' => 20],
                     ],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * The admin's entry lists, as Sylius grids of the entry resource, the way Sylius plugins ship grids: All entries
+     * (setono_sylius_cms_admin_entry_all) and each content type's list (setono_sylius_cms_admin_entry), which gets the
+     * content type's code from the route. Projects change them in their own sylius_grid config. The fields are spaced
+     * by position, so a column can go between two. See "Entry lists" in docs/spec/admin.md
+     */
+    private function prependGrids(ContainerBuilder $container): void
+    {
+        $field = static fn (string $label, string $template, int $position): array => [
+            'type' => 'twig',
+            'label' => $label,
+            'path' => '.',
+            'position' => $position,
+            'options' => ['template' => sprintf('@SetonoSyliusCMSPlugin/admin/entry/grid/field/%s.html.twig', $template)],
+        ];
+
+        $container->prependExtensionConfig('sylius_grid', [
+            'grids' => [
+                'setono_sylius_cms_admin_entry' => [
+                    'driver' => [
+                        'name' => 'doctrine/orm',
+                        'options' => [
+                            'class' => '%setono_sylius_cms.model.entry.class%',
+                            // The route's content type code, which All entries' route doesn't have
+                            'repository' => ['method' => 'createListQueryBuilder', 'arguments' => ['$contentType']],
+                        ],
+                    ],
+                    'sorting' => self::GRID_SORTING,
+                    'limits' => self::GRID_LIMITS,
+                    'fields' => [
+                        'title' => $field('setono_sylius_cms.ui.title', 'title', 10),
+                        'status' => $field('setono_sylius_cms.ui.status', 'status', 30),
+                        'lastEdited' => ['sortable' => 'lastEditedAt'] + $field('setono_sylius_cms.ui.last_edited', 'last_edited', 50),
+                        'problems' => $field('setono_sylius_cms.ui.problems', 'problems', 60),
+                    ],
+                    'filters' => [
+                        'search' => [
+                            'type' => 'string',
+                            'label' => 'setono_sylius_cms.ui.search',
+                            'options' => ['fields' => ['translation.title', 'translation.slug']],
+                            'form_options' => ['type' => 'contains'],
+                        ],
+                        'status' => ['type' => StatusFilter::TYPE, 'label' => 'setono_sylius_cms.ui.status'],
+                        'channel' => ['type' => ChannelFilter::TYPE, 'label' => 'setono_sylius_cms.ui.channel'],
+                    ],
+                    'actions' => [
+                        'main' => [
+                            'create' => [
+                                'type' => 'create',
+                                'options' => ['link' => ['route' => 'setono_sylius_cms_admin_entry_create', 'parameters' => ['contentType' => '$contentType']]],
+                            ],
+                        ],
+                        'item' => [
+                            'delete' => [
+                                'type' => 'delete',
+                                'options' => ['link' => ['route' => 'setono_sylius_cms_admin_entry_delete', 'parameters' => ['uuid' => 'resource.uuid']]],
+                            ],
+                        ],
+                    ],
+                ],
+                'setono_sylius_cms_admin_entry_all' => [
+                    'extends' => 'setono_sylius_cms_admin_entry',
+                    // A grid that extends another doesn't take its sorting and limits
+                    'sorting' => self::GRID_SORTING,
+                    'limits' => self::GRID_LIMITS,
+                    'fields' => [
+                        'type' => $field('setono_sylius_cms.ui.type', 'type', 20),
+                    ],
+                    // Creating an entry from All entries starts by picking its content type, which the create dialog does (#230)
+                    'actions' => ['main' => ['create' => ['type' => 'create', 'enabled' => false]]],
+                ],
+            ],
+            'templates' => [
+                'filter' => [
+                    StatusFilter::TYPE => '@SyliusUi/Grid/Filter/select.html.twig',
+                    ChannelFilter::TYPE => '@SyliusUi/Grid/Filter/select.html.twig',
                 ],
             ],
         ]);

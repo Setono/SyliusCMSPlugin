@@ -22,6 +22,7 @@ use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -211,11 +212,61 @@ final class EntryRowsTest extends TestCase
     /**
      * @test
      */
-    public function it_builds_no_rows_without_entries(): void
+    public function it_loads_nothing_for_a_page_without_entries(): void
     {
         $this->drafts->findByEntries(Argument::any())->shouldNotBeCalled();
 
-        self::assertSame([], $this->rows([]));
+        $this->entryRows()->load(self::pageOf([]));
+    }
+
+    /**
+     * @test
+     */
+    public function it_loads_the_drafts_of_a_page_of_entries_in_one_query_and_keeps_their_rows(): void
+    {
+        $about = self::page(['en_US' => ['About us', 'about-us']]);
+        $contact = self::page(['en_US' => ['Contact', 'contact']]);
+        $this->drafts->findByEntries([$about, $contact])->willReturn([])->shouldBeCalledOnce();
+        $rows = $this->entryRows();
+
+        $rows->load(self::pageOf([$about, $contact]));
+
+        self::assertSame('About us', $rows->get($about)->title);
+        self::assertSame('Contact', $rows->get($contact)->title);
+        self::assertSame($rows->get($about), $rows->get($about));
+    }
+
+    /**
+     * @test
+     */
+    public function it_loads_the_row_of_an_entry_that_was_not_on_a_page_alone(): void
+    {
+        $about = self::page(['en_US' => ['About us', 'about-us']]);
+        $contact = self::page(['en_US' => ['Contact', 'contact']]);
+        $this->drafts->findByEntries([$about])->willReturn([])->shouldBeCalledOnce();
+        $this->drafts->findByEntries([$contact])->willReturn([])->shouldBeCalledOnce();
+        $rows = $this->entryRows();
+
+        $rows->load(self::pageOf([$about]));
+
+        self::assertSame('Contact', $rows->get($contact)->title);
+        self::assertSame('Contact', $rows->get($contact)->title);
+    }
+
+    /**
+     * @test
+     */
+    public function it_forgets_the_rows_it_loaded_when_it_is_reset(): void
+    {
+        $about = self::page(['en_US' => ['About us', 'about-us']]);
+        $this->drafts->findByEntries([$about])->willReturn([])->shouldBeCalledTimes(2);
+        $rows = $this->entryRows();
+        $rows->load(self::pageOf([$about]));
+        $before = $rows->get($about);
+
+        $rows->reset();
+
+        self::assertNotSame($before, $rows->get($about));
     }
 
     /**
@@ -225,10 +276,23 @@ final class EntryRowsTest extends TestCase
      */
     private function rows(array $entries, string $localeCode = 'en_US'): array
     {
+        $rows = $this->entryRows($localeCode);
+        $rows->load(self::pageOf($entries));
+
+        return array_map($rows->get(...), $entries);
+    }
+
+    /**
+     * @param string $localeCode the admin user's locale
+     */
+    private function entryRows(string $localeCode = 'en_US'): EntryRows
+    {
         $translationLocaleProvider = $this->prophesize(TranslationLocaleProviderInterface::class);
         $translationLocaleProvider->getDefaultLocaleCode()->willReturn('en_US');
+        $localeContext = $this->prophesize(LocaleContextInterface::class);
+        $localeContext->getLocaleCode()->willReturn($localeCode);
 
-        $rows = new EntryRows(
+        return new EntryRows(
             $this->drafts->reveal(),
             new ContentTypeRegistry([
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
@@ -237,16 +301,24 @@ final class EntryRowsTest extends TestCase
             new StatusLabeler(new MockClock('2026-11-16 12:00:00')),
             $this->urlGenerator->reveal(),
             $translationLocaleProvider->reveal(),
+            $localeContext->reveal(),
         );
+    }
 
-        // The entries come as Pagerfanta gives a page of them: an iterable, whose keys don't matter
-        $page = (static function () use ($entries): \Generator {
+    /**
+     * A page of entries as Pagerfanta gives one: an iterable, whose keys don't matter
+     *
+     * @param list<EntryInterface> $entries
+     *
+     * @return iterable<EntryInterface>
+     */
+    private static function pageOf(array $entries): iterable
+    {
+        return (static function () use ($entries): \Generator {
             foreach ($entries as $entry) {
                 yield $entry->getUuid() => $entry;
             }
         })();
-
-        return $rows->build($page, $localeCode);
     }
 
     /**

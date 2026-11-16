@@ -9,7 +9,7 @@
             "Resources",
             "Rendering/EntryUrlLookup.php",
             "Query/VisibleEntriesQuery.php",
-            "Admin/EntryListQuery.php"
+            "Admin/Grid"
         ]
     },
     "testFrameworkOptions": "--testsuite=unit",

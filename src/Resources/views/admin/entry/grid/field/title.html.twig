@@ -1,0 +1,11 @@
+{#
+ # The Title column of the entry lists: the working copy's title in the admin user's locale, with its URL below.
+ # `data` is the entry. The overview page (#230) takes over from the builder as where the title links to
+ #}
+{% set row = cms_admin_entry_row(data) %}
+<div data-column="title" data-entry="{{ data.uuid }}">
+    <a href="{{ path('setono_sylius_cms_admin_builder', {'uuid': data.uuid, 'back': app.request.requestUri}) }}"><strong>{{ row.title|default('setono_sylius_cms.ui.untitled'|trans) }}</strong></a>
+    {% if row.url is not null %}
+        <div class="description"><small>{{ row.url }}</small></div>
+    {% endif %}
+</div>

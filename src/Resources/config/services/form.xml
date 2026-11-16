@@ -6,7 +6,12 @@
             <tag name="form.type"/>
         </service>
 
-        <service id="Setono\SyliusCMSPlugin\Form\Type\EntryListFilterType" class="Setono\SyliusCMSPlugin\Form\Type\EntryListFilterType">
+        <!-- The forms of the entry lists' grid filters -->
+        <service id="Setono\SyliusCMSPlugin\Form\Type\Filter\EntryStatusFilterType" class="Setono\SyliusCMSPlugin\Form\Type\Filter\EntryStatusFilterType">
+            <tag name="form.type"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Form\Type\Filter\EntryChannelFilterType" class="Setono\SyliusCMSPlugin\Form\Type\Filter\EntryChannelFilterType">
             <argument type="service" id="sylius.repository.channel"/>
 
             <tag name="form.type"/>

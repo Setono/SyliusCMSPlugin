@@ -10,35 +10,41 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Routing\EntryPath;
+use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
 /**
- * Builds the rows of a page of an entry list. It loads the page's drafts in one query and reads a draft's title and
- * slug from its JSON, so lists show the working copy (ADR 0009)
+ * The rows of the admin's entry lists. A list loads the rows of its page of entries at once, with the page's drafts in
+ * one query, and the field templates of its grid then get each entry's row through cms_admin_entry_row(). A draft's
+ * title and slug are read from its JSON, so lists show the working copy (ADR 0009)
  */
-final readonly class EntryRows
+final class EntryRows implements ResetInterface
 {
+    /** @var array<string, EntryRow> by the entry's UUID */
+    private array $rows = [];
+
     public function __construct(
-        private DraftRepositoryInterface $drafts,
-        private ContentTypeRegistryInterface $contentTypes,
-        private StatusLabelerInterface $statusLabeler,
-        private UrlGeneratorInterface $urlGenerator,
-        private TranslationLocaleProviderInterface $translationLocaleProvider,
+        private readonly DraftRepositoryInterface $drafts,
+        private readonly ContentTypeRegistryInterface $contentTypes,
+        private readonly StatusLabelerInterface $statusLabeler,
+        private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly TranslationLocaleProviderInterface $translationLocaleProvider,
+        private readonly LocaleContextInterface $localeContext,
     ) {
     }
 
     /**
-     * @param iterable<EntryInterface> $entries
-     * @param string $localeCode the admin user's locale
+     * Builds and keeps the rows of a page of entries, in the admin user's locale
      *
-     * @return list<EntryRow>
+     * @param iterable<EntryInterface> $entries
      */
-    public function build(iterable $entries, string $localeCode): array
+    public function load(iterable $entries): void
     {
         $entries = iterator_to_array($entries, false);
         if ([] === $entries) {
-            return [];
+            return;
         }
 
         /** @var array<string, DraftInterface> $drafts */
@@ -47,25 +53,49 @@ final readonly class EntryRows
             $drafts[$draft->getEntry()->getUuid()] = $draft;
         }
 
-        $locales = [$localeCode, $this->translationLocaleProvider->getDefaultLocaleCode()];
+        $locales = [$this->localeContext->getLocaleCode(), $this->translationLocaleProvider->getDefaultLocaleCode()];
 
-        return array_map(function (EntryInterface $entry) use ($drafts, $locales): EntryRow {
-            $draft = $drafts[$entry->getUuid()] ?? null;
-            $contentType = $this->contentTypes->getByEntry($entry);
+        foreach ($entries as $entry) {
+            $this->rows[$entry->getUuid()] = $this->build($entry, $drafts[$entry->getUuid()] ?? null, $locales);
+        }
+    }
 
-            $translations = null === $draft ? self::translationsOfRows($entry) : self::translationsOfDraft($draft);
-            $localeCode = self::localeShown($translations, $locales);
-            $translation = null === $localeCode ? ['title' => null, 'slug' => null] : $translations[$localeCode];
-            $path = EntryPath::ofSlug($contentType, $translation['slug']);
+    /**
+     * The entry's row, as it was loaded with its page, or else loaded alone
+     */
+    public function get(EntryInterface $entry): EntryRow
+    {
+        if (!isset($this->rows[$entry->getUuid()])) {
+            $this->load([$entry]);
+        }
 
-            return new EntryRow(
-                $entry,
-                $contentType,
-                $translation['title'],
-                null === $path ? null : $this->urlGenerator->generate('setono_sylius_cms_shop_entry', ['_locale' => $localeCode, 'path' => $path]),
-                $this->statusLabeler->labelsOf($entry, null !== $draft),
-            );
-        }, $entries);
+        return $this->rows[$entry->getUuid()];
+    }
+
+    public function reset(): void
+    {
+        $this->rows = [];
+    }
+
+    /**
+     * @param list<string> $locales the locales to show the first of that the entry has: the admin user's, then the store's default
+     */
+    private function build(EntryInterface $entry, ?DraftInterface $draft, array $locales): EntryRow
+    {
+        $contentType = $this->contentTypes->getByEntry($entry);
+
+        $translations = null === $draft ? self::translationsOfRows($entry) : self::translationsOfDraft($draft);
+        $localeCode = self::localeShown($translations, $locales);
+        $translation = null === $localeCode ? ['title' => null, 'slug' => null] : $translations[$localeCode];
+        $path = EntryPath::ofSlug($contentType, $translation['slug']);
+
+        return new EntryRow(
+            $entry,
+            $contentType,
+            $translation['title'],
+            null === $path ? null : $this->urlGenerator->generate('setono_sylius_cms_shop_entry', ['_locale' => $localeCode, 'path' => $path]),
+            $this->statusLabeler->labelsOf($entry, null !== $draft),
+        );
     }
 
     /**

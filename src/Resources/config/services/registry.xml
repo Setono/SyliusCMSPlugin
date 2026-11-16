@@ -23,6 +23,9 @@
         <service id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry" class="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry">
             <!-- Replaced by RegisterContentTypesPass with the content types' resources by code -->
             <argument type="collection"/>
+
+            <!-- The condition of the setono_sylius_cms_admin_entry_index route calls it as service('setono_sylius_cms_content_types') -->
+            <tag name="routing.condition_service" alias="setono_sylius_cms_content_types"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry"/>
 

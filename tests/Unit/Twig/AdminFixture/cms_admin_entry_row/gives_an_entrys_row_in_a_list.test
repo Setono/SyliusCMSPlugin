@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_entry_row() gives an entry's row in a list: its title, URL, content type and status labels
+--TEMPLATE--
+{% set row = cms_admin_entry_row(page) %}{{ row.title }} {{ row.url }} {{ row.contentType.code }} {{ row.statusLabels|map(label => label.code)|join(',') }}
+--DATA--
+return $this->aPage('About us')
+--EXPECT--
+About us /en_US/about-us page never_published

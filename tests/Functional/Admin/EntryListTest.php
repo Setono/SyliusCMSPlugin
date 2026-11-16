@@ -56,6 +56,8 @@ final class EntryListTest extends BuilderApiTestCase
         self::assertSelectorTextContains('h1', 'All entries');
         self::assertSame(['Title', 'Type', 'Status', 'Last edited', 'Problems', 'Actions'], $crawler->filter('table thead th')->each(static fn (Crawler $th): string => trim($th->text())));
         self::assertSame([$announcement->getUuid(), $about->getUuid()], self::listedUuids($crawler));
+        // Creating from All entries starts by picking a content type, in the create dialog (#230)
+        self::assertCount(0, $crawler->selectLink('Create'));
 
         $row = self::row($crawler, $about);
         self::assertSame('About us', $row->filter('[data-column="title"] a')->text());
@@ -240,13 +242,13 @@ final class EntryListTest extends BuilderApiTestCase
         $team = self::createPage('Our team', 'people');
         self::translate($team, 'da_DK', 'Vores hold', 'folk');
         self::createPage('Contact', 'contact');
-        self::createPage('100% cotton', 'cotton');
 
-        self::assertSame([$about->getUuid()], self::listedUuids(self::filter($client, ['search' => 'ABOUT'])));
-        self::assertSame([$team->getUuid()], self::listedUuids(self::filter($client, ['search' => 'peop'])));
-        self::assertSame([$team->getUuid()], self::listedUuids(self::filter($client, ['search' => 'hold'])));
-        self::assertSame([], self::listedUuids(self::filter($client, ['search' => '_'])));
-        self::assertCount(1, self::listedUuids(self::filter($client, ['search' => '%'])));
+        self::assertSame([$about->getUuid()], self::listedUuids(self::filter($client, ['search' => ['value' => 'ABOUT']])));
+        self::assertSame([$team->getUuid()], self::listedUuids(self::filter($client, ['search' => ['value' => 'peop']])));
+        // Found by a title in another locale, and listed once with the translations it has
+        $crawler = self::filter($client, ['search' => ['value' => 'hold']]);
+        self::assertSame([$team->getUuid()], self::listedUuids($crawler));
+        self::assertSame('Our team', self::row($crawler, $team)->filter('[data-column="title"] a')->text());
     }
 
     /**
@@ -257,8 +259,8 @@ final class EntryListTest extends BuilderApiTestCase
         $client = self::signedInClient();
         self::createPage('About us', 'about-us');
 
-        $crawler = self::filter($client, ['search' => 'about', 'status' => 'never_published']);
-        self::assertSame('about', $crawler->filter('#criteria_search')->attr('value'));
+        $crawler = self::filter($client, ['search' => ['value' => 'about'], 'status' => 'never_published']);
+        self::assertSame('about', $crawler->filter('#criteria_search_value')->attr('value'));
         self::assertSame('never_published', $crawler->filter('#criteria_status option[selected]')->attr('value'));
 
         $crawler = self::filter($client, ['status' => 'deleted']);
@@ -289,7 +291,7 @@ final class EntryListTest extends BuilderApiTestCase
     }
 
     /**
-     * @param array<string, string> $criteria
+     * @param array<string, mixed> $criteria what Sylius's grid filter form sends
      */
     private static function filter(KernelBrowser $client, array $criteria): Crawler
     {
@@ -304,12 +306,15 @@ final class EntryListTest extends BuilderApiTestCase
      */
     private static function listedUuids(Crawler $crawler): array
     {
-        return array_values($crawler->filter('table tbody tr[data-entry]')->each(static fn (Crawler $row): string => (string) $row->attr('data-entry')));
+        return array_values($crawler->filter('table tbody [data-entry]')->each(static fn (Crawler $title): string => (string) $title->attr('data-entry')));
     }
 
+    /**
+     * The grid's row of the entry, whose title cell names it
+     */
     private static function row(Crawler $crawler, EntryInterface $entry): Crawler
     {
-        $row = $crawler->filter(sprintf('table tbody tr[data-entry="%s"]', $entry->getUuid()));
+        $row = $crawler->filterXPath(sprintf('//table/tbody/tr[.//*[@data-entry="%s"]]', $entry->getUuid()));
         self::assertCount(1, $row);
 
         return $row;

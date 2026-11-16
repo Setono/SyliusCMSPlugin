@@ -20,9 +20,10 @@ use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 /**
- * Deletes an entry from a list, the way Sylius's admin deletes a resource: a DELETE carrying a CSRF token whose id is
- * the entry's UUID. It goes back to the page it was sent from, with the outcome as a flash message, which is
- * a BeforeEntryDelete listener's message when one vetoed the delete
+ * The entry lists' delete action. It takes what Sylius's grid delete action sends, a DELETE carrying a CSRF token whose
+ * id is the entry's id, and deletes through EntryDeleterInterface, so the delete dispatches BeforeEntryDelete and
+ * EntryDeleted, which the resource controller's delete wouldn't. It goes back to the page it was sent from, with the
+ * outcome as a flash message, which is a BeforeEntryDelete listener's message when one vetoed the delete
  */
 final readonly class DeleteEntryAction
 {
@@ -42,7 +43,7 @@ final readonly class DeleteEntryAction
 
         $entry = $this->entryRepository->findOneByUuid($uuid) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $uuid));
 
-        if (!$this->csrfTokenManager->isTokenValid(new CsrfToken($uuid, (string) $request->request->get('_csrf_token')))) {
+        if (!$this->csrfTokenManager->isTokenValid(new CsrfToken((string) $entry->getId(), (string) $request->request->get('_csrf_token')))) {
             throw new AccessDeniedHttpException('Invalid CSRF token');
         }
 

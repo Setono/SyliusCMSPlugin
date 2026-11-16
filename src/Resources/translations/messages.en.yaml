@@ -73,7 +73,6 @@ setono_sylius_cms:
         create: Create
         last_edited: Last edited
         new_entry: 'New %content_type%'
-        no_entries: There are no entries to show.
         overview_placeholder: What needs attention, what's coming up, translations and drafts in progress will show here. Until then, find the entries in their lists.
         problems: Problems
         search: Search

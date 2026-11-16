@@ -15,7 +15,6 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\ValidateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
-use Setono\SyliusCMSPlugin\Controller\Admin\EntryIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Routing\Requirement\Requirement;
@@ -33,15 +32,30 @@ return static function (RoutingConfigurator $routes): void {
         ->methods(['GET'])
     ;
 
+    // The entry lists are the grids of the entry resource, rendered by its resource controller (docs/spec/admin.md#entry-lists)
     $routes->add('setono_sylius_cms_admin_entry_index_all', '/cms/entries')
-        ->controller(EntryIndexAction::class)
+        ->controller('setono_sylius_cms.controller.entry::indexAction')
         ->methods(['GET'])
+        ->defaults(['_sylius' => [
+            'section' => 'admin',
+            'permission' => true,
+            'grid' => 'setono_sylius_cms_admin_entry_all',
+            'template' => '@SetonoSyliusCMSPlugin/admin/entry/index.html.twig',
+        ]])
     ;
 
+    // A code no content type has fails the condition, so the request ends in a 404
     $routes->add('setono_sylius_cms_admin_entry_index', '/cms/entries/{contentType}')
-        ->controller(EntryIndexAction::class)
+        ->controller('setono_sylius_cms.controller.entry::indexAction')
         ->methods(['GET'])
         ->requirements(['contentType' => '[a-z][a-z0-9_]*'])
+        ->condition("service('setono_sylius_cms_content_types').has(params['contentType'])")
+        ->defaults(['_sylius' => [
+            'section' => 'admin',
+            'permission' => true,
+            'grid' => 'setono_sylius_cms_admin_entry',
+            'template' => '@SetonoSyliusCMSPlugin/admin/entry/index.html.twig',
+        ]])
     ;
 
     $routes->add('setono_sylius_cms_admin_entry_create', '/cms/entries/{contentType}/new')

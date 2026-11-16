@@ -13,5 +13,18 @@
 
             <tag name="twig.runtime"/>
         </service>
+
+        <!-- The cms_admin_* functions of the CMS admin's own templates -->
+        <service id="Setono\SyliusCMSPlugin\Twig\AdminExtension" class="Setono\SyliusCMSPlugin\Twig\AdminExtension">
+            <tag name="twig.extension"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Twig\AdminRuntime" class="Setono\SyliusCMSPlugin\Twig\AdminRuntime">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="sylius.repository.customer_group"/>
+
+            <tag name="twig.runtime"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
     </services>
 </container>

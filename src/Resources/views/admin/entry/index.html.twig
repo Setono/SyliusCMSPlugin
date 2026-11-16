@@ -1,22 +1,22 @@
 {#
- # All entries (content_type is null) and each content type's list. See "Entry lists" in docs/spec/admin.md.
- # Each row is an EntryRow, and each column a cell with a data-column attribute
+ # The entry lists in the hub: the grids of the entry resource, rendered by its resource controller, so `resources` is
+ # the grid view. All entries' route has no content type, and a content type's list has its code in the route.
+ # See "Entry lists" in docs/spec/admin.md
  #}
 {% extends '@SetonoSyliusCMSPlugin/admin/layout.html.twig' %}
 
 {% import '@SyliusUi/Macro/headers.html.twig' as headers %}
 {% import '@SyliusAdmin/Macro/breadcrumb.html.twig' as breadcrumb %}
-{% import '@SyliusUi/Macro/pagination.html.twig' as pagination %}
-{% import '@SyliusUi/Macro/messages.html.twig' as messages %}
 
-{% form_theme filters '@SyliusAdmin/Form/theme.html.twig' %}
+{% set definition = resources.definition %}
+{% set content_type_code = app.request.attributes.get('contentType') %}
 
-{% if content_type is null %}
+{% if content_type_code is null %}
     {% set heading = 'setono_sylius_cms.ui.all_entries'|trans %}
 {% else %}
     {# A content type's list is named by its plural, setono_sylius_cms.content_type_plural.<code>, or else by its label #}
-    {% set plural = 'setono_sylius_cms.content_type_plural.' ~ content_type.code %}
-    {% set heading = plural|trans != plural ? plural|trans : content_type.label|trans %}
+    {% set plural = 'setono_sylius_cms.content_type_plural.' ~ content_type_code %}
+    {% set heading = plural|trans != plural ? plural|trans : cms_admin_content_type(content_type_code).label|trans %}
 {% endif %}
 
 {% block title %}{{ heading }} {{ parent() }}{% endblock %}
@@ -24,7 +24,7 @@
 {% block hub_content %}
     <div class="ui stackable two column grid">
         <div class="column">
-            {{ headers.default(heading, content_type is null ? 'list' : 'file alternate outline') }}
+            {{ headers.default(heading, content_type_code is null ? 'list' : 'file alternate outline') }}
 
             {{ breadcrumb.crumble([
                 { label: 'sylius.ui.administration'|trans, url: path('sylius_admin_dashboard') },
@@ -34,97 +34,14 @@
         </div>
         <div class="middle aligned column">
             <div class="ui right floated buttons">
-                {% if content_type is null %}
-                    <div class="ui labeled icon top right pointing simple dropdown primary button">
-                        <i class="plus icon"></i>
-                        <span class="text">{{ 'setono_sylius_cms.ui.create'|trans }}</span>
-                        <div class="menu">
-                            {% for type in content_types %}
-                                <a class="item" href="{{ path('setono_sylius_cms_admin_entry_create', {'contentType': type.code}) }}">{{ type.label|trans }}</a>
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% else %}
-                    <a class="ui labeled icon primary button" href="{{ path('setono_sylius_cms_admin_entry_create', {'contentType': content_type.code}) }}">
-                        <i class="plus icon"></i> {{ 'setono_sylius_cms.ui.create'|trans }}
-                    </a>
+                {% if definition.actionGroups.main is defined %}
+                    {% for action in definition.getEnabledActions('main') %}
+                        {{ sylius_grid_render_action(resources, action, null) }}
+                    {% endfor %}
                 {% endif %}
             </div>
         </div>
     </div>
 
-    <div class="ui segment">
-        {{ form_start(filters, {'attr': {'class': 'ui form', 'novalidate': 'novalidate'}}) }}
-            <div class="three fields">
-                {{ form_row(filters.search) }}
-                {{ form_row(filters.status) }}
-                {{ form_row(filters.channel) }}
-            </div>
-            <button class="ui blue labeled icon button" type="submit">
-                <i class="icon search"></i> {{ 'sylius.ui.filter'|trans }}
-            </button>
-            <a class="ui labeled icon button" href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')) }}">
-                <i class="icon remove"></i> {{ 'sylius.ui.clear_filters'|trans }}
-            </a>
-        {{ form_end(filters) }}
-    </div>
-
-    {% if rows is empty %}
-        {{ messages.info('setono_sylius_cms.ui.no_entries') }}
-    {% else %}
-        <div class="ui segment spaceless">
-            <table class="ui very basic celled table">
-                <thead>
-                    <tr>
-                        <th>{{ 'setono_sylius_cms.ui.title'|trans }}</th>
-                        {% if content_type is null %}
-                            <th>{{ 'setono_sylius_cms.ui.type'|trans }}</th>
-                        {% endif %}
-                        <th>{{ 'setono_sylius_cms.ui.status'|trans }}</th>
-                        <th>{{ 'setono_sylius_cms.ui.last_edited'|trans }}</th>
-                        <th>{{ 'setono_sylius_cms.ui.problems'|trans }}</th>
-                        <th>{{ 'sylius.ui.actions'|trans }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in rows %}
-                        <tr data-entry="{{ row.entry.uuid }}">
-                            <td data-column="title">
-                                {# The overview page (#230) takes over as where a row opens #}
-                                <a href="{{ path('setono_sylius_cms_admin_builder', {'uuid': row.entry.uuid, 'back': app.request.requestUri}) }}"><strong>{{ row.title|default('setono_sylius_cms.ui.untitled'|trans) }}</strong></a>
-                                {% if row.url is not null %}
-                                    <div class="description"><small>{{ row.url }}</small></div>
-                                {% endif %}
-                            </td>
-                            {% if content_type is null %}
-                                <td data-column="type">{{ row.contentType.label|trans }}</td>
-                            {% endif %}
-                            <td data-column="status">
-                                {% include '@SetonoSyliusCMSPlugin/admin/entry/_status_labels.html.twig' with {'labels': row.statusLabels} %}
-                            </td>
-                            <td data-column="last_edited">
-                                {{ row.entry.lastEditedAt|date('Y-m-d H:i') }}
-                                {% if row.entry.lastEditedBy is not null %}
-                                    <div><small>{{ 'setono_sylius_cms.ui.by'|trans({'%name%': row.entry.lastEditedBy}) }}</small></div>
-                                {% endif %}
-                            </td>
-                            {# Problems come with #231 #}
-                            <td data-column="problems"></td>
-                            <td>
-                                <form action="{{ path('setono_sylius_cms_admin_entry_delete', {'uuid': row.entry.uuid}) }}" method="post">
-                                    <input type="hidden" name="_method" value="DELETE">
-                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token(row.entry.uuid) }}">
-                                    <button class="ui red labeled icon button" type="submit" data-requires-confirmation>
-                                        <i class="icon trash"></i> {{ 'sylius.ui.delete'|trans }}
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        {{ pagination.simple(entries) }}
-    {% endif %}
+    {{ sylius_grid_render(resources, '@SyliusAdmin/Grid/_default.html.twig') }}
 {% endblock %}

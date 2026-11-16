@@ -1,0 +1,7 @@
+{# The Last edited column of the entry lists: when the entry was last saved, and by whom. `data` is the entry #}
+<div data-column="last_edited">
+    {{ data.lastEditedAt|date('Y-m-d H:i') }}
+    {% if data.lastEditedBy is not null %}
+        <div><small>{{ 'setono_sylius_cms.ui.by'|trans({'%name%': data.lastEditedBy}) }}</small></div>
+    {% endif %}
+</div>

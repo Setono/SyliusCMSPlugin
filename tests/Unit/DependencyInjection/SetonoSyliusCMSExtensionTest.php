@@ -13,6 +13,8 @@ use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\Entry;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
@@ -20,6 +22,8 @@ use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\EntryRepository;
+use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\LandingFromOne;
@@ -239,6 +243,72 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasService('setono_sylius_cms.factory.draft');
         $this->assertContainerBuilderHasService('setono_sylius_cms.repository.draft', DraftRepository::class);
         $this->assertContainerBuilderHasAlias(DraftRepositoryInterface::class, 'setono_sylius_cms.repository.draft');
+    }
+
+    /**
+     * @test
+     */
+    public function it_registers_the_root_of_the_content_types_as_a_sylius_resource_for_the_entry_lists(): void
+    {
+        $this->load();
+
+        $resources = $this->container->getParameter('sylius.resources');
+        self::assertIsArray($resources);
+        self::assertSame([
+            'driver' => 'doctrine/orm',
+            'classes' => [
+                'model' => Entry::class,
+                'interface' => EntryInterface::class,
+                'controller' => ResourceController::class,
+                'repository' => EntryRepository::class,
+                'factory' => Factory::class,
+            ],
+        ], $resources['setono_sylius_cms.entry'] ?? null);
+
+        $this->assertContainerBuilderHasService('setono_sylius_cms.controller.entry', ResourceController::class);
+        $this->assertContainerBuilderHasService('setono_sylius_cms.repository.entry', EntryRepository::class);
+        $this->assertContainerBuilderHasAlias(EntryRepositoryInterface::class, 'setono_sylius_cms.repository.entry');
+    }
+
+    /**
+     * @test
+     */
+    public function it_ships_the_entry_lists_as_sylius_grids_of_the_entry_resource(): void
+    {
+        $this->load();
+
+        /** @var list<array{grids: array<string, array<string, mixed>>, templates: array{filter: array<string, string>}}> $configs */
+        $configs = $this->container->getExtensionConfig('sylius_grid');
+        self::assertCount(1, $configs);
+        [$config] = $configs;
+
+        self::assertSame(['setono_sylius_cms_admin_entry', 'setono_sylius_cms_admin_entry_all'], array_keys($config['grids']));
+        $grid = $config['grids']['setono_sylius_cms_admin_entry'];
+        self::assertSame([
+            'name' => 'doctrine/orm',
+            'options' => [
+                'class' => '%setono_sylius_cms.model.entry.class%',
+                'repository' => ['method' => 'createListQueryBuilder', 'arguments' => ['$contentType']],
+            ],
+        ], $grid['driver']);
+        self::assertSame(['lastEdited' => 'desc'], $grid['sorting']);
+        self::assertSame([25, 50, 100], $grid['limits']);
+        self::assertIsArray($grid['fields']);
+        self::assertSame(['title', 'status', 'lastEdited', 'problems'], array_keys($grid['fields']));
+        self::assertIsArray($grid['filters']);
+        self::assertSame(['search', 'status', 'channel'], array_keys($grid['filters']));
+
+        $all = $config['grids']['setono_sylius_cms_admin_entry_all'];
+        self::assertSame('setono_sylius_cms_admin_entry', $all['extends']);
+        self::assertSame(['lastEdited' => 'desc'], $all['sorting']);
+        self::assertSame([25, 50, 100], $all['limits']);
+        self::assertIsArray($all['fields']);
+        self::assertSame(['type'], array_keys($all['fields']));
+
+        self::assertSame([
+            'setono_sylius_cms_entry_status' => '@SyliusUi/Grid/Filter/select.html.twig',
+            'setono_sylius_cms_entry_channel' => '@SyliusUi/Grid/Filter/select.html.twig',
+        ], $config['templates']['filter']);
     }
 
     /**

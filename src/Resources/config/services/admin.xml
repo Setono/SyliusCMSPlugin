@@ -11,29 +11,47 @@
         <service id="Setono\SyliusCMSPlugin\Admin\HubMenuBuilder" class="Setono\SyliusCMSPlugin\Admin\HubMenuBuilder">
             <argument type="service" id="knp_menu.factory"/>
             <argument type="service" id="event_dispatcher"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryListQueryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
 
             <tag name="knp_menu.menu_builder" method="createMenu" alias="setono_sylius_cms.admin.hub"/>
         </service>
-
-        <service id="Setono\SyliusCMSPlugin\Admin\EntryListQuery" class="Setono\SyliusCMSPlugin\Admin\EntryListQuery">
-            <argument type="service" id="doctrine"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
-            <argument type="service" id="clock"/>
-        </service>
-        <service id="Setono\SyliusCMSPlugin\Admin\EntryListQueryInterface" alias="Setono\SyliusCMSPlugin\Admin\EntryListQuery"/>
 
         <service id="Setono\SyliusCMSPlugin\Admin\StatusLabeler" class="Setono\SyliusCMSPlugin\Admin\StatusLabeler">
             <argument type="service" id="clock"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Admin\StatusLabelerInterface" alias="Setono\SyliusCMSPlugin\Admin\StatusLabeler"/>
 
+        <!-- The rows of the entry lists, which their grids' field templates get through cms_admin_entry_row() -->
         <service id="Setono\SyliusCMSPlugin\Admin\EntryRows" class="Setono\SyliusCMSPlugin\Admin\EntryRows">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\StatusLabelerInterface"/>
             <argument type="service" id="router"/>
             <argument type="service" id="sylius.translation_locale_provider"/>
+            <!-- In the admin, the admin user's locale -->
+            <argument type="service" id="sylius.context.locale"/>
+
+            <tag name="twig.runtime"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
+        <!-- Loads the rows of the page of entries a list shows, once its grid has them -->
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryIndexListener" class="Setono\SyliusCMSPlugin\Admin\EntryIndexListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryRows"/>
+
+            <tag name="kernel.event_listener" event="setono_sylius_cms.entry.index"/>
+        </service>
+
+        <!-- The entry lists' grid filters -->
+        <service id="Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter" class="Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter">
+            <argument type="service" id="clock"/>
+
+            <tag name="sylius.grid_filter" type="setono_sylius_cms_entry_status" form_type="Setono\SyliusCMSPlugin\Form\Type\Filter\EntryStatusFilterType"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter" class="Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter">
+            <tag name="sylius.grid_filter" type="setono_sylius_cms_entry_channel" form_type="Setono\SyliusCMSPlugin\Form\Type\Filter\EntryChannelFilterType"/>
         </service>
     </services>
 </container>

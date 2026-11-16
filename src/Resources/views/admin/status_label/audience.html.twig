@@ -1,5 +1,5 @@
 {# An audience that isn't everyone: label.parameters.mode (only or except) and label.parameters.groups (customer group values) #}
-{% set names = customer_group_names|default({}) %}
+{% set names = cms_admin_customer_group_names() %}
 {% set groups = [] %}
 {% for group in label.parameters.groups %}
     {% if group == '@guest' %}

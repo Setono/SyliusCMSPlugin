@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final class DeleteEntryTest extends WebTestCase
@@ -31,7 +32,7 @@ final class DeleteEntryTest extends WebTestCase
         self::createPage('Contact', 'contact');
 
         $client->request('GET', '/admin/cms/entries/page?criteria%5Bsearch%5D=about');
-        $client->submit($client->getCrawler()->filter(sprintf('tr[data-entry="%s"] form', $uuid))->form());
+        $client->submit(self::row($client, $uuid)->filter('form')->form());
 
         self::assertResponseRedirects('http://localhost/admin/cms/entries/page?criteria%5Bsearch%5D=about');
         self::assertNull(self::pages()->findOneBy(['uuid' => $uuid]));
@@ -41,7 +42,7 @@ final class DeleteEntryTest extends WebTestCase
 
         $client->followRedirect();
         self::assertSelectorTextContains('.sylius-flash-message', 'The entry has been deleted');
-        self::assertSelectorNotExists(sprintf('tr[data-entry="%s"]', $uuid));
+        self::assertSelectorNotExists(sprintf('[data-entry="%s"]', $uuid));
     }
 
     /**
@@ -67,7 +68,7 @@ final class DeleteEntryTest extends WebTestCase
             $dispatched[] = [$event, $connection->getTransactionNestingLevel(), $connection->fetchOne('SELECT COUNT(*) FROM setono_sylius_cms__entry WHERE uuid = ?', [$event->uuid])];
         });
 
-        $client->submit($client->getCrawler()->filter(sprintf('tr[data-entry="%s"] form', $uuid))->form());
+        $client->submit(self::row($client, $uuid)->filter('form')->form());
 
         self::assertCount(1, $dispatched);
         [[$event, $level, $count]] = $dispatched;
@@ -93,14 +94,14 @@ final class DeleteEntryTest extends WebTestCase
         $eventDispatcher->addListener(BeforeEntryDelete::class, static fn (BeforeEntryDelete $event) => $event->veto('The about page stays'));
         $eventDispatcher->addListener(EntryDeleted::class, static fn () => self::fail('A vetoed delete dispatched EntryDeleted'));
 
-        $client->submit($client->getCrawler()->filter(sprintf('tr[data-entry="%s"] form', $uuid))->form());
+        $client->submit(self::row($client, $uuid)->filter('form')->form());
 
         self::assertResponseRedirects('http://localhost/admin/cms/entries/page');
         self::assertNotNull(self::pages()->findOneBy(['uuid' => $uuid]));
 
         $client->followRedirect();
         self::assertSelectorTextContains('.sylius-flash-message.negative', 'The about page stays');
-        self::assertSelectorExists(sprintf('tr[data-entry="%s"]', $uuid));
+        self::assertSelectorExists(sprintf('[data-entry="%s"]', $uuid));
     }
 
     /**
@@ -112,7 +113,7 @@ final class DeleteEntryTest extends WebTestCase
         $page = self::createPage('About us', 'about-us');
         $other = self::createPage('Contact', 'contact');
         $client->request('GET', '/admin/cms/entries/page');
-        $token = (string) $client->getCrawler()->filter(sprintf('tr[data-entry="%s"] input[name="_csrf_token"]', $other->getUuid()))->attr('value');
+        $token = (string) self::row($client, $other->getUuid())->filter('input[name="_csrf_token"]')->attr('value');
 
         $client->request('DELETE', '/admin/cms/entry/' . $page->getUuid(), ['_csrf_token' => $token]);
 
@@ -128,7 +129,7 @@ final class DeleteEntryTest extends WebTestCase
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us');
         $client->request('GET', '/admin/cms/entries/page');
-        $form = $client->getCrawler()->filter(sprintf('tr[data-entry="%s"] form', $page->getUuid()))->form();
+        $form = self::row($client, $page->getUuid())->filter('form')->form();
 
         $client->request('DELETE', '/admin/cms/entry/' . $page->getUuid(), $form->getValues(), [], ['HTTP_REFERER' => 'https://example.com/admin/cms/entries']);
 
@@ -157,6 +158,17 @@ final class DeleteEntryTest extends WebTestCase
         $client->loginUser(self::admin(), 'admin');
 
         return $client;
+    }
+
+    /**
+     * The list's row of the entry, whose title cell names it
+     */
+    private static function row(KernelBrowser $client, string $uuid): Crawler
+    {
+        $row = $client->getCrawler()->filterXPath(sprintf('//table/tbody/tr[.//*[@data-entry="%s"]]', $uuid));
+        self::assertCount(1, $row);
+
+        return $row;
     }
 
     private static function saveDraft(PageInterface $page): void

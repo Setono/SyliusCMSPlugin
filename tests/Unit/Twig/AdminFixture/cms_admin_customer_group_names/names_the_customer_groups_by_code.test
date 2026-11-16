@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_customer_group_names() names the store's customer groups by code
+--TEMPLATE--
+{% for code, name in cms_admin_customer_group_names() %}{{ code }}={{ name }};{% endfor %}
+--DATA--
+return []
+--EXPECT--
+wholesale=Wholesale;retail=retail;
