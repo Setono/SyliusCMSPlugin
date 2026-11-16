@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 use Setono\SyliusCMSPlugin\Tests\Support\Customers;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 
 final class BuilderTest extends WebTestCase
 {
@@ -143,6 +144,33 @@ final class BuilderTest extends WebTestCase
     }
 
     /**
+     * Where a problem is fixed, such as the overview page's Problems section, opens the builder at the block it's in,
+     * in the locale of the value it's in. See "Entry overview page" in docs/spec/admin.md
+     *
+     * @test
+     */
+    public function it_opens_at_the_block_and_in_the_locale_the_url_gives_when_the_locale_switcher_offers_it(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        self::addLocales('WEB', 'da_DK');
+        $page = self::createPage('About us', 'about-us', 'Hello');
+        $uuid = $page->getUuid();
+
+        $config = self::config($client->request('GET', sprintf('/admin/cms/entry/%s/builder?block=0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f&locale=da_DK', $uuid)));
+        self::assertSame('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', $config['block']);
+        self::assertSame('da_DK', $config['locale']);
+
+        $config = self::config($client->request('GET', sprintf('/admin/cms/entry/%s/builder?locale=fr_FR', $uuid)));
+        self::assertNull($config['block']);
+        self::assertSame('en_US', $config['locale'], 'A locale the store\'s channels don\'t have opens the usual one');
+
+        $config = self::config($client->request('GET', sprintf('/admin/cms/entry/%s/builder?block[]=a&locale[]=da_DK', $uuid)));
+        self::assertNull($config['block']);
+        self::assertSame('en_US', $config['locale']);
+    }
+
+    /**
      * @test
      */
     public function it_answers_404_for_an_entry_it_does_not_have(): void
@@ -153,5 +181,17 @@ final class BuilderTest extends WebTestCase
         $client->request('GET', '/admin/cms/entry/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e/builder');
 
         self::assertResponseStatusCodeSame(404);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function config(Crawler $crawler): array
+    {
+        $config = json_decode((string) $crawler->filter('#cms-builder')->attr('data-config'), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertIsArray($config);
+
+        /** @var array<string, mixed> $config */
+        return $config;
     }
 }

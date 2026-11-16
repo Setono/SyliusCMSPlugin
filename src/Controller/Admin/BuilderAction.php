@@ -52,12 +52,15 @@ final readonly class BuilderAction
 
         $entry = $this->entryRepository->findOneByUuid($uuid) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $uuid));
         $channels = $this->channels();
+        $locales = $this->locales($channels, $request->getLocale());
 
         return new Response($this->twig->render('@SetonoSyliusCMSPlugin/admin/builder.html.twig', [
             'entry' => $entry,
             'config' => [
                 'entryUuid' => $entry->getUuid(),
-                'locale' => $this->editedLocale($entry),
+                'locale' => $this->editedLocale($request, $entry, $locales),
+                // The block it opens at, such as where a problem is fixed, which the app selects when the tree has it
+                'block' => self::query($request, 'block'),
                 'csrfToken' => $this->csrfToken->value(),
                 'backUrl' => $this->backUrl($request, $entry),
                 'overviewUrl' => $this->urlGenerator->generate('setono_sylius_cms_admin_entry_show', ['uuid' => $entry->getUuid()]),
@@ -77,7 +80,7 @@ final readonly class BuilderAction
                     'name' => $channel['channel']->getName(),
                     'locales' => array_keys($channel['locales']),
                 ], $channels),
-                'locales' => $this->locales($channels, $request->getLocale()),
+                'locales' => $locales,
                 'customerGroups' => $this->customerGroups(),
                 // The rest of the UI strings arrive with the registry, so the app shows these until it has loaded
                 'strings' => [
@@ -89,11 +92,19 @@ final readonly class BuilderAction
     }
 
     /**
-     * The builder edits one locale at a time, and opens in the store's default locale, or else the entry's first
-     * translation. The locale switcher picks another
+     * The builder edits one locale at a time, and opens in the locale the URL gives when the locale switcher offers it,
+     * such as where a problem in a translatable value is fixed. Otherwise it opens in the store's default locale, or else
+     * the entry's first translation. The locale switcher picks another
+     *
+     * @param list<array{code: string, name: string, fallbackChain: list<string>}> $locales the locales the switcher offers
      */
-    private function editedLocale(EntryInterface $entry): string
+    private function editedLocale(Request $request, EntryInterface $entry, array $locales): string
     {
+        $requested = self::query($request, 'locale');
+        if (null !== $requested && in_array($requested, array_column($locales, 'code'), true)) {
+            return $requested;
+        }
+
         $default = $this->translationLocaleProvider->getDefaultLocaleCode();
         $locales = $entry->getTranslations()->getKeys();
 
@@ -158,6 +169,13 @@ final readonly class BuilderAction
             static fn (CustomerGroupInterface $group): array => ['code' => $group->getCode(), 'name' => $group->getName()],
             $this->customerGroupRepository->findBy([], ['name' => 'ASC']),
         ));
+    }
+
+    private static function query(Request $request, string $name): ?string
+    {
+        $value = $request->query->all()[$name] ?? null;
+
+        return is_string($value) ? $value : null;
     }
 
     /**

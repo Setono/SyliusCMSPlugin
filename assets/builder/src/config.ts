@@ -26,6 +26,8 @@ export interface BuilderConfig {
     entryUuid: string;
     /** The locale the builder opens in. It edits one locale at a time. */
     locale: string;
+    /** The key of the block it opens with selected, such as where a problem is fixed, or null. Optional. */
+    block?: string | null;
     csrfToken: string;
     /** Where the back button and Esc go: where the builder was opened from. */
     backUrl: string;
