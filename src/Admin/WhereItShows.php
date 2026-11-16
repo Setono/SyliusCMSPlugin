@@ -44,7 +44,7 @@ final readonly class WhereItShows
 
         $localeCodes = $channels = [];
         foreach ($this->channelRepository->findBy([], ['id' => 'ASC']) as $channel) {
-            $channelCode = (string) $channel->getCode();
+            $channelCode = $channel->getCode() ?? '';
 
             $cells = [];
             foreach (self::localesOf($channel) as $localeCode) {
@@ -112,8 +112,8 @@ final readonly class WhereItShows
         $slugs = [];
         foreach ($entry->getTranslations() as $localeCode => $translation) {
             $slug = $translation->getSlug();
-            if (null !== $slug && $this->availability->showsIn($entry, (string) $localeCode)) {
-                $slugs[(string) $localeCode] = $slug;
+            if (null !== $slug && $this->availability->showsIn($entry, $localeCode)) {
+                $slugs[$localeCode] = $slug;
             }
         }
 
@@ -123,7 +123,7 @@ final readonly class WhereItShows
 
         $taken = [];
         foreach ($this->takenUrls->find($entry, $slugs, $channelCodes, true) as $takenUrl) {
-            $taken[(string) $takenUrl->channelCode][$takenUrl->localeCode] = $takenUrl;
+            $taken[$takenUrl->channelCode ?? ''][$takenUrl->localeCode] = $takenUrl;
         }
 
         return $taken;
@@ -136,7 +136,7 @@ final readonly class WhereItShows
     {
         $localeCodes = [];
         foreach ($channel->getLocales() as $locale) {
-            $localeCodes[] = (string) $locale->getCode();
+            $localeCodes[] = $locale->getCode() ?? '';
         }
 
         $default = $channel->getDefaultLocale()?->getCode();

@@ -74,6 +74,18 @@ final class WhereItShowsTest extends TestCase
     /**
      * @test
      */
+    public function a_channel_without_a_default_locale_has_its_locales_by_code(): void
+    {
+        $this->channels->findBy([], ['id' => 'ASC'])->willReturn([self::channel('B2B', null, null, 'sv_SE', 'da_DK', 'nb_NO')]);
+
+        $grid = $this->whereItShows()->of(self::row(self::page()));
+
+        self::assertSame(['da_DK', 'nb_NO', 'sv_SE'], array_keys($grid->channels[0]->cells));
+    }
+
+    /**
+     * @test
+     */
     public function a_channel_is_named_by_its_name_or_else_by_its_code_and_says_whether_it_is_enabled(): void
     {
         $disabled = self::channel('B2B', 'Wholesale', 'en_US', 'en_US');
@@ -234,11 +246,13 @@ final class WhereItShowsTest extends TestCase
         $page = self::page(['en_US' => 'About us', 'da_DK' => 'Om os']);
         $this->takenUrls->find($page, ['en_US' => 'about-us', 'da_DK' => 'om-os'], ['NORDIC', 'WEB'], true)->willReturn([
             new TakenUrl('NORDIC', 'da_DK', 'om-os', 'app_about'),
+            new TakenUrl('WEB', 'en_US', 'about-us', 'app_about_us'),
         ]);
 
         $grid = $this->whereItShows()->of(self::row($page));
 
         self::assertEquals(new WhereItShowsCell(WhereItShowsCell::HIDDEN_BY_ROUTE, ['route' => 'app_about']), $grid->channels[1]->cells['da_DK']);
+        self::assertEquals(new WhereItShowsCell(WhereItShowsCell::HIDDEN_BY_ROUTE, ['route' => 'app_about_us']), $grid->channels[0]->cells['en_US']);
         self::assertEquals(new WhereItShowsCell(WhereItShowsCell::LIVE), $grid->channels[0]->cells['da_DK']);
         self::assertEquals(new WhereItShowsCell(WhereItShowsCell::LIVE), $grid->channels[1]->cells['en_US']);
     }
@@ -369,7 +383,7 @@ final class WhereItShowsTest extends TestCase
         return $scheduledPublish;
     }
 
-    private static function channel(string $code, ?string $name, string $defaultLocale, string ...$localeCodes): Channel
+    private static function channel(string $code, ?string $name, ?string $defaultLocale, string ...$localeCodes): Channel
     {
         $channel = new Channel();
         $channel->setCode($code);
