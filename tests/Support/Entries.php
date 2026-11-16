@@ -13,6 +13,8 @@ use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Publishing\AutosaveInterface;
 use Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface;
+use Setono\SyliusCMSPlugin\Publishing\EntrySettings;
+use Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaverInterface;
 use Setono\SyliusCMSPlugin\Publishing\SaveResult;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
@@ -91,6 +93,19 @@ trait Entries
         self::assertInstanceOf(ChannelsAndAudienceModifierInterface::class, $modifier);
 
         return $modifier;
+    }
+
+    /**
+     * Makes the page the homepage of these channels as saving its settings does, which takes them off the pages that
+     * were their homepages
+     */
+    protected static function setHomepageOf(PageInterface $page, string ...$channelCodes): void
+    {
+        $current = EntrySettings::of($page);
+
+        /** @var EntrySettingsSaverInterface $saver */
+        $saver = self::getContainer()->get(EntrySettingsSaverInterface::class);
+        $saver->save($page, new EntrySettings($current->enabled, $current->dateWindow, $current->channels, $current->audience, $channelCodes));
     }
 
     /**

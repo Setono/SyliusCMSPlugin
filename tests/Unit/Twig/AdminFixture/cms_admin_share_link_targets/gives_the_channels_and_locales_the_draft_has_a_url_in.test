@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_share_link_targets() gives the channels and locales Share draft offers to share the entry's draft in
+--TEMPLATE--
+{% for target in cms_admin_share_link_targets(page) %}{{ target.channelCode }} {{ target.channelName }} {{ target.localeCode }}; {% endfor %}
+--DATA--
+return $this->aPageInTheWebChannel('About us')
+--EXPECT--
+WEB Web store en_US;

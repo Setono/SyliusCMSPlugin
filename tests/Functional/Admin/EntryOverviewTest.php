@@ -337,6 +337,38 @@ final class EntryOverviewTest extends WebTestCase
     }
 
     /**
+     * For a page, the URLs section shows "Homepage of" per channel, with the page that's each channel's homepage now
+     *
+     * @test
+     */
+    public function its_urls_section_shows_which_page_is_each_channels_homepage(): void
+    {
+        $client = self::signedInClient();
+        self::createChannel('B2B', 'Wholesale');
+        self::createChannel('MOBILE', 'Mobile');
+        $page = self::createPage('Welcome', 'welcome', published: true);
+        self::setHomepageOf($page, 'WEB');
+        $sale = self::createPage('Sale', 'sale', published: true);
+        self::setHomepageOf($sale, 'B2B');
+
+        $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s', $page->getUuid()));
+
+        $homepages = $crawler->filter('[data-section="urls"] [data-homepages]');
+        self::assertSame('Homepage of', $crawler->filter('[data-section="urls"] h3')->text());
+        self::assertSame([
+            ['WEB', 'Setono CMS Test Store', 'This page'],
+            ['B2B', 'Wholesale', 'Sale'],
+            ['MOBILE', 'Mobile', 'The store\'s own homepage'],
+        ], $homepages->filter('[data-channel]')->each(static fn (Crawler $row): array => [
+            $row->attr('data-channel'),
+            $row->filter('[data-channel-name]')->text(),
+            $row->filter('[data-homepage]')->text(),
+        ]));
+        self::assertCount(1, $homepages->filter('[data-homepage-of]'));
+        self::assertSame(sprintf('/admin/cms/entry/%s', $sale->getUuid()), $homepages->filter('[data-channel="B2B"] a')->attr('href'));
+    }
+
+    /**
      * @test
      */
     public function its_translations_section_shows_a_chip_per_locale_of_the_entrys_channels_from_its_draft(): void

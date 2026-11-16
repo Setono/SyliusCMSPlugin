@@ -5,5 +5,13 @@
                   xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
                                       http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
     <!-- A mapped superclass, like every Sylius model: it becomes an entity when it's the model of its resource -->
-    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\Page"/>
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\Page">
+        <!-- "Homepage of", an on-save setting -->
+        <one-to-many field="homepages" target-entity="Setono\SyliusCMSPlugin\Model\HomepageInterface" mapped-by="page" orphan-removal="true">
+            <cascade>
+                <cascade-persist/>
+                <cascade-remove/>
+            </cascade>
+        </one-to-many>
+    </mapped-superclass>
 </doctrine-mapping>

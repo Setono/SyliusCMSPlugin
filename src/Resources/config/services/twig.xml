@@ -17,6 +17,7 @@
         <service id="Setono\SyliusCMSPlugin\Twig\HeadTagsRuntime" class="Setono\SyliusCMSPlugin\Twig\HeadTagsRuntime">
             <argument type="service" id="Setono\SyliusCMSPlugin\Seo\MetaValues"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
 
             <tag name="twig.runtime"/>
         </service>

@@ -87,7 +87,8 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: Ap
                 void validation.validate();
 
                 // A content type with its own URL has a slug, which follows the title, and the URL & SEO tab
-                const urlPrefix = registry.contentTypes.find(({ code }) => code === entry.contentType)?.prefix ?? null;
+                const contentType = registry.contentTypes.find(({ code }) => code === entry.contentType);
+                const urlPrefix = contentType?.prefix ?? null;
                 const urlsStore = createUrlsStore();
                 if (urlPrefix !== null && urlsEndpoints !== null) {
                     urlsSync = createUrlsSync(store, urlsStore, () => urlsEndpoints.fetchUrls());
@@ -129,9 +130,11 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: Ap
                         cancelSchedule: createCancelSchedule(store, () => api.cancelSchedule()),
                         reload,
                         preview,
-                        // The page renders what the server holds, so a new page waits for the unsaved changes
+                        // The page renders what the server holds, so a new page waits for the unsaved changes, and for
+                        // the settings in flight, which decide where it lives, such as at its channel's root as a homepage
                         createPreviewUrl: async (request) => {
                             await autosave?.flush();
+                            await settings.getState().settled();
 
                             return api.createPreviewUrl(request);
                         },
@@ -142,6 +145,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: Ap
                         locales: config.locales ?? [],
                         customerGroups: config.customerGroups,
                         urlPrefix,
+                        homepage: contentType?.homepage ?? false,
                         urls: urlsStore,
                         titleChanged: (locale, before) => follower?.titleChanged(locale, before),
                     },

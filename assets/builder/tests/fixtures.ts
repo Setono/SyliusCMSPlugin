@@ -221,7 +221,7 @@ export const landing: LayoutDefinition = {
     ],
 };
 
-export const page: ContentTypeDefinition = { code: 'page', label: 'Page', blocks: anyBlock, layouts: [standard, landing] };
+export const page: ContentTypeDefinition = { code: 'page', label: 'Page', blocks: anyBlock, homepage: true, layouts: [standard, landing] };
 
 export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.layout': 'Layout',
@@ -282,6 +282,8 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.show_from': 'Show from',
     'setono_sylius_cms.builder.show_until': 'Show until',
     'setono_sylius_cms.builder.channels': 'Channels',
+    'setono_sylius_cms.builder.homepage_of': 'Homepage of',
+    'setono_sylius_cms.builder.homepage_of_help': "It shows at each of these channels' root URL in place of the store's own homepage.",
     'setono_sylius_cms.builder.audience': 'Audience',
     'setono_sylius_cms.builder.audience_everyone': 'Everyone',
     'setono_sylius_cms.builder.audience_only': 'Only these',
@@ -398,7 +400,7 @@ export function entry(blocks: StoredBlock[] = []): Entry {
 
 /** The settings of a new entry in the WEB channel, changed by the overrides. */
 export function settings(overrides: Partial<EntrySettings> = {}): EntrySettings {
-    return { enabled: true, showFrom: null, showUntil: null, channels: ['WEB'], audience: { mode: 'everyone', groups: [] }, ...overrides };
+    return { enabled: true, showFrom: null, showUntil: null, channels: ['WEB'], audience: { mode: 'everyone', groups: [] }, homepageOf: [], ...overrides };
 }
 
 /** A store on an entry with the given blocks, whose new block keys are new-1, new-2 and so on. */

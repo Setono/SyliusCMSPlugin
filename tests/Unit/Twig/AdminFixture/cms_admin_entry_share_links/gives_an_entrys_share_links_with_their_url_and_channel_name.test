@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_entry_share_links() gives an entry's share links, newest first, with their URL on the channel's hostname and their channel's name
+--TEMPLATE--
+{% for link in cms_admin_entry_share_links(page) %}{{ link.channelName }} {{ link.shareLink.localeCode }} {{ link.url }}; {% endfor %}
+--DATA--
+return $this->aPageInTheWebChannel('About us')
+--EXPECT--
+Web store en_US https://shop.example.com/en_US/about-us?_cms_share=abc;

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { envelope, openEnvelope, type FromBridge } from '../bridge/protocol';
-import { useBuilder, useBuilderState, usePreviewState } from '../context';
+import { useBuilder, useBuilderState, usePreviewState, useSettingsState } from '../context';
 import { useTranslator } from '../i18n';
 import { hasTranslation } from '../locales';
 import { createPreviewSync, type PreviewSync } from '../previewSync';
@@ -27,7 +27,8 @@ export interface PreviewProps {
 
 /**
  * The centre pane: the real shop page with the working copy, in an iframe from the admin's own host. It loads with a
- * new preview token when the channel, the locale, Shown to or Date changes. Edits are patched into the page by the bridge in it, and the
+ * new preview token when the channel, the locale, Shown to or Date changes, or whether the page is the channel's
+ * homepage, which moves it to the channel's root. Edits are patched into the page by the bridge in it, and the
  * page reloads only for what the bridge can't patch in. In a locale the entry has no translation in, a banner shows
  * instead, because the entry has no page there.
  */
@@ -40,6 +41,8 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
     const date = usePreviewState((state) => state.date);
     const locale = useBuilderState((state) => state.locale);
     const translated = useBuilderState((state) => hasTranslation(state.entry, state.locale));
+    // A page lives at its channel's root while it's the channel's homepage, so the preview moves when that changes
+    const homepage = useSettingsState((state) => channel !== null && state.settings.homepageOf.includes(channel));
     const [frame, setFrame] = useState<Frame>({ state: 'waiting' });
     const [reloads, setReloads] = useState(0);
     const [picker, setPicker] = useState<Picker | null>(null);
@@ -123,7 +126,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
         return () => {
             active = false;
         };
-    }, [createPreviewUrl, channel, locale, shownTo, date, translated, reloads]);
+    }, [createPreviewUrl, channel, locale, shownTo, date, translated, homepage, reloads]);
 
     useEffect(() => {
         if (frame.state !== 'loaded') {

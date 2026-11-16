@@ -278,13 +278,16 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         self::assertSame([
             'blocks' => [
                 'open_in_builder' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_open_in_builder.html.twig', 'priority' => 20],
+                'share_draft' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_share_draft.html.twig', 'priority' => 10],
             ],
         ], $events['setono_sylius_cms.admin.entry.show.header_actions'] ?? null);
         self::assertSame([
             'blocks' => [
                 'publishing' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_publishing.html.twig', 'priority' => 100],
                 'problems' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_problems.html.twig', 'priority' => 90],
+                'where_it_shows' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_where_it_shows.html.twig', 'priority' => 70],
                 'revisions' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_revisions.html.twig', 'priority' => 60],
+                'share_links' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_share_links.html.twig', 'priority' => 50],
                 'urls' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_urls.html.twig', 'priority' => 40],
                 'translations' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_translations.html.twig', 'priority' => 20],
             ],

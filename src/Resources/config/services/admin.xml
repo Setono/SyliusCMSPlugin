@@ -66,6 +66,14 @@
             <tag name="twig.runtime"/>
         </service>
 
+        <!-- "Homepage of" per channel, which a page's overview page gets through cms_admin_channel_homepages() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\ChannelHomepages" class="Setono\SyliusCMSPlugin\Admin\ChannelHomepages">
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
         <!-- The translation chips of an entry's row, for the Translations column and section -->
         <service id="Setono\SyliusCMSPlugin\Admin\TranslationChips" class="Setono\SyliusCMSPlugin\Admin\TranslationChips">
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
@@ -79,6 +87,28 @@
         <!-- The revisions of an entry, which its overview page gets through cms_admin_entry_revisions() -->
         <service id="Setono\SyliusCMSPlugin\Admin\EntryRevisions" class="Setono\SyliusCMSPlugin\Admin\EntryRevisions">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
+        <!-- The share links of an entry and where its Share draft offers to share it, which its overview page gets
+             through cms_admin_entry_share_links() and cms_admin_share_link_targets() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryShareLinks" class="Setono\SyliusCMSPlugin\Admin\EntryShareLinks">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator"/>
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
+        <!-- Where an entry shows, per channel and locale, which its overview page gets through cms_admin_where_it_shows() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\WhereItShows" class="Setono\SyliusCMSPlugin\Admin\WhereItShows">
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface"/>
+            <argument type="service" id="clock"/>
 
             <tag name="twig.runtime"/>
         </service>

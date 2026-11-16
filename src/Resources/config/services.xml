@@ -11,6 +11,7 @@
         <import resource="services/doctrine.xml"/>
         <import resource="services/field.xml"/>
         <import resource="services/form.xml"/>
+        <import resource="services/homepage.xml"/>
         <import resource="services/layout.xml"/>
         <import resource="services/localization.xml"/>
         <import resource="services/preview.xml"/>
@@ -24,6 +25,7 @@
         <import resource="services/routing.xml"/>
         <import resource="services/security.xml"/>
         <import resource="services/seo.xml"/>
+        <import resource="services/share_link.xml"/>
         <import resource="services/targeting.xml"/>
         <import resource="services/translation.xml"/>
         <import resource="services/twig.xml"/>

@@ -18,6 +18,8 @@ export interface SettingsState {
     error: string | null;
     /** Shows the changes at once and saves them, after any save in flight. */
     save(changes: Partial<EntrySettings>): Promise<void>;
+    /** Settles once the saves in flight have, whether they went through or not. */
+    settled(): Promise<void>;
 }
 
 export type SettingsStore = StoreApi<SettingsState>;
@@ -58,5 +60,8 @@ export function createSettingsStore(initial: EntrySettings, send: (changes: Part
 
             return queue;
         },
+
+        // A save that fails is caught where it runs, so the queue never rejects
+        settled: () => queue,
     }));
 }

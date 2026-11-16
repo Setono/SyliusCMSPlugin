@@ -48,6 +48,31 @@ final class PreviewTokenTest extends BuilderApiTestCase
     }
 
     /**
+     * The builder previews a channel's homepage at the channel's root, /{locale}/, where shoppers see it.
+     * See "Rendering the homepage" in docs/spec/urls-and-seo.md
+     *
+     * @test
+     */
+    public function it_answers_the_channels_root_for_the_channels_homepage(): void
+    {
+        $client = self::createClient(server: ['HTTP_HOST' => 'admin.example']);
+        $page = self::createPage('Welcome', 'welcome', 'Hello');
+        self::setHomepageOf($page, 'WEB');
+        $csrfToken = self::openBuilder($client, $page);
+
+        /** @var array{url: string} $response */
+        $response = self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => '@guest'], $csrfToken);
+
+        self::assertResponseIsSuccessful();
+        self::assertMatchesRegularExpression('#^http://admin\.example/en_US/\?_cms_preview=[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$#', $response['url']);
+
+        $client->request('GET', $response['url']);
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello');
+    }
+
+    /**
      * The token carries Shown to and Date, which the page follows. See "Shown to and Date" in docs/spec/targeting.md
      *
      * @test

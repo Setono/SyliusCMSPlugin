@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_where_it_shows() gives an entry row's Where it shows grid: the store's channels, and Live or why not in each of their locales
+--TEMPLATE--
+{% set grid = cms_admin_where_it_shows(cms_admin_entry_row(page)) %}{{ grid.localeCodes|join(' ') }} | {% for channel in grid.channels %}{{ channel.name }}:{% for locale, cell in channel.cells %} {{ locale }}={{ cell.code }}{% endfor %}{% endfor %}
+--DATA--
+return $this->aPageInTheWebChannel('About us')
+--EXPECT--
+en_US da_DK | WEB: en_US=not_published_yet da_DK=no_translation

@@ -11,6 +11,7 @@
             "Query/VisibleEntriesQuery.php",
             "Query/UrlClaimsQuery.php",
             "Query/ProblemCountsQuery.php",
+            "Homepage/HomepageProvider.php",
             "Admin/Grid"
         ]
     },

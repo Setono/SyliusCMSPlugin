@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
+use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Model\OldSlugInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Routing\EntryPath;
@@ -60,6 +61,7 @@ final readonly class EntryUrlLookup implements EntryUrlLookupInterface
             '{translation}' => $manager->getClassMetadata(EntryTranslation::class)->getTableName(),
             '{entry_channel}' => $manager->getClassMetadata(EntryChannelInterface::class)->getTableName(),
             '{old_slug}' => $manager->getClassMetadata(OldSlugInterface::class)->getTableName(),
+            '{homepage}' => $manager->getClassMetadata(HomepageInterface::class)->getTableName(),
             '{published}' => (string) self::PUBLISHED,
             '{old}' => (string) self::OLD_SLUG,
             '{never_published}' => (string) self::NEVER_PUBLISHED,
@@ -68,22 +70,27 @@ final readonly class EntryUrlLookup implements EntryUrlLookupInterface
         ];
 
         // A URL is unique per channel and locale, so entries with no channel in common can share one.
-        // The newest old slug wins over older ones of other entries
+        // The newest old slug wins over older ones of other entries. A page that's the channel's homepage redirects to
+        // the channel's root, from its URL and its old slugs alike
         $sql = strtr(<<<'SQL'
-            SELECT uuid, content_type, current_slug FROM (
+            SELECT uuid, content_type, current_slug, homepage FROM (
                 SELECT entry.uuid, entry.content_type, NULL AS current_slug, 0 AS old_slug_id, entry.id AS entry_id,
-                    CASE WHEN entry.last_published_at IS NULL THEN {never_published} ELSE {published} END AS priority
+                    CASE WHEN entry.last_published_at IS NULL THEN {never_published} ELSE {published} END AS priority,
+                    CASE WHEN homepage.id IS NULL THEN 0 ELSE 1 END AS homepage
                 FROM {entry} entry
                 INNER JOIN {translation} translation ON translation.translatable_id = entry.id AND translation.locale = :locale
                 INNER JOIN {entry_channel} entry_channel ON entry_channel.entry_id = entry.id AND entry_channel.code = :channel
+                LEFT JOIN {homepage} homepage ON homepage.page_id = entry.id AND homepage.channel_code = :channel
                 WHERE {current_slugs}
                 UNION ALL
                 SELECT entry.uuid, entry.content_type, translation.slug AS current_slug, old_slug.id AS old_slug_id, entry.id AS entry_id,
-                    {old} AS priority
+                    {old} AS priority,
+                    CASE WHEN homepage.id IS NULL THEN 0 ELSE 1 END AS homepage
                 FROM {old_slug} old_slug
                 INNER JOIN {entry} entry ON entry.id = old_slug.entry_id AND entry.last_published_at IS NOT NULL
                 INNER JOIN {translation} translation ON translation.translatable_id = entry.id AND translation.locale = old_slug.locale AND translation.slug IS NOT NULL
                 INNER JOIN {entry_channel} entry_channel ON entry_channel.entry_id = entry.id AND entry_channel.code = :channel
+                LEFT JOIN {homepage} homepage ON homepage.page_id = entry.id AND homepage.channel_code = :channel
                 WHERE old_slug.locale = :locale AND ({old_slugs})
             ) url
             ORDER BY priority ASC, old_slug_id DESC, entry_id ASC
@@ -100,6 +107,7 @@ final readonly class EntryUrlLookup implements EntryUrlLookupInterface
             $row['uuid'],
             $row['content_type'],
             is_string($currentSlug) ? EntryPath::ofSlug($this->contentTypes->get($row['content_type']), $currentSlug) : null,
+            in_array($row['homepage'] ?? null, [1, '1'], true),
         );
     }
 }

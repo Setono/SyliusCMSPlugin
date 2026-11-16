@@ -103,3 +103,9 @@
     font-weight: 700;
     text-align: center;
 }
+
+/* The overview page's Where it shows grid scrolls sideways when a store has more locales than fit */
+.cms-where-it-shows {
+    overflow-x: auto;
+    margin-bottom: 1em;
+}

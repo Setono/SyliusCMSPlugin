@@ -13,5 +13,8 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
         </service>
+
+        <!-- Whether an entry shows in a locale as far as its translations go, the rule the visible-entries query filters on in SQL -->
+        <service id="Setono\SyliusCMSPlugin\Localization\Availability" class="Setono\SyliusCMSPlugin\Localization\Availability"/>
     </services>
 </container>

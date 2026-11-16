@@ -7,9 +7,11 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Factory;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
+use Setono\SyliusCMSPlugin\Factory\HomepageFactory;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Tests\Unit\Factory\Fixture\ProjectEntryAudienceGroup;
 use Setono\SyliusCMSPlugin\Tests\Unit\Factory\Fixture\ProjectEntryChannel;
+use Setono\SyliusCMSPlugin\Tests\Unit\Factory\Fixture\ProjectHomepage;
 use Sylius\Resource\Exception\UnsupportedMethodException;
 
 /**
@@ -68,5 +70,32 @@ final class EntryRowFactoriesTest extends TestCase
         $this->expectException(UnsupportedMethodException::class);
 
         (new EntryAudienceGroupFactory(ProjectEntryAudienceGroup::class))->createNew();
+    }
+
+    /**
+     * @test
+     */
+    public function it_creates_a_homepage_row_of_the_configured_model_for_a_page(): void
+    {
+        $page = new Page();
+
+        $row = (new HomepageFactory(ProjectHomepage::class))->createForPage($page, 'WEB');
+
+        self::assertInstanceOf(ProjectHomepage::class, $row);
+        self::assertSame($page, $row->getPage());
+        self::assertSame('WEB', $row->getChannelCode());
+        self::assertNull($row->getId());
+    }
+
+    /**
+     * A homepage row always belongs to a page and has a channel code
+     *
+     * @test
+     */
+    public function it_creates_a_homepage_row_only_for_a_page(): void
+    {
+        $this->expectException(UnsupportedMethodException::class);
+
+        (new HomepageFactory(ProjectHomepage::class))->createNew();
     }
 }
