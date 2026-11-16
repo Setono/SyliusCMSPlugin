@@ -316,6 +316,21 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.rich_text.ordered_list': 'Numbered list',
     'setono_sylius_cms.builder.rich_text.blockquote': 'Quote',
     'setono_sylius_cms.builder.rich_text.horizontal_rule': 'Horizontal line',
+    'setono_sylius_cms.builder.save_locked': "A scheduled publish locks the draft, so your changes weren't saved",
+    'setono_sylius_cms.builder.schedule_menu': 'Schedule…',
+    'setono_sylius_cms.builder.schedule_publish': 'Schedule the publish',
+    'setono_sylius_cms.builder.schedule_at': 'Publish at',
+    'setono_sylius_cms.builder.scheduling': 'Scheduling…',
+    'setono_sylius_cms.builder.schedule_failed': "Couldn't schedule",
+    'setono_sylius_cms.builder.cancel_schedule': 'Cancel the schedule',
+    'setono_sylius_cms.builder.cancelling_schedule': 'Cancelling…',
+    'setono_sylius_cms.builder.cancel_schedule_failed': "Couldn't cancel the schedule",
+    'setono_sylius_cms.builder.publishes_at': 'Publishes %at%',
+    'setono_sylius_cms.builder.scheduled_publish_overdue': 'Scheduled publish overdue',
+    'setono_sylius_cms.builder.scheduled_publish_failed': 'Scheduled publish failed',
+    'setono_sylius_cms.builder.locked': 'The draft is locked: it publishes %at%. Cancel the schedule to edit it.',
+    'setono_sylius_cms.builder.locked_overdue': "The draft is locked: its publish was scheduled for %at% and hasn't run. The Messenger worker may not be running.",
+    'setono_sylius_cms.builder.schedule_stopped': 'The publish scheduled for %at% was stopped when it ran: %reason%',
 };
 
 /** A Choice field of several values, as a condition kind's parameter. */

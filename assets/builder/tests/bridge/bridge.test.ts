@@ -196,6 +196,26 @@ describe('the bridge', () => {
             ]);
         });
 
+        it('should only outline and select blocks while the working copy is read-only, as while a scheduled publish locks it', () => {
+            bridge.receive({ type: 'init', strings, readOnly: true });
+            bridge.receive({ type: 'select', key: 'a' });
+            fireEvent.mouseOver(document.querySelectorAll('h2')[2]!);
+
+            expect(outline()).toBeVisible();
+            expect(within(controls()).queryByRole('toolbar')).toBeNull();
+            expect(within(controls()).queryAllByRole('button', { name: 'Add block above' })).toHaveLength(0);
+            expect(within(controls()).queryAllByRole('button', { name: 'Add block below' })).toHaveLength(0);
+
+            document.querySelectorAll('h2')[0]?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            expect(posted).toEqual([{ type: 'select', key: 'a' }]);
+
+            // Unlocked, it offers them again. jsdom keeps the styles it computed for the hidden controls, so this reads hidden
+            bridge.receive({ type: 'init', strings, readOnly: false });
+            const shown = [...controls().querySelectorAll<HTMLElement>('[role="toolbar"], button')].filter((control) => !control.hidden && control.parentElement?.hidden !== true);
+            expect(shown.filter((control) => control.getAttribute('role') === 'toolbar')).toHaveLength(1);
+            expect(shown.filter((control) => control.getAttribute('aria-label') === 'Add block above')).toHaveLength(2);
+        });
+
         it('should offer only the selected block\'s + when the pointer is over the selected block', () => {
             bridge.receive({ type: 'select', key: 'a' });
             fireEvent.mouseOver(document.querySelectorAll('h2')[0]!);

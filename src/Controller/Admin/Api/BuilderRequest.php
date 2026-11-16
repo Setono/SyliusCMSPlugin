@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Publishing\DraftLockedException;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Setono\SyliusCMSPlugin\Security\BuilderCsrfToken;
@@ -88,6 +89,14 @@ final readonly class BuilderRequest
     public static function badRequest(string $error): JsonResponse
     {
         return new JsonResponse(['error' => $error], Response::HTTP_BAD_REQUEST);
+    }
+
+    /**
+     * 423 Locked: a scheduled publish locks the draft, so the builder loads it again, read-only
+     */
+    public static function draftLocked(DraftLockedException $e): JsonResponse
+    {
+        return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_LOCKED);
     }
 
     private static function invalidCsrfToken(): JsonResponse

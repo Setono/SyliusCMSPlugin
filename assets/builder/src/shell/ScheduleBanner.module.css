@@ -1,0 +1,22 @@
+/* Spans the preview pane, above the page */
+.banner {
+    display: flex;
+    flex: none;
+    align-self: stretch;
+    align-items: center;
+    padding: var(--builder-space-3) var(--builder-space-4);
+    border-bottom: 1px solid var(--builder-color-border);
+    background: var(--builder-color-selected);
+    color: var(--builder-color-accent);
+}
+
+.banner[data-schedule="scheduled_publish_overdue"],
+.banner[data-schedule="scheduled_publish_failed"] {
+    background: var(--builder-color-danger-subtle);
+    color: var(--builder-color-danger);
+}
+
+.message {
+    margin: 0;
+    font-weight: var(--builder-font-weight-medium);
+}

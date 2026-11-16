@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\EntryFields;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -20,8 +21,8 @@ use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 /**
- * Applies a change set to a working copy, all or nothing: to its block tree and its layout, and to its translations'
- * values, shown switches and translation state. The values themselves aren't validated, because invalid content saves: publish validates. They're
+ * Applies a change set to a working copy, all or nothing: to its block tree and its layout, to its shared entry fields,
+ * and to its translations' values, shown switches and translation state. The values themselves aren't validated, because invalid content saves: publish validates. They're
  * sanitised by field types that sanitise, such as rich text, and so are the parameter values of visibility conditions
  *
  * @internal
@@ -47,6 +48,8 @@ final readonly class ChangeSetApplier
         $tree = clone $workingCopy->getBlockTree();
         /** @var list<array{string, \Closure(EntryTranslationInterface): void}> $translationChanges the locale, and the change to its translation */
         $translationChanges = [];
+        /** @var list<\Closure(EntryInterface): void> $entryChanges changes to the entry's shared fields */
+        $entryChanges = [];
 
         foreach ($changeSet->changes as $change) {
             match (true) {
@@ -56,6 +59,7 @@ final readonly class ChangeSetApplier
                 $change instanceof SetValue => $this->setValue($change, $tree),
                 $change instanceof SetStyle => $this->setStyle($change, $tree),
                 $change instanceof SetConditions => $this->setConditions($change, $tree),
+                $change instanceof SetEntryValue && in_array($change->field, EntryFields::shared($contentType), true) => $entryChanges[] = self::sharedEntryValue($change),
                 $change instanceof SetEntryValue => $translationChanges[] = self::entryValue($change, $contentType),
                 $change instanceof SetShown => $translationChanges[] = [$change->locale, static fn (EntryTranslationInterface $translation) => $translation->setShown($change->shown)],
                 $change instanceof SetTranslated => $this->setTranslated($change, $tree),
@@ -70,6 +74,10 @@ final readonly class ChangeSetApplier
         self::assertUniqueKeys($tree);
 
         $workingCopy->setBlockTree($tree);
+        foreach ($entryChanges as $changeEntry) {
+            $changeEntry($workingCopy);
+        }
+
         foreach ($translationChanges as [$locale, $changeTranslation]) {
             $changeTranslation(self::translation($workingCopy, $locale, $contentType));
         }
@@ -95,9 +103,28 @@ final readonly class ChangeSetApplier
         // An empty value is no value
         $value = '' === $change->value ? null : $change->value;
 
-        return [$change->locale, 'slug' === $change->field
-            ? static fn (EntryTranslationInterface $translation) => $translation->setSlug($value)
-            : static fn (EntryTranslationInterface $translation) => $translation->setTitle($value)];
+        return [$change->locale, static fn (EntryTranslationInterface $translation) => EntryFields::write($translation, $change->field, $value)];
+    }
+
+    /**
+     * The change to a field of the entry shared by all translations, such as "Hide from search engines", once the value
+     * is known to fit. Removing the value switches it off
+     *
+     * @return \Closure(EntryInterface): void
+     */
+    private static function sharedEntryValue(SetEntryValue $change): \Closure
+    {
+        if (null !== $change->locale) {
+            throw new InvalidChangeSetException(sprintf('The entry field "%s" is shared by all translations, so a value takes no locale', $change->field));
+        }
+
+        if (null !== $change->value && !is_bool($change->value)) {
+            throw new InvalidChangeSetException(sprintf('The entry field "%s" must be true, false or null', $change->field));
+        }
+
+        $value = true === $change->value;
+
+        return static fn (EntryInterface $entry) => $entry->setNoindex($value);
     }
 
     /**
@@ -108,6 +135,10 @@ final readonly class ChangeSetApplier
      */
     private static function entryTranslated(SetEntryTranslated $change, ContentTypeMetadata $contentType): array
     {
+        if (in_array($change->field, EntryFields::shared($contentType), true)) {
+            throw new InvalidChangeSetException(sprintf('The entry field "%s" is shared by all translations, so it has no translation state', $change->field));
+        }
+
         self::assertEntryField($change->field, $contentType);
 
         return [$change->locale, static function (EntryTranslationInterface $translation) use ($change): void {
@@ -123,12 +154,12 @@ final readonly class ChangeSetApplier
     }
 
     /**
-     * The entry fields are a translation's title, and its slug for a content type with its own URL. The content type's
-     * own fields come with #265
+     * The translatable entry fields are a translation's title, and its slug, meta title and meta description for a
+     * content type with its own URL. The content type's own fields come with #265
      */
     private static function assertEntryField(string $field, ContentTypeMetadata $contentType): void
     {
-        if ('title' !== $field && !('slug' === $field && $contentType->hasOwnUrl())) {
+        if (!in_array($field, EntryFields::translatable($contentType), true)) {
             throw new InvalidChangeSetException(sprintf('The content type "%s" has no entry field "%s"', $contentType->code, $field));
         }
     }

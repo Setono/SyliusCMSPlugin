@@ -18,6 +18,7 @@ const config: BuilderConfig = {
         validate: '/validate',
         publish: '/publish',
         discard: '/discard',
+        schedule: '/schedule',
         settings: '/settings',
         previewToken: '/preview/token',
         previewRender: '/preview/render',
@@ -51,6 +52,8 @@ function fakeApi(initial: EntrySettings = settings(), overrides: Partial<Builder
         }),
         createPreviewUrl: vi.fn(async ({ channel }: { channel: string }) => `http://admin.example/en_US/about-us?channel=${channel}`),
         renderPreview: vi.fn(async (): Promise<Record<string, string>> => ({})),
+        schedule: vi.fn(() => Promise.reject(new Error('Not scheduled in this test'))),
+        cancelSchedule: vi.fn(() => Promise.reject(new Error('Not scheduled in this test'))),
         presence: vi.fn(async (): Promise<PresenceResponse> => ({ editors: [], lockToken: 0 })),
         ...overrides,
     };

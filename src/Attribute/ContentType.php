@@ -16,6 +16,8 @@ final readonly class ContentType
      * @param string $label a translation key
      * @param string|null $prefix the URL prefix: null means no URL of its own, and '' means URLs at the root
      * @param list<Allow>|null $blocks what the top level of its tree may hold: null means it has no block tree
+     * @param string|null $descriptionField the property of its translations the meta description falls back to, such as
+     *                                      a blog post's excerpt. See "SEO fields" in docs/spec/urls-and-seo.md
      */
     public function __construct(
         public string $code,
@@ -23,6 +25,7 @@ final readonly class ContentType
         public int $version = 1,
         public ?string $prefix = null,
         public ?array $blocks = null,
+        public ?string $descriptionField = null,
     ) {
     }
 }

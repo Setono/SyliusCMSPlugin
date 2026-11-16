@@ -134,8 +134,29 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.slug_help_none'
     | 'setono_sylius_cms.builder.old_urls'
     | 'setono_sylius_cms.builder.old_urls_help'
+    | 'setono_sylius_cms.builder.meta_title'
+    | 'setono_sylius_cms.builder.meta_title_help'
+    | 'setono_sylius_cms.builder.meta_description'
+    | 'setono_sylius_cms.builder.meta_description_help'
+    | 'setono_sylius_cms.builder.noindex'
+    | 'setono_sylius_cms.builder.noindex_help'
     | 'setono_sylius_cms.builder.url_and_seo'
-    | 'setono_sylius_cms.builder.clash_entry_value';
+    | 'setono_sylius_cms.builder.clash_entry_value'
+    | 'setono_sylius_cms.builder.save_locked'
+    | 'setono_sylius_cms.builder.schedule_menu'
+    | 'setono_sylius_cms.builder.schedule_publish'
+    | 'setono_sylius_cms.builder.schedule_at'
+    | 'setono_sylius_cms.builder.scheduling'
+    | 'setono_sylius_cms.builder.schedule_failed'
+    | 'setono_sylius_cms.builder.cancel_schedule'
+    | 'setono_sylius_cms.builder.cancelling_schedule'
+    | 'setono_sylius_cms.builder.cancel_schedule_failed'
+    | 'setono_sylius_cms.builder.publishes_at'
+    | 'setono_sylius_cms.builder.scheduled_publish_overdue'
+    | 'setono_sylius_cms.builder.scheduled_publish_failed'
+    | 'setono_sylius_cms.builder.locked'
+    | 'setono_sylius_cms.builder.locked_overdue'
+    | 'setono_sylius_cms.builder.schedule_stopped';
 
 /** Values for the placeholders in a string, such as { '%block%': 'Columns' }. */
 export type TranslationParameters = Readonly<Record<string, string>>;

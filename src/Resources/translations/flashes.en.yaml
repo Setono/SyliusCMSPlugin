@@ -1,8 +1,14 @@
 setono_sylius_cms:
     entry_changes_discarded: The unpublished changes have been discarded.
     entry_deleted: The entry has been deleted.
+    entry_draft_locked: The draft is locked until its scheduled publish runs. Cancel the schedule to change it.
     entry_publish_invalid: '{1} It wasn''t published: one error needs fixing.|]1,Inf[ It wasn''t published: %count% errors need fixing.'
     entry_published: The entry has been published.
+    entry_publish_scheduled: 'The publish has been scheduled for %at%.'
+    entry_schedule_cancelled: The scheduled publish has been cancelled.
+    entry_schedule_in_the_past: Pick a time in the future.
+    entry_schedule_invalid: '{1} It wasn''t scheduled: one error needs fixing.|]1,Inf[ It wasn''t scheduled: %count% errors need fixing.'
+    entry_schedule_time_missing: Pick when to publish.
     revision_restored: The revision has been restored into the draft. Review it, then publish it.
     share_link_created: The share link has been made. Copy it from Share links.
     share_link_revoked: The share link has been revoked. It now answers as it would for anyone else.

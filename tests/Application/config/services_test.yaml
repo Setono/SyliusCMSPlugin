@@ -4,3 +4,7 @@ services:
     Setono\SyliusCMSPlugin\Translation\TranslationStateInterface:
         alias: Setono\SyliusCMSPlugin\Translation\TranslationState
         public: true
+
+    # The DSN kept-in-memory:// (.env.test): Sylius's main transport, in memory and kept across the kernel's resets
+    Setono\SyliusCMSPlugin\Tests\Support\KeptInMemoryTransportFactory:
+        tags: [messenger.transport_factory]

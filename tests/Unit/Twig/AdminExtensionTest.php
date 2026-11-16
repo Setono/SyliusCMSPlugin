@@ -33,6 +33,7 @@ use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
 use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
@@ -172,6 +173,9 @@ final class AdminExtensionTest extends IntegrationTestCase
         $localeContext = $this->prophesize(LocaleContextInterface::class);
         $localeContext->getLocaleCode()->willReturn('en_US');
 
+        $scheduledPublishes = $this->prophesize(ScheduledPublishRepositoryInterface::class);
+        $scheduledPublishes->findByEntries(Argument::any())->willReturn([]);
+
         $entryRows = new EntryRows(
             $drafts->reveal(),
             self::contentTypes(),
@@ -179,6 +183,8 @@ final class AdminExtensionTest extends IntegrationTestCase
             $urlGenerator->reveal(),
             $translationLocaleProvider->reveal(),
             $localeContext->reveal(),
+            $scheduledPublishes->reveal(),
+            new MockClock(),
         );
         $oldSlugs = $this->prophesize(OldSlugRepositoryInterface::class);
         $oldSlugs->findByEntry(Argument::any())->willReturn([]);

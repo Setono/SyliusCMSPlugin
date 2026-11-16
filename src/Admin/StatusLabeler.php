@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Admin;
 use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Builder\EntryStatus;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Targeting\AudienceMode;
 
 final readonly class StatusLabeler implements StatusLabelerInterface
@@ -15,13 +16,21 @@ final readonly class StatusLabeler implements StatusLabelerInterface
     {
     }
 
-    public function labelsOf(EntryInterface $entry, bool $hasDraft): array
+    public function labelsOf(EntryInterface $entry, bool $hasDraft, ?ScheduledPublishInterface $scheduledPublish = null): array
     {
         $labels = match (EntryStatus::of($entry, $hasDraft)) {
             EntryStatus::NEVER_PUBLISHED => [new StatusLabel(StatusLabel::NEVER_PUBLISHED)],
             EntryStatus::UNPUBLISHED_CHANGES => [new StatusLabel(StatusLabel::PUBLISHED), new StatusLabel(StatusLabel::UNPUBLISHED_CHANGES)],
             default => [new StatusLabel(StatusLabel::PUBLISHED)],
         };
+
+        // The scheduled publish's state is a label of the same code
+        if (null !== $scheduledPublish) {
+            $labels[] = new StatusLabel(
+                EntryStatus::ofScheduledPublish($scheduledPublish, $this->clock->now()),
+                ['at' => $scheduledPublish->getPublishAt()] + ($scheduledPublish->isFailed() ? ['reason' => $scheduledPublish->getFailureReason()] : []),
+            );
+        }
 
         if (!$entry->isEnabled()) {
             $labels[] = new StatusLabel(StatusLabel::DISABLED);

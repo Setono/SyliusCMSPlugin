@@ -15,6 +15,7 @@ const config: BuilderConfig = {
         validate: '/admin/cms/api/entries/e1/validate',
         publish: '/admin/cms/api/entries/e1/publish',
         discard: '/admin/cms/api/entries/e1/discard',
+        schedule: '/admin/cms/api/entries/e1/schedule',
         settings: '/admin/cms/api/entries/e1/settings',
         previewToken: '/admin/cms/api/preview/token',
         previewRender: '/admin/cms/api/preview/render',
@@ -102,6 +103,43 @@ describe('the JSON endpoints', () => {
 
         expect(fetch).toHaveBeenCalledWith('/admin/cms/api/entries/e1/discard', {
             method: 'POST',
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123' },
+        });
+    });
+
+    it('should schedule a publish at a time with the CSRF token, and answer with the working copy it locks', async () => {
+        const schedule = { at: '2026-11-27T08:00:00Z', by: 'Jane Roe', status: 'publishes_at_a_time', reason: null };
+        const answer = { entry: entry(), lockToken: 2, settings: settings(), status: 'unpublished_changes', schedule, editors: [] };
+        const fetch = respond(200, answer);
+
+        await expect(createApi(config, fetch).schedule('2026-11-27T08:00:00Z')).resolves.toEqual(answer);
+
+        expect(fetch).toHaveBeenCalledWith('/admin/cms/api/entries/e1/schedule', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123', 'Content-Type': 'application/json' },
+            body: '{"at":"2026-11-27T08:00:00Z"}',
+        });
+    });
+
+    it('should fail with the reason and the errors when the server refuses to schedule', async () => {
+        const errors = [{ block: 'b1', field: 'text', locale: 'en_US', message: 'This field is required.' }];
+        const fetch = respond(422, { error: 'One error needs fixing', errors });
+
+        const refused = createApi(config, fetch).schedule('2026-11-27T08:00:00Z');
+
+        await expect(refused).rejects.toEqual(new ApiError('One error needs fixing', 422, errors));
+    });
+
+    it('should cancel the scheduled publish with the CSRF token, and answer with the working copy unlocked', async () => {
+        const answer = { entry: entry(), lockToken: 2, settings: settings(), status: 'unpublished_changes', schedule: null, editors: [] };
+        const fetch = respond(200, answer);
+
+        await expect(createApi(config, fetch).cancelSchedule()).resolves.toEqual(answer);
+
+        expect(fetch).toHaveBeenCalledWith('/admin/cms/api/entries/e1/schedule', {
+            method: 'DELETE',
             credentials: 'same-origin',
             headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123' },
         });

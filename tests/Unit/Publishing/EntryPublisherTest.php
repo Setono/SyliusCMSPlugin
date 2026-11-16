@@ -18,12 +18,15 @@ use Setono\SyliusCMSPlugin\Event\EntryPublished;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
 use Setono\SyliusCMSPlugin\Publishing\EntryLock;
 use Setono\SyliusCMSPlugin\Publishing\EntryPublisher;
 use Setono\SyliusCMSPlugin\Publishing\InvalidEntryException;
+use Setono\SyliusCMSPlugin\Publishing\PublishCheck;
 use Setono\SyliusCMSPlugin\Publishing\PublishVetoedException;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Setono\SyliusCMSPlugin\Revision\RevisionRecorderInterface;
 use Setono\SyliusCMSPlugin\Routing\OldSlugRecorderInterface;
 use Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface;
@@ -36,6 +39,12 @@ final class EntryPublisherTest extends TestCase
 
     /** @var ObjectProphecy<ManagerRegistry> */
     private ObjectProphecy $managerRegistry;
+
+    /** @var ObjectProphecy<EntityManagerInterface> */
+    private ObjectProphecy $manager;
+
+    /** @var ObjectProphecy<ScheduledPublishRepositoryInterface> */
+    private ObjectProphecy $scheduledPublishes;
 
     /** @var ObjectProphecy<WorkingCopyManagerInterface> */
     private ObjectProphecy $workingCopies;
@@ -66,7 +75,7 @@ final class EntryPublisherTest extends TestCase
         $this->page = self::page();
         $this->workingCopy = clone $this->page;
 
-        $manager = $this->prophesize(EntityManagerInterface::class);
+        $this->manager = $manager = $this->prophesize(EntityManagerInterface::class);
         $connection = $this->prophesize(Connection::class);
         $manager->getConnection()->willReturn($connection->reveal());
         $connection->beginTransaction()->will($this->record('begin'));
@@ -75,6 +84,7 @@ final class EntryPublisherTest extends TestCase
         $manager->lock($this->page, LockMode::PESSIMISTIC_WRITE)->will($this->record('lock to write'));
         $manager->refresh($this->page)->will($this->record('read again'));
         $manager->flush()->will($this->record('flush'));
+        $manager->remove(Argument::type(ScheduledPublish::class))->will($this->record('remove the scheduled publish'));
         $this->managerRegistry = $this->prophesize(ManagerRegistry::class);
         $this->managerRegistry->getManagerForClass(Page::class)->willReturn($manager->reveal());
 
@@ -93,6 +103,10 @@ final class EntryPublisherTest extends TestCase
 
             return [];
         });
+
+        // The page has no scheduled publish, unless a test schedules one
+        $this->scheduledPublishes = $this->prophesize(ScheduledPublishRepositoryInterface::class);
+        $this->scheduledPublishes->findOneByEntry($this->page)->willReturn(null);
 
         $this->revisions = $this->prophesize(RevisionRecorderInterface::class);
         $this->revisions->record(Argument::cetera())->will($this->record('store a revision'));
@@ -129,7 +143,7 @@ final class EntryPublisherTest extends TestCase
         );
 
         // The revision holds what the rows hold now, published by whoever is signed in
-        $this->revisions->record($page, new \DateTimeImmutable('2026-11-14 11:30:00', new \DateTimeZone('UTC')))->shouldHaveBeenCalledOnce();
+        $this->revisions->record($page, new \DateTimeImmutable('2026-11-14 11:30:00', new \DateTimeZone('UTC')), false, null)->shouldHaveBeenCalledOnce();
         // A first publish changes no slug shoppers saw
         $this->oldSlugs->record($page, [], ['en_US' => 'about-us'])->shouldHaveBeenCalledOnce();
 
@@ -217,6 +231,153 @@ final class EntryPublisherTest extends TestCase
         $this->revisions->record(Argument::cetera())->shouldNotHaveBeenCalled();
     }
 
+    /**
+     * @test
+     */
+    public function a_publish_now_ends_the_entrys_scheduled_publish(): void
+    {
+        $scheduledPublish = $this->scheduledPublish();
+        $this->workingCopies->applyToRows($this->page, $this->workingCopy)->will($this->record('apply to rows'));
+
+        $this->publisher()->publish($this->page);
+
+        self::assertSame(
+            ['begin', 'lock to write', 'read again', 'get working copy', 'validate', BeforeEntryPublish::class, 'remove the scheduled publish', 'apply to rows', 'record old slugs', 'store a revision', 'flush', 'commit', EntryPublished::class],
+            $this->calls,
+        );
+        $this->manager->remove($scheduledPublish)->shouldHaveBeenCalledOnce();
+        // Published now, by whoever is signed in
+        $this->revisions->record($this->page, new \DateTimeImmutable('2026-11-14 11:30:00', new \DateTimeZone('UTC')), false, null)->shouldHaveBeenCalledOnce();
+    }
+
+    /**
+     * @test
+     */
+    public function it_runs_a_scheduled_publish_as_a_publish_recorded_as_scheduled_by_who_scheduled_it(): void
+    {
+        $scheduledPublish = $this->scheduledPublish();
+        $this->workingCopies->applyToRows($this->page, $this->workingCopy)->will($this->record('apply to rows'));
+
+        self::assertTrue($this->publisher()->publishScheduled($this->page, $scheduledPublish->getToken()));
+
+        self::assertSame(
+            ['begin', 'lock to write', 'read again', 'get working copy', 'validate', BeforeEntryPublish::class, 'remove the scheduled publish', 'apply to rows', 'record old slugs', 'store a revision', 'flush', 'commit', EntryPublished::class],
+            $this->calls,
+        );
+        $this->manager->remove($scheduledPublish)->shouldHaveBeenCalledOnce();
+        $this->revisions->record($this->page, new \DateTimeImmutable('2026-11-14 11:30:00', new \DateTimeZone('UTC')), true, 'Jane Roe')->shouldHaveBeenCalledOnce();
+
+        $before = $this->events[0];
+        self::assertInstanceOf(BeforeEntryPublish::class, $before);
+        self::assertSame($this->workingCopy, $before->entry);
+        self::assertTrue($before->scheduled);
+
+        $published = $this->events[1];
+        self::assertInstanceOf(EntryPublished::class, $published);
+        self::assertSame($this->page->getUuid(), $published->uuid);
+        self::assertSame(['en_US' => 'about-us'], $published->newSlugs);
+        self::assertTrue($published->scheduled);
+
+        self::assertTrue($this->page->isPublished());
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideStaleMessages
+     */
+    public function a_message_whose_scheduled_publish_was_cancelled_replaced_or_stopped_does_nothing(?string $token, ?string $failure): void
+    {
+        $scheduledPublish = $this->scheduledPublish();
+        if (null !== $failure) {
+            $scheduledPublish->fail($failure);
+        }
+        $this->workingCopies->applyToRows(Argument::cetera())->shouldNotBeCalled();
+
+        self::assertFalse($this->publisher()->publishScheduled($this->page, $token ?? $scheduledPublish->getToken()));
+
+        self::assertSame(['begin', 'lock to write', 'read again', 'flush', 'commit'], $this->calls);
+        self::assertSame([], $this->events);
+        self::assertFalse($this->page->isPublished());
+        $this->revisions->record(Argument::cetera())->shouldNotHaveBeenCalled();
+    }
+
+    /**
+     * @return iterable<string, array{string|null, string|null}>
+     */
+    public static function provideStaleMessages(): iterable
+    {
+        yield 'replaced, so the message carries the token of the one before' => ['5f0c8c0e-6b1a-4c2e-9d3f-7a8b9c0d1e2f', null];
+        yield 'stopped when an earlier message of it ran' => [null, 'Not on a Sunday'];
+    }
+
+    /**
+     * @test
+     */
+    public function a_message_does_nothing_for_an_entry_without_a_scheduled_publish(): void
+    {
+        $this->workingCopies->applyToRows(Argument::cetera())->shouldNotBeCalled();
+
+        self::assertFalse($this->publisher()->publishScheduled($this->page, '5f0c8c0e-6b1a-4c2e-9d3f-7a8b9c0d1e2f'));
+
+        self::assertSame(['begin', 'lock to write', 'read again', 'flush', 'commit'], $this->calls);
+        self::assertSame([], $this->events);
+    }
+
+    /**
+     * @test
+     */
+    public function a_veto_stops_a_scheduled_publish_and_leaves_it_for_the_caller_to_flag(): void
+    {
+        $scheduledPublish = $this->scheduledPublish();
+        $this->workingCopies->applyToRows(Argument::cetera())->shouldNotBeCalled();
+        $this->eventDispatcher->addListener(BeforeEntryPublish::class, static fn (BeforeEntryPublish $event) => $event->veto('Not on a Sunday'));
+
+        try {
+            $this->publisher()->publishScheduled($this->page, $scheduledPublish->getToken());
+            self::fail('The scheduled publish was not vetoed');
+        } catch (PublishVetoedException $e) {
+            self::assertSame('Not on a Sunday', $e->getMessage());
+        }
+
+        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'validate', BeforeEntryPublish::class, 'roll back'], $this->calls);
+        $this->manager->remove(Argument::any())->shouldNotHaveBeenCalled();
+        self::assertFalse($this->page->isPublished());
+    }
+
+    /**
+     * @test
+     */
+    public function errors_stop_a_scheduled_publish_before_listeners_hear_of_it(): void
+    {
+        $scheduledPublish = $this->scheduledPublish();
+        $errors = [new ValidationError(null, 'slug', 'en_US', 'This slug is taken.')];
+        $this->entryValidator->validate($this->workingCopy)->willReturn($errors);
+
+        try {
+            $this->publisher()->publishScheduled($this->page, $scheduledPublish->getToken());
+            self::fail('The scheduled publish was not refused');
+        } catch (InvalidEntryException $e) {
+            self::assertSame($errors, $e->errors);
+        }
+
+        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'roll back'], $this->calls);
+        $this->manager->remove(Argument::any())->shouldNotHaveBeenCalled();
+    }
+
+    /**
+     * A publish of the page scheduled by Jane Roe, which waits
+     */
+    private function scheduledPublish(): ScheduledPublish
+    {
+        $scheduledPublish = new ScheduledPublish();
+        $scheduledPublish->setEntry($this->page);
+        $scheduledPublish->schedule(new \DateTimeImmutable('2026-11-14 11:00:00', new \DateTimeZone('UTC')), 'Jane Roe');
+        $this->scheduledPublishes->findOneByEntry($this->page)->willReturn($scheduledPublish);
+
+        return $scheduledPublish;
+    }
+
     private function publisher(): EntryPublisher
     {
         $clock = $this->prophesize(ClockInterface::class);
@@ -230,9 +391,11 @@ final class EntryPublisherTest extends TestCase
             new ContentTypeRegistry([
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             ]),
-            $this->entryValidator->reveal(),
+            new PublishCheck($this->entryValidator->reveal(), $this->eventDispatcher),
             $this->revisions->reveal(),
             $this->oldSlugs->reveal(),
+            $this->scheduledPublishes->reveal(),
+            $this->manager->reveal(),
         );
     }
 

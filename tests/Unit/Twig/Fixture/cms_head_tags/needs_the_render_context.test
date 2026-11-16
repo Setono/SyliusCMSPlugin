@@ -1,0 +1,8 @@
+--TEST--
+cms_head_tags() needs the render context, whose channel and locale the tags are for
+--TEMPLATE--
+{{ cms_head_tags(entry).title }}
+--DATA--
+return ['entry' => $this->pageWith(['en_US' => ['title' => 'About us', 'slug' => 'about-us']])]
+--EXCEPTION--
+Twig\Error\RuntimeError: An exception has been thrown during the rendering of a template ("The head tags can only be printed from a template that has the render context in "_cms_render_context", such as a layout template") in "index.twig" at line 2.

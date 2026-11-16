@@ -9,6 +9,7 @@ use Doctrine\ORM\QueryBuilder;
 use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Admin\EntryStatusFilter;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemSummaryProviderInterface;
 use Sylius\Bundle\GridBundle\Doctrine\DataSourceInterface as DoctrineDataSourceInterface;
 use Sylius\Component\Grid\Data\DataSourceInterface;
@@ -54,6 +55,11 @@ final readonly class StatusFilter implements FilterInterface
                 $entry,
             )),
             EntryStatusFilter::NeverPublished => $queryBuilder->andWhere(sprintf('%s.lastPublishedAt IS NULL', $entry)),
+            EntryStatusFilter::Scheduled => $queryBuilder->andWhere(sprintf(
+                'EXISTS (SELECT cms_status_scheduled.id FROM %s cms_status_scheduled WHERE cms_status_scheduled.entry = %s AND cms_status_scheduled.failureReason IS NULL)',
+                ScheduledPublishInterface::class,
+                $entry,
+            )),
             // "Show from" is inclusive and "Show until" exclusive. The columns hold UTC
             EntryStatusFilter::DisabledOrOutsideDateWindow => $queryBuilder
                 ->andWhere(sprintf('%1$s.enabled = :cms_status_disabled OR %1$s.showFrom > :cms_status_now OR %1$s.showUntil <= :cms_status_now', $entry))

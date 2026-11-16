@@ -33,6 +33,8 @@
             <argument type="service" id="sylius.translation_locale_provider"/>
             <!-- In the admin, the admin user's locale -->
             <argument type="service" id="sylius.context.locale"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+            <argument type="service" id="clock"/>
 
             <tag name="twig.runtime"/>
             <tag name="kernel.reset" method="reset"/>

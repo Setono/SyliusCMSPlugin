@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterUpgradersPass;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
+use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Symfony\Component\Config\FileLocator;
@@ -90,6 +91,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $this->prependGrids($container);
         $this->prependEntryOverviewEvents($container);
         $this->prependProblems($container);
+        $this->prependMessenger($container);
 
         /** @var array{assets: bool} $config */
         $config = $this->processConfiguration(new Configuration(), $container->getExtensionConfig($this->getAlias()));
@@ -104,6 +106,22 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                     'blocks' => [
                         'setono_sylius_cms_stylesheet' => ['template' => '@SetonoSyliusCMSPlugin/shop/stylesheet.html.twig', 'priority' => 20],
                     ],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Routes the delayed message that runs a scheduled publish to Sylius's main transport, the way Sylius routes the
+     * messages that schedule catalog promotions, so the shop's Messenger worker runs it. Projects route it elsewhere in
+     * their own framework config. See "Scheduled publishes" in docs/spec/publishing.md
+     */
+    private function prependMessenger(ContainerBuilder $container): void
+    {
+        $container->prependExtensionConfig('framework', [
+            'messenger' => [
+                'routing' => [
+                    ScheduledPublishDue::class => 'main',
                 ],
             ],
         ]);

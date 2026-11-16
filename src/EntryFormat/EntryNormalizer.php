@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\EntryFormat;
 use Setono\SyliusCMSPlugin\Json\ListedObject;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\EntryFields;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
@@ -29,9 +30,9 @@ final readonly class EntryNormalizer
         foreach ($entry->getTranslations()->getKeys() as $localeCode) {
             $translation = $entry->getTranslation($localeCode);
 
-            $fields = ['title' => $translation->getTitle()];
-            if ($contentType->hasOwnUrl()) {
-                $fields['slug'] = $translation->getSlug();
+            $fields = [];
+            foreach (EntryFields::translatable($contentType) as $field) {
+                $fields[$field] = EntryFields::read($translation, $field);
             }
 
             $translations[$localeCode] = new ListedObject([
@@ -49,7 +50,8 @@ final readonly class EntryNormalizer
             'contentType' => $contentType->code,
             'version' => $contentType->version,
             'createdAt' => $entry->getCreatedAt()->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z'),
-            'fields' => new \stdClass(),
+            // The shared base fields: "Hide from search engines" for a content type with its own URL
+            'fields' => (object) ($contentType->hasOwnUrl() ? ['noindex' => $entry->isNoindex()] : []),
             'translations' => (object) $translations,
             'tree' => (new StoredTreeSerializer())->normalize($entry->getBlockTree()),
         ]);

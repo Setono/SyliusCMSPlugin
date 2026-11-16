@@ -18,6 +18,15 @@ final readonly class StatusLabel
 
     public const NEVER_PUBLISHED = 'never_published';
 
+    /** A scheduled publish that waits. Parameters: `at`, a \DateTimeImmutable in UTC */
+    public const PUBLISHES_AT_A_TIME = 'publishes_at_a_time';
+
+    /** A scheduled publish whose time passed without it running. Parameters: `at`, a \DateTimeImmutable in UTC */
+    public const SCHEDULED_PUBLISH_OVERDUE = 'scheduled_publish_overdue';
+
+    /** A scheduled publish that was stopped when it ran. Parameters: `at`, a \DateTimeImmutable in UTC, and `reason` */
+    public const SCHEDULED_PUBLISH_FAILED = 'scheduled_publish_failed';
+
     public const DISABLED = 'disabled';
 
     /** A date window that hasn't ended. Parameters: `from` and `until`, each a \DateTimeImmutable in UTC or null */

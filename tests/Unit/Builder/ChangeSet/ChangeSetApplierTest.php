@@ -322,6 +322,7 @@ final class ChangeSetApplierTest extends TestCase
         self::assertSame([], $page->getBlockTree()->blocks[0]->fields);
         self::assertSame('About us', $page->getTranslation('en_US')->getTitle());
         self::assertSame(['en_US'], $page->getTranslations()->getKeys());
+        self::assertFalse($page->isNoindex());
     }
 
     /**
@@ -331,6 +332,7 @@ final class ChangeSetApplierTest extends TestCase
     {
         yield 'a block change after valid ones' => [new SetValue(self::A, 'text', 'en_US', 'Hello'), new SetEntryValue('title', 'en_US', 'About'), new RemoveBlock(self::B)];
         yield 'an entry change after valid ones' => [new SetValue(self::A, 'text', 'en_US', 'Hello'), new SetEntryValue('title', 'da_DK', 'Om os'), new SetEntryValue('title', 'en_US', 1)];
+        yield 'a shared entry change before an invalid one' => [new SetEntryValue('noindex', null, true), new SetEntryValue('title', 'en_US', 1)];
     }
 
     /**
@@ -364,6 +366,49 @@ final class ChangeSetApplierTest extends TestCase
 
         self::assertNull($page->getTranslation('en_US')->getTitle());
         self::assertNull($page->getTranslation('en_US')->getSlug());
+    }
+
+    /**
+     * See "SEO fields" in docs/spec/urls-and-seo.md
+     *
+     * @test
+     */
+    public function it_sets_and_removes_a_translations_meta_title_and_meta_description(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('metaTitle', 'en_US', 'About us | Shop'), new SetEntryValue('metaDescription', 'en_US', 'All about us')]), $page);
+
+        self::assertSame('About us | Shop', $page->getTranslation('en_US')->getMetaTitle());
+        self::assertSame('All about us', $page->getTranslation('en_US')->getMetaDescription());
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('metaTitle', 'en_US', ''), new SetEntryValue('metaDescription', 'en_US', null)]), $page);
+
+        self::assertNull($page->getTranslation('en_US')->getMetaTitle());
+        self::assertNull($page->getTranslation('en_US')->getMetaDescription());
+        self::assertSame('About us', $page->getTranslation('en_US')->getTitle());
+        self::assertSame('about-us', $page->getTranslation('en_US')->getSlug());
+    }
+
+    /**
+     * "Hide from search engines" is shared by all translations
+     *
+     * @test
+     */
+    public function it_switches_hide_from_search_engines_on_and_off(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('noindex', null, true)]), $page);
+        self::assertTrue($page->isNoindex());
+        self::assertSame(['en_US'], $page->getTranslations()->getKeys());
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('noindex', null, false)]), $page);
+        self::assertFalse($page->isNoindex());
+
+        $page->setNoindex(true);
+        self::applier()->apply(new ChangeSet([new SetEntryValue('noindex', null, null)]), $page);
+        self::assertFalse($page->isNoindex(), 'Removing the value switches it off');
     }
 
     /**
@@ -628,6 +673,13 @@ final class ChangeSetApplierTest extends TestCase
         yield 'a title that is not a string' => [$page, new SetEntryValue('title', 'en_US', ['About']), 'The entry field "title" must be a string or null'];
         yield 'the translation state of a field the entry does not have' => [$page, new SetEntryTranslated('subtitle', 'en_US', null), 'The content type "page" has no entry field "subtitle"'];
         yield 'the translation state of a slug of a content type without its own URL' => [$recipe, new SetEntryTranslated('slug', 'en_US', null), 'The content type "recipe" has no entry field "slug"'];
+        yield 'a meta title of a content type without its own URL' => [$recipe, new SetEntryValue('metaTitle', 'en_US', 'Pancakes'), 'The content type "recipe" has no entry field "metaTitle"'];
+        yield 'a meta description of a content type without its own URL' => [$recipe, new SetEntryValue('metaDescription', 'en_US', 'Pancakes'), 'The content type "recipe" has no entry field "metaDescription"'];
+        yield 'a meta description that is not a string' => [$page, new SetEntryValue('metaDescription', 'en_US', 7), 'The entry field "metaDescription" must be a string or null'];
+        yield 'hide from search engines of a content type without its own URL' => [$recipe, new SetEntryValue('noindex', null, true), 'The content type "recipe" has no entry field "noindex"'];
+        yield 'hide from search engines in a locale' => [$page, new SetEntryValue('noindex', 'en_US', true), 'The entry field "noindex" is shared by all translations, so a value takes no locale'];
+        yield 'hide from search engines that is not true or false' => [$page, new SetEntryValue('noindex', null, 'yes'), 'The entry field "noindex" must be true, false or null'];
+        yield 'the translation state of hide from search engines' => [$page, new SetEntryTranslated('noindex', 'en_US', null), 'The entry field "noindex" is shared by all translations, so it has no translation state'];
     }
 
     /**

@@ -30,6 +30,8 @@ use Setono\SyliusCMSPlugin\Model\Revision;
 use Setono\SyliusCMSPlugin\Model\RevisionInterface;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSetInterface;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Model\ShareLink;
 use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
@@ -38,6 +40,7 @@ use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
+use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepository;
 use Setono\SyliusCMSPlugin\Repository\ShareLinkRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
@@ -133,6 +136,14 @@ final class ConfigurationTest extends TestCase
                         'model' => OldSlug::class,
                         'interface' => OldSlugInterface::class,
                         'repository' => OldSlugRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'scheduled_publish' => [
+                    'classes' => [
+                        'model' => ScheduledPublish::class,
+                        'interface' => ScheduledPublishInterface::class,
+                        'repository' => ScheduledPublishRepository::class,
                         'factory' => Factory::class,
                     ],
                 ],

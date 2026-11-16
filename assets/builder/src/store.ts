@@ -13,20 +13,47 @@ import type { Locale } from './config';
 import { isRemovedLayout, layoutOf, switchLayout } from './layouts';
 import { localeOf } from './locales';
 import { entryValues, sourceOfTyped, upToDate } from './translationState';
-import type { BlockTypeDefinition, Clash, ConditionKindDefinition, ContentTypeDefinition, Entry, EntryStatus, FieldValues, JsonValue, LayoutDefinition, StoredBlock, TranslationSource, VisibilityCondition } from './types';
+import type {
+    BlockTypeDefinition,
+    Clash,
+    ConditionKindDefinition,
+    ContentTypeDefinition,
+    Entry,
+    EntryStatus,
+    FieldValues,
+    JsonValue,
+    LayoutDefinition,
+    Schedule,
+    StoredBlock,
+    TranslationSource,
+    VisibilityCondition,
+} from './types';
 import { normalizeValue, writeEntryTranslated, writeEntryValue, writeFieldValue, writeTranslated } from './values';
 
 enablePatches();
 
 /**
  * idle until the first edit, then saving while there are unsaved changes, then saved, or failed. stale when the server
- * can't merge a save onto what colleagues saved, so nothing saves until the working copy is loaded again.
+ * can't merge a save onto what colleagues saved, so nothing saves until the working copy is loaded again. locked when
+ * the server refused a save because a scheduled publish locks the working copy, which the builder then loads again.
  */
-export type SaveState = 'idle' | 'saving' | 'saved' | 'failed' | 'stale';
+export type SaveState = 'idle' | 'saving' | 'saved' | 'failed' | 'stale' | 'locked';
 
 export type PublishState = 'idle' | 'publishing' | 'failed';
 
 export type DiscardState = 'idle' | 'discarding' | 'failed';
+
+export type ScheduleState = 'idle' | 'scheduling' | 'failed';
+
+export type CancelScheduleState = 'idle' | 'cancelling' | 'failed';
+
+/**
+ * Whether the scheduled publish locks the working copy: while it waits, overdue or not, until it runs or is cancelled.
+ * One that failed no longer does. See "Scheduled publishes" in docs/spec/publishing.md
+ */
+export function locks(schedule: Schedule | null): boolean {
+    return schedule !== null && schedule.status !== 'scheduled_publish_failed';
+}
 
 export interface BuilderData {
     /** The one locale the builder edits, which the locale switcher picks. */
@@ -69,6 +96,12 @@ export interface BuilderData {
      */
     refusedSlugs: Record<string, string>;
     discardState: DiscardState;
+    /** The entry's scheduled publish, or null. While it waits, the working copy is read-only: edits are refused. */
+    schedule: Schedule | null;
+    scheduleState: ScheduleState;
+    /** Why the server refused the last schedule, such as a time that isn't in the future, or null. */
+    scheduleRefusal: string | null;
+    cancelScheduleState: CancelScheduleState;
 }
 
 export interface BuilderActions {
@@ -147,6 +180,11 @@ export interface BuilderActions {
     /** Records that an entry field's outdated value in the edited locale is up to date with the value it was translated from. */
     markEntryValueUpToDate(field: string): void;
     /**
+     * Sets the value of an entry field all translations share, such as "Hide from search engines". null removes it.
+     * Values set one after another in the same field are undone in one step.
+     */
+    setSharedEntryValue(field: string, value: JsonValue | null): void;
+    /**
      * Adds a translation in the edited locale with these fields, such as the title and slug of the translation it falls
      * back to, and where they're translated from, or gives the translation it has them. A new one starts shown before
      * the first publish, and held back after it.
@@ -160,9 +198,10 @@ export interface BuilderActions {
     redo(): boolean;
     /**
      * Loads a working copy from the server in place of the one being edited, such as the published content after
-     * discarding the draft. It isn't an edit: nothing is left to save or undo.
+     * discarding the draft. It isn't an edit: nothing is left to save or undo. With a schedule, it puts the entry's
+     * scheduled publish in place too.
      */
-    load(entry: Entry, status: EntryStatus, lockToken: number): void;
+    load(entry: Entry, status: EntryStatus, lockToken: number, schedule?: Schedule | null): void;
     /**
      * Pulls in a working copy the server merged a save onto, with colleagues' changes in it. The changes not yet saved
      * go on top, the way the server will apply them, and the undo stack keeps the edits that colleagues' changes leave
@@ -192,10 +231,23 @@ export interface BuilderStoreOptions {
     entry: Entry;
     status: EntryStatus;
     lockToken?: number;
+    /** The entry's scheduled publish, which locks the working copy while it waits. */
+    schedule?: Schedule | null;
     generateKey?: () => string;
 }
 
-export function createBuilderStore({ locale, locales = [], blockTypes, contentTypes, conditionKinds = [], entry, status, lockToken = 0, generateKey = generateBlockKey }: BuilderStoreOptions): BuilderStore {
+export function createBuilderStore({
+    locale,
+    locales = [],
+    blockTypes,
+    contentTypes,
+    conditionKinds = [],
+    entry,
+    status,
+    lockToken = 0,
+    schedule = null,
+    generateKey = generateBlockKey,
+}: BuilderStoreOptions): BuilderStore {
     const chainOf = (code: string): string[] => localeOf(locales, code).fallbackChain;
     const blockTypesByCode = new Map(blockTypes.map((blockType) => [blockType.code, blockType]));
     const contentType = contentTypes.find((candidate) => candidate.code === entry.contentType);
@@ -225,10 +277,13 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
     return createStore<BuilderState>()((set, get) => {
         /**
          * Puts a changed working copy in place, with the changes its patches make left to save. A selected block it no
-         * longer has is no longer selected.
+         * longer has is no longer selected. While a scheduled publish locks the working copy, it's left as it is.
          */
         const change = (next: Entry, patches: readonly Patch[], history: History, extra: Partial<BuilderData> = {}): void => {
             const state = get();
+            if (locks(state.schedule)) {
+                return;
+            }
 
             set({
                 ...extra,
@@ -246,6 +301,10 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
          */
         const edit = (recipe: (working: Entry) => void, extra: Partial<BuilderData> = {}, group: string | null = null): void => {
             const state = get();
+            if (locks(state.schedule)) {
+                return;
+            }
+
             const [next, patches, inversePatches] = produceWithPatches<Entry, Entry>(state.entry, recipe);
             if (patches.length === 0) {
                 if (Object.keys(extra).length > 0) {
@@ -289,9 +348,13 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
             publishRefusal: null,
             refusedSlugs: {},
             discardState: 'idle',
+            schedule,
+            scheduleState: 'idle',
+            scheduleRefusal: null,
+            cancelScheduleState: 'idle',
 
             addBlock(code, parent = null, index) {
-                if (!insertableIn(rules, get().entry.tree.blocks, parent).some((blockType) => blockType.code === code)) {
+                if (locks(get().schedule) || !insertableIn(rules, get().entry.tree.blocks, parent).some((blockType) => blockType.code === code)) {
                     return null;
                 }
 
@@ -314,7 +377,7 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
             },
 
             moveBlocks(keys, parent, index) {
-                if (!canMoveBlocks(rules, get().entry.tree.blocks, keys, parent)) {
+                if (locks(get().schedule) || !canMoveBlocks(rules, get().entry.tree.blocks, keys, parent)) {
                     return false;
                 }
 
@@ -368,6 +431,10 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
                 }
             },
 
+            setSharedEntryValue(field, value) {
+                edit((working) => writeFieldValue(working.fields, field, false, '', value), {}, JSON.stringify(['set_entry_value', field, null]));
+            },
+
             addTranslation(fields, translated = {}) {
                 const { locale: edited, status: current } = get();
                 const values = Object.fromEntries(Object.entries(fields).map(([field, value]) => [field, normalizeValue(value)]));
@@ -408,7 +475,7 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
 
             duplicateBlocks(keys) {
                 const originals = topmostBlocks(get().entry.tree.blocks, keys);
-                if (originals.length === 0 || !canDuplicate(rules, get().entry.tree.blocks, originals.map((block) => block.key))) {
+                if (locks(get().schedule) || originals.length === 0 || !canDuplicate(rules, get().entry.tree.blocks, originals.map((block) => block.key))) {
                     return null;
                 }
 
@@ -446,10 +513,11 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
                 set({ selection: [...selection, key], selectedKey: key });
             },
 
-            load(loaded, loadedStatus, loadedLockToken) {
+            load(loaded, loadedStatus, loadedLockToken, loadedSchedule) {
                 const { selectedKey, selection } = get();
 
                 set({
+                    ...(loadedSchedule === undefined ? {} : { schedule: loadedSchedule }),
                     entry: loaded,
                     status: loadedStatus,
                     lockToken: loadedLockToken,
@@ -508,7 +576,9 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
                             break;
                         }
                         case 'entry_value':
-                            if (clash.locale !== null) {
+                            if (clash.locale === null) {
+                                writeFieldValue(working.fields, clash.field, false, '', clash.mine);
+                            } else {
                                 writeEntryValue(working, clash.locale, clash.field, clash.mine, get().status === 'never_published');
                             }
                             break;

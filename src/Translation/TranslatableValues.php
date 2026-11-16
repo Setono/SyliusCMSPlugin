@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\EntryFields;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -49,13 +50,12 @@ final readonly class TranslatableValues
         $contentType = $this->contentTypes->getByEntry($workingCopy);
         /** @var array<string, EntryTranslationInterface> $translations Translations are indexed by locale */
         $translations = $workingCopy->getTranslations()->toArray();
-        $entryFields = $contentType->hasOwnUrl() ? ['title', 'slug'] : ['title'];
-        foreach ($entryFields as $field) {
+        foreach (EntryFields::translatable($contentType) as $field) {
             $this->add(
                 $values,
                 sprintf('entry.%s', $field),
                 null,
-                array_map(static fn (EntryTranslationInterface $translation): ?string => 'slug' === $field ? $translation->getSlug() : $translation->getTitle(), $translations),
+                array_map(static fn (EntryTranslationInterface $translation): ?string => EntryFields::read($translation, $field), $translations),
                 array_map(static fn (EntryTranslationInterface $translation): ?array => $translation->getTranslated()[$field] ?? null, $translations),
                 $localeCode,
             );

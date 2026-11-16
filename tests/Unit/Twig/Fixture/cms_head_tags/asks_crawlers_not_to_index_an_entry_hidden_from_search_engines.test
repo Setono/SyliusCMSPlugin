@@ -1,0 +1,8 @@
+--TEST--
+cms_head_tags() asks crawlers not to index an entry when "Hide from search engines" is on
+--TEMPLATE--
+{{ cms_head_tags(entry).noindex ? 'noindex' : 'index' }}
+--DATA--
+return $this->rendering(['entry' => $this->pageWith(['en_US' => ['title' => 'About us', 'slug' => 'about-us']], noindex: true)])
+--EXPECT--
+noindex

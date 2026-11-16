@@ -73,6 +73,7 @@ final class ContentTypeRegistry implements ContentTypeRegistryInterface
             $resource['model'],
             $resource['translation'],
             $resource['resource'],
+            $attribute->descriptionField,
         );
     }
 }

@@ -1,0 +1,5 @@
+{# A scheduled publish that waits: label.parameters.at #}
+<span class="ui teal label">
+    <i class="clock outline icon"></i>
+    {{- 'setono_sylius_cms.ui.status_label.publishes_at_a_time'|trans({'%at%': label.parameters.at|date('Y-m-d H:i')}) -}}
+</span>

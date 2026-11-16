@@ -55,6 +55,20 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\ScheduleEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\ScheduleEntryAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\CancelScheduleAction" class="Setono\SyliusCMSPlugin\Controller\Admin\CancelScheduleAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
@@ -125,6 +139,8 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsNormalizer"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\PresenceTrackerInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Translation\TranslatableValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+            <argument type="service" id="clock"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction">
@@ -181,6 +197,25 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface"/>
             <argument type="service" id="translator"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ScheduleEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ScheduleEntryAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\WorkingCopyAnswer"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\CancelScheduleAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\CancelScheduleAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\WorkingCopyAnswer"/>
 
             <tag name="controller.service_arguments"/>
         </service>

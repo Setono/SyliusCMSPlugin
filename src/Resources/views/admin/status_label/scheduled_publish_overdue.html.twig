@@ -1,0 +1,5 @@
+{# A scheduled publish whose time passed without it running: label.parameters.at #}
+<span class="ui red label" title="{{ 'setono_sylius_cms.ui.status_label.scheduled_for'|trans({'%at%': label.parameters.at|date('Y-m-d H:i')}) }}">
+    <i class="exclamation triangle icon"></i>
+    {{- 'setono_sylius_cms.ui.status_label.scheduled_publish_overdue'|trans -}}
+</span>
