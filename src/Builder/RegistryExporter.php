@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Builder;
 
 use Setono\SyliusCMSPlugin\Attribute\Style;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Registry\AllowedBlockType;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
@@ -96,6 +97,8 @@ final readonly class RegistryExporter
             'blocks' => null === $contentType->blocks ? null : self::allowed($this->nestingRules->topLevel($contentType->code)),
             // null when it has no URL of its own, so no slug
             'prefix' => $contentType->prefix,
+            // Whether its entries can be a channel's homepage, which only pages can, so the settings offer "Homepage of"
+            'homepage' => is_a($contentType->modelClass, PageInterface::class, true),
             'layouts' => $this->layouts($contentType->code),
         ];
     }

@@ -88,6 +88,8 @@ export interface EntrySettings {
     /** Channel codes. */
     channels: string[];
     audience: { mode: AudienceMode; groups: string[] };
+    /** "Homepage of": the codes of the channels a page is the homepage of. Empty for every content type but Page. */
+    homepageOf: string[];
 }
 
 /** Someone else who has the entry open in the builder. */
@@ -253,6 +255,8 @@ export interface ContentTypeDefinition {
     blocks: AllowedBlockType[] | null;
     /** Its URL prefix, '' for URLs at the root, or null when it has no URL of its own, so no slug. */
     prefix?: string | null;
+    /** Whether its entries can be a channel's homepage, which only pages can. Without it, they can't. */
+    homepage?: boolean;
     /** Its layouts, the default first, or none for a content type without its own URL. */
     layouts: LayoutDefinition[];
 }

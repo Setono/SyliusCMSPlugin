@@ -41,6 +41,8 @@ export interface BuilderSession {
     customerGroups: CustomerGroup[];
     /** The URL prefix of the entry's content type, '' for URLs at the root, or null when it has no URL of its own. */
     urlPrefix: string | null;
+    /** Whether the entry can be a channel's homepage, which only a page can. */
+    homepage: boolean;
     /** The warnings about the entry's URLs and the URLs of its old slugs, as the server has them. */
     urls: UrlsStore;
     /** Says the editor changed the title in a locale, so the slug can follow it. */

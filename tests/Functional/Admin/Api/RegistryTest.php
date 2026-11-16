@@ -148,10 +148,10 @@ final class RegistryTest extends BuilderApiTestCase
 
         // The test application adds a content type of its own, without a URL and so without layouts, and a layout of its own to pages
         self::assertIsArray($registry['contentTypes']);
-        self::assertSame(['code' => 'announcement', 'label' => 'Announcement', 'blocks' => $all, 'prefix' => null, 'layouts' => []], $registry['contentTypes'][0]);
+        self::assertSame(['code' => 'announcement', 'label' => 'Announcement', 'blocks' => $all, 'prefix' => null, 'homepage' => false, 'layouts' => []], $registry['contentTypes'][0]);
         $page = $registry['contentTypes'][1];
         self::assertIsArray($page);
-        self::assertSame(['page', 'Page', $all, ''], [$page['code'], $page['label'], $page['blocks'], $page['prefix']]);
+        self::assertSame(['page', 'Page', $all, '', true], [$page['code'], $page['label'], $page['blocks'], $page['prefix'], $page['homepage']]);
         self::assertIsArray($page['layouts']);
         $layouts = [];
         foreach ($page['layouts'] as $layout) {
