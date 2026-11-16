@@ -46,4 +46,6 @@
     --builder-tree-width: 17rem;
     --builder-selection-width: 21rem;
     --builder-preview-mobile-width: 375px;
+    --builder-popover-width: 18rem;
+    --builder-layout-card-min-width: 6.5rem;
 }

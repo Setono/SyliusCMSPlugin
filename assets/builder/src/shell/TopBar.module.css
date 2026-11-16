@@ -319,7 +319,7 @@
 /* Rendered in a portal at the end of the body, outside the shell, so it sets its own type and box model. */
 .schedule {
     box-sizing: border-box;
-    width: 18rem;
+    width: var(--builder-popover-width);
     max-width: calc(100vw - 2 * var(--builder-space-2));
     padding: var(--builder-space-3);
     border: 1px solid var(--builder-color-border);
