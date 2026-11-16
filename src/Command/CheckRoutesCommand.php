@@ -25,8 +25,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'setono:cms:check-routes', description: 'Lists every entry URL that another route now matches')]
 final class CheckRoutesCommand extends Command
 {
-    private const BATCH_SIZE = 100;
-
     /**
      * @param ObjectManager $manager the manager of entries
      */
@@ -44,23 +42,20 @@ final class CheckRoutesCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $rows = [];
-        $batched = 0;
         $published = [];
-        foreach ($this->entries->iterateAll() as $entry) {
+        // A batch's problems are counted again, and then it's dropped, as nothing else is written
+        $afterBatch = function () use (&$published): void {
+            $this->countProblems($published);
+            $published = [];
+            $this->manager->clear();
+        };
+        foreach (Batches::of($this->entries->iterateAll(), $afterBatch) as $entry) {
             foreach ($this->takenUrls->findLive($entry) as $taken) {
                 $rows[] = [$taken->channelCode ?? '', $taken->localeCode, sprintf('/%s/%s', $taken->localeCode, $taken->path), $taken->route];
             }
 
             if ($entry->isPublished()) {
                 $published[] = $entry;
-            }
-
-            // A batch's problems are counted again, and then it's dropped, as nothing else is written
-            if (self::BATCH_SIZE === ++$batched) {
-                $this->countProblems($published);
-                $published = [];
-                $this->manager->clear();
-                $batched = 0;
             }
         }
 

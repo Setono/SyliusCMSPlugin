@@ -30,8 +30,6 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 #[AsCommand(name: 'setono:cms:lint', description: 'Reports stored CMS values that don\'t fit their field type and blocks of unknown types')]
 final class LintCommand extends Command
 {
-    private const BATCH_SIZE = 100;
-
     /**
      * @param ObjectManager $manager the manager of entries and drafts
      * @param iterable<ProblemKindInterface> $kinds the kinds it reports: those whose setono_sylius_cms.problem_kind tag has `lint: true`
@@ -52,8 +50,9 @@ final class LintCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $rows = [];
-        $entries = $batched = 0;
-        foreach ($this->entries->iterateAll() as $entry) {
+        $entries = 0;
+        // Nothing is written, so a batch is dropped as it's done
+        foreach (Batches::of($this->entries->iterateAll(), $this->manager->clear(...)) as $entry) {
             $found = count($rows);
             foreach ($this->contents($entry) as $content => $read) {
                 try {
@@ -74,12 +73,6 @@ final class LintCommand extends Command
 
             if (count($rows) > $found) {
                 ++$entries;
-            }
-
-            // Nothing is written, so a batch is dropped as it's done
-            if (self::BATCH_SIZE === ++$batched) {
-                $this->manager->clear();
-                $batched = 0;
             }
         }
 

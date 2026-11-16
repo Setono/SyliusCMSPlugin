@@ -22,8 +22,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'setono:cms:upgrade', description: 'Runs the upgraders over all stored CMS data and writes it back')]
 final class UpgradeCommand extends Command
 {
-    private const BATCH_SIZE = 100;
-
     /**
      * @param ObjectManager $manager the manager of entries, drafts and revisions
      */
@@ -47,8 +45,8 @@ final class UpgradeCommand extends Command
         $dryRun = true === $input->getOption('dry-run');
         $verb = $dryRun ? 'Would upgrade' : 'Upgraded';
 
-        $blockTrees = $drafts = $revisions = $batched = 0;
-        foreach ($this->entries->iterateAll() as $entry) {
+        $blockTrees = $drafts = $revisions = 0;
+        foreach (Batches::of($this->entries->iterateAll(), fn () => $this->writeBatch($dryRun)) as $entry) {
             $rewrite = $this->rewriter->rewrite($entry);
             $what = sprintf('the %s %s', $this->contentTypes->getByEntry($entry)->code, $entry->getUuid());
 
@@ -69,11 +67,6 @@ final class UpgradeCommand extends Command
 
             foreach ($rewrite->newer as $newer) {
                 $io->warning(sprintf('In %s: %s. It\'s kept as it is', $what, $newer));
-            }
-
-            if (self::BATCH_SIZE === ++$batched) {
-                $this->writeBatch($dryRun);
-                $batched = 0;
             }
         }
 
