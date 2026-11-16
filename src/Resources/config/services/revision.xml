@@ -32,5 +32,11 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner"/>
             <argument type="service" id="router"/>
         </service>
+
+        <!-- Deletes the revisions beyond revisions.keep per entry, for setono:cms:revisions:prune -->
+        <service id="Setono\SyliusCMSPlugin\Revision\RevisionPruner" class="Setono\SyliusCMSPlugin\Revision\RevisionPruner">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface"/>
+            <argument>%setono_sylius_cms.revisions.keep%</argument>
+        </service>
     </services>
 </container>

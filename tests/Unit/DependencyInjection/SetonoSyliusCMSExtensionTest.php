@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Attribute\Layout;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
+use Setono\SyliusCMSPlugin\Revision\RevisionPruner;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
@@ -146,6 +147,17 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.block_styles', $blockStyles);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(BlockTypeRegistry::class, 3, '%setono_sylius_cms.block_styles%');
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_how_many_revisions_each_entry_keeps_to_the_pruner(): void
+    {
+        $this->load(['revisions' => ['keep' => 10]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.revisions.keep', 10);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(RevisionPruner::class, 1, '%setono_sylius_cms.revisions.keep%');
     }
 
     /**
