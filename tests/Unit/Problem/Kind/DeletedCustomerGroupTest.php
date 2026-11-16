@@ -55,7 +55,7 @@ final class DeletedCustomerGroupTest extends TestCase
     }
 
     /**
-     * A stored condition without its negate switch is "is one of"
+     * A stored condition without its negate switch is read as "is one of", which the tree's serializer fills in
      *
      * @test
      */
