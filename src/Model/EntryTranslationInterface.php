@@ -24,4 +24,12 @@ interface EntryTranslationInterface extends ResourceInterface, TranslationInterf
     public function getSlug(): ?string;
 
     public function setSlug(?string $slug): void;
+
+    /**
+     * The translation's "Show in <language>" switch, which holds it back when it's off: the entry then doesn't show in
+     * its locale. See "Held-back translations" in docs/spec/publishing.md
+     */
+    public function isShown(): bool;
+
+    public function setShown(bool $shown): void;
 }

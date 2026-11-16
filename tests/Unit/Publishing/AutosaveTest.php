@@ -24,12 +24,14 @@ use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Publishing\Autosave;
 use Setono\SyliusCMSPlugin\Publishing\EditRecorder;
 use Setono\SyliusCMSPlugin\Publishing\EntryLock;
 use Setono\SyliusCMSPlugin\Publishing\StaleLockTokenException;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -307,6 +309,7 @@ final class AutosaveTest extends TestCase
                     TextHandler::class => static fn (): TextHandler => new TextHandler(),
                     ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
                 ])),
+                new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
             ),
             $clock,
             new EditRecorder($this->tokenStorage, $clock),

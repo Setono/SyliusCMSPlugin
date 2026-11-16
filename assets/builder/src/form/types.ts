@@ -17,6 +17,8 @@ export interface FieldControlProps {
     locale: string;
     /** The id of the field's help text, when it has one. */
     describedBy?: string | undefined;
+    /** What it shows while it's empty: the value a translatable field falls back to. */
+    placeholder?: JsonValue | undefined;
 }
 
 export type FieldControl = ComponentType<FieldControlProps>;

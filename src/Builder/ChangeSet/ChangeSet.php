@@ -11,7 +11,8 @@ use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
  * What the builder autosaves: the changes it made since it last loaded, as values by field and locale,
- * block styles, and blocks added, moved or removed. See "Saving" in docs/spec/builder.md. The body format is internal to the builder
+ * block styles, blocks added, moved or removed, and the entry's own values and translations' shown switches.
+ * See "Saving" in docs/spec/builder.md. The body format is internal to the builder
  */
 final readonly class ChangeSet
 {
@@ -69,6 +70,13 @@ final readonly class ChangeSet
                 'locale' => $change->locale,
                 'value' => $change->value,
             ]),
+            $change instanceof SetEntryValue => new ListedObject([
+                'op' => 'set_entry_value',
+                'field' => $change->field,
+                'locale' => $change->locale,
+                'value' => $change->value,
+            ]),
+            $change instanceof SetShown => new ListedObject(['op' => 'set_shown', 'locale' => $change->locale, 'shown' => $change->shown]),
             default => throw new \LogicException(sprintf('Unknown change %s', $change::class)),
         }, $this->changes)];
     }
@@ -103,7 +111,16 @@ final readonly class ChangeSet
                 self::string($change, 'key'),
                 array_key_exists('style', $change) ? self::nullableString($change, 'style') : throw new InvalidChangeSetException('A set_style change must have a style'),
             ),
-            default => throw new InvalidChangeSetException('A change must have the op add_block, move_block, remove_block, set_value or set_style'),
+            'set_entry_value' => new SetEntryValue(
+                self::string($change, 'field'),
+                self::nullableString($change, 'locale'),
+                array_key_exists('value', $change) ? $change['value'] : throw new InvalidChangeSetException('A set_entry_value change must have a value'),
+            ),
+            'set_shown' => new SetShown(
+                self::string($change, 'locale'),
+                is_bool($change['shown'] ?? null) ? $change['shown'] : throw new InvalidChangeSetException('A set_shown change must have a shown switch that is true or false'),
+            ),
+            default => throw new InvalidChangeSetException('A change must have the op add_block, move_block, remove_block, set_value, set_style, set_entry_value or set_shown'),
         };
     }
 

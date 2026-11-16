@@ -101,6 +101,9 @@ setono_sylius_cms:
         add_block_above: Add block above
         add_block_below: Add block below
         add_block_inside: 'Add a block inside %block%'
+        add_translation: 'Add %locale% translation'
+        all_languages: All languages
+        all_languages_help: A change here changes every language
         also_editing: Also editing
         audience: Audience
         audience_everyone: Everyone
@@ -113,11 +116,13 @@ setono_sylius_cms:
         blocks_selected: '%count% blocks selected'
         channels: Channels
         children: Blocks inside
+        copy_it_here: Copy it here
         clash: A colleague changed this too
         clash_changed_block: 'You deleted %block%, which a colleague changed.'
         clash_count: '%index% of %count%'
         clash_deleted_block: 'A colleague deleted %block%, which you changed.'
         clash_empty: Nothing
+        clash_entry_value: 'You and a colleague both changed the %field% in %locale%.'
         clash_theirs: Theirs
         clash_value: 'You and a colleague both changed %field% in %block%.'
         clash_yours: Yours
@@ -133,11 +138,14 @@ setono_sylius_cms:
         duplicate: Duplicate
         enabled: Enabled
         entry_settings: Entry settings
+        entry_title: Title
+        falls_back_to: 'Empty here, so it shows the %locale% text'
         guests: Guests
         has_errors: Has errors
         keep_mine: Keep mine
         load_failed: Couldn't load the entry
         loading: Loading…
+        locale: Language
         mobile: Mobile
         move_down: Move down
         move_up: Move up
@@ -146,6 +154,7 @@ setono_sylius_cms:
         no_group: Signed in without a group
         no_matching_block_types: No block types match
         no_style: None
+        no_translation: 'This entry has no translation in %locale% yet.'
         path: Path
         preview: Preview
         preview_channel: Preview channel
@@ -177,7 +186,10 @@ setono_sylius_cms:
         select_parent: Select parent
         settings: Settings
         show_from: Show from
+        show_in_locale: 'Show in %locale%'
+        show_in_locale_help: 'Off holds the translation back, so shoppers don''t see the entry in %locale%. It takes effect when you publish.'
         show_until: Show until
+        slug: Slug
         take_theirs: Take theirs
         takes_effect_on_save: Takes effect when saved, without publishing
         title: Builder

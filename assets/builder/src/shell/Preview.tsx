@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { envelope, openEnvelope, type FromBridge } from '../bridge/protocol';
 import { useBuilder, useBuilderState, usePreviewState } from '../context';
 import { useTranslator } from '../i18n';
+import { hasTranslation } from '../locales';
 import { createPreviewSync, type PreviewSync } from '../previewSync';
 import type { BlockSpot } from '../tree';
 import { BlockPickerAt, soleBlockType } from './BlockPicker';
 import styles from './Preview.module.css';
+import { TranslationBanner } from './TranslationBanner';
 
 type Frame = { state: 'waiting' } | { state: 'loaded'; url: string; version: number } | { state: 'failed' };
 
@@ -25,7 +27,8 @@ export interface PreviewProps {
 /**
  * The centre pane: the real shop page with the working copy, in an iframe from the admin's own host. It loads with a
  * new preview token when the channel or locale changes. Edits are patched into the page by the bridge in it, and the
- * page reloads only for what the bridge can't patch in.
+ * page reloads only for what the bridge can't patch in. In a locale the entry has no translation in, a banner shows
+ * instead, because the entry has no page there.
  */
 export function Preview({ className, onOpenSettings }: PreviewProps) {
     const t = useTranslator();
@@ -33,6 +36,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
     const channel = usePreviewState((state) => state.channel);
     const width = usePreviewState((state) => state.width);
     const locale = useBuilderState((state) => state.locale);
+    const translated = useBuilderState((state) => hasTranslation(state.entry, state.locale));
     const [frame, setFrame] = useState<Frame>({ state: 'waiting' });
     const [reloads, setReloads] = useState(0);
     const [picker, setPicker] = useState<Picker | null>(null);
@@ -89,8 +93,14 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
             return undefined;
         }
 
-        let active = true;
         sync.current?.disconnect();
+        if (!translated) {
+            setFrame({ state: 'waiting' });
+
+            return undefined;
+        }
+
+        let active = true;
 
         createPreviewUrl({ channel, locale }).then(
             (url) => {
@@ -109,7 +119,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
         return () => {
             active = false;
         };
-    }, [createPreviewUrl, channel, locale, reloads]);
+    }, [createPreviewUrl, channel, locale, translated, reloads]);
 
     useEffect(() => {
         if (frame.state !== 'loaded') {
@@ -143,6 +153,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
 
     return (
         <main className={[className, styles.preview].filter(Boolean).join(' ')} data-width={width}>
+            <TranslationBanner />
             {frame.state === 'loaded' && <iframe ref={iframe} key={frame.version} className={styles.frame} title={t('setono_sylius_cms.builder.preview')} src={frame.url} />}
             {frame.state === 'failed' && (
                 <p role="alert" className={styles.failed}>

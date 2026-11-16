@@ -13,6 +13,8 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\Clash;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\Merge;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetShown;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -408,6 +410,58 @@ final class ChangeSetMergerTest extends TestCase
 
         self::assertSame([], $merge->changeSet->changes);
         self::assertSame([['kind' => 'changed_block', 'key' => self::A]], self::clashes($merge));
+    }
+
+    /**
+     * @test
+     */
+    public function it_applies_entry_values_set_in_another_field_or_another_locale(): void
+    {
+        $mine = [new SetEntryValue('title', 'da_DK', 'Om os'), new SetEntryValue('slug', 'en_US', 'about')];
+
+        $merge = (new ChangeSetMerger())->merge(
+            new ChangeSet([new SetEntryValue('title', 'en_US', 'About us'), new SetEntryValue('slug', 'da_DK', 'om-os')]),
+            new ChangeSet($mine),
+            self::tree(),
+        );
+
+        self::assertEquals($mine, $merge->changeSet->changes);
+        self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_a_clash_instead_of_applying_an_entry_value_a_colleague_set_in_the_same_locale(): void
+    {
+        $same = new SetEntryValue('slug', 'da_DK', 'om-os');
+
+        $merge = (new ChangeSetMerger())->merge(
+            new ChangeSet([new SetEntryValue('title', 'da_DK', 'Om'), new SetEntryValue('title', 'da_DK', 'Om dem'), $same]),
+            new ChangeSet([new SetEntryValue('title', 'da_DK', 'Om os'), $same]),
+            self::tree(),
+        );
+
+        self::assertEquals([$same], $merge->changeSet->changes);
+        self::assertSame(
+            [['kind' => 'entry_value', 'field' => 'title', 'locale' => 'da_DK', 'mine' => 'Om os', 'theirs' => 'Om dem']],
+            array_map(static fn (Clash $clash): array => $clash->toArray(), $merge->clashes),
+        );
+    }
+
+    /**
+     * A switch is no text to lose: the editor's last wins, as for a block style
+     *
+     * @test
+     */
+    public function it_applies_the_shown_switch_the_editor_set_last_when_both_set_it(): void
+    {
+        $mine = new SetShown('da_DK', true);
+
+        $merge = (new ChangeSetMerger())->merge(new ChangeSet([new SetShown('da_DK', false)]), new ChangeSet([$mine]), self::tree());
+
+        self::assertEquals([$mine], $merge->changeSet->changes);
+        self::assertSame([], $merge->clashes);
     }
 
     /**

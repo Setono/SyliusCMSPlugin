@@ -59,6 +59,7 @@ final class Configuration implements ConfigurationInterface
         ;
 
         $this->addBlockStylesSection($rootNode);
+        $this->addFallbackLocalesSection($rootNode);
         $this->addResourcesSection($rootNode);
 
         return $treeBuilder;
@@ -86,6 +87,26 @@ final class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                     ->validate()->always(self::assertBlockStyleCodes(...))->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * The middle of the fallback chain, per locale: the locales a translatable field falls back through, in order, before
+     * the store's fallback locale. See "Fallback chain" in docs/spec/localization.md
+     */
+    private function addFallbackLocalesSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('fallback_locales')
+                    ->info('The middle of the fallback chain, per locale: locale code => the locales it falls back through, in order, before the store\'s fallback locale')
+                    ->useAttributeAsKey('locale')
+                    ->arrayPrototype()
+                        ->performNoDeepMerging()
+                        ->scalarPrototype()->cannotBeEmpty()->end()
+                    ->end()
                 ->end()
             ->end()
         ;

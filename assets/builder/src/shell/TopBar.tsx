@@ -1,5 +1,6 @@
-import { useBuilder, useBuilderState, usePresenceState, usePreviewState } from '../context';
+import { useBuilder, useBuilderState, usePresenceState, usePreviewState, useSettingsState } from '../context';
 import { useTranslator, type MessageKey } from '../i18n';
+import { localeOf, offeredLocales } from '../locales';
 import type { EntryStatus } from '../types';
 import { ArrowLeftIcon, DesktopIcon, MobileIcon, RedoIcon, UndoIcon } from './icons';
 import { saveStateText } from './saveStateText';
@@ -13,11 +14,17 @@ const statusLabels: Record<EntryStatus, MessageKey> = {
 
 export function TopBar() {
     const t = useTranslator();
-    const { backUrl } = useBuilder();
+    const { backUrl, locales } = useBuilder();
+    // The title in the edited locale, or the one it falls back to
     const title = useBuilderState((state) => {
-        const value = state.entry.translations[state.locale]?.fields.title;
+        for (const locale of localeOf(locales, state.locale).fallbackChain) {
+            const value = state.entry.translations[locale]?.fields.title;
+            if (typeof value === 'string' && value !== '') {
+                return value;
+            }
+        }
 
-        return typeof value === 'string' ? value : '';
+        return '';
     });
     const status = useBuilderState((state) => state.status);
 
@@ -33,6 +40,7 @@ export function TopBar() {
                     {t(statusLabels[status])}
                 </span>
             </div>
+            <LocaleSwitcher />
             <PreviewChannel />
             <PreviewWidth />
             <UndoRedo />
@@ -40,6 +48,32 @@ export function TopBar() {
             <Editors />
             <Publish />
         </div>
+    );
+}
+
+/**
+ * The one locale the builder edits, of the locales of the entry's channels. Switching reloads the preview in that
+ * locale. A store with one locale has nothing to switch.
+ */
+function LocaleSwitcher() {
+    const t = useTranslator();
+    const { store, locales, channels } = useBuilder();
+    const locale = useBuilderState((state) => state.locale);
+    const entryChannels = useSettingsState((state) => state.settings.channels);
+    const offered = offeredLocales(locales, channels, entryChannels, locale);
+
+    if (offered.length <= 1) {
+        return null;
+    }
+
+    return (
+        <select className={styles.channel} aria-label={t('setono_sylius_cms.builder.locale')} value={locale} onChange={(event) => store.getState().setLocale(event.currentTarget.value)}>
+            {offered.map(({ code, name }) => (
+                <option key={code} value={code}>
+                    {name}
+                </option>
+            ))}
+        </select>
     );
 }
 

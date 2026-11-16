@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Model;
 
 use Doctrine\Common\Collections\Collection;
-use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactoryInterface;
-use Setono\SyliusCMSPlugin\Factory\EntryChannelFactoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
+use Setono\SyliusCMSPlugin\Targeting\AudienceMode;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Resource\Model\ResourceInterface;
@@ -79,12 +78,22 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
     public function getChannelCodes(): array;
 
     /**
-     * Keeps the rows of the codes that stay and creates the rows of new ones through $factory. Change an entry's
-     * channels through ChannelsAndAudienceModifierInterface, which passes the entry_channel resource's factory
+     * Its channel rows. Change them through ChannelsAndAudienceModifierInterface, which creates rows through the
+     * entry_channel resource's factory. They're typed by the shipped model, which a project's own model extends to
+     * inherit its Doctrine mapping
      *
-     * @param iterable<string> $codes
+     * @return Collection<array-key, EntryChannel>
      */
-    public function setChannelCodes(iterable $codes, EntryChannelFactoryInterface $factory): void;
+    public function getChannels(): Collection;
+
+    public function hasChannel(EntryChannel $channel): bool;
+
+    /**
+     * @throws \LogicException when the row belongs to another entry
+     */
+    public function addChannel(EntryChannel $channel): void;
+
+    public function removeChannel(EntryChannel $channel): void;
 
     /**
      * The customers it shows to. An on-save setting (ADR 0010)
@@ -92,10 +101,27 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
     public function getAudience(): Audience;
 
     /**
-     * Keeps the rows of the groups that stay and creates the rows of new ones through $factory. Change an entry's
-     * audience through ChannelsAndAudienceModifierInterface, which passes the entry_audience_group resource's factory
+     * Change the audience through ChannelsAndAudienceModifierInterface, which changes the mode and the groups together
      */
-    public function setAudience(Audience $audience, EntryAudienceGroupFactoryInterface $factory): void;
+    public function setAudienceMode(AudienceMode $mode): void;
+
+    /**
+     * The rows of the groups its audience mode applies to. Change them through ChannelsAndAudienceModifierInterface,
+     * which creates rows through the entry_audience_group resource's factory. They're typed by the shipped model,
+     * which a project's own model extends to inherit its Doctrine mapping
+     *
+     * @return Collection<array-key, EntryAudienceGroup>
+     */
+    public function getAudienceGroups(): Collection;
+
+    public function hasAudienceGroup(EntryAudienceGroup $group): bool;
+
+    /**
+     * @throws \LogicException when the row belongs to another entry
+     */
+    public function addAudienceGroup(EntryAudienceGroup $group): void;
+
+    public function removeAudienceGroup(EntryAudienceGroup $group): void;
 
     public function isPublished(): bool;
 

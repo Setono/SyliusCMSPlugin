@@ -15,6 +15,8 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetShown;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
@@ -22,10 +24,15 @@ use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\ChangeSet\Fixture\SharedNote;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Component\DependencyInjection\ServiceLocator;
@@ -239,18 +246,31 @@ final class ChangeSetApplierTest extends TestCase
 
     /**
      * @test
+     *
+     * @dataProvider provideChangeSetsWithAnInvalidChange
      */
-    public function it_applies_nothing_when_one_change_is_invalid(): void
+    public function it_applies_nothing_when_one_change_is_invalid(Change ...$changes): void
     {
-        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)]);
+        $page = self::page(new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)]));
 
         try {
-            $this->apply($tree, new SetValue(self::A, 'text', 'en_US', 'Hello'), new RemoveBlock(self::B));
+            self::applier()->apply(new ChangeSet(array_values($changes)), $page);
             self::fail('The change set must be refused');
         } catch (InvalidChangeSetException) {
         }
 
-        self::assertSame([], $tree->blocks[0]->fields);
+        self::assertSame([], $page->getBlockTree()->blocks[0]->fields);
+        self::assertSame('About us', $page->getTranslation('en_US')->getTitle());
+        self::assertSame(['en_US'], $page->getTranslations()->getKeys());
+    }
+
+    /**
+     * @return iterable<string, list<Change>>
+     */
+    public function provideChangeSetsWithAnInvalidChange(): iterable
+    {
+        yield 'a block change after valid ones' => [new SetValue(self::A, 'text', 'en_US', 'Hello'), new SetEntryValue('title', 'en_US', 'About'), new RemoveBlock(self::B)];
+        yield 'an entry change after valid ones' => [new SetValue(self::A, 'text', 'en_US', 'Hello'), new SetEntryValue('title', 'da_DK', 'Om os'), new SetEntryValue('title', 'en_US', 1)];
     }
 
     /**
@@ -264,8 +284,117 @@ final class ChangeSetApplierTest extends TestCase
         self::applier()->apply(
             new ChangeSet([new class() implements Change {
             }]),
-            new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)]),
+            self::page(new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)])),
         );
+    }
+
+    /**
+     * @test
+     */
+    public function it_sets_and_removes_a_translations_title_and_slug(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('title', 'en_US', 'About'), new SetEntryValue('slug', 'en_US', 'about')]), $page);
+
+        self::assertSame('About', $page->getTranslation('en_US')->getTitle());
+        self::assertSame('about', $page->getTranslation('en_US')->getSlug());
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('title', 'en_US', ''), new SetEntryValue('slug', 'en_US', null)]), $page);
+
+        self::assertNull($page->getTranslation('en_US')->getTitle());
+        self::assertNull($page->getTranslation('en_US')->getSlug());
+    }
+
+    /**
+     * Translations made before the first publish start shown. See "Held-back translations" in docs/spec/publishing.md
+     *
+     * @test
+     */
+    public function it_adds_a_translation_that_starts_shown_to_an_entry_that_was_never_published(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('title', 'da_DK', 'Om os'), new SetEntryValue('slug', 'da_DK', 'om-os')]), $page);
+
+        $danish = $page->getTranslations()->get('da_DK');
+        self::assertInstanceOf(PageTranslation::class, $danish);
+        self::assertSame('Om os', $danish->getTitle());
+        self::assertSame('om-os', $danish->getSlug());
+        self::assertTrue($danish->isShown());
+        self::assertSame($page, $danish->getTranslatable());
+        self::assertSame($danish, $page->getTranslation('da_DK'));
+    }
+
+    /**
+     * A translation added after the first publish starts held back
+     *
+     * @test
+     */
+    public function it_adds_a_translation_that_starts_held_back_to_an_entry_that_has_been_published(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+        $page->publish(new \DateTimeImmutable());
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('title', 'da_DK', 'Om os')]), $page);
+
+        self::assertFalse($page->getTranslation('da_DK')->isShown());
+        self::assertTrue($page->getTranslation('en_US')->isShown());
+    }
+
+    /**
+     * @test
+     */
+    public function it_switches_a_translation_shown_and_held_back(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+
+        self::applier()->apply(new ChangeSet([new SetShown('en_US', false)]), $page);
+        self::assertFalse($page->getTranslation('en_US')->isShown());
+
+        self::applier()->apply(new ChangeSet([new SetShown('en_US', true)]), $page);
+        self::assertTrue($page->getTranslation('en_US')->isShown());
+    }
+
+    /**
+     * @test
+     */
+    public function it_adds_a_translation_switched_the_way_a_shown_change_says(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+        $page->publish(new \DateTimeImmutable());
+
+        self::applier()->apply(new ChangeSet([new SetShown('da_DK', true), new SetEntryValue('title', 'da_DK', 'Om os')]), $page);
+
+        self::assertTrue($page->getTranslation('da_DK')->isShown());
+        self::assertSame('Om os', $page->getTranslation('da_DK')->getTitle());
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidEntryChanges
+     */
+    public function it_refuses_an_entry_change_that_does_not_fit_the_content_type(EntryInterface $entry, Change $change, string $message): void
+    {
+        $this->expectException(InvalidChangeSetException::class);
+        $this->expectExceptionMessage($message);
+
+        self::applier()->apply(new ChangeSet([$change]), $entry);
+    }
+
+    /**
+     * @return iterable<string, array{EntryInterface, Change, string}>
+     */
+    public function provideInvalidEntryChanges(): iterable
+    {
+        $page = self::page(new StoredTree(null, []));
+        $recipe = new Recipe();
+
+        yield 'a field the entry does not have' => [$page, new SetEntryValue('subtitle', 'en_US', 'Hello'), 'The content type "page" has no entry field "subtitle"'];
+        yield 'a slug of a content type without its own URL' => [$recipe, new SetEntryValue('slug', 'en_US', 'pancakes'), 'The content type "recipe" has no entry field "slug"'];
+        yield 'a translatable field without a locale' => [$page, new SetEntryValue('title', null, 'About'), 'The entry field "title" is translatable, so a value needs a locale'];
+        yield 'a title that is not a string' => [$page, new SetEntryValue('title', 'en_US', ['About']), 'The entry field "title" must be a string or null'];
     }
 
     /**
@@ -314,7 +443,38 @@ final class ChangeSetApplierTest extends TestCase
 
     private function apply(StoredTree $tree, Change ...$changes): StoredTree
     {
-        return self::applier()->apply(new ChangeSet(array_values($changes)), $tree);
+        $page = self::page($tree);
+        self::applier()->apply(new ChangeSet(array_values($changes)), $page);
+
+        return $page->getBlockTree();
+    }
+
+    /**
+     * A page in en_US with the tree, as a working copy. It holds the tree as it's given, rather than as JSON, so the
+     * values the applier writes are compared as it writes them
+     */
+    private static function page(StoredTree $tree): Page
+    {
+        $page = new class() extends Page {
+            private StoredTree $tree;
+
+            public function getBlockTree(): StoredTree
+            {
+                return $this->tree;
+            }
+
+            public function setBlockTree(StoredTree $tree): void
+            {
+                $this->tree = $tree;
+            }
+        };
+        $page->setCurrentLocale('en_US');
+        $page->setFallbackLocale('en_US');
+        $page->setTitle('About us');
+        $page->setSlug('about-us');
+        $page->setBlockTree($tree);
+
+        return $page;
     }
 
     private static function applier(): ChangeSetApplier
@@ -331,6 +491,10 @@ final class ChangeSetApplierTest extends TestCase
                 ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
                 RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
             ])),
+            new ContentTypeRegistry([
+                'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+                'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
+            ]),
         );
     }
 

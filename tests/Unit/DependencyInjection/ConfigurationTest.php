@@ -54,6 +54,7 @@ final class ConfigurationTest extends TestCase
             'disabled' => ['block_types' => []],
             'assets' => true,
             'block_styles' => [],
+            'fallback_locales' => [],
             'resources' => [
                 'draft' => [
                     'classes' => [
@@ -223,6 +224,39 @@ final class ConfigurationTest extends TestCase
                 ],
             ],
         ], 'resources.page');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_set_the_locales_a_locale_falls_back_through_in_order(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['fallback_locales' => ['de_CH' => ['de_DE']]],
+            ['fallback_locales' => ['fr_CH' => ['fr_FR', 'de_DE']]],
+        ], ['fallback_locales' => [
+            'de_CH' => ['de_DE'],
+            'fr_CH' => ['fr_FR', 'de_DE'],
+        ]], 'fallback_locales');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_later_config_replace_the_fallback_locales_of_a_locale(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['fallback_locales' => ['fr_CH' => ['fr_FR', 'de_DE']]],
+            ['fallback_locales' => ['fr_CH' => ['de_DE']]],
+        ], ['fallback_locales' => ['fr_CH' => ['de_DE']]], 'fallback_locales');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_an_empty_fallback_locale(): void
+    {
+        $this->assertConfigurationIsInvalid([['fallback_locales' => ['de_CH' => ['']]]], 'The path "setono_sylius_cms.fallback_locales.de_CH.0" cannot contain an empty value');
     }
 
     /**

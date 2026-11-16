@@ -50,6 +50,30 @@ final class ContentTypeRegistryTest extends TestCase
     /**
      * @test
      */
+    public function it_creates_a_translation_of_a_content_type_in_a_locale(): void
+    {
+        $translation = (new ContentTypeRegistry(['page' => self::PAGE]))->get('page')->createTranslation('da_DK');
+
+        self::assertInstanceOf(PageTranslation::class, $translation);
+        self::assertSame('da_DK', $translation->getLocale());
+    }
+
+    /**
+     * @test
+     */
+    public function it_needs_a_translation_model_to_create_a_translation(): void
+    {
+        $recipe = (new ContentTypeRegistry(['recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe']]))->get('recipe');
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('The content type "recipe" has no translation model to add the locale da_DK with');
+
+        $recipe->createTranslation('da_DK');
+    }
+
+    /**
+     * @test
+     */
     public function it_reads_each_content_type_once(): void
     {
         $registry = new ContentTypeRegistry(['page' => self::PAGE]);

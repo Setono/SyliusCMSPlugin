@@ -40,6 +40,19 @@ final class EntryNormalizerTest extends TestCase
     /**
      * @test
      */
+    public function it_writes_a_held_back_translation_as_not_shown(): void
+    {
+        $page = new Page();
+        $page->setCurrentLocale('da_DK');
+        $page->setTitle('Om os');
+        $page->getTranslation('da_DK')->setShown(false);
+
+        self::assertStringContainsString('"translations":{"da_DK":{"shown":false,', CanonicalJson::encode($this->normalizer()->normalize($page)));
+    }
+
+    /**
+     * @test
+     */
     public function it_writes_created_at_in_utc(): void
     {
         $page = new Page();

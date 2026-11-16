@@ -1,0 +1,8 @@
+--TEST--
+cms_field() prints an entry field in the render context's locale
+--TEMPLATE--
+<h1>{{ cms_field(entry, "title") }}</h1>
+--DATA--
+return $this->rendering(['entry' => $this->page(['en_US' => 'About us', 'da_DK' => 'Om os'])], locale: 'da_DK')
+--EXPECT--
+<h1>Om os</h1>

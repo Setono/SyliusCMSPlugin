@@ -11,6 +11,8 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetShown;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
@@ -154,6 +156,39 @@ final class ChangeSetTest extends TestCase
     }
 
     /**
+     * A translation's fields and its shown switch, which add the translation when the entry has none in the locale
+     *
+     * @test
+     */
+    public function it_reads_a_translations_values_and_its_shown_switch(): void
+    {
+        $changeSet = ChangeSet::fromArray(['changes' => [
+            ['op' => 'set_entry_value', 'field' => 'title', 'locale' => 'da_DK', 'value' => 'Om os'],
+            ['op' => 'set_entry_value', 'field' => 'slug', 'locale' => 'da_DK', 'value' => null],
+            ['op' => 'set_shown', 'locale' => 'da_DK', 'shown' => true],
+        ]]);
+
+        self::assertEquals([
+            new SetEntryValue('title', 'da_DK', 'Om os'),
+            new SetEntryValue('slug', 'da_DK', null),
+            new SetShown('da_DK', true),
+        ], $changeSet->changes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_writes_a_translations_values_and_its_shown_switch_the_way_it_reads_them(): void
+    {
+        $changeSet = new ChangeSet([new SetEntryValue('title', 'da_DK', 'Om os'), new SetShown('da_DK', false)]);
+
+        $json = CanonicalJson::encode($changeSet->toArray());
+
+        self::assertSame('{"changes":[{"op":"set_entry_value","field":"title","locale":"da_DK","value":"Om os"},{"op":"set_shown","locale":"da_DK","shown":false}]}', $json);
+        self::assertEquals($changeSet, ChangeSet::fromArray(CanonicalJson::decode($json)));
+    }
+
+    /**
      * @test
      */
     public function it_reads_an_empty_change_set(): void
@@ -210,5 +245,11 @@ final class ChangeSetTest extends TestCase
         yield 'set_style without a style' => [['changes' => [['op' => 'set_style', 'key' => self::KEY]]]];
         yield 'set_style with a non-string style' => [['changes' => [['op' => 'set_style', 'key' => self::KEY, 'style' => 1]]]];
         yield 'set_style with an empty style' => [['changes' => [['op' => 'set_style', 'key' => self::KEY, 'style' => '']]]];
+        yield 'set_entry_value without a field' => [['changes' => [['op' => 'set_entry_value', 'locale' => 'da_DK', 'value' => 'Om os']]]];
+        yield 'set_entry_value with a non-string locale' => [['changes' => [['op' => 'set_entry_value', 'field' => 'title', 'locale' => 1, 'value' => 'Om os']]]];
+        yield 'set_entry_value without a value' => [['changes' => [['op' => 'set_entry_value', 'field' => 'title', 'locale' => 'da_DK']]]];
+        yield 'set_shown without a locale' => [['changes' => [['op' => 'set_shown', 'shown' => true]]]];
+        yield 'set_shown without a switch' => [['changes' => [['op' => 'set_shown', 'locale' => 'da_DK']]]];
+        yield 'set_shown with a switch that is not a boolean' => [['changes' => [['op' => 'set_shown', 'locale' => 'da_DK', 'shown' => 1]]]];
     }
 }
