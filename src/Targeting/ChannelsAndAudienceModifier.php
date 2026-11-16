@@ -6,7 +6,10 @@ namespace Setono\SyliusCMSPlugin\Targeting;
 
 use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactoryInterface;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactoryInterface;
+use Setono\SyliusCMSPlugin\Model\CodedRows;
 use Setono\SyliusCMSPlugin\Model\Entry;
+use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
+use Setono\SyliusCMSPlugin\Model\EntryChannel;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 
 /**
@@ -24,20 +27,14 @@ final readonly class ChannelsAndAudienceModifier implements ChannelsAndAudienceM
     public function setChannels(EntryInterface $entry, iterable $codes): void
     {
         $entry = self::entry($entry);
-        $codes = [...$codes];
 
-        $kept = [];
-        foreach ($entry->getChannels()->toArray() as $channel) {
-            if (in_array($channel->getCode(), $codes, true)) {
-                $kept[] = $channel->getCode();
-            } else {
-                $entry->removeChannel($channel);
-            }
-        }
-
-        foreach (array_unique(array_diff($codes, $kept)) as $code) {
-            $entry->addChannel($this->channelFactory->createForEntry($entry, $code));
-        }
+        CodedRows::sync(
+            $entry->getChannels()->toArray(),
+            array_values([...$codes]),
+            static fn (EntryChannel $channel): string => $channel->getCode(),
+            $entry->removeChannel(...),
+            fn (string $code) => $entry->addChannel($this->channelFactory->createForEntry($entry, $code)),
+        );
     }
 
     /**
@@ -48,18 +45,13 @@ final readonly class ChannelsAndAudienceModifier implements ChannelsAndAudienceM
     {
         $entry = self::entry($entry);
 
-        $kept = [];
-        foreach ($entry->getAudienceGroups()->toArray() as $group) {
-            if (in_array($group->getCode(), $audience->groups, true)) {
-                $kept[] = $group->getCode();
-            } else {
-                $entry->removeAudienceGroup($group);
-            }
-        }
-
-        foreach (array_diff($audience->groups, $kept) as $code) {
-            $entry->addAudienceGroup($this->audienceGroupFactory->createForEntry($entry, $code));
-        }
+        CodedRows::sync(
+            $entry->getAudienceGroups()->toArray(),
+            array_values($audience->groups),
+            static fn (EntryAudienceGroup $group): string => $group->getCode(),
+            $entry->removeAudienceGroup(...),
+            fn (string $code) => $entry->addAudienceGroup($this->audienceGroupFactory->createForEntry($entry, $code)),
+        );
 
         $entry->setAudienceMode($audience->mode);
     }

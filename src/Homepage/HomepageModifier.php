@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Homepage;
 
 use Setono\SyliusCMSPlugin\Factory\HomepageFactoryInterface;
+use Setono\SyliusCMSPlugin\Model\CodedRows;
+use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
@@ -24,20 +26,14 @@ final readonly class HomepageModifier implements HomepageModifierInterface
     public function setHomepageOf(PageInterface $page, iterable $channelCodes): void
     {
         $page = self::page($page);
-        $codes = [...$channelCodes];
 
-        $kept = [];
-        foreach ($page->getHomepages()->toArray() as $homepage) {
-            if (in_array($homepage->getChannelCode(), $codes, true)) {
-                $kept[] = $homepage->getChannelCode();
-            } else {
-                $page->removeHomepage($homepage);
-            }
-        }
-
-        foreach (array_unique(array_diff($codes, $kept)) as $code) {
-            $page->addHomepage($this->factory->createForPage($page, $code));
-        }
+        CodedRows::sync(
+            $page->getHomepages()->toArray(),
+            array_values([...$channelCodes]),
+            static fn (Homepage $homepage): string => $homepage->getChannelCode(),
+            $page->removeHomepage(...),
+            fn (string $code) => $page->addHomepage($this->factory->createForPage($page, $code)),
+        );
     }
 
     public function takeOffOtherPages(PageInterface $page, iterable $channelCodes): array
