@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Builder\PresenceTrackerInterface;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Json\ListedObject;
+use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettings;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettingsNormalizer;
@@ -39,6 +40,7 @@ final readonly class WorkingCopyAnswer
         private TranslatableValues $translatableValues,
         private ScheduledPublishRepositoryInterface $scheduledPublishes,
         private ClockInterface $clock,
+        private Availability $availability,
     ) {
     }
 
@@ -81,8 +83,8 @@ final readonly class WorkingCopyAnswer
     private function completeness(EntryInterface $workingCopy): \stdClass
     {
         $completeness = [];
-        foreach ($workingCopy->getTranslations() as $localeCode => $translation) {
-            if (null === $translation->getTitle() || '' === $translation->getTitle()) {
+        foreach ($workingCopy->getTranslations()->getKeys() as $localeCode) {
+            if (!$this->availability->hasTranslation($workingCopy, (string) $localeCode)) {
                 continue;
             }
 

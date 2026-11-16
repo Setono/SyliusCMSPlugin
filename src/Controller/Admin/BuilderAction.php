@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin;
 
+use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Preview\StartingValuesInterface;
@@ -134,17 +135,16 @@ final readonly class BuilderAction
     private function channels(): array
     {
         return array_values(array_map(static function (ChannelInterface $channel): array {
-            $locales = [];
+            $byCode = [];
             if ($channel instanceof CoreChannelInterface) {
                 foreach ($channel->getLocales() as $locale) {
-                    $locales[(string) $locale->getCode()] = $locale;
+                    $byCode[(string) $locale->getCode()] = $locale;
                 }
+            }
 
-                ksort($locales);
-                $default = $channel->getDefaultLocale()?->getCode();
-                if (null !== $default && isset($locales[$default])) {
-                    $locales = [$default => $locales[$default]] + $locales;
-                }
+            $locales = [];
+            foreach (ChannelLocales::of($channel) as $code) {
+                $locales[$code] = $byCode[$code];
             }
 
             return ['channel' => $channel, 'locales' => $locales];

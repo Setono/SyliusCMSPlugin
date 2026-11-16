@@ -151,7 +151,7 @@ final class AutosaveTest extends TestCase
         /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $channelRepository */
         $channelRepository = $this->prophesize(ChannelRepositoryInterface::class);
         $this->channelRepository = $channelRepository;
-        $this->channelRepository->findAll()->willReturn([$channel]);
+        $this->channelRepository->findBy([], ['id' => 'ASC'])->willReturn([$channel]);
 
         // Whoever saves is recorded on the entry. The name is read when the edit is recorded
         $calls = &$this->calls;

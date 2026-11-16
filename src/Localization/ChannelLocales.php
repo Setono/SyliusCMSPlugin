@@ -53,8 +53,8 @@ final class ChannelLocales implements ResetInterface
     }
 
     /**
-     * The locales of these channels, each once, channel by channel in the order they're given. A channel the store
-     * doesn't have has none
+     * The locales of these channels, each once, channel by channel in the order the store lists its channels. A channel
+     * the store doesn't have has none
      *
      * @param list<string> $channelCodes
      *
@@ -64,7 +64,7 @@ final class ChannelLocales implements ResetInterface
     {
         if (null === $this->byChannel) {
             $this->byChannel = [];
-            foreach ($this->channelRepository->findAll() as $channel) {
+            foreach ($this->channelRepository->findBy([], ['id' => 'ASC']) as $channel) {
                 $code = $channel->getCode();
                 if (null !== $code) {
                     $this->byChannel[$code] = self::of($channel);
@@ -73,8 +73,10 @@ final class ChannelLocales implements ResetInterface
         }
 
         $locales = [];
-        foreach ($channelCodes as $channelCode) {
-            $locales = [...$locales, ...$this->byChannel[$channelCode] ?? []];
+        foreach ($this->byChannel as $channelCode => $localeCodes) {
+            if (in_array($channelCode, $channelCodes, true)) {
+                $locales = [...$locales, ...$localeCodes];
+            }
         }
 
         return array_values(array_unique($locales));

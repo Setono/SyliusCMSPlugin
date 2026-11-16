@@ -30,15 +30,16 @@ final class ChannelLocalesTest extends TestCase
     /**
      * @test
      */
-    public function it_gives_the_locales_of_channels_each_once_and_reads_the_channels_once_until_reset(): void
+    public function it_gives_the_locales_of_channels_each_once_in_the_order_the_store_lists_them_and_reads_the_channels_once_until_reset(): void
     {
         /** @var \Prophecy\Prophecy\ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $repository */
         $repository = $this->prophesize(ChannelRepositoryInterface::class);
         $nameless = new Channel();
-        $repository->findAll()->willReturn([self::channel('WEB', 'en_US', 'en_US', 'da_DK'), self::channel('NORDIC', 'sv_SE', 'sv_SE', 'da_DK'), $nameless])->shouldBeCalledTimes(2);
+        $repository->findBy([], ['id' => 'ASC'])->willReturn([self::channel('WEB', 'en_US', 'en_US', 'da_DK'), self::channel('NORDIC', 'sv_SE', 'sv_SE', 'da_DK'), $nameless])->shouldBeCalledTimes(2);
         $channelLocales = new ChannelLocales($repository->reveal());
 
-        self::assertSame(['sv_SE', 'da_DK', 'en_US'], $channelLocales->ofChannels(['NORDIC', 'WEB', 'GONE']));
+        self::assertSame(['en_US', 'da_DK', 'sv_SE'], $channelLocales->ofChannels(['NORDIC', 'WEB', 'GONE']));
+        self::assertSame(['sv_SE', 'da_DK'], $channelLocales->ofChannels(['NORDIC']));
         self::assertSame([], $channelLocales->ofChannels([]));
 
         $channelLocales->reset();

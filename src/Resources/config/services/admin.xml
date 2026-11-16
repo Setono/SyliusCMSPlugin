@@ -79,10 +79,10 @@
         <service id="Setono\SyliusCMSPlugin\Admin\TranslationChips" class="Setono\SyliusCMSPlugin\Admin\TranslationChips">
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Translation\TranslatableValues"/>
-            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\ChannelLocales"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
 
             <tag name="twig.runtime"/>
-            <tag name="kernel.reset" method="reset"/>
         </service>
 
         <!-- The revisions of an entry, which its overview page gets through cms_admin_entry_revisions() -->

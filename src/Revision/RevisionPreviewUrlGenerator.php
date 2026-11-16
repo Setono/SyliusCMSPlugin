@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Revision;
 
 use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
+use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Model\RevisionInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
@@ -62,16 +63,12 @@ final readonly class RevisionPreviewUrlGenerator
             throw new RevisionPreviewUnavailableException(sprintf('There is no channel %s', $channelCode));
         }
 
-        $channelLocaleCodes = self::localeCodes($channel);
+        $channelLocaleCodes = ChannelLocales::of($channel);
         if (null !== $localeCode && !in_array($localeCode, $channelLocaleCodes, true)) {
             throw new RevisionPreviewUnavailableException(sprintf('The channel %s has no locale %s', $channelCode, $localeCode));
         }
 
         foreach (null === $localeCode ? $channelLocaleCodes : [$localeCode] as $candidate) {
-            if (null === $candidate) {
-                continue;
-            }
-
             $path = EntryPath::of($contentType, $entry, $candidate);
             if (null !== $path) {
                 return $this->urlGenerator->generate('setono_sylius_cms_shop_entry', [
@@ -83,22 +80,5 @@ final readonly class RevisionPreviewUrlGenerator
         }
 
         throw new RevisionPreviewUnavailableException(null === $localeCode ? sprintf('The revision has no URL in the channel %s', $channelCode) : sprintf('The revision has no URL in %s', $localeCode));
-    }
-
-    /**
-     * The channel's default locale, then all its locales by code. The default locale is in the list twice, which
-     * changes nothing, and it's null when the channel has none
-     *
-     * @return list<string|null>
-     */
-    private static function localeCodes(ChannelInterface $channel): array
-    {
-        $codes = [];
-        foreach ($channel->getLocales() as $locale) {
-            $codes[] = $locale->getCode();
-        }
-        sort($codes);
-
-        return [$channel->getDefaultLocale()?->getCode(), ...$codes];
     }
 }

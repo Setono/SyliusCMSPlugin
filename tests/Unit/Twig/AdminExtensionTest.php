@@ -17,6 +17,7 @@ use Setono\SyliusCMSPlugin\Admin\TranslationChips;
 use Setono\SyliusCMSPlugin\Admin\WhereItShows;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Localization\Availability;
+use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
@@ -281,7 +282,8 @@ final class AdminExtensionTest extends IntegrationTestCase
                 new FallbackValues(new FieldHandlerLocator(new ServiceLocator([])), $fallbackChain->reveal()),
                 $fallbackChain->reveal(),
             ),
-            $channels->reveal(),
+            new ChannelLocales($channels->reveal()),
+            new Availability(),
         );
     }
 

@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Admin;
 use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Builder\EntryStatus;
 use Setono\SyliusCMSPlugin\Localization\Availability;
+use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Routing\TakenUrl;
 use Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface;
@@ -47,7 +48,7 @@ final readonly class WhereItShows
             $channelCode = $channel->getCode() ?? '';
 
             $cells = [];
-            foreach (self::localesOf($channel) as $localeCode) {
+            foreach (ChannelLocales::of($channel) as $localeCode) {
                 $localeCodes[$localeCode] = $localeCode;
                 $takenUrl = $takenUrls[$channelCode][$localeCode] ?? null;
 
@@ -112,21 +113,5 @@ final readonly class WhereItShows
         }
 
         return $taken;
-    }
-
-    /**
-     * @return list<string> the channel's locales, its default locale first and then the others by code
-     */
-    private static function localesOf(ChannelInterface $channel): array
-    {
-        $localeCodes = [];
-        foreach ($channel->getLocales() as $locale) {
-            $localeCodes[] = $locale->getCode() ?? '';
-        }
-
-        $default = $channel->getDefaultLocale()?->getCode();
-        usort($localeCodes, static fn (string $a, string $b): int => [$a !== $default, $a] <=> [$b !== $default, $b]);
-
-        return $localeCodes;
     }
 }

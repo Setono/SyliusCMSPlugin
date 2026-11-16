@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Admin;
 
+use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
@@ -65,7 +66,7 @@ final readonly class EntryShareLinks
                 continue;
             }
 
-            foreach (self::localeCodesOf($channel) as $localeCode) {
+            foreach (ChannelLocales::of($channel) as $localeCode) {
                 if (null !== EntryPath::of($contentType, $workingCopy, $localeCode)) {
                     $targets[] = new ShareLinkTarget($channelCode, self::nameOf($channel, $channelCode), $localeCode);
                 }
@@ -73,24 +74,6 @@ final readonly class EntryShareLinks
         }
 
         return $targets;
-    }
-
-    /**
-     * The channel's default locale first, then its other locales by code. A locale without a code has none to share in
-     *
-     * @return array<int, string>
-     */
-    private static function localeCodesOf(CoreChannelInterface $channel): array
-    {
-        $codes = [];
-        foreach ($channel->getLocales() as $locale) {
-            $codes[] = (string) $locale->getCode();
-        }
-        sort($codes);
-
-        $default = $channel->getDefaultLocale()?->getCode();
-
-        return null === $default ? $codes : array_unique([$default, ...$codes]);
     }
 
     private static function nameOf(?ChannelInterface $channel, string $code): string

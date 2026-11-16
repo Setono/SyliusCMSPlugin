@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Admin;
 
 use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Admin\EntryRow;
@@ -14,6 +15,8 @@ use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
+use Setono\SyliusCMSPlugin\Localization\Availability;
+use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\Draft;
@@ -162,22 +165,6 @@ final class TranslationChipsTest extends TestCase
     /**
      * @test
      */
-    public function it_reads_the_channels_once_until_it_is_reset(): void
-    {
-        $page = self::page();
-        $this->workingCopies->getWorkingCopyWithDraft($page, null)->willReturn($page);
-        $this->channels->findBy([], ['id' => 'ASC'])->willReturn([self::channel('WEB', 'en_US', 'en_US')])->shouldBeCalledTimes(2);
-        $chips = $this->chips();
-
-        $chips->of(self::row($page));
-        $chips->of(self::row($page));
-        $chips->reset();
-        $chips->of(self::row($page));
-    }
-
-    /**
-     * @test
-     */
     public function a_chip_is_complete_when_the_locale_has_a_translation_with_nothing_untranslated_or_outdated(): void
     {
         self::assertTrue((new TranslationChip('en_US', true, false, 0, 0))->isComplete());
@@ -189,12 +176,8 @@ final class TranslationChipsTest extends TestCase
 
     private function chips(): TranslationChips
     {
-        $fallbackChain = new class() implements FallbackChainInterface {
-            public function localesFor(string $localeCode): array
-            {
-                return 'en_US' === $localeCode ? ['en_US'] : [$localeCode, 'en_US'];
-            }
-        };
+        $fallbackChain = $this->prophesize(FallbackChainInterface::class);
+        $fallbackChain->localesFor(Argument::type('string'))->will(static fn (array $arguments): array => 'en_US' === $arguments[0] ? ['en_US'] : [$arguments[0], 'en_US']);
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
@@ -206,10 +189,11 @@ final class TranslationChipsTest extends TestCase
                 new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
                 new BlockTypeRegistry(['heading' => Heading::class], new FieldReader()),
                 new LayoutRegistry([], new FieldReader()),
-                new FallbackValues($handlers, $fallbackChain),
-                $fallbackChain,
+                new FallbackValues($handlers, $fallbackChain->reveal()),
+                $fallbackChain->reveal(),
             ),
-            $this->channels->reveal(),
+            new ChannelLocales($this->channels->reveal()),
+            new Availability(),
         );
     }
 

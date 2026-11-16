@@ -156,6 +156,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Translation\TranslatableValues"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
             <argument type="service" id="clock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction">
