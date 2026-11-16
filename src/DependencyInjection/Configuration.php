@@ -8,10 +8,12 @@ use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
 use Setono\SyliusCMSPlugin\Model\EntryChannel;
 use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -23,6 +25,7 @@ use Setono\SyliusCMSPlugin\Model\SavedChangeSetInterface;
 use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
+use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
@@ -149,6 +152,7 @@ final class Configuration implements ConfigurationInterface
             ->children()
                 ->arrayNode('resources')
                     ->addDefaultsIfNotSet()
+                    ->append(self::entryResource())
                     ->append(self::resourceWithoutController('draft', Draft::class, DraftInterface::class, DraftRepository::class))
                     ->append(self::resourceWithoutController('entry_channel', EntryChannel::class, EntryChannelInterface::class, factory: EntryChannelFactory::class))
                     ->append(self::resourceWithoutController('entry_audience_group', EntryAudienceGroup::class, EntryAudienceGroupInterface::class, factory: EntryAudienceGroupFactory::class))
@@ -191,6 +195,33 @@ final class Configuration implements ConfigurationInterface
                 ->end()
             ->end()
         ;
+    }
+
+    /**
+     * The root of every content type, whose resource controller and grids give the admin its entry lists. It's the
+     * abstract root of the entries' single table inheritance (ADR 0001), so it's never created through its factory
+     */
+    private static function entryResource(): ArrayNodeDefinition
+    {
+        $node = new ArrayNodeDefinition('entry');
+        $node
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->variableNode('options')->end()
+                ->arrayNode('classes')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('model')->defaultValue(Entry::class)->cannotBeEmpty()->end()
+                        ->scalarNode('interface')->defaultValue(EntryInterface::class)->cannotBeEmpty()->end()
+                        ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
+                        ->scalarNode('repository')->defaultValue(EntryRepository::class)->cannotBeEmpty()->end()
+                        ->scalarNode('factory')->defaultValue(Factory::class)->cannotBeEmpty()->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+
+        return $node;
     }
 
     /**

@@ -11,10 +11,12 @@ use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
 use Setono\SyliusCMSPlugin\Model\EntryChannel;
 use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -25,6 +27,7 @@ use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSetInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
+use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
@@ -46,7 +49,7 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
-    public function it_declares_page_the_draft_and_the_rows_beside_an_entry_as_resources_by_default(): void
+    public function it_declares_the_entry_page_the_draft_and_the_rows_beside_an_entry_as_resources_by_default(): void
     {
         $this->assertProcessedConfigurationEquals([
             [],
@@ -56,6 +59,15 @@ final class ConfigurationTest extends TestCase
             'block_styles' => [],
             'fallback_locales' => [],
             'resources' => [
+                'entry' => [
+                    'classes' => [
+                        'model' => Entry::class,
+                        'interface' => EntryInterface::class,
+                        'controller' => ResourceController::class,
+                        'repository' => EntryRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
                 'draft' => [
                     'classes' => [
                         'model' => Draft::class,

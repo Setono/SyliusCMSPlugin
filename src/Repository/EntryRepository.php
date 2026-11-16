@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Repository;
 
-use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
 /**
- * @extends EntityRepository<EntryInterface>
+ * The entry resource's repository
  */
 class EntryRepository extends EntityRepository implements EntryRepositoryInterface
 {
@@ -25,5 +26,41 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         $entries = $this->createQueryBuilder('entry')->orderBy('entry.id')->getQuery()->toIterable();
 
         return $entries;
+    }
+
+    public function createListQueryBuilder(?string $contentType = null): QueryBuilder
+    {
+        // "translation" is for the filters, and joined apart from the translations fetched, so a filter on it never
+        // leaves an entry with only the translations that matched. It's joined first, because Sylius's grid filters
+        // reach a field of an association through the first join of it
+        return $this->entries($contentType)
+            ->addSelect('fetched_translation', 'audience_group')
+            ->leftJoin('o.translations', 'translation')
+            ->leftJoin('o.translations', 'fetched_translation')
+            ->leftJoin('o.audienceGroups', 'audience_group')
+        ;
+    }
+
+    public function countEntries(?string $contentType = null): int
+    {
+        return (int) $this->entries($contentType)->select('COUNT(o.id)')->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * The entries of the content type, or of every content type, as "o". A content type code is the value of the
+     * entries' discriminator (ADR 0001), so it names the class that INSTANCE OF filters on, with its subclasses
+     */
+    private function entries(?string $contentType): QueryBuilder
+    {
+        $queryBuilder = $this->createQueryBuilder('o');
+        if (null === $contentType) {
+            return $queryBuilder;
+        }
+
+        $class = $this->getClassMetadata()->discriminatorMap[$contentType] ?? throw new \InvalidArgumentException(sprintf('There is no content type "%s"', $contentType));
+
+        // The class goes in the DQL, not in a parameter, because Doctrine's paginator counts without resolving an
+        // INSTANCE OF parameter to the discriminator values. It comes from the discriminator map, never from the request
+        return $queryBuilder->andWhere(sprintf('o INSTANCE OF %s', $class));
     }
 }

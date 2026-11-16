@@ -8,6 +8,7 @@ use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractCompilerPassTestCase
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\Doctrine\DiscriminatorMapListener;
 use Setono\SyliusCMSPlugin\Factory\EntryFactory;
+use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
@@ -47,6 +48,8 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
     {
         $this->setParameter('sylius.resources', [
             'sylius.product' => ['classes' => ['model' => \stdClass::class]],
+            // The root of the content types is a resource too, for the admin's entry lists
+            'setono_sylius_cms.entry' => ['classes' => ['model' => Entry::class]],
             'setono_sylius_cms.page' => self::PAGE,
             'app.recipe.v2' => ['classes' => ['model' => Recipe::class], 'translation' => ['classes' => ['model' => 'App\Missing']]],
             'app.broken' => ['classes' => []],

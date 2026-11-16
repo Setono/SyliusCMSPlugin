@@ -8,8 +8,8 @@ use Knp\Menu\ItemInterface;
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
-use Setono\SyliusCMSPlugin\Admin\EntryListQueryInterface;
 use Setono\SyliusCMSPlugin\Admin\HubMenuBuilder;
+use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Sylius\Bundle\UiBundle\Menu\Event\MenuBuilderEvent;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
@@ -17,16 +17,16 @@ final class HubMenuBuilderTest extends TestCase
 {
     use ProphecyTrait;
 
-    /** @var ObjectProphecy<EntryListQueryInterface> */
-    private ObjectProphecy $entryListQuery;
+    /** @var ObjectProphecy<EntryRepositoryInterface> */
+    private ObjectProphecy $entryRepository;
 
     private EventDispatcher $eventDispatcher;
 
     protected function setUp(): void
     {
-        $this->entryListQuery = $this->prophesize(EntryListQueryInterface::class);
-        $this->entryListQuery->count(null)->willReturn(7);
-        $this->entryListQuery->count('page')->willReturn(3);
+        $this->entryRepository = $this->prophesize(EntryRepositoryInterface::class);
+        $this->entryRepository->countEntries()->willReturn(7);
+        $this->entryRepository->countEntries('page')->willReturn(3);
 
         $this->eventDispatcher = new EventDispatcher();
     }
@@ -103,7 +103,7 @@ final class HubMenuBuilderTest extends TestCase
 
     private function menu(): ItemInterface
     {
-        return (new HubMenuBuilder(MenuFactory::create(), $this->eventDispatcher, $this->entryListQuery->reveal()))->createMenu([]);
+        return (new HubMenuBuilder(MenuFactory::create(), $this->eventDispatcher, $this->entryRepository->reveal()))->createMenu([]);
     }
 
     private static function child(ItemInterface $item, string $name): ItemInterface

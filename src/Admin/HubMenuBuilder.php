@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Admin;
 
 use Knp\Menu\FactoryInterface;
 use Knp\Menu\ItemInterface;
+use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Sylius\Bundle\UiBundle\Menu\Event\MenuBuilderEvent;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -21,7 +22,7 @@ final readonly class HubMenuBuilder
     public function __construct(
         private FactoryInterface $factory,
         private EventDispatcherInterface $eventDispatcher,
-        private EntryListQueryInterface $entryListQuery,
+        private EntryRepositoryInterface $entryRepository,
     ) {
     }
 
@@ -44,14 +45,14 @@ final readonly class HubMenuBuilder
             ->addChild('all', ['route' => 'setono_sylius_cms_admin_entry_index_all'])
             ->setLabel('setono_sylius_cms.menu.admin.hub.all_entries')
             ->setLabelAttribute('icon', 'list')
-            ->setExtra('count', $this->entryListQuery->count(null))
+            ->setExtra('count', $this->entryRepository->countEntries())
         ;
 
         $entries
             ->addChild('page', ['route' => 'setono_sylius_cms_admin_entry_index', 'routeParameters' => ['contentType' => 'page']])
             ->setLabel('setono_sylius_cms.menu.admin.hub.pages')
             ->setLabelAttribute('icon', 'file alternate outline')
-            ->setExtra('count', $this->entryListQuery->count('page'))
+            ->setExtra('count', $this->entryRepository->countEntries('page'))
         ;
 
         // Media, Presets and Transfer join with their tickets

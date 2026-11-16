@@ -40,7 +40,8 @@ final class RegisterContentTypesPass implements CompilerPassInterface
 
         foreach ($resources as $alias => $resource) {
             $model = $resource['classes']['model'] ?? null;
-            if (!is_string($model) || !is_a($model, EntryInterface::class, true)) {
+            // The abstract root of the content types is a resource of its own, for the admin's entry lists
+            if (!is_string($model) || !is_a($model, EntryInterface::class, true) || (new \ReflectionClass($model))->isAbstract()) {
                 continue;
             }
 
