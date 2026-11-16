@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\UI;
 
 use Playwright\Assertions\Expect;
+use Playwright\Symfony\Client\PlaywrightKernelClient;
 
 /**
  * Editors share an entry's draft from its overview page, as a link that shows it in the shop to anyone who has it,
@@ -49,7 +50,7 @@ final class ShareLinksTest extends UITestCase
         $visitor = self::createPlaywrightClient();
         $shared = $visitor->visit(self::pathOf($url));
         Expect::locator($shared->locator('.cms-tree .cms-heading'))->toHaveText('Hello');
-        self::assertSame(200, $visitor->getLastSymfonyResponse()?->getStatusCode());
+        self::assertSame(200, self::statusCodeOf($visitor));
         self::assertSame(0, $shared->locator('script[data-cms-bridge]')->count(), 'A share link gets no bridge');
 
         // Revoking asks first
@@ -60,8 +61,16 @@ final class ShareLinksTest extends UITestCase
 
         // Then the link answers as it would for anyone else
         $gone = $visitor->visit(self::pathOf($url));
-        self::assertSame(404, $visitor->getLastSymfonyResponse()?->getStatusCode());
+        self::assertSame(404, self::statusCodeOf($visitor));
         self::assertSame(0, $gone->locator('.cms-tree')->count());
+    }
+
+    private static function statusCodeOf(PlaywrightKernelClient $client): int
+    {
+        $response = $client->getLastSymfonyResponse();
+        self::assertNotNull($response);
+
+        return $response->getStatusCode();
     }
 
     /**

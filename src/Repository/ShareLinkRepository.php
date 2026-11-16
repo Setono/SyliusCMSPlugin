@@ -10,8 +10,6 @@ use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
 /**
  * The share link resource's repository. Share links made at the same time are ordered by id, the order they were stored in
- *
- * @extends EntityRepository<ShareLinkInterface>
  */
 class ShareLinkRepository extends EntityRepository implements ShareLinkRepositoryInterface
 {

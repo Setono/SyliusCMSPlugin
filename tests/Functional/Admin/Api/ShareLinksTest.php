@@ -162,7 +162,9 @@ final class ShareLinksTest extends BuilderApiTestCase
         self::assertIsArray($response['shareLinks'] ?? null);
         self::assertSame([$danish->getId(), $english->getId()], array_column($response['shareLinks'], 'id'));
         self::assertSame(['da_DK', 'en_US'], array_column($response['shareLinks'], 'locale'));
-        self::assertSame('http://localhost/da_DK/om-os?_cms_share=' . $danish->getToken(), $response['shareLinks'][0]['url'] ?? null);
+        $first = $response['shareLinks'][0] ?? null;
+        self::assertIsArray($first);
+        self::assertSame('http://localhost/da_DK/om-os?_cms_share=' . $danish->getToken(), $first['url'] ?? null);
     }
 
     /**

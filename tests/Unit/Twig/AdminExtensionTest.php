@@ -262,8 +262,10 @@ final class AdminExtensionTest extends IntegrationTestCase
         $channels->findOneByCode('WEB')->willReturn($web);
         $shareLinks = $this->prophesize(ShareLinkRepositoryInterface::class);
         $shareLinks->findByEntry(Argument::type(Page::class))->will(static function (array $arguments): array {
+            $page = $arguments[0];
+            self::assertInstanceOf(Page::class, $page);
             $shareLink = new ShareLink();
-            $shareLink->setEntry($arguments[0]);
+            $shareLink->setEntry($page);
             $shareLink->setChannelCode('WEB');
             $shareLink->setLocaleCode('en_US');
             $shareLink->setToken('abc');

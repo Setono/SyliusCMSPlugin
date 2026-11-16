@@ -6,15 +6,22 @@ namespace Setono\SyliusCMSPlugin\Repository;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
-use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 
 /**
- * The share links of entries. add() stores one and remove() revokes it. See "Share links" in docs/spec/publishing.md
- *
- * @extends RepositoryInterface<ShareLinkInterface>
+ * The share links of entries. See "Share links" in docs/spec/publishing.md
  */
-interface ShareLinkRepositoryInterface extends RepositoryInterface
+interface ShareLinkRepositoryInterface
 {
+    /**
+     * Stores the share link at once
+     */
+    public function add(ShareLinkInterface $resource): void;
+
+    /**
+     * Revokes the share link: it's deleted at once
+     */
+    public function remove(ShareLinkInterface $resource): void;
+
     public function findOneById(int $id): ?ShareLinkInterface;
 
     /**
