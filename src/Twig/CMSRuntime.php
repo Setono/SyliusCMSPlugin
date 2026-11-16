@@ -11,7 +11,7 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Value\RichText;
 use Twig\Extension\RuntimeExtensionInterface;
 
-final readonly class CmsRuntime implements RuntimeExtensionInterface
+final readonly class CMSRuntime implements RuntimeExtensionInterface
 {
     /**
      * The template variable that carries the RenderContext into layout and block templates,

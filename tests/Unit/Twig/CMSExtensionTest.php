@@ -19,8 +19,8 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\Faq;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\Quote;
-use Setono\SyliusCMSPlugin\Twig\CmsExtension;
-use Setono\SyliusCMSPlugin\Twig\CmsRuntime;
+use Setono\SyliusCMSPlugin\Twig\CMSExtension;
+use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\Clock\MockClock;
@@ -33,7 +33,7 @@ use Twig\Loader\ChainLoader;
 use Twig\Loader\FilesystemLoader;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 
-final class CmsExtensionTest extends TestCase
+final class CMSExtensionTest extends TestCase
 {
     use ProphecyTrait;
 
@@ -339,7 +339,7 @@ final class CmsExtensionTest extends TestCase
     {
         $context = new RenderContext($this->prophesize(ChannelInterface::class)->reveal(), 'en_US', 'USD', null, '@guest', new \DateTimeImmutable(), [], $previewMode);
 
-        return trim($this->twig(['template' => $template])->render('template', ['blocks' => $blocks, CmsRuntime::RENDER_CONTEXT => $context] + $variables));
+        return trim($this->twig(['template' => $template])->render('template', ['blocks' => $blocks, CMSRuntime::RENDER_CONTEXT => $context] + $variables));
     }
 
     /**
@@ -355,13 +355,13 @@ final class CmsExtensionTest extends TestCase
             'faq.html.twig' => '<dl>{% for child in children %}<dt>{{ cms_field(child.block, "text") }}</dt>{% endfor %}</dl>',
         ];
         $twig = new Environment(new ChainLoader([new ArrayLoader($templates), $filesystem]), ['strict_variables' => true]);
-        $twig->addExtension(new CmsExtension());
+        $twig->addExtension(new CMSExtension());
 
         $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class, 'quote' => Quote::class, 'faq' => Faq::class], new FieldReader());
         $renderer = new TwigBlockRenderer($twig, $blockTypes);
         $previewContext = new PreviewContext($this->requestStack, new PreviewTokenSigner('secret', new MockClock()));
         $twig->addRuntimeLoader(new FactoryRuntimeLoader([
-            CmsRuntime::class => static fn (): CmsRuntime => new CmsRuntime($renderer, new FieldMarker($blockTypes)),
+            CMSRuntime::class => static fn (): CMSRuntime => new CMSRuntime($renderer, new FieldMarker($blockTypes)),
             PreviewContext::class => static fn (): PreviewContext => $previewContext,
         ]));
 

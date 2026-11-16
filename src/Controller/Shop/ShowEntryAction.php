@@ -12,7 +12,7 @@ use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
 use Setono\SyliusCMSPlugin\Rendering\EntryUrlMatch;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher;
-use Setono\SyliusCMSPlugin\Twig\CmsRuntime;
+use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -56,7 +56,7 @@ final readonly class ShowEntryAction
             'layout' => null,
             'blocks' => $this->blockViewBuilder->build($this->upgrader->readBlockTree($entry)->blocks, $renderContext),
             'context' => $renderContext->getHostPageContext(),
-            CmsRuntime::RENDER_CONTEXT => $renderContext,
+            CMSRuntime::RENDER_CONTEXT => $renderContext,
         ]));
     }
 

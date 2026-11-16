@@ -2,11 +2,11 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="Setono\SyliusCMSPlugin\Twig\CmsExtension" class="Setono\SyliusCMSPlugin\Twig\CmsExtension">
+        <service id="Setono\SyliusCMSPlugin\Twig\CMSExtension" class="Setono\SyliusCMSPlugin\Twig\CMSExtension">
             <tag name="twig.extension"/>
         </service>
 
-        <service id="Setono\SyliusCMSPlugin\Twig\CmsRuntime" class="Setono\SyliusCMSPlugin\Twig\CmsRuntime">
+        <service id="Setono\SyliusCMSPlugin\Twig\CMSRuntime" class="Setono\SyliusCMSPlugin\Twig\CMSRuntime">
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\FieldMarker"/>
 

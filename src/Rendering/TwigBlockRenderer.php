@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Rendering;
 
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
-use Setono\SyliusCMSPlugin\Twig\CmsRuntime;
+use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Twig\Environment;
 
 /**
@@ -26,7 +26,7 @@ final readonly class TwigBlockRenderer implements BlockRendererInterface
             'view' => $view,
             'children' => $view->children,
             'context' => $context->getHostPageContext(),
-            CmsRuntime::RENDER_CONTEXT => $context,
+            CMSRuntime::RENDER_CONTEXT => $context,
         ]);
     }
 }
