@@ -115,6 +115,32 @@ final class EntryRowsTest extends TestCase
 
         self::assertSame('Om os', $row->title);
         self::assertSame('/da_DK/om-os', $row->url);
+
+        [$row] = $this->rows([$page], 'en_US');
+
+        self::assertSame('About us', $row->title);
+        self::assertSame('/en_US/about-us', $row->url);
+    }
+
+    /**
+     * @test
+     */
+    public function it_reads_the_translations_of_a_draft_it_can_read_beside_one_it_cannot(): void
+    {
+        $page = self::page(['en_US' => ['About us', 'about-us']]);
+        $page->publish(new \DateTimeImmutable('2026-11-01T00:00:00Z'));
+        $draft = new Draft();
+        $draft->setEntry($page);
+        $draft->setContent(CanonicalJson::encode(['translations' => [
+            'da_DK' => 'Om os',
+            'en_US' => ['fields' => ['slug' => 'about-our-shop', 'title' => 'About our shop']],
+        ]]));
+        $this->drafts->findByEntries([$page])->willReturn([$draft]);
+
+        [$row] = $this->rows([$page], 'da_DK');
+
+        self::assertSame('About our shop', $row->title);
+        self::assertSame('/en_US/about-our-shop', $row->url);
     }
 
     /**

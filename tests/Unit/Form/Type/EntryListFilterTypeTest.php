@@ -55,7 +55,7 @@ final class EntryListFilterTypeTest extends TypeTestCase
         $status->submit(['status' => 'deleted']);
 
         $channel = $this->factory->createNamed('criteria', EntryListFilterType::class);
-        $channel->submit(['channel' => 'MOBILE']);
+        $channel->submit(['channel' => 'POS']);
 
         self::assertFalse($status->isValid());
         self::assertFalse($channel->isValid());
@@ -79,15 +79,17 @@ final class EntryListFilterTypeTest extends TypeTestCase
     {
         $view = $this->factory->createNamed('criteria', EntryListFilterType::class, new EntryListCriteria('About', EntryStatusFilter::UnpublishedChanges, 'WEB'))->createView();
 
-        /** @var array{label: string, value: string} $search */
+        /** @var array{label: string, value: string, required: bool} $search */
         $search = $view['search']->vars;
         self::assertSame('setono_sylius_cms.ui.search', $search['label']);
+        self::assertFalse($search['required']);
         self::assertSame('About', $search['value']);
 
-        /** @var array{label: string, placeholder: string, value: string, choices: list<ChoiceView>} $status */
+        /** @var array{label: string, placeholder: string, value: string, required: bool, choices: list<ChoiceView>} $status */
         $status = $view['status']->vars;
         self::assertSame('setono_sylius_cms.ui.status', $status['label']);
         self::assertSame('setono_sylius_cms.ui.any_status', $status['placeholder']);
+        self::assertFalse($status['required']);
         self::assertSame('unpublished_changes', $status['value']);
         self::assertSame(
             [
@@ -98,12 +100,13 @@ final class EntryListFilterTypeTest extends TypeTestCase
             self::labels($status['choices']),
         );
 
-        /** @var array{label: string, placeholder: string, value: string, choices: list<ChoiceView>} $channel */
+        /** @var array{label: string, placeholder: string, value: string, required: bool, choices: list<ChoiceView>} $channel */
         $channel = $view['channel']->vars;
         self::assertSame('setono_sylius_cms.ui.channel', $channel['label']);
         self::assertSame('setono_sylius_cms.ui.any_channel', $channel['placeholder']);
+        self::assertFalse($channel['required']);
         self::assertSame('WEB', $channel['value']);
-        self::assertSame(['B2B' => 'Wholesale', 'WEB' => 'Web store'], self::labels($channel['choices']));
+        self::assertSame(['B2B' => 'Wholesale', 'MOBILE' => 'MOBILE', 'WEB' => 'Web store'], self::labels($channel['choices']));
     }
 
     /**
@@ -112,7 +115,8 @@ final class EntryListFilterTypeTest extends TypeTestCase
     protected function getExtensions(): array
     {
         $channels = $this->prophesize(ChannelRepositoryInterface::class);
-        $channels->findBy([], ['name' => 'ASC'])->willReturn([self::channel('B2B', 'Wholesale'), self::channel('WEB', 'Web store')]);
+        // A channel without a name is offered by its code, and one without a code isn't offered
+        $channels->findBy([], ['name' => 'ASC'])->willReturn([self::channel('B2B', 'Wholesale'), self::channel('MOBILE', null), self::channel(null, 'Unfinished'), self::channel('WEB', 'Web store')]);
 
         return [new PreloadedExtension([new EntryListFilterType($channels->reveal())], [])];
     }
@@ -134,7 +138,7 @@ final class EntryListFilterTypeTest extends TypeTestCase
         return $labels;
     }
 
-    private static function channel(string $code, string $name): ChannelInterface
+    private static function channel(?string $code, ?string $name): ChannelInterface
     {
         $channel = new Channel();
         $channel->setCode($code);

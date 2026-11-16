@@ -77,13 +77,18 @@ final class EntryListFilterType extends AbstractType
     }
 
     /**
-     * @return array<string, string> the channels' names => their codes, by name
+     * @return array<string, string> the channels' names, or else their codes => their codes, by name
      */
     private function channels(): array
     {
         $channels = [];
         foreach ($this->channelRepository->findBy([], ['name' => 'ASC']) as $channel) {
-            $channels[(string) $channel->getName()] = (string) $channel->getCode();
+            $code = $channel->getCode();
+            if (null === $code) {
+                continue;
+            }
+
+            $channels[$channel->getName() ?? $code] = $code;
         }
 
         return $channels;
