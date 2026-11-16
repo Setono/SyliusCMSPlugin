@@ -29,10 +29,12 @@ final readonly class EntryListQuery implements EntryListQueryInterface
 
     public function createQueryBuilder(?string $contentType, EntryListCriteria $criteria): QueryBuilder
     {
-        // The translations are fetched with the entries, which the rows read their titles and slugs from
+        // The translations and audience groups are fetched with the entries: the rows read their titles and slugs,
+        // and their status labels the audience
         $queryBuilder = $this->entries($contentType)
-            ->select('entry', 'translation')
+            ->select('entry', 'translation', 'audience_group')
             ->leftJoin('entry.translations', 'translation')
+            ->leftJoin('entry.audienceGroups', 'audience_group')
             ->orderBy('entry.lastEditedAt', 'DESC')
             ->addOrderBy('entry.id', 'DESC')
         ;
