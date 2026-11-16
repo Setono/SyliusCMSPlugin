@@ -35,22 +35,15 @@ final class ProblemSummaryTest extends TestCase
      */
     public function it_gives_each_entrys_count_the_entries_that_need_attention_and_the_total(): void
     {
-        $summary = new ProblemSummary([3 => new ProblemCount(1, 2), 8 => new ProblemCount(0, 1)]);
+        $first = new Page();
+        $second = new Page();
+        $summary = new ProblemSummary([$first->getUuid() => new ProblemCount(1, 2), $second->getUuid() => new ProblemCount(0, 1)]);
 
-        self::assertEquals(new ProblemCount(1, 2), $summary->of(self::entry(3)));
-        self::assertEquals(new ProblemCount(), $summary->of(self::entry(5)));
-        self::assertEquals(new ProblemCount(), $summary->of(new Page()), 'An entry not saved yet has no problems counted');
-        self::assertSame([3, 8], $summary->entryIds());
+        self::assertEquals(new ProblemCount(1, 2), $summary->of($first));
+        self::assertEquals(new ProblemCount(), $summary->of(new Page()));
+        self::assertSame([$first->getUuid(), $second->getUuid()], $summary->entryUuids());
         self::assertEquals(new ProblemCount(1, 3), $summary->total());
         self::assertEquals(new ProblemCount(), (new ProblemSummary())->total());
-        self::assertSame([], (new ProblemSummary())->entryIds());
-    }
-
-    private static function entry(int $id): Page
-    {
-        $page = new Page();
-        (new \ReflectionProperty($page, 'id'))->setValue($page, $id);
-
-        return $page;
+        self::assertSame([], (new ProblemSummary())->entryUuids());
     }
 }

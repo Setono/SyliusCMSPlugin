@@ -129,17 +129,20 @@ final class LintCommandTest extends TestCase
 
     /**
      * @test
+     *
+     * @testWith [199, 1]
+     *           [200, 2]
      */
-    public function it_drops_the_entries_it_has_checked_every_hundred_entries(): void
+    public function it_drops_the_entries_it_has_checked_every_hundred_entries(int $entries, int $clears): void
     {
         $pages = [];
-        for ($i = 0; $i < 201; ++$i) {
+        for ($i = 0; $i < $entries; ++$i) {
             $pages[] = new Page();
         }
 
         $this->entries->iterateAll()->willReturn($pages);
         $this->workingCopies->getWorkingCopy(Argument::any())->willReturnArgument(0);
-        $this->manager->clear()->shouldBeCalledTimes(2);
+        $this->manager->clear()->shouldBeCalledTimes($clears);
 
         self::assertSame(Command::SUCCESS, $this->lint([])->getStatusCode());
     }

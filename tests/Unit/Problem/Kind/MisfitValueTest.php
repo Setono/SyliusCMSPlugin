@@ -30,6 +30,7 @@ use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\OpeningHoursHandler;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Store;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
+use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Testimonial;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -48,6 +49,8 @@ final class MisfitValueTest extends TestCase
     private const C = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4c';
 
     private const D = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d';
+
+    private const E = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4e';
 
     private const EMPTY_DOCUMENT = ['type' => 'doc', 'content' => [['type' => 'paragraph']]];
 
@@ -88,17 +91,38 @@ final class MisfitValueTest extends TestCase
     /**
      * @test
      */
+    public function it_checks_every_field_of_a_block_whatever_the_fields_before_it_hold(): void
+    {
+        $page = self::page(
+            new StoredBlock(self::A, 'testimonial', 1, fields: ['quote' => 'Not a locale map', 'author' => 42, 'bio' => ['en_US' => '<p>Hello</p>']]),
+            new StoredBlock(self::B, 'testimonial', 1, fields: ['author' => 'Jane', 'bio' => ['en_US' => 'Born in 1970', 7 => 'Under a key that is no locale']]),
+        );
+
+        self::assertEquals([
+            self::problem($page, self::A, 'testimonial', 'quote', 'app.quote', null),
+            self::problem($page, self::A, 'testimonial', 'author', 'app.author', null),
+            self::problem($page, self::A, 'testimonial', 'bio', 'app.bio', 'en_US'),
+            // The tree is stored as canonical JSON, whose keys are sorted
+            self::problem($page, self::B, 'testimonial', 'bio', 'app.bio', '7'),
+            self::problem($page, self::B, 'testimonial', 'bio', 'app.bio', 'en_US'),
+        ], [...$this->kind()->findIn($page)]);
+    }
+
+    /**
+     * @test
+     */
     public function it_finds_values_at_any_depth_but_none_inside_a_block_of_a_type_the_code_no_longer_has(): void
     {
         $page = self::page(
             new StoredBlock(self::A, 'group', 1, children: [new StoredBlock(self::B, 'heading', 1, fields: ['level' => 1])]),
             new StoredBlock(self::C, 'promo', 1, fields: ['level' => 1], children: [new StoredBlock(self::D, 'heading', 1, fields: ['level' => 1])]),
+            new StoredBlock(self::E, 'heading', 1, fields: ['level' => 2]),
         );
 
-        self::assertEquals(
-            [self::problem($page, self::B, 'heading', 'level', 'setono_sylius_cms.field.heading.level', null)],
-            [...$this->kind()->findIn($page)],
-        );
+        self::assertEquals([
+            self::problem($page, self::B, 'heading', 'level', 'setono_sylius_cms.field.heading.level', null),
+            self::problem($page, self::E, 'heading', 'level', 'setono_sylius_cms.field.heading.level', null),
+        ], [...$this->kind()->findIn($page)]);
     }
 
     /**
@@ -156,7 +180,7 @@ final class MisfitValueTest extends TestCase
 
     private static function problem(Page $page, string $block, string $type, string $field, string $label, ?string $locale): Problem
     {
-        $blockLabels = ['heading' => 'setono_sylius_cms.block_type.heading', 'group' => 'setono_sylius_cms.block_type.group', 'rich_text' => 'setono_sylius_cms.block_type.rich_text', 'store' => 'app.store'];
+        $blockLabels = ['heading' => 'setono_sylius_cms.block_type.heading', 'group' => 'setono_sylius_cms.block_type.group', 'rich_text' => 'setono_sylius_cms.block_type.rich_text', 'store' => 'app.store', 'testimonial' => 'app.testimonial'];
 
         return new Problem(
             'misfit_value',
@@ -189,7 +213,7 @@ final class MisfitValueTest extends TestCase
         ]));
 
         return new MisfitValue(
-            new BlockTypeRegistry(['heading' => Heading::class, 'group' => Group::class, 'rich_text' => RichText::class, 'store' => Store::class], new FieldReader()),
+            new BlockTypeRegistry(['heading' => Heading::class, 'group' => Group::class, 'rich_text' => RichText::class, 'store' => Store::class, 'testimonial' => Testimonial::class], new FieldReader()),
             new LayoutRegistry(['page' => ['landing' => Landing::class]], new FieldReader()),
             new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
             $handlers,

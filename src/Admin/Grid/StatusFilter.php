@@ -63,17 +63,17 @@ final readonly class StatusFilter implements FilterInterface
     }
 
     /**
-     * The entries with a problem, which the problem summary finds outside SQL, by their IDs
+     * The entries with a problem, which the problem summary finds outside SQL, by their UUIDs
      */
     private function needsAttention(QueryBuilder $queryBuilder, string $entry): void
     {
-        $ids = $this->problemSummaries->getSummary()->entryIds();
-        if ([] === $ids) {
+        $uuids = $this->problemSummaries->getSummary()->entryUuids();
+        if ([] === $uuids) {
             $queryBuilder->andWhere('1 = 0');
 
             return;
         }
 
-        $queryBuilder->andWhere(sprintf('%s.id IN (:cms_status_needs_attention)', $entry))->setParameter('cms_status_needs_attention', $ids);
+        $queryBuilder->andWhere(sprintf('%s.uuid IN (:cms_status_needs_attention)', $entry))->setParameter('cms_status_needs_attention', $uuids);
     }
 }

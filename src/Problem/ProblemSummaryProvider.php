@@ -58,7 +58,7 @@ final class ProblemSummaryProvider implements ProblemSummaryProviderInterface, R
             }
 
             if ($count->total() > 0) {
-                $entries[(int) $entry->getId()] = $count;
+                $entries[$entry->getUuid()] = $count;
             }
         }
 

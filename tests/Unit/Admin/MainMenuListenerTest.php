@@ -71,7 +71,7 @@ final class MainMenuListenerTest extends TestCase
      */
     public function its_badge_counts_the_errors_and_warnings_that_need_attention_marked_as_an_error_when_there_is_one(): void
     {
-        $content = $this->syliusMenu(['configuration'], new ProblemSummary([3 => new ProblemCount(1, 1), 4 => new ProblemCount(0, 1)]))->getChild('setono_sylius_cms')?->getChild('content');
+        $content = $this->syliusMenu(['configuration'], new ProblemSummary(['0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a' => new ProblemCount(1, 1), '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4b' => new ProblemCount(0, 1)]))->getChild('setono_sylius_cms')?->getChild('content');
         self::assertNotNull($content);
 
         self::assertSame([
@@ -86,7 +86,7 @@ final class MainMenuListenerTest extends TestCase
      */
     public function its_badge_is_a_warning_when_only_warnings_need_attention(): void
     {
-        $content = $this->syliusMenu(['configuration'], new ProblemSummary([4 => new ProblemCount(0, 1)]))->getChild('setono_sylius_cms')?->getChild('content');
+        $content = $this->syliusMenu(['configuration'], new ProblemSummary(['0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4b' => new ProblemCount(0, 1)]))->getChild('setono_sylius_cms')?->getChild('content');
         self::assertNotNull($content);
 
         self::assertSame([

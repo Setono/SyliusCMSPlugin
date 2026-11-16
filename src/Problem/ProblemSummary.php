@@ -13,7 +13,7 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 final readonly class ProblemSummary
 {
     /**
-     * @param array<int, ProblemCount> $entries the count of each entry with a problem, by the entry's ID
+     * @param array<string, ProblemCount> $entries the count of each entry with a problem, by the entry's UUID
      */
     public function __construct(private array $entries = [])
     {
@@ -21,15 +21,15 @@ final readonly class ProblemSummary
 
     public function of(EntryInterface $entry): ProblemCount
     {
-        return $this->entries[(int) $entry->getId()] ?? new ProblemCount();
+        return $this->entries[$entry->getUuid()] ?? new ProblemCount();
     }
 
     /**
      * The entries that need attention: those with a problem
      *
-     * @return list<int> their IDs
+     * @return list<string> their UUIDs
      */
-    public function entryIds(): array
+    public function entryUuids(): array
     {
         return array_keys($this->entries);
     }

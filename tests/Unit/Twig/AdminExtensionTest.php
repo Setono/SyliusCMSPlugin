@@ -46,11 +46,14 @@ final class AdminExtensionTest extends IntegrationTestCase
 {
     use ProphecyTrait;
 
+    private Page $storesEntry;
+
     /** @var ObjectProphecy<RepositoryInterface<CustomerGroupInterface>> */
     private ObjectProphecy $customerGroups;
 
     protected function setUp(): void
     {
+        $this->storesEntry = new Page();
         /** @var ObjectProphecy<RepositoryInterface<CustomerGroupInterface>> $customerGroups */
         $customerGroups = $this->prophesize(RepositoryInterface::class);
         $this->customerGroups = $customerGroups;
@@ -90,14 +93,13 @@ final class AdminExtensionTest extends IntegrationTestCase
     }
 
     /**
-     * The store's one entry, with ID 1
+     * The store's one entry
      *
      * @return array{page: Page}
      */
     public function aPageWithABlockOfATypeTheCodeNoLongerHas(string $key): array
     {
-        $page = new Page();
-        (new \ReflectionProperty($page, 'id'))->setValue($page, 1);
+        $page = $this->storesEntry;
         $page->setBlockTree(new StoredTree(null, [new StoredBlock($key, 'promo', 1)]));
 
         return ['page' => $page];

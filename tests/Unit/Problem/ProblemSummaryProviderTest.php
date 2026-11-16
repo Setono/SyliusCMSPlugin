@@ -41,8 +41,8 @@ final class ProblemSummaryProviderTest extends TestCase
         $this->finder = $this->prophesize(ProblemFinderInterface::class);
         $this->cache = new ArrayAdapter();
 
-        $this->withProblems = self::entry(3);
-        $this->clean = self::entry(5);
+        $this->withProblems = new Page();
+        $this->clean = new Page();
         $this->finder->findByEntry($this->withProblems)->willReturn([self::problem(Severity::Error), self::problem(Severity::Warning), self::problem(Severity::Warning)]);
         $this->finder->findByEntry($this->clean)->willReturn([]);
     }
@@ -57,7 +57,7 @@ final class ProblemSummaryProviderTest extends TestCase
 
         $summary = $provider->getSummary();
 
-        self::assertSame([3], $summary->entryIds());
+        self::assertSame([$this->withProblems->getUuid()], $summary->entryUuids());
         self::assertEquals(new ProblemCount(1, 2), $summary->of($this->withProblems));
         self::assertEquals(new ProblemCount(), $summary->of($this->clean));
         self::assertSame($summary, $provider->getSummary());
@@ -81,9 +81,9 @@ final class ProblemSummaryProviderTest extends TestCase
 
         $provider->clear();
 
-        self::assertSame([3], $other->getSummary()->entryIds(), 'Another request in progress keeps what it read');
+        self::assertSame([$this->withProblems->getUuid()], $other->getSummary()->entryUuids(), 'Another request in progress keeps what it read');
         $this->finder->findByEntry($this->withProblems)->willReturn([]);
-        self::assertSame([], $provider->getSummary()->entryIds());
+        self::assertSame([], $provider->getSummary()->entryUuids());
     }
 
     /**
@@ -91,26 +91,18 @@ final class ProblemSummaryProviderTest extends TestCase
      */
     public function it_leaves_out_an_entry_whose_stored_content_cannot_be_read(): void
     {
-        $unreadableTree = self::entry(7);
-        $unreadableDraft = self::entry(8);
+        $unreadableTree = new Page();
+        $unreadableDraft = new Page();
         $this->entries->iterateAll()->willReturn([$unreadableTree, $this->withProblems, $unreadableDraft]);
         $this->finder->findByEntry($unreadableTree)->willThrow(new InvalidStoredTreeException('Not a tree'));
         $this->finder->findByEntry($unreadableDraft)->willThrow(new InvalidEntryFormatException('Not an entry'));
 
-        self::assertSame([3], $this->provider()->getSummary()->entryIds());
+        self::assertSame([$this->withProblems->getUuid()], $this->provider()->getSummary()->entryUuids());
     }
 
     private function provider(): ProblemSummaryProvider
     {
         return new ProblemSummaryProvider($this->entries->reveal(), $this->finder->reveal(), $this->cache);
-    }
-
-    private static function entry(int $id): Page
-    {
-        $page = new Page();
-        (new \ReflectionProperty($page, 'id'))->setValue($page, $id);
-
-        return $page;
     }
 
     private static function problem(Severity $severity): Problem
