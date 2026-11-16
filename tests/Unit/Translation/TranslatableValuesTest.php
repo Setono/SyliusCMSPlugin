@@ -263,6 +263,18 @@ final class TranslatableValuesTest extends TestCase
     }
 
     /**
+     * The entry renders in the default layout, which ignores the values of a disabled one
+     *
+     * @test
+     */
+    public function it_gives_nothing_of_a_disabled_layout(): void
+    {
+        $page = self::page([], new StoredLayout('promo', 1, ['tagline' => ['en_US' => 'Sale']]));
+
+        self::assertSame(['entry.title', 'entry.slug'], array_map(static fn (TranslatableValue $value): string => $value->path, $this->values(['page.promo'])->of($page, 'da_DK')));
+    }
+
+    /**
      * @test
      */
     public function it_counts_the_untranslated_and_outdated_values_of_a_locale(): void
@@ -313,7 +325,10 @@ final class TranslatableValuesTest extends TestCase
         return $page;
     }
 
-    private function values(): TranslatableValues
+    /**
+     * @param list<string> $disabledLayouts
+     */
+    private function values(array $disabledLayouts = []): TranslatableValues
     {
         $fallbackChain = $this->prophesize(FallbackChainInterface::class);
         $fallbackChain->localesFor('de_CH')->willReturn(['de_CH', 'fr_FR', 'de_DE', 'en_US']);
@@ -334,7 +349,7 @@ final class TranslatableValuesTest extends TestCase
                 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
             ]),
             new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class, 'group' => Group::class], new FieldReader()),
-            new LayoutRegistry(['page' => ['promo' => Promo::class]], new FieldReader()),
+            new LayoutRegistry(['page' => ['promo' => Promo::class]], new FieldReader(), disabled: $disabledLayouts),
             new FallbackValues($handlers, $fallbackChain->reveal()),
             $fallbackChain->reveal(),
         );

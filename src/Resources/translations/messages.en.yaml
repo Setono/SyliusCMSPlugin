@@ -67,6 +67,7 @@ setono_sylius_cms:
     problem:
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
+        removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
     publish:
         invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'

@@ -161,6 +161,7 @@ final class MisfitValueTest extends TestCase
             'transparentHeader',
         )], [...$this->kind()->findIn($page)]);
         self::assertSame([], [...$this->kind()->findIn($removed)]);
+        self::assertSame([], [...$this->kind(['page.landing'])->findIn($page)], 'The default layout an entry in a disabled one renders in ignores its values');
     }
 
     /**
@@ -202,7 +203,10 @@ final class MisfitValueTest extends TestCase
         return $page;
     }
 
-    private function kind(): MisfitValue
+    /**
+     * @param list<string> $disabledLayouts
+     */
+    private function kind(array $disabledLayouts = []): MisfitValue
     {
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
@@ -214,7 +218,7 @@ final class MisfitValueTest extends TestCase
 
         return new MisfitValue(
             new BlockTypeRegistry(['heading' => Heading::class, 'group' => Group::class, 'rich_text' => RichText::class, 'store' => Store::class, 'testimonial' => Testimonial::class], new FieldReader()),
-            new LayoutRegistry(['page' => ['landing' => Landing::class]], new FieldReader()),
+            new LayoutRegistry(['page' => ['landing' => Landing::class]], new FieldReader(), disabled: $disabledLayouts),
             new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
             $handlers,
             new FallbackValues($handlers, $this->prophesize(FallbackChainInterface::class)->reveal()),

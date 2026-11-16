@@ -8,6 +8,8 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredLayout;
+use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -56,6 +58,30 @@ final class ProblemsTest extends WebTestCase
         // It sits right after the Publishing section
         $sections = $crawler->filter('[data-section]')->each(static fn (Crawler $section): ?string => $section->attr('data-section'));
         self::assertSame(['publishing', 'problems'], array_slice($sections, 0, 2));
+    }
+
+    /**
+     * @test
+     */
+    public function an_entry_whose_layout_was_removed_from_code_has_a_warning_fixed_in_the_builders_entry_settings(): void
+    {
+        $client = self::signedInClient();
+        $page = self::createPage('About us', 'about-us', 'Hello', published: true);
+        $page->setBlockTree(new StoredTree(new StoredLayout('gone', 1), $page->getBlockTree()->blocks));
+        self::getContainer()->get('setono_sylius_cms.manager.page')->flush();
+
+        $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s', $page->getUuid()));
+
+        self::assertResponseIsSuccessful();
+        $problem = $crawler->filter('[data-section="problems"] [data-problem]');
+        self::assertCount(1, $problem);
+        self::assertSame(['removed_layout', 'warning'], [$problem->attr('data-problem'), $problem->attr('data-severity')]);
+        self::assertSame('Its layout "gone" was removed from the code or disabled, so it shows in the default layout, Standard, until you pick one.', $problem->filter('.description')->text());
+        self::assertSame(sprintf('/admin/cms/entry/%s/builder', $page->getUuid()), $problem->selectLink('Fix in builder')->attr('href'));
+
+        // The shop shows it in the default layout meanwhile
+        $client->request('GET', '/en_US/about-us');
+        self::assertSelectorTextSame('h1', 'About us');
     }
 
     /**
