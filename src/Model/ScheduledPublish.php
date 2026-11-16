@@ -94,7 +94,7 @@ class ScheduledPublish implements ScheduledPublishInterface
 
     public function isOverdue(\DateTimeImmutable $now): bool
     {
-        return !$this->isFailed() && $now >= $this->getPublishAt()->modify('+' . self::OVERDUE_AFTER);
+        return !$this->isFailed() && $now >= $this->getPublishAt()->modify(self::OVERDUE_AFTER);
     }
 
     private static function newToken(): string

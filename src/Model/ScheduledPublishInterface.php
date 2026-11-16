@@ -16,9 +16,9 @@ interface ScheduledPublishInterface extends ResourceInterface
 {
     /**
      * How long after its time a scheduled publish that hasn't run is overdue, when the admin warns that the Messenger
-     * worker may not be running
+     * worker may not be running, as a date modifier
      */
-    public const OVERDUE_AFTER = '5 minutes';
+    public const OVERDUE_AFTER = '+5 minutes';
 
     public function getId(): ?int;
 
