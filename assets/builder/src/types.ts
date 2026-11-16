@@ -117,6 +117,11 @@ export interface EntryResponse {
     status: EntryStatus;
     /** Who else has the entry open. */
     editors: Editor[];
+    /**
+     * The untranslated and outdated counts of each locale the entry has a translation in, as the admin shows them. The
+     * builder counts them itself as the working copy changes.
+     */
+    completeness?: Record<string, { untranslated: number; outdated: number }>;
 }
 
 /**
