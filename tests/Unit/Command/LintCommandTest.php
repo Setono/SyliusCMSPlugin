@@ -133,7 +133,9 @@ final class LintCommandTest extends TestCase
         $after = new Page();
         $this->entries->iterateAll()->willReturn([$brokenTree, $brokenDraft, $after]);
         $this->upgrader->readBlockTree($brokenTree)->willThrow(new InvalidStoredTreeException('Not a block tree'));
-        $this->workingCopies->hasDraft($brokenTree)->willReturn(false);
+        // Its draft is still checked
+        $this->workingCopies->hasDraft($brokenTree)->willReturn(true);
+        $this->workingCopies->getWorkingCopy($brokenTree)->willReturn($after);
         $this->upgrader->readBlockTree($brokenDraft)->willReturn(new StoredTree(null, []));
         $this->workingCopies->hasDraft($brokenDraft)->willReturn(true);
         $this->workingCopies->getWorkingCopy($brokenDraft)->willThrow(new InvalidEntryFormatException('Not an entry'));
@@ -145,9 +147,10 @@ final class LintCommandTest extends TestCase
         self::assertSame([
             'Entry Content Block Field Locale Problem',
             sprintf('%s published This content can\'t be read: Not a block tree', $brokenTree->getUuid()),
+            sprintf('%s draft A block of the type "promo", which the code no longer has, isn\'t shown.', $brokenTree->getUuid()),
             sprintf('%s draft This content can\'t be read: Not an entry', $brokenDraft->getUuid()),
             sprintf('%s draft A block of the type "promo", which the code no longer has, isn\'t shown.', $after->getUuid()),
-            '[ERROR] Found 3 problems in 3 entries.',
+            '[ERROR] Found 4 problems in 3 entries.',
         ], self::lines($tester));
     }
 

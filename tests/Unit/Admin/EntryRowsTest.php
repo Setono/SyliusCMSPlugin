@@ -201,6 +201,26 @@ final class EntryRowsTest extends TestCase
     }
 
     /**
+     * A draft that isn't JSON fails where it's opened, not in the lists
+     *
+     * @test
+     */
+    public function it_reads_no_title_or_url_of_a_draft_that_is_not_json(): void
+    {
+        $page = self::page(['en_US' => ['About us', 'about-us']]);
+        $page->publish(new \DateTimeImmutable('2026-11-01T00:00:00Z'));
+        $draft = new Draft();
+        $draft->setEntry($page);
+        $draft->setContent('{"translations":');
+        $this->drafts->findByEntries([$page])->willReturn([$draft]);
+
+        [$row] = $this->rows([$page], 'en_US');
+
+        self::assertNull($row->title);
+        self::assertNull($row->url);
+    }
+
+    /**
      * @test
      */
     public function it_has_no_url_for_a_content_type_without_its_own_url_or_an_entry_without_a_slug(): void

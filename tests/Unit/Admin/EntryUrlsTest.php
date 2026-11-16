@@ -22,6 +22,7 @@ use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\Article;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final class EntryUrlsTest extends TestCase
@@ -103,6 +104,21 @@ final class EntryUrlsTest extends TestCase
             new EntryUrl('da_DK', '/da_DK/velkommen', null, [], '/da_DK/'),
             new EntryUrl('en_US', '/en_US/welcome', null, [], '/en_US/'),
         ], $this->entryUrls()->of($page));
+    }
+
+    /**
+     * Only a page can be a channel's homepage
+     *
+     * @test
+     */
+    public function it_gives_an_entry_of_another_content_type_with_its_own_url_no_homepage_url(): void
+    {
+        $article = new Article();
+        $article->setCurrentLocale('en_US');
+        $article->setTitle('News');
+        $article->setSlug('news');
+
+        self::assertEquals([new EntryUrl('en_US', '/en_US/articles/news', null)], $this->entryUrls()->of($article));
     }
 
     /**
@@ -198,6 +214,7 @@ final class EntryUrlsTest extends TestCase
             new ContentTypeRegistry([
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
                 'recipe' => ['model' => Recipe::class, 'translation' => EntryTranslation::class, 'resource' => 'app.recipe'],
+                'article' => ['model' => Article::class, 'translation' => EntryTranslation::class, 'resource' => 'app.article'],
             ]),
             $urlGenerator->reveal(),
             $this->oldSlugs->reveal(),
