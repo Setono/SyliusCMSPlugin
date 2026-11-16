@@ -82,7 +82,11 @@ final class TranslatableValuesTest extends TestCase
      */
     public function it_leaves_out_a_value_no_locale_has(): void
     {
-        $page = self::page([self::heading(self::A, ['en_US' => '', 'da_DK' => null]), new StoredBlock(self::B, 'heading', 1)]);
+        $page = self::page([
+            self::heading(self::A, ['en_US' => '', 'da_DK' => null]),
+            new StoredBlock(self::B, 'heading', 1),
+            new StoredBlock(self::C, 'heading', 1, fields: ['text' => 'not a locale map']),
+        ]);
 
         self::assertSame([], $this->blockValues($page, 'da_DK'));
     }
@@ -196,6 +200,7 @@ final class TranslatableValuesTest extends TestCase
         $danish = new PageTranslation();
         $danish->setLocale('da_DK');
         $danish->setTitle('Om os');
+        $danish->setSlug('');
         $page->addTranslation($danish);
 
         self::assertEquals([

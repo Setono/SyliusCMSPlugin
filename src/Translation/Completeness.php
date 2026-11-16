@@ -34,9 +34,4 @@ final readonly class Completeness
 
         return new self($localeCode, $untranslated, $outdated);
     }
-
-    public function isComplete(): bool
-    {
-        return 0 === $this->untranslated && 0 === $this->outdated;
-    }
 }

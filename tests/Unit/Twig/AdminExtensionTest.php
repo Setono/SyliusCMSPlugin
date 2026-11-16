@@ -28,6 +28,7 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Translation\TranslatableValues;
 use Setono\SyliusCMSPlugin\Twig\AdminExtension;
 use Setono\SyliusCMSPlugin\Twig\AdminRuntime;
+use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Customer\Model\CustomerGroup;
@@ -169,7 +170,7 @@ final class AdminExtensionTest extends IntegrationTestCase
         $web->addLocale($english);
         $web->addLocale($danish);
         $web->setDefaultLocale($english);
-        /** @var ObjectProphecy<ChannelRepositoryInterface<Channel>> $channels */
+        /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $channels */
         $channels = $this->prophesize(ChannelRepositoryInterface::class);
         $channels->findBy([], ['id' => 'ASC'])->willReturn([$web]);
         $fallbackChain = $this->prophesize(FallbackChainInterface::class);

@@ -206,14 +206,15 @@ final class ChangeSetTest extends TestCase
             ['op' => 'set_entry_translated', 'field' => 'title', 'locale' => 'de_DE', 'translated' => null],
         ]]);
 
-        self::assertSame([
-            [self::KEY, 'text', 'da_DK', ['from' => 'en_US', 'fingerprint' => $fingerprint]],
-            [self::KEY, 'text', 'de_DE', null],
-        ], array_map(static fn (SetTranslated $change): array => [$change->key, $change->field, $change->locale, $change->translated], array_slice($changeSet->changes, 0, 2)));
-        self::assertSame([
-            ['title', 'da_DK', ['from' => 'en_US', 'fingerprint' => $fingerprint]],
-            ['title', 'de_DE', null],
-        ], array_map(static fn (SetEntryTranslated $change): array => [$change->field, $change->locale, $change->translated], array_slice($changeSet->changes, 2)));
+        self::assertEquals([
+            new SetTranslated(self::KEY, 'text', 'da_DK', ['from' => 'en_US', 'fingerprint' => $fingerprint]),
+            new SetTranslated(self::KEY, 'text', 'de_DE', null),
+            new SetEntryTranslated('title', 'da_DK', ['from' => 'en_US', 'fingerprint' => $fingerprint]),
+            new SetEntryTranslated('title', 'de_DE', null),
+        ], $changeSet->changes);
+        // Only the locale and the fingerprint are kept, in that order
+        $translated = $changeSet->changes[0] instanceof SetTranslated ? $changeSet->changes[0]->translated : null;
+        self::assertSame(['from' => 'en_US', 'fingerprint' => $fingerprint], $translated);
     }
 
     /**

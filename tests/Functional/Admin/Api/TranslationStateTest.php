@@ -132,7 +132,7 @@ final class TranslationStateTest extends BuilderApiTestCase
 
         $state->write(self::reloadPage($page), 'da_DK', $values[0]->path, 'Velkommen', 'en_US', (string) $values[0]->sourceFingerprint);
 
-        self::assertNull(self::reloadPage($page)->getBlockTree()->blocks[1]->fields['text']['da_DK'] ?? null, 'The rows hold the published content');
+        self::assertSame(['en_US' => 'Welcome'], self::reloadPage($page)->getBlockTree()->blocks[1]->fields['text'] ?? null, 'The rows hold the published content');
         self::assertSame($lockToken + 1, self::lockToken($client, $page));
         $written = array_values(array_filter([...$state->values(self::reloadPage($page), 'da_DK')], static fn (TranslatableValue $value): bool => $value->path === $values[0]->path));
         self::assertCount(1, $written);

@@ -73,12 +73,14 @@ final class TranslationChips implements ResetInterface
     {
         $locales = [];
         foreach ($this->channelLocales() as $channelCode => $localeCodes) {
-            if (in_array($channelCode, $channelCodes, true)) {
-                $locales = [...$locales, ...$localeCodes];
+            foreach (in_array($channelCode, $channelCodes, true) ? $localeCodes : [] as $localeCode) {
+                if (!in_array($localeCode, $locales, true)) {
+                    $locales[] = $localeCode;
+                }
             }
         }
 
-        return array_values(array_unique($locales));
+        return $locales;
     }
 
     /**
@@ -97,17 +99,17 @@ final class TranslationChips implements ResetInterface
             $localeCodes = [];
             if ($channel instanceof CoreChannelInterface) {
                 foreach ($channel->getLocales() as $locale) {
-                    $localeCodes[] = (string) $locale->getCode();
+                    $localeCodes[] = $locale->getCode() ?? '';
                 }
                 sort($localeCodes);
 
                 $default = $channel->getDefaultLocale()?->getCode();
-                if (null !== $default && in_array($default, $localeCodes, true)) {
-                    $localeCodes = [$default, ...array_values(array_diff($localeCodes, [$default]))];
+                if (in_array($default, $localeCodes, true)) {
+                    $localeCodes = [$default, ...array_diff($localeCodes, [$default])];
                 }
             }
 
-            $this->channelLocales[(string) $channel->getCode()] = $localeCodes;
+            $this->channelLocales[$channel->getCode() ?? ''] = $localeCodes;
         }
 
         return $this->channelLocales;

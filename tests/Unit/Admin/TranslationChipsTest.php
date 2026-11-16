@@ -117,6 +117,39 @@ final class TranslationChipsTest extends TestCase
     /**
      * @test
      */
+    public function it_says_a_translation_without_a_title_is_no_translation(): void
+    {
+        $page = self::page();
+        ChannelsAndAudience::modifier()->setChannels($page, ['B2B']);
+        $translation = new PageTranslation();
+        $translation->setLocale('nb_NO');
+        $translation->setSlug('om-oss');
+        $page->addTranslation($translation);
+        $this->workingCopies->getWorkingCopyWithDraft($page, null)->willReturn($page);
+
+        self::assertEquals([new TranslationChip('nb_NO', false)], $this->chips()->of(self::row($page)));
+    }
+
+    /**
+     * @test
+     */
+    public function it_puts_a_channel_s_default_locale_first_only_when_the_channel_has_it(): void
+    {
+        $page = self::page();
+        ChannelsAndAudience::modifier()->setChannels($page, ['WEB']);
+        $channel = self::channel('WEB', null, 'sv_SE', 'da_DK');
+        $elsewhere = new Locale();
+        $elsewhere->setCode('fi_FI');
+        $channel->setDefaultLocale($elsewhere);
+        $this->channels->findBy([], ['id' => 'ASC'])->willReturn([$channel]);
+        $this->workingCopies->getWorkingCopyWithDraft($page, null)->willReturn($page);
+
+        self::assertSame(['da_DK', 'sv_SE'], array_map(static fn (TranslationChip $chip): string => $chip->localeCode, $this->chips()->of(self::row($page))));
+    }
+
+    /**
+     * @test
+     */
     public function it_gives_no_chips_to_an_entry_in_no_channel(): void
     {
         $page = self::page();

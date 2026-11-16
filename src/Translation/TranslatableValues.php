@@ -53,7 +53,7 @@ final readonly class TranslatableValues
                 sprintf('entry.%s', $field),
                 null,
                 array_map(static fn (EntryTranslationInterface $translation): ?string => 'slug' === $field ? $translation->getSlug() : $translation->getTitle(), $translations),
-                array_filter(array_map(static fn (EntryTranslationInterface $translation): ?array => $translation->getTranslated()[$field] ?? null, $translations)),
+                array_map(static fn (EntryTranslationInterface $translation): ?array => $translation->getTranslated()[$field] ?? null, $translations),
                 $localeCode,
             );
         }
@@ -115,6 +115,7 @@ final readonly class TranslatableValues
      */
     private function value(string $path, ?Field $field, mixed $stored, mixed $translated, string $localeCode): ?TranslatableValue
     {
+        /** @var array<string, mixed> $stored a map from locale code to value */
         $stored = is_array($stored) ? $stored : [];
         $value = $stored[$localeCode] ?? null;
 
@@ -159,12 +160,16 @@ final readonly class TranslatableValues
      * The locale an untranslated value is translated from: the first its fallback chain reaches that has a value, or else
      * the first by code that has one. Null when no other locale has a value
      *
-     * @param array<array-key, mixed> $stored
+     * @param array<string, mixed> $stored locale code => value, which is missing in $localeCode
      */
     private function untranslatedSource(?Field $field, array $stored, string $localeCode): ?string
     {
-        $others = array_keys(array_filter($stored, fn (mixed $value): bool => !$this->isMissing($field, $value)));
-        $others = array_values(array_filter(array_map('strval', $others), static fn (string $other): bool => $other !== $localeCode));
+        $others = [];
+        foreach ($stored as $otherLocaleCode => $value) {
+            if (!$this->isMissing($field, $value)) {
+                $others[] = $otherLocaleCode;
+            }
+        }
         sort($others);
 
         foreach ($this->fallbackChain->localesFor($localeCode) as $chained) {
