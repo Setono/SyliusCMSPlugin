@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
 use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
+use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
@@ -26,6 +27,8 @@ use Setono\SyliusCMSPlugin\Model\Revision;
 use Setono\SyliusCMSPlugin\Model\RevisionInterface;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSetInterface;
+use Setono\SyliusCMSPlugin\Model\ShareLink;
+use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
 use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
@@ -33,6 +36,7 @@ use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
+use Setono\SyliusCMSPlugin\Repository\ShareLinkRepository;
 use Setono\SyliusCMSPlugin\Routing\Slug;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
@@ -242,10 +246,12 @@ final class Configuration implements ConfigurationInterface
 
     /**
      * The shipped Sylius resources. The draft and the rows beside an entry (its channels, its audience groups, who has
-     * it open, its saves, its revisions and its old slugs) have no admin screens of their own, so they have no controller.
+     * it open, its saves, its revisions, its old slugs and its share links) have no admin screens of their own, so they
+     * have no controller.
      * A project extends a shipped content type the way it extends any Sylius model:
      * by overriding classes.model, and translation.classes.model, with its own subclasses.
-     * The channel and audience group rows always belong to an entry, so their factories create them for one
+     * The channel and audience group rows always belong to an entry, so their factories create them for one. The share
+     * link factory gives each new share link its random token
      */
     private function addResourcesSection(ArrayNodeDefinition $node): void
     {
@@ -261,6 +267,7 @@ final class Configuration implements ConfigurationInterface
                     ->append(self::resourceWithoutController('saved_change_set', SavedChangeSet::class, SavedChangeSetInterface::class, SavedChangeSetRepository::class))
                     ->append(self::resourceWithoutController('revision', Revision::class, RevisionInterface::class, RevisionRepository::class))
                     ->append(self::resourceWithoutController('old_slug', OldSlug::class, OldSlugInterface::class, OldSlugRepository::class))
+                    ->append(self::resourceWithoutController('share_link', ShareLink::class, ShareLinkInterface::class, ShareLinkRepository::class, ShareLinkFactory::class))
                     ->children()
                         ->arrayNode('page')
                             ->addDefaultsIfNotSet()

@@ -16,5 +16,6 @@
         <service id="Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface" alias="setono_sylius_cms.repository.saved_change_set"/>
         <service id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface" alias="setono_sylius_cms.repository.revision"/>
         <service id="Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface" alias="setono_sylius_cms.repository.old_slug"/>
+        <service id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface" alias="setono_sylius_cms.repository.share_link"/>
     </services>
 </container>

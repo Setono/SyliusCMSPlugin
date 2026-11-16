@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    A revocable link that shows an entry's draft in the shop: its random token, which the shop looks it up by, the
+    channel and locale, and the Shown to and Date fixed when it was made, with who made it and when. Revoking it deletes
+    the row, and deleting the entry deletes its share links
+    -->
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\ShareLink" table="setono_sylius_cms__share_link">
+        <indexes>
+            <index name="setono_sylius_cms__share_link_entry_created_idx" columns="entry_id,created_at"/>
+        </indexes>
+
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="token" type="string" length="64" unique="true"/>
+        <field name="channelCode" column="channel_code" type="string"/>
+        <field name="localeCode" column="locale" type="string"/>
+        <!-- A customer group code, "@guest" or "@no_group" -->
+        <field name="shownTo" column="shown_to" type="string"/>
+        <!-- Null shows the page at the time it's opened -->
+        <field name="date" column="shown_at" type="datetime_immutable" nullable="true"/>
+        <field name="createdAt" column="created_at" type="datetime_immutable"/>
+        <field name="createdBy" column="created_by" type="string" nullable="true"/>
+
+        <many-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\Entry">
+            <join-column name="entry_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
+        </many-to-one>
+    </mapped-superclass>
+</doctrine-mapping>
