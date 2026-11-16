@@ -132,7 +132,7 @@ Layout fields are the class's typed properties, stored in the tree's `layout.fie
 
 ### Layout templates
 
-A layout template extends `@SetonoSyliusCMSPlugin/layout/base.html.twig`. That template extends `@SyliusShop/layout.html.twig`, fills its `title` and `metatags` blocks ([URLs and SEO](urls-and-seo.md#head-tags)), and renders the block `cms_content` inside `content`. A layout template gets:
+A layout template extends `@SetonoSyliusCMSPlugin/layout/base.html.twig`. That template extends `@SyliusShop/layout.html.twig`, fills its `title` and `metatags` blocks from `cms_head_tags(entry)` ([URLs and SEO](urls-and-seo.md#head-tags), [Twig](#twig)), and renders the block `cms_content` inside `content`. A layout template gets:
 
 | Variable | Value |
 | --- | --- |
@@ -427,9 +427,11 @@ interface TimeDependentConditionKindInterface extends ConditionKindInterface
 }
 ```
 
-`#[AsConditionKind(code, label, needs = [], reads = null, params = null)]`. `reads` is a list of `Setono\SyliusCMSPlugin\Condition\Reads` cases: `HostPage`, `Channel`, `Locale`, `Customer` and `Time`. `null`, the default, means unknown, and a later cache treats a kind that hasn't declared what it reads as uncacheable ([ADR 0021](../adr/0021-storefront-output-renders-on-every-request-in-v2-0.md)). `[]` claims it reads nothing. A kind that reads `Time` implements `TimeDependentConditionKindInterface`.
+`#[AsConditionKind(code, label, needs = [], reads = null, params = null, matches = 'setono_sylius_cms.builder.is_one_of', matchesNot = 'setono_sylius_cms.builder.is_not_one_of')]`. `reads` is a list of `Setono\SyliusCMSPlugin\Condition\Reads` cases: `HostPage`, `Channel`, `Locale`, `Customer` and `Time`. `null`, the default, means unknown, and a later cache treats a kind that hasn't declared what it reads as uncacheable ([ADR 0021](../adr/0021-storefront-output-renders-on-every-request-in-v2-0.md)). `[]` claims it reads nothing. A kind that reads `Time` implements `TimeDependentConditionKindInterface`.
 
-`matches()` answers "is one of". The plugin provides "is not one of" by negating it, so kinds never implement it. Kinds work in visibility conditions on blocks and in page scopes, never on entries ([ADR 0010](../adr/0010-entries-have-an-audience-not-visibility-conditions.md)). The shipped kinds are in [Targeting](targeting.md#condition-kinds).
+`matches` and `matchesNot` are optional translation keys for how the builder words a condition and its negation: "is one of" and "is not one of". A kind that matches otherwise words them its own way, as the shipped date window does with "is inside" and "is outside".
+
+`matches()` answers the condition. The plugin provides the negation by negating it, so kinds never implement it. Kinds work in visibility conditions on blocks and in page scopes, never on entries ([ADR 0010](../adr/0010-entries-have-an-audience-not-visibility-conditions.md)). The shipped kinds are in [Targeting](targeting.md#condition-kinds).
 
 ## Bindable properties
 
@@ -640,6 +642,7 @@ Every event that changes shopper output implements `StorefrontChangedInterface`,
 | `cms_image(media, options = {})` | safe HTML | Renders an image media item ([Media](media.md#the-image-helper)). |
 | `cms_link(link)` | `?ResolvedLink` | Resolves a `Link` value. `null` means don't render the link. |
 | `cms_url(entry)` | `?string` | An entry's URL in the current channel and locale, or `null` when it has none or isn't visible. |
+| `cms_head_tags(entry)` | `HeadTags` | The head tags of an entry shown at its own URL or as a homepage: its title, meta description, robots, canonical URL and hreflang links ([URLs and SEO](urls-and-seo.md#head-tags)). `layout/base.html.twig` calls it and prints them into the shop layout's `title` and `metatags` blocks. A layout that overrides those blocks must call it and print them too. |
 | `cms_preview_mode()` | `?string` | `builder` in the builder's preview, `share` on a share link, otherwise `null`. Themes use it to leave out analytics and other tracking ([Rendering](rendering.md#preview-mode-and-share-links)). |
 
 **Templates** are overridden the Symfony way, under `templates/bundles/SetonoSyliusCMSPlugin/`, or in a Sylius theme. There's no template suggestion chain. The shipped templates are at:
