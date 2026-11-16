@@ -49,6 +49,7 @@ use Setono\SyliusCMSPlugin\Twig\AdminRuntime;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\Channel;
+use Sylius\Component\Core\Model\ChannelInterface as CoreChannelInterface;
 use Sylius\Component\Customer\Model\CustomerGroup;
 use Sylius\Component\Customer\Model\CustomerGroupInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
@@ -268,7 +269,7 @@ final class AdminExtensionTest extends IntegrationTestCase
         $web->addLocale($danish);
         $web->addLocale($english);
         $web->setDefaultLocale($english);
-        /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $channels */
+        /** @var ObjectProphecy<ChannelRepositoryInterface<CoreChannelInterface>> $channels */
         $channels = $this->prophesize(ChannelRepositoryInterface::class);
         $channels->findBy([], ['id' => 'ASC'])->willReturn([$web]);
         $takenUrls = $this->prophesize(TakenUrlFinderInterface::class);
