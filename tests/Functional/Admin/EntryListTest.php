@@ -315,7 +315,13 @@ final class EntryListTest extends BuilderApiTestCase
      */
     private static function listedUuids(Crawler $crawler): array
     {
-        return array_values($crawler->filter('table tbody [data-entry]')->each(static fn (Crawler $title): string => (string) $title->attr('data-entry')));
+        $uuids = [];
+        foreach ($crawler->filter('table tbody [data-entry]') as $title) {
+            self::assertInstanceOf(\DOMElement::class, $title);
+            $uuids[] = $title->getAttribute('data-entry');
+        }
+
+        return $uuids;
     }
 
     /**
@@ -334,7 +340,12 @@ final class EntryListTest extends BuilderApiTestCase
      */
     private static function statusLabels(Crawler $row): array
     {
-        return array_values($row->filter('[data-column="status"] .label')->each(static fn (Crawler $label): string => trim($label->text())));
+        $labels = [];
+        foreach ($row->filter('[data-column="status"] .label') as $label) {
+            $labels[] = trim($label->textContent);
+        }
+
+        return $labels;
     }
 
     private static function createAnnouncement(string $title): Announcement

@@ -34,7 +34,8 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         // leaves an entry with only the translations that matched. It's joined first, because Sylius's grid filters
         // reach a field of an association through the first join of it
         return $this->entries($contentType)
-            ->addSelect('fetched_translation', 'audience_group')
+            ->addSelect('fetched_translation')
+            ->addSelect('audience_group')
             ->leftJoin('o.translations', 'translation')
             ->leftJoin('o.translations', 'fetched_translation')
             ->leftJoin('o.audienceGroups', 'audience_group')
