@@ -3,6 +3,7 @@ import { useBuilder, useBuilderState, useValidationState } from '../context';
 import { FieldRow } from '../form/FieldRow';
 import formStyles from '../form/Form.module.css';
 import { useTranslator } from '../i18n';
+import { fieldFallback } from '../locales';
 import { canDuplicate } from '../nesting';
 import { canShift, findBlock, pathTo, topmostBlocks } from '../tree';
 import type { BlockStyleDefinition, StoredBlock } from '../types';
@@ -20,7 +21,7 @@ import { SettingsPane } from './SettingsPane';
  */
 export function SelectionPane() {
     const t = useTranslator();
-    const { store } = useBuilder();
+    const { store, locales } = useBuilder();
     const block = useBuilderState((state) => (state.selectedKey === null ? undefined : findBlock(state.entry.tree.blocks, state.selectedKey)));
     const blockType = useBuilderState((state) => (block === undefined ? undefined : state.rules.blockTypes.get(block.type)));
     const locale = useBuilderState((state) => state.locale);
@@ -61,6 +62,7 @@ export function SelectionPane() {
                         value={readFieldValue(block.fields, name, schema['x-cms-translatable'], locale)}
                         onChange={(value) => store.getState().setFieldValue(block.key, name, value)}
                         errors={fieldMessages(errors, block.key, name, locale)}
+                        fallback={schema['x-cms-translatable'] ? fieldFallback(locales, block.fields[name], locale) : undefined}
                     />
                 ))}
             </div>

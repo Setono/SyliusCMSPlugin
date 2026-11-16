@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 import { useStore } from 'zustand';
 import type { BuilderApi, PreviewRequest } from './api';
-import type { Channel, CustomerGroup } from './config';
+import type { Channel, CustomerGroup, Locale } from './config';
 import type { PresenceState, PresenceStore } from './presence';
 import type { PreviewState, PreviewStore } from './preview';
 import type { SettingsState, SettingsStore } from './settings';
@@ -29,6 +29,8 @@ export interface BuilderSession {
     presence: PresenceStore;
     /** The store's channels, which the entry's channels are picked from. */
     channels: Channel[];
+    /** The locales of the store's channels, with their names and fallback chains. */
+    locales: Locale[];
     /** The store's customer groups, which the audience names. */
     customerGroups: CustomerGroup[];
 }

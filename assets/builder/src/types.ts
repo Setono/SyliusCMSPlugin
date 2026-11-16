@@ -133,6 +133,15 @@ export type Clash =
           mine: JsonValue | null;
           theirs: JsonValue | null;
       }
+    | {
+          /** An entry field, such as a translation's title. */
+          kind: 'entry_value';
+          field: string;
+          /** null for a shared field. */
+          locale: string | null;
+          mine: JsonValue | null;
+          theirs: JsonValue | null;
+      }
     | { kind: 'deleted_block'; key: string }
     | { kind: 'changed_block'; key: string };
 

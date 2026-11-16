@@ -1,21 +1,27 @@
 import type { Editor, JSONContent } from '@tiptap/core';
-import { UndoRedo } from '@tiptap/extensions';
+import { Placeholder, UndoRedo } from '@tiptap/extensions';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useTranslator, type MessageKey } from '../i18n';
 import { documentValue, headingLevels, richTextExtensions, type HeadingLevel } from '../richText/schema';
 import type { JsonValue } from '../types';
-import { isJsonObject, jsonEqual } from '../values';
+import { isJsonObject, jsonEqual, plainText } from '../values';
 import styles from './Form.module.css';
 import type { FieldControlProps } from './types';
 
-/** Rich text, edited with Tiptap and a toolbar for the schema's nodes and marks. An empty editor is no value. */
-export function RichTextControl({ id, value, onChange, schema, describedBy }: FieldControlProps) {
+/**
+ * Rich text, edited with Tiptap and a toolbar for the schema's nodes and marks. An empty editor is no value, and shows
+ * the text of its placeholder.
+ */
+export function RichTextControl({ id, value, onChange, schema, describedBy, placeholder }: FieldControlProps) {
     const onChangeRef = useRef(onChange);
     onChangeRef.current = onChange;
+    const placeholderText = placeholder === undefined || placeholder === null ? '' : plainText(placeholder);
+    const placeholderRef = useRef(placeholderText);
+    placeholderRef.current = placeholderText;
 
     const editor = useEditor({
-        extensions: [...richTextExtensions, UndoRedo],
+        extensions: [...richTextExtensions, UndoRedo, Placeholder.configure({ placeholder: () => placeholderRef.current })],
         content: documentOf(value),
         editorProps: {
             attributes: {
@@ -38,6 +44,11 @@ export function RichTextControl({ id, value, onChange, schema, describedBy }: Fi
             editor.chain().setMeta('addToHistory', false).setContent(documentOf(value), { emitUpdate: false }).run();
         }
     }, [editor, value]);
+
+    // The placeholder is drawn as a decoration, which a transaction redraws
+    useEffect(() => {
+        editor.view.dispatch(editor.state.tr.setMeta('addToHistory', false));
+    }, [editor, placeholderText]);
 
     return (
         <div className={styles.richText}>

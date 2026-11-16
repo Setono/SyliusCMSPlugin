@@ -2,6 +2,17 @@
 export interface Channel {
     code: string;
     name: string;
+    /** The codes of its locales, its default locale first. */
+    locales?: string[];
+}
+
+/** A locale of the store's channels, which the locale switcher offers. */
+export interface Locale {
+    code: string;
+    /** In the admin user's locale. */
+    name: string;
+    /** The locale itself, then the locales its translatable fields fall back through, ending at the store's fallback locale. */
+    fallbackChain: string[];
 }
 
 /** A customer group of the store, which an entry's audience can name. */
@@ -13,7 +24,7 @@ export interface CustomerGroup {
 /** What the builder page passes to the app, as JSON in the data-config attribute of #cms-builder. */
 export interface BuilderConfig {
     entryUuid: string;
-    /** The one locale the builder edits. */
+    /** The locale the builder opens in. It edits one locale at a time. */
     locale: string;
     csrfToken: string;
     backUrl: string;
@@ -30,6 +41,8 @@ export interface BuilderConfig {
     };
     /** The store's channels. The settings pick the entry's channels from them, and the preview picks from the entry's. */
     channels: Channel[];
+    /** The locales of the store's channels. The locale switcher offers those of the entry's channels. */
+    locales?: Locale[];
     /** The store's customer groups, for the audience. */
     customerGroups: CustomerGroup[];
     /** UI strings needed before the registry arrives, such as the loading text. Optional. */

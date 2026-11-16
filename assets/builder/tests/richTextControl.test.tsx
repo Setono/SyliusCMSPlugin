@@ -34,6 +34,22 @@ function selectAll(editor: HTMLElement): void {
 }
 
 describe('the rich text field', () => {
+    it('should show the text of the document it falls back to while it is empty, and copy the document here', () => {
+        const fallback = doc(paragraph(text('Hello '), text('world', ['bold'])));
+        const onChange = vi.fn();
+        render(
+            <TranslatorProvider value={createTranslator({ ...strings, 'setono_sylius_cms.builder.copy_it_here': 'Copy it here' })}>
+                <FieldRow id="field" schema={richTextSchema} value={undefined} onChange={onChange} locale="da_DK" fallback={{ value: fallback, localeName: 'English' }} />
+            </TranslatorProvider>,
+        );
+
+        expect(screen.getByRole('textbox', { name: 'Content' }).querySelector('p')).toHaveAttribute('data-placeholder', 'Hello world');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Copy it here' }));
+
+        expect(onChange).toHaveBeenCalledExactlyOnceWith(fallback);
+    });
+
     it('should show the stored document in a labelled, multi-line textbox', () => {
         renderRichText(doc(paragraph(text('Hello '), text('world', ['bold']))));
 

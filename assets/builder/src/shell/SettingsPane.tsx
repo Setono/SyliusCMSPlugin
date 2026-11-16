@@ -1,17 +1,20 @@
 import { useEffect, useId, useState } from 'react';
 import { useBuilder, useBuilderState, useSettingsState, useValidationState } from '../context';
 import { fromLocalInput, toLocalInput } from '../dates';
+import { FieldRow } from '../form/FieldRow';
 import formStyles from '../form/Form.module.css';
 import { useTranslator, type MessageKey } from '../i18n';
-import type { AudienceMode } from '../types';
+import { fieldFallback, localeOf } from '../locales';
+import type { AudienceMode, FieldSchema } from '../types';
 import { entryMessages } from '../validation';
 import { saveStateText } from './saveStateText';
 import styles from './SettingsPane.module.css';
 
 /**
- * The entry's settings, shown while no block is selected. The Settings tab holds the on-save settings, which take
- * effect as soon as they're saved, outside the draft. The title, the layout, the URL & SEO tab and the More tab join it
- * with their tickets. See "Right pane: the selection" in docs/spec/builder.md
+ * The entry's settings, shown while no block is selected. The Settings tab holds the edited locale's title and its
+ * shown switch, which are drafted, and the on-save settings, which take effect as soon as they're saved, outside the
+ * draft. The layout, the URL & SEO tab and the More tab join it with their tickets. See "Right pane: the selection" in
+ * docs/spec/builder.md
  */
 export function SettingsPane() {
     const t = useTranslator();
@@ -27,6 +30,8 @@ export function SettingsPane() {
                 </button>
             </div>
             <div role="tabpanel" id={panelId} className={styles.panel} aria-labelledby={tabId}>
+                <Title />
+                <Shown />
                 <Enabled />
                 <DateWindow />
                 <Channels />
@@ -56,6 +61,61 @@ function EntryErrors() {
                 <li key={message}>{message}</li>
             ))}
         </ul>
+    );
+}
+
+/** The edited locale's title, which shows the title it falls back to while it's empty. Typing one adds a translation. */
+function Title() {
+    const t = useTranslator();
+    const { store, locales } = useBuilder();
+    const locale = useBuilderState((state) => state.locale);
+    const translations = useBuilderState((state) => state.entry.translations);
+    const titles = Object.fromEntries(Object.entries(translations).map(([code, translation]) => [code, translation.fields.title ?? null]));
+    const schema: FieldSchema = {
+        'x-cms-type': 'text',
+        'x-cms-label': t('setono_sylius_cms.builder.entry_title'),
+        'x-cms-help': null,
+        'x-cms-required': true,
+        'x-cms-translatable': true,
+    };
+
+    return (
+        <FieldRow
+            id="cms-entry-title"
+            schema={schema}
+            locale={locale}
+            value={titles[locale] ?? undefined}
+            onChange={(value) => store.getState().setEntryValue('title', value)}
+            fallback={fieldFallback(locales, titles, locale)}
+        />
+    );
+}
+
+/**
+ * The edited locale's "Show in <language>" switch, which holds the translation back when it's off. It's drafted, so the
+ * translation goes live together with its finished text. See "Held-back translations" in docs/spec/publishing.md
+ */
+function Shown() {
+    const t = useTranslator();
+    const { store, locales } = useBuilder();
+    const locale = localeOf(locales, useBuilderState((state) => state.locale));
+    const shown = useBuilderState((state) => state.entry.translations[state.locale]?.shown);
+    const hintId = useId();
+
+    if (shown === undefined) {
+        return null;
+    }
+
+    return (
+        <div className={styles.setting}>
+            <label className={styles.check}>
+                <input type="checkbox" checked={shown} aria-describedby={hintId} onChange={(event) => store.getState().setShown(event.currentTarget.checked)} />
+                {t('setono_sylius_cms.builder.show_in_locale', { '%locale%': locale.name })}
+            </label>
+            <p id={hintId} className={formStyles.help}>
+                {t('setono_sylius_cms.builder.show_in_locale_help', { '%locale%': locale.name })}
+            </p>
+        </div>
     );
 }
 

@@ -9,8 +9,8 @@ import { emptyHistory, rebaseHistory, recordEdit, redoEdit, undoEdit, type Histo
 import { canDuplicate, canMoveBlocks, createNestingRules, initialChildren, insertableIn, type NestingRules } from './nesting';
 import { holdClashes, reconcile, splitValueClashes, withoutKeysIn, type HeldClash } from './pullIn';
 import { copyWithNewKeys, findBlock, generateBlockKey, insertBlock, listOf, locateBlock, moveBlocksTo, removeBlockFrom, shiftWithin, topmostBlocks } from './tree';
-import type { BlockTypeDefinition, Clash, ContentTypeDefinition, Entry, EntryStatus, JsonValue, StoredBlock } from './types';
-import { writeFieldValue } from './values';
+import type { BlockTypeDefinition, Clash, ContentTypeDefinition, Entry, EntryStatus, FieldValues, JsonValue, StoredBlock } from './types';
+import { normalizeValue, writeEntryValue, writeFieldValue } from './values';
 
 enablePatches();
 
@@ -25,7 +25,7 @@ export type PublishState = 'idle' | 'publishing' | 'failed';
 export type DiscardState = 'idle' | 'discarding' | 'failed';
 
 export interface BuilderData {
-    /** The one locale the builder edits. */
+    /** The one locale the builder edits, which the locale switcher picks. */
     locale: string;
     blockTypes: BlockTypeDefinition[];
     /** What each spot in the tree may hold. */
@@ -98,6 +98,21 @@ export interface BuilderActions {
     setFieldValue(key: string, field: string, value: JsonValue | null): void;
     /** Picks one of the block type's styles for a block, by its code, or none when the style is null. */
     setBlockStyle(key: string, style: string | null): void;
+    /** Edits another locale. It isn't an edit to the working copy: nothing is saved or undone. */
+    setLocale(locale: string): void;
+    /**
+     * Sets an entry field's value in the edited locale, such as the title. null or '' empties it. Setting a value in a
+     * locale the entry has no translation in adds one, which starts shown before the first publish, and held back after
+     * it. Values set one after another in the same field are undone in one step.
+     */
+    setEntryValue(field: string, value: JsonValue | null): void;
+    /**
+     * Adds a translation in the edited locale with these fields, such as the title and slug of the translation it falls
+     * back to, or gives the translation it has them. A new one starts shown before the first publish, and held back after it.
+     */
+    addTranslation(fields: FieldValues): void;
+    /** Switches the edited locale's translation shown, or holds it back. It does nothing when there's no translation. */
+    setShown(shown: boolean): void;
     /** Undoes the last edit, which is then saved like any other change. Returns whether there was one. */
     undo(): boolean;
     /** Redoes the last edit undone, which is then saved like any other change. Returns whether there was one. */
@@ -265,6 +280,45 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
                 return shifted;
             },
 
+            setLocale(next) {
+                set({ locale: next });
+            },
+
+            setEntryValue(field, value) {
+                const { locale: edited, status: current } = get();
+
+                edit(
+                    (working) => writeEntryValue(working, edited, field, value, current === 'never_published'),
+                    {},
+                    JSON.stringify(['set_entry_value', field, edited]),
+                );
+            },
+
+            addTranslation(fields) {
+                const { locale: edited, status: current } = get();
+                const values = Object.fromEntries(Object.entries(fields).map(([field, value]) => [field, normalizeValue(value)]));
+
+                edit((working) => {
+                    const translation = working.translations[edited];
+                    if (translation === undefined) {
+                        working.translations[edited] = { shown: current === 'never_published', fields: values, translated: {} };
+                    } else {
+                        Object.assign(translation.fields, values);
+                    }
+                });
+            },
+
+            setShown(shown) {
+                const edited = get().locale;
+
+                edit((working) => {
+                    const translation = working.translations[edited];
+                    if (translation !== undefined) {
+                        translation.shown = shown;
+                    }
+                });
+            },
+
             removeBlock(key) {
                 get().removeBlocks([key]);
             },
@@ -376,6 +430,11 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
                             }
                             break;
                         }
+                        case 'entry_value':
+                            if (clash.locale !== null) {
+                                writeEntryValue(working, clash.locale, clash.field, clash.mine, get().status === 'never_published');
+                            }
+                            break;
                         case 'changed_block':
                             removeBlockFrom(blocks, clash.key);
                             break;

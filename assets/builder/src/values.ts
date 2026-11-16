@@ -1,4 +1,4 @@
-import type { FieldValues, JsonObject, JsonValue } from './types';
+import type { Entry, FieldValues, JsonObject, JsonValue } from './types';
 
 export function isJsonObject(value: JsonValue | undefined): value is JsonObject {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -60,6 +60,28 @@ export function writeFieldValue(fields: FieldValues, field: string, translatable
     }
 }
 
+/**
+ * Writes a value of an entry field in a locale, such as a translation's title. A locale the entry has no translation in
+ * gets one, switched the way it's given, unless the value is empty. An empty value is kept as null, the way the entry
+ * format lists a translation's fields. Called on a working copy inside an Immer recipe.
+ */
+export function writeEntryValue(entry: Entry, locale: string, field: string, value: JsonValue | null, shownIfAdded: boolean): void {
+    const normalized = normalizeValue(value);
+    const translation = entry.translations[locale];
+
+    if (translation === undefined) {
+        if (normalized !== null) {
+            entry.translations[locale] = { shown: shownIfAdded, fields: { [field]: normalized }, translated: {} };
+        }
+
+        return;
+    }
+
+    if (!jsonEqual(translation.fields[field], normalized)) {
+        translation.fields[field] = normalized;
+    }
+}
+
 export function jsonEqual(a: JsonValue | undefined, b: JsonValue | undefined): boolean {
     if (a === b) {
         return true;
@@ -76,4 +98,31 @@ export function jsonEqual(a: JsonValue | undefined, b: JsonValue | undefined): b
     }
 
     return false;
+}
+
+/** A value as text: the text of rich text, and anything else as it's written. */
+export function plainText(value: JsonValue): string {
+    if (typeof value === 'string') {
+        return value;
+    }
+
+    if (isJsonObject(value) && value.type === 'doc') {
+        return textOf(value).trim();
+    }
+
+    return typeof value === 'object' ? JSON.stringify(value) : String(value);
+}
+
+function textOf(node: JsonValue | undefined): string {
+    if (!isJsonObject(node)) {
+        return '';
+    }
+
+    if (typeof node.text === 'string') {
+        return node.text;
+    }
+
+    const children = Array.isArray(node.content) ? node.content.map(textOf).join('') : '';
+
+    return node.type === 'paragraph' || node.type === 'heading' ? `${children}\n` : children;
 }

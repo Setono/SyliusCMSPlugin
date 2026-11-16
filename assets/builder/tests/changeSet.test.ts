@@ -39,7 +39,7 @@ function replay(blocks: StoredBlock[], changes: readonly Change[]): StoredBlock[
             if (target !== undefined) {
                 target.style = change.style;
             }
-        } else {
+        } else if (change.op === 'set_value') {
             const target = find(tree, change.key);
             if (target !== undefined) {
                 writeFieldValue(target.fields, change.field, change.locale !== null, change.locale ?? '', change.value);
@@ -189,9 +189,28 @@ describe('building the change set', () => {
         ]);
     });
 
-    it('should ignore changes outside the block tree', () => {
+    it("should turn an edit of a translation's field into a change of its value in its locale", () => {
         const changes = changesOf(entry(), (working) => {
             working.translations.en_US!.fields.title = 'About';
+        });
+
+        expect(changes).toEqual([{ op: 'set_entry_value', field: 'title', locale: 'en_US', value: 'About' }]);
+    });
+
+    it('should empty the fields of a translation taken away, so the entry has no translation there', () => {
+        const changes = changesOf(entry(), (working) => {
+            delete working.translations.en_US;
+        });
+
+        expect(changes).toEqual([
+            { op: 'set_entry_value', field: 'slug', locale: 'en_US', value: null },
+            { op: 'set_entry_value', field: 'title', locale: 'en_US', value: null },
+        ]);
+    });
+
+    it('should ignore changes outside the block tree and the translations', () => {
+        const changes = changesOf(entry(), (working) => {
+            working.fields.noindex = true;
         });
 
         expect(changes).toEqual([]);
