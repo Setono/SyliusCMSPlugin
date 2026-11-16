@@ -19,6 +19,7 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\HttpKernel\Profiler\Profile;
 
 /**
  * A block type's Media and Media list fields store media item UUIDs, which load in one pass before the tree renders,
@@ -201,16 +202,21 @@ final class MediaFieldsTest extends WebTestCase
     private static function queriesOf(KernelBrowser $client, string $table): array
     {
         $profile = $client->getProfile();
-        self::assertNotFalse($profile, 'The request was profiled');
+        self::assertInstanceOf(Profile::class, $profile, 'The request was profiled');
         $collector = $profile->getCollector('db');
         self::assertInstanceOf(DoctrineDataCollector::class, $collector);
 
+        $byConnection = $collector->getQueries();
+        self::assertIsArray($byConnection);
+
         $queries = [];
-        foreach ($collector->getQueries() as $connectionQueries) {
+        foreach ($byConnection as $connectionQueries) {
+            self::assertIsArray($connectionQueries);
             foreach ($connectionQueries as $query) {
-                $sql = (string) $query['sql'];
-                if (str_contains($sql, 'FROM ' . $table)) {
-                    $queries[] = $sql;
+                self::assertIsArray($query);
+                self::assertIsString($query['sql']);
+                if (str_contains($query['sql'], 'FROM ' . $table)) {
+                    $queries[] = $query['sql'];
                 }
             }
         }

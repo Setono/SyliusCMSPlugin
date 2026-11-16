@@ -35,8 +35,8 @@ final class ReferenceLoaderTest extends TestCase
         $products->load(['t_shirt'], $context)->willReturn(['t_shirt' => $shirt])->shouldBeCalledOnce();
 
         $map = (new ReferenceLoader(new ServiceLocator([
-            'media_item' => static fn (): ReferenceTypeLoaderInterface => $mediaItems->reveal(),
-            'product' => static fn (): ReferenceTypeLoaderInterface => $products->reveal(),
+            'media_item' => $mediaItems->reveal(...),
+            'product' => $products->reveal(...),
         ])))->load(self::generate([
             new Reference('media_item', 'hero', true),
             new Reference('product', 't_shirt', false),
@@ -59,7 +59,7 @@ final class ReferenceLoaderTest extends TestCase
         $mediaItems = $this->prophesize(ReferenceTypeLoaderInterface::class);
         $mediaItems->load(['hero', 'deleted'], $context)->willReturn(['hero' => new \stdClass()]);
 
-        $map = (new ReferenceLoader(new ServiceLocator(['media_item' => static fn (): ReferenceTypeLoaderInterface => $mediaItems->reveal()])))
+        $map = (new ReferenceLoader(new ServiceLocator(['media_item' => $mediaItems->reveal(...)])))
             ->load([new Reference('media_item', 'hero', true), new Reference('media_item', 'deleted', true)], $context);
 
         self::assertTrue($map->has('media_item', 'hero'));
@@ -85,7 +85,7 @@ final class ReferenceLoaderTest extends TestCase
         $mediaItems = $this->prophesize(ReferenceTypeLoaderInterface::class);
         $mediaItems->load(Argument::cetera())->shouldNotBeCalled();
 
-        $map = (new ReferenceLoader(new ServiceLocator(['media_item' => static fn (): ReferenceTypeLoaderInterface => $mediaItems->reveal()])))
+        $map = (new ReferenceLoader(new ServiceLocator(['media_item' => $mediaItems->reveal(...)])))
             ->load([], $this->renderContext());
 
         self::assertSame([], $map->all('media_item'));

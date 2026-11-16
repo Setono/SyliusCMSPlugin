@@ -43,18 +43,18 @@ final class ItemListTest extends TestCase
      */
     public function it_reads_a_lazy_adapter_only_when_it_is_first_read(): void
     {
-        $resolved = 0;
-        $list = ItemList::lazy(static function () use (&$resolved): AdapterInterface {
-            ++$resolved;
+        $resolved = new \ArrayObject();
+        $list = ItemList::lazy(static function () use ($resolved): AdapterInterface {
+            $resolved->append(true);
 
             return new ArrayAdapter(['a', 'b', 'c']);
         }, 2);
 
-        self::assertSame(0, $resolved);
+        self::assertCount(0, $resolved);
 
         self::assertSame(['a', 'b'], [...$list]);
         self::assertCount(2, $list);
-        self::assertSame(1, $resolved);
+        self::assertCount(1, $resolved);
     }
 
     /**

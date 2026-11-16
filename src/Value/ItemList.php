@@ -16,7 +16,6 @@ use Pagerfanta\Pagerfanta;
  * docs/spec/sources.md
  *
  * @template T
- *
  * @implements \IteratorAggregate<int, T>
  */
 final class ItemList implements \IteratorAggregate, \Countable

@@ -88,9 +88,9 @@ final class LayoutRendererTest extends TestCase
 
         $loader = $this->prophesize(ReferenceLoaderInterface::class);
         $loader->load(Argument::that(static fn (iterable $references): bool => [
-            new Reference('media_item', self::HERO, true),
-            new Reference('media_item', self::COVER, true),
-        ] == [...$references]), $context)
+            ['media_item', self::HERO, true],
+            ['media_item', self::COVER, true],
+        ] === self::references($references)), $context)
             ->willReturn(new ReferenceMap(['media_item' => [self::HERO => $hero]]))
             ->shouldBeCalledOnce()
         ;
@@ -144,6 +144,22 @@ final class LayoutRendererTest extends TestCase
         $this->expectExceptionMessage('The content type "recipe" has no layouts, so its entries have no page of their own to render');
 
         $this->renderer($recipe, new StoredTree(null, []), contentType: 'recipe')->render($recipe, $this->context());
+    }
+
+    /**
+     * @param iterable<mixed> $references
+     *
+     * @return list<array{string, string, bool}>
+     */
+    private static function references(iterable $references): array
+    {
+        $found = [];
+        foreach ($references as $reference) {
+            self::assertInstanceOf(Reference::class, $reference);
+            $found[] = [$reference->type, $reference->id, $reference->dependency];
+        }
+
+        return $found;
     }
 
     /**

@@ -315,10 +315,10 @@ final class BlockViewBuilderTest extends TestCase
 
         $loader = $this->prophesize(ReferenceLoaderInterface::class);
         $loader->load(Argument::that(static fn (iterable $references): bool => [
-            new Reference('media_item', self::COVER, true),
-            new Reference('media_item', self::IMAGE, true),
-            new Reference('media_item', self::DELETED, true),
-        ] == [...$references]), $context)
+            ['media_item', self::COVER, true],
+            ['media_item', self::IMAGE, true],
+            ['media_item', self::DELETED, true],
+        ] === self::references($references)), $context)
             ->willReturn(new ReferenceMap(['media_item' => [self::COVER => $cover, self::IMAGE => $image]]))
             ->shouldBeCalledOnce()
         ;
@@ -350,6 +350,22 @@ final class BlockViewBuilderTest extends TestCase
 
         self::assertInstanceOf(Gallery::class, $views[0]->block);
         self::assertSame($cover, $views[0]->block->cover);
+    }
+
+    /**
+     * @param iterable<mixed> $references
+     *
+     * @return list<array{string, string, bool}>
+     */
+    private static function references(iterable $references): array
+    {
+        $found = [];
+        foreach ($references as $reference) {
+            self::assertInstanceOf(Reference::class, $reference);
+            $found[] = [$reference->type, $reference->id, $reference->dependency];
+        }
+
+        return $found;
     }
 
     private static function image(): MediaItemInterface
