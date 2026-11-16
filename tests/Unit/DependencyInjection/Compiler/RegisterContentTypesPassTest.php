@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass
 use Setono\SyliusCMSPlugin\Doctrine\DiscriminatorMapListener;
 use Setono\SyliusCMSPlugin\Factory\EntryFactory;
 use Setono\SyliusCMSPlugin\Model\Entry;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
@@ -16,6 +17,8 @@ use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\InvalidCode;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Untagged;
+use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\Post;
+use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\PostTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\Article;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -136,6 +139,44 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
         $this->expectExceptionMessage('setono_sylius_cms.content_types sets a prefix for "recipe", which has no URL of its own');
 
         $this->compile();
+    }
+
+    /**
+     * @test
+     */
+    public function a_content_type_may_name_a_property_of_its_translations_for_the_meta_description_to_fall_back_to(): void
+    {
+        $this->setParameter('sylius.resources', ['app.post' => ['classes' => ['model' => Post::class], 'translation' => ['classes' => ['model' => PostTranslation::class]]]]);
+
+        $this->compile();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ContentTypeRegistry::class, 0, [
+            'post' => ['model' => Post::class, 'translation' => PostTranslation::class, 'resource' => 'app.post'],
+        ]);
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideTranslationsWithoutTheDescriptionField
+     */
+    public function a_field_for_the_meta_description_to_fall_back_to_that_its_translations_do_not_have_fails_the_build(array $resource): void
+    {
+        $this->setParameter('sylius.resources', ['app.post' => ['classes' => ['model' => Post::class]] + $resource]);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('The content type "post" names "excerpt" in descriptionField, which must be a property of its translations');
+
+        $this->compile();
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function provideTranslationsWithoutTheDescriptionField(): iterable
+    {
+        yield 'translations without it' => [['translation' => ['classes' => ['model' => EntryTranslation::class]]]];
+        yield 'no translation model' => [[]];
     }
 
     /**
