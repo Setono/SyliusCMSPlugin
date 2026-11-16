@@ -24,6 +24,15 @@ interface ProblemCountsQueryInterface
     public function store(array $counts, string $fingerprint, bool $onlyStale = false): void;
 
     /**
+     * Entries whose counts were made with another fingerprint, or never, in the order of their ids
+     *
+     * @param int $afterId the id the entries come after
+     *
+     * @return list<EntryInterface> at most $limit
+     */
+    public function findStale(string $fingerprint, int $limit, int $afterId): array;
+
+    /**
      * The entries' stored counts, with one error or warning for each time-dependent kind an entry has a problem of
      * at $now
      *

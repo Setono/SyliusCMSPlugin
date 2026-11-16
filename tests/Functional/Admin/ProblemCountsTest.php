@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface;
 use Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\GreetingKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -83,6 +84,33 @@ final class ProblemCountsTest extends WebTestCase
 
         $crawler = $client->request('GET', '/admin/cms/entries/page?' . http_build_query(['criteria' => ['status' => 'needs_attention']]));
         self::assertSame([$page->getUuid()], $crawler->filter('table tbody [data-entry]')->each(static fn (Crawler $title): ?string => $title->attr('data-entry')));
+    }
+
+    /**
+     * The counts were made with other code, so the first admin page counts the entries again, without a command
+     *
+     * @test
+     */
+    public function a_block_type_a_deploy_removed_shows_on_the_next_admin_page(): void
+    {
+        // The code had the Greeting block type when the page was saved
+        static::$class = GreetingKernel::class;
+        self::bootKernel();
+        $greeting = new StoredBlock(self::PROMO, 'greeting', 1);
+        $greeting->setValue('text', 'en_US', 'Hello');
+        $page = self::createPageWithBlocks('About us', 'about-us', [$greeting]);
+        self::assertEquals(new ProblemCount(), self::storedCount($page));
+
+        // The deploy removed it
+        self::ensureKernelShutdown();
+        static::$class = null;
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        $crawler = $client->request('GET', '/admin/');
+
+        $content = $crawler->filter('.sylius-admin-menu a[href="/admin/cms"]');
+        self::assertSame(['1', 'warning'], [$content->attr('data-cms-problem-count'), $content->attr('data-cms-problems')]);
+        self::assertEquals(new ProblemCount(0, 1), self::storedCount($page));
     }
 
     private static function storedCount(EntryInterface $entry): ProblemCount

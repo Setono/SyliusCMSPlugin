@@ -12,6 +12,9 @@ use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 
 final readonly class ProblemCountUpdater implements ProblemCountUpdaterInterface
 {
+    /** How many stale entries are counted at a time */
+    private const BATCH_SIZE = 100;
+
     /**
      * @param iterable<ProblemKindInterface> $kinds the kinds whose problems are stored: every kind tagged
      *                                              setono_sylius_cms.problem_kind but the time-dependent ones
@@ -32,8 +35,19 @@ final readonly class ProblemCountUpdater implements ProblemCountUpdaterInterface
         }
     }
 
+    /**
+     * It runs on an admin page, so it leaves the entity manager as it is, and it never overwrites what a write that
+     * ran meanwhile counted
+     */
     public function updateStale(): void
     {
+        $fingerprint = $this->fingerprint->get();
+
+        $after = 0;
+        while ([] !== $entries = $this->query->findStale($fingerprint, self::BATCH_SIZE, $after)) {
+            $this->query->store($this->count($entries), $fingerprint, true);
+            $after = max(array_map(static fn (EntryInterface $entry): int => (int) $entry->getId(), $entries));
+        }
     }
 
     /**

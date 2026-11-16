@@ -64,6 +64,25 @@ final readonly class ProblemCountsQuery implements ProblemCountsQueryInterface
         }
     }
 
+    public function findStale(string $fingerprint, int $limit, int $afterId): array
+    {
+        /** @var list<EntryInterface> $entries */
+        $entries = $this->manager()->createQueryBuilder()
+            ->select('entry')
+            ->from(Entry::class, 'entry')
+            ->andWhere('entry.problemsCountedWith IS NULL OR entry.problemsCountedWith <> :fingerprint')
+            ->andWhere('entry.id > :after')
+            ->setParameter('fingerprint', $fingerprint, Types::STRING)
+            ->setParameter('after', $afterId, Types::INTEGER)
+            ->orderBy('entry.id')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $entries;
+    }
+
     public function ofEntries(array $entries, iterable $kinds, \DateTimeImmutable $now): array
     {
         $ids = array_values(array_filter(array_map(static fn (EntryInterface $entry): ?int => $entry->getId(), $entries), is_int(...)));

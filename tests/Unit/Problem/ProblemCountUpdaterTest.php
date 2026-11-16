@@ -93,6 +93,38 @@ final class ProblemCountUpdaterTest extends TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_counts_again_the_entries_counted_with_other_code_or_never_batch_by_batch_without_overwriting_what_a_write_counted_meanwhile(): void
+    {
+        $first = $this->entry(3, [Severity::Warning]);
+        $second = $this->entry(8, []);
+        $third = $this->entry(12, [Severity::Error]);
+        $this->query->findStale('f1', 100, 0)->willReturn([$first, $second]);
+        $this->query->findStale('f1', 100, 8)->willReturn([$third]);
+        $this->query->findStale('f1', 100, 12)->willReturn([]);
+
+        $this->updater()->updateStale();
+
+        self::assertEquals([
+            [[3 => new ProblemCount(0, 1), 8 => new ProblemCount()], 'f1', true],
+            [[12 => new ProblemCount(1, 0)], 'f1', true],
+        ], $this->stored);
+    }
+
+    /**
+     * @test
+     */
+    public function it_counts_nothing_again_when_every_entry_was_counted_with_the_code(): void
+    {
+        $this->query->findStale('f1', 100, 0)->willReturn([])->shouldBeCalledOnce();
+
+        $this->updater()->updateStale();
+
+        self::assertSame([], $this->stored);
+    }
+
+    /**
      * @param list<Severity> $severities the severities of the problems its working copy has, one kind each
      */
     private function entry(int $id, array $severities): EntryInterface
