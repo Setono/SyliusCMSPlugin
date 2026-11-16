@@ -6,15 +6,20 @@ namespace Setono\SyliusCMSPlugin\Builder\ChangeSet;
 
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\SanitizingFieldHandlerInterface;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 /**
- * Applies a change set to a block tree, all or nothing. The values themselves aren't validated,
- * because invalid content saves: publish validates. They're sanitised by field types that sanitise, such as rich text
+ * Applies a change set to a working copy, all or nothing: to its block tree, and to its translations' values and shown
+ * switches. The values themselves aren't validated, because invalid content saves: publish validates. They're
+ * sanitised by field types that sanitise, such as rich text
  *
  * @internal
  */
@@ -23,17 +28,20 @@ final readonly class ChangeSetApplier
     public function __construct(
         private BlockTypeRegistryInterface $blockTypes,
         private FieldHandlerLocator $fieldHandlers,
+        private ContentTypeRegistryInterface $contentTypes,
     ) {
     }
 
     /**
-     * @return StoredTree a new tree with the changes applied; $tree is left as it is
-     *
      * @throws InvalidChangeSetException
      */
-    public function apply(ChangeSet $changeSet, StoredTree $tree): StoredTree
+    public function apply(ChangeSet $changeSet, EntryInterface $workingCopy): void
     {
-        $tree = clone $tree;
+        $contentType = $this->contentTypes->getByEntry($workingCopy);
+        // A copy, so nothing changes until every change is known to apply
+        $tree = clone $workingCopy->getBlockTree();
+        /** @var list<SetEntryValue|SetShown> $translationChanges */
+        $translationChanges = [];
 
         foreach ($changeSet->changes as $change) {
             match (true) {
@@ -42,13 +50,74 @@ final readonly class ChangeSetApplier
                 $change instanceof RemoveBlock => $this->removeBlock($change, $tree),
                 $change instanceof SetValue => $this->setValue($change, $tree),
                 $change instanceof SetStyle => $this->setStyle($change, $tree),
+                $change instanceof SetEntryValue => self::assertEntryValueFits($change, $contentType),
+                $change instanceof SetShown => null,
                 default => throw new InvalidChangeSetException(sprintf('Unknown change %s', $change::class)),
             };
+
+            if ($change instanceof SetEntryValue || $change instanceof SetShown) {
+                $translationChanges[] = $change;
+            }
         }
 
         self::assertUniqueKeys($tree);
 
-        return $tree;
+        $workingCopy->setBlockTree($tree);
+        foreach ($translationChanges as $change) {
+            $translation = self::translation($workingCopy, $change->locale, $contentType);
+
+            match (true) {
+                $change instanceof SetShown => $translation->setShown($change->shown),
+                'slug' === $change->field => $translation->setSlug(self::nullIfEmpty($change->value)),
+                default => $translation->setTitle(self::nullIfEmpty($change->value)),
+            };
+        }
+    }
+
+    /**
+     * The entry fields are a translation's title, and its slug for a content type with its own URL. The content type's
+     * own fields come with #265
+     *
+     * @phpstan-assert string $change->locale
+     * @phpstan-assert string|null $change->value
+     */
+    private static function assertEntryValueFits(SetEntryValue $change, ContentTypeMetadata $contentType): void
+    {
+        if ('title' !== $change->field && !('slug' === $change->field && $contentType->hasOwnUrl())) {
+            throw new InvalidChangeSetException(sprintf('The content type "%s" has no entry field "%s"', $contentType->code, $change->field));
+        }
+
+        if (null === $change->locale) {
+            throw new InvalidChangeSetException(sprintf('The entry field "%s" is translatable, so a value needs a locale', $change->field));
+        }
+
+        if (null !== $change->value && !is_string($change->value)) {
+            throw new InvalidChangeSetException(sprintf('The entry field "%s" must be a string or null', $change->field));
+        }
+    }
+
+    /**
+     * The working copy's translation in the locale. Setting something in a locale it has no translation in adds one,
+     * which starts shown before the entry's first publish, and held back after it.
+     * See "Held-back translations" in docs/spec/publishing.md
+     */
+    private static function translation(EntryInterface $workingCopy, string $localeCode, ContentTypeMetadata $contentType): EntryTranslationInterface
+    {
+        $translation = $workingCopy->getTranslations()->get($localeCode);
+        if ($translation instanceof EntryTranslationInterface) {
+            return $translation;
+        }
+
+        $translation = $contentType->createTranslation($localeCode);
+        $translation->setShown(!$workingCopy->isPublished());
+        $workingCopy->addTranslation($translation);
+
+        return $translation;
+    }
+
+    private static function nullIfEmpty(mixed $value): ?string
+    {
+        return is_string($value) && '' !== $value ? $value : null;
     }
 
     /**

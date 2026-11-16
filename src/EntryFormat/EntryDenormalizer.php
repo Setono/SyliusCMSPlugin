@@ -6,17 +6,17 @@ namespace Setono\SyliusCMSPlugin\EntryFormat;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
-use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
- * Copies an entry in the entry format onto the entry: what's drafted, which is its translations with their fields,
- * and its block tree. Publishing uses it to copy a draft onto the rows. See "Entry format" in docs/spec/content-model.md.
+ * Copies an entry in the entry format onto the entry: what's drafted, which is its translations with their fields and
+ * shown switches, and its block tree. Publishing uses it to copy a draft onto the rows. See "Entry format" in
+ * docs/spec/content-model.md.
  *
  * The UUID, the content type and createdAt identify the entry and aren't drafted, so they're checked, not copied.
- * Holding back translations (shown), translation state and the content type's own fields come with their tickets
+ * Translation state and the content type's own fields come with their tickets
  *
  * @internal
  */
@@ -49,13 +49,26 @@ final readonly class EntryDenormalizer
         }
 
         foreach ($translations as $localeCode => $translationData) {
-            $fields = self::map(self::map($translationData, sprintf('The translation %s', $localeCode))['fields'] ?? null, sprintf('The fields of the translation %s', $localeCode));
-
-            $translation = $entry->getTranslations()->containsKey($localeCode) ? $entry->getTranslation($localeCode) : self::addTranslation($entry, $localeCode, $contentType);
-            $translation->setTitle(self::nullableString($fields, 'title', $localeCode));
-            if ($contentType->hasOwnUrl()) {
-                $translation->setSlug(self::nullableString($fields, 'slug', $localeCode));
+            $translationData = self::map($translationData, sprintf('The translation %s', $localeCode));
+            $fields = self::map($translationData['fields'] ?? null, sprintf('The fields of the translation %s', $localeCode));
+            $title = self::nullableString($fields, 'title', $localeCode);
+            $slug = self::nullableString($fields, 'slug', $localeCode);
+            $shown = $translationData['shown'] ?? null;
+            if (!is_bool($shown)) {
+                throw new InvalidEntryFormatException(sprintf('The shown switch of the translation %s must be true or false', $localeCode));
             }
+
+            $translation = $entry->getTranslations()->get($localeCode);
+            if (!$translation instanceof EntryTranslationInterface) {
+                $translation = $contentType->createTranslation($localeCode);
+                $entry->addTranslation($translation);
+            }
+
+            $translation->setTitle($title);
+            if ($contentType->hasOwnUrl()) {
+                $translation->setSlug($slug);
+            }
+            $translation->setShown($shown);
         }
 
         try {
@@ -63,20 +76,6 @@ final readonly class EntryDenormalizer
         } catch (InvalidStoredTreeException $e) {
             throw new InvalidEntryFormatException(sprintf('The tree is invalid: %s', $e->getMessage()), previous: $e);
         }
-    }
-
-    private static function addTranslation(EntryInterface $entry, string $localeCode, ContentTypeMetadata $contentType): EntryTranslationInterface
-    {
-        $class = $contentType->translationModelClass;
-        $translation = null === $class ? null : new $class();
-        if (!$translation instanceof EntryTranslationInterface) {
-            throw new \LogicException(sprintf('The content type "%s" has no translation model to add the locale %s with', $contentType->code, $localeCode));
-        }
-
-        $translation->setLocale($localeCode);
-        $entry->addTranslation($translation);
-
-        return $translation;
     }
 
     /**

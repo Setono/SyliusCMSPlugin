@@ -51,12 +51,18 @@ final readonly class VisibleEntriesQuery implements VisibleEntriesQueryInterface
                 EntryChannelInterface::class,
             ))
             ->setParameter('cms_visible_channel', (string) $context->channel->getCode())
-            // 5. With a translation in the locale. Held-back translations come with #232
+            // 5. With a translation in the locale, which it has once that translation has a title, and that isn't held back.
+            // Whole entries never fall back to another locale
             ->andWhere(sprintf(
-                'EXISTS (SELECT cms_visible_translation.id FROM %s cms_visible_translation WHERE cms_visible_translation.translatable = entry AND cms_visible_translation.locale = :cms_visible_locale)',
+                'EXISTS (SELECT cms_visible_translation.id FROM %s cms_visible_translation WHERE cms_visible_translation.translatable = entry'
+                . ' AND cms_visible_translation.locale = :cms_visible_locale'
+                . ' AND cms_visible_translation.title IS NOT NULL AND cms_visible_translation.title <> :cms_visible_no_title'
+                . ' AND cms_visible_translation.shown = :cms_visible_shown)',
                 EntryTranslation::class,
             ))
             ->setParameter('cms_visible_locale', $context->localeCode)
+            ->setParameter('cms_visible_no_title', '')
+            ->setParameter('cms_visible_shown', true, Types::BOOLEAN)
             // 6. In the shopper's audience (ADR 0010)
             ->andWhere(sprintf(
                 'entry.audienceMode = :cms_visible_everyone'

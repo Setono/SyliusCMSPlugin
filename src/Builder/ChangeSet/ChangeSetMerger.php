@@ -9,9 +9,9 @@ use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 /**
  * Merges a save onto what colleagues saved since the builder last loaded. Changes that don't touch the same values are
- * both applied, and so are moves and block styles, the editor's last. A real clash goes to the editor instead of being
- * applied: the same field in the same locale, an edit to a block a colleague deleted, or deleting a block a colleague
- * changed something in.
+ * both applied, and so are moves, block styles and translations' shown switches, the editor's last. A real clash goes
+ * to the editor instead of being applied: the same field in the same locale, of a block or of the entry, an edit to a
+ * block a colleague deleted, or deleting a block a colleague changed something in.
  * See "Saving" in docs/spec/publishing.md
  *
  * @internal
@@ -84,7 +84,7 @@ final readonly class ChangeSetMerger
             $change instanceof SetValue, $change instanceof SetStyle, $change instanceof RemoveBlock => [$change->key],
             $change instanceof MoveBlock => [$change->key, $change->parent],
             $change instanceof AddBlock => [$change->parent],
-            // A change the applier doesn't know, which it refuses
+            // A change to the entry, or one the applier doesn't know, which it refuses
             default => [],
         };
 
@@ -98,7 +98,8 @@ final readonly class ChangeSetMerger
     }
 
     /**
-     * The clash over a value a colleague set to something else, or over removing a block they changed something in
+     * The clash over a value a colleague set to something else, in a block or in the entry, or over removing a block they
+     * changed something in
      */
     private static function clash(Change $change, Footprint $footprint, Outline $outline): ?Clash
     {
@@ -108,6 +109,14 @@ final readonly class ChangeSetMerger
             return CanonicalJson::encode($theirs) === CanonicalJson::encode($change->value)
                 ? null
                 : new ValueClash($change->key, $change->field, $change->locale, $change->value, $theirs);
+        }
+
+        if ($change instanceof SetEntryValue && $footprint->hasEntryValue($change)) {
+            $theirs = $footprint->entryValueOf($change);
+
+            return CanonicalJson::encode($theirs) === CanonicalJson::encode($change->value)
+                ? null
+                : new EntryValueClash($change->field, $change->locale, $change->value, $theirs);
         }
 
         if ($change instanceof RemoveBlock && $footprint->changedWithin($outline->keysWithin($change->key))) {
