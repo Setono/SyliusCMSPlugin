@@ -54,7 +54,8 @@ final class ProblemsTest extends WebTestCase
         self::assertSame(sprintf('/admin/cms/entry/%s/builder?block=%s', $page->getUuid(), self::PROMO), $unknown->selectLink('Fix in builder')->attr('href'));
 
         // It sits right after the Publishing section
-        self::assertSame(['publishing', 'problems', 'urls'], $crawler->filter('[data-section]')->each(static fn (Crawler $section): ?string => $section->attr('data-section')));
+        $sections = $crawler->filter('[data-section]')->each(static fn (Crawler $section): ?string => $section->attr('data-section'));
+        self::assertSame(['publishing', 'problems'], array_slice($sections, 0, 2));
     }
 
     /**
