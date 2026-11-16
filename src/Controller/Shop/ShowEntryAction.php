@@ -42,9 +42,15 @@ final readonly class ShowEntryAction
         $entry = $this->previewedEntry($match, $localeCode) ?? $this->visibleEntry($match)
             ?? throw new NotFoundHttpException(sprintf('No visible entry at "%s"', $path));
 
+        // The channel's homepage lives at the channel's root, so its URL and its old slugs redirect there, once the page is
+        // known to be visible
+        if (true === $match?->homepage) {
+            return $this->redirectTo($request, $this->urlGenerator->generate('sylius_shop_homepage', ['_locale' => $localeCode]));
+        }
+
         // An old slug redirects to the entry's current URL, once the entry is known to be visible
         if (null !== $match?->redirectTo) {
-            return $this->redirect($request, $localeCode, $match->redirectTo);
+            return $this->redirectTo($request, $this->urlGenerator->generate('setono_sylius_cms_shop_entry', ['_locale' => $localeCode, 'path' => $match->redirectTo]));
         }
 
         // 3. and 4. The tree in the entry's layout, with the entry as host-page context
@@ -52,12 +58,11 @@ final readonly class ShowEntryAction
     }
 
     /**
-     * A permanent redirect to the entry's current URL in the locale, keeping the query string.
-     * See "Old slugs" in docs/spec/urls-and-seo.md
+     * A permanent redirect to where the entry lives in the locale, keeping the query string.
+     * See "Old slugs" and "Rendering the homepage" in docs/spec/urls-and-seo.md
      */
-    private function redirect(Request $request, string $localeCode, string $path): RedirectResponse
+    private function redirectTo(Request $request, string $url): RedirectResponse
     {
-        $url = $this->urlGenerator->generate('setono_sylius_cms_shop_entry', ['_locale' => $localeCode, 'path' => $path]);
         $query = $request->getQueryString();
 
         return new RedirectResponse(null === $query ? $url : $url . '?' . $query, Response::HTTP_MOVED_PERMANENTLY);

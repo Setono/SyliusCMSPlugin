@@ -8,5 +8,24 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Homepage\HomepageModifierInterface" alias="Setono\SyliusCMSPlugin\Homepage\HomepageModifier"/>
+
+        <!-- The page a channel shows at its root URL, when the shopper can see it -->
+        <service id="Setono\SyliusCMSPlugin\Homepage\HomepageProvider" class="Setono\SyliusCMSPlugin\Homepage\HomepageProvider">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Homepage\HomepageProviderInterface" alias="Setono\SyliusCMSPlugin\Homepage\HomepageProvider"/>
+
+        <!-- A homepage's canonical URL is its channel's root, which its canonical and hreflang links and the builder's preview use -->
+        <service id="Setono\SyliusCMSPlugin\Homepage\HomepageCanonicalUrlGenerator" class="Setono\SyliusCMSPlugin\Homepage\HomepageCanonicalUrlGenerator"
+                 decorates="Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Homepage\HomepageCanonicalUrlGenerator.inner"/>
+            <argument type="service" id="router"/>
+        </service>
+
+        <!-- The page the decorated homepage controller renders: the provider's, or in the builder's preview, the working copy -->
+        <service id="Setono\SyliusCMSPlugin\Homepage\HomepageResolver" class="Setono\SyliusCMSPlugin\Homepage\HomepageResolver">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Homepage\HomepageProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider"/>
+        </service>
     </services>
 </container>
