@@ -8,7 +8,6 @@ use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Admin\ChannelHomepages;
-use Setono\SyliusCMSPlugin\Admin\EntryRevisions;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\EntryShareLinks;
 use Setono\SyliusCMSPlugin\Admin\EntryUrls;
@@ -50,6 +49,7 @@ use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Twig\AdminExtension;
 use Setono\SyliusCMSPlugin\Twig\AdminRuntime;
+use Setono\SyliusCMSPlugin\Twig\EntryOverviewRuntime;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\Channel;
@@ -216,11 +216,10 @@ final class AdminExtensionTest extends IntegrationTestCase
             self::revision('2026-11-14 10:00:00', 'Jane Roe'),
             self::revision('2026-11-01 10:00:00', 'John Doe'),
         ]);
-        $entryRevisions = new EntryRevisions($revisions->reveal());
         $entryShareLinks = $this->entryShareLinks();
-        $runtime = $this->runtime();
         $translationChips = $this->translationChips();
         $whereItShows = $this->whereItShows();
+        $runtime = new AdminRuntime(self::contentTypes(), $this->customerGroups->reveal(), $entryRows, $translationChips);
         $workingCopies = $this->prophesize(WorkingCopyProviderInterface::class);
         $workingCopies->getWorkingCopy(Argument::any())->willReturnArgument(0);
         $problemFinder = new ProblemFinder([new UnknownBlockType(new BlockTypeRegistry([], new FieldReader()))], $workingCopies->reveal());
@@ -241,16 +240,11 @@ final class AdminExtensionTest extends IntegrationTestCase
         $channels->findBy([], ['id' => 'ASC'])->willReturn([$web, $b2b]);
         $channelHomepages = new ChannelHomepages($channels->reveal(), $homepages->reveal());
 
+        $overview = new EntryOverviewRuntime($entryUrls, $channelHomepages, $problemFinder, $revisions->reveal(), $entryShareLinks, $whereItShows);
+
         return [new FactoryRuntimeLoader([
-            ChannelHomepages::class => static fn (): ChannelHomepages => $channelHomepages,
-            EntryRows::class => static fn (): EntryRows => $entryRows,
-            EntryUrls::class => static fn (): EntryUrls => $entryUrls,
-            TranslationChips::class => static fn (): TranslationChips => $translationChips,
-            WhereItShows::class => static fn (): WhereItShows => $whereItShows,
-            EntryRevisions::class => static fn (): EntryRevisions => $entryRevisions,
-            EntryShareLinks::class => static fn (): EntryShareLinks => $entryShareLinks,
             AdminRuntime::class => static fn (): AdminRuntime => $runtime,
-            ProblemFinder::class => static fn (): ProblemFinder => $problemFinder,
+            EntryOverviewRuntime::class => static fn (): EntryOverviewRuntime => $overview,
         ])];
     }
 
@@ -355,7 +349,22 @@ final class AdminExtensionTest extends IntegrationTestCase
 
     private function runtime(): AdminRuntime
     {
-        return new AdminRuntime(self::contentTypes(), $this->customerGroups->reveal());
+        return new AdminRuntime(
+            self::contentTypes(),
+            $this->customerGroups->reveal(),
+            new EntryRows(
+                $this->prophesize(DraftRepositoryInterface::class)->reveal(),
+                self::contentTypes(),
+                new StatusLabeler(new MockClock(), new Availability()),
+                $this->prophesize(UrlGeneratorInterface::class)->reveal(),
+                $this->prophesize(TranslationLocaleProviderInterface::class)->reveal(),
+                $this->prophesize(LocaleContextInterface::class)->reveal(),
+                $this->prophesize(ScheduledPublishRepositoryInterface::class)->reveal(),
+                new MockClock(),
+                $this->prophesize(ProblemCountProviderInterface::class)->reveal(),
+            ),
+            $this->translationChips(),
+        );
     }
 
     private static function contentTypes(): ContentTypeRegistry

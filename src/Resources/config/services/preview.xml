@@ -7,13 +7,11 @@
             <argument type="service" id="clock"/>
         </service>
 
-        <!-- Also the runtime of cms_preview_mode(). Reads the builder's preview tokens and share links' tokens -->
+        <!-- Reads the builder's preview tokens and share links' tokens. cms_preview_mode() reads it through CMSRuntime -->
         <service id="Setono\SyliusCMSPlugin\Preview\PreviewContext" class="Setono\SyliusCMSPlugin\Preview\PreviewContext">
             <argument type="service" id="request_stack"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner"/>
             <argument type="service_closure" id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface"/>
-
-            <tag name="twig.runtime"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider" class="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider">

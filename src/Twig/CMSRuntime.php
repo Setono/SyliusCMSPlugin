@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Twig;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Preview\FieldMarker;
+use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
@@ -25,7 +26,16 @@ final readonly class CMSRuntime implements RuntimeExtensionInterface
         private BlockRendererInterface $blockRenderer,
         private FieldMarker $fieldMarker,
         private FallbackValues $fallbackValues,
+        private PreviewContext $previewContext,
     ) {
+    }
+
+    /**
+     * The mode of the preview the page is rendered in, builder or share, or null outside a preview
+     */
+    public function previewMode(): ?string
+    {
+        return $this->previewContext->getMode();
     }
 
     /**

@@ -4,13 +4,11 @@
     <services>
         <!--
         Finds an entry's problems, of every kind, as they are now, which its overview page gets through
-        cms_admin_entry_problems(). RegisterProblemKindsPass hands it the kinds
+        cms_admin_entry_problems() (Twig\EntryOverviewRuntime). RegisterProblemKindsPass hands it the kinds
         -->
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemFinder" class="Setono\SyliusCMSPlugin\Problem\ProblemFinder">
             <argument type="collection"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
-
-            <tag name="twig.runtime"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemFinder"/>
 

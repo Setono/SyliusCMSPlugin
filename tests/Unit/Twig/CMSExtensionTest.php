@@ -124,12 +124,12 @@ final class CMSExtensionTest extends IntegrationTestCase
         $shopRoutes = new RouteCollection();
         $shopRoutes->add('setono_sylius_cms_shop_entry', new Route('/{_locale}/{path}', requirements: ['path' => '.+(?<!/)']));
         $runtimes = new FactoryRuntimeLoader([
-            CMSRuntime::class => static fn (): CMSRuntime => new CMSRuntime(
+            CMSRuntime::class => fn (): CMSRuntime => new CMSRuntime(
                 new TwigBlockRenderer($blockTwig, $blockTypes),
                 new FieldMarker($blockTypes),
                 $fallbackValues,
+                new PreviewContext($this->requestStack, self::signer(), $this->shareLinks(...)),
             ),
-            PreviewContext::class => fn (): PreviewContext => new PreviewContext($this->requestStack, self::signer(), $this->shareLinks(...)),
             HeadTagsRuntime::class => static fn (): HeadTagsRuntime => new HeadTagsRuntime(
                 new MetaValues($contentTypes, $fallbackValues),
                 new CanonicalUrlGenerator($contentTypes, new UrlGenerator($shopRoutes, new RequestContext(host: 'shop.example', scheme: 'https'))),

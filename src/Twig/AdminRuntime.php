@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig;
 
+use Setono\SyliusCMSPlugin\Admin\EntryRow;
+use Setono\SyliusCMSPlugin\Admin\EntryRows;
+use Setono\SyliusCMSPlugin\Admin\TranslationChip;
+use Setono\SyliusCMSPlugin\Admin\TranslationChips;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\UnknownContentTypeException;
@@ -13,6 +18,8 @@ use Symfony\Contracts\Service\ResetInterface;
 use Twig\Extension\RuntimeExtensionInterface;
 
 /**
+ * The cms_admin_* functions of the entry lists, their rows and the create dialog
+ *
  * @internal
  */
 final class AdminRuntime implements RuntimeExtensionInterface, ResetInterface
@@ -26,7 +33,25 @@ final class AdminRuntime implements RuntimeExtensionInterface, ResetInterface
     public function __construct(
         private readonly ContentTypeRegistryInterface $contentTypes,
         private readonly RepositoryInterface $customerGroupRepository,
+        private readonly EntryRows $entryRows,
+        private readonly TranslationChips $translationChips,
     ) {
+    }
+
+    /**
+     * The entry's row in the lists, as it was loaded with its page, or else loaded alone
+     */
+    public function entryRow(EntryInterface $entry): EntryRow
+    {
+        return $this->entryRows->get($entry);
+    }
+
+    /**
+     * @return list<TranslationChip>
+     */
+    public function translationChips(EntryRow $row): array
+    {
+        return $this->translationChips->of($row);
     }
 
     /**
