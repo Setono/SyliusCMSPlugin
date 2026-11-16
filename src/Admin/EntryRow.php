@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Admin;
 
+use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 
@@ -19,6 +20,7 @@ final readonly class EntryRow
      * @param string|null $url the path of its URL in that locale, or null when it has no URL of its own or no slug
      * @param list<StatusLabel> $statusLabels
      * @param string $status the entry's state, an EntryStatus: never published, published, or with unpublished changes
+     * @param DraftInterface|null $draft the entry's draft, loaded with its page, or null when it has none
      */
     public function __construct(
         public EntryInterface $entry,
@@ -27,6 +29,7 @@ final readonly class EntryRow
         public ?string $url,
         public array $statusLabels,
         public string $status,
+        public ?DraftInterface $draft = null,
     ) {
     }
 }

@@ -1,0 +1,47 @@
+[
+    {
+        "case": "a text",
+        "value": "Winter sale",
+        "fingerprint": "f7f4ff47d70d2af26c93ca1694968feaa44ca5e25d7f5704d6744ed06a588f61"
+    },
+    {
+        "case": "a text with characters JSON escapes",
+        "value": "Say \"hi\"\\ to\n\tthem\b\f\r\u0001 \u001f",
+        "fingerprint": "8ed045518841571769a721dfa357899bea9400858e77454ea1deaa5589459201"
+    },
+    {
+        "case": "a text with slashes and characters past ASCII, which stay as they are",
+        "value": "Æblegrød/øl — “tilbud” 😀 € ü",
+        "fingerprint": "f05c95d52212e529f550554c7610c55e7fca6030e61dddf002f521e1d9bce666"
+    },
+    {
+        "case": "a text with line and paragraph separators, which are escaped",
+        "value": "one\u2028two\u2029three",
+        "fingerprint": "8b83a8654e111504bfa0d7d2b2d70b5a19441f3b66d742bbc40039407dbbe964"
+    },
+    {
+        "case": "a text that looks like a number",
+        "value": "007",
+        "fingerprint": "82c4f652a2eaf8aaa4bcb2f37f7342e0aa00d12d2836eaf2c443e928662d0a37"
+    },
+    {
+        "case": "a rich text document with its keys in another order",
+        "value": {"content": [{"type": "paragraph", "content": [{"type": "text", "text": "Hi", "marks": [{"type": "bold"}]}]}, {"attrs": {"level": 2}, "type": "heading", "content": [{"text": "Title", "type": "text"}]}], "type": "doc"},
+        "fingerprint": "ae770e5096c64e9f32f6f707a90c484376697f089ada59d79461e2da6c27ac4b"
+    },
+    {
+        "case": "an empty object, an empty list and scalars",
+        "value": {"z": {}, "a": [], "m": null, "b": true, "c": false, "n": 42, "neg": -7, "half": 1.5, "tenth": 0.1},
+        "fingerprint": "e0101a2db301cf9e259730cd4b16183d73e6cb718bcc12d055b6b470c97a9cc6"
+    },
+    {
+        "case": "keys sorted by byte value",
+        "value": {"é": 1, "z": 2, "Z": 3, "a": 4, "_": 5, "10": 6, "2": 7, "😀": 8, "ﬀ": 9},
+        "fingerprint": "0e3d186978d6024b97f4c4458b1648ebc517b13e1e9253daa42f8a5d6a7d7b64"
+    },
+    {
+        "case": "a list, which keeps its order",
+        "value": ["b", "a"],
+        "fingerprint": "02d8bc3008a9bb0dcc4b86d7fd3428ced792355c733c19756bec5a56dc61b2c5"
+    }
+]

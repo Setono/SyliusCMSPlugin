@@ -17,8 +17,8 @@ use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 /**
- * Applies a change set to a working copy, all or nothing: to its block tree, and to its translations' values and shown
- * switches. The values themselves aren't validated, because invalid content saves: publish validates. They're
+ * Applies a change set to a working copy, all or nothing: to its block tree, and to its translations' values, shown
+ * switches and translation state. The values themselves aren't validated, because invalid content saves: publish validates. They're
  * sanitised by field types that sanitise, such as rich text
  *
  * @internal
@@ -52,6 +52,8 @@ final readonly class ChangeSetApplier
                 $change instanceof SetStyle => $this->setStyle($change, $tree),
                 $change instanceof SetEntryValue => $translationChanges[] = self::entryValue($change, $contentType),
                 $change instanceof SetShown => $translationChanges[] = [$change->locale, static fn (EntryTranslationInterface $translation) => $translation->setShown($change->shown)],
+                $change instanceof SetTranslated => $this->setTranslated($change, $tree),
+                $change instanceof SetEntryTranslated => $translationChanges[] = self::entryTranslated($change, $contentType),
                 default => throw new InvalidChangeSetException(sprintf('Unknown change %s', $change::class)),
             };
         }
@@ -65,17 +67,13 @@ final readonly class ChangeSetApplier
     }
 
     /**
-     * The locale of an entry value and the change to its translation, once the value is known to fit. The entry fields
-     * are a translation's title, and its slug for a content type with its own URL. The content type's own fields come
-     * with #265
+     * The locale of an entry value and the change to its translation, once the value is known to fit
      *
      * @return array{string, \Closure(EntryTranslationInterface): void}
      */
     private static function entryValue(SetEntryValue $change, ContentTypeMetadata $contentType): array
     {
-        if ('title' !== $change->field && !('slug' === $change->field && $contentType->hasOwnUrl())) {
-            throw new InvalidChangeSetException(sprintf('The content type "%s" has no entry field "%s"', $contentType->code, $change->field));
-        }
+        self::assertEntryField($change->field, $contentType);
 
         if (null === $change->locale) {
             throw new InvalidChangeSetException(sprintf('The entry field "%s" is translatable, so a value needs a locale', $change->field));
@@ -91,6 +89,39 @@ final readonly class ChangeSetApplier
         return [$change->locale, 'slug' === $change->field
             ? static fn (EntryTranslationInterface $translation) => $translation->setSlug($value)
             : static fn (EntryTranslationInterface $translation) => $translation->setTitle($value)];
+    }
+
+    /**
+     * The locale of where an entry value was translated from and the change to its translation, once the field is
+     * known to be one of the entry fields
+     *
+     * @return array{string, \Closure(EntryTranslationInterface): void}
+     */
+    private static function entryTranslated(SetEntryTranslated $change, ContentTypeMetadata $contentType): array
+    {
+        self::assertEntryField($change->field, $contentType);
+
+        return [$change->locale, static function (EntryTranslationInterface $translation) use ($change): void {
+            $translated = $translation->getTranslated();
+            if (null === $change->translated) {
+                unset($translated[$change->field]);
+            } else {
+                $translated[$change->field] = $change->translated;
+            }
+
+            $translation->setTranslated($translated);
+        }];
+    }
+
+    /**
+     * The entry fields are a translation's title, and its slug for a content type with its own URL. The content type's
+     * own fields come with #265
+     */
+    private static function assertEntryField(string $field, ContentTypeMetadata $contentType): void
+    {
+        if ('title' !== $field && !('slug' === $field && $contentType->hasOwnUrl())) {
+            throw new InvalidChangeSetException(sprintf('The content type "%s" has no entry field "%s"', $contentType->code, $field));
+        }
     }
 
     /**
@@ -193,6 +224,18 @@ final readonly class ChangeSetApplier
         }
 
         $block->setValue($change->field, $change->locale, null === $change->value ? null : $this->sanitize($field, $change->value));
+    }
+
+    private function setTranslated(SetTranslated $change, StoredTree $tree): void
+    {
+        $block = $tree->findBlock($change->key) ?? throw new InvalidChangeSetException(sprintf('The tree has no block with the key %s', $change->key));
+        $field = $this->blockType($block)->fields[$change->field] ?? throw new InvalidChangeSetException(sprintf('The block type "%s" has no field "%s"', $block->type, $change->field));
+
+        if (!$field->translatable) {
+            throw new InvalidChangeSetException(sprintf('The field "%s" is shared by all translations, so it has no translation state', $change->field));
+        }
+
+        $block->setTranslated($change->field, $change->locale, $change->translated);
     }
 
     private function setStyle(SetStyle $change, StoredTree $tree): void

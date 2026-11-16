@@ -1,0 +1,6 @@
+services:
+    # Nothing in the plugin injects the translation state: a project's translator does. The tests get it from the
+    # container instead, where an unused private service would be removed
+    Setono\SyliusCMSPlugin\Translation\TranslationStateInterface:
+        alias: Setono\SyliusCMSPlugin\Translation\TranslationState
+        public: true

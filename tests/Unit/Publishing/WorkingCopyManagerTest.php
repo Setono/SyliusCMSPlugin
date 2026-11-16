@@ -55,6 +55,8 @@ final class WorkingCopyManagerTest extends TestCase
     public function it_makes_a_never_published_entry_its_own_working_copy_and_writes_its_rows_on_save(): void
     {
         $page = self::page('Hello');
+        // Only a published entry has a draft
+        $this->drafts->findOneByEntry(Argument::any())->shouldNotBeCalled();
 
         $workingCopy = $this->workingCopies()->getWorkingCopy($page);
         self::assertSame($page, $workingCopy);
@@ -125,6 +127,27 @@ final class WorkingCopyManagerTest extends TestCase
 
         self::assertSame(self::json($workingCopy), $draft->getContent());
         self::assertSame(['en_US' => 'Hello'], $page->getBlockTree()->blocks[0]->fields['text'] ?? null);
+    }
+
+    /**
+     * A list loads the drafts of its page of entries at once
+     *
+     * @test
+     */
+    public function it_makes_a_draft_loaded_already_the_working_copy_without_loading_it_again(): void
+    {
+        $page = self::page('Hello', published: true);
+        $this->drafts->findOneByEntry(Argument::any())->shouldNotBeCalled();
+
+        $workingCopy = $this->workingCopies()->getWorkingCopyWithDraft($page, $this->draft($page, 'Hello world', 'About our shop'));
+        $withoutDraft = $this->workingCopies()->getWorkingCopyWithDraft($page, null);
+
+        self::assertNotSame($page, $workingCopy);
+        self::assertSame(['en_US' => 'Hello world'], $workingCopy->getBlockTree()->blocks[0]->fields['text'] ?? null);
+        self::assertSame('About our shop', $workingCopy->getTranslation('en_US')->getTitle());
+        self::assertSame('About us', $page->getTranslation('en_US')->getTitle());
+        self::assertNotSame($page, $withoutDraft);
+        self::assertSame(['en_US' => 'Hello'], $withoutDraft->getBlockTree()->blocks[0]->fields['text'] ?? null);
     }
 
     /**

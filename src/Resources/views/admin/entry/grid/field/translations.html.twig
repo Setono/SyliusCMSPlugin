@@ -1,0 +1,4 @@
+{# The Translations column of the entry lists: a translation chip per locale of the entry's channels. `data` is the entry #}
+<div data-column="translations">
+    {% include '@SetonoSyliusCMSPlugin/admin/entry/_translation_chips.html.twig' with {'chips': cms_admin_translation_chips(cms_admin_entry_row(data))} %}
+</div>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- The rules for which values are untranslated or outdated: the translation state and the completeness counts read them -->
+        <service id="Setono\SyliusCMSPlugin\Translation\TranslatableValues" class="Setono\SyliusCMSPlugin\Translation\TranslatableValues">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+        </service>
+
+        <!-- The seam a future translator fills -->
+        <service id="Setono\SyliusCMSPlugin\Translation\TranslationState" class="Setono\SyliusCMSPlugin\Translation\TranslationState">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Translation\TranslatableValues"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Translation\TranslationStateInterface" alias="Setono\SyliusCMSPlugin\Translation\TranslationState"/>
+    </services>
+</container>

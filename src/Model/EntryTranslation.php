@@ -24,6 +24,13 @@ class EntryTranslation extends AbstractTranslation implements EntryTranslationIn
      */
     protected bool $shown = true;
 
+    /**
+     * The translation state of its translatable fields: where each value was translated from
+     *
+     * @var array<string, array{from: string, fingerprint: string}>
+     */
+    protected array $translated = [];
+
     public function getId(): ?int
     {
         return $this->id;
@@ -57,5 +64,15 @@ class EntryTranslation extends AbstractTranslation implements EntryTranslationIn
     public function setShown(bool $shown): void
     {
         $this->shown = $shown;
+    }
+
+    public function getTranslated(): array
+    {
+        return $this->translated;
+    }
+
+    public function setTranslated(array $translated): void
+    {
+        $this->translated = $translated;
     }
 }

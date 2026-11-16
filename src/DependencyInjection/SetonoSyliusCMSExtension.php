@@ -154,6 +154,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                         'problems' => $block('_problems', 90),
                         'revisions' => $block('_revisions', 60),
                         'urls' => $block('_urls', 40),
+                        'translations' => $block('_translations', 20),
                     ],
                 ],
             ],
@@ -192,6 +193,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                     'fields' => [
                         'title' => $field('setono_sylius_cms.ui.title', 'title', 10),
                         'status' => $field('setono_sylius_cms.ui.status', 'status', 30),
+                        'translations' => $field('setono_sylius_cms.ui.translations', 'translations', 40),
                         'lastEdited' => ['sortable' => 'lastEditedAt'] + $field('setono_sylius_cms.ui.last_edited', 'last_edited', 50),
                         'problems' => $field('setono_sylius_cms.ui.problems', 'problems', 60),
                     ],

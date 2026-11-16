@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { describe, expect, it, vi } from 'vitest';
 import type { BuilderApi, PreviewRequest } from '../src/api';
 import { App } from '../src/App';
+import { fingerprint } from '../src/fingerprint';
 import type { BuilderConfig } from '../src/config';
 import type { Entry, EntryResponse, EntryStatus, PresenceResponse, SaveResponse, StoredBlock, ValidationError } from '../src/types';
 import { block, entry, registry, settings, strings } from './fixtures';
@@ -47,6 +48,11 @@ const translationStrings: Record<string, string> = {
     'setono_sylius_cms.builder.show_in_locale': 'Show in %locale%',
     'setono_sylius_cms.builder.show_in_locale_help': "Off holds the translation back, so shoppers don't see the entry in %locale%.",
     'setono_sylius_cms.builder.entry_title': 'Title',
+    'setono_sylius_cms.builder.locale_untranslated': '%count% untranslated',
+    'setono_sylius_cms.builder.locale_outdated': '%count% outdated',
+    'setono_sylius_cms.builder.locale_no_translation': 'no translation',
+    'setono_sylius_cms.builder.outdated': 'The %locale% text it was translated from has changed. It now reads:',
+    'setono_sylius_cms.builder.mark_up_to_date': 'Mark as up to date',
 };
 
 /** An entry with its English translation, and a Danish one when danish is given. */
@@ -93,7 +99,7 @@ describe('the locale switcher', () => {
         await openBuilder(api);
 
         const switcher = screen.getByRole('combobox', { name: 'Language' });
-        expect(within(switcher).getAllByRole('option').map((option) => option.textContent)).toEqual(['English (United States)', 'Danish (Denmark)']);
+        expect(within(switcher).getAllByRole('option').map((option) => option.textContent)).toEqual(['English (United States)', 'Danish (Denmark) · 1 untranslated']);
         expect(switcher).toHaveValue('en_US');
         await waitFor(() => expect(screen.getByTitle('Preview')).toHaveAttribute('src', 'http://admin.example/en_US/about-us?_cms_preview=abc'));
 
@@ -127,6 +133,7 @@ describe('a locale the entry has no translation in', () => {
                     { op: 'set_shown', locale: 'da_DK', shown: true },
                     { op: 'set_entry_value', field: 'slug', locale: 'da_DK', value: 'about-us' },
                     { op: 'set_entry_value', field: 'title', locale: 'da_DK', value: 'About us' },
+                    { op: 'set_entry_translated', field: 'title', locale: 'da_DK', translated: { from: 'en_US', fingerprint: fingerprint('About us') } },
                 ],
                 0,
             ),
@@ -201,7 +208,15 @@ describe('the fields of a block', () => {
 
         expect(text).toHaveValue('Welcome');
         expect(screen.queryByRole('button', { name: 'Copy it here' })).not.toBeInTheDocument();
-        await waitFor(() => expect(api.saveChanges).toHaveBeenCalledWith([{ op: 'set_value', key: 'a', field: 'text', locale: 'da_DK', value: 'Welcome' }], 0));
+        await waitFor(() =>
+            expect(api.saveChanges).toHaveBeenCalledWith(
+                [
+                    { op: 'set_value', key: 'a', field: 'text', locale: 'da_DK', value: 'Welcome' },
+                    { op: 'set_translated', key: 'a', field: 'text', locale: 'da_DK', translated: { from: 'en_US', fingerprint: fingerprint('Welcome') } },
+                ],
+                0,
+            ),
+        );
 
         fireEvent.change(text, { target: { value: 'Velkommen' } });
         switchTo('en_US');
@@ -215,5 +230,93 @@ describe('the fields of a block', () => {
 
         expect(screen.getByLabelText('Text')).not.toHaveAttribute('placeholder');
         expect(screen.queryByRole('button', { name: 'Copy it here' })).not.toBeInTheDocument();
+    });
+});
+
+describe('completeness and outdated flags', () => {
+    /** An entry with a heading translated into Danish from 'Hello', and a Danish title translated from 'About us'. */
+    function translatedFrom(english: string, danishText: string | null = 'Hej'): Entry {
+        const heading: StoredBlock = {
+            ...block('a', { text: danishText === null ? { en_US: english } : { en_US: english, da_DK: danishText } }),
+            translated: danishText === null ? {} : { text: { da_DK: { from: 'en_US', fingerprint: fingerprint('Hello') } } },
+        };
+        const edited = entryWith([heading], { title: 'Om os', shown: true });
+        edited.translations.da_DK = { shown: true, fields: { slug: 'om-os', title: 'Om os' }, translated: { title: { from: 'en_US', fingerprint: fingerprint('About us') } } };
+
+        return edited;
+    }
+
+    const options = (): Array<string | null> =>
+        within(screen.getByRole('combobox', { name: 'Language' }))
+            .getAllByRole('option')
+            .map((option) => option.textContent);
+
+    it("should count each locale's untranslated and outdated values in the locale switcher, as they change", async () => {
+        await openBuilder(fakeApi(translatedFrom('Hello')));
+
+        expect(options()).toEqual(['English (United States)', 'Danish (Denmark)']);
+
+        selectHeading();
+        fireEvent.change(screen.getByLabelText('Text'), { target: { value: 'Hello there' } });
+
+        expect(options()).toEqual(['English (United States)', 'Danish (Denmark) · 1 outdated']);
+
+        fireEvent.change(screen.getByLabelText('Text'), { target: { value: 'Hello' } });
+
+        expect(options()).toEqual(['English (United States)', 'Danish (Denmark)']);
+    });
+
+    it('should say when the entry has no translation in a locale, and count both kinds of values', async () => {
+        const edited = translatedFrom('Hello there', null);
+        edited.translations.da_DK = { shown: true, fields: { slug: 'om-os', title: 'Om os' }, translated: { title: { from: 'en_US', fingerprint: fingerprint('About') } } };
+        const api = fakeApi(edited);
+        api.fetchEntry.mockResolvedValue({ entry: edited, settings: { ...settings(), channels: ['WEB', 'CH'] }, status: 'never_published', lockToken: 0, editors: [] });
+        await openBuilder(api);
+
+        expect(options()).toEqual(['English (United States)', 'Danish (Denmark) · 1 untranslated · 1 outdated', 'German (Switzerland) · no translation']);
+    });
+
+    it('should flag an outdated field with the text it was translated from as it is now, and mark it up to date', async () => {
+        const api = fakeApi(translatedFrom('Hello there'));
+        await openBuilder(api);
+        switchTo('da_DK');
+        selectHeading();
+
+        const text = screen.getByLabelText('Text');
+        expect(text).toHaveValue('Hej');
+        expect(text).toHaveAccessibleDescription('The English (United States) text it was translated from has changed. It now reads: Hello there Mark as up to date');
+        expect(options()).toEqual(['English (United States)', 'Danish (Denmark) · 1 outdated']);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Mark as up to date' }));
+
+        expect(screen.queryByRole('button', { name: 'Mark as up to date' })).not.toBeInTheDocument();
+        expect(text).not.toHaveAccessibleDescription();
+        expect(options()).toEqual(['English (United States)', 'Danish (Denmark)']);
+        await waitFor(() =>
+            expect(api.saveChanges).toHaveBeenCalledWith(
+                [{ op: 'set_translated', key: 'a', field: 'text', locale: 'da_DK', translated: { from: 'en_US', fingerprint: fingerprint('Hello there') } }],
+                0,
+            ),
+        );
+    });
+
+    it('should flag an outdated title in the settings, and mark it up to date', async () => {
+        const edited = translatedFrom('Hello');
+        edited.translations.en_US = { shown: true, fields: { slug: 'about-us', title: 'About our shop' }, translated: {} };
+        const api = fakeApi(edited);
+        await openBuilder(api);
+        switchTo('da_DK');
+
+        expect(screen.getByLabelText('Title')).toHaveAccessibleDescription('The English (United States) text it was translated from has changed. It now reads: About our shop Mark as up to date');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Mark as up to date' }));
+
+        expect(screen.getByLabelText('Title')).not.toHaveAccessibleDescription();
+        await waitFor(() =>
+            expect(api.saveChanges).toHaveBeenCalledWith(
+                [{ op: 'set_entry_translated', field: 'title', locale: 'da_DK', translated: { from: 'en_US', fingerprint: fingerprint('About our shop') } }],
+                0,
+            ),
+        );
     });
 });

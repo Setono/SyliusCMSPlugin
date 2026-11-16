@@ -32,4 +32,18 @@ interface EntryTranslationInterface extends ResourceInterface, TranslationInterf
     public function isShown(): bool;
 
     public function setShown(bool $shown): void;
+
+    /**
+     * The translation state of its translatable fields: for each value translated from another locale, that locale and
+     * the fingerprint of the value it was translated from. A value typed without a source has none.
+     * See "Translation state" in docs/spec/content-model.md
+     *
+     * @return array<string, array{from: string, fingerprint: string}> field name => where its value was translated from
+     */
+    public function getTranslated(): array;
+
+    /**
+     * @param array<string, array{from: string, fingerprint: string}> $translated field name => where its value was translated from
+     */
+    public function setTranslated(array $translated): void;
 }

@@ -1,0 +1,14 @@
+{#
+ # The overview page's Translations section, a block of setono_sylius_cms.admin.entry.show.sections: a translation chip
+ # per locale of the entry's channels. Translating happens in the builder. See "Entry overview page" in docs/spec/admin.md
+ #}
+{% set chips = cms_admin_translation_chips(row) %}
+{% if chips is not empty %}
+    <section class="ui segment" data-section="translations" aria-labelledby="cms-section-translations">
+        <h2 class="ui dividing header" id="cms-section-translations">{{ 'setono_sylius_cms.ui.translations'|trans }}</h2>
+
+        {% include '@SetonoSyliusCMSPlugin/admin/entry/_translation_chips.html.twig' with {'chips': chips} %}
+
+        <p>{{ 'setono_sylius_cms.ui.translations_help'|trans }}</p>
+    </section>
+{% endif %}

@@ -319,6 +319,41 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
+    public function its_translations_section_shows_a_chip_per_locale_of_the_entrys_channels_from_its_draft(): void
+    {
+        $client = self::signedInClient();
+        self::addLocales('WEB', 'da_DK');
+        $page = self::createPage('About us', 'about-us', 'Hello', published: true);
+        self::translate($page, 'da_DK', 'Om os', 'om-os');
+        self::saveDraft($page, 'About our shop', 'about-us');
+
+        $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s', $page->getUuid()));
+
+        $translations = $crawler->filter('[data-section="translations"]');
+        self::assertSame('Translations', $translations->filter('h2')->text());
+        self::assertSame(
+            ['en_US complete', 'da_DK 1 untranslated'],
+            $translations->filter('[data-translation-chip]')->each(static fn (Crawler $chip): string => (string) preg_replace('/\s+/', ' ', trim($chip->text()))),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function an_entry_in_no_channel_has_no_translations_section(): void
+    {
+        $client = self::signedInClient();
+        $page = self::createPage('About us', 'about-us', channels: []);
+
+        $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s', $page->getUuid()));
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('[data-section="translations"]'));
+    }
+
+    /**
+     * @test
+     */
     public function an_entry_without_a_url_of_its_own_has_no_urls_section(): void
     {
         $client = self::signedInClient();
