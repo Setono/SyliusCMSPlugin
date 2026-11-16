@@ -99,8 +99,10 @@ final class ScheduledPublishProblemsTest extends TestCase
         $before = $queryBuilder->getParameter('cms_problem_overdue_before');
         self::assertNotNull($before);
         // The column holds UTC
-        self::assertEquals(new \DateTimeImmutable('2026-11-16 11:55:00', new \DateTimeZone('UTC')), $before->getValue());
-        self::assertSame('UTC', $before->getValue()->getTimezone()->getName());
+        $value = $before->getValue();
+        self::assertInstanceOf(\DateTimeImmutable::class, $value);
+        self::assertEquals(new \DateTimeImmutable('2026-11-16 11:55:00', new \DateTimeZone('UTC')), $value);
+        self::assertSame('UTC', $value->getTimezone()->getName());
         self::assertSame(Types::DATETIME_IMMUTABLE, $before->getType());
     }
 

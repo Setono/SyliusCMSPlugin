@@ -150,3 +150,5 @@ The admin flags problems on the entry, in the lists' problem marker, on the Over
 - a preset with blocks of removed types
 
 Missing translations and missing alt text are shown by the translation chips and the missing-alt flags, and aren't counted as problems.
+
+The entry's overview page finds its problems as they are now. The lists' marker, the Needs attention filter and the Content badge read counts stored with each entry, so no admin page goes through every entry: a write counts the entries it touches again, a deleted or added customer group the entries that name it, and a deploy that changes the block types, layouts, content types or condition kinds every entry, on the next admin page. Overdue scheduled publishes are found as of now. A URL that a route added later takes is counted when `setono:cms:check-routes` runs ([Extending](extending.md#console-commands)).

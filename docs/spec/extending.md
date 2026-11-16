@@ -780,7 +780,7 @@ A project caps a stock slot by setting `slots.<id>.cap`, moves a shipped content
 
 | Command | Does |
 | --- | --- |
-| `setono:cms:check-routes` | Lists every entry URL that another route now matches, with its channel, locale, URL and route. Exits non-zero when it finds any, for CI and deploys. |
+| `setono:cms:check-routes` | Lists every entry URL that another route now matches, with its channel, locale, URL and route. Exits non-zero when it finds any, for CI and deploys. It also counts the published entries' [problems](admin.md#problems) again, so the lists and the Content badge show a URL a route added since takes. |
 | `setono:cms:export <dir> [--entry=UUID]... [--content-type=CODE]... [--media-folder=UUID]... [--presets] [--all] [--zip]` | Exports ([Transfer](transfer.md#commands)). |
 | `setono:cms:import <path> [--dry-run] [--publish] [--overwrite]` | Imports a folder or zip. A dry run exits with the code the real run would ([Transfer](transfer.md#commands)). |
 | `setono:cms:preset:export <preset> <dir>` | Writes an editor preset, by UUID or name, to a code preset file. |

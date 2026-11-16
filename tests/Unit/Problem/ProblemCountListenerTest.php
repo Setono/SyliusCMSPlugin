@@ -156,15 +156,24 @@ final class ProblemCountListenerTest extends TestCase
         self::assertSame([[$added, $deleted]], $customerGroups->asked);
         self::assertSame([], $channelsAndTaxons->asked, 'A kind is asked only about what it references');
         self::assertSame([[$page, $referencing]], $this->updated);
+    }
 
-        // A flush that writes a taxon asks the kind about it
+    /**
+     * @test
+     */
+    public function it_asks_a_kind_about_all_it_references_that_a_flush_writes_at_once(): void
+    {
         $taxon = new Taxon();
-        $listener->onFlush($this->flushing([], [$taxon, new Channel()], []));
+        $channel = new Channel();
+        $customerGroups = new CustomerGroupReferences();
+        $channelsAndTaxons = new ChannelAndTaxonReferences();
+        $listener = new ProblemCountListener($this->updater->reveal(), [$customerGroups, $channelsAndTaxons], [CustomerGroupInterface::class, ChannelInterface::class, TaxonInterface::class]);
+
+        $listener->onFlush($this->flushing([$taxon], [new Page()], [$channel]));
         $listener->postFlush();
-        self::assertSame([[$added, $deleted]], $customerGroups->asked);
-        self::assertCount(1, $channelsAndTaxons->asked);
-        self::assertCount(2, $channelsAndTaxons->asked[0]);
-        self::assertSame($taxon, $channelsAndTaxons->asked[0][0]);
+
+        self::assertSame([[$taxon, $channel]], $channelsAndTaxons->asked);
+        self::assertSame([], $customerGroups->asked);
     }
 
     /**

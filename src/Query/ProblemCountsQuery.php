@@ -66,7 +66,7 @@ final readonly class ProblemCountsQuery implements ProblemCountsQueryInterface
 
     public function findStale(string $fingerprint, int $limit, int $afterId): array
     {
-        /** @var list<EntryInterface> $entries */
+        /** @var list<Entry> $entries */
         $entries = $this->manager()->createQueryBuilder()
             ->select('entry')
             ->from(Entry::class, 'entry')

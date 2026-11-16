@@ -9,6 +9,7 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\Spacer;
 use Setono\SyliusCMSPlugin\Condition\ConditionKindInterface;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue;
@@ -70,7 +71,7 @@ final class ProblemCountFingerprintTest extends TestCase
      */
     public function provideChangedCode(): iterable
     {
-        yield 'a problem kind added' => [self::fingerprint(kinds: [...self::KINDS, ProblemCountFingerprintTest::class])];
+        yield 'a problem kind added' => [self::fingerprint(kinds: [...self::KINDS, self::class])];
         yield 'a block type removed' => [self::fingerprint(blockTypes: ['heading' => Heading::class])];
         yield 'a block type switched off' => [self::fingerprint(disabledBlockTypes: ['spacer'])];
         yield 'a content type removed' => [self::fingerprint(contentTypes: ['page' => self::CONTENT_TYPES['page']])];
@@ -119,7 +120,7 @@ final class ProblemCountFingerprintTest extends TestCase
      * @param list<class-string> $kinds
      * @param array<string, class-string>|BlockTypeRegistryInterface $blockTypes
      * @param list<string> $disabledBlockTypes
-     * @param array<string, array{model: class-string, translation: class-string|null, resource: string}> $contentTypes
+     * @param array<string, array{model: class-string<EntryInterface>, translation: class-string|null, resource: string}> $contentTypes
      * @param array<string, array<string, class-string>> $layouts
      * @param list<string> $disabledLayouts
      */
