@@ -38,7 +38,7 @@ final class PreviewTokenTest extends BuilderApiTestCase
 
         self::assertResponseStatusCodeSame(200);
         self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello');
-        self::assertSelectorTextSame('title', 'Setono CMS Test Store', 'The channel is WEB, though its hostname is localhost');
+        self::assertSelectorExists('link[rel="alternate"][hreflang="x-default"][href$="/en_US/about-us"]', 'The channel is WEB, whose default locale is en_US, though its hostname is localhost');
     }
 
     /**

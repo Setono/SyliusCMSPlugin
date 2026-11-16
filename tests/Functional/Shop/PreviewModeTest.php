@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
 use Doctrine\Persistence\ObjectManager;
+use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
@@ -249,11 +250,20 @@ final class PreviewModeTest extends WebTestCase
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
         self::createChannel('OTHER', 'Other Store', 'other.example');
+        self::addLocales('OTHER', 'da_DK');
+        $danish = new PageTranslation();
+        $danish->setLocale('da_DK');
+        $danish->setTitle('Om os');
+        $danish->setSlug('om-os');
+        $page->addTranslation($danish);
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
+        $manager->flush();
 
         $client->request('GET', '/en_US/about-us?_cms_preview=' . self::previewToken($page, 'OTHER'));
 
         self::assertResponseStatusCodeSame(200);
-        self::assertSelectorTextSame('title', 'Other Store', 'The shop layout titles the page with the channel name');
+        self::assertSelectorExists('link[rel="alternate"][hreflang="da-DK"]', 'The hreflang links are those of the locales of the token\'s channel, which only OTHER has Danish among');
     }
 
     private static function secret(): string

@@ -20,6 +20,7 @@ final class CMSExtension extends AbstractExtension
             new TwigFunction('cms_block', [CMSRuntime::class, 'block'], ['is_safe' => ['html'], 'needs_context' => true]),
             new TwigFunction('cms_blocks', [CMSRuntime::class, 'blocks'], ['is_safe' => ['html'], 'needs_context' => true]),
             new TwigFunction('cms_preview_mode', [PreviewContext::class, 'getMode']),
+            new TwigFunction('cms_head_tags', [HeadTagsRuntime::class, 'headTags'], ['needs_context' => true]),
         ];
     }
 }

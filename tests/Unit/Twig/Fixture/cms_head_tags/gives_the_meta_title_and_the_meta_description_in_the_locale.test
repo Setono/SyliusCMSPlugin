@@ -1,0 +1,9 @@
+--TEST--
+cms_head_tags() gives the entry's meta title and meta description in the render context's locale, and asks crawlers to index it
+--TEMPLATE--
+{% set tags = cms_head_tags(entry) %}
+{{ tags.title }}|{{ tags.description }}|{{ tags.noindex ? 'noindex' : 'index' }}
+--DATA--
+return $this->rendering(['entry' => $this->pageWith(['en_US' => ['title' => 'About us', 'slug' => 'about-us', 'metaTitle' => 'About us | Shop', 'metaDescription' => 'All about us'], 'da_DK' => ['title' => 'Om os', 'slug' => 'om-os', 'metaTitle' => 'Om os | Butik']])])
+--EXPECT--
+About us | Shop|All about us|index

@@ -16,22 +16,32 @@ use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer;
+use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGenerator;
+use Setono\SyliusCMSPlugin\Seo\MetaValues;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\Faq;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\NotABlock;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\Quote;
 use Setono\SyliusCMSPlugin\Twig\CMSExtension;
 use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
+use Setono\SyliusCMSPlugin\Twig\HeadTagsRuntime;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Sylius\Component\Core\Model\Channel;
+use Sylius\Component\Core\Model\ChannelInterface;
+use Sylius\Component\Locale\Model\Locale;
 use Sylius\Resource\Translation\Provider\ImmutableTranslationLocaleProvider;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Routing\Generator\UrlGenerator;
+use Symfony\Component\Routing\RequestContext;
+use Symfony\Component\Routing\Route;
+use Symfony\Component\Routing\RouteCollection;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
 use Twig\Loader\ChainLoader;
@@ -100,14 +110,22 @@ final class CMSExtensionTest extends IntegrationTestCase
         $blockTwig->addExtension(new CMSExtension());
 
         $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class, 'quote' => Quote::class, 'faq' => Faq::class], new FieldReader());
+        // de_CH falls back to de_DE, and then to en_US
+        $fallbackValues = new FallbackValues(new FieldHandlerLocator(new ServiceLocator([])), new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'), ['de_CH' => ['de_DE']]));
+        $contentTypes = new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]);
+        $shopRoutes = new RouteCollection();
+        $shopRoutes->add('setono_sylius_cms_shop_entry', new Route('/{_locale}/{path}', requirements: ['path' => '.+(?<!/)']));
         $runtimes = new FactoryRuntimeLoader([
             CMSRuntime::class => static fn (): CMSRuntime => new CMSRuntime(
                 new TwigBlockRenderer($blockTwig, $blockTypes),
                 new FieldMarker($blockTypes),
-                // de_CH falls back to de_DE, and then to en_US
-                new FallbackValues(new FieldHandlerLocator(new ServiceLocator([])), new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'), ['de_CH' => ['de_DE']])),
+                $fallbackValues,
             ),
             PreviewContext::class => fn (): PreviewContext => new PreviewContext($this->requestStack, self::signer()),
+            HeadTagsRuntime::class => static fn (): HeadTagsRuntime => new HeadTagsRuntime(
+                new MetaValues($contentTypes, $fallbackValues),
+                new CanonicalUrlGenerator($contentTypes, new UrlGenerator($shopRoutes, new RequestContext(host: 'shop.example', scheme: 'https'))),
+            ),
         ]);
         $blockTwig->addRuntimeLoader($runtimes);
 
@@ -122,11 +140,54 @@ final class CMSExtensionTest extends IntegrationTestCase
      *
      * @return array<string, mixed>
      */
-    public function rendering(array $variables, ?string $previewMode = null, string $locale = 'en_US'): array
+    public function rendering(array $variables, ?string $previewMode = null, string $locale = 'en_US', ?ChannelInterface $channel = null): array
     {
         return $variables + [
-            CMSRuntime::RENDER_CONTEXT => new RenderContext(new Channel(), $locale, 'USD', null, '@guest', new \DateTimeImmutable(), [], $previewMode),
+            CMSRuntime::RENDER_CONTEXT => new RenderContext($channel ?? new Channel(), $locale, 'USD', null, '@guest', new \DateTimeImmutable(), [], $previewMode),
         ];
+    }
+
+    /**
+     * A channel with these locales, and its default locale, when it has one
+     *
+     * @param list<string> $locales
+     */
+    public function channel(array $locales, ?string $defaultLocale = null): ChannelInterface
+    {
+        $channel = new Channel();
+        foreach ($locales as $code) {
+            $locale = new Locale();
+            $locale->setCode($code);
+            $channel->addLocale($locale);
+            if ($code === $defaultLocale) {
+                $channel->setDefaultLocale($locale);
+            }
+        }
+
+        return $channel;
+    }
+
+    /**
+     * A page with these translations, each with a title, a slug, SEO fields and its shown switch as given
+     *
+     * @param array<string, array{title?: string|null, slug?: string|null, metaTitle?: string|null, metaDescription?: string|null, shown?: bool}> $translations by locale
+     */
+    public function pageWith(array $translations, bool $noindex = false): Page
+    {
+        $page = new Page();
+        $page->setNoindex($noindex);
+        foreach ($translations as $locale => $fields) {
+            $translation = new PageTranslation();
+            $translation->setLocale($locale);
+            $translation->setTitle($fields['title'] ?? null);
+            $translation->setSlug($fields['slug'] ?? null);
+            $translation->setMetaTitle($fields['metaTitle'] ?? null);
+            $translation->setMetaDescription($fields['metaDescription'] ?? null);
+            $translation->setShown($fields['shown'] ?? true);
+            $page->addTranslation($translation);
+        }
+
+        return $page;
     }
 
     /**
