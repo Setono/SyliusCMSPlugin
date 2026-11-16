@@ -9,7 +9,7 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 /**
  * Handles Text and Textarea fields: a string, with an optional max length
  */
-final class TextHandler implements FieldHandlerInterface
+final class TextHandler implements FitCheckingFieldHandlerInterface
 {
     public function schema(Field $field): array
     {
@@ -28,6 +28,14 @@ final class TextHandler implements FieldHandlerInterface
     public function hydrate(Field $field, mixed $value, HydrationContext $context): ?string
     {
         return is_string($value) ? $value : null;
+    }
+
+    /**
+     * A string fits, even one longer than the max length, which still renders and which publish refuses
+     */
+    public function fits(Field $field, mixed $value): bool
+    {
+        return is_string($value);
     }
 
     public function references(Field $field, mixed $value): iterable

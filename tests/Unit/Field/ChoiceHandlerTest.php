@@ -111,6 +111,17 @@ final class ChoiceHandlerTest extends TestCase
     /**
      * @test
      */
+    public function it_fits_only_a_choice_it_still_offers(): void
+    {
+        self::assertTrue($this->handler()->fits(new Choice(label: 'Level', choices: self::CHOICES), 'h1'));
+        self::assertTrue($this->handler()->fits(new Choice(label: 'Levels', choices: self::CHOICES, multiple: true), ['h1', 'h2']));
+        self::assertFalse($this->handler()->fits(new Choice(label: 'Level', choices: self::CHOICES), 'h6'));
+        self::assertFalse($this->handler()->fits(new Choice(label: 'Levels', choices: self::CHOICES, multiple: true), ['h1', 'h6']));
+    }
+
+    /**
+     * @test
+     */
     public function it_holds_no_references(): void
     {
         self::assertSame([], [...$this->handler()->references(new Choice(label: 'Level', choices: self::CHOICES), 'h1')]);

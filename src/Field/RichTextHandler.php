@@ -8,7 +8,7 @@ use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
-final readonly class RichTextHandler implements SanitizingFieldHandlerInterface, EmptinessCheckingFieldHandlerInterface
+final readonly class RichTextHandler implements SanitizingFieldHandlerInterface, EmptinessCheckingFieldHandlerInterface, FitCheckingFieldHandlerInterface
 {
     public function __construct(private RichTextSchema $schema)
     {
@@ -41,9 +41,17 @@ final readonly class RichTextHandler implements SanitizingFieldHandlerInterface,
         return [];
     }
 
+    /**
+     * A document fits, even an empty one, which counts as missing anyway
+     */
+    public function fits(Field $field, mixed $value): bool
+    {
+        return null !== $this->schema->sanitize($value);
+    }
+
     public function validate(Field $field, mixed $value, ExecutionContextInterface $context): void
     {
-        if (null === $value || null !== $this->schema->sanitize($value)) {
+        if (null === $value || $this->fits($field, $value)) {
             return;
         }
 

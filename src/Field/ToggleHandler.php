@@ -6,7 +6,7 @@ namespace Setono\SyliusCMSPlugin\Field;
 
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
-final class ToggleHandler implements FieldHandlerInterface
+final class ToggleHandler implements FitCheckingFieldHandlerInterface
 {
     public function schema(Field $field): array
     {
@@ -16,6 +16,11 @@ final class ToggleHandler implements FieldHandlerInterface
     public function hydrate(Field $field, mixed $value, HydrationContext $context): ?bool
     {
         return is_bool($value) ? $value : null;
+    }
+
+    public function fits(Field $field, mixed $value): bool
+    {
+        return is_bool($value);
     }
 
     public function references(Field $field, mixed $value): iterable
