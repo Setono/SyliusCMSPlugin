@@ -27,11 +27,14 @@ use Setono\SyliusCMSPlugin\Model\Revision;
 use Setono\SyliusCMSPlugin\Model\RevisionInterface;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSetInterface;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
+use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 use Sylius\Resource\Factory\Factory;
@@ -117,6 +120,14 @@ final class ConfigurationTest extends TestCase
                         'model' => Revision::class,
                         'interface' => RevisionInterface::class,
                         'repository' => RevisionRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'scheduled_publish' => [
+                    'classes' => [
+                        'model' => ScheduledPublish::class,
+                        'interface' => ScheduledPublishInterface::class,
+                        'repository' => ScheduledPublishRepository::class,
                         'factory' => Factory::class,
                     ],
                 ],

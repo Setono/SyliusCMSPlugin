@@ -12,11 +12,13 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\Merge;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 
 /**
  * Saves are kept for a day for merging onto. Each one runs with the entry's row locked (EntryLock), so saves of one entry
  * wait for each other, and loading waits for a save in flight, so a lock token always matches the working copy it came with.
- * A save that changes something, a discard and a replace record on the entry who made it and when
+ * A save that changes something, a discard and a replace record on the entry who made it and when. While a scheduled
+ * publish waits, the draft is locked, so saves, discards and replaces are refused
  */
 final readonly class Autosave implements AutosaveInterface
 {
@@ -35,6 +37,7 @@ final readonly class Autosave implements AutosaveInterface
         private ClockInterface $clock,
         private EditRecorder $editRecorder,
         private EntryDenormalizer $entryDenormalizer,
+        private ScheduledPublishRepositoryInterface $scheduledPublishes,
     ) {
     }
 
@@ -49,6 +52,8 @@ final readonly class Autosave implements AutosaveInterface
     public function save(EntryInterface $entry, ChangeSet $changeSet, int $lockToken): SaveResult
     {
         return $this->entryLock->write($entry, function () use ($entry, $changeSet, $lockToken): SaveResult {
+            $this->assertUnlocked($entry);
+
             $latest = $this->savedChangeSets->findLatestLockToken($entry);
             $theirs = $this->savedChangeSets->findChangeSetsSince($entry, $lockToken);
             if ($lockToken > $latest || count($theirs) !== $latest - $lockToken) {
@@ -77,6 +82,8 @@ final readonly class Autosave implements AutosaveInterface
     public function discard(EntryInterface $entry): LoadedWorkingCopy
     {
         return $this->entryLock->write($entry, function () use ($entry): LoadedWorkingCopy {
+            $this->assertUnlocked($entry);
+
             $latest = $this->savedChangeSets->findLatestLockToken($entry);
 
             if ($this->workingCopies->hasDraft($entry)) {
@@ -92,6 +99,8 @@ final readonly class Autosave implements AutosaveInterface
     public function replace(EntryInterface $entry, array $content): LoadedWorkingCopy
     {
         return $this->entryLock->write($entry, function () use ($entry, $content): LoadedWorkingCopy {
+            $this->assertUnlocked($entry);
+
             $workingCopy = $this->workingCopies->getWorkingCopy($entry);
             $this->entryDenormalizer->denormalize($content, $workingCopy);
 
@@ -102,6 +111,17 @@ final readonly class Autosave implements AutosaveInterface
 
             return new LoadedWorkingCopy($workingCopy, $lockToken);
         });
+    }
+
+    /**
+     * @throws DraftLockedException while a scheduled publish waits. One that failed no longer does
+     */
+    private function assertUnlocked(EntryInterface $entry): void
+    {
+        $scheduledPublish = $this->scheduledPublishes->findOneByEntry($entry);
+        if (null !== $scheduledPublish && !$scheduledPublish->isFailed()) {
+            throw new DraftLockedException($scheduledPublish);
+        }
     }
 
     /**

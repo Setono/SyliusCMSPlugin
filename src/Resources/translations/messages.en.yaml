@@ -83,6 +83,9 @@ setono_sylius_cms:
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
     publish:
         invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'
+    # Why a scheduled publish was stopped when it ran, which the overview page shows and EntryPublishFailed carries
+    scheduled_publish:
+        invalid: '{1} Validation found an error to fix: %errors%|]1,Inf[ Validation found %count% errors to fix: %errors%'
     ui:
         all_entries: All entries
         any_channel: Any channel

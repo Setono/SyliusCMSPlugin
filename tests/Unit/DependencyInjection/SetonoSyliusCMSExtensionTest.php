@@ -22,6 +22,7 @@ use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
+use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
@@ -272,10 +273,22 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     {
         $this->load();
 
-        self::assertSame(
-            [['cache' => ['pools' => ['setono_sylius_cms.cache.problems' => ['adapter' => 'cache.app', 'default_lifetime' => 300]]]]],
+        self::assertContains(
+            ['cache' => ['pools' => ['setono_sylius_cms.cache.problems' => ['adapter' => 'cache.app', 'default_lifetime' => 300]]]],
             $this->container->getExtensionConfig('framework'),
         );
+    }
+
+    /**
+     * @test
+     */
+    public function it_routes_the_message_that_runs_a_scheduled_publish_to_sylius_main_transport(): void
+    {
+        $this->load();
+
+        $framework = $this->container->getExtensionConfig('framework');
+        self::assertContains(['messenger' => ['routing' => [ScheduledPublishDue::class => 'main']]], $framework);
+        self::assertCount(2, $framework);
     }
 
     /**

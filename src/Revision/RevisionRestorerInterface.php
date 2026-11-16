@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Revision;
 
 use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
 use Setono\SyliusCMSPlugin\Model\RevisionInterface;
+use Setono\SyliusCMSPlugin\Publishing\DraftLockedException;
 use Setono\SyliusCMSPlugin\Publishing\LoadedWorkingCopy;
 
 /**
@@ -18,6 +19,7 @@ interface RevisionRestorerInterface
      * @return LoadedWorkingCopy the working copy, which holds the revision's content, with its lock token
      *
      * @throws InvalidEntryFormatException when the revision's content isn't its entry in the entry format
+     * @throws DraftLockedException while a scheduled publish locks the draft
      */
     public function restore(RevisionInterface $revision): LoadedWorkingCopy;
 }

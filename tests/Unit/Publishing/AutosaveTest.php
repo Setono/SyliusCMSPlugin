@@ -29,7 +29,9 @@ use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
 use Setono\SyliusCMSPlugin\Publishing\Autosave;
+use Setono\SyliusCMSPlugin\Publishing\DraftLockedException;
 use Setono\SyliusCMSPlugin\Publishing\EditRecorder;
 use Setono\SyliusCMSPlugin\Publishing\EntryLock;
 use Setono\SyliusCMSPlugin\Publishing\StaleLockTokenException;
@@ -38,6 +40,7 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -67,6 +70,9 @@ final class AutosaveTest extends TestCase
 
     /** @var ObjectProphecy<SavedChangeSetRepositoryInterface> */
     private ObjectProphecy $savedChangeSets;
+
+    /** @var ObjectProphecy<ScheduledPublishRepositoryInterface> */
+    private ObjectProphecy $scheduledPublishes;
 
     private TokenStorage $tokenStorage;
 
@@ -110,6 +116,10 @@ final class AutosaveTest extends TestCase
         $this->savedChangeSets = $this->prophesize(SavedChangeSetRepositoryInterface::class);
         $this->savedChangeSets->removeSavedBefore(Argument::cetera())->will($this->record('forget old saves'));
         $this->savedChangeSets->record(Argument::cetera())->will($this->record('number the save'));
+
+        // No scheduled publish locks the draft, unless a test schedules one
+        $this->scheduledPublishes = $this->prophesize(ScheduledPublishRepositoryInterface::class);
+        $this->scheduledPublishes->findOneByEntry($this->entry)->willReturn(null);
 
         // Whoever saves is recorded on the entry. The name is read when the edit is recorded
         $calls = &$this->calls;
@@ -341,6 +351,95 @@ final class AutosaveTest extends TestCase
         self::assertNull($this->entry->getLastEditedBy());
     }
 
+    /**
+     * @test
+     */
+    public function it_refuses_a_save_while_a_scheduled_publish_locks_the_draft(): void
+    {
+        $scheduledPublish = $this->scheduledPublish();
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
+        $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
+
+        try {
+            $this->autosave()->save($this->entry, new ChangeSet([new SetValue(self::A, 'text', 'en_US', 'Mine')]), 3);
+            self::fail('The save was not refused');
+        } catch (DraftLockedException $e) {
+            self::assertSame($scheduledPublish, $e->scheduledPublish);
+            self::assertSame('A publish scheduled for 2026-11-20T08:00:00+00:00 locks the draft until it runs or is cancelled', $e->getMessage());
+        }
+
+        self::assertSame(['Hello', 'World'], self::texts($this->workingCopy));
+        self::assertSame(['begin', 'lock to write', 'read again', 'roll back'], $this->calls);
+        self::assertNull($this->entry->getLastEditedBy());
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_discard_while_a_scheduled_publish_locks_the_draft(): void
+    {
+        $this->scheduledPublish();
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
+        $this->workingCopies->hasDraft($this->entry)->willReturn(true);
+        $this->workingCopies->discard(Argument::any())->shouldNotBeCalled();
+
+        try {
+            $this->autosave()->discard($this->entry);
+            self::fail('The discard was not refused');
+        } catch (DraftLockedException) {
+        }
+
+        self::assertSame(['begin', 'lock to write', 'read again', 'roll back'], $this->calls);
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_to_replace_the_working_copy_while_a_scheduled_publish_locks_the_draft(): void
+    {
+        $this->scheduledPublish();
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
+        $restored = clone $this->workingCopy;
+        $restored->setBlockTree(new StoredTree(null, [self::heading(self::B, 'As it was')]));
+
+        try {
+            $this->autosave()->replace($this->entry, self::entryFormat($restored));
+            self::fail('The working copy was replaced');
+        } catch (DraftLockedException) {
+        }
+
+        self::assertSame(['Hello', 'World'], self::texts($this->workingCopy));
+        self::assertSame(['begin', 'lock to write', 'read again', 'roll back'], $this->calls);
+    }
+
+    /**
+     * @test
+     */
+    public function a_failed_scheduled_publish_leaves_the_draft_unlocked(): void
+    {
+        $this->scheduledPublish()->fail('Not on a Sunday');
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
+        $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
+
+        $result = $this->autosave()->save($this->entry, new ChangeSet([new SetValue(self::A, 'text', 'en_US', 'Hello there')]), 3);
+
+        self::assertSame(4, $result->saved->lockToken);
+        self::assertSame(['Hello there', 'World'], self::texts($this->workingCopy));
+    }
+
+    /**
+     * A publish of the entry scheduled for 2026-11-20 08:00 UTC, which waits
+     */
+    private function scheduledPublish(): ScheduledPublish
+    {
+        $scheduledPublish = new ScheduledPublish();
+        $scheduledPublish->setEntry($this->entry);
+        $scheduledPublish->schedule(new \DateTimeImmutable('2026-11-20 08:00:00', new \DateTimeZone('UTC')), 'Jane Roe');
+        $this->scheduledPublishes->findOneByEntry($this->entry)->willReturn($scheduledPublish);
+
+        return $scheduledPublish;
+    }
+
     private function autosave(): Autosave
     {
         $clock = new MockClock('2026-11-14 10:00:00');
@@ -362,6 +461,7 @@ final class AutosaveTest extends TestCase
             $clock,
             new EditRecorder($this->tokenStorage, $clock),
             new EntryDenormalizer(self::contentTypes()),
+            $this->scheduledPublishes->reveal(),
         );
     }
 

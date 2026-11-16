@@ -28,6 +28,7 @@ interface AutosaveInterface
      *
      * @throws InvalidChangeSetException when the changes don't apply, and nothing is saved
      * @throws StaleLockTokenException when the lock token is one the server can't merge onto, and nothing is saved
+     * @throws DraftLockedException while a scheduled publish waits, and nothing is saved
      */
     public function save(EntryInterface $entry, ChangeSet $changeSet, int $lockToken): SaveResult;
 
@@ -37,6 +38,8 @@ interface AutosaveInterface
      * save made on the draft merges onto the published content: an edit to a block only the draft had is a clash
      *
      * @return LoadedWorkingCopy the working copy, which is the published content, with its lock token
+     *
+     * @throws DraftLockedException while a scheduled publish waits, and nothing is discarded
      */
     public function discard(EntryInterface $entry): LoadedWorkingCopy;
 
@@ -51,6 +54,7 @@ interface AutosaveInterface
      * @return LoadedWorkingCopy the working copy, which holds the content, with its lock token
      *
      * @throws InvalidEntryFormatException when the content isn't the entry in the entry format, and nothing is saved
+     * @throws DraftLockedException while a scheduled publish waits, and nothing is saved
      */
     public function replace(EntryInterface $entry, array $content): LoadedWorkingCopy;
 }

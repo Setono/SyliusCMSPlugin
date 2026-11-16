@@ -15,5 +15,6 @@
         <service id="Setono\SyliusCMSPlugin\Repository\EntryPresenceRepositoryInterface" alias="setono_sylius_cms.repository.entry_presence"/>
         <service id="Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface" alias="setono_sylius_cms.repository.saved_change_set"/>
         <service id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface" alias="setono_sylius_cms.repository.revision"/>
+        <service id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface" alias="setono_sylius_cms.repository.scheduled_publish"/>
     </services>
 </container>
