@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 
+use Setono\SyliusCMSPlugin\Tests\Support\Customers;
+use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Symfony\Component\DomCrawler\Crawler;
+
 final class PreviewTokenTest extends BuilderApiTestCase
 {
+    use Customers;
+
     /**
      * @test
      */
@@ -15,7 +21,7 @@ final class PreviewTokenTest extends BuilderApiTestCase
         $page = self::createPage('About us', 'about-us', 'Hello');
         $csrfToken = self::openBuilder($client, $page);
 
-        $response = self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US'], $csrfToken);
+        $response = self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => '@guest'], $csrfToken);
 
         self::assertResponseIsSuccessful();
         self::assertIsArray($response);
@@ -33,12 +39,44 @@ final class PreviewTokenTest extends BuilderApiTestCase
         $csrfToken = self::openBuilder($client, $page);
 
         /** @var array{url: string} $response */
-        $response = self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US'], $csrfToken);
+        $response = self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => '@guest'], $csrfToken);
         $client->request('GET', $response['url']);
 
         self::assertResponseStatusCodeSame(200);
         self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello');
         self::assertSelectorTextSame('title', 'Setono CMS Test Store', 'The channel is WEB, though its hostname is localhost');
+    }
+
+    /**
+     * The token carries Shown to and Date, which the page follows. See "Shown to and Date" in docs/spec/targeting.md
+     *
+     * @test
+     */
+    public function it_answers_a_url_that_shows_the_page_to_shown_to_at_the_date(): void
+    {
+        $client = self::createClient();
+        self::createCustomerGroup('wholesale', 'Wholesale');
+        $nextWeek = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->modify('+7 days')->setTime(12, 0);
+        $wholesale = new StoredBlock('0193a5be-0000-7000-8000-000000000001', 'heading', 1, conditions: [['kind' => 'customer_group', 'negate' => false, 'params' => ['groups' => ['wholesale']]]]);
+        $wholesale->setValue('text', 'en_US', 'Wholesale prices');
+        $campaign = new StoredBlock('0193a5be-0000-7000-8000-000000000002', 'heading', 1, conditions: [['kind' => 'date_window', 'negate' => false, 'params' => ['from' => $nextWeek->format('Y-m-d\TH:i:s\Z')]]]);
+        $campaign->setValue('text', 'en_US', 'Campaign');
+        $page = self::createPageWithBlocks('About us', 'about-us', [$wholesale, $campaign]);
+        $csrfToken = self::openBuilder($client, $page);
+
+        /** @var array{url: string} $response */
+        $response = self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => 'wholesale', 'date' => $nextWeek->format('Y-m-d\TH:i:s\Z')], $csrfToken);
+        $crawler = $client->request('GET', $response['url']);
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame(['Wholesale prices', 'Campaign'], $crawler->filter('.cms-tree .cms-heading')->each(static fn (Crawler $heading): string => $heading->text()));
+
+        /** @var array{url: string} $response */
+        $response = self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => '@no_group', 'date' => null], $csrfToken);
+        $client->request('GET', $response['url']);
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSelectorNotExists('.cms-tree .cms-heading', 'Signed in without a group, now, neither block shows');
     }
 
     /**
@@ -49,7 +87,7 @@ final class PreviewTokenTest extends BuilderApiTestCase
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us');
 
-        self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US']);
+        self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => '@guest']);
 
         self::assertResponseRedirects('http://localhost/admin/login');
     }
@@ -63,7 +101,7 @@ final class PreviewTokenTest extends BuilderApiTestCase
         $page = self::createPage('About us', 'about-us');
         self::openBuilder($client, $page);
 
-        self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US'], 'not-the-token');
+        self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => '@guest'], 'not-the-token');
 
         self::assertResponseStatusCodeSame(403);
     }
@@ -77,7 +115,7 @@ final class PreviewTokenTest extends BuilderApiTestCase
         $page = self::createPage('About us', 'about-us');
         $csrfToken = self::openBuilder($client, $page);
 
-        self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', 'channel' => 'WEB', 'locale' => 'en_US'], $csrfToken);
+        self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', 'channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => '@guest'], $csrfToken);
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -95,7 +133,7 @@ final class PreviewTokenTest extends BuilderApiTestCase
         $page = self::createPage('About us', 'about-us');
         $csrfToken = self::openBuilder($client, $page);
 
-        $response = self::json($client, 'POST', '/admin/cms/api/preview/token', $body + ['entry' => $page->getUuid()], $csrfToken);
+        $response = self::json($client, 'POST', '/admin/cms/api/preview/token', $body + ['entry' => $page->getUuid(), 'shownTo' => '@guest'], $csrfToken);
 
         self::assertResponseStatusCodeSame(400);
         self::assertIsArray($response);
@@ -113,6 +151,13 @@ final class PreviewTokenTest extends BuilderApiTestCase
         yield 'no locale' => [['channel' => 'WEB'], 'locale'];
         yield 'a locale the channel does not have' => [['channel' => 'WEB', 'locale' => 'da_DK'], 'da_DK'];
         yield 'an entry that is not a string' => [['entry' => 1, 'channel' => 'WEB', 'locale' => 'en_US'], 'entry'];
+        yield 'no Shown to' => [['channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => null], 'shownTo'];
+        yield 'a Shown to that is not a string' => [['channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => 1], 'shownTo'];
+        yield 'a Shown to that is no customer group value' => [['channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => '@everyone'], '@everyone'];
+        yield 'an empty Shown to' => [['channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => ''], 'shownTo'];
+        yield 'a date that is not a string' => [['channel' => 'WEB', 'locale' => 'en_US', 'date' => 1_795_000_000], 'date'];
+        yield 'a date that is not a UTC date and time' => [['channel' => 'WEB', 'locale' => 'en_US', 'date' => '2026-12-01T10:00:00+01:00'], '2026-12-01T10:00:00+01:00'];
+        yield 'a date that does not exist' => [['channel' => 'WEB', 'locale' => 'en_US', 'date' => '2026-02-30T10:00:00Z'], '2026-02-30T10:00:00Z'];
     }
 
     /**
@@ -124,7 +169,7 @@ final class PreviewTokenTest extends BuilderApiTestCase
         $page = self::createPage('About us', '');
         $csrfToken = self::openBuilder($client, $page);
 
-        $response = self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US'], $csrfToken);
+        $response = self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => '@guest'], $csrfToken);
 
         self::assertResponseStatusCodeSame(400);
         self::assertIsArray($response);
@@ -142,7 +187,7 @@ final class PreviewTokenTest extends BuilderApiTestCase
         $page = self::createPage('About us', 'about-us', channels: ['OTHER']);
         $csrfToken = self::openBuilder($client, $page);
 
-        $response = self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US'], $csrfToken);
+        $response = self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $page->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => '@guest'], $csrfToken);
 
         self::assertResponseStatusCodeSame(400);
         self::assertIsArray($response);
