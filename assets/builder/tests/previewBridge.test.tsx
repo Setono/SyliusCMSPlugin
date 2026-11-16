@@ -71,7 +71,16 @@ async function openWithBridge(api: BuilderApi) {
     return connectBridge();
 }
 
-function connectBridge() {
+/**
+ * Has the bridge in the preview say it's ready. The preview listens to the bridge from an effect that runs once the
+ * iframe is in place, which React may not have run yet when the iframe's src shows, so the effects and the promises
+ * pending are let run first: otherwise "ready" can come before anyone listens, and the builder never answers it.
+ */
+async function connectBridge() {
+    await act(async () => {
+        await Promise.resolve();
+    });
+
     const contentWindow = frame().contentWindow as Window;
     const postMessage = vi.spyOn(contentWindow, 'postMessage').mockImplementation(() => undefined);
     fromBridge({ type: 'ready' });
@@ -275,7 +284,7 @@ describe('the bridge in the preview', () => {
         fireEvent.change(screen.getByLabelText('Text'), { target: { value: 'Welcome back' } });
         expect(api.renderPreview).not.toHaveBeenCalled();
 
-        const { sent } = connectBridge();
+        const { sent } = await connectBridge();
 
         await waitFor(() => expect(sent().at(-1)).toMatchObject({ type: 'patch', blocks: [{ key: 'a' }] }));
     });
@@ -353,7 +362,7 @@ describe('the bridge in the preview', () => {
         render(<App config={config} api={fakeApi()} autosaveDelay={10} navigate={navigate} />);
         await screen.findByRole('heading', { level: 1 });
         await waitFor(() => expect(frame()).toHaveAttribute('src'));
-        connectBridge();
+        await connectBridge();
 
         fromBridge({ type: 'leave' });
 
