@@ -76,6 +76,8 @@ Every build ticket ships with tests at each level that applies, and a slice isn'
 - **Functional tests.** PHPUnit with Symfony's kernel and web test cases, against the test app and a real database. They cover controllers, the builder's JSON endpoints, routing, rendering, publishing, transfer and console commands.
 - **UI tests.** [`playwright-php/playwright-symfony`](https://github.com/playwright-php/playwright-symfony) drives a real browser through the builder and the storefront.
 
+The suites run on MySQL only. PostgreSQL stays supported, and the queries the spec relies on work on both, but tests and CI don't run on it, so a ticket's test lines that ask for PostgreSQL runs are dropped.
+
 These three levels replace Behat, so the skeleton's `behat/behat` dev dependency is dropped. Each build ticket's acceptance criteria name the tests it adds.
 
 ## How the build starts
