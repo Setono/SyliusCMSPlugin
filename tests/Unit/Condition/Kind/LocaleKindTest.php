@@ -33,6 +33,37 @@ final class LocaleKindTest extends TestCase
     /**
      * @test
      */
+    public function it_tells_whether_a_locale_condition_among_a_blocks_conditions_hides_it_in_a_locale(): void
+    {
+        $notDanish = ['kind' => 'locale', 'negate' => true, 'params' => ['locales' => ['da_DK']]];
+        $danishOrGerman = ['kind' => 'locale', 'negate' => false, 'params' => ['locales' => ['da_DK', 'de_DE']]];
+        $channel = ['kind' => 'channel', 'negate' => false, 'params' => ['locales' => []]];
+
+        self::assertTrue(LocaleKind::hidesIn([$notDanish], 'da_DK'));
+        self::assertFalse(LocaleKind::hidesIn([$notDanish], 'en_US'));
+        self::assertTrue(LocaleKind::hidesIn([$danishOrGerman], 'en_US'));
+        self::assertFalse(LocaleKind::hidesIn([$danishOrGerman], 'de_DE'));
+        self::assertTrue(LocaleKind::hidesIn([$channel, $danishOrGerman], 'en_US'), 'Conditions of other kinds are skipped');
+        self::assertFalse(LocaleKind::hidesIn([$channel], 'en_US'));
+        self::assertFalse(LocaleKind::hidesIn([], 'en_US'));
+    }
+
+    /**
+     * Without locales, "is one of" matches nobody and "is not one of" everybody, as when its parameters are hydrated
+     *
+     * @test
+     */
+    public function a_locale_condition_without_locales_hides_a_block_unless_negated(): void
+    {
+        self::assertTrue(LocaleKind::hidesIn([['kind' => 'locale', 'negate' => false, 'params' => []]], 'en_US'));
+        self::assertTrue(LocaleKind::hidesIn([['kind' => 'locale', 'params' => ['locales' => 'en_US']]], 'en_US'));
+        self::assertTrue(LocaleKind::hidesIn([['kind' => 'locale', 'negate' => 1, 'params' => new \stdClass()]], 'en_US'), 'Only a negate of true negates');
+        self::assertFalse(LocaleKind::hidesIn([['kind' => 'locale', 'negate' => true, 'params' => new \stdClass()]], 'en_US'));
+    }
+
+    /**
+     * @test
+     */
     public function it_takes_only_its_own_parameters(): void
     {
         $this->expectException(\InvalidArgumentException::class);

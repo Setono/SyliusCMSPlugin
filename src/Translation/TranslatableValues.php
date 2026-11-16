@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Translation;
 
+use Setono\SyliusCMSPlugin\Condition\Kind\LocaleKind;
 use Setono\SyliusCMSPlugin\Field\Field;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
@@ -17,7 +18,8 @@ use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
 /**
  * The translatable values of a working copy in a locale, with their translation state: its translations' own fields,
- * its layout's fields and its blocks' fields, at any depth. The one place the rules are, which TranslationState gives
+ * its layout's fields and its blocks' fields, at any depth, but those of a block a locale condition hides in the locale,
+ * which nobody reads there. The one place the rules are, which TranslationState gives
  * a translator, and the completeness counts and outdated flags of the admin read. The builder has the same rules
  * (assets/builder/src/translationState.ts). See "Completeness and outdated flags" in docs/spec/localization.md
  *
@@ -84,6 +86,11 @@ final readonly class TranslatableValues
      */
     private function blockValues(StoredBlock $block, string $localeCode, array &$values): void
     {
+        // Nobody reads a block in a locale it's hidden in, nor what's inside it
+        if (LocaleKind::hidesIn($block->conditions, $localeCode)) {
+            return;
+        }
+
         // A block of a type the code no longer has isn't rendered, so there's nothing in it to translate
         if ($this->blockTypes->has($block->type)) {
             foreach ($this->translatable($this->blockTypes->get($block->type)->fields) as $name => $field) {

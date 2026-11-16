@@ -133,6 +133,19 @@ describe('the counts of a locale', () => {
         expect(localeCounts(edited, 'da_DK', isTranslatable)).toEqual({ untranslated: 0, outdated: 0 });
     });
 
+    it('should leave out a block a locale condition hides in the locale, with everything inside it', () => {
+        const notDanish = { kind: 'locale', negate: true, params: { locales: ['da_DK'] } };
+        const onlyWeb = { kind: 'channel', negate: false, params: { channels: ['WEB'] } };
+        const edited = danish([
+            { ...blockOf('group', 'a', [block('b', { text: { en_US: 'Inside' } })]), conditions: [notDanish] },
+            { ...block('c', { text: { en_US: 'Not in the web store' } }), conditions: [{ ...onlyWeb, negate: true }] },
+        ]);
+
+        expect(localeCounts(edited, 'da_DK', isTranslatable)).toEqual({ untranslated: 1, outdated: 0 });
+        // The title, the slug and both headings, in a locale the entry has no translation in
+        expect(localeCounts(edited, 'de_DE', isTranslatable)).toEqual({ untranslated: 4, outdated: 0 });
+    });
+
     it('should count an entry field that one translation is missing', () => {
         const edited = danish([]);
         edited.translations.da_DK = { shown: true, fields: { title: 'Om os', slug: null }, translated: {} };
