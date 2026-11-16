@@ -69,7 +69,7 @@ class ScheduledPublish implements ScheduledPublishInterface
      */
     public function getPublishAt(): \DateTimeImmutable
     {
-        return new \DateTimeImmutable($this->publishAt->format('Y-m-d H:i:s'), new \DateTimeZone('UTC'));
+        return UtcColumn::read($this->publishAt);
     }
 
     public function getScheduledBy(): ?string

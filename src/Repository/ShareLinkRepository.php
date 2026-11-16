@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Repository;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
+use Setono\SyliusCMSPlugin\Model\UtcColumn;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
 /**
@@ -36,9 +37,7 @@ class ShareLinkRepository extends EntityRepository implements ShareLinkRepositor
             return null;
         }
 
-        // Doctrine hydrates the column in PHP's default time zone, but it holds UTC
-        $date = $shareLink['date'];
-        $shareLink['date'] = null === $date ? null : new \DateTimeImmutable($date->format('Y-m-d H:i:s'), new \DateTimeZone('UTC'));
+        $shareLink['date'] = UtcColumn::read($shareLink['date']);
 
         return $shareLink;
     }

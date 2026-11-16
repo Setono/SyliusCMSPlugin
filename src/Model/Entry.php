@@ -157,7 +157,7 @@ abstract class Entry implements EntryInterface
 
     public function getLastEditedAt(): \DateTimeImmutable
     {
-        return self::readUtc($this->lastEditedAt);
+        return UtcColumn::read($this->lastEditedAt);
     }
 
     public function getLastEditedBy(): ?string
@@ -183,7 +183,7 @@ abstract class Entry implements EntryInterface
 
     public function getDateWindow(): DateWindow
     {
-        return new DateWindow(self::readUtc($this->showFrom), self::readUtc($this->showUntil));
+        return new DateWindow(UtcColumn::read($this->showFrom), UtcColumn::read($this->showUntil));
     }
 
     public function setDateWindow(DateWindow $dateWindow): void
@@ -330,15 +330,5 @@ abstract class Entry implements EntryInterface
         sort($codes, \SORT_STRING);
 
         return $codes;
-    }
-
-    /**
-     * The date window and last edited columns hold UTC, but Doctrine hydrates them in PHP's default time zone
-     *
-     * @return ($column is null ? null : \DateTimeImmutable)
-     */
-    private static function readUtc(?\DateTimeImmutable $column): ?\DateTimeImmutable
-    {
-        return null === $column ? null : new \DateTimeImmutable($column->format('Y-m-d H:i:s'), new \DateTimeZone('UTC'));
     }
 }

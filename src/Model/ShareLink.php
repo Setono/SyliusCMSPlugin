@@ -98,7 +98,7 @@ class ShareLink implements ShareLinkInterface
      */
     public function getDate(): ?\DateTimeImmutable
     {
-        return null === $this->date ? null : self::utc($this->date);
+        return UtcColumn::read($this->date);
     }
 
     public function setDate(?\DateTimeImmutable $date): void
@@ -111,7 +111,7 @@ class ShareLink implements ShareLinkInterface
      */
     public function getCreatedAt(): \DateTimeImmutable
     {
-        return self::utc($this->createdAt);
+        return UtcColumn::read($this->createdAt);
     }
 
     public function setCreatedAt(\DateTimeImmutable $createdAt): void
@@ -127,10 +127,5 @@ class ShareLink implements ShareLinkInterface
     public function setCreatedBy(?string $createdBy): void
     {
         $this->createdBy = $createdBy;
-    }
-
-    private static function utc(\DateTimeImmutable $time): \DateTimeImmutable
-    {
-        return new \DateTimeImmutable($time->format('Y-m-d H:i:s'), new \DateTimeZone('UTC'));
     }
 }

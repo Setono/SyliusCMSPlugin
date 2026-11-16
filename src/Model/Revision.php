@@ -62,7 +62,7 @@ class Revision implements RevisionInterface
      */
     public function getPublishedAt(): \DateTimeImmutable
     {
-        return new \DateTimeImmutable($this->publishedAt->format('Y-m-d H:i:s'), new \DateTimeZone('UTC'));
+        return UtcColumn::read($this->publishedAt);
     }
 
     public function setPublishedAt(\DateTimeImmutable $publishedAt): void
