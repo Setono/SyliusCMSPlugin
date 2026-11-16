@@ -1,0 +1,8 @@
+--TEST--
+cms_field() marks a rich text field in the builder's preview
+--TEMPLATE--
+{{ cms_blocks(blocks) }}
+--DATA--
+return $this->rendering(['blocks' => [$this->richText('<p>A <strong>bold</strong> word</p>')]], 'builder')
+--EXPECT--
+<div class="cms-rich-text"><!--cms:field 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f content rich_text--><p>A <strong>bold</strong> word</p><!--/cms:field 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f content--></div>

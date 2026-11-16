@@ -1,0 +1,8 @@
+--TEST--
+cms_field() escapes text
+--TEMPLATE--
+{{ cms_blocks(blocks) }}
+--DATA--
+return $this->rendering(['blocks' => [$this->heading('<b>Tom & Jerry</b> "say" \'it\'')]])
+--EXPECT--
+<h2 class="cms-heading">&lt;b&gt;Tom &amp; Jerry&lt;/b&gt; &quot;say&quot; &#039;it&#039;</h2>

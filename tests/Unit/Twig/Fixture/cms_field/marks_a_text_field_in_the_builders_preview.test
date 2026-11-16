@@ -1,0 +1,8 @@
+--TEST--
+cms_field() marks a text field in the builder's preview, so it can be typed in place
+--TEMPLATE--
+{{ cms_blocks(blocks) }}
+--DATA--
+return $this->rendering(['blocks' => [$this->heading('Hello & welcome')]], 'builder')
+--EXPECT--
+<h2 class="cms-heading"><!--cms:field 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f text text-->Hello &amp; welcome<!--/cms:field 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f text--></h2>

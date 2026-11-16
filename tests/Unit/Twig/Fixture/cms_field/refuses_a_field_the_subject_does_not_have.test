@@ -1,0 +1,8 @@
+--TEST--
+cms_field() refuses to print a field the subject doesn't have
+--TEMPLATE--
+{{ cms_field(blocks[0].block, "subtitle") }}
+--DATA--
+return $this->rendering(['blocks' => [$this->heading('Hello')]])
+--EXCEPTION--
+Twig\Error\RuntimeError: An exception has been thrown during the rendering of a template ("Setono\SyliusCMSPlugin\Block\Heading has no field "subtitle"") in "index.twig" at line 2.

@@ -1,0 +1,8 @@
+--TEST--
+cms_field() doesn't mark fields without the render context
+--TEMPLATE--
+{{ cms_field(view.block, "text") }}
+--DATA--
+return ['view' => $this->heading('Hello')]
+--EXPECT--
+Hello

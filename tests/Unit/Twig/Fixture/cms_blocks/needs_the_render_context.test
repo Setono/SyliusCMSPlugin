@@ -1,0 +1,8 @@
+--TEST--
+cms_blocks() needs the render context
+--TEMPLATE--
+{{ cms_blocks(blocks) }}
+--DATA--
+return ['blocks' => [$this->heading('Hello')]]
+--EXCEPTION--
+Twig\Error\RuntimeError: An exception has been thrown during the rendering of a template ("Blocks can only be rendered from a template that has the render context in "_cms_render_context", such as a layout or block template") in "index.twig" at line 2.

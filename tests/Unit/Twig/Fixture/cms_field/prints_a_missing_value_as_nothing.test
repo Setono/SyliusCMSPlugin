@@ -1,0 +1,8 @@
+--TEST--
+cms_field() prints a missing value as nothing
+--TEMPLATE--
+{{ cms_blocks(blocks) }}
+--DATA--
+return $this->rendering(['blocks' => [$this->heading(null)]])
+--EXPECT--
+<h2 class="cms-heading"></h2>
