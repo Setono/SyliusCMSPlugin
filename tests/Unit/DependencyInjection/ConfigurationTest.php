@@ -60,6 +60,7 @@ final class ConfigurationTest extends TestCase
             'disabled' => ['block_types' => []],
             'assets' => true,
             'block_styles' => [],
+            'content_types' => [],
             'fallback_locales' => [],
             'revisions' => ['keep' => 50],
             'resources' => [
@@ -281,6 +282,51 @@ final class ConfigurationTest extends TestCase
     public function it_refuses_an_empty_fallback_locale(): void
     {
         $this->assertConfigurationIsInvalid([['fallback_locales' => ['de_CH' => ['']]]], 'The path "setono_sylius_cms.fallback_locales.de_CH.0" cannot contain an empty value');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_change_the_url_prefix_of_a_content_type_by_its_code(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['content_types' => ['page' => ['prefix' => 'pg'], 'blog_post' => ['prefix' => 'news/all']]],
+            ['content_types' => ['app_store' => ['prefix' => '']]],
+        ], ['content_types' => [
+            'page' => ['prefix' => 'pg'],
+            'blog_post' => ['prefix' => 'news/all'],
+            'app_store' => ['prefix' => ''],
+        ]], 'content_types');
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_out_a_prefix_a_project_does_not_set(): void
+    {
+        $this->assertProcessedConfigurationEquals([['content_types' => ['page' => []]]], ['content_types' => ['page' => []]], 'content_types');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidContentTypes
+     */
+    public function it_refuses_an_invalid_content_type_prefix_or_code(array $contentTypes, string $message): void
+    {
+        $this->assertConfigurationIsInvalid([['content_types' => $contentTypes]], $message);
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>, string}>
+     */
+    public function provideInvalidContentTypes(): iterable
+    {
+        yield 'a slash first' => [['page' => ['prefix' => '/pg']], 'The prefix "/pg" must be empty or a string that doesn\'t start or end with a slash or contain two slashes in a row'];
+        yield 'a slash last' => [['page' => ['prefix' => 'pg/']], 'The prefix "pg/" must be empty'];
+        yield 'two slashes in a row' => [['page' => ['prefix' => 'a//b']], 'The prefix "a//b" must be empty'];
+        yield 'not a string' => [['page' => ['prefix' => 7]], 'The prefix int must be empty'];
+        yield 'an invalid code' => [['Page' => ['prefix' => 'pg']], 'The content type code "Page" must match ^[a-z][a-z0-9_]*$'];
     }
 
     /**

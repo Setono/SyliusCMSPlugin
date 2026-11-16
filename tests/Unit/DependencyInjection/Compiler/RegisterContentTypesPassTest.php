@@ -16,6 +16,7 @@ use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\InvalidCode;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Untagged;
+use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\Article;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -32,7 +33,7 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
     {
         parent::setUp();
 
-        $this->setDefinition(ContentTypeRegistry::class, new Definition(ContentTypeRegistry::class, [[]]));
+        $this->setDefinition(ContentTypeRegistry::class, new Definition(ContentTypeRegistry::class, [[], []]));
         $this->setDefinition(DiscriminatorMapListener::class, new Definition(DiscriminatorMapListener::class, [[]]));
     }
 
@@ -62,6 +63,7 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
             'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe.v2'],
         ];
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(ContentTypeRegistry::class, 0, $contentTypes);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ContentTypeRegistry::class, 1, []);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(DiscriminatorMapListener::class, 0, $contentTypes);
 
         $locator = $this->container->getDefinition((string) $this->container->getAlias('setono_sylius_cms.entry_factories'));
@@ -88,6 +90,47 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
             $this->assertContainerBuilderHasServiceDefinitionWithArgument($decorator, 2, new Reference(ChannelsAndAudienceModifierInterface::class));
             self::assertSame([$factory, null, 0], $this->container->getDefinition($decorator)->getDecoratedService());
         }
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_the_registry_the_prefixes_set_in_config(): void
+    {
+        $this->setParameter('sylius.resources', ['setono_sylius_cms.page' => self::PAGE, 'app.article' => ['classes' => ['model' => Article::class]]]);
+        $this->setParameter(RegisterContentTypesPass::CONFIG_PARAMETER, ['page' => ['prefix' => 'pg'], 'article' => []]);
+
+        $this->compile();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ContentTypeRegistry::class, 1, ['page' => 'pg']);
+    }
+
+    /**
+     * @test
+     */
+    public function a_prefix_set_in_config_for_a_code_no_content_type_has_fails_the_build(): void
+    {
+        $this->setParameter('sylius.resources', ['setono_sylius_cms.page' => self::PAGE]);
+        $this->setParameter(RegisterContentTypesPass::CONFIG_PARAMETER, ['blog_post' => ['prefix' => 'news']]);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('setono_sylius_cms.content_types sets a prefix for "blog_post", which is no content type');
+
+        $this->compile();
+    }
+
+    /**
+     * @test
+     */
+    public function a_prefix_set_in_config_for_a_content_type_without_a_url_of_its_own_fails_the_build(): void
+    {
+        $this->setParameter('sylius.resources', ['app.recipe' => ['classes' => ['model' => Recipe::class]]]);
+        $this->setParameter(RegisterContentTypesPass::CONFIG_PARAMETER, ['recipe' => ['prefix' => 'recipes']]);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('setono_sylius_cms.content_types sets a prefix for "recipe", which has no URL of its own');
+
+        $this->compile();
     }
 
     /**

@@ -30,6 +30,7 @@ use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
+use Setono\SyliusCMSPlugin\Routing\Slug;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 use Sylius\Resource\Factory\Factory;
@@ -65,6 +66,7 @@ final class Configuration implements ConfigurationInterface
         ;
 
         $this->addBlockStylesSection($rootNode);
+        $this->addContentTypesSection($rootNode);
         $this->addFallbackLocalesSection($rootNode);
         $this->addRevisionsSection($rootNode);
         $this->addResourcesSection($rootNode);
@@ -94,6 +96,38 @@ final class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                     ->validate()->always(self::assertBlockStyleCodes(...))->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * What a project changes about a content type, shipped or not, by its code: the URL prefix, which moves every URL of
+     * the content type without redirecting the old ones. See "URL shape" in docs/spec/urls-and-seo.md
+     */
+    private function addContentTypesSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('content_types')
+                    ->info('What a project changes about a content type: content type code => {prefix}')
+                    ->useAttributeAsKey('code')
+                    ->normalizeKeys(false)
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('prefix')
+                                ->info('The URL prefix of a content type with its own URL, such as "pg". An empty prefix puts its URLs at the root')
+                                ->validate()
+                                    ->ifTrue(static fn (mixed $prefix): bool => !is_string($prefix) || ('' !== $prefix && !Slug::isValid($prefix)))
+                                    ->then(static fn (mixed $prefix): never => throw new \InvalidArgumentException(sprintf(
+                                        'The prefix %s must be empty or a string that doesn\'t start or end with a slash or contain two slashes in a row',
+                                        is_string($prefix) ? sprintf('"%s"', $prefix) : get_debug_type($prefix),
+                                    )))
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                    ->validate()->always(self::assertContentTypeCodes(...))->end()
                 ->end()
             ->end()
         ;
@@ -155,6 +189,20 @@ final class Configuration implements ConfigurationInterface
         }
 
         return $blockStyles;
+    }
+
+    /**
+     * @param array<array-key, array{prefix?: string}> $contentTypes
+     *
+     * @return array<array-key, array{prefix?: string}>
+     */
+    private static function assertContentTypeCodes(array $contentTypes): array
+    {
+        foreach (array_keys($contentTypes) as $code) {
+            self::assertCode('content type', (string) $code);
+        }
+
+        return $contentTypes;
     }
 
     private static function assertCode(string $kind, string $code): void

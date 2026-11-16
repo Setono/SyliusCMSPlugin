@@ -8,7 +8,8 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 
 /**
  * Content types are the Sylius resources whose model carries #[ContentType]. The container hands this registry
- * their model classes by code, and it reads their attributes on first use
+ * their model classes by code, and the URL prefixes the project set in setono_sylius_cms.content_types, and it reads
+ * their attributes on first use
  */
 final class ContentTypeRegistry implements ContentTypeRegistryInterface
 {
@@ -17,9 +18,12 @@ final class ContentTypeRegistry implements ContentTypeRegistryInterface
 
     /**
      * @param array<string, array{model: class-string<EntryInterface>, translation: class-string|null, resource: string}> $resources content type code => its resource
+     * @param array<string, string> $prefixes content type code => the URL prefix the project set, in place of the attribute's
      */
-    public function __construct(private readonly array $resources)
-    {
+    public function __construct(
+        private readonly array $resources,
+        private readonly array $prefixes = [],
+    ) {
     }
 
     public function has(string $code): bool
@@ -33,7 +37,7 @@ final class ContentTypeRegistry implements ContentTypeRegistryInterface
             throw new UnknownContentTypeException(sprintf('There is no content type with the code "%s"', $code));
         }
 
-        return $this->contentTypes[$code] ??= self::read($this->resources[$code]);
+        return $this->contentTypes[$code] ??= self::read($this->resources[$code], $this->prefixes[$code] ?? null);
     }
 
     public function getByEntry(EntryInterface $entry): ContentTypeMetadata
@@ -54,8 +58,9 @@ final class ContentTypeRegistry implements ContentTypeRegistryInterface
 
     /**
      * @param array{model: class-string<EntryInterface>, translation: class-string|null, resource: string} $resource
+     * @param string|null $prefix the prefix the project set, or null for the attribute's
      */
-    private static function read(array $resource): ContentTypeMetadata
+    private static function read(array $resource, ?string $prefix): ContentTypeMetadata
     {
         $attribute = AttributeReader::contentType($resource['model']) ?? throw new \LogicException(sprintf('The class %s must carry #[ContentType]', $resource['model']));
 
@@ -63,7 +68,7 @@ final class ContentTypeRegistry implements ContentTypeRegistryInterface
             $attribute->code,
             $attribute->label,
             $attribute->version,
-            $attribute->prefix,
+            $prefix ?? $attribute->prefix,
             $attribute->blocks,
             $resource['model'],
             $resource['translation'],

@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\UnknownContentTypeException;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Untagged;
+use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\Article;
 
 final class ContentTypeRegistryTest extends TestCase
 {
@@ -33,6 +34,28 @@ final class ContentTypeRegistryTest extends TestCase
         self::assertSame(PageTranslation::class, $page->translationModelClass);
         self::assertSame('setono_sylius_cms.page', $page->resourceAlias);
         self::assertTrue($page->hasOwnUrl());
+    }
+
+    /**
+     * @test
+     */
+    public function a_prefix_set_in_config_overrides_the_attributes(): void
+    {
+        $registry = new ContentTypeRegistry(['page' => self::PAGE, 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe']], ['page' => 'pg']);
+
+        self::assertSame('pg', $registry->get('page')->prefix);
+        self::assertNull($registry->get('recipe')->prefix);
+    }
+
+    /**
+     * @test
+     */
+    public function an_empty_prefix_set_in_config_puts_the_urls_at_the_root(): void
+    {
+        $registry = new ContentTypeRegistry(['article' => ['model' => Article::class, 'translation' => null, 'resource' => 'app.article']], ['article' => '']);
+
+        self::assertSame('', $registry->get('article')->prefix);
+        self::assertTrue($registry->get('article')->hasOwnUrl());
     }
 
     /**

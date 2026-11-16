@@ -8,6 +8,7 @@ use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
@@ -171,6 +172,16 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.revisions.keep', 10);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(RevisionPruner::class, 1, '%setono_sylius_cms.revisions.keep%');
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_what_the_project_changes_about_content_types_to_the_pass_that_registers_them(): void
+    {
+        $this->load(['content_types' => ['page' => ['prefix' => 'pg']]]);
+
+        $this->assertContainerBuilderHasParameter(RegisterContentTypesPass::CONFIG_PARAMETER, ['page' => ['prefix' => 'pg']]);
     }
 
     /**
