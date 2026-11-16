@@ -19,6 +19,7 @@ const config: BuilderConfig = {
         validate: '/validate',
         publish: '/publish',
         discard: '/discard',
+        schedule: '/schedule',
         settings: '/settings',
         previewToken: '/preview/token',
         previewRender: '/preview/render',
@@ -50,6 +51,8 @@ function fakeApi(blocks: StoredBlock[] = [block('a', { text: { en_US: 'Welcome' 
         saveSettings: vi.fn(async () => settings()),
         createPreviewUrl: vi.fn(async ({ locale }: PreviewRequest) => `${ORIGIN}/${locale}/about-us?_cms_preview=token-${++count}`),
         renderPreview: renderedBlocks(),
+        schedule: vi.fn(() => Promise.reject(new Error('Not scheduled in this test'))),
+        cancelSchedule: vi.fn(() => Promise.reject(new Error('Not scheduled in this test'))),
         presence: vi.fn(async (): Promise<PresenceResponse> => ({ editors: [], lockToken: 0 })),
         ...overrides,
     };
@@ -118,6 +121,7 @@ describe('the bridge in the preview', () => {
                     strike: 'Strikethrough',
                     code: 'Code',
                 },
+                readOnly: false,
             },
             { type: 'select', key: null },
         ]);

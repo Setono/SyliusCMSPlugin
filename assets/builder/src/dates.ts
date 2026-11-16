@@ -21,3 +21,8 @@ export function fromLocalInput(local: string): string | null {
 
     return local === '' || Number.isNaN(date.getTime()) ? null : date.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
+
+/** A UTC date and time as the builder shows it, in the editor's own time zone, such as 2026-11-27 01:00, as the admin shows times. */
+export function formatDateTime(utc: string): string {
+    return toLocalInput(utc).replace('T', ' ');
+}

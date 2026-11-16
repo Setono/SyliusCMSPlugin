@@ -5,6 +5,7 @@ import { FieldRow } from '../form/FieldRow';
 import formStyles from '../form/Form.module.css';
 import { useTranslator, type MessageKey } from '../i18n';
 import { fieldFallback, localeOf, outdatedValue } from '../locales';
+import { locks } from '../store';
 import { entryTranslated, entryValues } from '../translationState';
 import type { AudienceMode, FieldSchema } from '../types';
 import { entryMessages } from '../validation';
@@ -94,10 +95,15 @@ export function SettingsPane() {
 }
 
 function SettingsTab() {
+    // A scheduled publish locks what's drafted, but not the on-save settings, which aren't part of the draft
+    const locked = useBuilderState((state) => locks(state.schedule));
+
     return (
         <>
-            <Title />
-            <Shown />
+            <fieldset className={styles.locked} disabled={locked}>
+                <Title />
+                <Shown />
+            </fieldset>
             <Enabled />
             <DateWindow />
             <Channels />

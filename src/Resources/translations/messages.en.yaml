@@ -295,14 +295,15 @@ setono_sylius_cms:
             toolbar: Formatting
             underline: Underline
         save_failed: Couldn't save
+        save_locked: A scheduled publish locks the draft, so your changes weren't saved
         save_stale: Colleagues' changes can't be merged with yours
         saved: Saved
         saving: Saving…
-        schedule: Schedule…
         schedule_at: Publish at
         schedule_failed: Couldn't schedule
         schedule_in_the_past: Pick a time in the future.
         schedule_publish: Schedule the publish
+        schedule_stopped: 'The publish scheduled for %at% was stopped when it ran: %reason%'
         scheduled_publish_failed: Scheduled publish failed
         scheduled_publish_overdue: Scheduled publish overdue
         scheduling: Scheduling…

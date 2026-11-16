@@ -27,7 +27,8 @@ export function createPublish(
                 throw new Error('The unsaved changes could not be saved.');
             }
 
-            store.setState({ status: await send(), publishState: 'idle', publishRefusal: null });
+            // A publish ends the entry's scheduled publish, a failed one too
+            store.setState({ status: await send(), publishState: 'idle', publishRefusal: null, schedule: null });
             // What was published passed validation
             validation.getState().setErrors([]);
         } catch (error) {
@@ -61,8 +62,8 @@ export function createDiscard(store: BuilderStore, autosave: Autosave, send: () 
             // Waits for a save in flight. Nothing is left to send.
             await autosave.flush();
 
-            const { entry, status, lockToken } = await send();
-            store.getState().load(entry, status, lockToken);
+            const { entry, status, lockToken, schedule } = await send();
+            store.getState().load(entry, status, lockToken, schedule ?? null);
             store.setState({ discardState: 'idle', saveState: 'idle' });
         } catch {
             // The working copy stays as it is, so its unsaved changes get saved after all.
@@ -78,8 +79,70 @@ export function createDiscard(store: BuilderStore, autosave: Autosave, send: () 
  */
 export function createReload(store: BuilderStore, fetchEntry: () => Promise<EntryResponse>): () => Promise<void> {
     return async () => {
-        const { entry, status, lockToken } = await fetchEntry();
-        store.getState().load(entry, status, lockToken);
+        const { entry, status, lockToken, schedule } = await fetchEntry();
+        store.getState().load(entry, status, lockToken, schedule ?? null);
         store.setState({ saveState: 'idle' });
+    };
+}
+
+/**
+ * Scheduling a publish first saves what's unsaved, then schedules it at a time in UTC, and loads the working copy the
+ * server answers with, which the scheduled publish locks. When the server refuses, it says why, and validation's
+ * errors are shown as for a refused publish. See "Scheduled publishes" in docs/spec/publishing.md
+ */
+export function createSchedule(
+    store: BuilderStore,
+    autosave: Autosave,
+    send: (at: string) => Promise<EntryResponse>,
+    validation: ValidationStore = createValidationStore(),
+): (at: string) => Promise<boolean> {
+    return async (at) => {
+        if (store.getState().scheduleState === 'scheduling') {
+            return false;
+        }
+
+        store.setState({ scheduleState: 'scheduling', scheduleRefusal: null });
+
+        try {
+            if (!(await autosave.flush())) {
+                throw new Error('The unsaved changes could not be saved.');
+            }
+
+            const { entry, status, lockToken, schedule } = await send(at);
+            store.getState().load(entry, status, lockToken, schedule ?? null);
+            store.setState({ scheduleState: 'idle' });
+            validation.getState().setErrors([]);
+
+            return true;
+        } catch (error) {
+            const refused = error instanceof ApiError && error.status === 422;
+            store.setState({ scheduleState: 'failed', scheduleRefusal: refused ? error.message : null });
+
+            if (refused && error.errors.length > 0) {
+                validation.getState().setErrors(error.errors);
+                store.getState().selectBlock(firstBlockWithError(store.getState().entry.tree.blocks, error.errors));
+            }
+
+            return false;
+        }
+    };
+}
+
+/** Cancelling the scheduled publish loads the working copy the server answers with, unlocked. */
+export function createCancelSchedule(store: BuilderStore, send: () => Promise<EntryResponse>): () => Promise<void> {
+    return async () => {
+        if (store.getState().cancelScheduleState === 'cancelling') {
+            return;
+        }
+
+        store.setState({ cancelScheduleState: 'cancelling' });
+
+        try {
+            const { entry, status, lockToken, schedule } = await send();
+            store.getState().load(entry, status, lockToken, schedule ?? null);
+            store.setState({ cancelScheduleState: 'idle', saveState: 'idle' });
+        } catch {
+            store.setState({ cancelScheduleState: 'failed' });
+        }
     };
 }

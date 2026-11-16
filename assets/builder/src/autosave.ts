@@ -47,7 +47,7 @@ export function createAutosave(
         }
 
         const { unsaved: changes, lockToken, saveState, entry: sent } = store.getState();
-        if (saveState === 'stale') {
+        if (saveState === 'stale' || saveState === 'locked') {
             return false;
         }
 
@@ -72,9 +72,14 @@ export function createAutosave(
                     return true;
                 },
                 (error: unknown) => {
-                    // A 409: the server can't merge onto what colleagues saved, so no later save can go through either
+                    // A 409: the server can't merge onto what colleagues saved, so no later save can go through either.
+                    // A 423: a scheduled publish a colleague made locks the working copy, which the builder loads again
                     const stale = error instanceof ApiError && error.status === 409;
-                    store.setState((state) => ({ unsaved: mergeChanges(changes, state.unsaved), saveState: stale ? 'stale' : saving ? 'failed' : saveState }));
+                    const locked = error instanceof ApiError && error.status === 423;
+                    store.setState((state) => ({
+                        unsaved: mergeChanges(changes, state.unsaved),
+                        saveState: locked ? 'locked' : stale ? 'stale' : saving ? 'failed' : saveState,
+                    }));
 
                     return false;
                 },
@@ -91,7 +96,7 @@ export function createAutosave(
             return;
         }
 
-        if (state.saveState === 'stale') {
+        if (state.saveState === 'stale' || state.saveState === 'locked') {
             return;
         }
 

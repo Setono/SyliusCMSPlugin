@@ -102,6 +102,21 @@ describe('typing in place in the preview', () => {
         expect(heading).toHaveFocus();
     });
 
+    it('should only select the block of a field clicked while the working copy is read-only, and stop typing when it becomes so', () => {
+        const heading = query('h2');
+        fireEvent.click(heading);
+        expect(heading).toHaveAttribute('contenteditable', 'plaintext-only');
+
+        bridge.receive({ type: 'init', strings, readOnly: true });
+        expect(heading).not.toHaveAttribute('contenteditable');
+
+        posted = [];
+        fireEvent.click(heading);
+
+        expect(posted).toEqual([{ type: 'select', key: 'a' }]);
+        expect(heading).not.toHaveAttribute('contenteditable');
+    });
+
     it('should send the builder the text as the editor types it', () => {
         const heading = query('h2');
         fireEvent.click(heading);

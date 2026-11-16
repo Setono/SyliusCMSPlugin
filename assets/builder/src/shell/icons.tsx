@@ -84,6 +84,14 @@ export function ArrowUpIcon() {
     );
 }
 
+export function ChevronDownIcon() {
+    return (
+        <Icon>
+            <path d="m4 6 4 4 4-4" />
+        </Icon>
+    );
+}
+
 export function ArrowDownIcon() {
     return (
         <Icon>

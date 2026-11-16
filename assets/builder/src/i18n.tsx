@@ -122,7 +122,22 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.show_in_locale_help'
     | 'setono_sylius_cms.builder.entry_title'
     | 'setono_sylius_cms.builder.slug'
-    | 'setono_sylius_cms.builder.clash_entry_value';
+    | 'setono_sylius_cms.builder.clash_entry_value'
+    | 'setono_sylius_cms.builder.save_locked'
+    | 'setono_sylius_cms.builder.publish_options'
+    | 'setono_sylius_cms.builder.schedule_publish'
+    | 'setono_sylius_cms.builder.schedule_at'
+    | 'setono_sylius_cms.builder.scheduling'
+    | 'setono_sylius_cms.builder.schedule_failed'
+    | 'setono_sylius_cms.builder.cancel_schedule'
+    | 'setono_sylius_cms.builder.cancelling_schedule'
+    | 'setono_sylius_cms.builder.cancel_schedule_failed'
+    | 'setono_sylius_cms.builder.publishes_at'
+    | 'setono_sylius_cms.builder.scheduled_publish_overdue'
+    | 'setono_sylius_cms.builder.scheduled_publish_failed'
+    | 'setono_sylius_cms.builder.locked'
+    | 'setono_sylius_cms.builder.locked_overdue'
+    | 'setono_sylius_cms.builder.schedule_stopped';
 
 /** Values for the placeholders in a string, such as { '%block%': 'Columns' }. */
 export type TranslationParameters = Readonly<Record<string, string>>;

@@ -7,7 +7,7 @@ import { BuilderProvider, type BuilderSession } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
 import { createPresence, type Presence } from './presence';
 import { createPreviewStore } from './preview';
-import { createDiscard, createPublish, createReload } from './publishing';
+import { createCancelSchedule, createDiscard, createPublish, createReload, createSchedule } from './publishing';
 import { createSettingsStore } from './settings';
 import { Shell } from './shell/Shell';
 import { createBuilderStore } from './store';
@@ -45,9 +45,10 @@ export function App({ config, api, autosaveDelay, navigate = goTo }: AppProps) {
         let presence: Presence | undefined;
         let validation: Validation | undefined;
         let unsubscribeSettings: (() => void) | undefined;
+        let unsubscribeLock: (() => void) | undefined;
 
         Promise.all([api.fetchRegistry(), api.fetchEntry()]).then(
-            ([registry, { entry, settings: entrySettings, status, lockToken, editors }]) => {
+            ([registry, { entry, settings: entrySettings, status, lockToken, editors, schedule }]) => {
                 if (!active) {
                     return;
                 }
@@ -61,6 +62,7 @@ export function App({ config, api, autosaveDelay, navigate = goTo }: AppProps) {
                     entry,
                     status,
                     lockToken,
+                    schedule: schedule ?? null,
                 });
                 // Opened at a block, such as where a problem is fixed, it starts with that block selected
                 const opened = config.block ?? null;
@@ -87,6 +89,14 @@ export function App({ config, api, autosaveDelay, navigate = goTo }: AppProps) {
                     }
                 });
 
+                // A save refused because a colleague scheduled a publish loads the working copy again, read-only
+                const reload = createReload(store, () => api.fetchEntry());
+                unsubscribeLock = store.subscribe((state, previous) => {
+                    if (state.saveState === 'locked' && previous.saveState !== 'locked') {
+                        void reload();
+                    }
+                });
+
                 setPhase({
                     name: 'ready',
                     translate: createTranslator({ ...config.strings, ...registry.strings }),
@@ -98,7 +108,9 @@ export function App({ config, api, autosaveDelay, navigate = goTo }: AppProps) {
                         overviewUrl: config.overviewUrl,
                         publish: createPublish(store, autosave, () => api.publish(), validationStore),
                         discard: createDiscard(store, autosave, () => api.discard()),
-                        reload: createReload(store, () => api.fetchEntry()),
+                        schedule: createSchedule(store, autosave, (at) => api.schedule(at), validationStore),
+                        cancelSchedule: createCancelSchedule(store, () => api.cancelSchedule()),
+                        reload,
                         preview,
                         // The page renders what the server holds, so a new page waits for the unsaved changes
                         createPreviewUrl: async (request) => {
@@ -128,6 +140,7 @@ export function App({ config, api, autosaveDelay, navigate = goTo }: AppProps) {
             presence?.dispose();
             validation?.dispose();
             unsubscribeSettings?.();
+            unsubscribeLock?.();
         };
     }, [api, config, autosaveDelay, navigate]);
 
