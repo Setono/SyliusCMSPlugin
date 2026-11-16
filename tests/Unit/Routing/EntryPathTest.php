@@ -69,6 +69,18 @@ final class EntryPathTest extends TestCase
         self::assertNull(EntryPath::of(self::contentType('blog'), self::page(''), 'en_US'));
     }
 
+    /**
+     * @test
+     */
+    public function it_builds_the_path_of_a_slug_read_from_elsewhere_such_as_a_draft(): void
+    {
+        self::assertSame('blog/hello', EntryPath::ofSlug(self::contentType('blog'), 'hello'));
+        self::assertSame('hello', EntryPath::ofSlug(self::contentType(''), 'hello'));
+        self::assertNull(EntryPath::ofSlug(self::contentType(null), 'hello'));
+        self::assertNull(EntryPath::ofSlug(self::contentType('blog'), null));
+        self::assertNull(EntryPath::ofSlug(self::contentType('blog'), ''));
+    }
+
     private static function contentType(?string $prefix): ContentTypeMetadata
     {
         return new ContentTypeMetadata('page', 'Page', 1, $prefix, null, Page::class, PageTranslation::class, 'setono_sylius_cms.page');

@@ -20,8 +20,16 @@ final class EntryPath
     public static function of(ContentTypeMetadata $contentType, EntryInterface $entry, string $localeCode): ?string
     {
         $translation = $entry->getTranslations()->get($localeCode);
-        $slug = $translation instanceof EntryTranslationInterface ? $translation->getSlug() : null;
 
+        return self::ofSlug($contentType, $translation instanceof EntryTranslationInterface ? $translation->getSlug() : null);
+    }
+
+    /**
+     * The path of a slug read from elsewhere, such as a draft. Null when the content type has no URL of its own,
+     * or there's no slug
+     */
+    public static function ofSlug(ContentTypeMetadata $contentType, ?string $slug): ?string
+    {
         if (null === $contentType->prefix || null === $slug || '' === $slug) {
             return null;
         }
