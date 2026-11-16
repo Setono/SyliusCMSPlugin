@@ -62,6 +62,13 @@
             <tag name="twig.runtime"/>
         </service>
 
+        <!-- The revisions of an entry, which its overview page gets through cms_admin_entry_revisions() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryRevisions" class="Setono\SyliusCMSPlugin\Admin\EntryRevisions">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
         <!-- The locale a new entry's title and slug go into -->
         <service id="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver" class="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver">
             <!-- In the admin, the admin user's locale -->

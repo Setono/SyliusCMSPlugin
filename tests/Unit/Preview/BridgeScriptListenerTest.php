@@ -96,6 +96,18 @@ final class BridgeScriptListenerTest extends TestCase
     /**
      * @test
      */
+    public function it_never_gives_it_to_the_read_only_preview_of_a_revision(): void
+    {
+        $request = $this->previewRequest(42);
+
+        $response = $this->respond($request, new Response(self::PAGE));
+
+        self::assertSame(self::PAGE, $response->getContent());
+    }
+
+    /**
+     * @test
+     */
     public function it_leaves_the_responses_of_sub_requests_alone(): void
     {
         $this->previewRequest();
@@ -152,9 +164,9 @@ final class BridgeScriptListenerTest extends TestCase
         self::assertFalse($response->getContent());
     }
 
-    private function previewRequest(): Request
+    private function previewRequest(?int $revisionId = null): Request
     {
-        $request = new Request([PreviewContext::QUERY_PARAMETER => $this->signer->sign(new Preview('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', 'WEB', 'en_US'))]);
+        $request = new Request([PreviewContext::QUERY_PARAMETER => $this->signer->sign(new Preview('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', 'WEB', 'en_US', $revisionId))]);
         $this->requestStack->push($request);
 
         return $request;

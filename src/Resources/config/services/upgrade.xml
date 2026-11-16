@@ -2,7 +2,7 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <!-- Everything that reads stored data goes through it: rows, drafts, and later revisions, presets and exports -->
+        <!-- Everything that reads stored data goes through it: rows, drafts, revisions, and later presets and exports -->
         <service id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgrader" class="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgrader">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
@@ -12,13 +12,15 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface" alias="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgrader"/>
 
-        <!-- Writes an entry's rows and draft back upgraded, for setono:cms:upgrade -->
+        <!-- Writes an entry's rows, draft and revisions back upgraded, for setono:cms:upgrade -->
         <service id="Setono\SyliusCMSPlugin\Upgrade\EntryRewriter" class="Setono\SyliusCMSPlugin\Upgrade\EntryRewriter">
             <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionReader"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Upgrade\EntryRewriterInterface" alias="Setono\SyliusCMSPlugin\Upgrade\EntryRewriter"/>
     </services>

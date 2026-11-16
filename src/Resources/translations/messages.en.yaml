@@ -89,21 +89,29 @@ setono_sylius_cms:
         last_published: 'Last published %date%'
         new_entry: 'New %content_type%'
         new_entry_heading: New entry
+        no_revisions: Every publish stores a revision, which you can preview and restore. There are none yet.
         no_urls: It has no URL yet, because it has no slug.
         open_in_builder: Open in builder
         other_content_type: Another content type
         overview_placeholder: What needs attention, what's coming up, translations and drafts in progress will show here. Until then, find the entries in their lists.
         pick_content_type: What do you want to create?
+        preview: Preview
         problem_severity:
             error: Error
             warning: Warning
         problems: Problems
         publish: Publish
+        published_at: Published
+        published_by: By
         publishing: Publishing
         publishing_state:
             never_published: Shoppers don't see it until it's published.
             published: Shoppers see what was published, and there are no changes since.
             unpublished_changes: The draft has changes that shoppers don't see yet. Publish them, or discard them to go back to what's published.
+        restore: Restore
+        revisions: Revisions
+        revisions_help: Every publish stores a revision. Preview one as it was, or restore it into the draft to review and publish it.
+        scheduled: Scheduled
         search: Search
         status: Status
         status_filter:

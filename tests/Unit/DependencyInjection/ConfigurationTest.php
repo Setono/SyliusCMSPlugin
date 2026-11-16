@@ -23,11 +23,14 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\Revision;
+use Setono\SyliusCMSPlugin\Model\RevisionInterface;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSetInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
+use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
@@ -58,6 +61,7 @@ final class ConfigurationTest extends TestCase
             'assets' => true,
             'block_styles' => [],
             'fallback_locales' => [],
+            'revisions' => ['keep' => 50],
             'resources' => [
                 'entry' => [
                     'classes' => [
@@ -105,6 +109,14 @@ final class ConfigurationTest extends TestCase
                         'model' => SavedChangeSet::class,
                         'interface' => SavedChangeSetInterface::class,
                         'repository' => SavedChangeSetRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'revision' => [
+                    'classes' => [
+                        'model' => Revision::class,
+                        'interface' => RevisionInterface::class,
+                        'repository' => RevisionRepository::class,
                         'factory' => Factory::class,
                     ],
                 ],
@@ -269,6 +281,33 @@ final class ConfigurationTest extends TestCase
     public function it_refuses_an_empty_fallback_locale(): void
     {
         $this->assertConfigurationIsInvalid([['fallback_locales' => ['de_CH' => ['']]]], 'The path "setono_sylius_cms.fallback_locales.de_CH.0" cannot contain an empty value');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_set_how_many_revisions_per_entry_are_kept(): void
+    {
+        $this->assertProcessedConfigurationEquals([['revisions' => ['keep' => 10]]], ['revisions' => ['keep' => 10]], 'revisions');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidRevisionsToKeep
+     */
+    public function it_keeps_at_least_one_revision_per_entry(mixed $keep, string $message): void
+    {
+        $this->assertConfigurationIsInvalid([['revisions' => ['keep' => $keep]]], $message);
+    }
+
+    /**
+     * @return iterable<string, array{mixed, string}>
+     */
+    public function provideInvalidRevisionsToKeep(): iterable
+    {
+        yield 'none' => [0, 'Should be greater than or equal to 1'];
+        yield 'not a number' => ['all', 'Invalid type for path "setono_sylius_cms.revisions.keep"'];
     }
 
     /**

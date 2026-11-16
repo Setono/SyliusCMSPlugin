@@ -37,12 +37,13 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{disabled: array{block_types: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, fallback_locales: array<string, list<string>>, resources: array<string, array<string, mixed>>} $config */
+        /** @var array{disabled: array{block_types: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, resources: array<string, array<string, mixed>>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         $container->setParameter('setono_sylius_cms.disabled.block_types', $config['disabled']['block_types']);
         $container->setParameter('setono_sylius_cms.block_styles', $config['block_styles']);
         $container->setParameter('setono_sylius_cms.fallback_locales', $config['fallback_locales']);
+        $container->setParameter('setono_sylius_cms.revisions.keep', $config['revisions']['keep']);
 
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.xml');
@@ -149,6 +150,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                     'blocks' => [
                         'publishing' => $block('_publishing', 100),
                         'problems' => $block('_problems', 90),
+                        'revisions' => $block('_revisions', 60),
                         'urls' => $block('_urls', 40),
                     ],
                 ],

@@ -14,7 +14,7 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 interface EntryRewriterInterface
 {
     /**
-     * Upgrades the entry's rows and draft in place, without flushing
+     * Upgrades the entry's rows, draft and revisions in place, without flushing
      */
     public function rewrite(EntryInterface $entry): EntryRewrite;
 }

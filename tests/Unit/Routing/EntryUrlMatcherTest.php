@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Preview\Preview;
@@ -16,11 +17,15 @@ use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Rendering\EntryUrlLookupInterface;
 use Setono\SyliusCMSPlugin\Rendering\EntryUrlMatch;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
+use Setono\SyliusCMSPlugin\Revision\RevisionReader;
 use Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher;
+use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Channel\Context\ChannelNotFoundException;
 use Sylius\Component\Channel\Model\ChannelInterface as BaseChannelInterface;
@@ -195,6 +200,8 @@ final class EntryUrlMatcherTest extends TestCase
             $this->entryRepository->reveal(),
             $workingCopies->reveal(),
             $contentTypes->reveal(),
+            $this->prophesize(RevisionRepositoryInterface::class)->reveal(),
+            new RevisionReader($this->prophesize(StoredDataUpgraderInterface::class)->reveal(), new EntryDenormalizer(new ContentTypeRegistry([]))),
         );
 
         return new EntryUrlMatcher($this->channelContext->reveal(), $this->lookup->reveal(), $previewedEntries);

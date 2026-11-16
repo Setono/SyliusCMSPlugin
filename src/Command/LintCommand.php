@@ -18,10 +18,11 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
- * Reports the problems of the kinds tagged for it in all stored content: stored values that don't fit their field type
+ * Reports the problems of the kinds tagged for it in the stored content: stored values that don't fit their field type
  * and blocks of unknown types, and broken references once #245 adds them. It checks every entry's published content and
- * its draft apart, each upgraded as it's read, and exits non-zero on any problem, for CI and deploys. Revisions (#240)
- * and editor presets (#270) join with their tickets. See "Console commands" in docs/spec/extending.md
+ * its draft apart, each upgraded as it's read, and exits non-zero on any problem, for CI and deploys. Revisions are
+ * history that nobody edits, so they're left out: one restored brings its content into the draft, which is checked.
+ * Editor presets (#270) join with their ticket. See "Console commands" in docs/spec/extending.md
  */
 #[AsCommand(name: 'setono:cms:lint', description: 'Reports stored CMS values that don\'t fit their field type and blocks of unknown types')]
 final class LintCommand extends Command

@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_entry_revisions() gives an entry's revisions, newest first
+--TEMPLATE--
+{% for revision in cms_admin_entry_revisions(page) %}{{ revision.publishedBy }} {{ revision.publishedAt|date('Y-m-d') }}; {% endfor %}
+--DATA--
+return $this->aPage('About us')
+--EXPECT--
+Jane Roe 2026-11-14; John Doe 2026-11-01;

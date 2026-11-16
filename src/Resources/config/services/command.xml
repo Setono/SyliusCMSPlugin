@@ -24,5 +24,11 @@
 
             <tag name="console.command"/>
         </service>
+
+        <service id="Setono\SyliusCMSPlugin\Command\PruneRevisionsCommand" class="Setono\SyliusCMSPlugin\Command\PruneRevisionsCommand">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionPruner"/>
+
+            <tag name="console.command"/>
+        </service>
     </services>
 </container>
