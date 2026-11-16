@@ -170,10 +170,14 @@ final class BuilderTest extends WebTestCase
         self::assertIsArray($config);
         self::assertSame('/admin/products/', $config['backUrl']);
 
-        $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s/builder?back=%s', $page->getUuid(), urlencode('//evil.example/')));
-        $config = json_decode((string) $crawler->filter('#cms-builder')->attr('data-config'), true, 512, \JSON_THROW_ON_ERROR);
-        self::assertIsArray($config);
-        self::assertSame(sprintf('/admin/cms/entry/%s', $page->getUuid()), $config['backUrl']);
+        $config = self::config($client->request('GET', sprintf('/admin/cms/entry/%s/builder?back=%s', $page->getUuid(), urlencode('/admin/products/?page=2'))));
+        self::assertSame('/admin/products/?page=2', $config['backUrl']);
+
+        // Browsers skip a tab or a line break in a URL, so "/<tab>/evil.example" leaves the shop; and the shop isn't the admin
+        foreach (['//evil.example/', "/\t/evil.example", "/\n/evil.example", "/admin/products/\n", '/\\evil.example', 'https://evil.example/', '/en_US/about-us'] as $back) {
+            $config = self::config($client->request('GET', sprintf('/admin/cms/entry/%s/builder?back=%s', $page->getUuid(), urlencode($back))));
+            self::assertSame(sprintf('/admin/cms/entry/%s', $page->getUuid()), $config['backUrl'], $back);
+        }
     }
 
     /**

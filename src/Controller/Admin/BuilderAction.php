@@ -29,6 +29,9 @@ use Twig\Environment;
  */
 final readonly class BuilderAction
 {
+    /** A path and query of URL characters only (RFC 3986) */
+    private const URL_CHARACTERS = '#^[A-Za-z0-9\-._~!$&\'()*+,;=:@/%?]*\z#';
+
     /**
      * @param ChannelRepositoryInterface<ChannelInterface> $channelRepository
      * @param RepositoryInterface<CustomerGroupInterface> $customerGroupRepository
@@ -189,17 +192,22 @@ final readonly class BuilderAction
     }
 
     /**
-     * Back, and Esc, return to where the builder was opened from, when that's a path on this host passed as `back`, and
+     * Back, and Esc, return to where the builder was opened from, when that's a path in the admin passed as `back`, and
      * otherwise to the entry's overview page, which the builder opens from, as it does straight after the entry's created.
      * See "Into and out of the builder" in docs/spec/admin.md
      */
     private function backUrl(Request $request, EntryInterface $entry): string
     {
+        $overview = $this->urlGenerator->generate('setono_sylius_cms_admin_entry_show', ['uuid' => $entry->getUuid()]);
+        // The admin is where the overview page is, such as /admin/
+        $admin = substr($overview, 0, (int) strpos($overview, '/', 1) + 1);
+
         $back = $request->query->get('back');
-        if (is_string($back) && 1 === preg_match('#^/(?![/\\\\])#', $back)) {
+        // Only URL characters: a browser skips a tab or a line break, so "/<tab>/evil.example" would leave the shop
+        if (is_string($back) && str_starts_with($back, $admin) && 1 === preg_match(self::URL_CHARACTERS, $back)) {
             return $back;
         }
 
-        return $this->urlGenerator->generate('setono_sylius_cms_admin_entry_show', ['uuid' => $entry->getUuid()]);
+        return $overview;
     }
 }
