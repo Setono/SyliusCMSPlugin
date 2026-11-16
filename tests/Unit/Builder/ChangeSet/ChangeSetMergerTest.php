@@ -23,9 +23,11 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetShown;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
+use Setono\SyliusCMSPlugin\Json\ListedObject;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
  * Merging a save onto what colleagues saved since the builder's lock token. See "Saving" in docs/spec/publishing.md
@@ -617,6 +619,10 @@ final class ChangeSetMergerTest extends TestCase
     public function it_passes_a_change_it_does_not_know_on_for_the_applier_to_refuse(): void
     {
         $unknown = new class() implements Change {
+            public function toArray(StoredTreeSerializer $serializer): ListedObject
+            {
+                return new ListedObject([]);
+            }
         };
 
         $merge = self::merge([new SetValue(self::A, 'level', null, 'h2')], [$unknown], self::tree(self::heading(self::A)));

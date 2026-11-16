@@ -21,6 +21,23 @@ use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
  */
 final readonly class ChangeSet
 {
+    /** The ops of the changes, which fromArray() reads them by */
+    private const OPS = [
+        AddBlock::OP,
+        MoveBlock::OP,
+        RemoveBlock::OP,
+        SetValue::OP,
+        SetStyle::OP,
+        SetConditions::OP,
+        SetEntryValue::OP,
+        SetShown::OP,
+        SetTranslated::OP,
+        SetEntryTranslated::OP,
+        SetLayout::OP,
+        SetLayoutValue::OP,
+        SetLayoutTranslated::OP,
+    ];
+
     /** A locale code, such as en_US, as the shop's URLs allow one */
     private const LOCALE_CODE = '/^[A-Za-z]{2,4}(_([A-Za-z]{4}|[0-9]{3}))?(_([A-Za-z]{2}|[0-9]{3}))?$/';
 
@@ -54,76 +71,7 @@ final readonly class ChangeSet
     {
         $serializer = new StoredTreeSerializer();
 
-        return ['changes' => array_map(static fn (Change $change): ListedObject => match (true) {
-            $change instanceof AddBlock => new ListedObject([
-                'op' => 'add_block',
-                'parent' => $change->parent,
-                'index' => $change->index,
-                'after' => $change->after,
-                'block' => $serializer->normalizeBlock($change->block),
-            ]),
-            $change instanceof MoveBlock => new ListedObject([
-                'op' => 'move_block',
-                'key' => $change->key,
-                'parent' => $change->parent,
-                'index' => $change->index,
-                'after' => $change->after,
-            ]),
-            $change instanceof RemoveBlock => new ListedObject(['op' => 'remove_block', 'key' => $change->key]),
-            $change instanceof SetStyle => new ListedObject(['op' => 'set_style', 'key' => $change->key, 'style' => $change->style]),
-            $change instanceof SetConditions => new ListedObject([
-                'op' => 'set_conditions',
-                'key' => $change->key,
-                'conditions' => array_map(static fn (array $condition): ListedObject => new ListedObject([
-                    'kind' => $condition['kind'],
-                    'negate' => $condition['negate'],
-                    'params' => (object) $condition['params'],
-                ]), $change->conditions),
-            ]),
-            $change instanceof SetValue => new ListedObject([
-                'op' => 'set_value',
-                'key' => $change->key,
-                'field' => $change->field,
-                'locale' => $change->locale,
-                'value' => $change->value,
-            ]),
-            $change instanceof SetEntryValue => new ListedObject([
-                'op' => 'set_entry_value',
-                'field' => $change->field,
-                'locale' => $change->locale,
-                'value' => $change->value,
-            ]),
-            $change instanceof SetShown => new ListedObject(['op' => 'set_shown', 'locale' => $change->locale, 'shown' => $change->shown]),
-            $change instanceof SetTranslated => new ListedObject([
-                'op' => 'set_translated',
-                'key' => $change->key,
-                'field' => $change->field,
-                'locale' => $change->locale,
-                'translated' => self::source($change->translated),
-            ]),
-            $change instanceof SetEntryTranslated => new ListedObject([
-                'op' => 'set_entry_translated',
-                'field' => $change->field,
-                'locale' => $change->locale,
-                'translated' => self::source($change->translated),
-            ]),
-            $change instanceof SetLayout => new ListedObject(['op' => 'set_layout', 'layout' => $serializer->normalizeLayout($change->layout)]),
-            $change instanceof SetLayoutValue => new ListedObject([
-                'op' => 'set_layout_value',
-                'layout' => $change->layout,
-                'field' => $change->field,
-                'locale' => $change->locale,
-                'value' => $change->value,
-            ]),
-            $change instanceof SetLayoutTranslated => new ListedObject([
-                'op' => 'set_layout_translated',
-                'layout' => $change->layout,
-                'field' => $change->field,
-                'locale' => $change->locale,
-                'translated' => self::source($change->translated),
-            ]),
-            default => throw new \LogicException(sprintf('Unknown change %s', $change::class)),
-        }, $this->changes)];
+        return ['changes' => array_map(static fn (Change $change): ListedObject => $change->toArray($serializer), $this->changes)];
     }
 
     private static function change(mixed $change, StoredTreeSerializer $serializer): Change
@@ -133,64 +81,64 @@ final readonly class ChangeSet
         }
 
         return match ($change['op'] ?? null) {
-            'add_block' => new AddBlock(
+            AddBlock::OP => new AddBlock(
                 self::nullableString($change, 'parent'),
                 self::index($change),
                 self::block($change, $serializer),
                 self::nullableString($change, 'after'),
             ),
-            'move_block' => new MoveBlock(
+            MoveBlock::OP => new MoveBlock(
                 self::string($change, 'key'),
                 self::nullableString($change, 'parent'),
                 self::index($change),
                 self::nullableString($change, 'after'),
             ),
-            'remove_block' => new RemoveBlock(self::string($change, 'key')),
-            'set_value' => new SetValue(
+            RemoveBlock::OP => new RemoveBlock(self::string($change, 'key')),
+            SetValue::OP => new SetValue(
                 self::string($change, 'key'),
                 self::string($change, 'field'),
                 self::nullableLocale($change),
                 array_key_exists('value', $change) ? $change['value'] : throw new InvalidChangeSetException('A set_value change must have a value'),
             ),
-            'set_style' => new SetStyle(
+            SetStyle::OP => new SetStyle(
                 self::string($change, 'key'),
                 array_key_exists('style', $change) ? self::nullableString($change, 'style') : throw new InvalidChangeSetException('A set_style change must have a style'),
             ),
-            'set_conditions' => new SetConditions(self::string($change, 'key'), self::conditions($change)),
-            'set_entry_value' => new SetEntryValue(
+            SetConditions::OP => new SetConditions(self::string($change, 'key'), self::conditions($change)),
+            SetEntryValue::OP => new SetEntryValue(
                 self::string($change, 'field'),
                 self::nullableLocale($change),
                 array_key_exists('value', $change) ? $change['value'] : throw new InvalidChangeSetException('A set_entry_value change must have a value'),
             ),
-            'set_shown' => new SetShown(
+            SetShown::OP => new SetShown(
                 self::locale($change),
                 is_bool($change['shown'] ?? null) ? $change['shown'] : throw new InvalidChangeSetException('A set_shown change must have a shown switch that is true or false'),
             ),
-            'set_translated' => new SetTranslated(
+            SetTranslated::OP => new SetTranslated(
                 self::string($change, 'key'),
                 self::string($change, 'field'),
                 self::locale($change),
                 self::translated($change),
             ),
-            'set_entry_translated' => new SetEntryTranslated(
+            SetEntryTranslated::OP => new SetEntryTranslated(
                 self::string($change, 'field'),
                 self::locale($change),
                 self::translated($change),
             ),
-            'set_layout' => new SetLayout(self::layout($change, $serializer)),
-            'set_layout_value' => new SetLayoutValue(
+            SetLayout::OP => new SetLayout(self::layout($change, $serializer)),
+            SetLayoutValue::OP => new SetLayoutValue(
                 self::string($change, 'layout'),
                 self::string($change, 'field'),
                 self::nullableLocale($change),
                 array_key_exists('value', $change) ? $change['value'] : throw new InvalidChangeSetException('A set_layout_value change must have a value'),
             ),
-            'set_layout_translated' => new SetLayoutTranslated(
+            SetLayoutTranslated::OP => new SetLayoutTranslated(
                 self::string($change, 'layout'),
                 self::string($change, 'field'),
                 self::locale($change),
                 self::translated($change),
             ),
-            default => throw new InvalidChangeSetException('A change must have the op add_block, move_block, remove_block, set_value, set_style, set_conditions, set_entry_value, set_shown, set_translated, set_entry_translated, set_layout, set_layout_value or set_layout_translated'),
+            default => throw new InvalidChangeSetException(sprintf('A change must have the op %s', implode(', ', self::OPS))),
         };
     }
 
@@ -225,7 +173,7 @@ final readonly class ChangeSet
     /**
      * @param array{from: string, fingerprint: string}|null $translated
      */
-    private static function source(?array $translated): ?ListedObject
+    public static function source(?array $translated): ?ListedObject
     {
         return null === $translated ? null : new ListedObject(['from' => $translated['from'], 'fingerprint' => $translated['fingerprint']]);
     }

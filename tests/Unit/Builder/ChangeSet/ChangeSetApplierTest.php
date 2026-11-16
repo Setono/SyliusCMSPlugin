@@ -31,6 +31,7 @@ use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
+use Setono\SyliusCMSPlugin\Json\ListedObject;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
@@ -47,6 +48,7 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Standard;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\IdentityTranslator;
 
@@ -345,6 +347,10 @@ final class ChangeSetApplierTest extends TestCase
 
         self::applier()->apply(
             new ChangeSet([new class() implements Change {
+                public function toArray(StoredTreeSerializer $serializer): ListedObject
+                {
+                    return new ListedObject([]);
+                }
             }]),
             self::page(new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)])),
         );

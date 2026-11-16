@@ -6,7 +6,6 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Builder\ChangeSet;
 
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\AddBlock;
-use Setono\SyliusCMSPlugin\Builder\ChangeSet\Change;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
@@ -134,19 +133,6 @@ final class ChangeSetTest extends TestCase
             $json,
         );
         self::assertEquals($changeSet, ChangeSet::fromArray(CanonicalJson::decode($json)));
-    }
-
-    /**
-     * @test
-     */
-    public function it_refuses_to_write_a_change_it_does_not_know(): void
-    {
-        $changeSet = new ChangeSet([new RemoveBlock(self::KEY), new class() implements Change {
-        }]);
-
-        $this->expectException(\LogicException::class);
-
-        $changeSet->toArray();
     }
 
     /**
