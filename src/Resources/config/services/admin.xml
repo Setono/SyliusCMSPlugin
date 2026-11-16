@@ -21,6 +21,7 @@
 
         <service id="Setono\SyliusCMSPlugin\Admin\StatusLabeler" class="Setono\SyliusCMSPlugin\Admin\StatusLabeler">
             <argument type="service" id="clock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Admin\StatusLabelerInterface" alias="Setono\SyliusCMSPlugin\Admin\StatusLabeler"/>
 

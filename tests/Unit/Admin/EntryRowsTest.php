@@ -14,6 +14,7 @@ use Setono\SyliusCMSPlugin\Admin\StatusLabel;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
 use Setono\SyliusCMSPlugin\Builder\EntryStatus;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
+use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
@@ -370,7 +371,7 @@ final class EntryRowsTest extends TestCase
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
                 'recipe' => ['model' => Recipe::class, 'translation' => EntryTranslation::class, 'resource' => 'app.recipe'],
             ]),
-            new StatusLabeler(new MockClock('2026-11-16 12:00:00', 'UTC')),
+            new StatusLabeler(new MockClock('2026-11-16 12:00:00', 'UTC'), new Availability()),
             $this->urlGenerator->reveal(),
             $translationLocaleProvider->reveal(),
             $localeContext->reveal(),

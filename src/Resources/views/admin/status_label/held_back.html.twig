@@ -1,0 +1,9 @@
+{# Translations held back, which don't show: label.parameters.locales #}
+{% set locales = [] %}
+{% for localeCode in label.parameters.locales %}
+    {% set locales = locales|merge([localeCode|sylius_locale_name]) %}
+{% endfor %}
+<span class="ui orange basic label">
+    <i class="eye slash outline icon"></i>
+    {{- 'setono_sylius_cms.ui.status_label.held_back'|trans({'%locales%': locales|join(', ')}) -}}
+</span>

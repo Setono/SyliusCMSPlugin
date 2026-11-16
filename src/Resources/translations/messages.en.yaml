@@ -195,6 +195,7 @@ setono_sylius_cms:
             date_window: 'Shows %from%–%until%'
             disabled: Disabled
             ended: 'Ended %until%'
+            held_back: 'Held back: %locales%'
             never_published: Never published
             published: Published
             publishes_at_a_time: 'Publishes %at%'

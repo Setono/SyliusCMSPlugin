@@ -7,7 +7,9 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Admin;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Admin\StatusLabel;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
+use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\CustomerGroupValue;
@@ -152,6 +154,34 @@ final class StatusLabelerTest extends TestCase
     }
 
     /**
+     * A translation without a title is no translation, so it isn't held back either
+     *
+     * @test
+     */
+    public function it_labels_the_translations_held_back_with_their_locales_after_the_date_window_and_before_the_audience(): void
+    {
+        $page = self::published();
+        foreach (['da_DK' => ['Om os', false], 'de_DE' => ['Über uns', false], 'en_US' => ['About us', true], 'sv_SE' => [null, false]] as $localeCode => [$title, $shown]) {
+            $translation = new PageTranslation();
+            $translation->setLocale($localeCode);
+            $translation->setTitle($title);
+            $translation->setShown($shown);
+            $page->addTranslation($translation);
+        }
+        $page->setDateWindow(new DateWindow(null, self::utc('2026-12-01 00:00:00')));
+        ChannelsAndAudience::modifier()->setAudience($page, Audience::only('wholesale'));
+
+        $labels = $this->labelsOf($page, false);
+
+        self::assertSame(
+            [StatusLabel::PUBLISHED, StatusLabel::DATE_WINDOW, StatusLabel::HELD_BACK, StatusLabel::AUDIENCE],
+            array_map(static fn (StatusLabel $label): string => $label->code, $labels),
+        );
+        self::assertEquals(new StatusLabel(StatusLabel::HELD_BACK, ['locales' => ['da_DK', 'de_DE']]), $labels[2]);
+        self::assertSame([StatusLabel::PUBLISHED], array_map(static fn (StatusLabel $label): string => $label->code, $this->labelsOf(self::published(), false)));
+    }
+
+    /**
      * @test
      */
     public function it_labels_a_scheduled_publish_that_waits_with_its_time_after_the_state(): void
@@ -208,7 +238,7 @@ final class StatusLabelerTest extends TestCase
      */
     private function labelsOf(Page $page, bool $hasDraft, ?ScheduledPublish $scheduledPublish = null): array
     {
-        return (new StatusLabeler(new MockClock(self::NOW, 'UTC')))->labelsOf($page, $hasDraft, $scheduledPublish);
+        return (new StatusLabeler(new MockClock(self::NOW, 'UTC'), new Availability()))->labelsOf($page, $hasDraft, $scheduledPublish);
     }
 
     private static function scheduledPublish(string $at): ScheduledPublish

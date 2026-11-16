@@ -199,7 +199,7 @@ final class AdminExtensionTest extends IntegrationTestCase
         $entryRows = new EntryRows(
             $drafts->reveal(),
             self::contentTypes(),
-            new StatusLabeler(new MockClock()),
+            new StatusLabeler(new MockClock(), new Availability()),
             $urlGenerator->reveal(),
             $translationLocaleProvider->reveal(),
             $localeContext->reveal(),

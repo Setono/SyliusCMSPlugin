@@ -87,5 +87,4 @@ final class CheckRoutesCommand extends Command
             $this->problemCounts->update($entries);
         }
     }
-
 }

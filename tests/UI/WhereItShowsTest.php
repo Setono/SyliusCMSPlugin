@@ -29,6 +29,7 @@ final class WhereItShowsTest extends UITestCase
         Expect::locator($this->cell($browser, 'da_DK'))->toContainText('Held back');
         Expect::locator($browser->getByRole('region', ['name' => 'Where it shows'])->locator('[data-audience]'))->toContainText('Everyone');
         self::assertSame('held_back', $this->cell($browser, 'da_DK')->getAttribute('data-reason'));
+        Expect::locator($browser->locator('[data-overview-header] [data-status]'))->toContainText('Held back: Danish (Denmark)');
 
         // Danish is switched on in the builder, which drafts it, so it shows once it's published
         $browser->getByRole('link', ['name' => 'Open in builder'])->click();
@@ -43,6 +44,7 @@ final class WhereItShowsTest extends UITestCase
         Expect::locator($this->cell($browser, 'en_US'))->toContainText('Live');
         Expect::locator($this->cell($browser, 'da_DK'))->toContainText('Live');
         self::assertSame('live', $this->cell($browser, 'da_DK')->getAttribute('data-reason'));
+        Expect::locator($browser->locator('[data-overview-header] [data-status]'))->not()->toContainText('Held back');
     }
 
     /**

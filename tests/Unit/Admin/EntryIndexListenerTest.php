@@ -13,6 +13,7 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Admin\EntryIndexListener;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
+use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
@@ -61,7 +62,7 @@ final class EntryIndexListenerTest extends TestCase
         $this->entryRows = new EntryRows(
             $this->drafts->reveal(),
             new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
-            new StatusLabeler(new MockClock()),
+            new StatusLabeler(new MockClock(), new Availability()),
             $this->prophesize(UrlGeneratorInterface::class)->reveal(),
             $translationLocaleProvider->reveal(),
             $localeContext->reveal(),

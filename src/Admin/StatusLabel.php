@@ -35,6 +35,9 @@ final readonly class StatusLabel
     /** A date window that has ended. Parameters: `until`, a \DateTimeImmutable in UTC */
     public const ENDED = 'ended';
 
+    /** Translations held back, which don't show. Parameters: `locales`, their locale codes in code order */
+    public const HELD_BACK = 'held_back';
+
     /** An audience that isn't everyone. Parameters: `mode` (`only` or `except`) and `groups` (a list of customer group values) */
     public const AUDIENCE = 'audience';
 
