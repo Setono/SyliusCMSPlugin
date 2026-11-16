@@ -40,8 +40,17 @@ final class SvgSanitizer
      */
     private static function removeRemoteFiles(string $svg): string
     {
-        $document = new \DOMDocument();
-        if (!$document->loadXML($svg, \LIBXML_NONET)) {
+        $previous = libxml_use_internal_errors(true);
+
+        try {
+            $document = new \DOMDocument();
+            $loaded = $document->loadXML($svg, \LIBXML_NONET);
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
+
+        if (!$loaded) {
             throw new UnreadableFileException('The SVG isn\'t well-formed XML');
         }
 
@@ -74,23 +83,25 @@ final class SvgSanitizer
         $previous = libxml_use_internal_errors(true);
 
         try {
-            $root = simplexml_load_string($svg, options: \LIBXML_NONET);
+            $document = new \DOMDocument();
+            $loaded = $document->loadXML($svg, \LIBXML_NONET);
         } finally {
             libxml_clear_errors();
             libxml_use_internal_errors($previous);
         }
 
-        if (false === $root) {
+        $root = $document->documentElement;
+        if (!$loaded || null === $root) {
             return null;
         }
 
-        $width = self::pixels((string) $root['width']);
-        $height = self::pixels((string) $root['height']);
+        $width = self::pixels($root->getAttribute('width'));
+        $height = self::pixels($root->getAttribute('height'));
         if (null !== $width && null !== $height) {
             return [$width, $height];
         }
 
-        $viewBox = preg_split('/[\s,]+/', trim((string) $root['viewBox']));
+        $viewBox = preg_split('/[\s,]+/', trim($root->getAttribute('viewBox')));
         if (false === $viewBox || 4 !== count($viewBox) || !is_numeric($viewBox[2]) || !is_numeric($viewBox[3])) {
             return null;
         }

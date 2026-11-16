@@ -49,7 +49,7 @@ final class ContentHubTest extends WebTestCase
     /**
      * @test
      */
-    public function it_gives_the_hub_its_own_menu_with_the_overview_and_the_entry_lists_with_their_counts(): void
+    public function it_gives_the_hub_its_own_menu_with_the_overview_the_entry_lists_with_their_counts_and_the_library(): void
     {
         $client = self::createClient();
         $client->loginUser(self::admin(), 'admin');
@@ -59,10 +59,10 @@ final class ContentHubTest extends WebTestCase
         $crawler = $client->request('GET', '/admin/cms/entries/page');
 
         $menu = $crawler->filter('[data-hub-menu]');
-        self::assertSame(['Overview', 'Entries'], $menu->filter('.header, a.item[href="/admin/cms"]')->each(static fn (Crawler $item): string => self::label($item)));
+        self::assertSame(['Overview', 'Entries', 'Library'], $menu->filter('.header, a.item[href="/admin/cms"]')->each(static fn (Crawler $item): string => self::label($item)));
         self::assertSame(
-            [['All entries', '2', '/admin/cms/entries'], ['Pages', '2', '/admin/cms/entries/page']],
-            $menu->filter('.item > .menu > a.item')->each(static fn (Crawler $item): array => [self::label($item), $item->filter('.label')->text(), (string) $item->attr('href')]),
+            [['All entries', '2', '/admin/cms/entries'], ['Pages', '2', '/admin/cms/entries/page'], ['Media', null, '/admin/cms/media']],
+            $menu->filter('.item > .menu > a.item')->each(static fn (Crawler $item): array => [self::label($item), 0 === $item->filter('.label')->count() ? null : $item->filter('.label')->text(), (string) $item->attr('href')]),
         );
         self::assertSame('Pages', self::label($menu->filter('a.item.active')));
     }
