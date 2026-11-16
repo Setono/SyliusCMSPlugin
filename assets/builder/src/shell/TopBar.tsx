@@ -1,6 +1,7 @@
 import { useBuilder, useBuilderState, usePresenceState, usePreviewState, useSettingsState } from '../context';
 import { useTranslator, type MessageKey } from '../i18n';
-import { localeOf, offeredLocales } from '../locales';
+import { hasTranslation, localeOf, offeredLocales } from '../locales';
+import { localeCounts } from '../translationState';
 import type { EntryStatus } from '../types';
 import { ArrowLeftIcon, DesktopIcon, MobileIcon, RedoIcon, UndoIcon } from './icons';
 import { saveStateText } from './saveStateText';
@@ -62,13 +63,16 @@ export function TopBar() {
 }
 
 /**
- * The one locale the builder edits, of the locales of the entry's channels. Switching reloads the preview in that
- * locale. A store with one locale has nothing to switch.
+ * The one locale the builder edits, of the locales of the entry's channels, each with its untranslated and outdated
+ * counts, or that the entry has no translation in it. Switching reloads the preview in that locale. A store with one
+ * locale has nothing to switch. See "Completeness and outdated flags" in docs/spec/localization.md
  */
 function LocaleSwitcher() {
     const t = useTranslator();
     const { store, locales, channels } = useBuilder();
     const locale = useBuilderState((state) => state.locale);
+    const entry = useBuilderState((state) => state.entry);
+    const blockTypes = useBuilderState((state) => state.rules.blockTypes);
     const entryChannels = useSettingsState((state) => state.settings.channels);
     const offered = offeredLocales(locales, channels, entryChannels, locale);
 
@@ -76,11 +80,27 @@ function LocaleSwitcher() {
         return null;
     }
 
+    const isTranslatable = (blockType: string, field: string): boolean =>
+        blockTypes.get(blockType)?.fields.find((definition) => definition.name === field)?.schema['x-cms-translatable'] === true;
+    const label = (code: string, name: string): string => {
+        if (!hasTranslation(entry, code)) {
+            return `${name} · ${t('setono_sylius_cms.builder.locale_no_translation')}`;
+        }
+
+        const { untranslated, outdated } = localeCounts(entry, code, isTranslatable);
+        const counts = [
+            ...(untranslated > 0 ? [t('setono_sylius_cms.builder.locale_untranslated', { '%count%': String(untranslated) })] : []),
+            ...(outdated > 0 ? [t('setono_sylius_cms.builder.locale_outdated', { '%count%': String(outdated) })] : []),
+        ];
+
+        return [name, ...counts].join(' · ');
+    };
+
     return (
         <select className={styles.channel} aria-label={t('setono_sylius_cms.builder.locale')} value={locale} onChange={(event) => store.getState().setLocale(event.currentTarget.value)}>
             {offered.map(({ code, name }) => (
                 <option key={code} value={code}>
-                    {name}
+                    {label(code, name)}
                 </option>
             ))}
         </select>

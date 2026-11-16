@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Builder\ChangeSet;
 
 use Setono\SyliusCMSPlugin\Json\ListedObject;
+use Setono\SyliusCMSPlugin\Translation\Fingerprint;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
- * What the builder autosaves: the changes it made since it last loaded, as values by field and locale,
- * block styles, blocks added, moved or removed, and the entry's own values and translations' shown switches.
+ * What the builder autosaves: the changes it made since it last loaded, as values by field and locale, where they
+ * were translated from, block styles, blocks added, moved or removed, and the entry's own values, where they were
+ * translated from and translations' shown switches.
  * See "Saving" in docs/spec/builder.md. The body format is internal to the builder
  */
 final readonly class ChangeSet
@@ -77,6 +79,19 @@ final readonly class ChangeSet
                 'value' => $change->value,
             ]),
             $change instanceof SetShown => new ListedObject(['op' => 'set_shown', 'locale' => $change->locale, 'shown' => $change->shown]),
+            $change instanceof SetTranslated => new ListedObject([
+                'op' => 'set_translated',
+                'key' => $change->key,
+                'field' => $change->field,
+                'locale' => $change->locale,
+                'translated' => self::source($change->translated),
+            ]),
+            $change instanceof SetEntryTranslated => new ListedObject([
+                'op' => 'set_entry_translated',
+                'field' => $change->field,
+                'locale' => $change->locale,
+                'translated' => self::source($change->translated),
+            ]),
             default => throw new \LogicException(sprintf('Unknown change %s', $change::class)),
         }, $this->changes)];
     }
@@ -120,8 +135,55 @@ final readonly class ChangeSet
                 self::string($change, 'locale'),
                 is_bool($change['shown'] ?? null) ? $change['shown'] : throw new InvalidChangeSetException('A set_shown change must have a shown switch that is true or false'),
             ),
-            default => throw new InvalidChangeSetException('A change must have the op add_block, move_block, remove_block, set_value, set_style, set_entry_value or set_shown'),
+            'set_translated' => new SetTranslated(
+                self::string($change, 'key'),
+                self::string($change, 'field'),
+                self::string($change, 'locale'),
+                self::translated($change),
+            ),
+            'set_entry_translated' => new SetEntryTranslated(
+                self::string($change, 'field'),
+                self::string($change, 'locale'),
+                self::translated($change),
+            ),
+            default => throw new InvalidChangeSetException('A change must have the op add_block, move_block, remove_block, set_value, set_style, set_entry_value, set_shown, set_translated or set_entry_translated'),
         };
+    }
+
+    /**
+     * Where a value was translated from: the locale and the fingerprint of the value it was translated from, or null
+     * when it has no source
+     *
+     * @param array<array-key, mixed> $change
+     *
+     * @return array{from: string, fingerprint: string}|null
+     */
+    private static function translated(array $change): ?array
+    {
+        if (!array_key_exists('translated', $change)) {
+            throw new InvalidChangeSetException('A change to the translation state must have a translated');
+        }
+
+        $translated = $change['translated'];
+        if (null === $translated) {
+            return null;
+        }
+
+        $from = is_array($translated) ? $translated['from'] ?? null : null;
+        $fingerprint = is_array($translated) ? $translated['fingerprint'] ?? null : null;
+        if (!is_string($from) || '' === $from || !is_string($fingerprint) || !Fingerprint::isValid($fingerprint)) {
+            throw new InvalidChangeSetException('The "translated" of a change must be null, or have the locale the value was translated from and its fingerprint');
+        }
+
+        return ['from' => $from, 'fingerprint' => $fingerprint];
+    }
+
+    /**
+     * @param array{from: string, fingerprint: string}|null $translated
+     */
+    private static function source(?array $translated): ?ListedObject
+    {
+        return null === $translated ? null : new ListedObject(['from' => $translated['from'], 'fingerprint' => $translated['fingerprint']]);
     }
 
     /**

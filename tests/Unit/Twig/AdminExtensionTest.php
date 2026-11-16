@@ -11,6 +11,10 @@ use Setono\SyliusCMSPlugin\Admin\EntryRevisions;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\EntryUrls;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
+use Setono\SyliusCMSPlugin\Admin\TranslationChips;
+use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
+use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
@@ -22,21 +26,29 @@ use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Translation\TranslatableValues;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Twig\AdminExtension;
 use Setono\SyliusCMSPlugin\Twig\AdminRuntime;
+use Sylius\Component\Channel\Model\ChannelInterface;
+use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
+use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Customer\Model\CustomerGroup;
 use Sylius\Component\Customer\Model\CustomerGroupInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
+use Sylius\Component\Locale\Model\Locale;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\Test\IntegrationTestCase;
@@ -91,6 +103,17 @@ final class AdminExtensionTest extends IntegrationTestCase
         $page->setCurrentLocale('en_US');
         $page->setTitle($title);
         $page->setSlug('about-us');
+
+        return ['page' => $page];
+    }
+
+    /**
+     * @return array{page: Page}
+     */
+    public function aPageInTheWebChannel(string $title): array
+    {
+        $page = $this->aPage($title)['page'];
+        ChannelsAndAudience::modifier()->setChannels($page, ['WEB']);
 
         return ['page' => $page];
     }
@@ -156,6 +179,7 @@ final class AdminExtensionTest extends IntegrationTestCase
         ]);
         $entryRevisions = new EntryRevisions($revisions->reveal());
         $runtime = $this->runtime();
+        $translationChips = $this->translationChips();
         $workingCopies = $this->prophesize(WorkingCopyProviderInterface::class);
         $workingCopies->getWorkingCopy(Argument::any())->willReturnArgument(0);
         $problemFinder = new ProblemFinder([new UnknownBlockType(new BlockTypeRegistry([], new FieldReader()))], $workingCopies->reveal());
@@ -166,11 +190,44 @@ final class AdminExtensionTest extends IntegrationTestCase
         return [new FactoryRuntimeLoader([
             EntryRows::class => static fn (): EntryRows => $entryRows,
             EntryUrls::class => static fn (): EntryUrls => $entryUrls,
+            TranslationChips::class => static fn (): TranslationChips => $translationChips,
             EntryRevisions::class => static fn (): EntryRevisions => $entryRevisions,
             AdminRuntime::class => static fn (): AdminRuntime => $runtime,
             ProblemFinder::class => static fn (): ProblemFinder => $problemFinder,
             ProblemSummaryProvider::class => static fn (): ProblemSummaryProvider => $problemSummaries,
         ])];
+    }
+
+    private function translationChips(): TranslationChips
+    {
+        $workingCopies = $this->prophesize(WorkingCopyProviderInterface::class);
+        $workingCopies->getWorkingCopyWithDraft(Argument::any(), null)->willReturnArgument(0);
+        $english = new Locale();
+        $english->setCode('en_US');
+        $danish = new Locale();
+        $danish->setCode('da_DK');
+        $web = new Channel();
+        $web->setCode('WEB');
+        $web->addLocale($english);
+        $web->addLocale($danish);
+        $web->setDefaultLocale($english);
+        /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $channels */
+        $channels = $this->prophesize(ChannelRepositoryInterface::class);
+        $channels->findBy([], ['id' => 'ASC'])->willReturn([$web]);
+        $fallbackChain = $this->prophesize(FallbackChainInterface::class);
+        $fallbackChain->localesFor(Argument::type('string'))->will(static fn (array $arguments): array => [$arguments[0]]);
+
+        return new TranslationChips(
+            $workingCopies->reveal(),
+            new TranslatableValues(
+                self::contentTypes(),
+                new BlockTypeRegistry([], new FieldReader()),
+                new LayoutRegistry([], new FieldReader()),
+                new FallbackValues(new FieldHandlerLocator(new ServiceLocator([])), $fallbackChain->reveal()),
+                $fallbackChain->reveal(),
+            ),
+            $channels->reveal(),
+        );
     }
 
     private function runtime(): AdminRuntime

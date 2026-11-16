@@ -14,11 +14,13 @@ use Setono\SyliusCMSPlugin\Publishing\EntrySettings;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettingsNormalizer;
 use Setono\SyliusCMSPlugin\Publishing\LoadedWorkingCopy;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
+use Setono\SyliusCMSPlugin\Translation\TranslatableValues;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
  * What the builder loads an entry from: the working copy in the entry format, with the lock token a save made on it
- * carries, the entry's on-save settings, which aren't part of the draft, its state, and who else has it open.
+ * carries, the entry's on-save settings, which aren't part of the draft, its state, who else has it open, and the
+ * untranslated and outdated counts of each locale it has a translation in.
  * entry_show answers with it, and so does entry_discard, with the published content
  *
  * @internal
@@ -31,6 +33,7 @@ final readonly class WorkingCopyAnswer
         private EntryNormalizer $entryNormalizer,
         private EntrySettingsNormalizer $settingsNormalizer,
         private PresenceTrackerInterface $presence,
+        private TranslatableValues $translatableValues,
     ) {
     }
 
@@ -42,7 +45,27 @@ final readonly class WorkingCopyAnswer
             'settings' => $this->settingsNormalizer->normalize(EntrySettings::of($entry)),
             'status' => EntryStatus::of($entry, $this->workingCopies->hasDraft($entry)),
             'editors' => self::editors($this->presence->others($entry, $this->builderRequest->admin())),
+            'completeness' => $this->completeness($loaded->workingCopy),
         ])), json: true);
+    }
+
+    /**
+     * The untranslated and outdated counts of each locale the working copy has a translation in: one with a title.
+     * See "Completeness and outdated flags" in docs/spec/localization.md
+     */
+    private function completeness(EntryInterface $workingCopy): \stdClass
+    {
+        $completeness = [];
+        foreach ($workingCopy->getTranslations() as $localeCode => $translation) {
+            if (null === $translation->getTitle() || '' === $translation->getTitle()) {
+                continue;
+            }
+
+            $counts = $this->translatableValues->completeness($workingCopy, (string) $localeCode);
+            $completeness[$counts->localeCode] = new ListedObject(['untranslated' => $counts->untranslated, 'outdated' => $counts->outdated]);
+        }
+
+        return (object) $completeness;
     }
 
     /**

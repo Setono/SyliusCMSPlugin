@@ -11,9 +11,11 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetShown;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -189,6 +191,85 @@ final class ChangeSetTest extends TestCase
     }
 
     /**
+     * Where a value was translated from, in a block or in the entry, or that it has no source
+     *
+     * @test
+     */
+    public function it_reads_where_values_were_translated_from(): void
+    {
+        $fingerprint = hash('sha256', '"Hello"');
+
+        $changeSet = ChangeSet::fromArray(['changes' => [
+            ['op' => 'set_translated', 'key' => self::KEY, 'field' => 'text', 'locale' => 'da_DK', 'translated' => ['fingerprint' => $fingerprint, 'from' => 'en_US', 'ignored' => true]],
+            ['op' => 'set_translated', 'key' => self::KEY, 'field' => 'text', 'locale' => 'de_DE', 'translated' => null],
+            ['op' => 'set_entry_translated', 'field' => 'title', 'locale' => 'da_DK', 'translated' => ['from' => 'en_US', 'fingerprint' => $fingerprint]],
+            ['op' => 'set_entry_translated', 'field' => 'title', 'locale' => 'de_DE', 'translated' => null],
+        ]]);
+
+        self::assertEquals([
+            new SetTranslated(self::KEY, 'text', 'da_DK', ['from' => 'en_US', 'fingerprint' => $fingerprint]),
+            new SetTranslated(self::KEY, 'text', 'de_DE', null),
+            new SetEntryTranslated('title', 'da_DK', ['from' => 'en_US', 'fingerprint' => $fingerprint]),
+            new SetEntryTranslated('title', 'de_DE', null),
+        ], $changeSet->changes);
+        // Only the locale and the fingerprint are kept, in that order
+        $translated = $changeSet->changes[0] instanceof SetTranslated ? $changeSet->changes[0]->translated : null;
+        self::assertSame(['from' => 'en_US', 'fingerprint' => $fingerprint], $translated);
+    }
+
+    /**
+     * @test
+     */
+    public function it_writes_where_values_were_translated_from_the_way_it_reads_them(): void
+    {
+        $fingerprint = hash('sha256', '"Hello"');
+        $changeSet = new ChangeSet([
+            new SetTranslated(self::KEY, 'text', 'da_DK', ['from' => 'en_US', 'fingerprint' => $fingerprint]),
+            new SetTranslated(self::KEY, 'text', 'de_DE', null),
+            new SetEntryTranslated('title', 'da_DK', ['from' => 'en_US', 'fingerprint' => $fingerprint]),
+            new SetEntryTranslated('title', 'de_DE', null),
+        ]);
+
+        $json = CanonicalJson::encode($changeSet->toArray());
+
+        self::assertSame(sprintf(
+            '{"changes":[{"op":"set_translated","key":"%1$s","field":"text","locale":"da_DK","translated":{"from":"en_US","fingerprint":"%2$s"}},{"op":"set_translated","key":"%1$s","field":"text","locale":"de_DE","translated":null},{"op":"set_entry_translated","field":"title","locale":"da_DK","translated":{"from":"en_US","fingerprint":"%2$s"}},{"op":"set_entry_translated","field":"title","locale":"de_DE","translated":null}]}',
+            self::KEY,
+            $fingerprint,
+        ), $json);
+        self::assertEquals($changeSet, ChangeSet::fromArray(CanonicalJson::decode($json)));
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidTranslationStates
+     */
+    public function it_rejects_translation_state_without_a_locale_and_a_fingerprint(mixed $translated): void
+    {
+        $this->expectException(InvalidChangeSetException::class);
+        $this->expectExceptionMessage('The "translated" of a change must be null, or have the locale the value was translated from and its fingerprint');
+
+        ChangeSet::fromArray(['changes' => [['op' => 'set_entry_translated', 'field' => 'title', 'locale' => 'da_DK', 'translated' => $translated]]]);
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public function provideInvalidTranslationStates(): iterable
+    {
+        $fingerprint = hash('sha256', '"Hello"');
+
+        yield 'a string' => ['en_US'];
+        yield 'no locale' => [['fingerprint' => $fingerprint]];
+        yield 'an empty locale' => [['from' => '', 'fingerprint' => $fingerprint]];
+        yield 'a locale that is a number' => [['from' => 1, 'fingerprint' => $fingerprint]];
+        yield 'no fingerprint' => [['from' => 'en_US']];
+        yield 'a fingerprint that is a number' => [['from' => 'en_US', 'fingerprint' => 1]];
+        yield 'a fingerprint that is not a SHA-256' => [['from' => 'en_US', 'fingerprint' => strtoupper($fingerprint)]];
+    }
+
+    /**
      * @test
      */
     public function it_reads_an_empty_change_set(): void
@@ -251,5 +332,13 @@ final class ChangeSetTest extends TestCase
         yield 'set_shown without a locale' => [['changes' => [['op' => 'set_shown', 'shown' => true]]]];
         yield 'set_shown without a switch' => [['changes' => [['op' => 'set_shown', 'locale' => 'da_DK']]]];
         yield 'set_shown with a switch that is not a boolean' => [['changes' => [['op' => 'set_shown', 'locale' => 'da_DK', 'shown' => 1]]]];
+        $setTranslated = ['op' => 'set_translated', 'key' => self::KEY, 'field' => 'text', 'locale' => 'da_DK', 'translated' => null];
+        yield 'set_translated without a key' => [['changes' => [array_diff_key($setTranslated, ['key' => true])]]];
+        yield 'set_translated without a field' => [['changes' => [array_diff_key($setTranslated, ['field' => true])]]];
+        yield 'set_translated without a locale' => [['changes' => [['locale' => null] + $setTranslated]]];
+        yield 'set_translated without translated' => [['changes' => [array_diff_key($setTranslated, ['translated' => true])]]];
+        yield 'set_entry_translated without a field' => [['changes' => [['op' => 'set_entry_translated', 'locale' => 'da_DK', 'translated' => null]]]];
+        yield 'set_entry_translated without a locale' => [['changes' => [['op' => 'set_entry_translated', 'field' => 'title', 'translated' => null]]]];
+        yield 'set_entry_translated without translated' => [['changes' => [['op' => 'set_entry_translated', 'field' => 'title', 'locale' => 'da_DK']]]];
     }
 }

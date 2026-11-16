@@ -5,8 +5,8 @@
 import { produce, type Patch } from 'immer';
 import { longestIncreasing } from './sequence';
 import { blockList, findBlock, insertBlock, removeBlockFrom } from './tree';
-import type { Entry, EntryTranslation, FieldValues, JsonValue, StoredBlock } from './types';
-import { isJsonObject, jsonEqual, normalizeValue, writeEntryValue, writeFieldValue } from './values';
+import type { Entry, EntryTranslation, FieldValues, JsonValue, StoredBlock, TranslationSource, TranslationState } from './types';
+import { isJsonObject, jsonEqual, normalizeValue, writeEntryTranslated, writeEntryValue, writeFieldValue, writeTranslated } from './values';
 
 export interface AddBlockChange {
     op: 'add_block';
@@ -72,18 +72,51 @@ export interface SetShownChange {
     shown: boolean;
 }
 
-export type Change = AddBlockChange | MoveBlockChange | RemoveBlockChange | SetValueChange | SetStyleChange | SetEntryValueChange | SetShownChange;
+/** Where a block's value in a locale was translated from. */
+export interface SetTranslatedChange {
+    op: 'set_translated';
+    key: string;
+    field: string;
+    locale: string;
+    /** null when the value has no source. */
+    translated: TranslationSource | null;
+}
+
+/** Where a value of one of the entry's own fields, such as a translation's title, was translated from. */
+export interface SetEntryTranslatedChange {
+    op: 'set_entry_translated';
+    field: string;
+    locale: string;
+    /** null when the value has no source. */
+    translated: TranslationSource | null;
+}
+
+export type Change =
+    | AddBlockChange
+    | MoveBlockChange
+    | RemoveBlockChange
+    | SetValueChange
+    | SetStyleChange
+    | SetEntryValueChange
+    | SetShownChange
+    | SetTranslatedChange
+    | SetEntryTranslatedChange;
 
 /** Whether a field of a block type is translatable. */
 export type TranslatableLookup = (blockType: string, field: string) => boolean;
 
-type Target = { kind: 'list'; parent: string | null; depth: number } | { kind: 'fields'; key: string; field: string | undefined } | { kind: 'style'; key: string };
+type Target =
+    | { kind: 'list'; parent: string | null; depth: number }
+    | { kind: 'fields'; key: string; field: string | undefined }
+    | { kind: 'style'; key: string }
+    | { kind: 'translated'; key: string };
 
 /**
  * Turns the patches of one edit into key-based changes.
  *
- * Patches into a translation become set_entry_value changes for its fields and set_shown for its switch. Patches into
- * a block's fields become set_value changes, and into its style set_style. Patches that touch a list of blocks aren't
+ * Patches into a translation become set_entry_value changes for its fields, set_entry_translated for its translation
+ * state and set_shown for its switch. Patches into a block's fields become set_value changes, into its translation
+ * state set_translated, and into its style set_style. Patches that touch a list of blocks aren't
  * read index by index, because Immer reports a removal from the middle of a list as replacements plus a
  * trailing removal, and a move as a removal from one list and an addition to another. Instead each list's
  * keys are compared before and after the edit, against the tree as the server has it once the changes
@@ -93,6 +126,7 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
     const lists = new Map<string | null, number>();
     const fieldTargets: Array<{ key: string; field: string | undefined }> = [];
     const styleTargets = new Set<string>();
+    const translatedTargets = new Set<string>();
     const locales = new Set<string>();
 
     for (const patch of patches) {
@@ -104,6 +138,8 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
             fieldTargets.push(target);
         } else if (target?.kind === 'style') {
             styleTargets.add(target.key);
+        } else if (target?.kind === 'translated') {
+            translatedTargets.add(target.key);
         }
     }
 
@@ -141,6 +177,13 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
         const block = findBlock(after.tree.blocks, key);
         if (block !== undefined && !addedOrRemoved.has(key)) {
             changes.push(...diffStyle(block, findBlock(before.tree.blocks, key)?.style ?? null));
+        }
+    }
+
+    for (const key of translatedTargets) {
+        const block = findBlock(after.tree.blocks, key);
+        if (block !== undefined && !addedOrRemoved.has(key)) {
+            changes.push(...diffBlockTranslated(block, findBlock(before.tree.blocks, key)?.translated ?? {}));
         }
     }
 
@@ -195,6 +238,7 @@ function neededKeys(change: Change): string[] {
             return change.parent === null ? [change.key] : [change.key, change.parent];
         case 'set_entry_value':
         case 'set_shown':
+        case 'set_entry_translated':
             return [];
         default:
             return [change.key];
@@ -269,6 +313,20 @@ function applyChange(working: Entry, change: Change): boolean {
 
             return true;
         }
+        case 'set_translated': {
+            const target = findBlock(blocks, change.key);
+            if (target === undefined) {
+                return false;
+            }
+
+            writeTranslated(target.translated, change.field, change.locale, change.translated);
+
+            return true;
+        }
+        case 'set_entry_translated':
+            writeEntryTranslated(working, change.locale, change.field, change.translated, false);
+
+            return true;
     }
 }
 
@@ -292,6 +350,13 @@ function mergeChange(changes: Change[], change: Change): Change[] {
             return [...changes.filter((earlier) => !(earlier.op === 'set_entry_value' && earlier.field === change.field && earlier.locale === change.locale)), change];
         case 'set_shown':
             return [...changes.filter((earlier) => !(earlier.op === 'set_shown' && earlier.locale === change.locale)), change];
+        case 'set_translated':
+            return [
+                ...changes.filter((earlier) => !(earlier.op === 'set_translated' && earlier.key === change.key && earlier.field === change.field && earlier.locale === change.locale)),
+                change,
+            ];
+        case 'set_entry_translated':
+            return [...changes.filter((earlier) => !(earlier.op === 'set_entry_translated' && earlier.field === change.field && earlier.locale === change.locale)), change];
         case 'add_block':
         case 'move_block':
             return [...changes, change];
@@ -318,7 +383,7 @@ function mergeRemoval(changes: Change[], removal: RemoveBlockChange): Change[] {
         return [...changes.slice(0, additionIndex), ...later.filter((change) => !gone.has(blockKeyOf(change) ?? ''))];
     }
 
-    return [...changes.filter((change) => !((change.op === 'set_value' || change.op === 'set_style') && change.key === removal.key)), removal];
+    return [...changes.filter((change) => !((change.op === 'set_value' || change.op === 'set_style' || change.op === 'set_translated') && change.key === removal.key)), removal];
 }
 
 /** The key of the block a change is about, or undefined for a change to the entry. */
@@ -328,6 +393,7 @@ function blockKeyOf(change: Change): string | undefined {
             return change.block.key;
         case 'set_entry_value':
         case 'set_shown':
+        case 'set_entry_translated':
             return undefined;
         default:
             return change.key;
@@ -390,6 +456,36 @@ function diffTranslation(locale: string, before: EntryTranslation | undefined, a
         }
     }
 
+    const translatedBefore = before?.translated ?? {};
+    const translatedAfter = after?.translated ?? {};
+    for (const field of new Set([...Object.keys(translatedAfter), ...Object.keys(translatedBefore)])) {
+        const source = translatedAfter[field] ?? null;
+        if (!sameSource(translatedBefore[field] ?? null, source)) {
+            changes.push({ op: 'set_entry_translated', field, locale, translated: source });
+        }
+    }
+
+    return changes;
+}
+
+function sameSource(a: TranslationSource | null, b: TranslationSource | null): boolean {
+    return a?.from === b?.from && a?.fingerprint === b?.fingerprint;
+}
+
+/** set_translated changes for where a block's values were translated from, by field and locale, that differ from before. */
+function diffBlockTranslated(block: StoredBlock, before: TranslationState): SetTranslatedChange[] {
+    const changes: SetTranslatedChange[] = [];
+    for (const field of new Set([...Object.keys(before), ...Object.keys(block.translated)])) {
+        const localesBefore = before[field] ?? {};
+        const localesAfter = block.translated[field] ?? {};
+        for (const locale of new Set([...Object.keys(localesBefore), ...Object.keys(localesAfter)])) {
+            const source = localesAfter[locale] ?? null;
+            if (!sameSource(localesBefore[locale] ?? null, source)) {
+                changes.push({ op: 'set_translated', key: block.key, field, locale, translated: source });
+            }
+        }
+    }
+
     return changes;
 }
 
@@ -427,6 +523,10 @@ function locate(path: Patch['path'], before: Entry, after: Entry): Target | null
 
         if (property === 'style') {
             return { kind: 'style', key: block.key };
+        }
+
+        if (property === 'translated') {
+            return { kind: 'translated', key: block.key };
         }
 
         if (property !== 'children') {
@@ -508,6 +608,7 @@ function diffBlockList(parent: string | null, after: readonly StoredBlock[], dif
         if (old !== undefined && old !== block) {
             changes.push(...diffFields(block, old.fields, diff.isTranslatable));
             changes.push(...diffStyle(block, old.style));
+            changes.push(...diffBlockTranslated(block, old.translated));
             if (old.children !== block.children) {
                 changes.push(...diffBlockList(block.key, block.children, diff));
             }

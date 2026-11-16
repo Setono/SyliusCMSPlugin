@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_translation_chips() gives an entry row's translation chips, one per locale of the entry's channels
+--TEMPLATE--
+{% for chip in cms_admin_translation_chips(cms_admin_entry_row(page)) %}{{ chip.localeCode }}:{{ chip.translated ? 'translated' : 'none' }}:{{ chip.complete ? 'complete' : 'incomplete' }} {% endfor %}
+--DATA--
+return $this->aPageInTheWebChannel('About us')
+--EXPECT--
+en_US:translated:complete da_DK:none:incomplete

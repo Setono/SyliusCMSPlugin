@@ -55,7 +55,8 @@ export interface StoredBlockTree {
 export interface EntryTranslation {
     shown: boolean;
     fields: FieldValues;
-    translated: TranslationState;
+    /** Field name, then where the translation's value was translated from. */
+    translated: Record<string, TranslationSource>;
 }
 
 export interface Entry {
@@ -116,6 +117,11 @@ export interface EntryResponse {
     status: EntryStatus;
     /** Who else has the entry open. */
     editors: Editor[];
+    /**
+     * The untranslated and outdated counts of each locale the entry has a translation in, as the admin shows them. The
+     * builder counts them itself as the working copy changes.
+     */
+    completeness?: Record<string, { untranslated: number; outdated: number }>;
 }
 
 /**

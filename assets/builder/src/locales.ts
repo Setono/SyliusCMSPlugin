@@ -4,7 +4,8 @@
  */
 import type { Channel, Locale } from './config';
 import { fallbackValue, type FieldFallback } from './fallback';
-import type { Entry, JsonValue } from './types';
+import { outdatedSource, type OutdatedValue } from './translationState';
+import type { Entry, JsonValue, TranslationSource } from './types';
 
 /**
  * The locales the locale switcher offers: those of the entry's channels, in the order the store lists them, and the
@@ -49,4 +50,23 @@ export function fieldFallback(locales: readonly Locale[], values: JsonValue | un
     const found = fallbackValue(values, localeOf(locales, edited).fallbackChain);
 
     return found === undefined ? undefined : { value: found.value, localeName: localeOf(locales, found.locale).name };
+}
+
+/**
+ * What a translatable field shows while its value in the edited locale is outdated: the value it was translated from,
+ * as that locale has it now, with the name of the locale. Undefined when the value isn't outdated.
+ *
+ * @param values what the field stores: a map from locale to value
+ * @param translated where each locale's value was translated from
+ */
+export function outdatedValue(
+    locales: readonly Locale[],
+    values: JsonValue | undefined,
+    translated: Readonly<Record<string, TranslationSource>> | undefined,
+    edited: string,
+    onMarkUpToDate: () => void,
+): OutdatedValue | undefined {
+    const source = outdatedSource(values, translated, edited);
+
+    return source === undefined ? undefined : { value: source.value, localeName: localeOf(locales, source.locale).name, onMarkUpToDate };
 }

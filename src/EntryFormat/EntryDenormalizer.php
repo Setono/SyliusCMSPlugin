@@ -7,16 +7,17 @@ namespace Setono\SyliusCMSPlugin\EntryFormat;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Translation\Fingerprint;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
- * Copies an entry in the entry format onto the entry: what's drafted, which is its translations with their fields and
- * shown switches, and its block tree. Publishing uses it to copy a draft onto the rows. See "Entry format" in
- * docs/spec/content-model.md.
+ * Copies an entry in the entry format onto the entry: what's drafted, which is its translations with their fields,
+ * shown switches and translation state, and its block tree. Publishing uses it to copy a draft onto the rows. See
+ * "Entry format" in docs/spec/content-model.md.
  *
  * The UUID, the content type and createdAt identify the entry and aren't drafted, so they're checked, not copied.
- * Translation state and the content type's own fields come with their tickets
+ * The content type's own fields come with their ticket
  *
  * @internal
  */
@@ -69,6 +70,7 @@ final readonly class EntryDenormalizer
                 $translation->setSlug($slug);
             }
             $translation->setShown($shown);
+            $translation->setTranslated(self::translated($translationData['translated'] ?? [], $localeCode));
         }
 
         try {
@@ -76,6 +78,31 @@ final readonly class EntryDenormalizer
         } catch (InvalidStoredTreeException $e) {
             throw new InvalidEntryFormatException(sprintf('The tree is invalid: %s', $e->getMessage()), previous: $e);
         }
+    }
+
+    /**
+     * A translation's translation state: field name => the locale its value was translated from and the fingerprint of
+     * that value
+     *
+     * @return array<string, array{from: string, fingerprint: string}>
+     *
+     * @throws InvalidEntryFormatException
+     */
+    private static function translated(mixed $data, string $localeCode): array
+    {
+        $translated = [];
+        foreach (self::map($data, sprintf('The translation state of the translation %s', $localeCode)) as $field => $source) {
+            $source = self::map($source, sprintf('The translation state of the %s of the translation %s', $field, $localeCode));
+            $from = $source['from'] ?? null;
+            $fingerprint = $source['fingerprint'] ?? null;
+            if (!is_string($from) || '' === $from || !is_string($fingerprint) || !Fingerprint::isValid($fingerprint)) {
+                throw new InvalidEntryFormatException(sprintf('The translation state of the %s of the translation %s must have the locale it was translated from and a fingerprint', $field, $localeCode));
+            }
+
+            $translated[$field] = ['from' => $from, 'fingerprint' => $fingerprint];
+        }
+
+        return $translated;
     }
 
     /**

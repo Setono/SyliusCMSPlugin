@@ -4,7 +4,8 @@ import { fromLocalInput, toLocalInput } from '../dates';
 import { FieldRow } from '../form/FieldRow';
 import formStyles from '../form/Form.module.css';
 import { useTranslator, type MessageKey } from '../i18n';
-import { fieldFallback, localeOf } from '../locales';
+import { fieldFallback, localeOf, outdatedValue } from '../locales';
+import { entryTranslated, entryValues } from '../translationState';
 import type { AudienceMode, FieldSchema } from '../types';
 import { entryMessages } from '../validation';
 import { saveStateText } from './saveStateText';
@@ -149,7 +150,7 @@ function Title() {
     const { store, locales } = useBuilder();
     const locale = useBuilderState((state) => state.locale);
     const translations = useBuilderState((state) => state.entry.translations);
-    const titles = Object.fromEntries(Object.entries(translations).map(([code, translation]) => [code, translation.fields.title ?? null]));
+    const titles = entryValues({ translations }, 'title');
     const schema: FieldSchema = {
         'x-cms-type': 'text',
         'x-cms-label': t('setono_sylius_cms.builder.entry_title'),
@@ -166,6 +167,7 @@ function Title() {
             value={titles[locale] ?? undefined}
             onChange={(value) => store.getState().setEntryValue('title', value)}
             fallback={fieldFallback(locales, titles, locale)}
+            outdated={outdatedValue(locales, titles, entryTranslated({ translations }, 'title'), locale, () => store.getState().markEntryValueUpToDate('title'))}
         />
     );
 }

@@ -37,7 +37,10 @@ final readonly class EntryNormalizer
             $translations[$localeCode] = new ListedObject([
                 'shown' => $translation->isShown(),
                 'fields' => $fields,
-                'translated' => new \stdClass(),
+                'translated' => (object) array_map(
+                    static fn (array $source): ListedObject => new ListedObject(['from' => $source['from'], 'fingerprint' => $source['fingerprint']]),
+                    $translation->getTranslated(),
+                ),
             ]);
         }
 

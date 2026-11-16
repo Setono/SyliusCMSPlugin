@@ -59,6 +59,30 @@
     outline-offset: 2px;
 }
 
+/* An outdated value shows the text it was translated from as it is now */
+.outdated {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    align-items: flex-start;
+    padding: var(--builder-space-2);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-warning-subtle);
+    color: var(--builder-color-warning);
+    font-size: var(--builder-font-size-sm);
+}
+
+.outdatedMessage {
+    margin: 0;
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.source {
+    margin: 0;
+    color: var(--builder-color-text);
+    white-space: pre-wrap;
+}
+
 .help {
     margin: 0;
     color: var(--builder-color-text-muted);

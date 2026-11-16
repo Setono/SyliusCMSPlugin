@@ -96,6 +96,7 @@ final class EntryRows implements ResetInterface
             null === $path ? null : $this->urlGenerator->generate('setono_sylius_cms_shop_entry', ['_locale' => $localeCode, 'path' => $path]),
             $this->statusLabeler->labelsOf($entry, null !== $draft),
             EntryStatus::of($entry, null !== $draft),
+            $draft,
         );
     }
 

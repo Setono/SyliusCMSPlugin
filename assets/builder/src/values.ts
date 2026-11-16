@@ -1,4 +1,4 @@
-import type { Entry, FieldValues, JsonObject, JsonValue } from './types';
+import type { Entry, FieldValues, JsonObject, JsonValue, TranslationSource, TranslationState } from './types';
 
 export function isJsonObject(value: JsonValue | undefined): value is JsonObject {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -79,6 +79,61 @@ export function writeEntryValue(entry: Entry, locale: string, field: string, val
 
     if (!jsonEqual(translation.fields[field], normalized)) {
         translation.fields[field] = normalized;
+    }
+}
+
+/**
+ * Writes where a value in a locale was translated from, or that it has no source when source is null, into a block's
+ * or a layout's translation state: field name, then locale. A field with no source in any locale is left out. Called
+ * inside an Immer recipe, so it changes only what it has to.
+ */
+export function writeTranslated(translated: TranslationState, field: string, locale: string, source: TranslationSource | null): void {
+    const locales = translated[field];
+    if (source === null) {
+        if (locales !== undefined && locale in locales) {
+            delete locales[locale];
+            if (Object.keys(locales).length === 0) {
+                delete translated[field];
+            }
+        }
+
+        return;
+    }
+
+    const current = locales?.[locale];
+    if (current?.from === source.from && current.fingerprint === source.fingerprint) {
+        return;
+    }
+
+    if (locales === undefined) {
+        translated[field] = { [locale]: { ...source } };
+    } else {
+        locales[locale] = { ...source };
+    }
+}
+
+/**
+ * Writes where a value of an entry field in a locale, such as a translation's title, was translated from, or that it
+ * has no source. A locale the entry has no translation in gets one, switched the way it's given, unless there's no
+ * source to write. Called inside an Immer recipe.
+ */
+export function writeEntryTranslated(entry: Entry, locale: string, field: string, source: TranslationSource | null, shownIfAdded: boolean): void {
+    const translation = entry.translations[locale];
+    if (translation !== undefined) {
+        const current = translation.translated[field];
+        if (source === null) {
+            if (current !== undefined) {
+                delete translation.translated[field];
+            }
+        } else if (current?.from !== source.from || current.fingerprint !== source.fingerprint) {
+            translation.translated[field] = { ...source };
+        }
+
+        return;
+    }
+
+    if (source !== null) {
+        entry.translations[locale] = { shown: shownIfAdded, fields: {}, translated: { [field]: { ...source } } };
     }
 }
 

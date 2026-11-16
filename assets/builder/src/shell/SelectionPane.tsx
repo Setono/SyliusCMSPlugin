@@ -3,7 +3,7 @@ import { useBuilder, useBuilderState, useValidationState } from '../context';
 import { FieldRow } from '../form/FieldRow';
 import formStyles from '../form/Form.module.css';
 import { useTranslator } from '../i18n';
-import { fieldFallback } from '../locales';
+import { fieldFallback, outdatedValue } from '../locales';
 import { canDuplicate } from '../nesting';
 import { canShift, findBlock, pathTo, topmostBlocks } from '../tree';
 import type { BlockStyleDefinition, StoredBlock } from '../types';
@@ -63,6 +63,11 @@ export function SelectionPane() {
                         onChange={(value) => store.getState().setFieldValue(block.key, name, value)}
                         errors={fieldMessages(errors, block.key, name, locale)}
                         fallback={schema['x-cms-translatable'] ? fieldFallback(locales, block.fields[name], locale) : undefined}
+                        outdated={
+                            schema['x-cms-translatable']
+                                ? outdatedValue(locales, block.fields[name], block.translated[name], locale, () => store.getState().markValueUpToDate(block.key, name))
+                                : undefined
+                        }
                     />
                 ))}
             </div>

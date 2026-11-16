@@ -78,10 +78,14 @@ final class EntryRowsTest extends TestCase
         $page->publish(new \DateTimeImmutable('2026-11-01T00:00:00Z'));
         $other = self::page(['en_US' => ['Contact', 'contact']]);
         $other->publish(new \DateTimeImmutable('2026-11-01T00:00:00Z'));
-        $this->drafts->findByEntries([$page, $other])->willReturn([self::draft($page, ['en_US' => ['About our shop', 'about-our-shop']])]);
+        $draft = self::draft($page, ['en_US' => ['About our shop', 'about-our-shop']]);
+        $this->drafts->findByEntries([$page, $other])->willReturn([$draft]);
 
         [$row, $otherRow] = $this->rows([$page, $other]);
 
+        // The row keeps the draft, for what else reads the working copy, such as its translation chips
+        self::assertSame($draft, $row->draft);
+        self::assertNull($otherRow->draft);
         self::assertSame('About our shop', $row->title);
         self::assertSame('/en_US/about-our-shop', $row->url);
         self::assertEquals([new StatusLabel(StatusLabel::PUBLISHED), new StatusLabel(StatusLabel::UNPUBLISHED_CHANGES)], $row->statusLabels);
