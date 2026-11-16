@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Publishing\AutosaveInterface;
@@ -82,6 +83,30 @@ trait Entries
         $manager->flush();
 
         return $page;
+    }
+
+    /**
+     * Adds a translation to the page, created through the page translation resource's own factory, and flushes. On a
+     * working copy, which Doctrine doesn't manage, the translation is only added. A locale the page has a translation
+     * in already must go through that translation, since Sylius's getTranslation() falls back to another locale's
+     */
+    protected static function addTranslation(PageInterface $page, string $localeCode, ?string $title, ?string $slug = null, bool $shown = true): PageTranslationInterface
+    {
+        /** @var FactoryInterface<PageTranslationInterface> $factory */
+        $factory = self::getContainer()->get('setono_sylius_cms.factory.page_translation');
+
+        $translation = $factory->createNew();
+        $translation->setLocale($localeCode);
+        $translation->setTitle($title);
+        $translation->setSlug($slug);
+        $translation->setShown($shown);
+        $page->addTranslation($translation);
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
+        $manager->flush();
+
+        return $translation;
     }
 
     /**

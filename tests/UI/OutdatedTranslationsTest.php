@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\UI;
 
-use Doctrine\Persistence\ObjectManager;
 use Playwright\Assertions\Expect;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Translation\Fingerprint;
 
 /**
@@ -89,14 +87,7 @@ final class OutdatedTranslationsTest extends UITestCase
         $heading->setTranslated('text', 'da_DK', ['from' => 'en_US', 'fingerprint' => Fingerprint::of('Hello')]);
         $page = self::createPageWithBlocks('About us', 'about-us', [$heading]);
 
-        $danish = new PageTranslation();
-        $danish->setLocale('da_DK');
-        $danish->setTitle('Om os');
-        $danish->setSlug('om-os');
-        $page->addTranslation($danish);
-        /** @var ObjectManager $manager */
-        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
-        $manager->flush();
+        self::addTranslation($page, 'da_DK', 'Om os', 'om-os');
 
         return $page;
     }

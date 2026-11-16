@@ -7,7 +7,6 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\CustomerGroupValue;
@@ -200,11 +199,7 @@ final class EntryListTest extends BuilderApiTestCase
         $workingCopies = self::getContainer()->get(WorkingCopyManagerInterface::class);
         $workingCopy = $workingCopies->getWorkingCopy($published);
         $workingCopy->setCurrentLocale('de_DE');
-        $german = new PageTranslation();
-        $german->setLocale('de_DE');
-        $german->setTitle('Kontakt');
-        $german->setSlug('kontakt');
-        $workingCopy->addTranslation($german);
+        self::addTranslation($workingCopy, 'de_DE', 'Kontakt', 'kontakt');
         $workingCopies->save($published, $workingCopy);
 
         $crawler = $client->request('GET', '/admin/cms/entries/page');
@@ -433,12 +428,7 @@ final class EntryListTest extends BuilderApiTestCase
 
     private static function translate(PageInterface $page, string $localeCode, string $title, string $slug): void
     {
-        $translation = new PageTranslation();
-        $translation->setLocale($localeCode);
-        $translation->setTitle($title);
-        $translation->setSlug($slug);
-        $page->addTranslation($translation);
-        self::flush();
+        self::addTranslation($page, $localeCode, $title, $slug);
     }
 
     /**

@@ -6,7 +6,6 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Query;
 
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface;
 use Setono\SyliusCMSPlugin\Registry\UnknownContentTypeException;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
@@ -106,12 +105,7 @@ final class VisibleEntriesQueryTest extends KernelTestCase
     {
         self::createPage('English only', 'english-only', published: true);
         $both = self::createPage('English and Danish', 'english-and-danish', published: true);
-        self::save($both, static function (PageInterface $page): void {
-            $danish = new PageTranslation();
-            $danish->setLocale('da_DK');
-            $danish->setTitle('Engelsk og dansk');
-            $page->addTranslation($danish);
-        });
+        self::addTranslation($both, 'da_DK', 'Engelsk og dansk');
 
         self::assertSame(['English and Danish', 'English only'], self::visibleTitles(self::context()));
         self::assertSame(['English and Danish'], self::visibleTitles(self::context(localeCode: 'da_DK')));
@@ -128,13 +122,7 @@ final class VisibleEntriesQueryTest extends KernelTestCase
     public function it_leaves_out_an_entry_whose_translation_in_the_locale_has_no_title(?string $title): void
     {
         $page = self::createPage('English and Danish', 'english-and-danish', published: true);
-        self::save($page, static function (PageInterface $page) use ($title): void {
-            $danish = new PageTranslation();
-            $danish->setLocale('da_DK');
-            $danish->setTitle($title);
-            $danish->setSlug('engelsk-og-dansk');
-            $page->addTranslation($danish);
-        });
+        self::addTranslation($page, 'da_DK', $title, 'engelsk-og-dansk');
 
         self::assertSame([], self::visibleTitles(self::context(localeCode: 'da_DK')));
     }
@@ -157,13 +145,7 @@ final class VisibleEntriesQueryTest extends KernelTestCase
     public function it_leaves_out_an_entry_whose_translation_in_the_locale_is_held_back(): void
     {
         $page = self::createPage('English and Danish', 'english-and-danish', published: true);
-        self::save($page, static function (PageInterface $page): void {
-            $danish = new PageTranslation();
-            $danish->setLocale('da_DK');
-            $danish->setTitle('Engelsk og dansk');
-            $danish->setShown(false);
-            $page->addTranslation($danish);
-        });
+        self::addTranslation($page, 'da_DK', 'Engelsk og dansk', shown: false);
 
         self::assertSame([], self::visibleTitles(self::context(localeCode: 'da_DK')));
         self::assertSame(['English and Danish'], self::visibleTitles(self::context()));

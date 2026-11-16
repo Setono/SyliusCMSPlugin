@@ -6,7 +6,6 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -149,9 +148,7 @@ final class HeadTagsTest extends WebTestCase
         $page = self::reloadPage($page);
         $translation = $page->getTranslations()->get($locale);
         if (null === $translation) {
-            $translation = new PageTranslation();
-            $translation->setLocale($locale);
-            $page->addTranslation($translation);
+            $translation = self::addTranslation($page, $locale, null);
         }
 
         $translation->setTitle($fields['title'] ?? $translation->getTitle());

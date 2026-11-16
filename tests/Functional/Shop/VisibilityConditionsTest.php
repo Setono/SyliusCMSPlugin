@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
-use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Tests\Support\Customers;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -216,14 +214,6 @@ final class VisibilityConditionsTest extends WebTestCase
 
     private static function translate(PageInterface $page, string $localeCode, string $title, string $slug): void
     {
-        $translation = new PageTranslation();
-        $translation->setLocale($localeCode);
-        $translation->setTitle($title);
-        $translation->setSlug($slug);
-        $page->addTranslation($translation);
-
-        /** @var ObjectManager $manager */
-        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
-        $manager->flush();
+        self::addTranslation($page, $localeCode, $title, $slug);
     }
 }

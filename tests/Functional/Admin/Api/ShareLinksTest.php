@@ -6,7 +6,6 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Support\Admins;
 use Setono\SyliusCMSPlugin\Tests\Support\ShareLinks;
@@ -246,14 +245,6 @@ final class ShareLinksTest extends BuilderApiTestCase
 
     private static function addDanish(PageInterface $page): void
     {
-        $danish = new PageTranslation();
-        $danish->setLocale('da_DK');
-        $danish->setTitle('Om os');
-        $danish->setSlug('om-os');
-        $page->addTranslation($danish);
-
-        /** @var ObjectManager $manager */
-        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
-        $manager->flush();
+        self::addTranslation($page, 'da_DK', 'Om os', 'om-os');
     }
 }

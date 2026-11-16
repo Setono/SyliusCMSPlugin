@@ -9,7 +9,6 @@ use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\WhereItShows;
 use Setono\SyliusCMSPlugin\Admin\WhereItShowsCell;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface;
 use Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
@@ -271,18 +270,6 @@ final class WhereItShowsTest extends WebTestCase
         /** @var ObjectManager $manager */
         $manager = self::getContainer()->get('sylius.manager.channel');
         $manager->flush();
-    }
-
-    private static function addTranslation(PageInterface $page, string $localeCode, string $title, string $slug, bool $shown): void
-    {
-        self::save($page, static function (PageInterface $page) use ($localeCode, $title, $slug, $shown): void {
-            $translation = new PageTranslation();
-            $translation->setLocale($localeCode);
-            $translation->setTitle($title);
-            $translation->setSlug($slug);
-            $translation->setShown($shown);
-            $page->addTranslation($translation);
-        });
     }
 
     /**

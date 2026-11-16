@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
 use Doctrine\Persistence\ObjectManager;
-use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
@@ -251,14 +250,7 @@ final class PreviewModeTest extends WebTestCase
         $page = self::createPage('About us', 'about-us', 'Hello');
         self::createChannel('OTHER', 'Other Store', 'other.example');
         self::addLocales('OTHER', 'da_DK');
-        $danish = new PageTranslation();
-        $danish->setLocale('da_DK');
-        $danish->setTitle('Om os');
-        $danish->setSlug('om-os');
-        $page->addTranslation($danish);
-        /** @var ObjectManager $manager */
-        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
-        $manager->flush();
+        self::addTranslation($page, 'da_DK', 'Om os', 'om-os');
 
         $client->request('GET', '/en_US/about-us?_cms_preview=' . self::previewToken($page, 'OTHER'));
 

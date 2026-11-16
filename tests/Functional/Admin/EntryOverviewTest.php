@@ -7,7 +7,6 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Event\BeforeEntryPublish;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
@@ -452,15 +451,7 @@ final class EntryOverviewTest extends WebTestCase
 
     private static function translate(PageInterface $page, string $localeCode, string $title, string $slug): void
     {
-        $translation = new PageTranslation();
-        $translation->setLocale($localeCode);
-        $translation->setTitle($title);
-        $translation->setSlug($slug);
-        $page->addTranslation($translation);
-
-        /** @var ObjectManager $manager */
-        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
-        $manager->flush();
+        self::addTranslation($page, $localeCode, $title, $slug);
     }
 
     private static function eventDispatcher(): EventDispatcherInterface

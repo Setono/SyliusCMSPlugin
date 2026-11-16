@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
 use Doctrine\Persistence\ObjectManager;
-use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -229,17 +227,6 @@ final class HomepageTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextSame('.cms-heading', 'Hello shoppers');
         self::assertResponseHeaderSame('X-Robots-Tag', 'noindex');
-    }
-
-    private static function addTranslation(PageInterface $page, string $localeCode, string $title, string $slug): void
-    {
-        $page = self::reloadPage($page);
-        $translation = new PageTranslation();
-        $translation->setLocale($localeCode);
-        $translation->setTitle($title);
-        $translation->setSlug($slug);
-        $page->addTranslation($translation);
-        self::pageManager()->flush();
     }
 
     private static function pageManager(): ObjectManager

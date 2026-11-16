@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\UI;
 
-use Doctrine\Persistence\ObjectManager;
 use Playwright\Assertions\Expect;
 use Playwright\Locator\LocatorInterface;
 use Playwright\Page\PageInterface as BrowserPage;
-use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
 /**
@@ -27,14 +25,7 @@ final class VisibilityConditionsTest extends UITestCase
             self::bilingualHeading('0193a5be-0000-7000-8000-000000000001', 'Welcome', 'Velkommen'),
             self::bilingualHeading('0193a5be-0000-7000-8000-000000000002', 'Not for Danes', 'Ikke for danskere'),
         ]);
-        $translation = new PageTranslation();
-        $translation->setLocale('da_DK');
-        $translation->setTitle('Om os');
-        $translation->setSlug('om-os');
-        $page->addTranslation($translation);
-        /** @var ObjectManager $manager */
-        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
-        $manager->flush();
+        self::addTranslation($page, 'da_DK', 'Om os', 'om-os');
         $this->signInAsAdmin();
 
         $browser = $this->visit(sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));

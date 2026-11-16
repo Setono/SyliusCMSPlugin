@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 
-use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Translation\Fingerprint;
 use Setono\SyliusCMSPlugin\Translation\TranslatableValue;
 use Setono\SyliusCMSPlugin\Translation\TranslationStateInterface;
@@ -152,15 +150,7 @@ final class TranslationStateTest extends BuilderApiTestCase
         $other->setValue('text', 'en_US', 'Welcome');
 
         $page = self::createPageWithBlocks('About us', 'about-us', [$heading, $other], $published);
-        $danish = new PageTranslation();
-        $danish->setLocale('da_DK');
-        $danish->setTitle('Om os');
-        $danish->setSlug('om-os');
-        $page->addTranslation($danish);
-
-        /** @var ObjectManager $manager */
-        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
-        $manager->flush();
+        self::addTranslation($page, 'da_DK', 'Om os', 'om-os');
 
         return $page;
     }

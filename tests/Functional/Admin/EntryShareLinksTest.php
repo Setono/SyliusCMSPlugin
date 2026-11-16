@@ -7,7 +7,6 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Publishing\EntryDeleterInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
@@ -327,12 +326,7 @@ final class EntryShareLinksTest extends WebTestCase
 
     private static function addDanish(PageInterface $page): void
     {
-        $danish = new PageTranslation();
-        $danish->setLocale('da_DK');
-        $danish->setTitle('Priser');
-        $danish->setSlug('priser');
-        $page->addTranslation($danish);
-        self::flush();
+        self::addTranslation($page, 'da_DK', 'Priser', 'priser');
     }
 
     private static function flush(): void

@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\UI;
 
-use Doctrine\Persistence\ObjectManager;
 use Playwright\Assertions\Expect;
 use Playwright\Locator\LocatorInterface;
 use Playwright\Page\PageInterface as BrowserPage;
-use Setono\SyliusCMSPlugin\Model\PageTranslation;
 
 /**
  * The overview page's Where it shows grid, which says per channel and locale whether shoppers see the entry, and if
@@ -23,15 +21,7 @@ final class WhereItShowsTest extends UITestCase
     {
         self::addLocales('WEB', 'da_DK');
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
-        $danish = new PageTranslation();
-        $danish->setLocale('da_DK');
-        $danish->setTitle('Om os');
-        $danish->setSlug('om-os');
-        $danish->setShown(false);
-        $page->addTranslation($danish);
-        /** @var ObjectManager $manager */
-        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
-        $manager->flush();
+        self::addTranslation($page, 'da_DK', 'Om os', 'om-os', false);
         $this->signInAsAdmin();
 
         $browser = $this->visit(sprintf('/admin/cms/entry/%s', $page->getUuid()));
