@@ -55,6 +55,11 @@ setono_sylius_cms:
             content: Content
         spacer:
             size: Size
+        standard:
+            show_title: Show title
+    layout:
+        page:
+            standard: Standard
     menu:
         admin:
             hub:
@@ -70,6 +75,7 @@ setono_sylius_cms:
     form:
         entry:
             channels: Channels
+            layout: Layout
             slug: Slug
             slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team.'
             slug_rules: A slug can't start or end with a slash, or have two slashes in a row.
@@ -80,9 +86,11 @@ setono_sylius_cms:
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
+        removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
         scheduled_publish_failed: 'The publish scheduled for %at% was stopped: %reason%'
         scheduled_publish_overdue: 'The publish scheduled for %at% hasn''t run. The Messenger worker may not be running.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
+        url_taken_by_route: 'URL taken by a Sylius route: shoppers get the page of the route %route% at %url%.'
     publish:
         invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'
     # Why a scheduled publish was stopped when it ran, which the overview page shows and EntryPublishFailed carries
@@ -117,6 +125,7 @@ setono_sylius_cms:
         new_entry_heading: New entry
         no_revisions: Every publish stores a revision, which you can preview and restore. There are none yet.
         no_urls: It has no URL yet, because it has no slug.
+        old_urls: 'Redirects from:'
         open_in_builder: Open in builder
         other_content_type: Another content type
         overview_placeholder: What needs attention, what's coming up, translations and drafts in progress will show here. Until then, find the entries in their lists.
@@ -246,6 +255,8 @@ setono_sylius_cms:
         is_one_of: is one of
         is_outside: is outside
         keep_mine: Keep mine
+        layout: Layout
+        layout_removed: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
         load_failed: Couldn't load the entry
         loading: Loading…
         locale: Language
@@ -262,16 +273,22 @@ setono_sylius_cms:
         move_up: Move up
         never_published: Never published
         no_blocks: No blocks yet
+        not_shown_in_layout: Not shown in this layout
         no_group: Signed in without a group
         no_matching_block_types: No block types match
         no_style: None
         no_translation: 'This entry has no translation in %locale% yet.'
+        old_urls: Redirects from
+        old_urls_help: The URLs of the slugs this had before, which redirect here.
         open_overview: Open the overview page
         outdated: 'The %locale% text it was translated from has changed. It now reads:'
         path: Path
         preview: Preview
         preview_channel: Preview channel
+        preview_date: Date
         preview_failed: Couldn't load the preview
+        preview_now: Now
+        preview_now_help: Shows the page as it is now. Pick a date and time to see it as it shows then.
         preview_width: Preview width
         publish: Publish
         publish_failed: Couldn't publish
@@ -314,7 +331,11 @@ setono_sylius_cms:
         show_in_locale: 'Show in %locale%'
         show_in_locale_help: 'Off holds the translation back, so shoppers don''t see the entry in %locale%. It takes effect when you publish.'
         show_until: Show until
+        shown_to: Shown to
+        shown_to_guest: Guest
         slug: Slug
+        slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team. The URL: %url%'
+        slug_help_none: Generated from the title until you change it. It may have slashes, such as about/team.
         take_theirs: Take theirs
         takes_effect_on_save: Takes effect when saved, without publishing
         title: Builder
@@ -325,5 +346,6 @@ setono_sylius_cms:
         unknown_condition_kind_help: 'The code no longer has this kind of condition, so the block doesn''t show. Remove the condition to show it again.'
         unpublished_changes: Unpublished changes
         unsupported_field_type: This field type isn't supported yet
+        url_and_seo: URL & SEO
         visibility: Visibility
         visibility_help: Shows to everyone. Add conditions to show it only to some shoppers, on some pages or at some times.

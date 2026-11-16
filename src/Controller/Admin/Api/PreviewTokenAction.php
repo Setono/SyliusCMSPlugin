@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Routing\EntryPath;
+use Setono\SyliusCMSPlugin\Targeting\CustomerGroupValue;
 use Sylius\Component\Channel\Model\ChannelInterface as BaseChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -22,12 +23,14 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
- * Creates a preview token for an entry, a channel and a locale, and answers with the URL the builder loads in its
- * preview iframe: the working copy's URL, on the admin's own host. Shown to, Date, the sample object and the placement
+ * Creates a preview token for an entry, a channel, a locale, Shown to and Date, and answers with the URL the builder
+ * loads in its preview iframe: the working copy's URL, on the admin's own host. The sample object and the placement
  * join it with their tickets. See "Preview mode" in docs/spec/builder.md
  */
 final readonly class PreviewTokenAction
 {
+    private const DATE_FORMAT = 'Y-m-d\TH:i:s\Z';
+
     /**
      * @param ChannelRepositoryInterface<BaseChannelInterface> $channelRepository
      */
@@ -77,6 +80,18 @@ final readonly class PreviewTokenAction
             return BuilderRequest::badRequest(sprintf('The channel %s has no locale %s', $channelCode, $localeCode));
         }
 
+        // Shown to: a customer group value. Date: a UTC date and time, or null for now
+        $shownTo = $body['shownTo'] ?? null;
+        if (!is_string($shownTo) || !CustomerGroupValue::isValid($shownTo)) {
+            return BuilderRequest::badRequest(sprintf('The body needs shownTo, a customer group code, "%s" or "%s", got %s', CustomerGroupValue::GUEST, CustomerGroupValue::NO_GROUP, json_encode($shownTo)));
+        }
+
+        $date = $body['date'] ?? null;
+        $at = null === $date ? null : self::dateTime($date);
+        if (null !== $date && null === $at) {
+            return BuilderRequest::badRequest(sprintf('The date must be null or a UTC date and time such as 2026-12-01T00:00:00Z, got %s', json_encode($date)));
+        }
+
         $workingCopy = $this->workingCopyProvider->getWorkingCopy($entry);
         $path = EntryPath::of($this->contentTypes->getByEntry($workingCopy), $workingCopy, $localeCode);
         if (null === $path) {
@@ -86,7 +101,21 @@ final readonly class PreviewTokenAction
         return new JsonResponse(['url' => $this->urlGenerator->generate('setono_sylius_cms_shop_entry', [
             '_locale' => $localeCode,
             'path' => $path,
-            PreviewContext::QUERY_PARAMETER => $this->signer->sign(new Preview($entry->getUuid(), $channelCode, $localeCode)),
+            PreviewContext::QUERY_PARAMETER => $this->signer->sign(new Preview($entry->getUuid(), $channelCode, $localeCode, null, $shownTo, $at)),
         ], UrlGeneratorInterface::ABSOLUTE_URL)]);
+    }
+
+    /**
+     * A time that exists, written in UTC as the builder writes it, or null
+     */
+    private static function dateTime(mixed $value): ?\DateTimeImmutable
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $at = \DateTimeImmutable::createFromFormat(self::DATE_FORMAT, $value, new \DateTimeZone('UTC'));
+
+        return false !== $at && $at->format(self::DATE_FORMAT) === $value ? $at : null;
     }
 }

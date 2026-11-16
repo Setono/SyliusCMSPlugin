@@ -14,4 +14,10 @@ setono_sylius_cms:
         required: This field is required.
         too_long: This value is too long. It should have {{ limit }} characters or less.
     slug:
+        blank: A URL needs a slug.
+        drafted_elsewhere: '"%title%" has the URL %url% in its draft too, in %channels%. Only one of them can be published there.'
         invalid: A slug can't start or end with a slash, or contain two slashes in a row.
+        live_url_taken_by_route: 'Shoppers don''t see this at %url%: the route %route% takes the URL.'
+        taken: 'The URL %url% is already the URL of "%title%" in %channels%.'
+        taken_by_route: 'The URL %url% is taken by the route %route%.'
+        taken_in_channel: 'The URL %url% is already the URL of "%title%" in %channels%, so this can''t be shown there too.'

@@ -80,7 +80,7 @@ describe('the preview', () => {
         await openBuilder(api);
 
         await waitFor(() => expect(preview()).toHaveAttribute('src', 'http://admin.example/en_US/about-us?channel=WEB&_cms_preview=1'));
-        expect(api.createPreviewUrl).toHaveBeenCalledExactlyOnceWith({ channel: 'WEB', locale: 'en_US' });
+        expect(api.createPreviewUrl).toHaveBeenCalledExactlyOnceWith({ channel: 'WEB', locale: 'en_US', shownTo: '@guest', date: null });
         expect(screen.getByRole('combobox', { name: 'Preview channel' })).toHaveValue('WEB');
     });
 
@@ -145,7 +145,7 @@ describe('the preview', () => {
 
         expect(picker).toHaveValue('B2B');
         await waitFor(() => expect(preview()).toHaveAttribute('src', expect.stringContaining('channel=B2B')));
-        expect(api.createPreviewUrl).toHaveBeenLastCalledWith({ channel: 'B2B', locale: 'en_US' });
+        expect(api.createPreviewUrl).toHaveBeenLastCalledWith({ channel: 'B2B', locale: 'en_US', shownTo: '@guest', date: null });
     });
 
     it('should show the latest preview asked for when the answers come back out of order', async () => {

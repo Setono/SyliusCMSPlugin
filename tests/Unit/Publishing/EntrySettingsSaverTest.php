@@ -15,9 +15,12 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Publishing\EditRecorder;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettings;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver;
+use Setono\SyliusCMSPlugin\Publishing\InvalidEntrySettingsException;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
+use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
+use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
@@ -35,6 +38,9 @@ final class EntrySettingsSaverTest extends TestCase
     private ObjectProphecy $managerRegistry;
 
     private EventDispatcher $eventDispatcher;
+
+    /** @var ObjectProphecy<EntryUrlValidatorInterface> */
+    private ObjectProphecy $urlValidator;
 
     /** @var list<string> what happened, in order */
     private array $calls = [];
@@ -55,6 +61,9 @@ final class EntrySettingsSaverTest extends TestCase
 
             return $result;
         });
+
+        $this->urlValidator = $this->prophesize(EntryUrlValidatorInterface::class);
+        $this->urlValidator->validateChannels(Argument::cetera())->willReturn([]);
 
         $this->eventDispatcher = new EventDispatcher();
         $this->eventDispatcher->addListener(EntrySettingsChanged::class, function (EntrySettingsChanged $event): void {
@@ -98,6 +107,57 @@ final class EntrySettingsSaverTest extends TestCase
     /**
      * @test
      */
+    public function it_checks_the_entrys_urls_in_the_channels_it_would_be_in_when_they_change(): void
+    {
+        $page = new Page();
+        ChannelsAndAudience::modifier()->setChannels($page, ['WEB']);
+
+        $this->saver()->save($page, new EntrySettings(true, new DateWindow(), ['MOBILE', 'WEB'], Audience::everyone()));
+
+        $this->urlValidator->validateChannels($page, ['MOBILE', 'WEB'])->shouldHaveBeenCalledOnce();
+        self::assertSame(['MOBILE', 'WEB'], $page->getChannelCodes());
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_channels_where_another_entry_has_published_one_of_the_entrys_published_urls(): void
+    {
+        $page = new Page();
+        ChannelsAndAudience::modifier()->setChannels($page, ['WEB']);
+        $this->urlValidator->validateChannels($page, ['MOBILE', 'WEB'])->willReturn([
+            new ValidationError(null, 'slug', 'en_US', 'The URL /en_US/about-us is already the URL of "About" in Mobile.'),
+            new ValidationError(null, 'slug', 'da_DK', 'The URL /da_DK/om-os is already the URL of "Om" in Mobile.'),
+        ]);
+
+        try {
+            $this->saver()->save($page, new EntrySettings(false, new DateWindow(), ['MOBILE', 'WEB'], Audience::everyone()));
+            self::fail('The channels were not refused');
+        } catch (InvalidEntrySettingsException $e) {
+            self::assertSame('The URL /en_US/about-us is already the URL of "About" in Mobile. The URL /da_DK/om-os is already the URL of "Om" in Mobile.', $e->getMessage());
+        }
+
+        self::assertSame([], $this->calls);
+        self::assertSame(['WEB'], $page->getChannelCodes());
+        self::assertTrue($page->isEnabled(), 'Nothing is saved');
+    }
+
+    /**
+     * @test
+     */
+    public function it_checks_no_url_when_the_channels_stay(): void
+    {
+        $page = new Page();
+        ChannelsAndAudience::modifier()->setChannels($page, ['WEB']);
+
+        $this->saver()->save($page, new EntrySettings(false, new DateWindow(), ['WEB'], Audience::everyone()));
+
+        $this->urlValidator->validateChannels(Argument::cetera())->shouldNotHaveBeenCalled();
+    }
+
+    /**
+     * @test
+     */
     public function it_changes_nothing_when_saving_the_settings_an_entry_already_has(): void
     {
         $page = new Page();
@@ -136,6 +196,7 @@ final class EntrySettingsSaverTest extends TestCase
             $this->eventDispatcher,
             ChannelsAndAudience::modifier(),
             new EditRecorder($tokenStorage, $clock),
+            $this->urlValidator->reveal(),
         );
     }
 }

@@ -1,7 +1,7 @@
 {#
  # The overview page's URLs section, a block of setono_sylius_cms.admin.entry.show.sections, for a content type with
- # its own URL: the URL per locale, and the one the draft gives it once published, when that's another.
- # See "Entry overview page" in docs/spec/admin.md
+ # its own URL: the URL per locale, the one the draft gives it once published, when that's another, and the old slugs
+ # that redirect to it. See "Entry overview page" in docs/spec/admin.md
  #}
 {% if row.contentType.hasOwnUrl() %}
     {% set urls = cms_admin_entry_urls(entry) %}
@@ -28,6 +28,14 @@
                                 {% endif %}
                                 {% if url.draftUrl is not null %}
                                     <div data-draft-url><small>{{ 'setono_sylius_cms.ui.url_after_publishing'|trans({'%url%': url.draftUrl}) }}</small></div>
+                                {% endif %}
+                                {% if url.oldUrls is not empty %}
+                                    <div data-old-urls>
+                                        <small>{{ 'setono_sylius_cms.ui.old_urls'|trans }}</small>
+                                        {% for oldUrl in url.oldUrls %}
+                                            <code data-old-url>{{ oldUrl }}</code>
+                                        {% endfor %}
+                                    </div>
                                 {% endif %}
                             </td>
                         </tr>

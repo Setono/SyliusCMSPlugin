@@ -19,6 +19,8 @@ use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
+use Setono\SyliusCMSPlugin\Model\OldSlug;
+use Setono\SyliusCMSPlugin\Model\OldSlugInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
@@ -32,6 +34,7 @@ use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
+use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepository;
@@ -60,8 +63,9 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             [],
         ], [
-            'disabled' => ['block_types' => []],
+            'disabled' => ['block_types' => [], 'layouts' => []],
             'assets' => true,
+            'content_types' => [],
             'block_styles' => [],
             'fallback_locales' => [],
             'revisions' => ['keep' => 50],
@@ -123,6 +127,14 @@ final class ConfigurationTest extends TestCase
                         'factory' => Factory::class,
                     ],
                 ],
+                'old_slug' => [
+                    'classes' => [
+                        'model' => OldSlug::class,
+                        'interface' => OldSlugInterface::class,
+                        'repository' => OldSlugRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
                 'scheduled_publish' => [
                     'classes' => [
                         'model' => ScheduledPublish::class,
@@ -159,7 +171,78 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             ['disabled' => ['block_types' => ['spacer']]],
             ['disabled' => ['block_types' => ['group']]],
-        ], ['disabled' => ['block_types' => ['spacer', 'group']]], 'disabled');
+        ], ['disabled' => ['block_types' => ['spacer', 'group'], 'layouts' => []]], 'disabled');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_switch_off_layouts_by_content_type_and_code(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['disabled' => ['layouts' => ['page.landing']]],
+            ['disabled' => ['layouts' => ['blog_post.wide']]],
+        ], ['disabled' => ['block_types' => [], 'layouts' => ['page.landing', 'blog_post.wide']]], 'disabled');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidDisabledLayouts
+     */
+    public function it_refuses_a_disabled_layout_that_is_not_a_content_type_code_and_a_layout_code(int|string $layout): void
+    {
+        $this->assertConfigurationIsInvalid([['disabled' => ['layouts' => [$layout]]]], sprintf('A disabled layout must be "<content type code>.<layout code>", such as page.standard, not "%s"', $layout));
+    }
+
+    /**
+     * @return iterable<string, array{int|string}>
+     */
+    public function provideInvalidDisabledLayouts(): iterable
+    {
+        yield 'a number' => [42];
+        yield 'a layout code alone' => ['landing'];
+        yield 'a content type code that is no code' => ['Page.landing'];
+        yield 'a layout code that is no code' => ['page.Landing'];
+        yield 'three parts' => ['page.landing.wide'];
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_change_a_content_types_default_layout(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['content_types' => ['page' => ['default_layout' => 'landing']]],
+            ['content_types' => ['blog_post' => ['default_layout' => 'wide']]],
+        ], ['content_types' => [
+            'page' => ['default_layout' => 'landing'],
+            'blog_post' => ['default_layout' => 'wide'],
+        ]], 'content_types');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidDefaultLayouts
+     *
+     * @param array<array-key, mixed> $contentTypes
+     */
+    public function it_refuses_an_invalid_default_layout_or_code(array $contentTypes, string $message): void
+    {
+        $this->assertConfigurationIsInvalid([['content_types' => $contentTypes]], $message);
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>, string}>
+     */
+    public function provideInvalidDefaultLayouts(): iterable
+    {
+        yield 'a content type code that is no code' => [['blog-post' => ['default_layout' => 'wide']], 'The content type code "blog-post" must match ^[a-z][a-z0-9_]*$'];
+        yield 'a default layout that is no code' => [['page' => ['default_layout' => 'Landing']], 'The layout code "Landing" must match ^[a-z][a-z0-9_]*$'];
+        yield 'an empty default layout' => [['page' => ['default_layout' => '']], 'cannot contain an empty value'];
+        yield 'a numeric default layout' => [['page' => ['default_layout' => 42]], 'The layout code "42" must match ^[a-z][a-z0-9_]*$'];
+        yield 'a numeric content type code' => [[42 => ['default_layout' => 'wide']], 'The content type code "42" must match ^[a-z][a-z0-9_]*$'];
     }
 
     /**
@@ -292,6 +375,55 @@ final class ConfigurationTest extends TestCase
     public function it_refuses_an_empty_fallback_locale(): void
     {
         $this->assertConfigurationIsInvalid([['fallback_locales' => ['de_CH' => ['']]]], 'The path "setono_sylius_cms.fallback_locales.de_CH.0" cannot contain an empty value');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_change_the_url_prefix_of_a_content_type_by_its_code(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['content_types' => ['page' => ['prefix' => 'pg'], 'blog_post' => ['prefix' => 'news/all']]],
+            ['content_types' => ['app_store' => ['prefix' => '']]],
+        ], ['content_types' => [
+            'page' => ['prefix' => 'pg'],
+            'blog_post' => ['prefix' => 'news/all'],
+            'app_store' => ['prefix' => ''],
+        ]], 'content_types');
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_out_a_prefix_a_project_does_not_set(): void
+    {
+        $this->assertProcessedConfigurationEquals([['content_types' => ['page' => []]]], ['content_types' => ['page' => []]], 'content_types');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidContentTypes
+     *
+     * @param array<array-key, mixed> $contentTypes
+     */
+    public function it_refuses_an_invalid_content_type_prefix_or_code(array $contentTypes, string $message): void
+    {
+        $this->assertConfigurationIsInvalid([['content_types' => $contentTypes]], $message);
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>, string}>
+     */
+    public function provideInvalidContentTypes(): iterable
+    {
+        yield 'a slash first' => [['page' => ['prefix' => '/pg']], 'The prefix "/pg" must be empty or a string that doesn\'t start or end with a slash or contain two slashes in a row'];
+        yield 'a slash last' => [['page' => ['prefix' => 'pg/']], 'The prefix "pg/" must be empty'];
+        yield 'two slashes in a row' => [['page' => ['prefix' => 'a//b']], 'The prefix "a//b" must be empty'];
+        yield 'not a string' => [['page' => ['prefix' => 7]], 'The prefix int must be empty'];
+        yield 'an invalid code' => [['Page' => ['prefix' => 'pg']], 'The content type code "Page" must match ^[a-z][a-z0-9_]*$'];
+        yield 'a number as a code' => [[7 => ['prefix' => 'pg']], 'The content type code "7" must match ^[a-z][a-z0-9_]*$'];
+        yield 'a dash in the code, which is kept' => [['blog-post' => ['prefix' => 'pg']], 'The content type code "blog-post" must match ^[a-z][a-z0-9_]*$'];
     }
 
     /**

@@ -46,6 +46,13 @@
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\RemovedLayout" class="Setono\SyliusCMSPlugin\Problem\Kind\RemovedLayout">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue" class="Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
@@ -63,6 +70,13 @@
 
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
             <tag name="kernel.reset" method="reset"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\UrlTakenByRoute" class="Setono\SyliusCMSPlugin\Problem\Kind\UrlTakenByRoute">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
         </service>
 
         <!-- A scheduled publish that's overdue, or failed: errors of the admin's, not of the content, so lint leaves them out -->

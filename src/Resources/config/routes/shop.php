@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Setono\SyliusCMSPlugin\Controller\Shop\ShowEntryAction;
+use Setono\SyliusCMSPlugin\Routing\RouteChecker;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 
@@ -20,14 +21,15 @@ use Symfony\Component\Routing\RouteCollection;
  */
 $routes = new RouteCollection();
 
-$routes->add('setono_sylius_cms_shop_entry', new Route(
+$routes->add(RouteChecker::ENTRY_ROUTE, new Route(
     path: '/{path}',
     defaults: ['_controller' => ShowEntryAction::class],
     requirements: ['path' => '.+(?<!/)'],
     methods: ['GET'],
     // Looks the URL up by the channel, the locale from the URL and the path. A URL no entry claims fails the condition,
-    // so the request falls through to Sylius's ordinary 404
-    condition: "service('setono_sylius_cms_entry_url_matcher').matches(params)",
+    // so the request falls through to Sylius's ordinary 404. Routing\RouteChecker's requests, which ask whether
+    // another route takes a URL, don't look it up
+    condition: sprintf("not request.attributes.get('%s') and service('setono_sylius_cms_entry_url_matcher').matches(params)", RouteChecker::REQUEST_ATTRIBUTE),
 ), -1000);
 
 return $routes;

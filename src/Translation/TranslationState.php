@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Translation;
 
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\Change;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayoutTranslated;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayoutValue;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
@@ -33,21 +36,36 @@ final readonly class TranslationState implements TranslationStateInterface
             throw new \InvalidArgumentException(sprintf('"%s" is not a fingerprint: a lowercase hex SHA-256', $sourceFingerprint));
         }
 
-        $source = ['from' => $sourceLocaleCode, 'fingerprint' => $sourceFingerprint];
-        $changes = match (true) {
-            1 === preg_match('/^entry\.(\w+)$/D', $path, $matches) => [
-                new SetEntryValue($matches[1], $localeCode, $value),
-                new SetEntryTranslated($matches[1], $localeCode, $source),
-            ],
-            1 === preg_match('/^block\.([0-9a-f-]+)\.(\w+)$/D', $path, $matches) => [
-                new SetValue($matches[1], $matches[2], $localeCode, $value),
-                new SetTranslated($matches[1], $matches[2], $localeCode, $source),
-            ],
-            // Layout fields are written once the builder edits layouts, with the change it saves them with
-            default => throw new \InvalidArgumentException(sprintf('The path "%s" is not one of an entry field (entry.<field>) or a block field (block.<key>.<field>)', $path)),
-        };
-
         // The latest lock token, so the save goes on top of what editors saved, as their own saves do
-        $this->autosave->save($entry, new ChangeSet($changes), $this->autosave->load($entry)->lockToken);
+        $loaded = $this->autosave->load($entry);
+        $source = ['from' => $sourceLocaleCode, 'fingerprint' => $sourceFingerprint];
+
+        $this->autosave->save($entry, new ChangeSet(self::changes($loaded->workingCopy, $localeCode, $path, $value, $source)), $loaded->lockToken);
+    }
+
+    /**
+     * @param array{from: string, fingerprint: string} $source
+     *
+     * @return list<Change>
+     */
+    private static function changes(EntryInterface $workingCopy, string $localeCode, string $path, mixed $value, array $source): array
+    {
+        if (1 === preg_match('/^entry\.(\w+)$/D', $path, $matches)) {
+            return [new SetEntryValue($matches[1], $localeCode, $value), new SetEntryTranslated($matches[1], $localeCode, $source)];
+        }
+
+        if (1 === preg_match('/^block\.([0-9a-f-]+)\.(\w+)$/D', $path, $matches)) {
+            return [new SetValue($matches[1], $matches[2], $localeCode, $value), new SetTranslated($matches[1], $matches[2], $localeCode, $source)];
+        }
+
+        if (1 === preg_match('/^layout\.(\w+)$/D', $path, $matches)) {
+            // Set in the layout the draft is in, as the builder sets an editor's change
+            $layout = $workingCopy->getBlockTree()->layout->code
+                ?? throw new \InvalidArgumentException(sprintf('The path "%s" is a layout field, but the entry\'s draft has no layout', $path));
+
+            return [new SetLayoutValue($layout, $matches[1], $localeCode, $value), new SetLayoutTranslated($layout, $matches[1], $localeCode, $source)];
+        }
+
+        throw new \InvalidArgumentException(sprintf('The path "%s" is not one of an entry field (entry.<field>), a layout field (layout.<field>) or a block field (block.<key>.<field>)', $path));
     }
 }

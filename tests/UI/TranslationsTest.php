@@ -36,7 +36,7 @@ final class TranslationsTest extends UITestCase
         Expect::locator($browser->getByText('This entry has no translation in Danish (Denmark) yet.'))->toHaveCount(0);
         $shown = $browser->getByRole('checkbox', ['name' => 'Show in Danish (Denmark)']);
         Expect::locator($shown)->not()->toBeChecked();
-        Expect::locator($browser->getByLabel('Title'))->toHaveValue('About us');
+        Expect::locator($browser->getByLabel('Title', ['exact' => true]))->toHaveValue('About us');
         $this->expectSaved($browser);
 
         // The preview shows the page in Danish, where the heading falls back to the English text

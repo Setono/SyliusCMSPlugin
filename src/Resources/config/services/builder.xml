@@ -10,6 +10,7 @@
             <argument type="service" id="translator"/>
             <argument type="service" id="translator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier" class="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier">
@@ -17,6 +18,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
         </service>
 
         <!-- What the search endpoint searches, by the kind tagged: what pickers pick from -->

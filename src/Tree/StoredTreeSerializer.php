@@ -38,13 +38,18 @@ final class StoredTreeSerializer
     public function normalize(StoredTree $tree): ListedObject
     {
         return new ListedObject([
-            'layout' => null === $tree->layout ? null : new ListedObject([
-                'code' => $tree->layout->code,
-                'version' => $tree->layout->version,
-                'fields' => (object) $tree->layout->fields,
-                'translated' => $this->normalizeTranslated($tree->layout->translated),
-            ]),
+            'layout' => null === $tree->layout ? null : $this->normalizeLayout($tree->layout),
             'blocks' => array_map($this->normalizeBlock(...), $tree->blocks),
+        ]);
+    }
+
+    public function normalizeLayout(StoredLayout $layout): ListedObject
+    {
+        return new ListedObject([
+            'code' => $layout->code,
+            'version' => $layout->version,
+            'fields' => (object) $layout->fields,
+            'translated' => $this->normalizeTranslated($layout->translated),
         ]);
     }
 
@@ -127,7 +132,7 @@ final class StoredTreeSerializer
     /**
      * @throws InvalidStoredTreeException
      */
-    private function denormalizeLayout(mixed $data): StoredLayout
+    public function denormalizeLayout(mixed $data): StoredLayout
     {
         $data = self::map($data, 'The layout');
 

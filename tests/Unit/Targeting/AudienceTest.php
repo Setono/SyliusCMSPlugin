@@ -167,6 +167,22 @@ final class AudienceTest extends TestCase
         self::assertFalse(CustomerGroupValue::isReserved('wholesale'));
     }
 
+    /**
+     * What an audience and Shown to accept: a customer group code, which can't contain "@", or a reserved value
+     *
+     * @test
+     */
+    public function a_customer_group_value_is_a_code_guest_or_no_group(): void
+    {
+        self::assertTrue(CustomerGroupValue::isValid('wholesale'));
+        self::assertTrue(CustomerGroupValue::isValid('@guest'));
+        self::assertTrue(CustomerGroupValue::isValid('@no_group'));
+
+        foreach (self::invalidGroups() as [$value]) {
+            self::assertFalse(CustomerGroupValue::isValid($value));
+        }
+    }
+
     private function customerGroupValueOf(string $shopper): string
     {
         if ('guest' === $shopper) {

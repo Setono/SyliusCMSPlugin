@@ -9,6 +9,7 @@
             "Resources",
             "Rendering/EntryUrlLookup.php",
             "Query/VisibleEntriesQuery.php",
+            "Query/UrlClaimsQuery.php",
             "Admin/Grid"
         ]
     },

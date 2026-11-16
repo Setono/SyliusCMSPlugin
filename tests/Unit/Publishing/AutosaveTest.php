@@ -18,6 +18,7 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\Clash;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer;
@@ -39,11 +40,14 @@ use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
+use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
@@ -73,6 +77,9 @@ final class AutosaveTest extends TestCase
 
     /** @var ObjectProphecy<ScheduledPublishRepositoryInterface> */
     private ObjectProphecy $scheduledPublishes;
+
+    /** @var ObjectProphecy<EntryUrlValidatorInterface> */
+    private ObjectProphecy $urlValidator;
 
     private TokenStorage $tokenStorage;
 
@@ -120,6 +127,8 @@ final class AutosaveTest extends TestCase
         // No scheduled publish locks the draft, unless a test schedules one
         $this->scheduledPublishes = $this->prophesize(ScheduledPublishRepositoryInterface::class);
         $this->scheduledPublishes->findOneByEntry($this->entry)->willReturn(null);
+        $this->urlValidator = $this->prophesize(EntryUrlValidatorInterface::class);
+        $this->urlValidator->refuse(Argument::cetera())->willReturn([]);
 
         // Whoever saves is recorded on the entry. The name is read when the edit is recorded
         $calls = &$this->calls;
@@ -193,6 +202,101 @@ final class AutosaveTest extends TestCase
         );
         self::assertSame(['Theirs', 'Wide world'], self::texts($this->workingCopy));
         $this->savedChangeSets->record($this->entry, 6, new ChangeSet([$mine]), Argument::any())->shouldHaveBeenCalledOnce();
+    }
+
+    /**
+     * @test
+     */
+    public function it_saves_everything_but_a_slug_another_route_takes_and_says_why(): void
+    {
+        $this->workingCopy->setCurrentLocale('en_US');
+        $this->workingCopy->setSlug('about-us');
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
+        $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
+        $refused = new ValidationError(null, 'slug', 'en_US', 'The URL /en_US/cart is taken by the route sylius_shop_cart_summary.');
+        // The slug a locale ends with is the one checked
+        $this->urlValidator->refuse($this->workingCopy, ['en_US' => 'cart', 'da_DK' => 'om-os'])->willReturn(['en_US' => $refused]);
+        $text = new SetValue(self::A, 'text', 'en_US', 'Hello there');
+        $danish = new SetEntryValue('slug', 'da_DK', 'om-os');
+        $title = new SetEntryValue('title', 'en_US', 'Cart');
+
+        $result = $this->autosave()->save($this->entry, new ChangeSet([
+            new SetEntryValue('slug', 'en_US', 'car'),
+            $text,
+            new SetEntryValue('slug', 'en_US', 'cart'),
+            $danish,
+            $title,
+        ]), 3);
+
+        self::assertSame([$refused], $result->refused);
+        self::assertSame(4, $result->saved->lockToken);
+        self::assertSame(['Hello there', 'World'], self::texts($this->workingCopy));
+        self::assertSame('about-us', $this->workingCopy->getTranslation('en_US')->getSlug(), 'The slug keeps its last saved value');
+        self::assertSame('Cart', $this->workingCopy->getTranslation('en_US')->getTitle());
+        self::assertSame('om-os', $this->workingCopy->getTranslation('da_DK')->getSlug());
+        $this->savedChangeSets->record($this->entry, 4, new ChangeSet([$text, $danish, $title]), Argument::any())->shouldHaveBeenCalledOnce();
+    }
+
+    /**
+     * @test
+     */
+    public function it_saves_nothing_when_the_only_change_is_a_slug_another_route_takes(): void
+    {
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
+        $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
+        $refused = new ValidationError(null, 'slug', 'en_US', 'The URL /en_US/cart is taken by the route sylius_shop_cart_summary.');
+        $this->urlValidator->refuse($this->workingCopy, ['en_US' => 'cart'])->willReturn(['en_US' => $refused]);
+
+        $result = $this->autosave()->save($this->entry, new ChangeSet([new SetEntryValue('slug', 'en_US', 'cart')]), 3);
+
+        self::assertSame([$refused], $result->refused);
+        self::assertSame(3, $result->saved->lockToken);
+        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'flush', 'commit'], $this->calls);
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_a_slug_without_a_locale_for_the_change_set_to_refuse(): void
+    {
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
+        $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
+        $this->urlValidator->refuse(Argument::cetera())->shouldNotBeCalled();
+
+        $this->expectException(InvalidChangeSetException::class);
+
+        $this->autosave()->save($this->entry, new ChangeSet([new SetEntryValue('slug', null, 'cart')]), 3);
+    }
+
+    /**
+     * @test
+     */
+    public function it_checks_no_block_field_named_slug(): void
+    {
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
+        $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
+        $this->urlValidator->refuse(Argument::cetera())->shouldNotBeCalled();
+
+        $this->expectException(InvalidChangeSetException::class);
+
+        $this->autosave()->save($this->entry, new ChangeSet([new SetValue(self::A, 'slug', 'en_US', 'cart')]), 3);
+    }
+
+    /**
+     * @test
+     */
+    public function it_checks_no_slug_a_save_empties(): void
+    {
+        $this->workingCopy->setCurrentLocale('en_US');
+        $this->workingCopy->setSlug('about-us');
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
+        $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
+        $this->urlValidator->refuse(Argument::cetera())->shouldNotBeCalled();
+
+        $result = $this->autosave()->save($this->entry, new ChangeSet([new SetEntryValue('slug', 'en_US', 'cart'), new SetEntryValue('slug', 'en_US', null), new SetEntryValue('title', 'en_US', 'Cart')]), 3);
+
+        self::assertSame([], $result->refused);
+        self::assertNull($this->workingCopy->getTranslation('en_US')->getSlug());
     }
 
     /**
@@ -457,10 +561,12 @@ final class AutosaveTest extends TestCase
                 ])),
                 self::contentTypes(),
                 Conditions::registry(),
+                new LayoutRegistry([], new FieldReader()),
             ),
             $clock,
             new EditRecorder($this->tokenStorage, $clock),
             new EntryDenormalizer(self::contentTypes()),
+            $this->urlValidator->reveal(),
             $this->scheduledPublishes->reveal(),
         );
     }

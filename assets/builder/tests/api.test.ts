@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError, createApi } from '../src/api';
+import { ApiError, createApi, createUrlsApi } from '../src/api';
 import type { BuilderConfig } from '../src/config';
 import { entry, settings } from './fixtures';
 
@@ -210,10 +210,10 @@ describe('the JSON endpoints', () => {
         await expect(createApi(config, respond(200, { errors: [{ block: 'a' }] })).validate()).rejects.toBeInstanceOf(ApiError);
     });
 
-    it('should ask for a preview token for the entry in a channel and a locale, and answer with the preview URL', async () => {
+    it('should ask for a preview token for the entry in a channel and a locale, shown to someone at a date, and answer with the preview URL', async () => {
         const fetch = respond(200, { url: 'http://admin.example/en_US/about-us?_cms_preview=abc.def' });
 
-        await expect(createApi(config, fetch).createPreviewUrl({ channel: 'WEB', locale: 'en_US' })).resolves.toBe(
+        await expect(createApi(config, fetch).createPreviewUrl({ channel: 'WEB', locale: 'en_US', shownTo: 'wholesale', date: '2026-12-01T00:00:00Z' })).resolves.toBe(
             'http://admin.example/en_US/about-us?_cms_preview=abc.def',
         );
 
@@ -221,12 +221,12 @@ describe('the JSON endpoints', () => {
             method: 'POST',
             credentials: 'same-origin',
             headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123', 'Content-Type': 'application/json' },
-            body: JSON.stringify({ entry: 'e1', channel: 'WEB', locale: 'en_US' }),
+            body: JSON.stringify({ entry: 'e1', channel: 'WEB', locale: 'en_US', shownTo: 'wholesale', date: '2026-12-01T00:00:00Z' }),
         });
     });
 
     it('should fail when the preview token answer has no URL', async () => {
-        await expect(createApi(config, respond(200, {})).createPreviewUrl({ channel: 'WEB', locale: 'en_US' })).rejects.toBeInstanceOf(ApiError);
+        await expect(createApi(config, respond(200, {})).createPreviewUrl({ channel: 'WEB', locale: 'en_US', shownTo: '@guest', date: null })).rejects.toBeInstanceOf(ApiError);
     });
 
     it('should ask for blocks of the working copy to be rendered under the preview token, and answer their HTML by key', async () => {
@@ -258,5 +258,47 @@ describe('the JSON endpoints', () => {
         const fetch = vi.fn(async () => new Response('<html>Login</html>', { status: 200 }));
 
         await expect(createApi(config, fetch).fetchEntry()).rejects.toBeInstanceOf(ApiError);
+    });
+});
+
+describe("the endpoints of an entry's URLs", () => {
+    const withUrls: BuilderConfig = { ...config, endpoints: { ...config.endpoints, slug: '/admin/cms/api/slug', urls: '/admin/cms/api/entries/e1/urls' } };
+
+    it('should be there only when the builder page gives both', () => {
+        expect(createUrlsApi(config)).toBeNull();
+        expect(createUrlsApi({ ...config, endpoints: { ...config.endpoints, slug: '/admin/cms/api/slug' } })).toBeNull();
+        expect(createUrlsApi(withUrls)).not.toBeNull();
+    });
+
+    it('should ask for the slug Sylius makes of a title', async () => {
+        const fetch = respond(200, { slug: 'cafe-au-lait' });
+
+        await expect(createUrlsApi(withUrls, fetch)?.generateSlug('Café & lait')).resolves.toBe('cafe-au-lait');
+
+        expect(fetch).toHaveBeenCalledWith('/admin/cms/api/slug?title=Caf%C3%A9%20%26%20lait', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+        });
+    });
+
+    it('should fail when the slug endpoint answers without a slug', async () => {
+        await expect(createUrlsApi(withUrls, respond(200, {}))?.generateSlug('About')).rejects.toBeInstanceOf(ApiError);
+        await expect(createUrlsApi(withUrls, respond(403, { error: 'Admins only' }))?.generateSlug('About')).rejects.toThrow('Admins only');
+    });
+
+    it('should read the warnings and the old URLs', async () => {
+        const answer = { warnings: [{ block: null, field: 'slug', locale: 'en_US', message: 'Taken' }], oldUrls: { en_US: ['/en_US/about'] } };
+        const fetch = respond(200, answer);
+
+        await expect(createUrlsApi(withUrls, fetch)?.fetchUrls()).resolves.toEqual(answer);
+
+        expect(fetch).toHaveBeenCalledWith('/admin/cms/api/entries/e1/urls', { method: 'GET', credentials: 'same-origin', headers: { Accept: 'application/json' } });
+    });
+
+    it('should fail when the URLs endpoint answers something else', async () => {
+        for (const answer of [{ oldUrls: {} }, { warnings: [], oldUrls: [] }, { warnings: [], oldUrls: { en_US: '/en_US/about' } }, { warnings: [], oldUrls: { en_US: [7] } }, { warnings: [{ message: 'Taken' }], oldUrls: {} }]) {
+            await expect(createUrlsApi(withUrls, respond(200, answer))?.fetchUrls()).rejects.toBeInstanceOf(ApiError);
+        }
     });
 });

@@ -21,6 +21,14 @@ export interface CustomerGroup {
     name: string;
 }
 
+/** Who the preview shows the page to, and when. See "Shown to and Date" in docs/spec/targeting.md. */
+export interface ShownToAndDate {
+    /** A customer group code, '@guest' or '@no_group'. */
+    shownTo: string;
+    /** A UTC date and time, such as 2026-12-01T00:00:00Z, or null for now. */
+    date: string | null;
+}
+
 /** What the builder page passes to the app, as JSON in the data-config attribute of #cms-builder. */
 export interface BuilderConfig {
     entryUuid: string;
@@ -45,13 +53,19 @@ export interface BuilderConfig {
         previewToken: string;
         previewRender: string;
         presence: string;
+        /** Makes a slug of a title with Sylius's slug generator. Without it, a slug doesn't follow its title. */
+        slug?: string;
+        /** The entry's URL warnings and old URLs, which the URL & SEO tab shows. */
+        urls?: string;
     };
     /** The store's channels. The settings pick the entry's channels from them, and the preview picks from the entry's. */
     channels: Channel[];
     /** The locales of the store's channels. The locale switcher offers those of the entry's channels. */
     locales?: Locale[];
-    /** The store's customer groups, for the audience. */
+    /** The store's customer groups, for the audience and Shown to. */
     customerGroups: CustomerGroup[];
+    /** Where the preview's Shown to and Date start, from the entry's audience and date window. Guests and now without it. */
+    preview?: ShownToAndDate;
     /** UI strings needed before the registry arrives, such as the loading text. Optional. */
     strings?: Record<string, string>;
 }

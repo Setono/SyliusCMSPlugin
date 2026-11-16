@@ -7,5 +7,11 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface" alias="Setono\SyliusCMSPlugin\Query\VisibleEntriesQuery"/>
+
+        <!-- The entries that have a URL, published or drafted, for the URL checks -->
+        <service id="Setono\SyliusCMSPlugin\Query\UrlClaimsQuery" class="Setono\SyliusCMSPlugin\Query\UrlClaimsQuery">
+            <argument type="service" id="doctrine"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Query\UrlClaimsQueryInterface" alias="Setono\SyliusCMSPlugin\Query\UrlClaimsQuery"/>
     </services>
 </container>

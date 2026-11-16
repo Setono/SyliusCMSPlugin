@@ -178,6 +178,19 @@ export interface SaveResponse {
     /** The working copy with colleagues' changes in it, when they saved since the last load. */
     entry?: Entry;
     clashes?: Clash[];
+    /**
+     * The slugs the server didn't save because another route takes their URL, with why, by locale. Each keeps its last
+     * saved value on the server.
+     */
+    refused?: ValidationError[];
+}
+
+/** What the URL & SEO tab shows beside the slug, as the server has it. */
+export interface EntryUrlsResponse {
+    /** URLs other entries have drafted, and published URLs another route takes now, pointing at the slug in a locale. */
+    warnings: ValidationError[];
+    /** The paths of the URLs of the old slugs that redirect, by locale, newest first. */
+    oldUrls: Record<string, string[]>;
 }
 
 export interface PresenceResponse {
@@ -235,11 +248,32 @@ export interface BlockTypeDefinition {
     fields: FieldDefinition[];
 }
 
+/** A frame around the entry's tree, with presentation fields of its own. See docs/spec/layouts-and-presets.md */
+export interface LayoutDefinition {
+    code: string;
+    label: string;
+    version: number;
+    /** A public path to its wireframe card, or null. */
+    thumbnail: string | null;
+    /** The content type's default layout, which an entry in a layout that was removed or disabled renders in. */
+    default: boolean;
+    /** Switched off in the config: the picker leaves it out, and an entry in it renders in the default layout. */
+    disabled: boolean;
+    /** The entry fields its template prints, by name. The others are "Not shown in this layout". */
+    shows: string[];
+    /** In display order. */
+    fields: FieldDefinition[];
+}
+
 export interface ContentTypeDefinition {
     code: string;
     label: string;
     /** What the top level of its tree may hold, or null when it has no block tree. */
     blocks: AllowedBlockType[] | null;
+    /** Its URL prefix, '' for URLs at the root, or null when it has no URL of its own, so no slug. */
+    prefix?: string | null;
+    /** Its layouts, the default first, or none for a content type without its own URL. */
+    layouts: LayoutDefinition[];
 }
 
 /** A kind of visibility condition, whose parameters are fields shared by all translations. */

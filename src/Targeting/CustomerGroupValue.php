@@ -39,4 +39,13 @@ final class CustomerGroupValue
     {
         return self::GUEST === $value || self::NO_GROUP === $value;
     }
+
+    /**
+     * Whether a value can be a shopper's: a customer group code, which can't contain "@", or a reserved value.
+     * A code no group has any more is still one, which matches nobody
+     */
+    public static function isValid(string $value): bool
+    {
+        return '' !== $value && (!str_contains($value, '@') || self::isReserved($value));
+    }
 }

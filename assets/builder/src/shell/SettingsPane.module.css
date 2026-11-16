@@ -101,6 +101,77 @@
     border-radius: var(--builder-radius-sm);
 }
 
+/* An entry whose layout was removed from code or disabled */
+.warning {
+    margin: 0;
+    padding: var(--builder-space-2) var(--builder-space-3);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-warning-subtle);
+    color: var(--builder-color-warning);
+    font-size: var(--builder-font-size-sm);
+}
+
+/* The layout picker: a card per layout, with its thumbnail, the picked one outlined */
+.layouts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+    gap: var(--builder-space-2);
+}
+
+.layout {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    padding: var(--builder-space-2);
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-surface);
+    cursor: pointer;
+}
+
+.layout:hover {
+    background: var(--builder-color-hover);
+}
+
+.layout:has(.layoutRadio:checked) {
+    border-color: var(--builder-color-selected-border);
+    background: var(--builder-color-selected);
+}
+
+.layout:has(.layoutRadio:focus-visible) {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}
+
+/* Kept for the keyboard and screen readers; the card shows which is picked */
+.layoutRadio {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.layoutThumbnail {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-neutral-subtle);
+    object-fit: cover;
+}
+
+.layoutLabel {
+    font-size: var(--builder-font-size-sm);
+    font-weight: var(--builder-font-weight-medium);
+    text-align: center;
+}
+
+.layoutFields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-4);
+}
+
 .saveState {
     min-height: 1lh;
     margin: 0;
@@ -110,6 +181,32 @@
 
 .saveState[data-state="failed"] {
     color: var(--builder-color-danger);
+}
+
+/* What the server warns of in a field, such as another entry with the same URL in its draft */
+.warnings {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    margin: 0;
+    padding: var(--builder-space-2) var(--builder-space-3);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-warning-subtle);
+    color: var(--builder-color-warning);
+    font-size: var(--builder-font-size-sm);
+    list-style: none;
+}
+
+/* The URLs of the old slugs, which redirect */
+.oldUrls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    margin: 0;
+    padding: 0;
+    font-size: var(--builder-font-size-sm);
+    list-style: none;
+    overflow-wrap: anywhere;
 }
 
 /* The More tab's link to the overview page */

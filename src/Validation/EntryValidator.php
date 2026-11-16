@@ -13,8 +13,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 /**
  * Validates the content type's fields as block fields are validated: its shared fields on the entry, and its
  * translatable fields on its translations, in each of the entry's locales. Then it checks the Symfony Validator
- * constraints on the entry's and its translations' other properties, and validates the block tree in each locale.
- * The slug checks come with #234
+ * constraints on the entry's and its translations' other properties, checks its URLs, and validates the block tree in
+ * each locale
  */
 final readonly class EntryValidator implements EntryValidatorInterface
 {
@@ -24,6 +24,7 @@ final readonly class EntryValidator implements EntryValidatorInterface
         private FieldReader $fieldReader,
         private ContentTypeRegistryInterface $contentTypes,
         private ValidatorInterface $validator,
+        private EntryUrlValidatorInterface $urlValidator,
     ) {
     }
 
@@ -48,7 +49,7 @@ final readonly class EntryValidator implements EntryValidatorInterface
             $errors = [...$errors, ...$this->violations($translation, $locale, array_keys($translationFields))];
         }
 
-        return [...$errors, ...$this->blockTreeValidator->validate($entry->getBlockTree(), $contentType->code, $locales)];
+        return [...$errors, ...$this->urlValidator->validate($entry), ...$this->blockTreeValidator->validate($entry->getBlockTree(), $contentType->code, $locales)];
     }
 
     /**

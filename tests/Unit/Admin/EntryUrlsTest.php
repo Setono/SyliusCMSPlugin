@@ -13,10 +13,12 @@ use Setono\SyliusCMSPlugin\Admin\EntryUrls;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
+use Setono\SyliusCMSPlugin\Model\OldSlug;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -27,10 +29,48 @@ final class EntryUrlsTest extends TestCase
     /** @var ObjectProphecy<DraftRepositoryInterface> */
     private ObjectProphecy $drafts;
 
+    /** @var ObjectProphecy<OldSlugRepositoryInterface> */
+    private ObjectProphecy $oldSlugs;
+
     protected function setUp(): void
     {
         $this->drafts = $this->prophesize(DraftRepositoryInterface::class);
         $this->drafts->findOneByEntry(Argument::any())->willReturn(null);
+        $this->oldSlugs = $this->prophesize(OldSlugRepositoryInterface::class);
+        $this->oldSlugs->findByEntry(Argument::any())->willReturn([]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_gives_the_urls_of_each_locales_old_slugs_which_redirect_to_its_url(): void
+    {
+        $page = self::page(['en_US' => ['About us', 'about-our-shop'], 'da_DK' => ['Om os', 'om-os']]);
+        $page->publish(new \DateTimeImmutable('2026-11-01T00:00:00Z'));
+        $this->oldSlugs->findByEntry($page)->willReturn([
+            self::oldSlug($page, 'en_US', 'about-us'),
+            self::oldSlug($page, 'en_US', 'about'),
+            self::oldSlug($page, 'fr_FR', 'a-propos'),
+        ]);
+
+        self::assertEquals([
+            new EntryUrl('da_DK', '/da_DK/om-os', null),
+            new EntryUrl('en_US', '/en_US/about-our-shop', null, ['/en_US/about-us', '/en_US/about']),
+        ], $this->entryUrls()->of($page));
+        self::assertSame(['en_US' => ['/en_US/about-us', '/en_US/about'], 'fr_FR' => ['/fr_FR/a-propos']], $this->entryUrls()->oldUrlsOf($page));
+    }
+
+    /**
+     * @test
+     */
+    public function an_entry_never_published_or_without_a_url_of_its_own_has_no_old_slugs_to_read(): void
+    {
+        $this->oldSlugs->findByEntry(Argument::any())->shouldNotBeCalled();
+        $recipe = new Recipe();
+        $recipe->publish(new \DateTimeImmutable('2026-11-01T00:00:00Z'));
+
+        self::assertSame([], $this->entryUrls()->oldUrlsOf(self::page(['en_US' => ['About us', 'about-us']])));
+        self::assertSame([], $this->entryUrls()->oldUrlsOf($recipe));
     }
 
     /**
@@ -135,7 +175,18 @@ final class EntryUrlsTest extends TestCase
                 'recipe' => ['model' => Recipe::class, 'translation' => EntryTranslation::class, 'resource' => 'app.recipe'],
             ]),
             $urlGenerator->reveal(),
+            $this->oldSlugs->reveal(),
         );
+    }
+
+    private static function oldSlug(Page $page, string $localeCode, string $slug): OldSlug
+    {
+        $oldSlug = new OldSlug();
+        $oldSlug->setEntry($page);
+        $oldSlug->setLocaleCode($localeCode);
+        $oldSlug->setSlug($slug);
+
+        return $oldSlug;
     }
 
     /**

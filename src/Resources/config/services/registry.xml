@@ -17,11 +17,14 @@
             <!-- Replaced by RegisterLayoutsPass with the layout classes by content type and code -->
             <argument type="collection"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\FieldReader"/>
+            <argument>%setono_sylius_cms.default_layouts%</argument>
+            <argument>%setono_sylius_cms.disabled.layouts%</argument>
         </service>
         <service id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\LayoutRegistry"/>
 
         <service id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry" class="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry">
-            <!-- Replaced by RegisterContentTypesPass with the content types' resources by code -->
+            <!-- Replaced by RegisterContentTypesPass with the content types' resources, and the URL prefixes set in config, by code -->
+            <argument type="collection"/>
             <argument type="collection"/>
 
             <!-- The condition of the setono_sylius_cms_admin_entry_index route calls it as service('setono_sylius_cms_content_types') -->

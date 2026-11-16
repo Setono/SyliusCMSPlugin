@@ -24,6 +24,13 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionReader"/>
         </service>
 
+        <!-- Where Shown to and Date start in the builder's preview, and what a share link fixes them at -->
+        <service id="Setono\SyliusCMSPlugin\Preview\StartingValues" class="Setono\SyliusCMSPlugin\Preview\StartingValues">
+            <argument type="service" id="sylius.repository.customer_group"/>
+            <argument type="service" id="clock"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Preview\StartingValuesInterface" alias="Setono\SyliusCMSPlugin\Preview\StartingValues"/>
+
         <!-- Ahead of Sylius's hostname-based channel context, which has the default priority 0 -->
         <service id="Setono\SyliusCMSPlugin\Preview\PreviewChannelContext" class="Setono\SyliusCMSPlugin\Preview\PreviewChannelContext">
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>

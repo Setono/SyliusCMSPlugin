@@ -30,7 +30,7 @@ final readonly class Audience
     ) {
         $unique = [];
         foreach ($groups as $group) {
-            if ('' === $group || (str_contains($group, '@') && !CustomerGroupValue::isReserved($group))) {
+            if (!CustomerGroupValue::isValid($group)) {
                 throw new \InvalidArgumentException(sprintf('"%s" is neither a customer group code, "%s" nor "%s"', $group, CustomerGroupValue::GUEST, CustomerGroupValue::NO_GROUP));
             }
 

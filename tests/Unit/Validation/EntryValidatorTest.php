@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Validation;
 
 use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
@@ -22,6 +24,7 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\LandingTranslation;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Validation\BlockTreeValidator;
+use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
 use Setono\SyliusCMSPlugin\Validation\EntryValidator;
 use Setono\SyliusCMSPlugin\Validation\FieldValidator;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
@@ -33,6 +36,15 @@ final class EntryValidatorTest extends TestCase
     use ProphecyTrait;
 
     private const KEY = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f';
+
+    /** @var ObjectProphecy<EntryUrlValidatorInterface> */
+    private ObjectProphecy $urlValidator;
+
+    protected function setUp(): void
+    {
+        $this->urlValidator = $this->prophesize(EntryUrlValidatorInterface::class);
+        $this->urlValidator->validate(Argument::any())->willReturn([]);
+    }
 
     /**
      * @test
@@ -116,6 +128,27 @@ final class EntryValidatorTest extends TestCase
         self::assertSame([], $this->validator()->validate(self::validEntry()));
     }
 
+    /**
+     * @test
+     */
+    public function it_checks_the_entrys_urls_after_its_fields_and_before_its_tree(): void
+    {
+        $entry = self::validEntry();
+        $entry->setSubtitle('A subtitle far too long');
+        $entry->setBlockTree(new StoredTree(null, [new StoredBlock(self::KEY, 'heading', 1)]));
+        $slugError = new ValidationError(null, 'slug', 'en_US', 'The URL /en_US/landing/cart is taken by the route sylius_shop_cart_summary.');
+        $this->urlValidator->validate($entry)->willReturn([$slugError]);
+
+        self::assertEquals(
+            [
+                new ValidationError(null, 'subtitle', null, 'This value is too long. It should have 10 characters or less.'),
+                $slugError,
+                new ValidationError(self::KEY, 'text', 'en_US', 'This field is required.'),
+            ],
+            $this->validator()->validate($entry),
+        );
+    }
+
     private static function validEntry(): Landing
     {
         $entry = new Landing();
@@ -164,6 +197,7 @@ final class EntryValidatorTest extends TestCase
             new FieldReader(),
             $contentTypes,
             $validator,
+            $this->urlValidator->reveal(),
         );
     }
 }

@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin;
 
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Preview\StartingValuesInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Setono\SyliusCMSPlugin\Security\BuilderCsrfToken;
@@ -43,6 +44,7 @@ final readonly class BuilderAction
         private ChannelRepositoryInterface $channelRepository,
         private RepositoryInterface $customerGroupRepository,
         private FallbackChainInterface $fallbackChain,
+        private StartingValuesInterface $startingValues,
     ) {
     }
 
@@ -75,6 +77,8 @@ final readonly class BuilderAction
                     'previewToken' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_token'),
                     'previewRender' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_render'),
                     'presence' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_presence', ['uuid' => $entry->getUuid()]),
+                    'slug' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_slug'),
+                    'urls' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_urls', ['uuid' => $entry->getUuid()]),
                 ],
                 'channels' => array_map(static fn (array $channel): array => [
                     'code' => $channel['channel']->getCode(),
@@ -83,6 +87,11 @@ final readonly class BuilderAction
                 ], $channels),
                 'locales' => $locales,
                 'customerGroups' => $this->customerGroups(),
+                // Where the preview's Shown to and Date start. Date is a UTC date and time, or null for now
+                'preview' => [
+                    'shownTo' => $this->startingValues->shownTo($entry),
+                    'date' => $this->startingValues->date($entry)?->format('Y-m-d\TH:i:s\Z'),
+                ],
                 // The rest of the UI strings arrive with the registry, so the app shows these until it has loaded
                 'strings' => [
                     'setono_sylius_cms.builder.loading' => $this->translator->trans('setono_sylius_cms.builder.loading'),

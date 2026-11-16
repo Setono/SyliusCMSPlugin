@@ -6,6 +6,7 @@ import type { PresenceState, PresenceStore } from './presence';
 import type { PreviewState, PreviewStore } from './preview';
 import type { SettingsState, SettingsStore } from './settings';
 import type { BuilderState, BuilderStore } from './store';
+import type { UrlsState, UrlsStore } from './urls';
 import type { ValidationState, ValidationStore } from './validation';
 
 /** One open entry in the builder. */
@@ -42,6 +43,12 @@ export interface BuilderSession {
     locales: Locale[];
     /** The store's customer groups, which the audience names. */
     customerGroups: CustomerGroup[];
+    /** The URL prefix of the entry's content type, '' for URLs at the root, or null when it has no URL of its own. */
+    urlPrefix: string | null;
+    /** The warnings about the entry's URLs and the URLs of its old slugs, as the server has them. */
+    urls: UrlsStore;
+    /** Says the editor changed the title in a locale, so the slug can follow it. */
+    titleChanged: (locale: string, before: string | null) => void;
 }
 
 const BuilderContext = createContext<BuilderSession | null>(null);
@@ -75,6 +82,11 @@ export function usePresenceState<T>(selector: (state: PresenceState) => T): T {
 /** Selects from the validation errors. The selector must return state as it is, or a primitive, not a new object. */
 export function useValidationState<T>(selector: (state: ValidationState) => T): T {
     return useStore(useBuilder().validation, selector);
+}
+
+/** Selects from the URL warnings and old URLs. The selector must return state as it is, not a new object. */
+export function useUrlsState<T>(selector: (state: UrlsState) => T): T {
+    return useStore(useBuilder().urls, selector);
 }
 
 /** Selects from what the preview shows. The selector must return state as it is, not a new object. */

@@ -45,9 +45,10 @@ final readonly class MisfitValue implements ProblemKindInterface
     {
         $tree = $entry->getBlockTree();
 
-        // A layout the code no longer has is another kind's problem (#236)
+        // A layout that was removed or disabled is another kind's problem, and the default layout ignores its values
         $layout = $tree->layout;
-        if (null !== $layout && $this->layouts->has($contentType = $this->contentTypes->getByEntry($entry)->code, $layout->code)) {
+        $contentType = $this->contentTypes->getByEntry($entry)->code;
+        if (null !== $layout && $this->layouts->has($contentType, $layout->code) && !$this->layouts->get($contentType, $layout->code)->disabled) {
             foreach ($this->misfits($this->layouts->get($contentType, $layout->code)->fields, $layout->fields) as [$field, $locale]) {
                 yield new Problem(
                     self::CODE,

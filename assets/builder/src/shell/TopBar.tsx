@@ -1,9 +1,10 @@
 import * as Popover from '@radix-ui/react-popover';
-import { useId, useState, type FormEvent } from 'react';
+import { useEffect, useId, useState, type FormEvent } from 'react';
 import { useBuilder, useBuilderState, usePresenceState, usePreviewState, useSettingsState } from '../context';
-import { formatDateTime, fromLocalInput } from '../dates';
+import { formatDateTime, fromLocalInput, toLocalInput } from '../dates';
 import { useTranslator, type MessageKey, type Translate } from '../i18n';
 import { hasTranslation, localeOf, offeredLocales } from '../locales';
+import { isRemovedLayout, layoutOf } from '../layouts';
 import { locks } from '../store';
 import { localeCounts } from '../translationState';
 import type { EntryStatus, Schedule } from '../types';
@@ -75,6 +76,8 @@ export function TopBar() {
             </div>
             <LocaleSwitcher />
             <PreviewChannel />
+            <ShownTo />
+            <PreviewDate />
             <PreviewWidth />
             <UndoRedo />
             <SaveStatus />
@@ -95,6 +98,7 @@ function LocaleSwitcher() {
     const locale = useBuilderState((state) => state.locale);
     const entry = useBuilderState((state) => state.entry);
     const blockTypes = useBuilderState((state) => state.rules.blockTypes);
+    const layouts = useBuilderState((state) => state.layouts);
     const entryChannels = useSettingsState((state) => state.settings.channels);
     const offered = offeredLocales(locales, channels, entryChannels, locale);
 
@@ -109,7 +113,7 @@ function LocaleSwitcher() {
             return `${name} · ${t('setono_sylius_cms.builder.locale_no_translation')}`;
         }
 
-        const { untranslated, outdated } = localeCounts(entry, code, isTranslatable);
+        const { untranslated, outdated } = localeCounts(entry, code, isTranslatable, isRemovedLayout(layouts, entry.tree.layout) ? undefined : layoutOf(layouts, entry.tree.layout));
         const counts = [
             ...(untranslated > 0 ? [t('setono_sylius_cms.builder.locale_untranslated', { '%count%': String(untranslated) })] : []),
             ...(outdated > 0 ? [t('setono_sylius_cms.builder.locale_outdated', { '%count%': String(outdated) })] : []),
@@ -153,6 +157,77 @@ function PreviewChannel() {
                 </option>
             ))}
         </select>
+    );
+}
+
+/**
+ * Who the preview shows the page to: guests, customers signed in without a group, or a customer group. Every condition
+ * and audience on the page follows it. Picking another reloads the preview. See "Shown to and Date"
+ * in docs/spec/targeting.md
+ */
+function ShownTo() {
+    const t = useTranslator();
+    const { customerGroups } = useBuilder();
+    const shownTo = usePreviewState((state) => state.shownTo);
+    const setShownTo = usePreviewState((state) => state.setShownTo);
+    const values = [
+        { code: '@guest', name: t('setono_sylius_cms.builder.shown_to_guest') },
+        { code: '@no_group', name: t('setono_sylius_cms.builder.no_group') },
+        ...customerGroups,
+    ];
+
+    return (
+        <select className={styles.channel} aria-label={t('setono_sylius_cms.builder.shown_to')} value={shownTo} onChange={(event) => setShownTo(event.currentTarget.value)}>
+            {values.map(({ code, name }) => (
+                <option key={code} value={code}>
+                    {name}
+                </option>
+            ))}
+        </select>
+    );
+}
+
+/**
+ * When the preview shows the page: now, or a date and time the editor picks in their own time zone, which date windows
+ * follow. It reloads the preview once the editor leaves the input or presses Enter, rather than at every digit typed,
+ * and Now goes back to now.
+ */
+function PreviewDate() {
+    const t = useTranslator();
+    const date = usePreviewState((state) => state.date);
+    const setDate = usePreviewState((state) => state.setDate);
+    const [local, setLocal] = useState(toLocalInput(date));
+    const now = t('setono_sylius_cms.builder.preview_now');
+
+    // Shows the date picked, such as after Now
+    useEffect(() => setLocal(toLocalInput(date)), [date]);
+
+    const commit = (): void => {
+        const picked = fromLocalInput(local);
+        if (picked !== date) {
+            setDate(picked);
+        }
+    };
+
+    return (
+        <div className={styles.date}>
+            <input
+                type="datetime-local"
+                className={styles.dateInput}
+                aria-label={t('setono_sylius_cms.builder.preview_date')}
+                value={local}
+                onChange={(event) => setLocal(event.currentTarget.value)}
+                onBlur={commit}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                        commit();
+                    }
+                }}
+            />
+            <button type="button" className={styles.now} aria-pressed={date === null} title={t('setono_sylius_cms.builder.preview_now_help')} onClick={() => setDate(null)}>
+                {now}
+            </button>
+        </div>
     );
 }
 

@@ -63,7 +63,8 @@ final readonly class TranslatableValues
 
         $tree = $workingCopy->getBlockTree();
         $layout = $tree->layout;
-        if (null !== $layout && $this->layouts->has($contentType->code, $layout->code)) {
+        // A layout that was removed or disabled isn't rendered, so there's nothing in it to translate
+        if (null !== $layout && $this->layouts->has($contentType->code, $layout->code) && !$this->layouts->get($contentType->code, $layout->code)->disabled) {
             foreach ($this->translatable($this->layouts->get($contentType->code, $layout->code)->fields) as $name => $field) {
                 $this->add($values, sprintf('layout.%s', $name), $field, $layout->fields[$name] ?? null, $layout->translated[$name] ?? null, $localeCode);
             }

@@ -27,7 +27,7 @@ export interface PreviewProps {
 
 /**
  * The centre pane: the real shop page with the working copy, in an iframe from the admin's own host. It loads with a
- * new preview token when the channel or locale changes. Edits are patched into the page by the bridge in it, and the
+ * new preview token when the channel, the locale, Shown to or Date changes. Edits are patched into the page by the bridge in it, and the
  * page reloads only for what the bridge can't patch in. In a locale the entry has no translation in, a banner shows
  * instead, because the entry has no page there.
  */
@@ -36,6 +36,8 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
     const { store, createPreviewUrl, renderPreview, leave } = useBuilder();
     const channel = usePreviewState((state) => state.channel);
     const width = usePreviewState((state) => state.width);
+    const shownTo = usePreviewState((state) => state.shownTo);
+    const date = usePreviewState((state) => state.date);
     const locale = useBuilderState((state) => state.locale);
     const translated = useBuilderState((state) => hasTranslation(state.entry, state.locale));
     const [frame, setFrame] = useState<Frame>({ state: 'waiting' });
@@ -104,7 +106,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
 
         let active = true;
 
-        createPreviewUrl({ channel, locale }).then(
+        createPreviewUrl({ channel, locale, shownTo, date }).then(
             (url) => {
                 if (active) {
                     // A new version remounts the iframe, so it reloads even when the URL is the same.
@@ -121,7 +123,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
         return () => {
             active = false;
         };
-    }, [createPreviewUrl, channel, locale, translated, reloads]);
+    }, [createPreviewUrl, channel, locale, shownTo, date, translated, reloads]);
 
     useEffect(() => {
         if (frame.state !== 'loaded') {

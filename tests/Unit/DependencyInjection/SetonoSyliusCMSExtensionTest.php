@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
@@ -184,6 +185,20 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_hands_the_disabled_layouts_and_the_configured_default_layouts_to_the_layouts_pass(): void
+    {
+        $this->load([
+            'disabled' => ['layouts' => ['page.landing']],
+            'content_types' => ['page' => ['default_layout' => 'wide'], 'recipe' => []],
+        ]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.layouts', ['page.landing']);
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.default_layouts', ['page' => 'wide']);
+    }
+
+    /**
+     * @test
+     */
     public function it_hands_the_block_styles_added_in_config_to_the_block_type_registry(): void
     {
         $blockStyles = ['group' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-group--brand']]];
@@ -203,6 +218,16 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.revisions.keep', 10);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(RevisionPruner::class, 1, '%setono_sylius_cms.revisions.keep%');
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_what_the_project_changes_about_content_types_to_the_pass_that_registers_them(): void
+    {
+        $this->load(['content_types' => ['page' => ['prefix' => 'pg']]]);
+
+        $this->assertContainerBuilderHasParameter(RegisterContentTypesPass::CONFIG_PARAMETER, ['page' => ['prefix' => 'pg']]);
     }
 
     /**

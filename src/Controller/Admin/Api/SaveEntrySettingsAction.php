@@ -17,7 +17,8 @@ use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Saves the on-save settings the body holds, outside the draft, and answers with all of them. A setting the body
- * leaves out keeps its value, so the builder sends only what the editor changed
+ * leaves out keeps its value, so the builder sends only what the editor changed. Settings the saver refuses, such as
+ * channels where another entry has the entry's URL, answer 400 with why
  */
 final readonly class SaveEntrySettingsAction
 {
@@ -36,12 +37,10 @@ final readonly class SaveEntrySettingsAction
     private function save(Request $request, EntryInterface $entry): JsonResponse
     {
         try {
-            $settings = $this->normalizer->denormalize($request->toArray(), EntrySettings::of($entry));
+            $this->saver->save($entry, $this->normalizer->denormalize($request->toArray(), EntrySettings::of($entry)));
         } catch (JsonException|InvalidEntrySettingsException $e) {
             return BuilderRequest::badRequest($e->getMessage());
         }
-
-        $this->saver->save($entry, $settings);
 
         return new JsonResponse(CanonicalJson::encode(new ListedObject([
             'settings' => $this->normalizer->normalize(EntrySettings::of($entry)),

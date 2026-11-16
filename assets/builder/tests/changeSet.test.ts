@@ -54,7 +54,7 @@ function replay(blocks: StoredBlock[], changes: readonly Change[]): StoredBlock[
 function changesOf(before: Entry, recipe: (working: Entry) => void): Change[] {
     const [after, patches] = produceWithPatches<Entry, Entry>(before, recipe);
 
-    return changesFromPatches(patches, before, after, isTranslatable);
+    return changesFromPatches(patches, before, after, isTranslatable, () => false);
 }
 
 describe('building the change set', () => {
@@ -86,7 +86,7 @@ describe('building the change set', () => {
 
         // Immer reports this as replacing index 1 and removing the last index.
         expect(patches.map((patch) => patch.op)).toEqual(['replace', 'remove']);
-        expect(changesFromPatches(patches, before, after, isTranslatable)).toEqual([{ op: 'remove_block', key: 'b' }]);
+        expect(changesFromPatches(patches, before, after, isTranslatable, () => false)).toEqual([{ op: 'remove_block', key: 'b' }]);
     });
 
     it('should send an added block with its parent and its index', () => {

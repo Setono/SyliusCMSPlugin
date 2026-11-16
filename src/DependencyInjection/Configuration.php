@@ -16,6 +16,8 @@ use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
+use Setono\SyliusCMSPlugin\Model\OldSlug;
+use Setono\SyliusCMSPlugin\Model\OldSlugInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
@@ -30,9 +32,11 @@ use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
+use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepository;
+use Setono\SyliusCMSPlugin\Routing\Slug;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 use Sylius\Resource\Factory\Factory;
@@ -58,6 +62,12 @@ final class Configuration implements ConfigurationInterface
                             ->info('Block type codes')
                             ->scalarPrototype()->end()
                         ->end()
+                        ->arrayNode('layouts')
+                            ->info('"<content type code>.<layout code>", such as page.standard. Their entries render in the default layout, which can\'t be disabled')
+                            ->scalarPrototype()
+                                ->validate()->always(self::assertDisabledLayout(...))->end()
+                            ->end()
+                        ->end()
                     ->end()
                 ->end()
                 ->booleanNode('assets')
@@ -68,6 +78,7 @@ final class Configuration implements ConfigurationInterface
         ;
 
         $this->addBlockStylesSection($rootNode);
+        $this->addContentTypesSection($rootNode);
         $this->addFallbackLocalesSection($rootNode);
         $this->addRevisionsSection($rootNode);
         $this->addResourcesSection($rootNode);
@@ -97,6 +108,44 @@ final class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                     ->validate()->always(self::assertBlockStyleCodes(...))->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * What a project changes about a content type, shipped or not, by its code: the URL prefix, which moves every URL of
+     * the content type without redirecting the old ones (see "URL shape" in docs/spec/urls-and-seo.md), and the default
+     * layout, which overrides #[Layout(default: true)] (see "Configuration" in docs/spec/extending.md)
+     */
+    private function addContentTypesSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('content_types')
+                    ->info('What a project changes about a content type: content type code => {prefix, default_layout}')
+                    ->useAttributeAsKey('code')
+                    ->normalizeKeys(false)
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('prefix')
+                                ->info('The URL prefix of a content type with its own URL, such as "pg". An empty prefix puts its URLs at the root')
+                                ->validate()
+                                    ->ifTrue(static fn (mixed $prefix): bool => !is_string($prefix) || ('' !== $prefix && !Slug::isValid($prefix)))
+                                    ->then(static fn (mixed $prefix): never => throw new \InvalidArgumentException(sprintf(
+                                        'The prefix %s must be empty or a string that doesn\'t start or end with a slash or contain two slashes in a row',
+                                        is_string($prefix) ? sprintf('"%s"', $prefix) : get_debug_type($prefix),
+                                    )))
+                                ->end()
+                            ->end()
+                            ->scalarNode('default_layout')
+                                ->info('A layout code, which overrides #[Layout(default: true)]')
+                                ->cannotBeEmpty()
+                                ->validate()->always(static fn (mixed $code): string => self::assertCode('layout', is_scalar($code) ? (string) $code : ''))->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                    ->validate()->always(self::assertContentTypeCodes(...))->end()
                 ->end()
             ->end()
         ;
@@ -160,16 +209,44 @@ final class Configuration implements ConfigurationInterface
         return $blockStyles;
     }
 
-    private static function assertCode(string $kind, string $code): void
+    /**
+     * @param array<array-key, array{prefix?: string, default_layout?: string}> $contentTypes
+     *
+     * @return array<array-key, array{prefix?: string, default_layout?: string}>
+     */
+    private static function assertContentTypeCodes(array $contentTypes): array
+    {
+        foreach (array_keys($contentTypes) as $code) {
+            self::assertCode('content type', (string) $code);
+        }
+
+        return $contentTypes;
+    }
+
+    private static function assertDisabledLayout(mixed $layout): string
+    {
+        $layout = is_scalar($layout) ? (string) $layout : '';
+        $parts = explode('.', $layout);
+        if (2 !== count($parts) || !Code::isValid($parts[0]) || !Code::isValid($parts[1])) {
+            throw new \InvalidArgumentException(sprintf('A disabled layout must be "<content type code>.<layout code>", such as page.standard, not "%s"', $layout));
+        }
+
+        return $layout;
+    }
+
+    private static function assertCode(string $kind, string $code): string
     {
         if (!Code::isValid($code)) {
             throw new \InvalidArgumentException(sprintf('The %s code "%s" must match %s', $kind, $code, trim(Code::PATTERN, '/')));
         }
+
+        return $code;
     }
 
     /**
      * The shipped Sylius resources. The draft and the rows beside an entry (its channels, its audience groups, who has
-     * it open, its saves, its revisions and its scheduled publish) have no admin screens of their own, so they have no controller.
+     * it open, its saves, its revisions, its old slugs and its scheduled publish) have no admin screens of their own, so they
+     * have no controller.
      * A project extends a shipped content type the way it extends any Sylius model:
      * by overriding classes.model, and translation.classes.model, with its own subclasses.
      * The channel and audience group rows always belong to an entry, so their factories create them for one
@@ -187,6 +264,7 @@ final class Configuration implements ConfigurationInterface
                     ->append(self::resourceWithoutController('entry_presence', EntryPresence::class, EntryPresenceInterface::class, EntryPresenceRepository::class))
                     ->append(self::resourceWithoutController('saved_change_set', SavedChangeSet::class, SavedChangeSetInterface::class, SavedChangeSetRepository::class))
                     ->append(self::resourceWithoutController('revision', Revision::class, RevisionInterface::class, RevisionRepository::class))
+                    ->append(self::resourceWithoutController('old_slug', OldSlug::class, OldSlugInterface::class, OldSlugRepository::class))
                     ->append(self::resourceWithoutController('scheduled_publish', ScheduledPublish::class, ScheduledPublishInterface::class, ScheduledPublishRepository::class))
                     ->children()
                         ->arrayNode('page')

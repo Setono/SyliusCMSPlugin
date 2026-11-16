@@ -7,12 +7,10 @@
         <service id="Setono\SyliusCMSPlugin\Controller\Shop\ShowEntryAction" class="Setono\SyliusCMSPlugin\Controller\Shop\ShowEntryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder"/>
-            <argument type="service" id="twig"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\LayoutRendererInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="router"/>
 
             <tag name="controller.service_arguments"/>
         </service>
@@ -83,6 +81,7 @@
             <argument type="service" id="twig"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
 
             <tag name="controller.service_arguments"/>
         </service>
@@ -98,6 +97,7 @@
             <argument type="service" id="sylius.repository.channel"/>
             <argument type="service" id="sylius.repository.customer_group"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\StartingValuesInterface"/>
 
             <tag name="controller.service_arguments"/>
         </service>
@@ -180,6 +180,15 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryUrls"/>
 
             <tag name="controller.service_arguments"/>
         </service>

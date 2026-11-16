@@ -11,5 +11,35 @@
             <tag name="routing.condition_service" alias="setono_sylius_cms_entry_url_matcher"/>
             <tag name="kernel.reset" method="reset"/>
         </service>
+
+        <!-- Finds the Sylius or app route that takes an entry URL. #243's "Where it shows" reads it too -->
+        <service id="Setono\SyliusCMSPlugin\Routing\RouteChecker" class="Setono\SyliusCMSPlugin\Routing\RouteChecker">
+            <argument type="service" id="router"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Routing\RouteCheckerInterface" alias="Setono\SyliusCMSPlugin\Routing\RouteChecker"/>
+
+        <service id="Setono\SyliusCMSPlugin\Routing\TakenUrlFinder" class="Setono\SyliusCMSPlugin\Routing\TakenUrlFinder">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Routing\RouteCheckerInterface"/>
+            <argument type="service" id="sylius.repository.channel"/>
+
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface" alias="Setono\SyliusCMSPlugin\Routing\TakenUrlFinder"/>
+
+        <!-- Finds the other entries with the same URL in a channel and locale -->
+        <service id="Setono\SyliusCMSPlugin\Routing\UrlClashFinder" class="Setono\SyliusCMSPlugin\Routing\UrlClashFinder">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\UrlClaimsQueryInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Routing\UrlClashFinderInterface" alias="Setono\SyliusCMSPlugin\Routing\UrlClashFinder"/>
+
+        <!-- Keeps the slugs a publish changes, so their URLs redirect -->
+        <service id="Setono\SyliusCMSPlugin\Routing\OldSlugRecorder" class="Setono\SyliusCMSPlugin\Routing\OldSlugRecorder">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.factory.old_slug"/>
+            <argument type="service" id="setono_sylius_cms.manager.old_slug"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Routing\OldSlugRecorderInterface" alias="Setono\SyliusCMSPlugin\Routing\OldSlugRecorder"/>
     </services>
 </container>

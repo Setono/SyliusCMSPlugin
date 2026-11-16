@@ -12,11 +12,12 @@ use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Setono\SyliusCMSPlugin\Revision\RevisionRecorderInterface;
+use Setono\SyliusCMSPlugin\Routing\OldSlugRecorderInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Publishes now, and runs scheduled publishes. See "Publishing now" and "Scheduled publishes" in
- * docs/spec/publishing.md. Old slugs (#234), the reference table and the media usage index join the steps with their tickets
+ * docs/spec/publishing.md. The reference table and the media usage index join the steps with their tickets
  */
 final readonly class EntryPublisher implements EntryPublisherInterface
 {
@@ -31,6 +32,7 @@ final readonly class EntryPublisher implements EntryPublisherInterface
         private ContentTypeRegistryInterface $contentTypes,
         private PublishCheck $check,
         private RevisionRecorderInterface $revisions,
+        private OldSlugRecorderInterface $oldSlugs,
         private ScheduledPublishRepositoryInterface $scheduledPublishes,
         private ObjectManager $manager,
     ) {
@@ -103,6 +105,9 @@ final readonly class EntryPublisher implements EntryPublisherInterface
 
         // 3. Copy the working copy onto the rows and delete the draft
         $this->workingCopies->applyToRows($entry, $workingCopy);
+
+        // 4. Record the old slug of every translation whose slug changed, so it redirects
+        $this->oldSlugs->record($entry, $oldSlugs, self::slugs($entry));
 
         // 7. Store what the rows hold now as a revision. A scheduled one names who scheduled it, since no one is signed in to the worker
         $now = $this->clock->now()->setTimezone(new \DateTimeZone('UTC'));

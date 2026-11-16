@@ -30,6 +30,8 @@ final class ShopRenderContextFactoryTest extends TestCase
 {
     use ProphecyTrait;
 
+    private const ENTRY = '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e';
+
     /** @var ObjectProphecy<ChannelContextInterface> */
     private ObjectProphecy $channelContext;
 
@@ -145,6 +147,61 @@ final class ShopRenderContextFactoryTest extends TestCase
     }
 
     /**
+     * Shown to and Date set the customer group value and the time, and nothing else. See "Shown to and Date"
+     * in docs/spec/targeting.md
+     *
+     * @test
+     */
+    public function it_shows_the_page_to_the_previews_customer_group_value_at_its_date_whoever_signed_in(): void
+    {
+        $customer = $this->prophesize(CustomerInterface::class);
+        $customer->getGroup()->willReturn(null);
+        $this->customerContext->getCustomer()->willReturn($customer->reveal());
+        $date = new \DateTimeImmutable('2026-12-24T18:00:00Z');
+        $this->previewing(new Preview(self::ENTRY, 'WEB', 'en_US', shownTo: 'wholesale', date: $date));
+
+        $context = $this->factory()->create();
+
+        self::assertSame('wholesale', $context->customerGroup);
+        self::assertEquals($date, $context->now);
+        self::assertSame($customer->reveal(), $context->customer);
+    }
+
+    /**
+     * @test
+     */
+    public function it_shows_the_page_to_guests_in_a_preview_that_says_so_while_a_customer_is_signed_in(): void
+    {
+        $customer = $this->prophesize(CustomerInterface::class);
+        $customer->getGroup()->willReturn(null);
+        $this->customerContext->getCustomer()->willReturn($customer->reveal());
+        $this->previewing(new Preview(self::ENTRY, 'WEB', 'en_US', shownTo: '@guest'));
+
+        $context = $this->factory()->create();
+
+        self::assertSame('@guest', $context->customerGroup);
+        self::assertSame($this->now, $context->now, 'A preview without a date shows the page now');
+    }
+
+    /**
+     * A revision's read-only preview carries neither
+     *
+     * @test
+     */
+    public function it_shows_a_preview_without_shown_to_to_the_shopper_now(): void
+    {
+        $customer = $this->prophesize(CustomerInterface::class);
+        $customer->getGroup()->willReturn(null);
+        $this->customerContext->getCustomer()->willReturn($customer->reveal());
+        $this->previewing(new Preview(self::ENTRY, 'WEB', 'en_US'));
+
+        $context = $this->factory()->create();
+
+        self::assertSame('@no_group', $context->customerGroup);
+        self::assertSame($this->now, $context->now);
+    }
+
+    /**
      * @test
      */
     public function it_needs_a_shop_channel(): void
@@ -154,6 +211,12 @@ final class ShopRenderContextFactoryTest extends TestCase
         $this->expectException(\LogicException::class);
 
         $this->factory()->create();
+    }
+
+    private function previewing(Preview $preview): void
+    {
+        $signer = new PreviewTokenSigner('secret', new MockClock());
+        $this->requestStack->push(new Request([PreviewContext::QUERY_PARAMETER => $signer->sign($preview)]));
     }
 
     private function factory(): ShopRenderContextFactory

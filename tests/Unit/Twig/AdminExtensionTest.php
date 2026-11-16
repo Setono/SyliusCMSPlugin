@@ -29,6 +29,7 @@ use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
@@ -177,7 +178,9 @@ final class AdminExtensionTest extends IntegrationTestCase
             $scheduledPublishes->reveal(),
             new MockClock(),
         );
-        $entryUrls = new EntryUrls($drafts->reveal(), self::contentTypes(), $urlGenerator->reveal());
+        $oldSlugs = $this->prophesize(OldSlugRepositoryInterface::class);
+        $oldSlugs->findByEntry(Argument::any())->willReturn([]);
+        $entryUrls = new EntryUrls($drafts->reveal(), self::contentTypes(), $urlGenerator->reveal(), $oldSlugs->reveal());
         $revisions = $this->prophesize(RevisionRepositoryInterface::class);
         $revisions->findByEntry(Argument::type(Page::class))->willReturn([
             self::revision('2026-11-14 10:00:00', 'Jane Roe'),
