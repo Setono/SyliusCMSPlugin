@@ -60,14 +60,14 @@ final readonly class UpdateMediaItemAction
     {
         $metadata = MediaItemMetadata::of($mediaItem);
 
-        return new MediaItemMetadata(
+        return (new MediaItemMetadata(
             array_key_exists('name', $body) ? self::string($body['name'], 'name') : $metadata->name,
             array_key_exists('folder', $body) ? $this->folder($body['folder']) : $metadata->folder,
             array_key_exists('credit', $body) ? self::nullableString($body['credit'], 'credit') : $metadata->credit,
             $metadata->altTexts,
             array_key_exists('focalPoint', $body) ? self::focalPoint($body['focalPoint']) : $metadata->focalPoint,
             array_key_exists('poster', $body) ? $this->poster($body['poster']) : $metadata->poster,
-        )->withAltTexts(array_key_exists('altTexts', $body) ? self::altTexts($body['altTexts']) : []);
+        ))->withAltTexts(array_key_exists('altTexts', $body) ? self::altTexts($body['altTexts']) : []);
     }
 
     private function folder(mixed $uuid): ?MediaFolderInterface
