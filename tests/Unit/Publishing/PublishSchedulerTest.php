@@ -227,6 +227,7 @@ final class PublishSchedulerTest extends TestCase
             self::fail('The time was not refused');
         } catch (ScheduledPublishInThePastException $e) {
             self::assertSame($at, $e->at->format('Y-m-d H:i:s'));
+            self::assertSame(sprintf('A publish can only be scheduled for a time in the future, not %sT%s+00:00', substr($at, 0, 10), substr($at, 11)), $e->getMessage());
         }
 
         self::assertSame([], $this->calls);

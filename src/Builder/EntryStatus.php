@@ -41,12 +41,11 @@ final class EntryStatus
     }
 
     /**
-     * The state of the entry's scheduled publish: publishes at a time, overdue or failed, or null when it has none
+     * The state of the entry's scheduled publish: publishes at a time, overdue or failed
      */
-    public static function ofScheduledPublish(?ScheduledPublishInterface $scheduledPublish, \DateTimeImmutable $now): ?string
+    public static function ofScheduledPublish(ScheduledPublishInterface $scheduledPublish, \DateTimeImmutable $now): string
     {
         return match (true) {
-            null === $scheduledPublish => null,
             $scheduledPublish->isFailed() => self::SCHEDULED_PUBLISH_FAILED,
             $scheduledPublish->isOverdue($now) => self::SCHEDULED_PUBLISH_OVERDUE,
             default => self::PUBLISHES_AT_A_TIME,

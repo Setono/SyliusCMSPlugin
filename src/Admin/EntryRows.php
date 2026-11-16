@@ -109,7 +109,7 @@ final class EntryRows implements ResetInterface
             EntryStatus::of($entry, null !== $draft),
             $draft,
             $scheduledPublish,
-            EntryStatus::ofScheduledPublish($scheduledPublish, $this->clock->now()),
+            null === $scheduledPublish ? null : EntryStatus::ofScheduledPublish($scheduledPublish, $this->clock->now()),
         );
     }
 

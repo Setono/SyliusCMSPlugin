@@ -25,9 +25,11 @@ final readonly class StatusLabeler implements StatusLabelerInterface
         };
 
         // The scheduled publish's state is a label of the same code
-        $scheduled = EntryStatus::ofScheduledPublish($scheduledPublish, $this->clock->now());
-        if (null !== $scheduledPublish && null !== $scheduled) {
-            $labels[] = new StatusLabel($scheduled, ['at' => $scheduledPublish->getPublishAt()] + ($scheduledPublish->isFailed() ? ['reason' => $scheduledPublish->getFailureReason()] : []));
+        if (null !== $scheduledPublish) {
+            $labels[] = new StatusLabel(
+                EntryStatus::ofScheduledPublish($scheduledPublish, $this->clock->now()),
+                ['at' => $scheduledPublish->getPublishAt()] + ($scheduledPublish->isFailed() ? ['reason' => $scheduledPublish->getFailureReason()] : []),
+            );
         }
 
         if (!$entry->isEnabled()) {

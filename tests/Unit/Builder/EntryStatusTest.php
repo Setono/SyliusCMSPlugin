@@ -37,14 +37,6 @@ final class EntryStatusTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_without_a_scheduled_publish_has_no_scheduled_publish_state(): void
-    {
-        self::assertNull(EntryStatus::ofScheduledPublish(null, new \DateTimeImmutable()));
-    }
-
-    /**
-     * @test
-     */
     public function a_scheduled_publish_publishes_at_a_time_until_it_is_overdue_five_minutes_after(): void
     {
         $scheduledPublish = new ScheduledPublish();
