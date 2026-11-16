@@ -54,36 +54,6 @@ final class EntrySettingsTest extends TestCase
     /**
      * @test
      */
-    public function it_applies_them_to_an_entry_changing_its_channels_audience_and_homepages_through_the_modifiers(): void
-    {
-        $page = new Page();
-
-        (new EntrySettings(false, self::window(), ['WEB', 'B2B', 'WEB'], Audience::except('retail'), ['MOBILE']))
-            ->applyTo($page, ChannelsAndAudience::modifier(), $this->homepages());
-
-        self::assertFalse($page->isEnabled());
-        self::assertTrue($page->getDateWindow()->equals(self::window()));
-        self::assertSame(['B2B', 'WEB'], $page->getChannelCodes());
-        self::assertTrue($page->getAudience()->equals(Audience::except('retail')));
-        self::assertSame(['MOBILE'], $page->getHomepageChannelCodes());
-    }
-
-    /**
-     * @test
-     */
-    public function it_applies_the_other_settings_to_an_entry_other_than_a_page(): void
-    {
-        $announcement = new Announcement();
-
-        (new EntrySettings(false, new DateWindow(), ['WEB'], Audience::everyone()))->applyTo($announcement, ChannelsAndAudience::modifier(), $this->homepages());
-
-        self::assertFalse($announcement->isEnabled());
-        self::assertSame(['WEB'], $announcement->getChannelCodes());
-    }
-
-    /**
-     * @test
-     */
     public function it_keeps_its_channels_and_homepages_as_sorted_codes_without_duplicates(): void
     {
         $settings = new EntrySettings(true, new DateWindow(), ['WEB', 'B2B', 'WEB'], Audience::everyone(), ['WEB', 'MOBILE', 'WEB']);

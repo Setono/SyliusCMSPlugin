@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Publishing;
 
 use Setono\SyliusCMSPlugin\Event\EntrySettingsChanged;
-use Setono\SyliusCMSPlugin\Homepage\HomepageModifierInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
-use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 
 /**
@@ -57,23 +55,6 @@ final readonly class EntrySettings
             $entry->getAudience(),
             $entry instanceof PageInterface ? $entry->getHomepageChannelCodes() : [],
         );
-    }
-
-    /**
-     * The channels, the audience and the homepages are rows beside the entry, so they change through the modifiers, which
-     * create the rows. Only a page has homepages, and a channel has one homepage, so take the page's channels off the
-     * pages that are their homepages now first (HomepageModifierInterface::takeOffOtherPages())
-     */
-    public function applyTo(EntryInterface $entry, ChannelsAndAudienceModifierInterface $channelsAndAudience, HomepageModifierInterface $homepages): void
-    {
-        $entry->setEnabled($this->enabled);
-        $entry->setDateWindow($this->dateWindow);
-        $channelsAndAudience->setChannels($entry, $this->channels);
-        $channelsAndAudience->setAudience($entry, $this->audience);
-
-        if ($entry instanceof PageInterface) {
-            $homepages->setHomepageOf($entry, $this->homepageOf);
-        }
     }
 
     /**

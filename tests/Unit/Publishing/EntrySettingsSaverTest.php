@@ -116,6 +116,36 @@ final class EntrySettingsSaverTest extends TestCase
     /**
      * @test
      */
+    public function it_changes_the_channels_audience_and_homepages_through_the_modifiers(): void
+    {
+        $page = new Page();
+
+        $this->saver()->save($page, new EntrySettings(false, new DateWindow(new \DateTimeImmutable('2026-12-01T00:00:00Z')), ['WEB', 'B2B', 'WEB'], Audience::except('retail'), ['MOBILE']));
+
+        self::assertFalse($page->isEnabled());
+        self::assertEquals(new \DateTimeImmutable('2026-12-01T00:00:00Z'), $page->getDateWindow()->from);
+        self::assertSame(['B2B', 'WEB'], $page->getChannelCodes());
+        self::assertTrue($page->getAudience()->equals(Audience::except('retail')));
+        self::assertSame(['MOBILE'], $page->getHomepageChannelCodes());
+    }
+
+    /**
+     * @test
+     */
+    public function it_changes_the_other_settings_of_an_entry_other_than_a_page(): void
+    {
+        $announcement = new Announcement();
+        $this->managerRegistry->getManagerForClass(Announcement::class)->willReturn($this->manager->reveal());
+
+        $this->saver()->save($announcement, new EntrySettings(false, new DateWindow(), ['WEB'], Audience::everyone()));
+
+        self::assertFalse($announcement->isEnabled());
+        self::assertSame(['WEB'], $announcement->getChannelCodes());
+    }
+
+    /**
+     * @test
+     */
     public function it_checks_the_entrys_urls_in_the_channels_it_would_be_in_when_they_change(): void
     {
         $page = new Page();

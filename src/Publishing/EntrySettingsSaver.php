@@ -76,7 +76,7 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
                 }
             }
 
-            $settings->applyTo($entry, $this->channelsAndAudienceModifier, $this->homepageModifier);
+            $this->apply($settings, $entry);
             $entry->setChangedAt($now);
             $this->editRecorder->record($entry);
         });
@@ -85,6 +85,22 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
         $this->eventDispatcher->dispatch(new EntrySettingsChanged($entry->getUuid(), $changed));
         foreach ($takenFrom as $page) {
             $this->eventDispatcher->dispatch(new EntrySettingsChanged($page->getUuid(), [EntrySettingsChanged::HOMEPAGE]));
+        }
+    }
+
+    /**
+     * The channels, the audience and the homepages are rows beside the entry, so they change through the modifiers, which
+     * create the rows. Only a page has homepages
+     */
+    private function apply(EntrySettings $settings, EntryInterface $entry): void
+    {
+        $entry->setEnabled($settings->enabled);
+        $entry->setDateWindow($settings->dateWindow);
+        $this->channelsAndAudienceModifier->setChannels($entry, $settings->channels);
+        $this->channelsAndAudienceModifier->setAudience($entry, $settings->audience);
+
+        if ($entry instanceof PageInterface) {
+            $this->homepageModifier->setHomepageOf($entry, $settings->homepageOf);
         }
     }
 }
