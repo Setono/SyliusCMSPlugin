@@ -1,0 +1,143 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Setono\SyliusCMSPlugin\Tests\Support;
+
+use Setono\SyliusCMSPlugin\Media\MediaFolderModifierInterface;
+use Setono\SyliusCMSPlugin\Media\MediaUploaderInterface;
+use Setono\SyliusCMSPlugin\Model\MediaFolderInterface;
+use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+
+/**
+ * Helpers for functional and UI tests that need media items, folders or files to upload. Media items are created through
+ * the media library's own uploader, so they're checked and stored like any upload, in the test application's
+ * public/media/cms. Each test removes the files it stored there, since the database is rolled back but the files aren't
+ */
+trait MediaItems
+{
+    /** @var list<string>|null what the storage held before the test */
+    private ?array $storedBefore = null;
+
+    /** @var list<string> */
+    private array $temporaryUploads = [];
+
+    abstract protected static function getContainer(): ContainerInterface;
+
+    /**
+     * @before
+     */
+    protected function rememberStoredMedia(): void
+    {
+        $this->storedBefore = self::storedMedia();
+    }
+
+    /**
+     * @after
+     */
+    protected function removeStoredMedia(): void
+    {
+        foreach (array_diff(self::storedMedia(), $this->storedBefore ?? []) as $directory) {
+            self::removeDirectory(self::mediaDirectory() . '/' . $directory);
+        }
+
+        foreach ($this->temporaryUploads as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+
+        $this->temporaryUploads = [];
+    }
+
+    /**
+     * A PNG of this size in one colour
+     *
+     * @param array{int, int, int} $rgb
+     */
+    protected static function png(int $width = 40, int $height = 20, array $rgb = [200, 30, 30]): string
+    {
+        $image = imagecreatetruecolor($width, $height);
+        imagefill($image, 0, 0, (int) imagecolorallocate($image, ...$rgb));
+        ob_start();
+        imagepng($image);
+
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * A JPEG of this size in one colour
+     *
+     * @param array{int, int, int} $rgb
+     */
+    protected static function jpeg(int $width = 40, int $height = 20, array $rgb = [30, 30, 200]): string
+    {
+        $image = imagecreatetruecolor($width, $height);
+        imagefill($image, 0, 0, (int) imagecolorallocate($image, ...$rgb));
+        ob_start();
+        imagejpeg($image);
+
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * A file as a browser uploads it, with this name
+     */
+    protected function uploadedFile(string $filename, string $content, int $error = \UPLOAD_ERR_OK): UploadedFile
+    {
+        $path = (string) tempnam(sys_get_temp_dir(), 'setono_sylius_cms_test_');
+        file_put_contents($path, $content);
+        $this->temporaryUploads[] = $path;
+
+        return new UploadedFile($path, $filename, null, $error, true);
+    }
+
+    protected function uploadMediaItem(string $filename, string $content, ?MediaFolderInterface $folder = null): MediaItemInterface
+    {
+        /** @var MediaUploaderInterface $uploader */
+        $uploader = self::getContainer()->get(MediaUploaderInterface::class);
+
+        return $uploader->upload($this->uploadedFile($filename, $content), $filename, $folder, true)->mediaItem;
+    }
+
+    protected static function createMediaFolder(string $name, ?MediaFolderInterface $parent = null): MediaFolderInterface
+    {
+        /** @var MediaFolderModifierInterface $modifier */
+        $modifier = self::getContainer()->get(MediaFolderModifierInterface::class);
+
+        return $modifier->create($name, $parent);
+    }
+
+    /**
+     * The test application's default media storage
+     */
+    protected static function mediaDirectory(): string
+    {
+        return dirname(__DIR__) . '/Application/public/media/cms';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function storedMedia(): array
+    {
+        return is_dir(self::mediaDirectory()) ? array_values(array_diff(scandir(self::mediaDirectory()) ?: [], ['.', '..'])) : [];
+    }
+
+    private static function removeDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::CHILD_FIRST);
+        foreach ($files as $file) {
+            \assert($file instanceof \SplFileInfo);
+            $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
+        }
+
+        rmdir($directory);
+    }
+}

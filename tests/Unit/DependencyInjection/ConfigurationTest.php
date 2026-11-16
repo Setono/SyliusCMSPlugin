@@ -23,6 +23,12 @@ use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
 use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
+use Setono\SyliusCMSPlugin\Model\MediaFolder;
+use Setono\SyliusCMSPlugin\Model\MediaFolderInterface;
+use Setono\SyliusCMSPlugin\Model\MediaItem;
+use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
+use Setono\SyliusCMSPlugin\Model\MediaItemTranslation;
+use Setono\SyliusCMSPlugin\Model\MediaItemTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\OldSlug;
 use Setono\SyliusCMSPlugin\Model\OldSlugInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -41,6 +47,8 @@ use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepository;
+use Setono\SyliusCMSPlugin\Repository\MediaFolderRepository;
+use Setono\SyliusCMSPlugin\Repository\MediaItemRepository;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
@@ -77,6 +85,15 @@ final class ConfigurationTest extends TestCase
             'block_styles' => [],
             'fallback_locales' => [],
             'revisions' => ['keep' => 50],
+            'media' => [
+                'storage' => 'setono_sylius_cms.storage',
+                'types' => [
+                    'image' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml'],
+                    'video' => ['video/mp4', 'video/webm'],
+                    'document' => ['application/pdf'],
+                ],
+                'max_upload_size' => null,
+            ],
             'resources' => [
                 'entry' => [
                     'classes' => [
@@ -167,6 +184,29 @@ final class ConfigurationTest extends TestCase
                         'factory' => HomepageFactory::class,
                     ],
                 ],
+                'media_item' => [
+                    'classes' => [
+                        'model' => MediaItem::class,
+                        'interface' => MediaItemInterface::class,
+                        'repository' => MediaItemRepository::class,
+                        'factory' => TranslatableFactory::class,
+                    ],
+                    'translation' => [
+                        'classes' => [
+                            'model' => MediaItemTranslation::class,
+                            'interface' => MediaItemTranslationInterface::class,
+                            'factory' => Factory::class,
+                        ],
+                    ],
+                ],
+                'media_folder' => [
+                    'classes' => [
+                        'model' => MediaFolder::class,
+                        'interface' => MediaFolderInterface::class,
+                        'repository' => MediaFolderRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
                 'page' => [
                     'classes' => [
                         'model' => Page::class,
@@ -185,6 +225,60 @@ final class ConfigurationTest extends TestCase
                 ],
             ],
         ]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_set_the_media_storage_the_mime_types_of_a_kind_and_the_upload_limit(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['media' => ['storage' => 'app.s3_storage', 'types' => ['document' => ['application/pdf', 'application/zip']], 'max_upload_size' => '20M']],
+        ], ['media' => [
+            'storage' => 'app.s3_storage',
+            'types' => [
+                'image' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml'],
+                'video' => ['video/mp4', 'video/webm'],
+                'document' => ['application/pdf', 'application/zip'],
+            ],
+            'max_upload_size' => 20 * 1024 * 1024,
+        ]], 'media');
+    }
+
+    /**
+     * @test
+     */
+    public function it_takes_the_upload_limit_in_bytes(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['media' => ['max_upload_size' => 1500000]],
+        ], ['media' => ['max_upload_size' => 1500000]], 'media.max_upload_size');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_an_upload_limit_that_is_not_a_size(): void
+    {
+        $this->assertConfigurationIsInvalid([['media' => ['max_upload_size' => 'lots']]], 'must be a positive number of bytes');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_what_is_not_a_mime_type(): void
+    {
+        $this->assertConfigurationIsInvalid([['media' => ['types' => ['document' => ['pdf']]]]], '"pdf" isn\'t a MIME type');
+    }
+
+    /**
+     * An uploaded file of it would have no one kind
+     *
+     * @test
+     */
+    public function it_refuses_a_mime_type_in_two_kinds(): void
+    {
+        $this->assertConfigurationIsInvalid([['media' => ['types' => ['document' => ['image/png']]]]], 'The MIME type "image/png" is in both');
     }
 
     /**

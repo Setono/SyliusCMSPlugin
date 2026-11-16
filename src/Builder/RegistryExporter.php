@@ -6,6 +6,8 @@ namespace Setono\SyliusCMSPlugin\Builder;
 
 use Setono\SyliusCMSPlugin\Attribute\Style;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Media\MediaTypes;
+use Setono\SyliusCMSPlugin\Media\UploadLimit;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Registry\AllowedBlockType;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
@@ -24,8 +26,9 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * What the builder's registry endpoint answers: the block types with their field schemas, nesting rules and block styles,
  * what the top level of each content type may hold, the layouts editors can pick for it with their field schemas, the
- * condition kinds with their parameters' field schemas, and the UI strings, translated in the current locale,
- * which in the admin is the admin user's locale. The shape is internal to the builder
+ * condition kinds with their parameters' field schemas, the effective upload limit with the MIME types of each kind of
+ * media item, and the UI strings, translated in the current locale, which in the admin is the admin user's locale. The
+ * shape is internal to the builder
  */
 final readonly class RegistryExporter
 {
@@ -40,11 +43,13 @@ final readonly class RegistryExporter
         private TranslatorBagInterface $catalogues,
         private ConditionKindRegistryInterface $conditionKinds,
         private LayoutRegistryInterface $layouts,
+        private UploadLimit $uploadLimit,
+        private MediaTypes $mediaTypes,
     ) {
     }
 
     /**
-     * @return array{blockTypes: list<array<string, mixed>>, contentTypes: list<array<string, mixed>>, conditionKinds: list<array<string, mixed>>, strings: array<string, string>}
+     * @return array{blockTypes: list<array<string, mixed>>, contentTypes: list<array<string, mixed>>, conditionKinds: list<array<string, mixed>>, media: array{maxUploadSize: int, types: array<string, list<string>>}, strings: array<string, string>}
      */
     public function export(): array
     {
@@ -52,7 +57,8 @@ final readonly class RegistryExporter
             'blockTypes' => array_map($this->blockType(...), $this->blockTypes->all()),
             'contentTypes' => array_map($this->contentType(...), $this->contentTypes->all()),
             'conditionKinds' => array_map($this->conditionKind(...), $this->conditionKinds->all()),
-            'strings' => $this->strings(),
+            'media' => $this->media(),
+            'strings' => (new UiStrings($this->translator, $this->catalogues))->withPrefix(self::STRINGS_PREFIX),
         ];
     }
 
@@ -184,21 +190,15 @@ final readonly class RegistryExporter
     }
 
     /**
-     * @return array<string, string>
+     * The effective upload limit and the MIME types of each kind, so the builder checks a file before uploading it
+     *
+     * @return array{maxUploadSize: int, types: array<string, list<string>>}
      */
-    private function strings(): array
+    private function media(): array
     {
-        $strings = [];
-        for ($catalogue = $this->catalogues->getCatalogue(); null !== $catalogue; $catalogue = $catalogue->getFallbackCatalogue()) {
-            foreach (array_keys($catalogue->all('messages')) as $id) {
-                if (is_string($id) && str_starts_with($id, self::STRINGS_PREFIX)) {
-                    $strings[$id] ??= $this->translator->trans($id);
-                }
-            }
-        }
-
-        ksort($strings);
-
-        return $strings;
+        return [
+            'maxUploadSize' => $this->uploadLimit->bytes(),
+            'types' => $this->mediaTypes->all(),
+        ];
     }
 }

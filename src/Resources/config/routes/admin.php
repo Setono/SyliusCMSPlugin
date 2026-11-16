@@ -3,9 +3,12 @@
 declare(strict_types=1);
 
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CancelScheduleAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateMediaFolderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateShareLinkAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DiscardEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaFolderIndexAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PresenceAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRenderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRevisionAction;
@@ -22,6 +25,9 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\SearchAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SlugAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaFolderAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaItemAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\UploadMediaAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ValidateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CancelScheduleAction as CancelSchedulePageAction;
@@ -29,6 +35,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateShareLinkAction as CreateShareLinkPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction as DiscardEntryPageAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\MediaLibraryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PreviewRevisionAction as PreviewRevisionPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PublishEntryAction as PublishEntryPageAction;
@@ -160,6 +167,12 @@ return static function (RoutingConfigurator $routes): void {
         ->requirements(['uuid' => Requirement::UUID])
     ;
 
+    // The media library's screen (docs/spec/admin.md#media-library)
+    $routes->add('setono_sylius_cms_admin_media_index', '/cms/media')
+        ->controller(MediaLibraryAction::class)
+        ->methods(['GET'])
+    ;
+
     // The builder's JSON endpoints are internal: their paths, names and bodies can change in any release (docs/spec/builder.md#json-endpoints)
     $routes->add('setono_sylius_cms_admin_api_registry', '/cms/api/registry')
         ->controller(RegistryAction::class)
@@ -282,5 +295,38 @@ return static function (RoutingConfigurator $routes): void {
         ->controller(RevokeShareLinkAction::class)
         ->methods(['DELETE'])
         ->requirements(['id' => Requirement::DIGITS])
+    ;
+
+    // The media library, which the library's screen and the builder's media picker share (docs/spec/media.md)
+    $routes->add('setono_sylius_cms_admin_api_media_index', '/cms/api/media')
+        ->controller(MediaIndexAction::class)
+        ->methods(['GET'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_media_upload', '/cms/api/media')
+        ->controller(UploadMediaAction::class)
+        ->methods(['POST'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_media_update', '/cms/api/media/{uuid}')
+        ->controller(UpdateMediaItemAction::class)
+        ->methods(['PATCH'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_media_folder_index', '/cms/api/media-folders')
+        ->controller(MediaFolderIndexAction::class)
+        ->methods(['GET'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_media_folder_create', '/cms/api/media-folders')
+        ->controller(CreateMediaFolderAction::class)
+        ->methods(['POST'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_media_folder_update', '/cms/api/media-folders/{uuid}')
+        ->controller(UpdateMediaFolderAction::class)
+        ->methods(['PATCH'])
+        ->requirements(['uuid' => Requirement::UUID])
     ;
 };

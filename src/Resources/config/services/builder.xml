@@ -11,6 +11,14 @@
             <argument type="service" id="translator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\UploadLimit"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaTypes"/>
+        </service>
+
+        <!-- The builder app's UI strings, which the media library's page hands its app too -->
+        <service id="Setono\SyliusCMSPlugin\Builder\UiStrings" class="Setono\SyliusCMSPlugin\Builder\UiStrings">
+            <argument type="service" id="translator"/>
+            <argument type="service" id="translator"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier" class="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier">

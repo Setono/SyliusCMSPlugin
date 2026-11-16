@@ -66,6 +66,7 @@ setono_sylius_cms:
                 all_entries: All entries
                 entries: Entries
                 library: Library
+                media: Media
                 overview: Overview
                 pages: Pages
             main:
@@ -80,6 +81,14 @@ setono_sylius_cms:
             slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team.'
             slug_rules: A slug can't start or end with a slash, or have two slashes in a row.
             title: Title
+    # Why the media library refused a file. See "Uploading" in docs/spec/media.md
+    media:
+        refused:
+            not_allowed: '%filename% is a %type% file, which the media library doesn''t take. It takes %types%, up to %limit% each.'
+            not_uploaded: '%filename% didn''t arrive in full. Try uploading it again.'
+            over_limit: '%filename% is over the upload limit of %limit%.'
+            too_big: '%filename% is %size%, over the upload limit of %limit%.'
+            unreadable: '%filename% couldn''t be read as a %type% file.'
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
         deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
@@ -134,6 +143,8 @@ setono_sylius_cms:
         last_published: 'Last published %date%'
         link: Link
         made_by: Made by
+        media: Media
+        media_description: Images, videos and documents for your content, shared by every channel
         new_entry: 'New %content_type%'
         new_entry_heading: New entry
         new_share_link: New
@@ -317,6 +328,56 @@ setono_sylius_cms:
         locale_outdated: '%count% outdated'
         locale_untranslated: '%count% untranslated'
         mark_up_to_date: Mark as up to date
+        # The media library, on its own screen and as the builder's media picker. See "Media library" in docs/spec/admin.md
+        media:
+            all_media: All media
+            alt_text: Alt text
+            alt_text_help: Describes the image to people who can't see it, and to search engines. Each language has its own.
+            any_kind: Any kind
+            cancel: Cancel
+            create_folder: Create
+            credit: Credit
+            credit_help: A credit or copyright line, such as the photographer's name.
+            dimensions: '%width% × %height% px'
+            drop_here: 'Drop files to upload them into %folder%'
+            duplicate: '%filename% is already in the library as %name%.'
+            file: File
+            focal_point: Focal point
+            focal_point_help: Click or drag to set the point that stays in view wherever the image is cropped.
+            folder: Folder
+            folder_name: Folder name
+            folders: Folders
+            kind: Kind
+            kind_document: Documents
+            kind_image: Images
+            kind_video: Videos
+            load_failed: Couldn't load the media library
+            load_more: Load more
+            missing_alt: Missing alt text
+            missing_alt_flag: No alt text
+            move: Move
+            move_folder: Move folder
+            move_to: Move to
+            name: Name
+            new_folder: New folder
+            no_matches: No media items match.
+            no_media: Nothing here yet. Drop files here, or upload them, to add them.
+            open_file: Open the file
+            rename_folder: Rename folder
+            save: Save
+            save_failed: Couldn't save
+            saved: Saved
+            saving: Saving…
+            search: Search
+            search_placeholder: Name, filename or alt text
+            takes_effect: Changes take effect wherever it's used as soon as they're saved.
+            top_level: At the top
+            unsorted: Unsorted
+            upload: Upload
+            upload_copy: Upload a copy
+            upload_failed: Couldn't upload
+            uploading: Uploading…
+            use_existing: Use the existing one
         meta_description: Meta description
         meta_description_help: Search engines may show it under the title in their results.
         meta_title: Meta title

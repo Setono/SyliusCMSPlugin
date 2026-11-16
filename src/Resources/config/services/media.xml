@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!--
+        The plugin's default Flysystem storage, media.storage unless a project configures another: a local public
+        directory beside Sylius's own public/media/image, whose public URLs Flysystem builds from public_url. It holds the
+        only copy of every file, so a project keeps it across deploys. See "Image processing" in docs/spec/media.md
+        -->
+        <service id="setono_sylius_cms.storage.adapter" class="League\Flysystem\Local\LocalFilesystemAdapter">
+            <argument>%kernel.project_dir%/public/media/cms</argument>
+        </service>
+
+        <service id="setono_sylius_cms.storage" class="League\Flysystem\Filesystem">
+            <argument type="service" id="setono_sylius_cms.storage.adapter"/>
+            <argument type="collection">
+                <argument key="visibility">public</argument>
+                <argument key="directory_visibility">public</argument>
+                <argument key="public_url">/media/cms</argument>
+            </argument>
+        </service>
+
+        <!-- The effective upload limit, read from the PHP that runs -->
+        <service id="Setono\SyliusCMSPlugin\Media\UploadLimit" class="Setono\SyliusCMSPlugin\Media\UploadLimit">
+            <factory class="Setono\SyliusCMSPlugin\Media\UploadLimit" method="fromPhp"/>
+            <argument>%setono_sylius_cms.media.max_upload_size%</argument>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Media\MediaTypes" class="Setono\SyliusCMSPlugin\Media\MediaTypes">
+            <argument>%setono_sylius_cms.media.types%</argument>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Media\MimeTypeDetector" class="Setono\SyliusCMSPlugin\Media\MimeTypeDetector">
+            <argument type="service" id="mime_types"/>
+        </service>
+
+        <!-- Turns an image upright with the image library LiipImagine is configured with -->
+        <service id="Setono\SyliusCMSPlugin\Media\Image\ImageNormalizer" class="Setono\SyliusCMSPlugin\Media\Image\ImageNormalizer">
+            <argument type="service" id="liip_imagine"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Media\Image\SvgSanitizer" class="Setono\SyliusCMSPlugin\Media\Image\SvgSanitizer"/>
+
+        <!-- Checks every uploaded, replaced or imported file the same way -->
+        <service id="Setono\SyliusCMSPlugin\Media\MediaFileChecker" class="Setono\SyliusCMSPlugin\Media\MediaFileChecker">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\UploadLimit"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaTypes"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MimeTypeDetector"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\Image\ImageNormalizer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\Image\SvgSanitizer"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Media\MediaFileCheckerInterface" alias="Setono\SyliusCMSPlugin\Media\MediaFileChecker"/>
+
+        <service id="Setono\SyliusCMSPlugin\Media\MediaUploader" class="Setono\SyliusCMSPlugin\Media\MediaUploader">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaFileCheckerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.factory.media_item"/>
+            <argument type="service" id="setono_sylius_cms.media.storage"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Media\MediaUploaderInterface" alias="Setono\SyliusCMSPlugin\Media\MediaUploader"/>
+
+        <service id="Setono\SyliusCMSPlugin\Media\MediaUrlGenerator" class="Setono\SyliusCMSPlugin\Media\MediaUrlGenerator">
+            <argument type="service" id="setono_sylius_cms.media.storage"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface" alias="Setono\SyliusCMSPlugin\Media\MediaUrlGenerator"/>
+
+        <service id="Setono\SyliusCMSPlugin\Media\AltTextResolver" class="Setono\SyliusCMSPlugin\Media\AltTextResolver">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Media\AltTextResolverInterface" alias="Setono\SyliusCMSPlugin\Media\AltTextResolver"/>
+
+        <service id="Setono\SyliusCMSPlugin\Media\MediaItemSaver" class="Setono\SyliusCMSPlugin\Media\MediaItemSaver">
+            <argument type="service" id="doctrine"/>
+            <argument type="service" id="clock"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="sylius.translation_locale_provider"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Media\MediaItemSaverInterface" alias="Setono\SyliusCMSPlugin\Media\MediaItemSaver"/>
+
+        <service id="Setono\SyliusCMSPlugin\Media\MediaFolderModifier" class="Setono\SyliusCMSPlugin\Media\MediaFolderModifier">
+            <argument type="service" id="setono_sylius_cms.factory.media_folder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>
+            <argument type="service" id="doctrine"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Media\MediaFolderModifierInterface" alias="Setono\SyliusCMSPlugin\Media\MediaFolderModifier"/>
+    </services>
+</container>

@@ -17,6 +17,8 @@ use Setono\SyliusCMSPlugin\Field\DateTimeHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
+use Setono\SyliusCMSPlugin\Media\MediaTypes;
+use Setono\SyliusCMSPlugin\Media\UploadLimit;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
@@ -319,6 +321,21 @@ final class RegistryExporterTest extends TestCase
     }
 
     /**
+     * The builder checks a file before uploading it. See "What the library holds" in docs/spec/media.md
+     *
+     * @test
+     */
+    public function it_exports_the_effective_upload_limit_and_the_mime_types_of_each_kind_of_media_item(): void
+    {
+        $registry = $this->exporter()->export();
+
+        self::assertSame([
+            'maxUploadSize' => 2 * 1024 * 1024,
+            'types' => ['image' => ['image/jpeg', 'image/png'], 'video' => [], 'document' => ['application/pdf']],
+        ], $registry['media']);
+    }
+
+    /**
      * @param list<string> $disabled
      * @param array<string, array<string, array{label: string, class: string}>> $styles
      * @param array<string, class-string> $blockTypes block types besides the shipped Columns, Column and Heading
@@ -367,6 +384,9 @@ final class RegistryExporterTest extends TestCase
             $catalogues->reveal(),
             Conditions::registry($conditionKinds),
             new LayoutRegistry(['page' => ['standard' => Standard::class, 'landing' => Landing::class, 'wide' => Wide::class]], new FieldReader(), ['page' => 'landing'], $disabledLayouts),
+            // A configured limit below PHP's
+            new UploadLimit(2 * 1024 * 1024, 8 * 1024 * 1024),
+            new MediaTypes(['image' => ['image/jpeg', 'image/png'], 'document' => ['application/pdf']]),
         );
     }
 }

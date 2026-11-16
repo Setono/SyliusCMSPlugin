@@ -47,9 +47,23 @@ final class HubMenuBuilderTest extends TestCase
 
         self::assertSame('setono_sylius_cms.menu.admin.hub.entries', self::child($menu, 'entries')->getLabel());
 
-        $library = self::child($menu, 'library');
-        self::assertSame('setono_sylius_cms.menu.admin.hub.library', $library->getLabel());
-        self::assertSame([], $library->getChildren());
+        self::assertSame('setono_sylius_cms.menu.admin.hub.library', self::child($menu, 'library')->getLabel());
+    }
+
+    /**
+     * @test
+     */
+    public function its_library_has_the_media_library(): void
+    {
+        $library = self::child($this->menu(), 'library');
+
+        self::assertSame(['media'], array_keys($library->getChildren()));
+
+        $media = self::child($library, 'media');
+        self::assertSame('setono_sylius_cms.menu.admin.hub.media', $media->getLabel());
+        self::assertSame('/admin/cms/media', $media->getUri());
+        self::assertSame('images outline', $media->getLabelAttribute('icon'));
+        self::assertTrue(MenuFactory::matcherOn('setono_sylius_cms_admin_media_index')->isCurrent($media));
     }
 
     /**
@@ -95,10 +109,10 @@ final class HubMenuBuilderTest extends TestCase
     public function it_lets_listeners_add_items(): void
     {
         $this->eventDispatcher->addListener(HubMenuBuilder::EVENT, static function (MenuBuilderEvent $event): void {
-            $event->getMenu()->getChild('library')?->addChild('media', ['uri' => '/media']);
+            $event->getMenu()->getChild('library')?->addChild('brand_assets', ['uri' => '/brand-assets']);
         });
 
-        self::assertSame(['media'], array_keys(self::child($this->menu(), 'library')->getChildren()));
+        self::assertSame(['media', 'brand_assets'], array_keys(self::child($this->menu(), 'library')->getChildren()));
     }
 
     private function menu(): ItemInterface

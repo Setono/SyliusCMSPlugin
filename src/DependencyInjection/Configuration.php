@@ -8,6 +8,8 @@ use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Factory\HomepageFactory;
 use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
+use Setono\SyliusCMSPlugin\Media\FileSize;
+use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
@@ -20,6 +22,12 @@ use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
 use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
+use Setono\SyliusCMSPlugin\Model\MediaFolder;
+use Setono\SyliusCMSPlugin\Model\MediaFolderInterface;
+use Setono\SyliusCMSPlugin\Model\MediaItem;
+use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
+use Setono\SyliusCMSPlugin\Model\MediaItemTranslation;
+use Setono\SyliusCMSPlugin\Model\MediaItemTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\OldSlug;
 use Setono\SyliusCMSPlugin\Model\OldSlugInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -39,6 +47,8 @@ use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepository;
+use Setono\SyliusCMSPlugin\Repository\MediaFolderRepository;
+use Setono\SyliusCMSPlugin\Repository\MediaItemRepository;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
@@ -55,6 +65,8 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 final class Configuration implements ConfigurationInterface
 {
+    private const MIME_TYPE = '#^[a-z0-9][a-z0-9!\#$&^_.+-]*/[a-z0-9][a-z0-9!\#$&^_.+-]*$#i';
+
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder('setono_sylius_cms');
@@ -89,6 +101,7 @@ final class Configuration implements ConfigurationInterface
         $this->addContentTypesSection($rootNode);
         $this->addFallbackLocalesSection($rootNode);
         $this->addRevisionsSection($rootNode);
+        $this->addMediaSection($rootNode);
         $this->addResourcesSection($rootNode);
 
         return $treeBuilder;
@@ -201,6 +214,86 @@ final class Configuration implements ConfigurationInterface
     }
 
     /**
+     * The media library's storage, the MIME types each kind of media item allows, and the upload limit. See
+     * "What the library holds" and "Image processing" in docs/spec/media.md
+     */
+    private function addMediaSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('media')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('storage')
+                            ->info('A Flysystem storage service. The default writes to %kernel.project_dir%/public/media/cms, served at /media/cms')
+                            ->defaultValue('setono_sylius_cms.storage')
+                            ->cannotBeEmpty()
+                        ->end()
+                        ->arrayNode('types')
+                            ->info('The MIME types each kind of media item allows')
+                            ->addDefaultsIfNotSet()
+                            ->append(self::mimeTypes(MediaKind::Image, ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml']))
+                            ->append(self::mimeTypes(MediaKind::Video, ['video/mp4', 'video/webm']))
+                            ->append(self::mimeTypes(MediaKind::Document, ['application/pdf']))
+                            ->validate()->always(self::assertMimeTypesInOneKind(...))->end()
+                        ->end()
+                        ->scalarNode('max_upload_size')
+                            ->info('In bytes, or as php.ini writes it, such as 20M. null means PHP\'s effective limit, and a value above it is lowered to it')
+                            ->defaultNull()
+                            ->validate()
+                                ->ifTrue(static fn (mixed $size): bool => null !== $size)
+                                ->then(static fn (mixed $size): int => FileSize::parse(is_int($size) || is_string($size) ? $size : ''))
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * @param list<string> $default
+     */
+    private static function mimeTypes(MediaKind $kind, array $default): ArrayNodeDefinition
+    {
+        $node = new ArrayNodeDefinition($kind->value);
+        $node
+            ->info(sprintf('The MIME types a media item of kind %s may have', $kind->value))
+            ->scalarPrototype()
+                ->cannotBeEmpty()
+                ->validate()
+                    ->ifTrue(static fn (mixed $type): bool => !is_string($type) || 1 !== preg_match(self::MIME_TYPE, $type))
+                    ->then(static fn (mixed $type): never => throw new \InvalidArgumentException(sprintf('"%s" isn\'t a MIME type, such as image/jpeg', is_scalar($type) ? (string) $type : get_debug_type($type))))
+                ->end()
+            ->end()
+            ->defaultValue($default)
+        ;
+
+        return $node;
+    }
+
+    /**
+     * @param array<string, list<string>> $types
+     *
+     * @return array<string, list<string>>
+     */
+    private static function assertMimeTypesInOneKind(array $types): array
+    {
+        $kinds = [];
+        foreach ($types as $kind => $mimeTypes) {
+            foreach ($mimeTypes as $mimeType) {
+                if (isset($kinds[$mimeType]) && $kinds[$mimeType] !== $kind) {
+                    throw new \InvalidArgumentException(sprintf('The MIME type "%s" is in both %s and %s, so an uploaded file of it would have no one kind', $mimeType, $kinds[$mimeType], $kind));
+                }
+
+                $kinds[$mimeType] = $kind;
+            }
+        }
+
+        return $types;
+    }
+
+    /**
      * @param array<array-key, array<array-key, array{label: string, class: string}>> $blockStyles
      *
      * @return array<array-key, array<array-key, array{label: string, class: string}>>
@@ -277,6 +370,8 @@ final class Configuration implements ConfigurationInterface
                     ->append(self::resourceWithoutController('scheduled_publish', ScheduledPublish::class, ScheduledPublishInterface::class, ScheduledPublishRepository::class))
                     ->append(self::resourceWithoutController('share_link', ShareLink::class, ShareLinkInterface::class, ShareLinkRepository::class, ShareLinkFactory::class))
                     ->append(self::resourceWithoutController('homepage', Homepage::class, HomepageInterface::class, HomepageRepository::class, HomepageFactory::class))
+                    ->append(self::mediaItemResource())
+                    ->append(self::resourceWithoutController('media_folder', MediaFolder::class, MediaFolderInterface::class, MediaFolderRepository::class))
                     ->children()
                         ->arrayNode('page')
                             ->addDefaultsIfNotSet()
@@ -335,6 +430,47 @@ final class Configuration implements ConfigurationInterface
                         ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
                         ->scalarNode('repository')->defaultValue(EntryRepository::class)->cannotBeEmpty()->end()
                         ->scalarNode('factory')->defaultValue(Factory::class)->cannotBeEmpty()->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+
+        return $node;
+    }
+
+    /**
+     * The media items, whose translations hold the alt text. The media library is a screen of its own, so they have no
+     * controller
+     */
+    private static function mediaItemResource(): ArrayNodeDefinition
+    {
+        $node = new ArrayNodeDefinition('media_item');
+        $node
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->variableNode('options')->end()
+                ->arrayNode('classes')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('model')->defaultValue(MediaItem::class)->cannotBeEmpty()->end()
+                        ->scalarNode('interface')->defaultValue(MediaItemInterface::class)->cannotBeEmpty()->end()
+                        ->scalarNode('repository')->defaultValue(MediaItemRepository::class)->cannotBeEmpty()->end()
+                        ->scalarNode('factory')->defaultValue(TranslatableFactory::class)->cannotBeEmpty()->end()
+                    ->end()
+                ->end()
+                ->arrayNode('translation')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->variableNode('options')->end()
+                        ->arrayNode('classes')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->scalarNode('model')->defaultValue(MediaItemTranslation::class)->cannotBeEmpty()->end()
+                                ->scalarNode('interface')->defaultValue(MediaItemTranslationInterface::class)->cannotBeEmpty()->end()
+                                ->scalarNode('repository')->cannotBeEmpty()->end()
+                                ->scalarNode('factory')->defaultValue(Factory::class)->cannotBeEmpty()->end()
+                            ->end()
+                        ->end()
                     ->end()
                 ->end()
             ->end()
