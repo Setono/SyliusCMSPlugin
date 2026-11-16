@@ -10,10 +10,14 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Field\Choice;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
+use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\HydrationContext;
 use Setono\SyliusCMSPlugin\Field\Text;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\ChannelsByLocale;
 use Sylius\Component\Core\Model\ChannelInterface;
+use Symfony\Component\DependencyInjection\ServiceLocator;
+use Symfony\Component\Translation\IdentityTranslator;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -22,7 +26,7 @@ final class ChoiceHandlerTest extends TestCase
 {
     use ProphecyTrait;
 
-    private const CHOICES = ['h1' => 'heading.h1', 'h2' => 'heading.h2'];
+    private const CHOICES = ['h1' => 'setono_sylius_cms.choice.heading_level.h1', 'h2' => 'setono_sylius_cms.choice.heading_level.h2'];
 
     /** @var ObjectProphecy<TranslatorInterface> */
     private ObjectProphecy $translator;
@@ -30,8 +34,8 @@ final class ChoiceHandlerTest extends TestCase
     protected function setUp(): void
     {
         $this->translator = $this->prophesize(TranslatorInterface::class);
-        $this->translator->trans('heading.h1')->willReturn('Heading 1');
-        $this->translator->trans('heading.h2')->willReturn('Heading 2');
+        $this->translator->trans('setono_sylius_cms.choice.heading_level.h1')->willReturn('Heading 1');
+        $this->translator->trans('setono_sylius_cms.choice.heading_level.h2')->willReturn('Heading 2');
     }
 
     /**
@@ -70,11 +74,24 @@ final class ChoiceHandlerTest extends TestCase
      */
     public function its_schema_writes_numeric_choice_values_as_strings(): void
     {
-        $this->translator->trans('One')->willReturn('One');
+        $this->translator->trans('setono_sylius_cms.choice.spacer_size.small')->willReturn('Small');
 
-        $schema = $this->handler()->schema(new Choice(label: 'Columns', choices: ['1' => 'One']));
+        $schema = $this->handler()->schema(new Choice(label: 'Size', choices: ['1' => 'setono_sylius_cms.choice.spacer_size.small']));
 
         self::assertSame(['1'], $schema['enum']);
+    }
+
+    /**
+     * PHP turns a numeric choice value into an int key, while the value is stored as a string
+     *
+     * @test
+     */
+    public function it_fits_and_hydrates_a_numeric_choice_value_as_a_string(): void
+    {
+        $field = new Choice(label: 'Columns', choices: ['2' => 'Two', '3' => 'Three']);
+
+        self::assertTrue($this->handler()->fits($field, '2'));
+        self::assertSame('3', $this->handler()->hydrate($field, '3', $this->hydrationContext()));
     }
 
     /**
@@ -180,16 +197,105 @@ final class ChoiceHandlerTest extends TestCase
         $this->handler()->schema(new Text(label: 'Heading'));
     }
 
+    /**
+     * @test
+     */
+    public function its_schema_has_the_choices_a_provider_gives_in_the_translators_locale(): void
+    {
+        $translator = new IdentityTranslator();
+        $translator->setLocale('da_DK');
+
+        self::assertSame(
+            [
+                'type' => 'array',
+                'items' => ['type' => 'string', 'enum' => ['WEB', '42']],
+                'uniqueItems' => true,
+                'x-cms-options' => ['choices' => ['WEB' => 'Webbutik', 42 => 'Butik 42'], 'multiple' => true],
+            ],
+            $this->providing($translator)->schema(self::fromProvider()),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_asks_a_provider_in_english_when_the_translator_has_no_locale(): void
+    {
+        $schema = $this->providing($this->translator->reveal())->schema(self::fromProvider());
+
+        self::assertSame(['choices' => ['WEB' => 'Web store', 42 => 'Store 42', 'B2B' => 'Wholesale'], 'multiple' => true], $schema['x-cms-options']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_hydrates_only_the_values_a_provider_gives_in_the_shoppers_locale(): void
+    {
+        $translator = new IdentityTranslator();
+        $translator->setLocale('da_DK');
+        $handler = $this->providing($translator);
+
+        self::assertSame(['42', 'WEB'], $handler->hydrate(self::fromProvider(), ['42', 'B2B', 'WEB'], $this->hydrationContext('da_DK')));
+        self::assertSame(['42', 'B2B', 'WEB'], $handler->hydrate(self::fromProvider(), ['42', 'B2B', 'WEB'], $this->hydrationContext('en_US')));
+        self::assertSame('WEB', $handler->hydrate(self::fromProvider(multiple: false), 'WEB', $this->hydrationContext('da_DK')));
+        self::assertNull($handler->hydrate(self::fromProvider(multiple: false), 'B2B', $this->hydrationContext('da_DK')));
+    }
+
+    /**
+     * @test
+     */
+    public function it_fits_only_the_values_a_provider_gives_in_the_translators_locale(): void
+    {
+        $translator = new IdentityTranslator();
+        $translator->setLocale('da_DK');
+
+        self::assertTrue($this->providing($translator)->fits(self::fromProvider(), ['WEB', '42']));
+        self::assertFalse($this->providing($translator)->fits(self::fromProvider(), ['WEB', 'B2B']));
+        self::assertTrue($this->providing(new IdentityTranslator())->fits(self::fromProvider(), ['WEB', 'B2B']));
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_provider_that_is_not_registered(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf('The choices provider %s isn\'t registered', ChannelsByLocale::class));
+
+        $this->handler()->schema(self::fromProvider());
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_provider_that_does_not_implement_the_interface(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf('The choices provider %s must implement %s', ChannelsByLocale::class, ChoicesProviderInterface::class));
+
+        (new ChoiceHandler(new IdentityTranslator(), new ServiceLocator([ChannelsByLocale::class => static fn (): \stdClass => new \stdClass()])))->schema(self::fromProvider());
+    }
+
+    private static function fromProvider(bool $multiple = true): Choice
+    {
+        return new Choice(label: 'Channels', multiple: $multiple, choicesProvider: ChannelsByLocale::class);
+    }
+
+    private function providing(TranslatorInterface $translator): ChoiceHandler
+    {
+        return new ChoiceHandler($translator, new ServiceLocator([ChannelsByLocale::class => static fn (): ChannelsByLocale => new ChannelsByLocale()]));
+    }
+
     private function handler(): ChoiceHandler
     {
         return new ChoiceHandler($this->translator->reveal());
     }
 
-    private function hydrationContext(): HydrationContext
+    private function hydrationContext(string $localeCode = 'en_US'): HydrationContext
     {
         return new HydrationContext(new RenderContext(
             $this->prophesize(ChannelInterface::class)->reveal(),
-            'en_US',
+            $localeCode,
             'USD',
             null,
             '@guest',

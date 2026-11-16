@@ -23,11 +23,12 @@ export interface TranslationSource {
 /** Field name, then locale, then where that value was translated from. */
 export type TranslationState = Record<string, Record<string, TranslationSource>>;
 
-export interface VisibilityCondition {
+/** A visibility condition in the stored condition format. A type, not an interface, so it is a JsonValue too. */
+export type VisibilityCondition = {
     kind: string;
     negate: boolean;
     params: JsonObject;
-}
+};
 
 export interface StoredBlock {
     key: string;
@@ -241,9 +242,19 @@ export interface ContentTypeDefinition {
     layouts: LayoutDefinition[];
 }
 
+/** A kind of visibility condition, whose parameters are fields shared by all translations. */
+export interface ConditionKindDefinition {
+    code: string;
+    label: string;
+    /** In display order. */
+    fields: FieldDefinition[];
+}
+
 export interface Registry {
     blockTypes: BlockTypeDefinition[];
     contentTypes: ContentTypeDefinition[];
+    /** In the order the condition picker lists them. */
+    conditionKinds: ConditionKindDefinition[];
     /** The UI strings, already translated, keyed by translation key. */
     strings: Record<string, string>;
 }

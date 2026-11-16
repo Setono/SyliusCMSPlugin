@@ -8,7 +8,7 @@ use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 
 /**
  * What colleagues' change sets touched: the values they set, in blocks and in the entry, the blocks they set values,
- * styles or translation state on or added, and the blocks they moved. A block they removed is gone, so a change to it shows up as a missing
+ * styles, conditions or translation state on or added, and the blocks they moved. A block they removed is gone, so a change to it shows up as a missing
  * block instead
  *
  * @internal
@@ -35,7 +35,7 @@ final class Footprint
                 $this->changed[] = $change->key;
             }
 
-            if ($change instanceof SetStyle || $change instanceof SetTranslated) {
+            if ($change instanceof SetStyle || $change instanceof SetConditions || $change instanceof SetTranslated) {
                 $this->changed[] = $change->key;
             }
 

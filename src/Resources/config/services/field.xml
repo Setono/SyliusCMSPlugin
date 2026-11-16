@@ -23,7 +23,17 @@
 
         <service id="Setono\SyliusCMSPlugin\Field\ChoiceHandler" class="Setono\SyliusCMSPlugin\Field\ChoiceHandler">
             <argument type="service" id="translator"/>
+            <!-- The choices providers Choice fields name, by class: services implementing ChoicesProviderInterface, which autoconfiguration tags -->
+            <argument type="tagged_locator" tag="setono_sylius_cms.choices_provider"/>
 
+            <tag name="setono_sylius_cms.field_handler"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Field\DateHandler" class="Setono\SyliusCMSPlugin\Field\DateHandler">
+            <tag name="setono_sylius_cms.field_handler"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Field\DateTimeHandler" class="Setono\SyliusCMSPlugin\Field\DateTimeHandler">
             <tag name="setono_sylius_cms.field_handler"/>
         </service>
     </services>

@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Registry;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
+use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\SignedIn;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
 
@@ -33,5 +34,7 @@ final class AttributeReaderTest extends TestCase
         self::assertSame('plain', AttributeReader::blockType(Plain::class)?->code);
         self::assertNull(AttributeReader::layout(Plain::class));
         self::assertSame('landing', AttributeReader::layout(Landing::class)?->code);
+        self::assertNull(AttributeReader::conditionKind(Plain::class));
+        self::assertSame('signed_in', AttributeReader::conditionKind(SignedIn::class)?->code);
     }
 }

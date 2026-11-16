@@ -14,6 +14,8 @@ export type FieldRowProps = Omit<FieldControlProps, 'describedBy' | 'placeholder
     fallback?: FieldFallback | undefined;
     /** Given when the value is outdated: the value it was translated from has changed since. */
     outdated?: OutdatedValue | undefined;
+    /** Whether a shared field carries the "All languages" badge. Fields that are always shared, such as a condition's, leave it out. */
+    languageBadge?: boolean;
 };
 
 /**
@@ -22,7 +24,7 @@ export type FieldRowProps = Omit<FieldControlProps, 'describedBy' | 'placeholder
  * "Copy it here", and an outdated field shows the current text of its source, with "Mark as up to date". See
  * "Translation aids" in docs/spec/builder.md
  */
-export function FieldRow({ errors = [], fallback, outdated, ...props }: FieldRowProps) {
+export function FieldRow({ errors = [], fallback, outdated, languageBadge = true, ...props }: FieldRowProps) {
     const t = useTranslator();
     const { id, schema, value, onChange } = props;
     const Control = controlFor(schema['x-cms-type']);
@@ -50,7 +52,7 @@ export function FieldRow({ errors = [], fallback, outdated, ...props }: FieldRow
                         *
                     </span>
                 )}
-                {!schema['x-cms-translatable'] && (
+                {languageBadge && !schema['x-cms-translatable'] && (
                     <span className={styles.badge} title={t('setono_sylius_cms.builder.all_languages_help')}>
                         {t('setono_sylius_cms.builder.all_languages')}
                     </span>

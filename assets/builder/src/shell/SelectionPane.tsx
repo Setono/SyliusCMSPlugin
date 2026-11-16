@@ -14,10 +14,11 @@ import { blockHint, blockLabel } from './BlockTreePane';
 import { ArrowDownIcon, ArrowUpIcon, CopyIcon, PlusIcon, TrashIcon } from './icons';
 import styles from './SelectionPane.module.css';
 import { SettingsPane } from './SettingsPane';
+import { VisibilityConditions } from './VisibilityConditions';
 
 /**
  * The right pane: the selected block's path, its actions, its block style when its block type offers any, its fields,
- * rendered from their schemas, and its children, or the entry's settings. With several blocks selected, the actions for all of them.
+ * rendered from their schemas, its children and its visibility conditions, or the entry's settings. With several blocks selected, the actions for all of them.
  */
 export function SelectionPane() {
     const t = useTranslator();
@@ -72,6 +73,7 @@ export function SelectionPane() {
                 ))}
             </div>
             {(blockType?.children.length ?? 0) > 0 && <Children block={block} label={label} />}
+            <VisibilityConditions key={`conditions-${block.key}`} block={block} />
         </div>
     );
 }

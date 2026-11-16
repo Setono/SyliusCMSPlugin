@@ -213,6 +213,20 @@ final class TranslatableValuesTest extends TestCase
     }
 
     /**
+     * Nobody reads a block in a locale it's hidden in, nor what's inside it
+     *
+     * @test
+     */
+    public function it_leaves_out_the_values_of_a_block_a_locale_condition_hides_in_the_locale_and_of_the_blocks_inside_it(): void
+    {
+        $hidden = new StoredBlock(self::A, 'group', 1, conditions: [['kind' => 'locale', 'negate' => true, 'params' => ['locales' => ['da_DK']]]], children: [self::heading(self::B, ['en_US' => 'Inside'])]);
+        $page = self::page([$hidden, self::heading(self::C, ['en_US' => 'Outside'])]);
+
+        self::assertSame(['block.' . self::C . '.text'], array_map(static fn (TranslatableValue $value): string => $value->path, $this->blockValues($page, 'da_DK')));
+        self::assertSame(['block.' . self::B . '.text', 'block.' . self::C . '.text'], array_map(static fn (TranslatableValue $value): string => $value->path, $this->blockValues($page, 'fr_FR')));
+    }
+
+    /**
      * @test
      */
     public function it_gives_the_values_of_the_entry_fields_the_layout_and_the_blocks_at_any_depth_in_order(): void

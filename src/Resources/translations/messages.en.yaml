@@ -7,6 +7,7 @@ setono_sylius_cms:
         accordion_item: Accordion item
         column: Column
         columns: Columns
+        first_match: First match
         group: Group
         heading: Heading
         rich_text: Rich text
@@ -21,6 +22,12 @@ setono_sylius_cms:
             large: Large
             medium: Medium
             small: Small
+    # The condition kinds' labels. See "Condition kinds" in docs/spec/targeting.md
+    condition_kind:
+        channel: Channel
+        customer_group: Customer group
+        date_window: Date window
+        locale: Language
     content_type:
         page: Page
     # A content type's list is named by its plural. One without a plural here is named by its label
@@ -30,11 +37,20 @@ setono_sylius_cms:
         accordion_item:
             content: Content
             title: Title
+        channel_condition:
+            channels: Channels
+        customer_group_condition:
+            groups: Customer groups
+        date_window_condition:
+            from: From
+            until: Until
         group:
             full_width: Full width
         heading:
             level: Level
             text: Text
+        locale_condition:
+            locales: Languages
         rich_text:
             content: Content
         spacer:
@@ -66,6 +82,8 @@ setono_sylius_cms:
             title: Title
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
+        deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
+        deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
         removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
@@ -157,6 +175,7 @@ setono_sylius_cms:
         add_block_above: Add block above
         add_block_below: Add block below
         add_block_inside: 'Add a block inside %block%'
+        add_condition: Add condition
         add_translation: 'Add %locale% translation'
         all_languages: All languages
         all_languages_help: A change here changes every language
@@ -172,6 +191,9 @@ setono_sylius_cms:
         blocks_selected: '%count% blocks selected'
         channels: Channels
         children: Blocks inside
+        condition: 'Condition %number%'
+        condition_kind: Kind
+        condition_match: Matches when it
         copy_it_here: Copy it here
         clash: A colleague changed this too
         clash_changed_block: 'You deleted %block%, which a colleague changed.'
@@ -198,6 +220,11 @@ setono_sylius_cms:
         falls_back_to: 'Empty here, so it shows the %locale% text'
         guests: Guests
         has_errors: Has errors
+        hidden_in_preview: Hidden in this channel and language
+        is_inside: is inside
+        is_not_one_of: is not one of
+        is_one_of: is one of
+        is_outside: is outside
         keep_mine: Keep mine
         layout: Layout
         layout_removed: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
@@ -233,6 +260,7 @@ setono_sylius_cms:
         publishing: Publishing…
         redo: Redo
         reload: Reload
+        remove_condition: Remove condition
         rich_text:
             blockquote: Quote
             bold: Bold
@@ -263,5 +291,9 @@ setono_sylius_cms:
         undo: Undo
         unknown_block_type: 'Unknown block type: %type%'
         unknown_block_type_help: The code no longer has this block type. The block is kept as it is, but the shop doesn't show it.
+        unknown_condition_kind: 'Unknown condition: %kind%'
+        unknown_condition_kind_help: 'The code no longer has this kind of condition, so the block doesn''t show. Remove the condition to show it again.'
         unpublished_changes: Unpublished changes
         unsupported_field_type: This field type isn't supported yet
+        visibility: Visibility
+        visibility_help: Shows to everyone. Add conditions to show it only to some shoppers, on some pages or at some times.

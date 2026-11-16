@@ -9,9 +9,9 @@ use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 /**
  * Merges a save onto what colleagues saved since the builder last loaded. Changes that don't touch the same values are
- * both applied, and so are moves, block styles, translation state, translations' shown switches, the layout and its
- * values, the editor's last. A value set in a layout a colleague switched away from is left out, as the switch dropped
- * the values the new layout has no field for. A real clash goes
+ * both applied, and so are moves, block styles, visibility conditions, translation state, translations' shown switches,
+ * the layout and its values, the editor's last. A value set in a layout a colleague switched away from is left out, as
+ * the switch dropped the values the new layout has no field for. A real clash goes
  * to the editor instead of being applied: the same field in the same locale, of a block or of the entry, an edit to a
  * block a colleague deleted, or deleting a block a colleague changed something in.
  * See "Saving" in docs/spec/publishing.md
@@ -93,7 +93,7 @@ final readonly class ChangeSetMerger
     private static function missingBlock(Change $change, Outline $outline): ?string
     {
         $needed = match (true) {
-            $change instanceof SetValue, $change instanceof SetStyle, $change instanceof SetTranslated, $change instanceof RemoveBlock => [$change->key],
+            $change instanceof SetValue, $change instanceof SetStyle, $change instanceof SetConditions, $change instanceof SetTranslated, $change instanceof RemoveBlock => [$change->key],
             $change instanceof MoveBlock => [$change->key, $change->parent],
             $change instanceof AddBlock => [$change->parent],
             // A change to the entry, or one the applier doesn't know, which it refuses

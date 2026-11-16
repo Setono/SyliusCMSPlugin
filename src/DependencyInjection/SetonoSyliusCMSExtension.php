@@ -6,13 +6,16 @@ namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
 use Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter;
 use Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter;
+use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBlockTypesPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterConditionKindsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLayoutsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterProblemKindsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterUpgradersPass;
+use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
@@ -26,6 +29,8 @@ use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 final class SetonoSyliusCMSExtension extends AbstractResourceExtension implements PrependExtensionInterface
 {
     public const FIELD_HANDLER_TAG = 'setono_sylius_cms.field_handler';
+
+    public const CHOICES_PROVIDER_TAG = 'setono_sylius_cms.choices_provider';
 
     /** The entry lists show the entries edited last first */
     private const GRID_SORTING = ['lastEdited' => 'desc'];
@@ -59,6 +64,10 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
         $container->registerForAutoconfiguration(FieldHandlerInterface::class)->addTag(self::FIELD_HANDLER_TAG);
         $container->registerForAutoconfiguration(ProblemKindInterface::class)->addTag(RegisterProblemKindsPass::TAG);
+        $container->registerForAutoconfiguration(ChoicesProviderInterface::class)->addTag(self::CHOICES_PROVIDER_TAG);
+        $container->registerAttributeForAutoconfiguration(AsConditionKind::class, static function (ChildDefinition $definition): void {
+            $definition->addTag(RegisterConditionKindsPass::TAG);
+        });
         $container->registerAttributeForAutoconfiguration(BlockType::class, static function (ChildDefinition $definition): void {
             $definition->addTag(RegisterBlockTypesPass::TAG);
         });

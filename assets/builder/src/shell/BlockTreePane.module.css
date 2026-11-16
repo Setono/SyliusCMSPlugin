@@ -110,6 +110,21 @@
     background: var(--builder-color-danger-subtle);
 }
 
+/* A block hidden in the preview's channel and locale, and the blocks inside it */
+.row[data-hidden] .label,
+.row[data-hidden] .hint {
+    color: var(--builder-color-text-muted);
+    text-decoration: line-through;
+}
+
+.hidden {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: var(--builder-space-5);
+    color: var(--builder-color-text-muted);
+}
+
 .invalid {
     display: grid;
     flex: none;

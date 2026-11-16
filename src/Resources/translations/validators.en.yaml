@@ -6,6 +6,8 @@ setono_sylius_cms:
         unknown_type: 'Its block type "%type%" no longer exists, so it isn''t shown.'
     field:
         invalid_choice: The value you selected is not a valid choice.
+        not_date: This value should be a date.
+        not_date_time: This value should be a date and time.
         not_rich_text: This value should be formatted text.
         not_text: This value should be text.
         not_toggle: This value should be on or off.

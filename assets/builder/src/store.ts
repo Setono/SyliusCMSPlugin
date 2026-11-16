@@ -13,7 +13,7 @@ import type { Locale } from './config';
 import { isRemovedLayout, layoutOf, switchLayout } from './layouts';
 import { localeOf } from './locales';
 import { entryValues, sourceOfTyped, upToDate } from './translationState';
-import type { BlockTypeDefinition, Clash, ContentTypeDefinition, Entry, EntryStatus, FieldValues, JsonValue, LayoutDefinition, StoredBlock, TranslationSource } from './types';
+import type { BlockTypeDefinition, Clash, ConditionKindDefinition, ContentTypeDefinition, Entry, EntryStatus, FieldValues, JsonValue, LayoutDefinition, StoredBlock, TranslationSource, VisibilityCondition } from './types';
 import { normalizeValue, writeEntryTranslated, writeEntryValue, writeFieldValue, writeTranslated } from './values';
 
 enablePatches();
@@ -32,6 +32,8 @@ export interface BuilderData {
     /** The one locale the builder edits, which the locale switcher picks. */
     locale: string;
     blockTypes: BlockTypeDefinition[];
+    /** The kinds of visibility conditions a block can carry. */
+    conditionKinds: ConditionKindDefinition[];
     /** What each spot in the tree may hold. */
     rules: NestingRules;
     /** The entry's content type's layouts, the default first, disabled ones too, or none for a content type without its own URL. */
@@ -109,6 +111,11 @@ export interface BuilderActions {
     /** Picks one of the block type's styles for a block, by its code, or none when the style is null. */
     setBlockStyle(key: string, style: string | null): void;
     /**
+     * Sets a block's visibility conditions, all of them. Changes one after another to the same block's conditions, such
+     * as picking several locales, are undone in one step.
+     */
+    setConditions(key: string, conditions: VisibilityCondition[]): void;
+    /**
      * Switches the entry to another of its content type's layouts, by its code, leaving the blocks and the entry fields as
      * they are. The layout's values carry over to fields of the new layout with the same name and field type, with their
      * translation state, and the rest are dropped, which undo brings back. Picking a layout clears the flag of one that
@@ -175,13 +182,14 @@ export interface BuilderStoreOptions {
     locales?: readonly Locale[];
     blockTypes: BlockTypeDefinition[];
     contentTypes: ContentTypeDefinition[];
+    conditionKinds?: ConditionKindDefinition[];
     entry: Entry;
     status: EntryStatus;
     lockToken?: number;
     generateKey?: () => string;
 }
 
-export function createBuilderStore({ locale, locales = [], blockTypes, contentTypes, entry, status, lockToken = 0, generateKey = generateBlockKey }: BuilderStoreOptions): BuilderStore {
+export function createBuilderStore({ locale, locales = [], blockTypes, contentTypes, conditionKinds = [], entry, status, lockToken = 0, generateKey = generateBlockKey }: BuilderStoreOptions): BuilderStore {
     const chainOf = (code: string): string[] => localeOf(locales, code).fallbackChain;
     const blockTypesByCode = new Map(blockTypes.map((blockType) => [blockType.code, blockType]));
     const contentType = contentTypes.find((candidate) => candidate.code === entry.contentType);
@@ -257,6 +265,7 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
         return {
             locale,
             blockTypes,
+            conditionKinds,
             rules,
             layouts,
             entry,
@@ -609,6 +618,19 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
                         target.style = style;
                     }
                 });
+            },
+
+            setConditions(key, conditions) {
+                edit(
+                    (working) => {
+                        const target = findBlock(working.tree.blocks, key);
+                        if (target !== undefined) {
+                            target.conditions = conditions;
+                        }
+                    },
+                    {},
+                    JSON.stringify(['set_conditions', key]),
+                );
             },
 
             undo() {

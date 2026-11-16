@@ -24,6 +24,7 @@ use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
 use Setono\SyliusCMSPlugin\Rendering\LayoutRenderer;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Standard;
@@ -129,7 +130,7 @@ final class LayoutRendererTest extends TestCase
             $contentTypes->reveal(),
             new LayoutRegistry(['page' => ['standard' => Standard::class, 'landing' => Landing::class]], new FieldReader(), disabled: $disabled),
             $upgrader->reveal(),
-            new BlockViewBuilder(new BlockTypeRegistry(['heading' => Heading::class], new FieldReader()), $hydrator),
+            new BlockViewBuilder(new BlockTypeRegistry(['heading' => Heading::class], new FieldReader()), $hydrator, Conditions::matcher()),
             $hydrator,
             new Environment(new ArrayLoader([
                 'standard.html.twig' => 'standard|{{ layout.showTitle ? "title" : "no title" }}',

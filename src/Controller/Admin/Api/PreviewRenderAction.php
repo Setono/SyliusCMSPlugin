@@ -21,8 +21,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  * Renders the given blocks of the working copy, as the builder holds them, under the preview token in the query
  * parameter _cms_preview, and answers with their HTML by key. The token puts the request in preview mode, so the
  * blocks render through the same pipeline as the shop page in the preview, with their markers. A block that renders
- * nothing, such as one of a type the code no longer has, answers an empty string. See "Updating the preview" in
- * docs/spec/builder.md
+ * nothing, such as one of a type the code no longer has or one its visibility conditions hide, answers an empty string.
+ * See "Updating the preview" in docs/spec/builder.md
  */
 final readonly class PreviewRenderAction
 {

@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\RestoreRevisionAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RevisionIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntrySettingsAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\SearchAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SlugAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ValidateEntryAction;
@@ -127,6 +128,13 @@ return static function (RoutingConfigurator $routes): void {
     $routes->add('setono_sylius_cms_admin_api_registry', '/cms/api/registry')
         ->controller(RegistryAction::class)
         ->methods(['GET'])
+    ;
+
+    // What pickers search, by kind, such as customer_group
+    $routes->add('setono_sylius_cms_admin_api_search', '/cms/api/search/{kind}')
+        ->controller(SearchAction::class)
+        ->methods(['GET'])
+        ->requirements(['kind' => '[a-z][a-z0-9_]*'])
     ;
 
     $routes->add('setono_sylius_cms_admin_api_slug', '/cms/api/slug')

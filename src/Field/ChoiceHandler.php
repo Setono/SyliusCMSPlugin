@@ -4,28 +4,37 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Field;
 
+use Psr\Container\ContainerInterface;
+use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
+use Symfony\Contracts\Translation\LocaleAwareInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
+/**
+ * Handles Choice fields: one of the fixed choices, or of the choices its provider gives, or a list of them when multiple
+ */
 final readonly class ChoiceHandler implements FitCheckingFieldHandlerInterface
 {
-    public function __construct(private TranslatorInterface $translator)
-    {
+    /**
+     * @param ContainerInterface $choicesProviders the choices providers, by class
+     */
+    public function __construct(
+        private TranslatorInterface $translator,
+        private ContainerInterface $choicesProviders = new ServiceLocator([]),
+    ) {
     }
 
+    /**
+     * The choices in the translator's locale, which in the admin is the admin user's locale
+     */
     public function schema(Field $field): array
     {
         $field = self::choice($field);
+        $choices = $this->choices($field, $this->locale());
 
-        $one = ['type' => 'string', 'enum' => $field->values()];
+        $one = ['type' => 'string', 'enum' => array_map(strval(...), array_keys($choices))];
         $schema = $field->multiple ? ['type' => 'array', 'items' => $one, 'uniqueItems' => true] : $one;
-
-        $labels = [];
-        foreach ($field->choices as $value => $label) {
-            $labels[$value] = $this->translator->trans($label);
-        }
-
-        $schema['x-cms-options'] = ['choices' => $labels, 'multiple' => $field->multiple];
+        $schema['x-cms-options'] = ['choices' => $choices, 'multiple' => $field->multiple];
 
         return $schema;
     }
@@ -36,7 +45,7 @@ final readonly class ChoiceHandler implements FitCheckingFieldHandlerInterface
     public function hydrate(Field $field, mixed $value, HydrationContext $context): string|array|null
     {
         $field = self::choice($field);
-        $values = $field->values();
+        $values = $this->values($field, $context->renderContext->localeCode);
 
         if ($field->multiple) {
             return is_array($value) ? array_values(array_filter($value, static fn (mixed $item): bool => in_array($item, $values, true))) : [];
@@ -67,7 +76,7 @@ final readonly class ChoiceHandler implements FitCheckingFieldHandlerInterface
     public function fits(Field $field, mixed $value): bool
     {
         $field = self::choice($field);
-        $values = $field->values();
+        $values = $this->values($field, $this->locale());
 
         if (!$field->multiple) {
             return in_array($value, $values, true);
@@ -84,6 +93,50 @@ final readonly class ChoiceHandler implements FitCheckingFieldHandlerInterface
         }
 
         return true;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function values(Choice $field, string $localeCode): array
+    {
+        return null === $field->choicesProvider ? $field->values() : array_map(strval(...), array_keys($this->provider($field->choicesProvider)->getChoices($localeCode)));
+    }
+
+    /**
+     * Value => label: the fixed choices with their labels translated, or the provider's choices in the locale
+     *
+     * @return array<array-key, string>
+     */
+    private function choices(Choice $field, string $localeCode): array
+    {
+        if (null !== $field->choicesProvider) {
+            return $this->provider($field->choicesProvider)->getChoices($localeCode);
+        }
+
+        return array_map(fn (string $label): string => $this->translator->trans($label), $field->choices);
+    }
+
+    private function provider(string $class): ChoicesProviderInterface
+    {
+        if (!$this->choicesProviders->has($class)) {
+            throw new \LogicException(sprintf('The choices provider %s isn\'t registered. Make it a service implementing %s, whose id is its class, and autoconfigure it', $class, ChoicesProviderInterface::class));
+        }
+
+        $provider = $this->choicesProviders->get($class);
+        if (!$provider instanceof ChoicesProviderInterface) {
+            throw new \LogicException(sprintf('The choices provider %s must implement %s', $class, ChoicesProviderInterface::class));
+        }
+
+        return $provider;
+    }
+
+    /**
+     * The translator's locale, which in the admin is the admin user's. Symfony's translator always knows it
+     */
+    private function locale(): string
+    {
+        return $this->translator instanceof LocaleAwareInterface ? $this->translator->getLocale() : 'en';
     }
 
     private static function choice(Field $field): Choice

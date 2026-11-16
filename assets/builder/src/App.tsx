@@ -57,6 +57,7 @@ export function App({ config, api, autosaveDelay, navigate = goTo }: AppProps) {
                     locales: config.locales ?? [],
                     blockTypes: registry.blockTypes,
                     contentTypes: registry.contentTypes,
+                    conditionKinds: registry.conditionKinds,
                     entry,
                     status,
                     lockToken,
