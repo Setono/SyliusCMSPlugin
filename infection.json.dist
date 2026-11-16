@@ -10,6 +10,7 @@
             "Rendering/EntryUrlLookup.php",
             "Query/VisibleEntriesQuery.php",
             "Query/UrlClaimsQuery.php",
+            "Query/ProblemCountsQuery.php",
             "Admin/Grid"
         ]
     },
