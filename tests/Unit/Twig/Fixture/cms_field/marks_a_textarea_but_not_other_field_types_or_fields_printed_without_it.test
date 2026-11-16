@@ -1,0 +1,9 @@
+--TEST--
+cms_field() marks a textarea in the builder's preview, but not other field types, nor fields printed without cms_field()
+--TEMPLATE--
+{{ cms_blocks(blocks) }}
+--DATA--
+return $this->rendering(['blocks' => [$this->quote("First line\nSecond line", 'Ann')]], 'builder')
+--EXPECT--
+<blockquote class="small"><p><!--cms:field 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f quote textarea-->First line
+Second line<!--/cms:field 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f quote--></p><cite>Ann</cite></blockquote>

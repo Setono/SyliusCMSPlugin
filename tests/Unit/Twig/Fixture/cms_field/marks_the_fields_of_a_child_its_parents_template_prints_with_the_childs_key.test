@@ -1,0 +1,8 @@
+--TEST--
+cms_field() marks the fields of a child its parent's template prints with the child's key
+--TEMPLATE--
+{{ cms_blocks(blocks) }}
+--DATA--
+return $this->rendering(['blocks' => [$this->faq($this->heading('Question'))]], 'builder')
+--EXPECT--
+<dl><dt><!--cms:field 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f text text-->Question<!--/cms:field 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f text--></dt></dl>

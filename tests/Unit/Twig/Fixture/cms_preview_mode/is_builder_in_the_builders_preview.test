@@ -1,0 +1,8 @@
+--TEST--
+cms_preview_mode() tells templates they render in the builder's preview
+--TEMPLATE--
+{{ cms_preview_mode() }}
+--DATA--
+return $this->inTheBuildersPreview()
+--EXPECT--
+builder

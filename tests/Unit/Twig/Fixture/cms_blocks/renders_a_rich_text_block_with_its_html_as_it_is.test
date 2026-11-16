@@ -1,0 +1,8 @@
+--TEST--
+cms_blocks() renders a rich text block with its HTML as it is
+--TEMPLATE--
+{{ cms_blocks(blocks) }}
+--DATA--
+return $this->rendering(['blocks' => [$this->richText('<p>A <strong>bold</strong> word &amp; more</p>')]])
+--EXPECT--
+<div class="cms-rich-text"><p>A <strong>bold</strong> word &amp; more</p></div>

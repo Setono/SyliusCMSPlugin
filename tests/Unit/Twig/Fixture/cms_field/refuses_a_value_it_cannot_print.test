@@ -1,0 +1,8 @@
+--TEST--
+cms_field() refuses to print a value it can't print
+--TEMPLATE--
+{{ cms_field(object, "list") }}
+--DATA--
+return $this->rendering(['object' => $this->notABlock()])
+--EXCEPTION--
+Twig\Error\RuntimeError: An exception has been thrown during the rendering of a template ("The field "list" of Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\NotABlock holds array, which cms_field() can't print. Use cms_value() to read it") in "index.twig" at line 2.

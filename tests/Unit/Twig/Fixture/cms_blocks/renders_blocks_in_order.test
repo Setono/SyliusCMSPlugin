@@ -1,0 +1,9 @@
+--TEST--
+cms_blocks() renders blocks in order
+--TEMPLATE--
+{{ cms_blocks(blocks) }}
+--DATA--
+return $this->rendering(['blocks' => [$this->heading('One'), $this->heading('Two')]])
+--EXPECT--
+<h2 class="cms-heading">One</h2>
+<h2 class="cms-heading">Two</h2>

@@ -1,0 +1,8 @@
+--TEST--
+cms_field() prints numbers and stringable values
+--TEMPLATE--
+{{ cms_field(object, "number") }}|{{ cms_field(object, "stringable") }}
+--DATA--
+return $this->rendering(['object' => $this->notABlock()])
+--EXPECT--
+42|A &amp; B

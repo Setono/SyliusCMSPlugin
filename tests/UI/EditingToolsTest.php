@@ -8,7 +8,7 @@ use Playwright\Assertions\Expect;
 use Playwright\Frame\FrameLocatorInterface;
 use Playwright\Locator\LocatorInterface;
 use Playwright\Page\PageInterface;
-use Setono\SyliusCMSPlugin\Model\PageInterface as CmsPageInterface;
+use Setono\SyliusCMSPlugin\Model\PageInterface as CMSPageInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
 /**
@@ -98,7 +98,7 @@ final class EditingToolsTest extends UITestCase
     /**
      * @return array{PageInterface, FrameLocatorInterface}
      */
-    private function openBuilder(CmsPageInterface $entry): array
+    private function openBuilder(CMSPageInterface $entry): array
     {
         $this->signInAsAdmin();
 

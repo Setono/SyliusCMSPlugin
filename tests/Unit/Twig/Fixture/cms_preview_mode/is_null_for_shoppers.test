@@ -1,0 +1,9 @@
+--TEST--
+cms_preview_mode() shows shoppers no preview mode
+--TEMPLATE--
+{# Assigned first, because older Twig, such as the lowest 3.7 allowed, compiles ?? to a defined test, which takes only a variable #}
+{% set mode = cms_preview_mode() %}{{ mode ?? "none" }}
+--DATA--
+return $this->forAShopper()
+--EXPECT--
+none

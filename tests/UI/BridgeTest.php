@@ -8,7 +8,7 @@ use Playwright\Assertions\Expect;
 use Playwright\Frame\FrameLocatorInterface;
 use Playwright\Locator\LocatorInterface;
 use Playwright\Page\PageInterface;
-use Setono\SyliusCMSPlugin\Model\PageInterface as CmsPageInterface;
+use Setono\SyliusCMSPlugin\Model\PageInterface as CMSPageInterface;
 
 /**
  * The bridge between the builder and its preview: selection linked both ways, changes patched into the page without
@@ -113,7 +113,7 @@ final class BridgeTest extends UITestCase
         }
     }
 
-    private static function twoHeadings(): CmsPageInterface
+    private static function twoHeadings(): CMSPageInterface
     {
         return self::createPageWithBlocks('About us', 'about-us', [self::heading(self::FIRST, 'First'), self::heading(self::SECOND, 'Second')]);
     }
@@ -121,7 +121,7 @@ final class BridgeTest extends UITestCase
     /**
      * @return array{PageInterface, FrameLocatorInterface}
      */
-    private function openBuilder(CmsPageInterface $entry): array
+    private function openBuilder(CMSPageInterface $entry): array
     {
         $this->signInAsAdmin();
 

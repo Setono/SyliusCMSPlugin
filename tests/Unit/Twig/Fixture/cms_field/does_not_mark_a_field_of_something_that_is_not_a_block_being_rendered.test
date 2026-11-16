@@ -1,0 +1,8 @@
+--TEST--
+cms_field() doesn't mark a field of something that isn't a block being rendered
+--TEMPLATE--
+{{ cms_field(object, "text") }}|{% with { view: blocks[0] } %}{{ cms_field(object, "text") }}{% endwith %}
+--DATA--
+return $this->rendering(['blocks' => [$this->heading('Hello')], 'object' => $this->notABlock()], 'builder')
+--EXPECT--
+Hello|Hello

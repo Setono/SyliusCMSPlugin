@@ -1,0 +1,8 @@
+--TEST--
+cms_block() renders one block
+--TEMPLATE--
+{{ cms_block(blocks[0]) }}
+--DATA--
+return $this->rendering(['blocks' => [$this->heading('Hello')]])
+--EXPECT--
+<h2 class="cms-heading">Hello</h2>

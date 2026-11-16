@@ -1,0 +1,8 @@
+--TEST--
+cms_blocks() renders an empty rich text block as an empty wrapper
+--TEMPLATE--
+{{ cms_blocks(blocks) }}
+--DATA--
+return $this->rendering(['blocks' => [$this->richText(null)]])
+--EXPECT--
+<div class="cms-rich-text"></div>
