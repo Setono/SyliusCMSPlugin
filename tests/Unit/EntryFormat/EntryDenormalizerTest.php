@@ -33,6 +33,9 @@ final class EntryDenormalizerTest extends TestCase
         $draft->setCurrentLocale('da_DK');
         $draft->setTitle('Om os');
         $draft->setSlug('om-os');
+        $draft->getTranslation('da_DK')->setMetaTitle('Om os | Butik');
+        $draft->getTranslation('en_US')->setMetaDescription('All about us');
+        $draft->setNoindex(true);
         $heading = new StoredBlock(self::KEY, 'heading', 1);
         $heading->setValue('text', 'en_US', 'Hello');
         $heading->setValue('text', 'da_DK', 'Hej');
@@ -42,7 +45,7 @@ final class EntryDenormalizerTest extends TestCase
         $json = CanonicalJson::encode($this->normalizer()->normalize($draft));
         self::assertSame(
             sprintf(
-                '{"uuid":"%s","contentType":"page","version":1,"createdAt":"%s","fields":{},"translations":{"da_DK":{"shown":true,"fields":{"slug":"om-os","title":"Om os"},"translated":{}},"en_US":{"shown":true,"fields":{"slug":"about-us","title":"About"},"translated":{}}},"tree":{"layout":{"code":"standard","version":1,"fields":{},"translated":{}},"blocks":[{"key":"%s","type":"heading","version":1,"style":null,"fields":{"level":"h3","text":{"da_DK":"Hej","en_US":"Hello"}},"translated":{},"conditions":[],"children":[]}]}}',
+                '{"uuid":"%s","contentType":"page","version":1,"createdAt":"%s","fields":{"noindex":true},"translations":{"da_DK":{"shown":true,"fields":{"metaDescription":null,"metaTitle":"Om os | Butik","slug":"om-os","title":"Om os"},"translated":{}},"en_US":{"shown":true,"fields":{"metaDescription":"All about us","metaTitle":null,"slug":"about-us","title":"About"},"translated":{}}},"tree":{"layout":{"code":"standard","version":1,"fields":{},"translated":{}},"blocks":[{"key":"%s","type":"heading","version":1,"style":null,"fields":{"level":"h3","text":{"da_DK":"Hej","en_US":"Hello"}},"translated":{},"conditions":[],"children":[]}]}}',
                 $rows->getUuid(),
                 $rows->getCreatedAt()->format('Y-m-d\TH:i:s\Z'),
                 self::KEY,
@@ -53,6 +56,7 @@ final class EntryDenormalizerTest extends TestCase
         $this->denormalizer()->denormalize(CanonicalJson::decode($json), $rows);
 
         self::assertSame($json, CanonicalJson::encode($this->normalizer()->normalize($rows)));
+        self::assertTrue($rows->isNoindex());
         self::assertInstanceOf(PageTranslation::class, $rows->getTranslations()->get('da_DK'));
         self::assertSame($rows, $rows->getTranslation('da_DK')->getTranslatable());
     }
@@ -136,19 +140,58 @@ final class EntryDenormalizerTest extends TestCase
     /**
      * @test
      */
-    public function it_leaves_the_slug_alone_for_a_content_type_without_its_own_url(): void
+    public function it_leaves_the_slug_and_the_seo_fields_alone_for_a_content_type_without_its_own_url(): void
     {
         $recipe = new Recipe();
         $recipe->setCurrentLocale('en_US');
         $recipe->setTitle('Pancakes');
         $recipe->setSlug('pancakes');
+        $recipe->getTranslation('en_US')->setMetaTitle('Pancakes | Recipes');
+        $recipe->getTranslation('en_US')->setMetaDescription('Thin ones');
+        $recipe->setNoindex(true);
         $draft = clone $recipe;
         $draft->setTitle('Crêpes');
+        $data = CanonicalJson::decode(CanonicalJson::encode($this->normalizer()->normalize($draft)));
+        self::assertIsArray($data);
+        $data['fields'] = ['noindex' => false];
+        $data['translations']['en_US']['fields'] += ['slug' => 'crepes', 'metaTitle' => 'Crêpes', 'metaDescription' => 'Thinner ones'];
 
-        $this->denormalizer()->denormalize(CanonicalJson::decode(CanonicalJson::encode($this->normalizer()->normalize($draft))), $recipe);
+        $this->denormalizer()->denormalize($data, $recipe);
 
         self::assertSame('Crêpes', $recipe->getTitle());
         self::assertSame('pancakes', $recipe->getSlug());
+        self::assertSame('Pancakes | Recipes', $recipe->getTranslation('en_US')->getMetaTitle());
+        self::assertSame('Thin ones', $recipe->getTranslation('en_US')->getMetaDescription());
+        self::assertTrue($recipe->isNoindex());
+    }
+
+    /**
+     * A draft saved before the SEO fields came has none of them
+     *
+     * @test
+     */
+    public function it_reads_an_entry_without_the_seo_fields_as_having_none(): void
+    {
+        $page = self::page(['en_US' => ['About us', 'about-us']]);
+        $page->getTranslation('en_US')->setMetaTitle('About us | Shop');
+        $page->getTranslation('en_US')->setMetaDescription('All about us');
+        $page->setNoindex(true);
+        $data = CanonicalJson::decode(CanonicalJson::encode($this->normalizer()->normalize($page)));
+        self::assertIsArray($data);
+        $data['fields'] = new \stdClass();
+        $data['translations'] = ['en_US' => ['shown' => true, 'fields' => ['title' => 'About us', 'slug' => 'about-us'], 'translated' => new \stdClass()]];
+
+        $this->denormalizer()->denormalize($data, $page);
+
+        self::assertNull($page->getTranslation('en_US')->getMetaTitle());
+        self::assertNull($page->getTranslation('en_US')->getMetaDescription());
+        self::assertFalse($page->isNoindex());
+
+        $page->setNoindex(true);
+        unset($data['fields']);
+        $this->denormalizer()->denormalize($data, $page);
+
+        self::assertFalse($page->isNoindex(), 'An entry without shared fields has Hide from search engines off');
     }
 
     /**
@@ -222,6 +265,10 @@ final class EntryDenormalizerTest extends TestCase
         yield 'a translation without fields' => [static fn (array $data): array => ['translations' => ['en_US' => ['shown' => true]]] + $data, 'The fields of the translation en_US must be a JSON object'];
         yield 'a title that is a number' => [static fn (array $data): array => ['translations' => ['en_US' => ['fields' => ['title' => 1]]]] + $data, 'The title of the translation en_US must be a string or null'];
         yield 'a slug that is a list' => [static fn (array $data): array => ['translations' => ['en_US' => ['fields' => ['slug' => ['about-us']]]]] + $data, 'The slug of the translation en_US must be a string or null'];
+        yield 'a meta title that is a number' => [static fn (array $data): array => ['translations' => ['en_US' => ['fields' => ['metaTitle' => 1]]]] + $data, 'The metaTitle of the translation en_US must be a string or null'];
+        yield 'a meta description that is a list' => [static fn (array $data): array => ['translations' => ['en_US' => ['fields' => ['metaDescription' => ['All about us']]]]] + $data, 'The metaDescription of the translation en_US must be a string or null'];
+        yield 'shared fields that are a list' => [static fn (array $data): array => ['fields' => [true]] + $data, 'The fields must be a JSON object'];
+        yield 'hide from search engines that is a string' => [static fn (array $data): array => ['fields' => ['noindex' => 'yes']] + $data, 'The field noindex must be true or false'];
         yield 'a translation without a shown switch' => [static fn (array $data): array => ['translations' => ['en_US' => ['fields' => ['title' => 'About us']]]] + $data, 'The shown switch of the translation en_US must be true or false'];
         yield 'a shown switch that is a string' => [static fn (array $data): array => ['translations' => ['en_US' => ['shown' => 'yes', 'fields' => ['title' => 'About us']]]] + $data, 'The shown switch of the translation en_US must be true or false'];
         $translation = static fn (mixed $translated): array => ['translations' => ['en_US' => ['shown' => true, 'fields' => ['title' => 'About us'], 'translated' => $translated]]];
