@@ -168,16 +168,17 @@ final class ConfigurationTest extends TestCase
      *
      * @dataProvider provideInvalidDisabledLayouts
      */
-    public function it_refuses_a_disabled_layout_that_is_not_a_content_type_code_and_a_layout_code(string $layout): void
+    public function it_refuses_a_disabled_layout_that_is_not_a_content_type_code_and_a_layout_code(int|string $layout): void
     {
         $this->assertConfigurationIsInvalid([['disabled' => ['layouts' => [$layout]]]], sprintf('A disabled layout must be "<content type code>.<layout code>", such as page.standard, not "%s"', $layout));
     }
 
     /**
-     * @return iterable<string, array{string}>
+     * @return iterable<string, array{int|string}>
      */
     public function provideInvalidDisabledLayouts(): iterable
     {
+        yield 'a number' => [42];
         yield 'a layout code alone' => ['landing'];
         yield 'a content type code that is no code' => ['Page.landing'];
         yield 'a layout code that is no code' => ['page.Landing'];
@@ -218,6 +219,8 @@ final class ConfigurationTest extends TestCase
         yield 'a content type code that is no code' => [['blog-post' => ['default_layout' => 'wide']], 'The content type code "blog-post" must match ^[a-z][a-z0-9_]*$'];
         yield 'a default layout that is no code' => [['page' => ['default_layout' => 'Landing']], 'The layout code "Landing" must match ^[a-z][a-z0-9_]*$'];
         yield 'an empty default layout' => [['page' => ['default_layout' => '']], 'cannot contain an empty value'];
+        yield 'a numeric default layout' => [['page' => ['default_layout' => 42]], 'The layout code "42" must match ^[a-z][a-z0-9_]*$'];
+        yield 'a numeric content type code' => [[42 => ['default_layout' => 'wide']], 'The content type code "42" must match ^[a-z][a-z0-9_]*$'];
     }
 
     /**

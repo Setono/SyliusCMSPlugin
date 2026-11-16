@@ -124,9 +124,10 @@ final class LayoutRegistry implements LayoutRegistryInterface
     private function markedDefault(string $contentType): string
     {
         $marked = array_filter($this->classes[$contentType] ?? [], static fn (string $class): bool => true === AttributeReader::layout($class)?->default);
+        $codes = array_keys($marked);
 
-        return match (count($marked)) {
-            1 => (string) array_key_first($marked),
+        return match (count($codes)) {
+            1 => $codes[0],
             0 => throw new \LogicException(sprintf('The content type "%1$s" has no default layout. Mark one of its layouts #[Layout(default: true)], or name one in setono_sylius_cms.content_types.%1$s.default_layout', $contentType)),
             default => throw new \LogicException(sprintf('The content type "%1$s" has more than one default layout: %2$s. Remove default: true from all but one, or name one in setono_sylius_cms.content_types.%1$s.default_layout', $contentType, implode(' and ', $marked))),
         };

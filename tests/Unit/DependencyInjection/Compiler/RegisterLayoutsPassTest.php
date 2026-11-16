@@ -215,6 +215,24 @@ final class RegisterLayoutsPassTest extends AbstractCompilerPassTestCase
     }
 
     /**
+     * RegisterContentTypesPass refuses a content type whose model has no #[ContentType], so there's nothing to check here
+     *
+     * @test
+     */
+    public function it_leaves_a_content_type_whose_model_has_no_attribute_to_the_content_types_pass(): void
+    {
+        $this->setDefinition(ContentTypeRegistry::class, new Definition(ContentTypeRegistry::class, [[
+            'page' => ['model' => Page::class, 'translation' => null, 'resource' => 'setono_sylius_cms.page'],
+            'plain' => ['model' => Plain::class, 'translation' => null, 'resource' => 'app.plain'],
+        ]]));
+        $this->setDefinition('app.standard', (new Definition(Standard::class))->addTag('setono_sylius_cms.layout'));
+
+        $this->compile();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(LayoutRegistry::class, 0, ['page' => ['standard' => Standard::class]]);
+    }
+
+    /**
      * @test
      */
     public function content_types_with_their_own_url_and_layouts_and_those_without_a_url_pass(): void

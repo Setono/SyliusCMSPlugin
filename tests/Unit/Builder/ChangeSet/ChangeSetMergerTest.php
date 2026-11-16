@@ -581,11 +581,11 @@ final class ChangeSetMergerTest extends TestCase
     {
         $merge = self::merge(
             [new SetLayout(new StoredLayout('landing', 1))],
-            [new SetLayoutValue('standard', 'showTitle', null, false), new SetLayoutTranslated('standard', 'tagline', 'da_DK', null)],
+            [new SetLayoutValue('standard', 'showTitle', null, false), new SetLayoutTranslated('standard', 'tagline', 'da_DK', null), new SetShown('da_DK', true)],
             new StoredTree(new StoredLayout('landing', 1), []),
         );
 
-        self::assertSame([], $merge->changeSet->changes);
+        self::assertEquals([new SetShown('da_DK', true)], $merge->changeSet->changes, 'The changes after them are applied');
         self::assertSame([], $merge->clashes);
     }
 

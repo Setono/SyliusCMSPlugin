@@ -81,6 +81,16 @@ final class LayoutRegistryTest extends TestCase
     /**
      * @test
      */
+    public function a_class_without_the_layout_attribute_is_no_default(): void
+    {
+        $registry = new LayoutRegistry(['page' => ['plain' => Plain::class, 'standard' => Standard::class]], new FieldReader());
+
+        self::assertSame('standard', $registry->getDefault('page')->code);
+    }
+
+    /**
+     * @test
+     */
     public function a_default_layout_named_in_the_config_wins_over_the_ones_marked_as_the_default(): void
     {
         $registry = new LayoutRegistry(['page' => ['standard' => Standard::class, 'wide' => Wide::class, 'landing' => Landing::class]], new FieldReader(), ['page' => 'landing']);

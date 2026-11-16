@@ -27,9 +27,9 @@ final readonly class LayoutMetadata
         public array $fields,
         public string $label,
         public string $template,
-        public ?string $thumbnail = null,
-        public array $shows = [],
-        public bool $disabled = false,
+        public ?string $thumbnail,
+        public array $shows,
+        public bool $disabled,
     ) {
     }
 }
