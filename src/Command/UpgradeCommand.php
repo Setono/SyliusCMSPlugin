@@ -83,7 +83,7 @@ final class UpgradeCommand extends Command
             0 === $blockTrees ? null : self::count($blockTrees, 'block tree'),
             0 === $drafts ? null : self::count($drafts, 'draft'),
             0 === $revisions ? null : self::count($revisions, 'revision'),
-        ]));
+        ], static fn (?string $count): bool => null !== $count));
         if ('' === $counts) {
             $io->success('Everything is up to date.');
         } elseif ($dryRun) {

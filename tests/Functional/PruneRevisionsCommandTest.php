@@ -26,7 +26,7 @@ final class PruneRevisionsCommandTest extends KernelTestCase
      */
     public function it_deletes_each_entrys_revisions_beyond_the_newest_50(): void
     {
-        self::bootKernel();
+        $kernel = self::bootKernel();
         $about = self::createPage('About us', 'about-us', 'Hello', published: true);
         $contact = self::createPage('Contact', 'contact', 'Hello', published: true);
         // Stored out of order, so the oldest by publish time aren't the first stored
@@ -35,7 +35,7 @@ final class PruneRevisionsCommandTest extends KernelTestCase
         }
         self::storeRevision($contact, [], '2026-01-01 10:00:00');
 
-        $tester = new CommandTester((new Application(self::$kernel ?? self::bootKernel()))->find('setono:cms:revisions:prune'));
+        $tester = new CommandTester((new Application($kernel))->find('setono:cms:revisions:prune'));
         $tester->execute([]);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());

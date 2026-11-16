@@ -174,7 +174,8 @@ final class RevisionsTest extends BuilderApiTestCase
         $response = self::json($client, 'POST', sprintf('/admin/cms/api/revisions/%d/preview', $revision), ['channel' => 'WEB', 'locale' => 'en_US'], $csrfToken);
         self::assertResponseIsSuccessful();
         self::assertIsArray($response);
-        self::assertStringStartsWith('http://localhost/en_US/about-us?_cms_preview=', (string) ($response['url'] ?? null));
+        self::assertIsString($response['url'] ?? null);
+        self::assertStringStartsWith('http://localhost/en_US/about-us?_cms_preview=', $response['url']);
 
         $response = self::json($client, 'POST', sprintf('/admin/cms/api/revisions/%d/preview', $revision), ['channel' => 'WEB', 'locale' => 'da_DK'], $csrfToken);
         self::assertResponseStatusCodeSame(400);

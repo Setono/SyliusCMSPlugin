@@ -17,9 +17,11 @@ use Setono\SyliusCMSPlugin\Model\RevisionInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Revision\RevisionRecorder;
 use Sylius\Component\Core\Model\AdminUser;
+use Sylius\Component\Core\Model\AdminUserInterface;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 final class RevisionRecorderTest extends TestCase
 {
@@ -83,11 +85,20 @@ final class RevisionRecorderTest extends TestCase
 
     private function signIn(string $username, ?string $firstName = null, ?string $lastName = null): void
     {
-        $admin = new AdminUser();
+        $admin = self::newAdmin();
         $admin->setUsername($username);
         $admin->setFirstName($firstName);
         $admin->setLastName($lastName);
+        self::assertInstanceOf(UserInterface::class, $admin);
         $this->tokenStorage->setToken(new UsernamePasswordToken($admin, 'admin', []));
+    }
+
+    /**
+     * Sylius's admin user is a Symfony user through a polyfill that static analysis doesn't follow
+     */
+    private static function newAdmin(): AdminUserInterface
+    {
+        return new AdminUser();
     }
 
     private function recorder(): RevisionRecorder

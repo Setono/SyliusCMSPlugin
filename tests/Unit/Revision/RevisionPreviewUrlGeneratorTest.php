@@ -25,6 +25,7 @@ use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Setono\SyliusCMSPlugin\Upgrade\Upgraded;
+use Sylius\Component\Channel\Model\ChannelInterface as BaseChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Locale\Model\Locale;
@@ -35,17 +36,19 @@ final class RevisionPreviewUrlGeneratorTest extends TestCase
 {
     use ProphecyTrait;
 
-    /** @var ObjectProphecy<ChannelRepositoryInterface> */
+    /** @var ObjectProphecy<ChannelRepositoryInterface<BaseChannelInterface>> */
     private ObjectProphecy $channels;
 
     private PreviewTokenSigner $signer;
 
-    /** @var array<string, mixed>|null the parameters of the URL generated last */
-    private ?array $parameters = null;
+    /** @var array<string, mixed> the parameters of the URL generated last */
+    private array $parameters = [];
 
     protected function setUp(): void
     {
-        $this->channels = $this->prophesize(ChannelRepositoryInterface::class);
+        /** @var ObjectProphecy<ChannelRepositoryInterface<BaseChannelInterface>> $channels */
+        $channels = $this->prophesize(ChannelRepositoryInterface::class);
+        $this->channels = $channels;
         $this->channels->findOneByCode(Argument::any())->willReturn(null);
         $this->channels->findOneByCode('WEB')->willReturn(self::channel('WEB', 'en_US', 'da_DK'));
         $this->channels->findOneByCode('B2B')->willReturn(self::channel('B2B', 'en_US', 'de_DE', 'da_DK'));

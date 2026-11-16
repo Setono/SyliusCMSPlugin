@@ -148,7 +148,8 @@ final class UpgradeTest extends BuilderApiTestCase
         // Its preview renders it through the upgrader
         $response = self::json($client, 'POST', sprintf('/admin/cms/api/revisions/%d/preview', (int) $revision->getId()), null, $csrfToken);
         self::assertIsArray($response);
-        $client->request('GET', (string) ($response['url'] ?? null));
+        self::assertIsString($response['url'] ?? null);
+        $client->request('GET', $response['url']);
         self::assertSelectorTextSame('.cms-tree .app-callout', 'Published with version 1');
 
         // Restoring it puts it in the draft upgraded, and leaves the revision as it was stored

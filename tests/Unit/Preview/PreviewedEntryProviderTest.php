@@ -6,11 +6,11 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Preview;
 
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
+use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
-use Prophecy\PhpUnit\ProphecyTrait;
-use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Revision;
