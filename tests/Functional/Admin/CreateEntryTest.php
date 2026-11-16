@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement;
 use Setono\SyliusCMSPlugin\Tests\Support\Admins;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -70,6 +71,46 @@ final class CreateEntryTest extends WebTestCase
         self::assertSame('John Doe', $page->getLastEditedBy());
         // The builder's back button goes to the new page's overview page
         self::assertResponseRedirects(sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));
+    }
+
+    /**
+     * @test
+     */
+    public function it_puts_the_page_in_the_layout_the_editor_picked_from_the_wireframe_cards_with_the_default_picked_to_start_with(): void
+    {
+        $client = self::signedInClient();
+
+        $crawler = $client->request('GET', '/admin/cms/entries/page/new');
+        $cards = $crawler->filter('fieldset[data-cms-create-entry-layouts] .cms-layout-card');
+        self::assertSame('Layout', $crawler->filter('fieldset[data-cms-create-entry-layouts] legend')->text());
+        self::assertSame(['Standard', 'Landing'], $cards->each(static fn (Crawler $card): string => trim($card->text())));
+        self::assertSame('/bundles/setonosyliuscmsplugin/thumbnail/layout/page/standard.svg', $cards->eq(0)->filter('img')->attr('src'));
+        self::assertCount(0, $cards->eq(1)->filter('img'), 'A layout without a thumbnail has a plain card');
+        self::assertSame(['standard'], $crawler->filter('input[name="setono_sylius_cms_create_entry[layout]"]:checked')->each(static fn (Crawler $radio): string => (string) $radio->attr('value')));
+
+        $client->submitForm('Create', [
+            'setono_sylius_cms_create_entry[title]' => 'Summer sale',
+            'setono_sylius_cms_create_entry[slug]' => 'summer-sale',
+            'setono_sylius_cms_create_entry[layout]' => 'landing',
+        ]);
+
+        self::assertEquals(new StoredLayout('landing', 1), self::onlyPage()->getBlockTree()->layout);
+    }
+
+    /**
+     * @test
+     */
+    public function it_puts_a_page_in_the_default_layout_unless_the_editor_picks_another(): void
+    {
+        $client = self::signedInClient();
+
+        $client->request('GET', '/admin/cms/entries/page/new');
+        $client->submitForm('Create', [
+            'setono_sylius_cms_create_entry[title]' => 'About us',
+            'setono_sylius_cms_create_entry[slug]' => 'about-us',
+        ]);
+
+        self::assertEquals(new StoredLayout('standard', 1), self::onlyPage()->getBlockTree()->layout);
     }
 
     /**

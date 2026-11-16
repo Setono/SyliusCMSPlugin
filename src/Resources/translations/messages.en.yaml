@@ -59,6 +59,7 @@ setono_sylius_cms:
     form:
         entry:
             channels: Channels
+            layout: Layout
             slug: Slug
             slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team.'
             slug_rules: A slug can't start or end with a slash, or have two slashes in a row.

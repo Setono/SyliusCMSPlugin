@@ -12,8 +12,11 @@ use Setono\SyliusCMSPlugin\Form\Type\CreateEntryType;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Publishing\EditRecorder;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
+use Setono\SyliusCMSPlugin\Tree\StoredLayout;
+use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -27,7 +30,8 @@ use Twig\Environment;
 /**
  * The create dialog's end on the server, for a content type. GET answers the dialog's form: alone when the dialog
  * loads it, and as a page otherwise. POST creates a never-published entry through the content type's resource factory,
- * which starts it in every channel, puts it in the channels the editor picked, and opens the builder, whose back
+ * which starts it in every channel and in the default layout, puts it in the layout and the channels the editor picked,
+ * and opens the builder, whose back
  * button goes to the entry's overview page. A submit the form refuses answers the form with its errors, as a page.
  * See "Create dialog" in docs/spec/admin.md
  */
@@ -48,6 +52,7 @@ final readonly class CreateEntryAction
         private Environment $twig,
         private EventDispatcherInterface $eventDispatcher,
         private EditRecorder $editRecorder,
+        private LayoutRegistryInterface $layouts,
     ) {
     }
 
@@ -64,17 +69,23 @@ final readonly class CreateEntryAction
         // The dialog shows the form on another page, so it posts here
         $form = $this->formFactory->create(CreateEntryType::class, null, [
             'slug' => $metadata->hasOwnUrl(),
+            'layouts' => $this->layoutChoices($contentType),
             'action' => $this->urlGenerator->generate('setono_sylius_cms_admin_entry_create', ['contentType' => $contentType]),
         ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            /** @var array{title: string, slug?: string, channels?: array<int, string>} $data */
+            /** @var array{title: string, slug?: string, layout?: string, channels?: array<int, string>} $data */
             $data = $form->getData();
 
             $entry = $this->createEntry($contentType);
             if (isset($data['channels'])) {
                 $this->channelsAndAudienceModifier->setChannels($entry, $data['channels']);
+            }
+
+            if (isset($data['layout'])) {
+                $layout = $this->layouts->get($contentType, $data['layout']);
+                $entry->setBlockTree(new StoredTree(new StoredLayout($layout->code, $layout->version), $entry->getBlockTree()->blocks));
             }
 
             // The title and slug go into the admin user's locale, or else the channels' default
@@ -104,7 +115,24 @@ final readonly class CreateEntryAction
     }
 
     /**
-     * A new entry of the content type, from its resource factory, which starts it in every channel
+     * The layouts editors can pick for the content type, the default first, by code, with their labels and thumbnails
+     *
+     * @return array<string, array{label: string, thumbnail: string|null}>
+     */
+    private function layoutChoices(string $contentType): array
+    {
+        $choices = [];
+        foreach ($this->layouts->all($contentType) as $layout) {
+            if (!$layout->disabled) {
+                $choices[$layout->code] = ['label' => $layout->label, 'thumbnail' => $layout->thumbnail];
+            }
+        }
+
+        return $choices;
+    }
+
+    /**
+     * A new entry of the content type, from its resource factory, which starts it in every channel and in the default layout
      */
     private function createEntry(string $contentType): EntryInterface
     {

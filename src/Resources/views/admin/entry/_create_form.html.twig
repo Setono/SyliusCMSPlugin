@@ -1,7 +1,7 @@
 {#
  # The create dialog's form for a content type (`content_type`): the title, the slug for a content type with its own
- # URL, which admin/create-entry-dialog.js fills from the title until the editor changes it, and the channels in a store
- # with more than one. The dialog loads it with its heading; the create page shows it under its own.
+ # URL, which admin/create-entry-dialog.js fills from the title until the editor changes it, the layout from wireframe
+ # cards for a content type with more than one, and the channels in a store with more than one. The dialog loads it with its heading; the create page shows it under its own.
  # See "Create dialog" in docs/spec/admin.md
  #}
 {% form_theme form '@SyliusAdmin/Form/theme.html.twig' %}
@@ -14,6 +14,26 @@
     {{ form_row(form.title, {'attr': form.title.vars.attr|merge({'data-cms-create-entry-title': ''})}) }}
     {% if form.slug is defined %}
         {{ form_row(form.slug, {'attr': form.slug.vars.attr|merge({'data-cms-create-entry-slug': path('setono_sylius_cms_admin_api_slug')})}) }}
+    {% endif %}
+    {% if form.layout is defined %}
+        {# The layouts as wireframe cards: each a radio with the layout's thumbnail and its label #}
+        <fieldset class="field cms-layout-cards" data-cms-create-entry-layouts>
+            <legend class="cms-layout-cards__legend">{{ form.layout.vars.label|trans }}</legend>
+            {% for card in form.layout %}
+                {% set thumbnail = card.vars.attr['data-thumbnail']|default(null) %}
+                <label class="cms-layout-card" for="{{ card.vars.id }}">
+                    <input type="radio" class="cms-layout-card__radio" id="{{ card.vars.id }}" name="{{ card.vars.full_name }}" value="{{ card.vars.value }}"{% if card.vars.checked %} checked{% endif %}>
+                    {% if thumbnail is not null %}
+                        <img class="cms-layout-card__thumbnail" src="{{ thumbnail }}" alt="">
+                    {% else %}
+                        <span class="cms-layout-card__thumbnail cms-layout-card__thumbnail--none"></span>
+                    {% endif %}
+                    <span class="cms-layout-card__label">{{ card.vars.label|trans }}</span>
+                </label>
+                {% do card.setRendered %}
+            {% endfor %}
+            {{ form_errors(form.layout) }}
+        </fieldset>
     {% endif %}
     {% if form.channels is defined %}
         {# Sylius's theme labels the checkboxes' container, which only a group can be named by #}

@@ -25,6 +25,11 @@ final class CreateEntryTypeTest extends TypeTestCase
 {
     use ProphecyTrait;
 
+    private const LAYOUTS = [
+        'standard' => ['label' => 'setono_sylius_cms.layout.page.standard', 'thumbnail' => '/bundles/setonosyliuscmsplugin/thumbnail/layout/page/standard.svg'],
+        'landing' => ['label' => 'app.cms.layout.landing', 'thumbnail' => null],
+    ];
+
     /** @var list<ChannelInterface> the store's channels, by name */
     private array $channels = [];
 
@@ -184,6 +189,51 @@ final class CreateEntryTypeTest extends TypeTestCase
     /**
      * @test
      */
+    public function it_offers_the_layouts_as_wireframe_cards_with_the_first_picked_to_start_with(): void
+    {
+        $form = $this->factory->create(CreateEntryType::class, null, ['layouts' => self::LAYOUTS]);
+        $view = $form->createView();
+
+        /** @var array{label: string, expanded: bool, multiple: bool, choices: list<ChoiceView>, data: string} $vars */
+        $vars = $view['layout']->vars;
+        self::assertSame('setono_sylius_cms.form.entry.layout', $vars['label']);
+        self::assertTrue($vars['expanded']);
+        self::assertFalse($vars['multiple']);
+        self::assertSame(['standard' => 'setono_sylius_cms.layout.page.standard', 'landing' => 'app.cms.layout.landing'], self::labels($vars['choices']));
+        self::assertSame(['data-thumbnail' => '/bundles/setonosyliuscmsplugin/thumbnail/layout/page/standard.svg'], $vars['choices'][0]->attr);
+        self::assertSame([], $vars['choices'][1]->attr, 'A layout without a thumbnail has none');
+        self::assertSame('standard', $vars['data']);
+
+        $form->submit(['title' => 'About us', 'slug' => 'about-us', 'layout' => 'landing']);
+
+        self::assertTrue($form->isValid());
+        self::assertSame(['title' => 'About us', 'slug' => 'about-us', 'layout' => 'landing'], $form->getData());
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_layout_it_does_not_offer(): void
+    {
+        $form = $this->factory->create(CreateEntryType::class, null, ['layouts' => self::LAYOUTS]);
+
+        $form->submit(['title' => 'About us', 'slug' => 'about-us', 'layout' => 'gone']);
+
+        self::assertFalse($form->isValid());
+    }
+
+    /**
+     * @test
+     */
+    public function it_has_no_layout_to_pick_for_a_content_type_with_one_or_none(): void
+    {
+        self::assertFalse($this->factory->create(CreateEntryType::class, null, ['layouts' => ['standard' => self::LAYOUTS['standard']]])->has('layout'));
+        self::assertFalse($this->factory->create(CreateEntryType::class)->has('layout'));
+    }
+
+    /**
+     * @test
+     */
     public function its_fields_have_translated_labels_and_a_block_prefix(): void
     {
         $view = $this->factory->create(CreateEntryType::class)->createView();
@@ -247,6 +297,16 @@ final class CreateEntryTypeTest extends TypeTestCase
         $form->submit(['title' => str_repeat('a', 255), 'slug' => str_repeat('a', 255)]);
 
         self::assertTrue($form->isValid());
+    }
+
+    /**
+     * @test
+     */
+    public function its_layouts_option_is_an_array(): void
+    {
+        $this->expectException(InvalidOptionsException::class);
+
+        $this->factory->create(CreateEntryType::class, null, ['layouts' => 'standard']);
     }
 
     /**
