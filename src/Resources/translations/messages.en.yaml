@@ -82,6 +82,7 @@ setono_sylius_cms:
         create: Create
         create_dialog_load_failed: Couldn't load the form. Try again.
         discard_changes: Discard changes
+        fix_in_builder: Fix in builder
         language: Language
         last_edited: Last edited
         last_published: 'Last published %date%'
@@ -92,6 +93,9 @@ setono_sylius_cms:
         other_content_type: Another content type
         overview_placeholder: What needs attention, what's coming up, translations and drafts in progress will show here. Until then, find the entries in their lists.
         pick_content_type: What do you want to create?
+        problem_severity:
+            error: Error
+            warning: Warning
         problems: Problems
         publish: Publish
         publishing: Publishing

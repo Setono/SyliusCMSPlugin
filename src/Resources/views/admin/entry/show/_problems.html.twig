@@ -1,0 +1,31 @@
+{#
+ # The overview page's Problems section, a block of setono_sylius_cms.admin.entry.show.sections: the errors and
+ # warnings in the entry's working copy, errors first, each with where it's fixed, such as the builder at the block.
+ # It renders nothing for an entry without problems. See "Entry overview page" and "Problems" in docs/spec/admin.md
+ #}
+{% set problems = cms_admin_entry_problems(entry) %}
+{% if problems is not empty %}
+    <section class="ui segment" data-section="problems" aria-labelledby="cms-section-problems">
+        <h2 class="ui dividing header" id="cms-section-problems">{{ 'setono_sylius_cms.ui.problems'|trans }}</h2>
+
+        <div class="ui divided relaxed list">
+            {% for problem in problems %}
+                {% set error = problem.severity.value == 'error' %}
+                <div class="item" data-problem="{{ problem.kind }}" data-severity="{{ problem.severity.value }}"{% if problem.block is not null %} data-block="{{ problem.block }}"{% endif %}>
+                    {% if problem.fix is not null %}
+                        <div class="right floated content">
+                            <a class="ui small labeled icon button" href="{{ path(problem.fix.route, problem.fix.parameters) }}">
+                                <i class="wrench icon"></i> {{ problem.fix.label|trans }}
+                            </a>
+                        </div>
+                    {% endif %}
+                    <i class="{{ error ? 'red times circle' : 'orange exclamation triangle' }} icon" aria-hidden="true"></i>
+                    <div class="content">
+                        <div class="header">{{ ('setono_sylius_cms.ui.problem_severity.' ~ problem.severity.value)|trans }}{% if problem.locale is not null %} · {{ problem.locale|sylius_locale_name }}{% endif %}</div>
+                        <div class="description">{{ problem.message|trans }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+{% endif %}

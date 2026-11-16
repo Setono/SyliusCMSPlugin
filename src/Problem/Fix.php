@@ -28,7 +28,7 @@ final readonly class Fix
      */
     public static function inBuilder(EntryInterface $entry, ?string $block = null, ?string $locale = null): self
     {
-        return new self('setono_sylius_cms.ui.open_in_builder', 'setono_sylius_cms_admin_builder', array_filter(
+        return new self('setono_sylius_cms.ui.fix_in_builder', 'setono_sylius_cms_admin_builder', array_filter(
             ['uuid' => $entry->getUuid(), 'block' => $block, 'locale' => $locale],
             static fn (?string $parameter): bool => null !== $parameter,
         ));

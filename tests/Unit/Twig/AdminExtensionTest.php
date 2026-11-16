@@ -13,9 +13,16 @@ use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType;
+use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
+use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
+use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Twig\AdminExtension;
 use Setono\SyliusCMSPlugin\Twig\AdminRuntime;
 use Sylius\Component\Customer\Model\CustomerGroup;
@@ -79,6 +86,17 @@ final class AdminExtensionTest extends IntegrationTestCase
         return ['page' => $page];
     }
 
+    /**
+     * @return array{page: Page}
+     */
+    public function aPageWithABlockOfATypeTheCodeNoLongerHas(string $key): array
+    {
+        $page = new Page();
+        $page->setBlockTree(new StoredTree(null, [new StoredBlock($key, 'promo', 1)]));
+
+        return ['page' => $page];
+    }
+
     protected static function getFixturesDirectory(): string
     {
         return __DIR__ . '/AdminFixture';
@@ -121,11 +139,15 @@ final class AdminExtensionTest extends IntegrationTestCase
         );
         $entryUrls = new EntryUrls($drafts->reveal(), self::contentTypes(), $urlGenerator->reveal());
         $runtime = $this->runtime();
+        $workingCopies = $this->prophesize(WorkingCopyProviderInterface::class);
+        $workingCopies->getWorkingCopy(Argument::any())->willReturnArgument(0);
+        $problemFinder = new ProblemFinder([new UnknownBlockType(new BlockTypeRegistry([], new FieldReader()))], $workingCopies->reveal());
 
         return [new FactoryRuntimeLoader([
             EntryRows::class => static fn (): EntryRows => $entryRows,
             EntryUrls::class => static fn (): EntryUrls => $entryUrls,
             AdminRuntime::class => static fn (): AdminRuntime => $runtime,
+            ProblemFinder::class => static fn (): ProblemFinder => $problemFinder,
         ])];
     }
 

@@ -72,8 +72,7 @@ final class LintCommandTest extends KernelTestCase
         /** @var WorkingCopyManagerInterface $workingCopies */
         $workingCopies = self::getContainer()->get(WorkingCopyManagerInterface::class);
         $workingCopy = $workingCopies->getWorkingCopy($page);
-        $heading = self::heading(self::HEADING, 'Hello');
-        $heading->fields['text']['da_DK'] = 42;
+        $heading = new StoredBlock(self::HEADING, 'heading', 1, fields: ['text' => ['en_US' => 'Hello', 'da_DK' => 42]]);
         $workingCopy->setBlockTree(new StoredTree($workingCopy->getBlockTree()->layout, [$heading]));
         $workingCopies->save($page, $workingCopy);
         /** @var ObjectManager $manager */

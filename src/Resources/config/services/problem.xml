@@ -2,10 +2,15 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <!-- Finds an entry's problems, of every kind. RegisterProblemKindsPass hands it the kinds -->
+        <!--
+        Finds an entry's problems, of every kind, which its overview page gets through cms_admin_entry_problems().
+        RegisterProblemKindsPass hands it the kinds
+        -->
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemFinder" class="Setono\SyliusCMSPlugin\Problem\ProblemFinder">
             <argument type="collection"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+
+            <tag name="twig.runtime"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemFinder"/>
 

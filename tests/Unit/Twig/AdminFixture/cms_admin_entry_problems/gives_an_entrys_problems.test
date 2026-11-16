@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_entry_problems() gives an entry's problems
+--TEMPLATE--
+{% for problem in cms_admin_entry_problems(page) %}{{ problem.kind }} {{ problem.block }}{% endfor %}
+--DATA--
+return $this->aPageWithABlockOfATypeTheCodeNoLongerHas('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a')
+--EXPECT--
+unknown_block_type 0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a
