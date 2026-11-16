@@ -10,5 +10,18 @@
             <argument type="service" id="security.token_storage"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Revision\RevisionRecorderInterface" alias="Setono\SyliusCMSPlugin\Revision\RevisionRecorder"/>
+
+        <!-- Reads revisions upgraded -->
+        <service id="Setono\SyliusCMSPlugin\Revision\RevisionReader" class="Setono\SyliusCMSPlugin\Revision\RevisionReader">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer"/>
+        </service>
+
+        <!-- Copies a revision into the draft -->
+        <service id="Setono\SyliusCMSPlugin\Revision\RevisionRestorer" class="Setono\SyliusCMSPlugin\Revision\RevisionRestorer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionReader"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Revision\RevisionRestorerInterface" alias="Setono\SyliusCMSPlugin\Revision\RevisionRestorer"/>
     </services>
 </container>

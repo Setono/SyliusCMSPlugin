@@ -30,6 +30,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier"/>
             <argument type="service" id="clock"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface" alias="Setono\SyliusCMSPlugin\Publishing\Autosave"/>
 

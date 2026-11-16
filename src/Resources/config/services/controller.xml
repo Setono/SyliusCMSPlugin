@@ -206,5 +206,14 @@
 
             <tag name="controller.service_arguments"/>
         </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\RestoreRevisionAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\RestoreRevisionAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionRestorerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\WorkingCopyAnswer"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
     </services>
 </container>

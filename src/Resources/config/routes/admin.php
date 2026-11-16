@@ -8,6 +8,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRenderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewTokenAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PublishEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RegistryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\RestoreRevisionAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RevisionIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntrySettingsAction;
@@ -173,5 +174,11 @@ return static function (RoutingConfigurator $routes): void {
         ->controller(RevisionIndexAction::class)
         ->methods(['GET'])
         ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_revision_restore', '/cms/api/revisions/{id}/restore')
+        ->controller(RestoreRevisionAction::class)
+        ->methods(['POST'])
+        ->requirements(['id' => Requirement::DIGITS])
     ;
 };

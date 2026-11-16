@@ -67,6 +67,82 @@ final class RevisionsTest extends BuilderApiTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
+    /**
+     * @test
+     */
+    public function restoring_a_revision_puts_its_content_in_the_draft_and_leaves_the_shop_as_it_was(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('About us', 'about-us', 'Hello');
+        $csrfToken = self::openBuilder($client, $page);
+        self::publish($client, $page, $csrfToken);
+        self::saveHeading($client, $page, 'Hello world', $csrfToken);
+        self::publish($client, $page, $csrfToken);
+        $lockToken = self::lockToken($client, $page);
+        [, $first] = self::revisionIds($client, $page);
+
+        $response = self::json($client, 'POST', sprintf('/admin/cms/api/revisions/%d/restore', $first), null, $csrfToken);
+
+        // It answers like entry_show, with the restored content and the lock token of a save
+        self::assertResponseIsSuccessful();
+        self::assertIsArray($response);
+        self::assertSame('unpublished_changes', $response['status'] ?? null);
+        self::assertSame($lockToken + 1, $response['lockToken'] ?? null);
+        self::assertIsArray($response['entry'] ?? null);
+        self::assertSame($page->getUuid(), $response['entry']['uuid'] ?? null);
+        self::assertStringContainsString('"text":{"en_US":"Hello"}', (string) self::draftOf($page)?->getContent());
+        self::assertSame('John Doe', self::reloadPage($page)->getLastEditedBy());
+
+        // The shop still shows what was published last, until someone publishes the draft
+        $client->request('GET', '/en_US/about-us');
+        self::assertSelectorTextSame('.cms-heading', 'Hello world');
+
+        self::publish($client, $page, $csrfToken);
+        $client->request('GET', '/en_US/about-us');
+        self::assertSelectorTextSame('.cms-heading', 'Hello');
+        self::assertCount(3, self::revisionIds($client, $page));
+    }
+
+    /**
+     * @test
+     */
+    public function restoring_needs_the_builders_csrf_token_and_a_revision_that_exists(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('About us', 'about-us', 'Hello');
+        $csrfToken = self::openBuilder($client, $page);
+        self::publish($client, $page, $csrfToken);
+        [$revision] = self::revisionIds($client, $page);
+
+        self::json($client, 'POST', sprintf('/admin/cms/api/revisions/%d/restore', $revision), null, 'forged');
+        self::assertResponseStatusCodeSame(403);
+        self::assertNull(self::draftOf($page));
+
+        self::json($client, 'POST', sprintf('/admin/cms/api/revisions/%d/restore', $revision + 1000), null, $csrfToken);
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    /**
+     * The ids of the page's revisions, newest first, as revision_index lists them
+     *
+     * @return list<int>
+     */
+    private static function revisionIds(KernelBrowser $client, PageInterface $page): array
+    {
+        $response = self::json($client, 'GET', sprintf('/admin/cms/api/entries/%s/revisions', $page->getUuid()));
+        self::assertIsArray($response);
+        self::assertIsArray($response['revisions'] ?? null);
+
+        $ids = [];
+        foreach ($response['revisions'] as $revision) {
+            self::assertIsArray($revision);
+            self::assertIsInt($revision['id'] ?? null);
+            $ids[] = $revision['id'];
+        }
+
+        return $ids;
+    }
+
     private static function publish(KernelBrowser $client, PageInterface $page, string $csrfToken): void
     {
         self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/publish', $page->getUuid()), null, $csrfToken);

@@ -9,13 +9,14 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\Merge;
+use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
 
 /**
  * Saves are kept for a day for merging onto. Each one runs with the entry's row locked (EntryLock), so saves of one entry
  * wait for each other, and loading waits for a save in flight, so a lock token always matches the working copy it came with.
- * A save that changes something, and a discard, record on the entry who made it and when
+ * A save that changes something, a discard and a replace record on the entry who made it and when
  */
 final readonly class Autosave implements AutosaveInterface
 {
@@ -33,6 +34,7 @@ final readonly class Autosave implements AutosaveInterface
         private ChangeSetApplier $applier,
         private ClockInterface $clock,
         private EditRecorder $editRecorder,
+        private EntryDenormalizer $entryDenormalizer,
     ) {
     }
 
@@ -84,6 +86,21 @@ final readonly class Autosave implements AutosaveInterface
             }
 
             return new LoadedWorkingCopy($this->workingCopies->getWorkingCopy($entry), $latest);
+        });
+    }
+
+    public function replace(EntryInterface $entry, array $content): LoadedWorkingCopy
+    {
+        return $this->entryLock->write($entry, function () use ($entry, $content): LoadedWorkingCopy {
+            $workingCopy = $this->workingCopies->getWorkingCopy($entry);
+            $this->entryDenormalizer->denormalize($content, $workingCopy);
+
+            $lockToken = $this->savedChangeSets->findLatestLockToken($entry) + 1;
+            $this->number($entry, $lockToken, new ChangeSet([]));
+            $this->editRecorder->record($entry);
+            $this->workingCopies->save($entry, $workingCopy);
+
+            return new LoadedWorkingCopy($workingCopy, $lockToken);
         });
     }
 

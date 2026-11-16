@@ -19,9 +19,13 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\Clash;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
+use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
+use Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer;
+use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
+use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
@@ -294,6 +298,48 @@ final class AutosaveTest extends TestCase
         self::assertNull($this->entry->getLastEditedBy());
     }
 
+    /**
+     * @test
+     */
+    public function it_replaces_the_working_copy_with_content_in_the_entry_format_and_numbers_it_as_an_empty_save(): void
+    {
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
+        $restored = clone $this->workingCopy;
+        $restored->setCurrentLocale('en_US');
+        $restored->setTitle('About us');
+        $restored->setBlockTree(new StoredTree(null, [self::heading(self::B, 'As it was')]));
+
+        $loaded = $this->autosave()->replace($this->entry, self::entryFormat($restored));
+
+        self::assertSame(4, $loaded->lockToken);
+        self::assertSame($this->workingCopy, $loaded->workingCopy);
+        self::assertSame(['As it was'], self::texts($this->workingCopy));
+        self::assertSame('About us', $this->workingCopy->getTranslation('en_US')->getTitle());
+        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'forget old saves', 'number the save', 'record the edit', 'save working copy', 'flush', 'commit'], $this->calls);
+        $this->savedChangeSets->removeSavedBefore($this->entry, new \DateTimeImmutable('2026-11-13 10:00:00'))->shouldHaveBeenCalledOnce();
+        $this->savedChangeSets->record($this->entry, 4, new ChangeSet([]), new \DateTimeImmutable('2026-11-14 10:00:00'))->shouldHaveBeenCalledOnce();
+        self::assertSame('Jane Roe', $this->entry->getLastEditedBy());
+    }
+
+    /**
+     * @test
+     */
+    public function it_replaces_nothing_with_content_that_is_not_the_entry(): void
+    {
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
+        $this->savedChangeSets->record(Argument::cetera())->shouldNotBeCalled();
+
+        try {
+            $this->autosave()->replace($this->entry, self::entryFormat(new Page()));
+            self::fail('Content of another entry replaced the working copy');
+        } catch (InvalidEntryFormatException) {
+        }
+
+        self::assertSame(['Hello', 'World'], self::texts($this->workingCopy));
+        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'roll back'], $this->calls);
+        self::assertNull($this->entry->getLastEditedBy());
+    }
+
     private function autosave(): Autosave
     {
         $clock = new MockClock('2026-11-14 10:00:00');
@@ -309,11 +355,30 @@ final class AutosaveTest extends TestCase
                     TextHandler::class => static fn (): TextHandler => new TextHandler(),
                     ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
                 ])),
-                new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
+                self::contentTypes(),
             ),
             $clock,
             new EditRecorder($this->tokenStorage, $clock),
+            new EntryDenormalizer(self::contentTypes()),
         );
+    }
+
+    private static function contentTypes(): ContentTypeRegistry
+    {
+        return new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]);
+    }
+
+    /**
+     * The entry in the entry format, as CanonicalJson::decode() gives it
+     *
+     * @return array<array-key, mixed>
+     */
+    private static function entryFormat(EntryInterface $entry): array
+    {
+        $data = CanonicalJson::decode(CanonicalJson::encode((new EntryNormalizer(self::contentTypes()))->normalize($entry)));
+        self::assertIsArray($data);
+
+        return $data;
     }
 
     /**
