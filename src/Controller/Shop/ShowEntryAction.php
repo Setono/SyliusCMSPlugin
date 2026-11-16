@@ -7,17 +7,13 @@ namespace Setono\SyliusCMSPlugin\Controller\Shop;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
 use Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface;
-use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
-use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
 use Setono\SyliusCMSPlugin\Rendering\EntryUrlMatch;
+use Setono\SyliusCMSPlugin\Rendering\LayoutRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher;
-use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
-use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Twig\Environment;
 
 /**
  * Renders an entry at its own URL. See "Rendering an entry at its own URL" in docs/spec/rendering.md
@@ -27,12 +23,9 @@ final readonly class ShowEntryAction
     public function __construct(
         private EntryUrlMatcher $entryUrlMatcher,
         private VisibleEntriesQueryInterface $visibleEntries,
-        private ContentTypeRegistryInterface $contentTypes,
         private RenderContextFactoryInterface $renderContextFactory,
-        private BlockViewBuilder $blockViewBuilder,
-        private Environment $twig,
+        private LayoutRendererInterface $layoutRenderer,
         private PreviewedEntryProvider $previewedEntryProvider,
-        private StoredDataUpgraderInterface $upgrader,
     ) {
     }
 
@@ -46,18 +39,8 @@ final readonly class ShowEntryAction
         $entry = $this->previewedEntry($match, $localeCode) ?? $this->visibleEntry($match)
             ?? throw new NotFoundHttpException(sprintf('No visible entry at "%s"', $path));
 
-        // 3. The render context, with the entry as host-page context
-        $renderContext = $this->renderContextFactory->create(['entry' => $entry]);
-        $contentType = $this->contentTypes->getByEntry($entry);
-
-        // 4. The layout. Page's standard layout is the only one until the layout machinery (#236) resolves the tree's layout
-        return new Response($this->twig->render(sprintf('@SetonoSyliusCMSPlugin/layout/%s/standard.html.twig', $contentType->code), [
-            'entry' => $entry,
-            'layout' => null,
-            'blocks' => $this->blockViewBuilder->build($this->upgrader->readBlockTree($entry)->blocks, $renderContext),
-            'context' => $renderContext->getHostPageContext(),
-            CMSRuntime::RENDER_CONTEXT => $renderContext,
-        ]));
+        // 3. and 4. The tree in the entry's layout, with the entry as host-page context
+        return new Response($this->layoutRenderer->render($entry, $this->renderContextFactory->create(['entry' => $entry])));
     }
 
     /**

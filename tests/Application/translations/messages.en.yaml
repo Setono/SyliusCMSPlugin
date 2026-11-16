@@ -7,3 +7,7 @@ app:
             announcement: Announcement
         field:
             subtitle: Subtitle
+            tagline: Tagline
+            transparent_header: Transparent header
+        layout:
+            landing: Landing

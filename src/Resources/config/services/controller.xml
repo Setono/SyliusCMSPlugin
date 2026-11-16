@@ -7,12 +7,9 @@
         <service id="Setono\SyliusCMSPlugin\Controller\Shop\ShowEntryAction" class="Setono\SyliusCMSPlugin\Controller\Shop\ShowEntryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder"/>
-            <argument type="service" id="twig"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\LayoutRendererInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
 
             <tag name="controller.service_arguments"/>
         </service>

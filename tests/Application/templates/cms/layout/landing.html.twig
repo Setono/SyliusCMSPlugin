@@ -1,0 +1,12 @@
+{# The template of the test application's Landing layout (tests/Application/Layout/Landing.php) #}
+{% extends '@SetonoSyliusCMSPlugin/layout/base.html.twig' %}
+
+{% block cms_content %}
+    <header class="app-landing{{ layout.transparentHeader ? ' app-landing--transparent' : '' }}">
+        <p class="app-landing__tagline">{{ cms_field(layout, 'tagline') }}</p>
+    </header>
+
+    <div class="cms-tree">
+        {{ cms_blocks(blocks) }}
+    </div>
+{% endblock %}
