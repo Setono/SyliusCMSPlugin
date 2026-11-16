@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
@@ -89,6 +90,18 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $instanceof = $this->container->getAutoconfiguredInstanceof();
         self::assertArrayHasKey(FieldHandlerInterface::class, $instanceof);
         self::assertTrue($instanceof[FieldHandlerInterface::class]->hasTag('setono_sylius_cms.field_handler'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_autoconfigures_problem_kinds(): void
+    {
+        $this->load();
+
+        $instanceof = $this->container->getAutoconfiguredInstanceof();
+        self::assertArrayHasKey(ProblemKindInterface::class, $instanceof);
+        self::assertSame(['setono_sylius_cms.problem_kind' => [[]]], $instanceof[ProblemKindInterface::class]->getTags());
     }
 
     /**

@@ -12,6 +12,7 @@
         <import resource="services/form.xml"/>
         <import resource="services/localization.xml"/>
         <import resource="services/preview.xml"/>
+        <import resource="services/problem.xml"/>
         <import resource="services/publishing.xml"/>
         <import resource="services/query.xml"/>
         <import resource="services/registry.xml"/>

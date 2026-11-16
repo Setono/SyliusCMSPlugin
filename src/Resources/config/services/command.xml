@@ -11,5 +11,18 @@
 
             <tag name="console.command"/>
         </service>
+
+        <!-- RegisterProblemKindsPass hands it the problem kinds it reports -->
+        <service id="Setono\SyliusCMSPlugin\Command\LintCommand" class="Setono\SyliusCMSPlugin\Command\LintCommand">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="translator"/>
+            <!-- The manager of drafts, which is also the manager of entries -->
+            <argument type="service" id="setono_sylius_cms.manager.draft"/>
+            <argument type="collection"/>
+
+            <tag name="console.command"/>
+        </service>
     </services>
 </container>
