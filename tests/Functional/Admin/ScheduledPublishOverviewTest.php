@@ -270,7 +270,7 @@ final class ScheduledPublishOverviewTest extends WebTestCase
         $client = self::signedInClient();
         $client->disableReboot();
         $waiting = self::pageWithDraft('About us', 'about-us');
-        $overdue = self::pageWithDraft('Contact', 'contact');
+        $overdue = self::pageWithDraft('Delivery', 'delivery');
         $failed = self::pageWithDraft('Imprint', 'imprint');
         self::pageWithDraft('Jobs', 'jobs');
 
