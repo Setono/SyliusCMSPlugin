@@ -81,6 +81,22 @@ final class EntryUrlsTest extends TestCase
     /**
      * @test
      */
+    public function it_gives_the_urls_of_the_published_locales_a_draft_has_no_translation_in(): void
+    {
+        $page = self::page(['da_DK' => ['Om os', 'om-os'], 'en_US' => ['About us', 'about-us']]);
+        $page->publish(new \DateTimeImmutable('2026-11-01T00:00:00Z'));
+        $this->drafts->findOneByEntry($page)->willReturn(self::draft($page, ['fr_FR' => ['À propos', 'a-propos']]));
+
+        self::assertEquals([
+            new EntryUrl('da_DK', '/da_DK/om-os', null),
+            new EntryUrl('en_US', '/en_US/about-us', null),
+            new EntryUrl('fr_FR', null, '/fr_FR/a-propos'),
+        ], $this->entryUrls()->of($page));
+    }
+
+    /**
+     * @test
+     */
     public function it_reads_no_draft_of_an_entry_never_published(): void
     {
         $page = self::page(['en_US' => ['About us', 'about-us']]);
