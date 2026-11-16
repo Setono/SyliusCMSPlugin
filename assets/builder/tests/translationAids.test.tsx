@@ -107,7 +107,7 @@ describe('the locale switcher', () => {
 
         expect(switcher).toHaveValue('da_DK');
         await waitFor(() => expect(screen.getByTitle('Preview')).toHaveAttribute('src', 'http://admin.example/da_DK/about-us?_cms_preview=abc'));
-        expect(api.createPreviewUrl).toHaveBeenLastCalledWith({ channel: 'WEB', locale: 'da_DK' });
+        expect(api.createPreviewUrl).toHaveBeenLastCalledWith({ channel: 'WEB', locale: 'da_DK', shownTo: '@guest', date: null });
         expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Om os');
     });
 });
@@ -138,7 +138,7 @@ describe('a locale the entry has no translation in', () => {
                 0,
             ),
         );
-        await waitFor(() => expect(api.createPreviewUrl).toHaveBeenLastCalledWith({ channel: 'WEB', locale: 'da_DK' }));
+        await waitFor(() => expect(api.createPreviewUrl).toHaveBeenLastCalledWith({ channel: 'WEB', locale: 'da_DK', shownTo: '@guest', date: null }));
         expect(screen.getByLabelText('Title')).toHaveValue('About us');
     });
 

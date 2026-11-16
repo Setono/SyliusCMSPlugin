@@ -172,10 +172,10 @@ describe('the JSON endpoints', () => {
         await expect(createApi(config, respond(200, { errors: [{ block: 'a' }] })).validate()).rejects.toBeInstanceOf(ApiError);
     });
 
-    it('should ask for a preview token for the entry in a channel and a locale, and answer with the preview URL', async () => {
+    it('should ask for a preview token for the entry in a channel and a locale, shown to someone at a date, and answer with the preview URL', async () => {
         const fetch = respond(200, { url: 'http://admin.example/en_US/about-us?_cms_preview=abc.def' });
 
-        await expect(createApi(config, fetch).createPreviewUrl({ channel: 'WEB', locale: 'en_US' })).resolves.toBe(
+        await expect(createApi(config, fetch).createPreviewUrl({ channel: 'WEB', locale: 'en_US', shownTo: 'wholesale', date: '2026-12-01T00:00:00Z' })).resolves.toBe(
             'http://admin.example/en_US/about-us?_cms_preview=abc.def',
         );
 
@@ -183,12 +183,12 @@ describe('the JSON endpoints', () => {
             method: 'POST',
             credentials: 'same-origin',
             headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123', 'Content-Type': 'application/json' },
-            body: JSON.stringify({ entry: 'e1', channel: 'WEB', locale: 'en_US' }),
+            body: JSON.stringify({ entry: 'e1', channel: 'WEB', locale: 'en_US', shownTo: 'wholesale', date: '2026-12-01T00:00:00Z' }),
         });
     });
 
     it('should fail when the preview token answer has no URL', async () => {
-        await expect(createApi(config, respond(200, {})).createPreviewUrl({ channel: 'WEB', locale: 'en_US' })).rejects.toBeInstanceOf(ApiError);
+        await expect(createApi(config, respond(200, {})).createPreviewUrl({ channel: 'WEB', locale: 'en_US', shownTo: '@guest', date: null })).rejects.toBeInstanceOf(ApiError);
     });
 
     it('should ask for blocks of the working copy to be rendered under the preview token, and answer their HTML by key', async () => {

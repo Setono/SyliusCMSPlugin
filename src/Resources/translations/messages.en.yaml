@@ -246,7 +246,10 @@ setono_sylius_cms:
         path: Path
         preview: Preview
         preview_channel: Preview channel
+        preview_date: Date
         preview_failed: Couldn't load the preview
+        preview_now: Now
+        preview_now_help: Shows the page as it is now. Pick a date and time to see it as it shows then.
         preview_width: Preview width
         publish: Publish
         publish_failed: Couldn't publish
@@ -278,6 +281,8 @@ setono_sylius_cms:
         show_in_locale: 'Show in %locale%'
         show_in_locale_help: 'Off holds the translation back, so shoppers don''t see the entry in %locale%. It takes effect when you publish.'
         show_until: Show until
+        shown_to: Shown to
+        shown_to_guest: Guest
         slug: Slug
         slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team. The URL: %url%'
         slug_help_none: Generated from the title until you change it. It may have slashes, such as about/team.

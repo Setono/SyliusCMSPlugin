@@ -1,5 +1,5 @@
 import type { Change } from './changeSet';
-import type { BuilderConfig } from './config';
+import type { BuilderConfig, ShownToAndDate } from './config';
 import type { EntryResponse, EntrySettings, EntryStatus, EntryUrlsResponse, PresenceResponse, Registry, SaveResponse, StoredBlock, ValidationError } from './types';
 
 /** The builder's JSON endpoints. They're internal, and change together with the app. */
@@ -33,8 +33,8 @@ export interface BuilderApi {
     renderPreview(token: string, blocks: readonly StoredBlock[]): Promise<Record<string, string>>;
 }
 
-/** What the preview shows the working copy in. Shown to, Date, the sample object and the placement come later. */
-export interface PreviewRequest {
+/** What the preview shows the working copy in, to whom and when. The sample object and the placement come later. */
+export interface PreviewRequest extends ShownToAndDate {
     channel: string;
     locale: string;
 }
@@ -154,11 +154,11 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = defaultFetch):
             return settings as unknown as EntrySettings;
         },
 
-        async createPreviewUrl({ channel, locale }) {
+        async createPreviewUrl({ channel, locale, shownTo, date }) {
             const body = await request(config.endpoints.previewToken, {
                 method: 'POST',
                 headers: { ...write, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ entry: config.entryUuid, channel, locale }),
+                body: JSON.stringify({ entry: config.entryUuid, channel, locale, shownTo, date }),
             });
 
             const url = isObject(body) ? body.url : undefined;

@@ -97,7 +97,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: Ap
                 // The preview shows the entry in one of its own channels, which follow the settings as they change.
                 const settings = createSettingsStore(entrySettings, (changes) => api.saveSettings(changes));
                 const entryChannels = (codes: string[]) => config.channels.filter(({ code }) => codes.includes(code));
-                const preview = createPreviewStore(entryChannels(entrySettings.channels));
+                const preview = createPreviewStore(entryChannels(entrySettings.channels), config.preview);
                 unsubscribeSettings = settings.subscribe((state, previous) => {
                     if (state.settings.channels !== previous.settings.channels) {
                         preview.getState().setChannels(entryChannels(state.settings.channels));
