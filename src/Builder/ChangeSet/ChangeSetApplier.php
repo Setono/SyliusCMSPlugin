@@ -40,7 +40,7 @@ final readonly class ChangeSetApplier
         $contentType = $this->contentTypes->getByEntry($workingCopy);
         // A copy, so nothing changes until every change is known to apply
         $tree = clone $workingCopy->getBlockTree();
-        /** @var list<SetEntryValue|SetShown> $translationChanges */
+        /** @var list<array{string, \Closure(EntryTranslationInterface): void}> $translationChanges the locale, and the change to its translation */
         $translationChanges = [];
 
         foreach ($changeSet->changes as $change) {
@@ -50,38 +50,28 @@ final readonly class ChangeSetApplier
                 $change instanceof RemoveBlock => $this->removeBlock($change, $tree),
                 $change instanceof SetValue => $this->setValue($change, $tree),
                 $change instanceof SetStyle => $this->setStyle($change, $tree),
-                $change instanceof SetEntryValue => self::assertEntryValueFits($change, $contentType),
-                $change instanceof SetShown => null,
+                $change instanceof SetEntryValue => $translationChanges[] = self::entryValue($change, $contentType),
+                $change instanceof SetShown => $translationChanges[] = [$change->locale, static fn (EntryTranslationInterface $translation) => $translation->setShown($change->shown)],
                 default => throw new InvalidChangeSetException(sprintf('Unknown change %s', $change::class)),
             };
-
-            if ($change instanceof SetEntryValue || $change instanceof SetShown) {
-                $translationChanges[] = $change;
-            }
         }
 
         self::assertUniqueKeys($tree);
 
         $workingCopy->setBlockTree($tree);
-        foreach ($translationChanges as $change) {
-            $translation = self::translation($workingCopy, $change->locale, $contentType);
-
-            match (true) {
-                $change instanceof SetShown => $translation->setShown($change->shown),
-                'slug' === $change->field => $translation->setSlug(self::nullIfEmpty($change->value)),
-                default => $translation->setTitle(self::nullIfEmpty($change->value)),
-            };
+        foreach ($translationChanges as [$locale, $changeTranslation]) {
+            $changeTranslation(self::translation($workingCopy, $locale, $contentType));
         }
     }
 
     /**
-     * The entry fields are a translation's title, and its slug for a content type with its own URL. The content type's
-     * own fields come with #265
+     * The locale of an entry value and the change to its translation, once the value is known to fit. The entry fields
+     * are a translation's title, and its slug for a content type with its own URL. The content type's own fields come
+     * with #265
      *
-     * @phpstan-assert string $change->locale
-     * @phpstan-assert string|null $change->value
+     * @return array{string, \Closure(EntryTranslationInterface): void}
      */
-    private static function assertEntryValueFits(SetEntryValue $change, ContentTypeMetadata $contentType): void
+    private static function entryValue(SetEntryValue $change, ContentTypeMetadata $contentType): array
     {
         if ('title' !== $change->field && !('slug' === $change->field && $contentType->hasOwnUrl())) {
             throw new InvalidChangeSetException(sprintf('The content type "%s" has no entry field "%s"', $contentType->code, $change->field));
@@ -94,6 +84,13 @@ final readonly class ChangeSetApplier
         if (null !== $change->value && !is_string($change->value)) {
             throw new InvalidChangeSetException(sprintf('The entry field "%s" must be a string or null', $change->field));
         }
+
+        // An empty value is no value
+        $value = '' === $change->value ? null : $change->value;
+
+        return [$change->locale, 'slug' === $change->field
+            ? static fn (EntryTranslationInterface $translation) => $translation->setSlug($value)
+            : static fn (EntryTranslationInterface $translation) => $translation->setTitle($value)];
     }
 
     /**
@@ -113,11 +110,6 @@ final readonly class ChangeSetApplier
         $workingCopy->addTranslation($translation);
 
         return $translation;
-    }
-
-    private static function nullIfEmpty(mixed $value): ?string
-    {
-        return is_string($value) && '' !== $value ? $value : null;
     }
 
     /**

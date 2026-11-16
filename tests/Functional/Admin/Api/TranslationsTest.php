@@ -50,6 +50,8 @@ final class TranslationsTest extends BuilderApiTestCase
 
         $response = self::json($client, 'GET', '/admin/cms/api/entries/' . $page->getUuid());
         self::assertIsArray($response);
+        self::assertIsArray($response['entry'] ?? null);
+        self::assertIsArray($response['entry']['translations'] ?? null);
         self::assertSame(['shown' => false, 'fields' => ['slug' => 'om-os', 'title' => 'Om os'], 'translated' => []], $response['entry']['translations']['da_DK'] ?? null);
     }
 

@@ -6,10 +6,10 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Localization;
 
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Setono\SyliusCMSPlugin\Field\Field;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\RichText;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
-use Setono\SyliusCMSPlugin\Field\Field;
 use Setono\SyliusCMSPlugin\Field\Text;
 use Setono\SyliusCMSPlugin\Field\Textarea;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
