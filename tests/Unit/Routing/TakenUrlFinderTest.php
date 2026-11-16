@@ -16,6 +16,7 @@ use Setono\SyliusCMSPlugin\Routing\TakenUrl;
 use Setono\SyliusCMSPlugin\Routing\TakenUrlFinder;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\Article;
+use Sylius\Component\Channel\Model\Channel as PlainChannel;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -53,7 +54,10 @@ final class TakenUrlFinderTest extends TestCase
         /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $channelRepository */
         $channelRepository = $this->prophesize(ChannelRepositoryInterface::class);
         $this->channelRepository = $channelRepository;
-        $this->channelRepository->findAll()->willReturn([self::channel('WEB', 'en_US', 'da_DK'), self::channel('B2B', 'en_US'), self::channel(null)]);
+        // A channel that isn't a shop's has no hostname or locales to check in
+        $plain = new PlainChannel();
+        $plain->setCode('PLAIN');
+        $this->channelRepository->findAll()->willReturn([self::channel('WEB', 'en_US', 'da_DK'), self::channel('B2B', 'en_US'), self::channel(null), $plain]);
     }
 
     /**
@@ -113,9 +117,9 @@ final class TakenUrlFinderTest extends TestCase
     /**
      * @test
      */
-    public function it_skips_a_channel_the_store_no_longer_has(): void
+    public function it_skips_a_channel_the_store_no_longer_has_or_that_is_not_a_shops(): void
     {
-        self::assertSame([], $this->finder()->find(new Page(), ['en_US' => 'cart'], ['GONE']));
+        self::assertSame([], $this->finder()->find(new Page(), ['en_US' => 'cart'], ['GONE', 'PLAIN']));
         self::assertSame([], $this->checked);
     }
 
