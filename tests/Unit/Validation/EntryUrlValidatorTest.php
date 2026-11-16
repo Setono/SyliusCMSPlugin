@@ -48,7 +48,9 @@ final class EntryUrlValidatorTest extends TestCase
         $this->clashes->findDrafted(Argument::cetera())->willReturn([]);
         $this->takenUrls = $this->prophesize(TakenUrlFinderInterface::class);
         $this->takenUrls->find(Argument::cetera())->willReturn([]);
-        $this->channels = $this->prophesize(ChannelRepositoryInterface::class);
+        /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $channels */
+        $channels = $this->prophesize(ChannelRepositoryInterface::class);
+        $this->channels = $channels;
         $this->channels->findAll()->willReturn([self::channel('WEB', 'Web store'), self::channel('B2B', null)]);
 
         $this->page = self::page(['en_US' => 'about-us', 'da_DK' => 'om-os'], ['WEB', 'B2B']);

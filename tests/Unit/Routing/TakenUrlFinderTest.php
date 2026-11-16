@@ -50,7 +50,9 @@ final class TakenUrlFinderTest extends TestCase
             };
         });
 
-        $this->channelRepository = $this->prophesize(ChannelRepositoryInterface::class);
+        /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $channelRepository */
+        $channelRepository = $this->prophesize(ChannelRepositoryInterface::class);
+        $this->channelRepository = $channelRepository;
         $this->channelRepository->findAll()->willReturn([self::channel('WEB', 'en_US', 'da_DK'), self::channel('B2B', 'en_US'), self::channel(null)]);
     }
 

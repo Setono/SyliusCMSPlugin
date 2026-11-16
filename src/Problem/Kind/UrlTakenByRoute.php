@@ -41,8 +41,8 @@ final readonly class UrlTakenByRoute implements ProblemKindInterface
         $slugs = [];
         foreach ($entry->getTranslations() as $localeCode => $translation) {
             $slug = $translation->getSlug();
-            if (Slug::isValid($slug)) {
-                $slugs[(string) $localeCode] = (string) $slug;
+            if (null !== $slug && Slug::isValid($slug)) {
+                $slugs[$localeCode] = $slug;
             }
         }
 

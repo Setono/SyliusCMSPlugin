@@ -42,8 +42,8 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
 
         $errors = $slugs = [];
         foreach (self::slugsOf($entry) as $localeCode => $slug) {
-            if (Slug::isValid($slug)) {
-                $slugs[$localeCode] = (string) $slug;
+            if (null !== $slug && Slug::isValid($slug)) {
+                $slugs[$localeCode] = $slug;
 
                 continue;
             }
@@ -66,10 +66,7 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
             return [];
         }
 
-        $slugs = array_filter(self::slugsOf($entry), Slug::isValid(...));
-
-        /** @var array<string, string> $slugs */
-        return $this->clashErrors($this->clashes->findDrafted($entry, $slugs, $entry->getChannelCodes()), 'setono_sylius_cms.slug.drafted_elsewhere');
+        return $this->clashErrors($this->clashes->findDrafted($entry, self::validSlugsOf($entry), $entry->getChannelCodes()), 'setono_sylius_cms.slug.drafted_elsewhere');
     }
 
     public function warnTakenLiveUrls(EntryInterface $entry): array
@@ -78,10 +75,7 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
             return [];
         }
 
-        $slugs = array_filter(self::slugsOf($entry), Slug::isValid(...));
-
-        /** @var array<string, string> $slugs */
-        return array_values($this->takenByRoutes($entry, $slugs, $entry->getChannelCodes(), 'setono_sylius_cms.slug.live_url_taken_by_route'));
+        return array_values($this->takenByRoutes($entry, self::validSlugsOf($entry), $entry->getChannelCodes(), 'setono_sylius_cms.slug.live_url_taken_by_route'));
     }
 
     public function refuse(EntryInterface $entry, array $slugs): array
@@ -101,10 +95,7 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
             return [];
         }
 
-        $slugs = array_filter(self::slugsOf($entry), Slug::isValid(...));
-
-        /** @var array<string, string> $slugs */
-        return $this->clashErrors($this->clashes->findPublished($entry, $slugs, $added), 'setono_sylius_cms.slug.taken_in_channel');
+        return $this->clashErrors($this->clashes->findPublished($entry, self::validSlugsOf($entry), $added), 'setono_sylius_cms.slug.taken_in_channel');
     }
 
     /**
@@ -161,8 +152,10 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
     {
         $names = [];
         foreach ($this->channels->findAll() as $channel) {
-            $code = (string) $channel->getCode();
-            $names[$code] = $channel->getName() ?? $code;
+            $code = $channel->getCode();
+            if (null !== $code) {
+                $names[$code] = $channel->getName() ?? $code;
+            }
         }
 
         return $names;
@@ -177,9 +170,26 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
     {
         $slugs = [];
         foreach ($entry->getTranslations() as $localeCode => $translation) {
-            $slugs[(string) $localeCode] = $translation->getSlug();
+            $slugs[$localeCode] = $translation->getSlug();
         }
         ksort($slugs);
+
+        return $slugs;
+    }
+
+    /**
+     * The slugs that follow the slug rules, by locale code, which have a URL to check
+     *
+     * @return array<string, string>
+     */
+    private static function validSlugsOf(EntryInterface $entry): array
+    {
+        $slugs = [];
+        foreach (self::slugsOf($entry) as $localeCode => $slug) {
+            if (null !== $slug && Slug::isValid($slug)) {
+                $slugs[$localeCode] = $slug;
+            }
+        }
 
         return $slugs;
     }

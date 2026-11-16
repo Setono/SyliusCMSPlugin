@@ -45,7 +45,7 @@ final class CheckRoutesCommand extends Command
         $batched = 0;
         foreach ($this->entries->iterateAll() as $entry) {
             foreach ($this->takenUrls->find($entry, self::publishedSlugs($entry), $entry->getChannelCodes(), true) as $taken) {
-                $rows[] = [(string) $taken->channelCode, $taken->localeCode, sprintf('/%s/%s', $taken->localeCode, $taken->path), $taken->route];
+                $rows[] = [$taken->channelCode ?? '', $taken->localeCode, sprintf('/%s/%s', $taken->localeCode, $taken->path), $taken->route];
             }
 
             // Nothing is written, so a batch is dropped as it's done
@@ -81,8 +81,8 @@ final class CheckRoutesCommand extends Command
         $slugs = [];
         foreach ($entry->getTranslations() as $localeCode => $translation) {
             $slug = $translation->getSlug();
-            if (Slug::isValid($slug)) {
-                $slugs[(string) $localeCode] = (string) $slug;
+            if (null !== $slug && Slug::isValid($slug)) {
+                $slugs[$localeCode] = $slug;
             }
         }
 

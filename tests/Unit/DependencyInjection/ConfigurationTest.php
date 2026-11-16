@@ -322,6 +322,8 @@ final class ConfigurationTest extends TestCase
      * @test
      *
      * @dataProvider provideInvalidContentTypes
+     *
+     * @param array<array-key, mixed> $contentTypes
      */
     public function it_refuses_an_invalid_content_type_prefix_or_code(array $contentTypes, string $message): void
     {

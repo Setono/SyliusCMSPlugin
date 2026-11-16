@@ -73,7 +73,7 @@ final readonly class Autosave implements AutosaveInterface
             $refused = $this->refusedSlugs($workingCopy, $merge->changeSet);
             $changes = [] === $refused ? $merge->changeSet : new ChangeSet(array_values(array_filter(
                 $merge->changeSet->changes,
-                static fn (Change $change): bool => !self::isSlug($change) || !isset($refused[(string) $change->locale]),
+                static fn (Change $change): bool => !isset($refused[self::slug($change)[0] ?? '']),
             )));
 
             if ([] !== $changes->changes) {
@@ -127,8 +127,9 @@ final readonly class Autosave implements AutosaveInterface
     {
         $slugs = [];
         foreach ($changeSet->changes as $change) {
-            if (self::isSlug($change)) {
-                $slugs[(string) $change->locale] = is_string($change->value) ? $change->value : '';
+            $slug = self::slug($change);
+            if (null !== $slug) {
+                $slugs[$slug[0]] = $slug[1];
             }
         }
 
@@ -138,11 +139,18 @@ final readonly class Autosave implements AutosaveInterface
     }
 
     /**
-     * @phpstan-assert-if-true SetEntryValue $change
+     * The locale and the slug of a change of a slug, '' for one emptied, or null for another change. A slug without a
+     * locale is left for the change set to refuse
+     *
+     * @return array{string, string}|null
      */
-    private static function isSlug(Change $change): bool
+    private static function slug(Change $change): ?array
     {
-        return $change instanceof SetEntryValue && EntryUrlValidator::FIELD === $change->field;
+        if (!$change instanceof SetEntryValue || EntryUrlValidator::FIELD !== $change->field || null === $change->locale) {
+            return null;
+        }
+
+        return [$change->locale, is_string($change->value) ? $change->value : ''];
     }
 
     /**

@@ -17,8 +17,8 @@ final class Slug
      */
     public const HTML_PATTERN = '(?!/)(?!.*//)(?!.*/$).+';
 
-    public static function isValid(?string $slug): bool
+    public static function isValid(string $slug): bool
     {
-        return null !== $slug && 1 === preg_match(self::PATTERN, $slug);
+        return 1 === preg_match(self::PATTERN, $slug);
     }
 }

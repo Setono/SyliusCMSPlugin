@@ -70,7 +70,7 @@ final readonly class UrlClaimsQuery implements UrlClaimsQueryInterface
 
         $claims = [];
         foreach ($query->executeQuery()->iterateAssociative() as $row) {
-            $claims[] = ['id' => (int) $row['id'], 'uuid' => (string) $row['uuid'], 'content_type' => (string) $row['content_type'], 'slug' => (string) $row['slug'], 'title' => is_string($row['title']) ? $row['title'] : null];
+            $claims[] = ['id' => self::int($row['id']), 'uuid' => self::string($row['uuid']), 'content_type' => self::string($row['content_type']), 'slug' => self::string($row['slug']), 'title' => is_string($row['title']) ? $row['title'] : null];
         }
 
         return $this->withChannels($manager, $localeCode, $claims);
@@ -105,13 +105,13 @@ final readonly class UrlClaimsQuery implements UrlClaimsQueryInterface
 
         $claims = [];
         foreach ($query->executeQuery()->iterateAssociative() as $row) {
-            $contentType = (string) $row['content_type'];
-            $fields = self::draftedFields((string) $row['content'], $localeCode);
+            $contentType = self::string($row['content_type']);
+            $fields = self::draftedFields(self::string($row['content']), $localeCode);
             if (($fields['slug'] ?? null) !== ($slugs[$contentType] ?? null)) {
                 continue;
             }
 
-            $claims[] = ['id' => (int) $row['id'], 'uuid' => (string) $row['uuid'], 'content_type' => $contentType, 'slug' => $slugs[$contentType], 'title' => is_string($fields['title'] ?? null) ? $fields['title'] : null];
+            $claims[] = ['id' => self::int($row['id']), 'uuid' => self::string($row['uuid']), 'content_type' => $contentType, 'slug' => $slugs[$contentType], 'title' => is_string($fields['title'] ?? null) ? $fields['title'] : null];
         }
 
         return $this->withChannels($manager, $localeCode, $claims);
@@ -151,7 +151,7 @@ final readonly class UrlClaimsQuery implements UrlClaimsQueryInterface
 
         $channels = [];
         foreach ($rows as $row) {
-            $channels[(int) $row['entry_id']][] = (string) $row['code'];
+            $channels[self::int($row['entry_id'])][] = self::string($row['code']);
         }
 
         $result = [];
@@ -198,6 +198,19 @@ final readonly class UrlClaimsQuery implements UrlClaimsQueryInterface
         }
 
         return implode(', ', $parameters);
+    }
+
+    /**
+     * A column's value, which the database driver gives as a string or an int
+     */
+    private static function string(mixed $value): string
+    {
+        return is_string($value) || is_int($value) ? (string) $value : '';
+    }
+
+    private static function int(mixed $value): int
+    {
+        return is_numeric($value) ? (int) $value : 0;
     }
 
     private static function escapeLike(string $value): string

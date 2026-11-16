@@ -222,7 +222,7 @@ final class AutosaveTest extends TestCase
         self::assertSame(['Hello there', 'World'], self::texts($this->workingCopy));
         self::assertSame('about-us', $this->workingCopy->getTranslation('en_US')->getSlug(), 'The slug keeps its last saved value');
         self::assertSame('Cart', $this->workingCopy->getTranslation('en_US')->getTitle());
-        self::assertSame('om-os', $this->workingCopy->getTranslations()->get('da_DK')?->getSlug());
+        self::assertSame('om-os', $this->workingCopy->getTranslation('da_DK')->getSlug());
         $this->savedChangeSets->record($this->entry, 4, new ChangeSet([$text, $danish, $title]), Argument::any())->shouldHaveBeenCalledOnce();
     }
 
@@ -241,6 +241,20 @@ final class AutosaveTest extends TestCase
         self::assertSame([$refused], $result->refused);
         self::assertSame(3, $result->saved->lockToken);
         self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'flush', 'commit'], $this->calls);
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_a_slug_without_a_locale_for_the_change_set_to_refuse(): void
+    {
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
+        $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
+        $this->urlValidator->refuse(Argument::cetera())->shouldNotBeCalled();
+
+        $this->expectException(InvalidChangeSetException::class);
+
+        $this->autosave()->save($this->entry, new ChangeSet([new SetEntryValue('slug', null, 'cart')]), 3);
     }
 
     /**

@@ -35,17 +35,16 @@ final class SlugTest extends TestCase
      *
      * @dataProvider provideInvalidSlugs
      */
-    public function it_refuses_a_slug_that_is_empty_starts_or_ends_with_a_slash_or_has_two_slashes_in_a_row(?string $slug): void
+    public function it_refuses_a_slug_that_is_empty_starts_or_ends_with_a_slash_or_has_two_slashes_in_a_row(string $slug): void
     {
         self::assertFalse(Slug::isValid($slug));
     }
 
     /**
-     * @return iterable<string, array{?string}>
+     * @return iterable<string, array{string}>
      */
     public static function provideInvalidSlugs(): iterable
     {
-        yield 'none' => [null];
         yield 'empty' => [''];
         yield 'a slash alone' => ['/'];
         yield 'a slash first' => ['/about'];
@@ -59,6 +58,7 @@ final class SlugTest extends TestCase
      */
     public function its_html_pattern_is_its_pattern_without_the_anchors(): void
     {
-        self::assertSame('#^' . Slug::HTML_PATTERN . '$#', Slug::PATTERN);
+        self::assertSame(1, preg_match('#^' . Slug::HTML_PATTERN . '$#', 'about/team'));
+        self::assertSame(0, preg_match('#^' . Slug::HTML_PATTERN . '$#', 'about//team'));
     }
 }

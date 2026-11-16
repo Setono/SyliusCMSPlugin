@@ -155,9 +155,7 @@ final class RouteCheckerTest extends TestCase
     {
         $matched = &$this->matched;
         $contexts = &$this->contexts;
-        /** @var ObjectProphecy<RequestMatcherInterface> $router */
-        $router = $this->router;
-        $router->matchRequest(Argument::type(Request::class))->will(static function (array $arguments) use ($match, &$matched, &$contexts): array {
+        $this->router->matchRequest(Argument::type(Request::class))->will(static function (array $arguments) use ($match, &$matched, &$contexts): array {
             $context = end($contexts);
             self::assertInstanceOf(RequestContext::class, $context);
             $matched[] = [$arguments[0], $context];

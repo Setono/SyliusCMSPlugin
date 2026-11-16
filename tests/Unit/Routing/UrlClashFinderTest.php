@@ -40,9 +40,11 @@ final class UrlClashFinderTest extends TestCase
         $published = &$this->published;
         $drafted = &$this->drafted;
         $this->claims->published(Argument::cetera())->will(static function (array $arguments) use (&$published): array {
+            /** @var array{string, array<string, string>, string} $arguments */
             return self::matching($published, ...$arguments);
         });
         $this->claims->drafted(Argument::cetera())->will(static function (array $arguments) use (&$drafted): array {
+            /** @var array{string, array<string, string>, string} $arguments */
             return self::matching($drafted, ...$arguments);
         });
         $this->page = new Page();
