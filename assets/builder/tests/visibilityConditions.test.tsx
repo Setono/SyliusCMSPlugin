@@ -235,12 +235,12 @@ describe('the visibility conditions in the right pane', () => {
 
         const condition = within(selectionPane()).getByRole('group', { name: 'Condition 1' });
         const kind = within(condition).getByRole('combobox', { name: 'Kind' });
-        expect(within(kind).getAllByRole('option').map((option) => option.textContent)).toEqual(['Channel', 'Language', 'Date window', 'Customer group']);
+        expect(within(kind).getAllByRole('option').map((option) => option.textContent)).toEqual(['Channel', 'Locale', 'Date window', 'Customer group']);
         expect(kind).toHaveValue('channel');
 
         fireEvent.change(kind, { target: { value: 'locale' } });
         fireEvent.change(within(condition).getByRole('combobox', { name: 'Matches when it' }), { target: { value: 'not' } });
-        const languages = within(condition).getByRole('listbox', { name: 'Languages' });
+        const languages = within(condition).getByRole('listbox', { name: 'Locales' });
         within(languages).getByRole<HTMLOptionElement>('option', { name: 'Danish (Denmark)' }).selected = true;
         fireEvent.change(languages);
 

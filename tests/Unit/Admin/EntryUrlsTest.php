@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -83,6 +84,23 @@ final class EntryUrlsTest extends TestCase
         self::assertEquals([
             new EntryUrl('da_DK', '/da_DK/om-os', null),
             new EntryUrl('en_US', '/en_US/about-us', null),
+        ], $this->entryUrls()->of($page));
+    }
+
+    /**
+     * A channel's homepage shows at /{locale}/, and its own URL redirects there in that channel. See "Homepage" in
+     * docs/spec/urls-and-seo.md
+     *
+     * @test
+     */
+    public function it_gives_a_homepage_the_channels_root_beside_its_own_url(): void
+    {
+        $page = self::page(['en_US' => ['Welcome', 'welcome'], 'da_DK' => ['Velkommen', 'velkommen']]);
+        Homepages::modifier()->setHomepageOf($page, ['WEB']);
+
+        self::assertEquals([
+            new EntryUrl('da_DK', '/da_DK/velkommen', null, [], '/da_DK/'),
+            new EntryUrl('en_US', '/en_US/welcome', null, [], '/en_US/'),
         ], $this->entryUrls()->of($page));
     }
 
@@ -166,6 +184,12 @@ final class EntryUrlsTest extends TestCase
             $parameters = $arguments[1];
 
             return sprintf('/%s/%s', $parameters['_locale'], $parameters['path']);
+        });
+        $urlGenerator->generate('sylius_shop_homepage', Argument::type('array'))->will(static function (array $arguments): string {
+            /** @var array{_locale: string} $parameters */
+            $parameters = $arguments[1];
+
+            return sprintf('/%s/', $parameters['_locale']);
         });
 
         return new EntryUrls(

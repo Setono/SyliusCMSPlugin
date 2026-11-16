@@ -221,12 +221,20 @@ function Slug() {
     const refused = useBuilderState((state) => state.refusedSlugs[state.locale]);
     const errors = useValidationState((state) => state.errors);
     const warnings = useUrlsState((state) => state.warnings);
+    // A channel's homepage shows at the channel's root, where its own URL redirects in that channel
+    const homepage = useSettingsState((state) => state.settings.homepageOf.length > 0);
     const url = typeof slug === 'string' && slug !== '' ? `/${locale}/${urlPrefix === null || urlPrefix === '' ? '' : `${urlPrefix}/`}${slug}` : null;
     const warned = slugMessages(warnings, locale);
+    const help =
+        url === null
+            ? t('setono_sylius_cms.builder.slug_help_none')
+            : homepage
+              ? t('setono_sylius_cms.builder.slug_help_homepage', { '%homepage%': `/${locale}/`, '%url%': url })
+              : t('setono_sylius_cms.builder.slug_help', { '%url%': url });
     const schema: FieldSchema = {
         'x-cms-type': 'text',
         'x-cms-label': t('setono_sylius_cms.builder.slug'),
-        'x-cms-help': url === null ? t('setono_sylius_cms.builder.slug_help_none') : t('setono_sylius_cms.builder.slug_help', { '%url%': url }),
+        'x-cms-help': help,
         'x-cms-required': true,
         'x-cms-translatable': true,
     };
@@ -389,8 +397,11 @@ function Layout() {
     const pickable = pickableLayouts(layouts);
     const removed = isRemovedLayout(layouts, stored);
     const rendered = renderedLayout(layouts, stored);
-    // The fields of a layout that was removed or disabled aren't shown, and the default layout ignores its values
-    const own = removed || stored === null ? undefined : layoutOf(layouts, stored);
+    // The fields of a layout that was removed or disabled aren't shown. A tree without a layout renders in the default
+    // one, so its fields are, and a first value stores it
+    const own = removed ? undefined : stored === null ? rendered : layoutOf(layouts, stored);
+    const values = stored?.fields ?? {};
+    const translated = stored?.translated ?? {};
 
     return (
         <>
@@ -424,7 +435,7 @@ function Layout() {
                     </div>
                 </fieldset>
             )}
-            {own !== undefined && stored !== null && own.fields.length > 0 && (
+            {own !== undefined && own.fields.length > 0 && (
                 <div key={own.code} className={styles.layoutFields}>
                     {own.fields.map(({ name: field, schema }) => (
                         <FieldRow
@@ -432,12 +443,12 @@ function Layout() {
                             id={`cms-layout-field-${field}`}
                             schema={schema}
                             locale={locale}
-                            value={readFieldValue(stored.fields, field, schema['x-cms-translatable'], locale)}
+                            value={readFieldValue(values, field, schema['x-cms-translatable'], locale)}
                             onChange={(value) => store.getState().setLayoutValue(field, value)}
-                            fallback={schema['x-cms-translatable'] ? fieldFallback(locales, stored.fields[field], locale) : undefined}
+                            fallback={schema['x-cms-translatable'] ? fieldFallback(locales, values[field], locale) : undefined}
                             outdated={
                                 schema['x-cms-translatable']
-                                    ? outdatedValue(locales, stored.fields[field], stored.translated[field], locale, () => store.getState().markLayoutValueUpToDate(field))
+                                    ? outdatedValue(locales, values[field], translated[field], locale, () => store.getState().markLayoutValueUpToDate(field))
                                     : undefined
                             }
                         />

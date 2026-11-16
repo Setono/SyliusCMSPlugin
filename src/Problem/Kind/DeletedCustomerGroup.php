@@ -103,7 +103,8 @@ final class DeletedCustomerGroup implements ReferenceProblemKindInterface, Reset
                         self::CODE,
                         Severity::Error,
                         $entry,
-                        new TranslatableMessage('setono_sylius_cms.problem.deleted_customer_group', [
+                        // "is one of" no longer matches anyone through it, and "is not one of" no longer excludes anyone
+                        new TranslatableMessage(true === ($condition['negate'] ?? false) ? 'setono_sylius_cms.problem.deleted_customer_group_negated' : 'setono_sylius_cms.problem.deleted_customer_group', [
                             '%group%' => $group,
                             '%block%' => $this->blockTypes->has($block->type) ? new TranslatableMessage($this->blockTypes->get($block->type)->label) : $block->type,
                         ]),

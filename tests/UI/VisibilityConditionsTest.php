@@ -39,7 +39,7 @@ final class VisibilityConditionsTest extends UITestCase
         $condition = $selection->getByRole('group', ['name' => 'Condition 1']);
         $condition->getByRole('combobox', ['name' => 'Kind'])->selectOption('locale');
         $condition->getByRole('combobox', ['name' => 'Matches when it'])->selectOption('not');
-        $condition->getByLabel('Languages')->selectOption('da_DK');
+        $condition->getByLabel('Locales')->selectOption('da_DK');
         $this->expectSaved($browser);
 
         // Not struck through while previewing English

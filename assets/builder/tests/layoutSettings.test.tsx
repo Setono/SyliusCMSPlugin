@@ -130,6 +130,24 @@ describe('the layout in the entry settings', () => {
         expect(settingsPanel().getByRole('checkbox', { name: 'Show title' })).toBeChecked();
     });
 
+    // A tree without a layout renders in the default layout, so its fields show, and the first change stores the layout
+    it("should show the default layout's fields for a tree without a layout, and store the layout with the first change", async () => {
+        const base = entry([block('a', { text: { en_US: 'Welcome' } })]);
+        const api = fakeApi({ ...base, tree: { ...base.tree, layout: null } }, { ...titled, contentTypes: [{ ...page, layouts: [standard] }] });
+        await openBuilder(api);
+
+        expect(settingsPanel().queryByRole('group', { name: 'Layout' })).not.toBeInTheDocument();
+        const showTitle = settingsPanel().getByRole('checkbox', { name: 'Show title' });
+        expect(showTitle).toBeChecked();
+
+        fireEvent.click(showTitle);
+
+        expect(settingsPanel().getByRole('checkbox', { name: 'Show title' })).not.toBeChecked();
+        await waitFor(() =>
+            expect(api.saveChanges).toHaveBeenLastCalledWith([{ op: 'set_layout', layout: { code: 'standard', version: 1, fields: { showTitle: false }, translated: {} } }], 0),
+        );
+    });
+
     it('should flag a disabled layout, and offer only the others', async () => {
         const disabled = { ...page.layouts[1]!, disabled: true };
         await openBuilder(fakeApi(inLayout({ code: 'landing', version: 2, fields: {}, translated: {} }), { ...titled, contentTypes: [{ ...page, layouts: [standard, disabled] }] }));

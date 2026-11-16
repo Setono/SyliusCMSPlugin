@@ -10,7 +10,7 @@ import { canDuplicate, canMoveBlocks, createNestingRules, initialChildren, inser
 import { holdClashes, reconcile, splitValueClashes, withoutKeysIn, type HeldClash } from './pullIn';
 import { copyWithNewKeys, findBlock, generateBlockKey, insertBlock, listOf, locateBlock, moveBlocksTo, removeBlockFrom, shiftWithin, topmostBlocks } from './tree';
 import type { Locale } from './config';
-import { isRemovedLayout, layoutOf, switchLayout } from './layouts';
+import { isRemovedLayout, layoutOf, renderedLayout, switchLayout } from './layouts';
 import { localeOf } from './locales';
 import { entryValues, sourceOfTyped, upToDate } from './translationState';
 import type {
@@ -268,11 +268,13 @@ export function createBuilderStore({
     const isLayoutTranslatable: LayoutTranslatableLookup = (layout, field) =>
         layouts.find(({ code }) => code === layout)?.fields.find((definition) => definition.name === field)?.schema['x-cms-translatable'] === true;
     /** The schema of a field of the layout the entry is in, unless that one was removed or disabled. */
-    const layoutField = (working: Entry, field: string) => {
+    /** The layout whose fields the tree's layout values are for: its own, or the default for a tree without a layout. */
+    const fieldsLayout = (working: Entry) => {
         const stored = working.tree.layout;
 
-        return isRemovedLayout(layouts, stored) ? undefined : layoutOf(layouts, stored)?.fields.find(({ name }) => name === field)?.schema;
+        return stored === null ? renderedLayout(layouts, null) : isRemovedLayout(layouts, stored) ? undefined : layoutOf(layouts, stored);
     };
+    const layoutField = (working: Entry, field: string) => fieldsLayout(working)?.fields.find(({ name }) => name === field)?.schema;
 
     return createStore<BuilderState>()((set, get) => {
         /**
@@ -652,21 +654,21 @@ export function createBuilderStore({
             setLayoutValue(field, value) {
                 const { entry: before, locale: edited } = get();
                 const schema = layoutField(before, field);
-                const stored = before.tree.layout;
-                if (schema === undefined || stored === null) {
+                const definition = fieldsLayout(before);
+                if (schema === undefined || definition === undefined) {
                     return;
                 }
 
+                const stored = before.tree.layout;
                 const translatable = schema['x-cms-translatable'];
-                const source = translatable ? sourceOfTyped(stored.fields[field], stored.translated[field]?.[edited], normalizeValue(value), chainOf(edited)) : null;
+                const source = translatable ? sourceOfTyped(stored?.fields[field], stored?.translated[field]?.[edited], normalizeValue(value), chainOf(edited)) : null;
                 edit(
                     (working) => {
-                        const layout = working.tree.layout;
-                        if (layout !== null) {
-                            writeFieldValue(layout.fields, field, translatable, edited, value);
-                            if (translatable) {
-                                writeTranslated(layout.translated, field, edited, source);
-                            }
+                        // A tree without a layout renders in the default one, which a first value stores
+                        const layout = (working.tree.layout ??= { code: definition.code, version: definition.version, fields: {}, translated: {} });
+                        writeFieldValue(layout.fields, field, translatable, edited, value);
+                        if (translatable) {
+                            writeTranslated(layout.translated, field, edited, source);
                         }
                     },
                     {},

@@ -48,7 +48,7 @@ final class DeletedCustomerGroupTest extends TestCase
         );
 
         self::assertEquals([
-            self::inBlock($page, self::A, 'gone', new TranslatableMessage('setono_sylius_cms.block_type.heading')),
+            self::inBlock($page, self::A, 'gone', new TranslatableMessage('setono_sylius_cms.block_type.heading'), negated: true),
             self::inBlock($page, self::C, 'old', 'removed'),
             self::inBlock($page, self::C, 'gone', 'removed'),
         ], [...$this->kind()->findIn($page)]);
@@ -161,13 +161,13 @@ final class DeletedCustomerGroupTest extends TestCase
     /**
      * @param string|TranslatableMessage $block the block type's label, or the type of a block the code no longer has
      */
-    private static function inBlock(Page $page, string $key, string $group, string|TranslatableMessage $block): Problem
+    private static function inBlock(Page $page, string $key, string $group, string|TranslatableMessage $block, bool $negated = false): Problem
     {
         return new Problem(
             'deleted_customer_group',
             Severity::Error,
             $page,
-            new TranslatableMessage('setono_sylius_cms.problem.deleted_customer_group', ['%group%' => $group, '%block%' => $block]),
+            new TranslatableMessage($negated ? 'setono_sylius_cms.problem.deleted_customer_group_negated' : 'setono_sylius_cms.problem.deleted_customer_group', ['%group%' => $group, '%block%' => $block]),
             Fix::inBuilder($page, $key),
             $key,
         );

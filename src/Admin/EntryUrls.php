@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Admin;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
@@ -15,8 +16,8 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 /**
  * The URLs of an entry per locale, which the URLs section of its overview page lists through cms_admin_entry_urls():
  * the URL each locale has in the entry's rows, the one its draft gives it once published, when that's another, and its
- * old slugs' URLs, which redirect to it. Only an entry whose content type has its own URL has URLs, and only in the
- * locales it has a slug in. See "Entry overview page" in docs/spec/admin.md and "Old slugs" in docs/spec/urls-and-seo.md
+ * old slugs' URLs, which redirect to it, and for a channel's homepage, the channel's root, /{locale}/. Only an entry
+ * whose content type has its own URL has URLs, and only in the locales it has a slug in. See "Entry overview page" in docs/spec/admin.md and "Old slugs" in docs/spec/urls-and-seo.md
  */
 final readonly class EntryUrls
 {
@@ -46,13 +47,21 @@ final readonly class EntryUrls
         $localeCodes = array_unique([...array_keys($rows), ...array_keys($drafted)]);
         sort($localeCodes);
         $oldUrls = $this->oldUrlsOf($entry);
+        // A page that's a channel's homepage shows at the channel's root, where its own URL redirects in that channel
+        $homepage = $entry instanceof PageInterface && [] !== $entry->getHomepageChannelCodes();
 
         $urls = [];
         foreach ($localeCodes as $localeCode) {
             $url = $this->url($contentType, $localeCode, $rows[$localeCode]['slug'] ?? null);
             $draftUrl = $this->url($contentType, $localeCode, $drafted[$localeCode]['slug'] ?? null);
             if (null !== $url || null !== $draftUrl) {
-                $urls[] = new EntryUrl($localeCode, $url, $draftUrl === $url ? null : $draftUrl, $oldUrls[$localeCode] ?? []);
+                $urls[] = new EntryUrl(
+                    $localeCode,
+                    $url,
+                    $draftUrl === $url ? null : $draftUrl,
+                    $oldUrls[$localeCode] ?? [],
+                    $homepage ? $this->urlGenerator->generate('sylius_shop_homepage', ['_locale' => $localeCode]) : null,
+                );
             }
         }
 

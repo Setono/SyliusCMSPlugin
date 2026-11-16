@@ -27,7 +27,7 @@ setono_sylius_cms:
         channel: Channel
         customer_group: Customer group
         date_window: Date window
-        locale: Language
+        locale: Locale
     content_type:
         page: Page
     # A content type's list is named by its plural. One without a plural here is named by its label
@@ -50,7 +50,7 @@ setono_sylius_cms:
             level: Level
             text: Text
         locale_condition:
-            locales: Languages
+            locales: Locales
         rich_text:
             content: Content
         spacer:
@@ -83,6 +83,7 @@ setono_sylius_cms:
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
         deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
+        deleted_customer_group_negated: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer excludes anyone through it.'
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
@@ -127,6 +128,7 @@ setono_sylius_cms:
         homepage_now: Homepage now
         homepage_of: Homepage of
         homepage_of_help: The page each channel shows at its root URL in place of the store's own homepage. Choose the channels in the builder's settings.
+        homepage_url: 'The homepage, where its own URL redirects in the channels it''s the homepage of'
         language: Language
         last_edited: Last edited
         last_published: 'Last published %date%'
@@ -387,6 +389,7 @@ setono_sylius_cms:
         shown_to_guest: Guest
         slug: Slug
         slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team. The URL: %url%'
+        slug_help_homepage: 'Generated from the title until you change it. It may have slashes, such as about/team. As a homepage, it shows at %homepage%, and %url% redirects there in the channels it''s the homepage of.'
         slug_help_none: Generated from the title until you change it. It may have slashes, such as about/team.
         take_theirs: Take theirs
         takes_effect_on_save: Takes effect when saved, without publishing

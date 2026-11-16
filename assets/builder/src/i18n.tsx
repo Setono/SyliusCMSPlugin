@@ -133,6 +133,7 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.entry_title'
     | 'setono_sylius_cms.builder.slug'
     | 'setono_sylius_cms.builder.slug_help'
+    | 'setono_sylius_cms.builder.slug_help_homepage'
     | 'setono_sylius_cms.builder.slug_help_none'
     | 'setono_sylius_cms.builder.old_urls'
     | 'setono_sylius_cms.builder.old_urls_help'

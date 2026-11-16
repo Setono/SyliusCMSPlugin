@@ -36,7 +36,7 @@ final class VisibilityConditionsTest extends BuilderApiTestCase
         $exported = $registry['conditionKinds'];
         $kinds = array_column($exported, null, 'code');
         self::assertSame(['channel', 'locale', 'date_window', 'customer_group'], array_keys($kinds));
-        self::assertSame(['Channel', 'Language', 'Date window', 'Customer group'], array_column($exported, 'label'));
+        self::assertSame(['Channel', 'Locale', 'Date window', 'Customer group'], array_column($exported, 'label'));
 
         self::assertSame([
             'name' => 'channels',

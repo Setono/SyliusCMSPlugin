@@ -358,7 +358,7 @@ function dateTime(label: string): FieldSchema {
 /** The shipped condition kinds, as the registry endpoint exports them. */
 export const conditionKinds: ConditionKindDefinition[] = [
     { code: 'channel', label: 'Channel', fields: [{ name: 'channels', schema: choices('Channels', { WEB: 'Web store', B2B: 'Wholesale' }) }] },
-    { code: 'locale', label: 'Language', fields: [{ name: 'locales', schema: choices('Languages', { en_US: 'English (United States)', da_DK: 'Danish (Denmark)' }) }] },
+    { code: 'locale', label: 'Locale', fields: [{ name: 'locales', schema: choices('Locales', { en_US: 'English (United States)', da_DK: 'Danish (Denmark)' }) }] },
     {
         code: 'date_window',
         label: 'Date window',

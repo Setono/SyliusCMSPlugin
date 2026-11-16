@@ -1,7 +1,7 @@
 {#
  # The overview page's URLs section, a block of setono_sylius_cms.admin.entry.show.sections, for a content type with
  # its own URL: the URL per locale, the one the draft gives it once published, when that's another, and the old slugs
- # that redirect to it. For a page, "Homepage of" per channel, with the page that's each channel's homepage now.
+ # that redirect to it. A channel's homepage shows at the channel's root, /{locale}/, first. For a page, "Homepage of" per channel, with the page that's each channel's homepage now.
  # See "Entry overview page" in docs/spec/admin.md
  #}
 {% if row.contentType.hasOwnUrl() %}
@@ -25,6 +25,9 @@
                         <tr data-locale="{{ url.localeCode }}">
                             <td data-locale-name>{{ url.localeCode|sylius_locale_name }}</td>
                             <td>
+                                {% if url.homepageUrl is not null %}
+                                    <div data-homepage-url><code>{{ url.homepageUrl }}</code> <small>{{ 'setono_sylius_cms.ui.homepage_url'|trans }}</small></div>
+                                {% endif %}
                                 {% if url.url is not null %}
                                     <code data-url>{{ url.url }}</code>
                                 {% endif %}

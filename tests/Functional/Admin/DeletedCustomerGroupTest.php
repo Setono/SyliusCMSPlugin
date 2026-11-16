@@ -47,7 +47,7 @@ final class DeletedCustomerGroupTest extends WebTestCase
             [
                 ['deleted_customer_group', 'error', null, 'The customer group "wholesale" in the audience was deleted, so the audience no longer counts anyone through it.', sprintf('/admin/cms/entry/%s/builder', $page->getUuid())],
                 ['deleted_customer_group', 'error', self::ONLY_WHOLESALE, 'The customer group "wholesale" in a condition of the Heading block was deleted, so the condition no longer matches anyone through it.', sprintf('/admin/cms/entry/%s/builder?block=%s', $page->getUuid(), self::ONLY_WHOLESALE)],
-                ['deleted_customer_group', 'error', self::NOT_WHOLESALE, 'The customer group "wholesale" in a condition of the Heading block was deleted, so the condition no longer matches anyone through it.', sprintf('/admin/cms/entry/%s/builder?block=%s', $page->getUuid(), self::NOT_WHOLESALE)],
+                ['deleted_customer_group', 'error', self::NOT_WHOLESALE, 'The customer group "wholesale" in a condition of the Heading block was deleted, so the condition no longer excludes anyone through it.', sprintf('/admin/cms/entry/%s/builder?block=%s', $page->getUuid(), self::NOT_WHOLESALE)],
             ],
             $problems->each(static fn (Crawler $problem): array => [
                 $problem->attr('data-problem'),

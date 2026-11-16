@@ -68,5 +68,9 @@ final class HomepageTest extends UITestCase
         $row = $browser->getByRole('table', ['name' => 'Homepage of'])->getByRole('row', ['name' => 'Setono CMS Test Store This page']);
         Expect::locator($row)->toBeVisible();
         self::assertSame('WEB', $row->getAttribute('data-channel'));
+        // It shows at the channel's root, where its own URL redirects
+        $url = $browser->getByRole('region', ['name' => 'URLs'])->locator('tr[data-locale="en_US"]');
+        Expect::locator($url->locator('[data-homepage-url] code'))->toHaveText('/en_US/');
+        Expect::locator($url->locator('[data-url]'))->toHaveText('/en_US/welcome');
     }
 }

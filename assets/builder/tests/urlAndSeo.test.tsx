@@ -44,6 +44,7 @@ const withUrls: Registry = {
         'setono_sylius_cms.builder.falls_back_to': 'Falls back to %locale%',
         'setono_sylius_cms.builder.copy_it_here': 'Copy it here',
         'setono_sylius_cms.builder.all_languages': 'All languages',
+        'setono_sylius_cms.builder.slug_help_homepage': 'As a homepage, it shows at %homepage%, and %url% redirects there.',
     },
 };
 
@@ -125,6 +126,14 @@ describe('the URL & SEO tab', () => {
 
         expect(slug).toHaveAccessibleDescription('Generated from the title until you change it. The URL: /en_US/about/team');
         await waitFor(() => expect(api.saveChanges).toHaveBeenCalledWith([{ op: 'set_entry_value', field: 'slug', locale: 'en_US', value: 'about/team' }], 0));
+    });
+
+    // A channel's homepage shows at the channel's root, and its own URL redirects there. See "Homepage" in docs/spec/urls-and-seo.md
+    it("should tell that a homepage shows at the channel's root", async () => {
+        const homepage = (): EntryResponse => ({ entry: entry(), settings: settings({ homepageOf: ['WEB'] }), status: 'published', lockToken: 0, editors: [] });
+        const panel = await openUrlTab(fakeApi({ fetchEntry: vi.fn(async () => homepage()) }));
+
+        expect(panel.getByLabelText('Slug')).toHaveAccessibleDescription('As a homepage, it shows at /en_US/, and /en_US/about-us redirects there.');
     });
 
     it('should show the SEO fields of the edited locale, and save what the editor changes', async () => {
