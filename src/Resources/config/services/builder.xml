@@ -15,6 +15,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger" class="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger"/>

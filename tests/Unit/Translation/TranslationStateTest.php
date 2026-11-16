@@ -12,11 +12,14 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayoutTranslated;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayoutValue;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
+use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
@@ -31,12 +34,14 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
+use Setono\SyliusCMSPlugin\Tests\Unit\Translation\Fixture\Promo;
 use Setono\SyliusCMSPlugin\Translation\Fingerprint;
 use Setono\SyliusCMSPlugin\Translation\TranslatableValue;
 use Setono\SyliusCMSPlugin\Translation\TranslatableValues;
 use Setono\SyliusCMSPlugin\Translation\TranslationState;
 use Setono\SyliusCMSPlugin\Translation\ValueState;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\IdentityTranslator;
@@ -102,6 +107,59 @@ final class TranslationStateTest extends TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_writes_a_layout_value_and_where_it_was_translated_from_in_the_layout_the_working_copy_is_in(): void
+    {
+        $entry = self::page('Hello');
+        $workingCopy = self::page('Hello', new StoredLayout('promo', 1, ['tagline' => ['en_US' => 'Big news']]));
+        $fingerprint = Fingerprint::of('Big news');
+        $autosave = $this->prophesize(AutosaveInterface::class);
+        $autosave->load($entry)->willReturn(new LoadedWorkingCopy($workingCopy, 3));
+        $autosave->save($entry, new ChangeSet([
+            new SetLayoutValue('promo', 'tagline', 'da_DK', 'Nyhed'),
+            new SetLayoutTranslated('promo', 'tagline', 'da_DK', ['from' => 'en_US', 'fingerprint' => $fingerprint]),
+        ]), 3)->shouldBeCalledOnce()->willReturn(new SaveResult(new LoadedWorkingCopy($workingCopy, 4), false));
+
+        $state = new TranslationState($this->prophesize(WorkingCopyProviderInterface::class)->reveal(), $autosave->reveal(), self::translatableValues());
+        $state->write($entry, 'da_DK', 'layout.tagline', 'Nyhed', 'en_US', $fingerprint);
+    }
+
+    /**
+     * @test
+     */
+    public function it_writes_a_layout_value_a_translator_read_so_it_is_up_to_date(): void
+    {
+        $entry = self::page('Hello', new StoredLayout('promo', 1, ['tagline' => ['en_US' => 'Big news']]));
+        $state = new TranslationState(self::ownWorkingCopy(), self::applyingAutosave(), self::translatableValues());
+        $read = self::valueAt($state->values($entry, 'da_DK'), 'layout.tagline');
+        self::assertSame(ValueState::Untranslated, $read->state);
+
+        $state->write($entry, 'da_DK', 'layout.tagline', 'Nyhed', 'en_US', $read->sourceFingerprint ?? '');
+
+        $written = self::valueAt($state->values($entry, 'da_DK'), 'layout.tagline');
+        self::assertSame(ValueState::UpToDate, $written->state);
+        self::assertSame('Nyhed', $written->value);
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_to_write_a_layout_value_of_an_entry_without_a_layout(): void
+    {
+        $entry = self::page('Hello');
+        $autosave = $this->prophesize(AutosaveInterface::class);
+        $autosave->load($entry)->willReturn(new LoadedWorkingCopy($entry, 0));
+        $autosave->save(Argument::cetera())->shouldNotBeCalled();
+        $state = new TranslationState($this->prophesize(WorkingCopyProviderInterface::class)->reveal(), $autosave->reveal(), self::translatableValues());
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('The path "layout.tagline" is a layout field, but the entry\'s draft has no layout');
+
+        $state->write($entry, 'da_DK', 'layout.tagline', 'Nyhed', 'en_US', Fingerprint::of('Big news'));
+    }
+
+    /**
      * A translator passes the fingerprint of the source it read, so a source that changed while the translation was in
      * flight leaves the value outdated
      *
@@ -136,14 +194,16 @@ final class TranslationStateTest extends TestCase
      */
     public function it_refuses_to_write_to_a_path_that_is_not_an_entry_field_or_a_block_field(string $path): void
     {
+        $entry = self::page('Hello', new StoredLayout('promo', 1));
         $autosave = $this->prophesize(AutosaveInterface::class);
+        $autosave->load($entry)->willReturn(new LoadedWorkingCopy($entry, 0));
         $autosave->save(Argument::cetera())->shouldNotBeCalled();
         $state = new TranslationState($this->prophesize(WorkingCopyProviderInterface::class)->reveal(), $autosave->reveal(), self::translatableValues());
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage(sprintf('The path "%s" is not one of an entry field (entry.<field>) or a block field (block.<key>.<field>)', $path));
+        $this->expectExceptionMessage(sprintf('The path "%s" is not one of an entry field (entry.<field>), a layout field (layout.<field>) or a block field (block.<key>.<field>)', $path));
 
-        $state->write(self::page('Hello'), 'da_DK', $path, 'Hej', 'en_US', Fingerprint::of('Hello'));
+        $state->write($entry, 'da_DK', $path, 'Hej', 'en_US', Fingerprint::of('Hello'));
     }
 
     /**
@@ -151,7 +211,10 @@ final class TranslationStateTest extends TestCase
      */
     public static function provideInvalidPaths(): iterable
     {
-        yield 'a layout field' => ['layout.tagline'];
+        yield 'no layout field' => ['layout.'];
+        yield 'a layout field with more after it' => ['layout.tagline.x'];
+        yield 'a layout field with something before it' => ['the layout.tagline'];
+        yield 'a layout field ending in a line break' => ["layout.tagline\n"];
         yield 'an entry field with more after it' => ['entry.title.x'];
         yield 'an entry field with something before it' => ['the entry.title'];
         yield 'no entry field' => ['entry.'];
@@ -195,9 +258,23 @@ final class TranslationStateTest extends TestCase
     }
 
     /**
-     * A never-published page in English, with a heading
+     * @param iterable<TranslatableValue> $values
      */
-    private static function page(string $heading): Page
+    private static function valueAt(iterable $values, string $path): TranslatableValue
+    {
+        foreach ($values as $value) {
+            if ($path === $value->path) {
+                return $value;
+            }
+        }
+
+        self::fail(sprintf('The entry has no value at %s', $path));
+    }
+
+    /**
+     * A never-published page in English, with a heading, in the layout when it's given
+     */
+    private static function page(string $heading, ?StoredLayout $layout = null): Page
     {
         $page = new class() extends Page {
             private StoredTree $tree;
@@ -216,7 +293,7 @@ final class TranslationStateTest extends TestCase
         $page->setFallbackLocale('en_US');
         $page->setTitle('About us');
         $page->setSlug('about-us');
-        $page->setBlockTree(new StoredTree(null, [new StoredBlock(self::KEY, 'heading', 1, fields: ['text' => ['en_US' => $heading], 'level' => 'h2'])]));
+        $page->setBlockTree(new StoredTree($layout, [new StoredBlock(self::KEY, 'heading', 1, fields: ['text' => ['en_US' => $heading], 'level' => 'h2'])]));
 
         return $page;
     }
@@ -244,7 +321,7 @@ final class TranslationStateTest extends TestCase
      */
     private static function applyingAutosave(): AutosaveInterface
     {
-        $applier = new ChangeSetApplier(self::blockTypes(), self::fieldHandlers(), self::contentTypes());
+        $applier = new ChangeSetApplier(self::blockTypes(), self::fieldHandlers(), self::contentTypes(), self::layouts());
 
         return new class($applier) implements AutosaveInterface {
             private int $lockToken = 0;
@@ -289,7 +366,7 @@ final class TranslationStateTest extends TestCase
         return new TranslatableValues(
             self::contentTypes(),
             self::blockTypes(),
-            new LayoutRegistry([], new FieldReader()),
+            self::layouts(),
             new FallbackValues(self::fieldHandlers(), $fallbackChain),
             $fallbackChain,
         );
@@ -298,6 +375,11 @@ final class TranslationStateTest extends TestCase
     private static function contentTypes(): ContentTypeRegistry
     {
         return new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]);
+    }
+
+    private static function layouts(): LayoutRegistry
+    {
+        return new LayoutRegistry(['page' => ['promo' => Promo::class]], new FieldReader(), ['page' => 'promo']);
     }
 
     private static function blockTypes(): BlockTypeRegistry
@@ -310,6 +392,7 @@ final class TranslationStateTest extends TestCase
         return new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
+            ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
         ]));
     }
 }

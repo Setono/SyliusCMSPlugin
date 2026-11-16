@@ -9,9 +9,11 @@ namespace Setono\SyliusCMSPlugin\Tree;
  */
 final class StoredLayout
 {
+    use StoredValuesTrait;
+
     /**
-     * @param array<string, mixed> $fields
-     * @param array<string, mixed> $translated
+     * @param array<string, mixed> $fields field name => value; a translatable field's value is a map of locale code => value
+     * @param array<string, mixed> $translated field name => locale code => translation state
      */
     public function __construct(
         public readonly string $code,

@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Builder\ChangeSet;
 
 use Setono\SyliusCMSPlugin\Json\ListedObject;
+use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Translation\Fingerprint;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
  * What the builder autosaves: the changes it made since it last loaded, as values by field and locale, where they
- * were translated from, block styles, blocks added, moved or removed, and the entry's own values, where they were
- * translated from and translations' shown switches.
+ * were translated from, block styles, blocks added, moved or removed, the entry's own values, where they were
+ * translated from and translations' shown switches, and the layout switched to, its values and where they were
+ * translated from.
  * See "Saving" in docs/spec/builder.md. The body format is internal to the builder
  */
 final readonly class ChangeSet
@@ -92,6 +95,21 @@ final readonly class ChangeSet
                 'locale' => $change->locale,
                 'translated' => self::source($change->translated),
             ]),
+            $change instanceof SetLayout => new ListedObject(['op' => 'set_layout', 'layout' => $serializer->normalizeLayout($change->layout)]),
+            $change instanceof SetLayoutValue => new ListedObject([
+                'op' => 'set_layout_value',
+                'layout' => $change->layout,
+                'field' => $change->field,
+                'locale' => $change->locale,
+                'value' => $change->value,
+            ]),
+            $change instanceof SetLayoutTranslated => new ListedObject([
+                'op' => 'set_layout_translated',
+                'layout' => $change->layout,
+                'field' => $change->field,
+                'locale' => $change->locale,
+                'translated' => self::source($change->translated),
+            ]),
             default => throw new \LogicException(sprintf('Unknown change %s', $change::class)),
         }, $this->changes)];
     }
@@ -146,7 +164,20 @@ final readonly class ChangeSet
                 self::string($change, 'locale'),
                 self::translated($change),
             ),
-            default => throw new InvalidChangeSetException('A change must have the op add_block, move_block, remove_block, set_value, set_style, set_entry_value, set_shown, set_translated or set_entry_translated'),
+            'set_layout' => new SetLayout(self::layout($change, $serializer)),
+            'set_layout_value' => new SetLayoutValue(
+                self::string($change, 'layout'),
+                self::string($change, 'field'),
+                self::nullableString($change, 'locale'),
+                array_key_exists('value', $change) ? $change['value'] : throw new InvalidChangeSetException('A set_layout_value change must have a value'),
+            ),
+            'set_layout_translated' => new SetLayoutTranslated(
+                self::string($change, 'layout'),
+                self::string($change, 'field'),
+                self::string($change, 'locale'),
+                self::translated($change),
+            ),
+            default => throw new InvalidChangeSetException('A change must have the op add_block, move_block, remove_block, set_value, set_style, set_entry_value, set_shown, set_translated, set_entry_translated, set_layout, set_layout_value or set_layout_translated'),
         };
     }
 
@@ -218,6 +249,24 @@ final readonly class ChangeSet
         }
 
         return $index;
+    }
+
+    /**
+     * @param array<array-key, mixed> $change
+     */
+    private static function layout(array $change, StoredTreeSerializer $serializer): StoredLayout
+    {
+        try {
+            $layout = $serializer->denormalizeLayout($change['layout'] ?? null);
+        } catch (InvalidStoredTreeException $e) {
+            throw new InvalidChangeSetException(sprintf('The layout of a set_layout change is invalid: %s', $e->getMessage()), previous: $e);
+        }
+
+        if (!Code::isValid($layout->code)) {
+            throw new InvalidChangeSetException(sprintf('The layout code "%s" of a set_layout change must match %s', $layout->code, Code::PATTERN));
+        }
+
+        return $layout;
     }
 
     /**

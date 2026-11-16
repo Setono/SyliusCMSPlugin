@@ -15,11 +15,15 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayout;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayoutTranslated;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayoutValue;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetShown;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 /**
@@ -506,6 +510,69 @@ final class ChangeSetMergerTest extends TestCase
 
         self::assertSame([], $merge->changeSet->changes);
         self::assertSame([['kind' => 'changed_block', 'key' => self::A]], self::clashes($merge));
+    }
+
+    /**
+     * A layout is a presentation choice, not text to lose: the editor's last wins, as for a block style, and so does a
+     * layout field's value, which presentation options are
+     *
+     * @test
+     */
+    public function it_applies_the_layout_and_the_layout_values_the_editor_set_last_when_both_set_them(): void
+    {
+        $mine = [
+            new SetLayout(new StoredLayout('landing', 1, ['tagline' => ['en_US' => 'Mine']])),
+            new SetLayoutValue('landing', 'tagline', 'da_DK', 'Min'),
+            new SetLayoutTranslated('landing', 'tagline', 'da_DK', null),
+        ];
+
+        $merge = self::merge(
+            [new SetLayout(new StoredLayout('landing', 1, ['tagline' => ['en_US' => 'Theirs']])), new SetLayoutValue('landing', 'tagline', 'da_DK', 'Deres')],
+            $mine,
+            new StoredTree(new StoredLayout('landing', 1, ['tagline' => ['en_US' => 'Theirs', 'da_DK' => 'Deres']]), []),
+        );
+
+        self::assertEquals($mine, $merge->changeSet->changes);
+        self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * A switch drops the values the new layout has no field for, so a value set in the layout before is dropped too
+     *
+     * @test
+     */
+    public function it_leaves_out_a_layout_value_set_in_a_layout_a_colleague_switched_away_from(): void
+    {
+        $merge = self::merge(
+            [new SetLayout(new StoredLayout('landing', 1))],
+            [new SetLayoutValue('standard', 'showTitle', null, false), new SetLayoutTranslated('standard', 'tagline', 'da_DK', null)],
+            new StoredTree(new StoredLayout('landing', 1), []),
+        );
+
+        self::assertSame([], $merge->changeSet->changes);
+        self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_applies_the_layout_values_the_editor_set_in_the_layout_they_switched_to(): void
+    {
+        $mine = [new SetLayout(new StoredLayout('standard', 1)), new SetLayoutValue('standard', 'showTitle', null, false)];
+
+        $merge = self::merge([new SetLayout(new StoredLayout('landing', 1))], $mine, new StoredTree(new StoredLayout('landing', 1), []));
+
+        self::assertEquals($mine, $merge->changeSet->changes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_out_a_layout_value_of_a_tree_without_a_layout(): void
+    {
+        $merge = self::merge([], [new SetLayoutValue('standard', 'showTitle', null, false)], self::tree());
+
+        self::assertSame([], $merge->changeSet->changes);
     }
 
     /**

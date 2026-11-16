@@ -13,12 +13,14 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 /**
- * Applies a change set to a working copy, all or nothing: to its block tree, and to its translations' values, shown
- * switches and translation state. The values themselves aren't validated, because invalid content saves: publish validates. They're
+ * Applies a change set to a working copy, all or nothing: to its block tree and its layout, and to its translations'
+ * values, shown switches and translation state. The values themselves aren't validated, because invalid content saves: publish validates. They're
  * sanitised by field types that sanitise, such as rich text
  *
  * @internal
@@ -29,6 +31,7 @@ final readonly class ChangeSetApplier
         private BlockTypeRegistryInterface $blockTypes,
         private FieldHandlerLocator $fieldHandlers,
         private ContentTypeRegistryInterface $contentTypes,
+        private LayoutRegistryInterface $layouts,
     ) {
     }
 
@@ -54,6 +57,9 @@ final readonly class ChangeSetApplier
                 $change instanceof SetShown => $translationChanges[] = [$change->locale, static fn (EntryTranslationInterface $translation) => $translation->setShown($change->shown)],
                 $change instanceof SetTranslated => $this->setTranslated($change, $tree),
                 $change instanceof SetEntryTranslated => $translationChanges[] = self::entryTranslated($change, $contentType),
+                $change instanceof SetLayout => $this->setLayout($change, $tree, $contentType),
+                $change instanceof SetLayoutValue => $this->setLayoutValue($change, $tree, $contentType),
+                $change instanceof SetLayoutTranslated => $this->setLayoutTranslated($change, $tree, $contentType),
                 default => throw new InvalidChangeSetException(sprintf('Unknown change %s', $change::class)),
             };
         }
@@ -251,6 +257,76 @@ final readonly class ChangeSetApplier
     }
 
     /**
+     * Switches the layout to the one the builder made, with the values that carried over. A layout the code doesn't
+     * have, such as the removed one that undoing a switch from it brings back, is kept as it is
+     */
+    private function setLayout(SetLayout $change, StoredTree $tree, ContentTypeMetadata $contentType): void
+    {
+        if (!$contentType->hasOwnUrl()) {
+            throw new InvalidChangeSetException(sprintf('The content type "%s" has no layouts', $contentType->code));
+        }
+
+        $layout = clone $change->layout;
+        if ($this->layouts->has($contentType->code, $layout->code)) {
+            $fields = $this->layouts->get($contentType->code, $layout->code)->fields;
+            foreach ($layout->fields as $name => $value) {
+                $field = $fields[$name] ?? throw new InvalidChangeSetException(sprintf('The layout "%s" has no field "%s"', $layout->code, $name));
+                $layout->fields[$name] = $this->sanitizeStored($field, $value);
+            }
+        }
+
+        $tree->layout = $layout;
+    }
+
+    private function setLayoutValue(SetLayoutValue $change, StoredTree $tree, ContentTypeMetadata $contentType): void
+    {
+        [$layout, $field] = $this->layoutField($change->layout, $change->field, $tree, $contentType);
+
+        if ($field->translatable && null === $change->locale) {
+            throw new InvalidChangeSetException(sprintf('The field "%s" is translatable, so a value needs a locale', $change->field));
+        }
+
+        if (!$field->translatable && null !== $change->locale) {
+            throw new InvalidChangeSetException(sprintf('The field "%s" is shared by all translations, so a value takes no locale', $change->field));
+        }
+
+        $layout->setValue($change->field, $change->locale, null === $change->value ? null : $this->sanitize($field, $change->value));
+    }
+
+    private function setLayoutTranslated(SetLayoutTranslated $change, StoredTree $tree, ContentTypeMetadata $contentType): void
+    {
+        [$layout, $field] = $this->layoutField($change->layout, $change->field, $tree, $contentType);
+
+        if (!$field->translatable) {
+            throw new InvalidChangeSetException(sprintf('The field "%s" is shared by all translations, so it has no translation state', $change->field));
+        }
+
+        $layout->setTranslated($change->field, $change->locale, $change->translated);
+    }
+
+    /**
+     * The tree's layout and the field a change to it is about. The change names the layout it was made in, which must
+     * be the tree's still
+     *
+     * @return array{StoredLayout, FieldMetadata}
+     */
+    private function layoutField(string $code, string $name, StoredTree $tree, ContentTypeMetadata $contentType): array
+    {
+        $layout = $tree->layout;
+        if (null === $layout || $layout->code !== $code) {
+            throw new InvalidChangeSetException(sprintf('The tree has no layout "%s", so it can\'t take the change to its field "%s"', $code, $name));
+        }
+
+        if (!$this->layouts->has($contentType->code, $code)) {
+            throw new InvalidChangeSetException(sprintf('The content type "%s" has no layout with the code "%s"', $contentType->code, $code));
+        }
+
+        $field = $this->layouts->get($contentType->code, $code)->fields[$name] ?? throw new InvalidChangeSetException(sprintf('The layout "%s" has no field "%s"', $code, $name));
+
+        return [$layout, $field];
+    }
+
+    /**
      * Sanitises the values of a block and the blocks inside it. A block of a type the code no longer has is kept as it
      * is, with what's inside it
      */
@@ -269,16 +345,24 @@ final readonly class ChangeSetApplier
                 continue;
             }
 
-            if (!$field->translatable) {
-                $block->fields[$name] = $this->sanitize($field, $value);
-            } elseif (is_array($value)) {
-                $block->fields[$name] = array_map(fn (mixed $localized): mixed => $this->sanitize($field, $localized), $value);
-            }
+            $block->fields[$name] = $this->sanitizeStored($field, $value);
         }
 
         foreach ($block->children as $child) {
             $this->sanitizeBlock($child);
         }
+    }
+
+    /**
+     * Sanitises a field's value as it's stored: a shared field's one value, or a translatable field's value in each locale
+     */
+    private function sanitizeStored(FieldMetadata $field, mixed $value): mixed
+    {
+        if (!$field->translatable) {
+            return $this->sanitize($field, $value);
+        }
+
+        return is_array($value) ? array_map(fn (mixed $localized): mixed => $this->sanitize($field, $localized), $value) : $value;
     }
 
     private function sanitize(FieldMetadata $field, mixed $value): mixed
