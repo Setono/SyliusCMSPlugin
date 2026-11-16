@@ -1,0 +1,70 @@
+{#
+ # The overview page's Where it shows section, a block of setono_sylius_cms.admin.entry.show.sections: a grid of the
+ # store's channels and the locales of each, whose cells say Live, or the first reason shoppers don't see the entry
+ # there (Admin\WhereItShowsCell), with the entry's audience below it. A channel lacks the locales it has no cell for.
+ # Times are in the time zone the admin shows times in. See "Entry overview page" in docs/spec/admin.md
+ #}
+{% set grid = cms_admin_where_it_shows(row) %}
+{% set audience = entry.audience %}
+<section class="ui segment" data-section="where_it_shows" aria-labelledby="cms-section-where_it_shows">
+    <h2 class="ui dividing header" id="cms-section-where_it_shows">{{ 'setono_sylius_cms.ui.where_it_shows'|trans }}</h2>
+
+    <p>{{ 'setono_sylius_cms.ui.where_it_shows_help'|trans }}</p>
+
+    <div class="cms-where-it-shows">
+        <table class="ui celled definition table" data-where-it-shows>
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'setono_sylius_cms.ui.channel'|trans }}</th>
+                    {% for locale_code in grid.localeCodes %}
+                        <th scope="col" data-locale="{{ locale_code }}">{{ locale_code|sylius_locale_name }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for channel in grid.channels %}
+                    <tr data-channel="{{ channel.code }}">
+                        <th scope="row">
+                            {{ channel.name }}
+                            {% if not channel.enabled %}
+                                <span class="ui mini grey label" data-channel-disabled>{{ 'setono_sylius_cms.ui.status_label.disabled'|trans }}</span>
+                            {% endif %}
+                        </th>
+                        {% for locale_code in grid.localeCodes %}
+                            {% set cell = channel.cells[locale_code]|default(null) %}
+                            {% if cell is null %}
+                                <td class="disabled" data-locale="{{ locale_code }}"></td>
+                            {% else %}
+                                {% set parameters = {} %}
+                                {% if cell.code == 'publishes_at_a_time' %}
+                                    {% set parameters = {'%at%': cell.parameters.at|date('Y-m-d H:i')} %}
+                                {% elseif cell.code == 'ended' %}
+                                    {% set parameters = {'%until%': cell.parameters.until|date('Y-m-d H:i')} %}
+                                {% elseif cell.code == 'shows_from_a_date' %}
+                                    {% set parameters = {'%from%': cell.parameters.from|date('Y-m-d H:i')} %}
+                                {% elseif cell.code == 'hidden_by_route' %}
+                                    {% set parameters = {'%route%': cell.parameters.route} %}
+                                {% endif %}
+                                {% set live = cell.code == 'live' %}
+                                <td class="{{ live ? 'positive' : '' }}" data-locale="{{ locale_code }}" data-reason="{{ cell.code }}">
+                                    <i class="{{ live ? 'green check circle' : 'grey minus circle' }} icon" aria-hidden="true"></i>
+                                    <span data-reason-text>{{ ('setono_sylius_cms.ui.where_it_shows_cell.' ~ cell.code)|trans(parameters) }}</span>
+                                </td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <p data-audience>
+        <strong>{{ 'setono_sylius_cms.ui.where_it_shows_audience'|trans }}</strong>
+        {% if audience.mode.value == 'everyone' %}
+            {{ 'setono_sylius_cms.ui.audience.everyone'|trans }}
+        {% else %}
+            {% include '@SetonoSyliusCMSPlugin/admin/status_label/audience.html.twig' with {'label': {'parameters': {'mode': audience.mode.value, 'groups': audience.groups}}} %}
+            <br><small>{{ 'setono_sylius_cms.ui.where_it_shows_audience_help'|trans }}</small>
+        {% endif %}
+    </p>
+</section>

@@ -101,6 +101,7 @@ setono_sylius_cms:
         any_channel: Any channel
         any_status: Any status
         audience:
+            everyone: Everyone
             except: 'Everyone except %groups%'
             guests: Guests
             no_group: Signed in without a group
@@ -214,6 +215,22 @@ setono_sylius_cms:
         url_after_publishing: 'After publishing: %url%'
         warning_count: '{0} no warnings|{1} 1 warning|]1,Inf[ %count% warnings'
         urls: URLs
+        where_it_shows: Where it shows
+        where_it_shows_audience: 'Audience:'
+        where_it_shows_audience_help: Where it says Live, only shoppers in its audience see it.
+        # A cell of the Where it shows grid: Live, or the first reason shoppers don't see the entry in the channel and language
+        where_it_shows_cell:
+            disabled: Disabled
+            ended: 'Ended %until%'
+            held_back: Held back
+            hidden_by_route: 'Hidden by the Sylius route %route%'
+            live: Live
+            no_translation: No translation
+            not_in_channel: Not in the channel
+            not_published_yet: Not published yet
+            publishes_at_a_time: 'Publishes %at%'
+            shows_from_a_date: 'Shows from %from%'
+        where_it_shows_help: Whether shoppers see it now in each channel and language, and if they don't, why.
 
     # The builder app's UI strings. Every key under setono_sylius_cms.builder reaches the app through the registry endpoint
     builder:

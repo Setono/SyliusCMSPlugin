@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\EntryShareLinks;
 use Setono\SyliusCMSPlugin\Admin\EntryUrls;
 use Setono\SyliusCMSPlugin\Admin\TranslationChips;
+use Setono\SyliusCMSPlugin\Admin\WhereItShows;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
 use Setono\SyliusCMSPlugin\Problem\ProblemSummaryProvider;
 use Twig\Extension\AbstractExtension;
@@ -32,6 +33,7 @@ final class AdminExtension extends AbstractExtension
             new TwigFunction('cms_admin_problem_summary', [ProblemSummaryProvider::class, 'getSummary']),
             new TwigFunction('cms_admin_entry_revisions', [EntryRevisions::class, 'of']),
             new TwigFunction('cms_admin_entry_share_links', [EntryShareLinks::class, 'of']),
+            new TwigFunction('cms_admin_where_it_shows', [WhereItShows::class, 'of']),
             new TwigFunction('cms_admin_share_link_targets', [EntryShareLinks::class, 'targets']),
             new TwigFunction('cms_admin_content_type', [AdminRuntime::class, 'contentType']),
             new TwigFunction('cms_admin_content_types', [AdminRuntime::class, 'contentTypes']),

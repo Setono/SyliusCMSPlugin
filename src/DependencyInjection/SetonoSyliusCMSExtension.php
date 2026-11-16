@@ -187,6 +187,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                     'blocks' => [
                         'publishing' => $block('_publishing', 100),
                         'problems' => $block('_problems', 90),
+                        'where_it_shows' => $block('_where_it_shows', 70),
                         'revisions' => $block('_revisions', 60),
                         'share_links' => $block('_share_links', 50),
                         'urls' => $block('_urls', 40),

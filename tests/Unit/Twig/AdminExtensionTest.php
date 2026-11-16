@@ -13,7 +13,9 @@ use Setono\SyliusCMSPlugin\Admin\EntryShareLinks;
 use Setono\SyliusCMSPlugin\Admin\EntryUrls;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
 use Setono\SyliusCMSPlugin\Admin\TranslationChips;
+use Setono\SyliusCMSPlugin\Admin\WhereItShows;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
@@ -35,6 +37,7 @@ use Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
+use Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface;
 use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
@@ -198,6 +201,7 @@ final class AdminExtensionTest extends IntegrationTestCase
         $entryShareLinks = $this->entryShareLinks();
         $runtime = $this->runtime();
         $translationChips = $this->translationChips();
+        $whereItShows = $this->whereItShows();
         $workingCopies = $this->prophesize(WorkingCopyProviderInterface::class);
         $workingCopies->getWorkingCopy(Argument::any())->willReturnArgument(0);
         $problemFinder = new ProblemFinder([new UnknownBlockType(new BlockTypeRegistry([], new FieldReader()))], $workingCopies->reveal());
@@ -209,6 +213,7 @@ final class AdminExtensionTest extends IntegrationTestCase
             EntryRows::class => static fn (): EntryRows => $entryRows,
             EntryUrls::class => static fn (): EntryUrls => $entryUrls,
             TranslationChips::class => static fn (): TranslationChips => $translationChips,
+            WhereItShows::class => static fn (): WhereItShows => $whereItShows,
             EntryRevisions::class => static fn (): EntryRevisions => $entryRevisions,
             EntryShareLinks::class => static fn (): EntryShareLinks => $entryShareLinks,
             AdminRuntime::class => static fn (): AdminRuntime => $runtime,
@@ -247,6 +252,29 @@ final class AdminExtensionTest extends IntegrationTestCase
             ),
             $channels->reveal(),
         );
+    }
+
+    /**
+     * The store has one channel, WEB, in en_US and da_DK, where no route takes an entry's URL
+     */
+    private function whereItShows(): WhereItShows
+    {
+        $english = new Locale();
+        $english->setCode('en_US');
+        $danish = new Locale();
+        $danish->setCode('da_DK');
+        $web = new Channel();
+        $web->setCode('WEB');
+        $web->addLocale($danish);
+        $web->addLocale($english);
+        $web->setDefaultLocale($english);
+        /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $channels */
+        $channels = $this->prophesize(ChannelRepositoryInterface::class);
+        $channels->findBy([], ['id' => 'ASC'])->willReturn([$web]);
+        $takenUrls = $this->prophesize(TakenUrlFinderInterface::class);
+        $takenUrls->find(Argument::cetera())->willReturn([]);
+
+        return new WhereItShows($channels->reveal(), new Availability(), $takenUrls->reveal(), new MockClock());
     }
 
     /**
