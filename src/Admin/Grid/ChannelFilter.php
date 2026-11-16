@@ -18,6 +18,9 @@ final class ChannelFilter implements FilterInterface
 {
     public const TYPE = 'setono_sylius_cms_entry_channel';
 
+    /**
+     * @param array<string, mixed> $options
+     */
     public function apply(DataSourceInterface $dataSource, string $name, $data, array $options): void
     {
         if (!is_string($data) || '' === $data || !$dataSource instanceof DoctrineDataSourceInterface) {

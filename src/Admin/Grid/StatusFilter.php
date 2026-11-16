@@ -26,6 +26,9 @@ final readonly class StatusFilter implements FilterInterface
     {
     }
 
+    /**
+     * @param array<string, mixed> $options
+     */
     public function apply(DataSourceInterface $dataSource, string $name, $data, array $options): void
     {
         $status = is_string($data) ? EntryStatusFilter::tryFrom($data) : null;
