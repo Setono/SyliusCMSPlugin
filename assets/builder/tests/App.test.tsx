@@ -388,13 +388,75 @@ describe('leaving the builder', () => {
         expect(saveChanges.mock.invocationCallOrder[0]).toBeLessThan(navigate.mock.invocationCallOrder[0] ?? 0);
     });
 
-    it('should go back on Esc even when the unsaved changes could not be saved', async () => {
-        const navigate = await openBuilderToLeave(fakeApi({ saveChanges: vi.fn(() => Promise.reject(new Error('Offline'))) }));
+    it('should stay and say why when the unsaved changes could not be saved', async () => {
+        const saveChanges = vi.fn(() => Promise.reject(new Error('Offline')));
+        const navigate = await openBuilderToLeave(fakeApi({ saveChanges }));
         fireEvent.click(screen.getByRole('button', { name: 'Delete block' }));
 
         fireEvent.keyDown(document.body, { key: 'Escape' });
 
+        const dialog = await screen.findByRole('dialog', { name: "Your changes aren't saved" });
+        expect(dialog).toHaveTextContent("Couldn't save");
+        expect(dialog).toHaveAccessibleDescription("Couldn't save. If you leave now, they're lost.");
+        expect(navigate).not.toHaveBeenCalled();
+        expect(saveChanges).toHaveBeenCalledTimes(1);
+    });
+
+    it("should say colleagues' changes can't be merged when that is why the changes could not be saved", async () => {
+        const navigate = await openBuilderToLeave(fakeApi({ saveChanges: vi.fn(() => Promise.reject(new ApiError('Conflict', 409))) }));
+        fireEvent.click(screen.getByRole('button', { name: 'Delete block' }));
+
+        fireEvent.click(screen.getByRole('link', { name: 'Back' }));
+
+        expect(await screen.findByRole('dialog', { name: "Your changes aren't saved" })).toHaveTextContent("Colleagues' changes can't be merged with yours");
+        expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('should leave without the unsaved changes when the editor leaves anyway', async () => {
+        const saveChanges = vi.fn(() => Promise.reject(new Error('Offline')));
+        const navigate = await openBuilderToLeave(fakeApi({ saveChanges }));
+        fireEvent.click(screen.getByRole('button', { name: 'Delete block' }));
+        fireEvent.click(screen.getByRole('link', { name: 'Back' }));
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Leave anyway' }));
+
+        expect(navigate).toHaveBeenCalledWith('/admin/');
+        expect(saveChanges).toHaveBeenCalledTimes(1);
+    });
+
+    it('should stay when the editor chooses to, and leave once another try saves the changes', async () => {
+        const saveChanges = vi
+            .fn<() => Promise<SaveResponse>>()
+            .mockRejectedValueOnce(new Error('Offline'))
+            .mockResolvedValue({ status: 'never_published', lockToken: 1 });
+        const navigate = await openBuilderToLeave(fakeApi({ saveChanges }));
+        fireEvent.click(screen.getByRole('button', { name: 'Delete block' }));
+        fireEvent.click(screen.getByRole('link', { name: 'Back' }));
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Stay' }));
+
+        await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+        expect(navigate).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByRole('link', { name: 'Back' }));
+
         await waitFor(() => expect(navigate).toHaveBeenCalledWith('/admin/'));
+        expect(saveChanges).toHaveBeenCalledTimes(2);
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('should stay when Esc closes the dialog, without trying to leave again', async () => {
+        const saveChanges = vi.fn(() => Promise.reject(new Error('Offline')));
+        const navigate = await openBuilderToLeave(fakeApi({ saveChanges }));
+        fireEvent.click(screen.getByRole('button', { name: 'Delete block' }));
+        fireEvent.keyDown(document.body, { key: 'Escape' });
+
+        fireEvent.keyDown(await screen.findByRole('dialog', { name: "Your changes aren't saved" }), { key: 'Escape' });
+
+        await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        expect(navigate).not.toHaveBeenCalled();
+        expect(saveChanges).toHaveBeenCalledTimes(1);
     });
 
     it('should go back from the back button the same way', async () => {

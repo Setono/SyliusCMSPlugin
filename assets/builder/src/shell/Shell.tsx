@@ -3,6 +3,7 @@ import { useBuilder } from '../context';
 import { leavesOn, shortcutOf } from '../shortcuts';
 import { BlockTreePane } from './BlockTreePane';
 import { ClashDialog } from './ClashDialog';
+import { LeaveDialog } from './LeaveDialog';
 import { Preview } from './Preview';
 import { SelectionPane } from './SelectionPane';
 import styles from './Shell.module.css';
@@ -52,6 +53,7 @@ export function Shell() {
                 <SelectionPane />
             </aside>
             <ClashDialog />
+            <LeaveDialog />
         </div>
     );
 }

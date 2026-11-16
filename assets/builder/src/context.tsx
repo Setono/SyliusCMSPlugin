@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react';
 import { useStore } from 'zustand';
 import type { BuilderApi, PreviewRequest } from './api';
 import type { Channel, CustomerGroup, Locale } from './config';
+import type { LeavingState, LeavingStore } from './leaving';
 import type { PresenceState, PresenceStore } from './presence';
 import type { PreviewState, PreviewStore } from './preview';
 import type { SettingsState, SettingsStore } from './settings';
@@ -24,8 +25,10 @@ export interface BuilderSession {
     reload: () => Promise<void>;
     /** Where the back button and Esc go: where the builder was opened from. */
     backUrl: string;
-    /** Leaves the builder for backUrl, once the unsaved changes are sent. */
+    /** Leaves the builder for backUrl, once the unsaved changes are sent, or stays when they can't be. */
     leave: () => void;
+    /** Whether leaving stayed because the unsaved changes couldn't be sent, and the way to stay or leave anyway. */
+    leaving: LeavingStore;
     /** The entry's overview page, for publishing history, revisions, share links and placements. */
     overviewUrl: string;
     preview: PreviewStore;
@@ -94,4 +97,9 @@ export function useUrlsState<T>(selector: (state: UrlsState) => T): T {
 /** Selects from what the preview shows. The selector must return state as it is, not a new object. */
 export function usePreviewState<T>(selector: (state: PreviewState) => T): T {
     return useStore(useBuilder().preview, selector);
+}
+
+/** Selects from leaving the builder. The selector must return state as it is, not a new object. */
+export function useLeavingState<T>(selector: (state: LeavingState) => T): T {
+    return useStore(useBuilder().leaving, selector);
 }

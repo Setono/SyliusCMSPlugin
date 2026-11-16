@@ -5,6 +5,7 @@ import { createAutosave, type Autosave } from './autosave';
 import type { BuilderConfig } from './config';
 import { BuilderProvider, type BuilderSession } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
+import { createLeaving } from './leaving';
 import { createPresence, type Presence } from './presence';
 import { createPreviewStore } from './preview';
 import { createCancelSchedule, createDiscard, createPublish, createReload, createSchedule } from './publishing';
@@ -28,13 +29,6 @@ export interface AppProps {
 }
 
 const goTo = (url: string): void => window.location.assign(url);
-
-/** Leaves the builder once the changes not sent yet are, without waiting on a save that fails. */
-function leaving(autosave: Autosave, go: () => void): () => void {
-    return () => {
-        void autosave.flush().finally(go);
-    };
-}
 
 type Phase = { name: 'loading' } | { name: 'failed' } | { name: 'ready'; session: BuilderSession; translate: Translate };
 
@@ -107,6 +101,9 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: Ap
                     }
                 });
 
+                // Back and Esc leave once the unsaved changes are sent, and stay when they can't be
+                const leaving = createLeaving(store, autosave, () => navigate(config.backUrl));
+
                 // A save refused because a colleague scheduled a publish loads the working copy again, read-only
                 const reload = createReload(store, () => api.fetchEntry());
                 unsubscribeLock = store.subscribe((state, previous) => {
@@ -122,7 +119,8 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: Ap
                         store,
                         validation: validationStore,
                         backUrl: config.backUrl,
-                        leave: leaving(autosave, () => navigate(config.backUrl)),
+                        leave: () => void leaving.getState().leave(),
+                        leaving,
                         overviewUrl: config.overviewUrl,
                         publish: createPublish(store, autosave, () => api.publish(), validationStore),
                         discard: createDiscard(store, autosave, () => api.discard()),

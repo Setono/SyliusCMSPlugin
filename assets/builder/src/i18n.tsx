@@ -159,7 +159,11 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.scheduled_publish_failed'
     | 'setono_sylius_cms.builder.locked'
     | 'setono_sylius_cms.builder.locked_overdue'
-    | 'setono_sylius_cms.builder.schedule_stopped';
+    | 'setono_sylius_cms.builder.schedule_stopped'
+    | 'setono_sylius_cms.builder.leave_unsaved'
+    | 'setono_sylius_cms.builder.leave_unsaved_description'
+    | 'setono_sylius_cms.builder.leave_anyway'
+    | 'setono_sylius_cms.builder.stay';
 
 /** Values for the placeholders in a string, such as { '%block%': 'Columns' }. */
 export type TranslationParameters = Readonly<Record<string, string>>;

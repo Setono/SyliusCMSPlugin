@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\UI;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Playwright\Assertions\Expect;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
+use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
 
 /**
  * The entry overview page, between an entry's list and the builder, and the ways between them.
@@ -68,6 +71,61 @@ final class EntryOverviewTest extends UITestCase
         $browser->getByRole('link', ['name' => 'Back'])->click();
         Expect::locator($browser->locator('[data-overview-header]'))->toContainText('About us');
         self::assertStringEndsWith(sprintf('/admin/cms/entry/%s', $page->getUuid()), $browser->url());
+    }
+
+    /**
+     * Back sends the unsaved changes first. When they can't be saved, the builder stays and says why, and the editor
+     * stays or leaves anyway, without them. See "Opening and leaving" in docs/spec/builder.md
+     *
+     * @test
+     */
+    public function it_stays_in_the_builder_when_the_changes_cannot_be_saved_and_leaves_without_them_when_asked_to(): void
+    {
+        $this->signInAsAdmin();
+        $page = self::createPage('About us', 'about-us', 'Hello');
+        $builderUrl = sprintf('/admin/cms/entry/%s/builder', $page->getUuid());
+
+        $browser = $this->visit($builderUrl);
+        Expect::locator($browser->getByRole('heading', ['level' => 1]))->toHaveText('About us');
+
+        // Colleagues saved twice since the builder opened, and the server no longer keeps the first of their saves, so it
+        // can't merge the builder's changes onto theirs
+        self::recordColleaguesSave($page, 2);
+
+        $browser->getByRole('button', ['name' => 'Heading Hello'])->click();
+        $browser->getByLabel('Text')->fill('Hello there');
+        $browser->getByRole('link', ['name' => 'Back'])->click();
+
+        // The only dialog. playwright-php can't chain a locator onto a role name with an apostrophe
+        $dialog = $browser->getByRole('dialog');
+        Expect::locator($dialog)->toHaveAccessibleName("Your changes aren't saved");
+        Expect::locator($dialog)->toHaveAccessibleDescription("Colleagues' changes can't be merged with yours. If you leave now, they're lost.");
+        $dialog->getByRole('button', ['name' => 'Stay'])->click();
+
+        Expect::locator($dialog)->toHaveCount(0);
+        Expect::locator($browser->getByLabel('Text'))->toHaveValue('Hello there');
+        self::assertStringEndsWith($builderUrl, $browser->url());
+
+        $browser->getByRole('link', ['name' => 'Back'])->click();
+        $dialog->getByRole('button', ['name' => 'Leave anyway'])->click();
+
+        Expect::locator($browser->locator('[data-overview-header]'))->toContainText('About us');
+        self::assertStringEndsWith(sprintf('/admin/cms/entry/%s', $page->getUuid()), $browser->url());
+        self::assertSame(['en_US' => 'Hello'], self::reloadPage($page)->getBlockTree()->blocks[0]->fields['text'] ?? null);
+    }
+
+    /**
+     * Records a colleague's save of no changes under the lock token
+     */
+    private static function recordColleaguesSave(PageInterface $page, int $lockToken): void
+    {
+        /** @var SavedChangeSetRepositoryInterface $savedChangeSets */
+        $savedChangeSets = self::getContainer()->get(SavedChangeSetRepositoryInterface::class);
+        $savedChangeSets->record(self::reloadPage($page), $lockToken, ChangeSet::fromArray(['changes' => []]), new \DateTimeImmutable());
+
+        /** @var EntityManagerInterface $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.saved_change_set');
+        $manager->flush();
     }
 
     /**

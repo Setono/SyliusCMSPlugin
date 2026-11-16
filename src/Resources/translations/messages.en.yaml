@@ -305,6 +305,9 @@ setono_sylius_cms:
         keep_mine: Keep mine
         layout: Layout
         layout_removed: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
+        leave_anyway: Leave anyway
+        leave_unsaved: Your changes aren't saved
+        leave_unsaved_description: '%reason%. If you leave now, they''re lost.'
         load_failed: Couldn't load the entry
         loading: Loading…
         locale: Language
@@ -391,6 +394,7 @@ setono_sylius_cms:
         slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team. The URL: %url%'
         slug_help_homepage: 'Generated from the title until you change it. It may have slashes, such as about/team. As a homepage, it shows at %homepage%, and %url% redirects there in the channels it''s the homepage of.'
         slug_help_none: Generated from the title until you change it. It may have slashes, such as about/team.
+        stay: Stay
         take_theirs: Take theirs
         takes_effect_on_save: Takes effect when saved, without publishing
         title: Builder
