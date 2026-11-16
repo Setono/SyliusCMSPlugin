@@ -5,6 +5,7 @@
  * outdated flags" in docs/spec/localization.md and "Translation state" in docs/spec/content-model.md
  */
 import type { TranslatableLookup } from './changeSet';
+import { hiddenInPreview } from './conditions';
 import { fallbackValue, isMissing } from './fallback';
 import { fingerprint } from './fingerprint';
 import type { Entry, JsonObject, JsonValue, StoredBlock, TranslationSource } from './types';
@@ -120,7 +121,8 @@ export function entryTranslated(entry: Pick<Entry, 'translations'>, field: strin
 
 /**
  * How many of the entry's translatable values are untranslated and outdated in the locale: its own fields, such as the
- * title, and its blocks' fields. The layout's come with the layouts.
+ * title, and its blocks' fields. The layout's come with the layouts. A block a locale condition hides in the locale is
+ * left out, with everything inside it, because nobody reads it there.
  */
 export function localeCounts(entry: Entry, locale: string, isTranslatable: TranslatableLookup): LocaleCounts {
     const counts: LocaleCounts = { untranslated: 0, outdated: 0 };
@@ -139,6 +141,11 @@ export function localeCounts(entry: Entry, locale: string, isTranslatable: Trans
 
     const countBlocks = (blocks: readonly StoredBlock[]): void => {
         for (const block of blocks) {
+            // Without a channel, only locale conditions count
+            if (hiddenInPreview(block, null, locale)) {
+                continue;
+            }
+
             for (const field of Object.keys(block.fields)) {
                 if (isTranslatable(block.type, field)) {
                     count(valueState(block.fields[field], block.translated[field], locale));

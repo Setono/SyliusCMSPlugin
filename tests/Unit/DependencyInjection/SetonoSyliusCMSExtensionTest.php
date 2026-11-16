@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection;
 
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
+use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
+use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Model\Draft;
@@ -27,6 +29,7 @@ use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Revision\RevisionPruner;
+use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\SignedIn;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\LandingFromOne;
@@ -104,6 +107,34 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $instanceof = $this->container->getAutoconfiguredInstanceof();
         self::assertArrayHasKey(ProblemKindInterface::class, $instanceof);
         self::assertSame(['setono_sylius_cms.problem_kind' => [[]]], $instanceof[ProblemKindInterface::class]->getTags());
+    }
+
+    /**
+     * @test
+     */
+    public function it_autoconfigures_choices_providers(): void
+    {
+        $this->load();
+
+        $instanceof = $this->container->getAutoconfiguredInstanceof();
+        self::assertArrayHasKey(ChoicesProviderInterface::class, $instanceof);
+        self::assertSame(['setono_sylius_cms.choices_provider' => [[]]], $instanceof[ChoicesProviderInterface::class]->getTags());
+    }
+
+    /**
+     * @test
+     */
+    public function it_autoconfigures_condition_kinds_by_their_attribute(): void
+    {
+        $this->load();
+
+        $configurators = $this->container->getAutoconfiguredAttributes();
+        self::assertArrayHasKey(AsConditionKind::class, $configurators);
+
+        $definition = new ChildDefinition('');
+        $configurators[AsConditionKind::class]($definition, new AsConditionKind('signed_in', 'app.signed_in'), new \ReflectionClass(SignedIn::class));
+
+        self::assertSame(['setono_sylius_cms.condition_kind' => [[]]], $definition->getTags());
     }
 
     /**

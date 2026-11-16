@@ -12,7 +12,7 @@ import { copyWithNewKeys, findBlock, generateBlockKey, insertBlock, listOf, loca
 import type { Locale } from './config';
 import { localeOf } from './locales';
 import { entryValues, sourceOfTyped, upToDate } from './translationState';
-import type { BlockTypeDefinition, Clash, ContentTypeDefinition, Entry, EntryStatus, FieldValues, JsonValue, StoredBlock, TranslationSource } from './types';
+import type { BlockTypeDefinition, Clash, ConditionKindDefinition, ContentTypeDefinition, Entry, EntryStatus, FieldValues, JsonValue, StoredBlock, TranslationSource, VisibilityCondition } from './types';
 import { normalizeValue, writeEntryTranslated, writeEntryValue, writeFieldValue, writeTranslated } from './values';
 
 enablePatches();
@@ -31,6 +31,8 @@ export interface BuilderData {
     /** The one locale the builder edits, which the locale switcher picks. */
     locale: string;
     blockTypes: BlockTypeDefinition[];
+    /** The kinds of visibility conditions a block can carry. */
+    conditionKinds: ConditionKindDefinition[];
     /** What each spot in the tree may hold. */
     rules: NestingRules;
     entry: Entry;
@@ -110,6 +112,11 @@ export interface BuilderActions {
     markValueUpToDate(key: string, field: string): void;
     /** Picks one of the block type's styles for a block, by its code, or none when the style is null. */
     setBlockStyle(key: string, style: string | null): void;
+    /**
+     * Sets a block's visibility conditions, all of them. Changes one after another to the same block's conditions, such
+     * as picking several locales, are undone in one step.
+     */
+    setConditions(key: string, conditions: VisibilityCondition[]): void;
     /** Edits another locale. It isn't an edit to the working copy: nothing is saved or undone. */
     setLocale(locale: string): void;
     /**
@@ -164,13 +171,14 @@ export interface BuilderStoreOptions {
     locales?: readonly Locale[];
     blockTypes: BlockTypeDefinition[];
     contentTypes: ContentTypeDefinition[];
+    conditionKinds?: ConditionKindDefinition[];
     entry: Entry;
     status: EntryStatus;
     lockToken?: number;
     generateKey?: () => string;
 }
 
-export function createBuilderStore({ locale, locales = [], blockTypes, contentTypes, entry, status, lockToken = 0, generateKey = generateBlockKey }: BuilderStoreOptions): BuilderStore {
+export function createBuilderStore({ locale, locales = [], blockTypes, contentTypes, conditionKinds = [], entry, status, lockToken = 0, generateKey = generateBlockKey }: BuilderStoreOptions): BuilderStore {
     const chainOf = (code: string): string[] => localeOf(locales, code).fallbackChain;
     const blockTypesByCode = new Map(blockTypes.map((blockType) => [blockType.code, blockType]));
     const rules = createNestingRules(blockTypes, contentTypes.find((contentType) => contentType.code === entry.contentType)?.blocks ?? null);
@@ -236,6 +244,7 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
         return {
             locale,
             blockTypes,
+            conditionKinds,
             rules,
             entry,
             status,
@@ -536,6 +545,19 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
                         target.style = style;
                     }
                 });
+            },
+
+            setConditions(key, conditions) {
+                edit(
+                    (working) => {
+                        const target = findBlock(working.tree.blocks, key);
+                        if (target !== undefined) {
+                            target.conditions = conditions;
+                        }
+                    },
+                    {},
+                    JSON.stringify(['set_conditions', key]),
+                );
             },
 
             undo() {

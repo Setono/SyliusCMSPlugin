@@ -29,7 +29,7 @@ use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\OpeningHoursHandler;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Store;
-use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Kind\Fixture\Wide;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Testimonial;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
@@ -147,18 +147,18 @@ final class MisfitValueTest extends TestCase
     public function it_finds_a_value_of_the_layout_that_does_not_fit_while_the_code_has_the_layout(): void
     {
         $page = new Page();
-        $page->setBlockTree(new StoredTree(new StoredLayout('landing', 2, ['transparentHeader' => 'no']), []));
+        $page->setBlockTree(new StoredTree(new StoredLayout('wide', 1, ['fullWidth' => 'no']), []));
         $removed = new Page();
-        $removed->setBlockTree(new StoredTree(new StoredLayout('standard', 1, ['transparentHeader' => 'no']), []));
+        $removed->setBlockTree(new StoredTree(new StoredLayout('standard', 1, ['fullWidth' => 'no']), []));
 
         self::assertEquals([new Problem(
             'misfit_value',
             Severity::Error,
             $page,
-            new TranslatableMessage('setono_sylius_cms.problem.misfit_layout_value', ['%field%' => new TranslatableMessage('app.transparent_header')]),
+            new TranslatableMessage('setono_sylius_cms.problem.misfit_layout_value', ['%field%' => new TranslatableMessage('setono_sylius_cms.field.group.full_width')]),
             Fix::inBuilder($page),
             null,
-            'transparentHeader',
+            'fullWidth',
         )], [...$this->kind()->findIn($page)]);
         self::assertSame([], [...$this->kind()->findIn($removed)]);
     }
@@ -214,7 +214,7 @@ final class MisfitValueTest extends TestCase
 
         return new MisfitValue(
             new BlockTypeRegistry(['heading' => Heading::class, 'group' => Group::class, 'rich_text' => RichText::class, 'store' => Store::class, 'testimonial' => Testimonial::class], new FieldReader()),
-            new LayoutRegistry(['page' => ['landing' => Landing::class]], new FieldReader()),
+            new LayoutRegistry(['page' => ['wide' => Wide::class]], new FieldReader()),
             new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
             $handlers,
             new FallbackValues($handlers, $this->prophesize(FallbackChainInterface::class)->reveal()),

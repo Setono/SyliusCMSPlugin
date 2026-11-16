@@ -1,5 +1,6 @@
 import { createContext, useContext, useRef, useState, type DragEvent } from 'react';
-import { useBuilder, useBuilderState, useValidationState } from '../context';
+import { hiddenInPreview } from '../conditions';
+import { useBuilder, useBuilderState, usePreviewState, useValidationState } from '../context';
 import { useTranslator, type Translate } from '../i18n';
 import { canMove, canMoveBlocks, placement, type DropZone } from '../nesting';
 import { actedOn } from '../store';
@@ -9,7 +10,7 @@ import { blockHasErrors } from '../validation';
 import { readFieldValue } from '../values';
 import { AddBlockButton } from './BlockPicker';
 import styles from './BlockTreePane.module.css';
-import { AlertIcon, GripIcon, PlusIcon, TrashIcon } from './icons';
+import { AlertIcon, EyeSlashIcon, GripIcon, PlusIcon, TrashIcon } from './icons';
 
 /** Where the dragged block would land, and whether the nesting rules let it. */
 interface DropTarget {
@@ -125,20 +126,31 @@ export function BlockTreePane({ headingId }: { headingId: string }) {
     );
 }
 
-function BlockList({ blocks }: { blocks: readonly StoredBlock[] }) {
+/**
+ * A list of blocks in the tree. A block that a channel or locale condition hides in the preview's channel and locale is
+ * struck through, and so is everything inside it, which the preview drops with it.
+ */
+function BlockList({ blocks, hidden = false }: { blocks: readonly StoredBlock[]; hidden?: boolean }) {
+    const channel = usePreviewState((state) => state.channel);
+    const locale = useBuilderState((state) => state.locale);
+
     return (
         <ul className={styles.list}>
-            {blocks.map((block) => (
-                <li key={block.key}>
-                    <BlockRow block={block} />
-                    {block.children.length > 0 && <BlockList blocks={block.children} />}
-                </li>
-            ))}
+            {blocks.map((block) => {
+                const hiddenHere = hidden || hiddenInPreview(block, channel, locale);
+
+                return (
+                    <li key={block.key}>
+                        <BlockRow block={block} hidden={hiddenHere} />
+                        {block.children.length > 0 && <BlockList blocks={block.children} hidden={hiddenHere} />}
+                    </li>
+                );
+            })}
         </ul>
     );
 }
 
-function BlockRow({ block }: { block: StoredBlock }) {
+function BlockRow({ block, hidden }: { block: StoredBlock; hidden: boolean }) {
     const t = useTranslator();
     const { store } = useBuilder();
     const dragging = useContext(DraggingContext);
@@ -179,6 +191,7 @@ function BlockRow({ block }: { block: StoredBlock }) {
             className={blockType === undefined ? `${styles.row} ${styles.unknown}` : styles.row}
             data-selected={selected || undefined}
             data-invalid={invalid || undefined}
+            data-hidden={hidden || undefined}
             data-dragged={moving || undefined}
             data-drop={target?.zone}
             data-refused={(target !== null && !target.allowed) || undefined}
@@ -223,6 +236,7 @@ function BlockRow({ block }: { block: StoredBlock }) {
                 <span className={styles.label}>{label}</span>
                 {hint !== '' && <span className={styles.hint}>{hint}</span>}
             </button>
+            {hidden && <HiddenFlag />}
             {invalid && <InvalidFlag />}
             {holdsBlocks && (
                 <AddBlockButton parent={block.key} className={styles.action} label={t('setono_sylius_cms.builder.add_block_inside', { '%block%': label })}>
@@ -264,6 +278,18 @@ function zoneOf(event: DragEvent<HTMLElement>, holdsBlocks: boolean): DropZone {
     }
 
     return holdsBlocks ? 'inside' : 'after';
+}
+
+/** Flags a row whose block doesn't show in the preview's channel and locale. */
+function HiddenFlag() {
+    const t = useTranslator();
+    const label = t('setono_sylius_cms.builder.hidden_in_preview');
+
+    return (
+        <span role="img" className={styles.hidden} aria-label={label} title={label}>
+            <EyeSlashIcon />
+        </span>
+    );
 }
 
 /** Flags a row whose block, or the entry, has errors that publish would refuse. Selecting it shows them. */

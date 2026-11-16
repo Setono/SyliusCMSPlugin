@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Builder\ChangeSet;
 
 use Setono\SyliusCMSPlugin\Json\ListedObject;
+use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Translation\Fingerprint;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -12,8 +13,8 @@ use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
  * What the builder autosaves: the changes it made since it last loaded, as values by field and locale, where they
- * were translated from, block styles, blocks added, moved or removed, and the entry's own values, where they were
- * translated from and translations' shown switches.
+ * were translated from, block styles and visibility conditions, blocks added, moved or removed, and the entry's own
+ * values, where they were translated from and translations' shown switches.
  * See "Saving" in docs/spec/builder.md. The body format is internal to the builder
  */
 final readonly class ChangeSet
@@ -65,6 +66,15 @@ final readonly class ChangeSet
             ]),
             $change instanceof RemoveBlock => new ListedObject(['op' => 'remove_block', 'key' => $change->key]),
             $change instanceof SetStyle => new ListedObject(['op' => 'set_style', 'key' => $change->key, 'style' => $change->style]),
+            $change instanceof SetConditions => new ListedObject([
+                'op' => 'set_conditions',
+                'key' => $change->key,
+                'conditions' => array_map(static fn (array $condition): ListedObject => new ListedObject([
+                    'kind' => $condition['kind'],
+                    'negate' => $condition['negate'],
+                    'params' => (object) $condition['params'],
+                ]), $change->conditions),
+            ]),
             $change instanceof SetValue => new ListedObject([
                 'op' => 'set_value',
                 'key' => $change->key,
@@ -126,6 +136,7 @@ final readonly class ChangeSet
                 self::string($change, 'key'),
                 array_key_exists('style', $change) ? self::nullableString($change, 'style') : throw new InvalidChangeSetException('A set_style change must have a style'),
             ),
+            'set_conditions' => new SetConditions(self::string($change, 'key'), self::conditions($change)),
             'set_entry_value' => new SetEntryValue(
                 self::string($change, 'field'),
                 self::nullableString($change, 'locale'),
@@ -146,7 +157,7 @@ final readonly class ChangeSet
                 self::string($change, 'locale'),
                 self::translated($change),
             ),
-            default => throw new InvalidChangeSetException('A change must have the op add_block, move_block, remove_block, set_value, set_style, set_entry_value, set_shown, set_translated or set_entry_translated'),
+            default => throw new InvalidChangeSetException('A change must have the op add_block, move_block, remove_block, set_value, set_style, set_conditions, set_entry_value, set_shown, set_translated or set_entry_translated'),
         };
     }
 
@@ -205,6 +216,53 @@ final readonly class ChangeSet
     private static function nullableString(array $change, string $key): ?string
     {
         return null === ($change[$key] ?? null) ? null : self::string($change, $key);
+    }
+
+    /**
+     * The conditions of a set_conditions change, each with a condition kind's code, whether it's negated and its
+     * parameter values. A kind the code doesn't have is kept, as a block's conditions are saved whole
+     *
+     * @param array<array-key, mixed> $change
+     *
+     * @return list<array{kind: string, negate: bool, params: array<string, mixed>}>
+     */
+    private static function conditions(array $change): array
+    {
+        $conditions = $change['conditions'] ?? null;
+        if (!is_array($conditions) || !array_is_list($conditions)) {
+            throw new InvalidChangeSetException('A set_conditions change must have a list of conditions');
+        }
+
+        return array_map(static function (mixed $condition): array {
+            if (!is_array($condition)) {
+                throw new InvalidChangeSetException('A condition must be an object');
+            }
+
+            $kind = $condition['kind'] ?? null;
+            if (!is_string($kind) || !Code::isValid($kind)) {
+                throw new InvalidChangeSetException('A condition must have a condition kind\'s code as its kind');
+            }
+
+            $negate = $condition['negate'] ?? null;
+            if (!is_bool($negate)) {
+                throw new InvalidChangeSetException('The negate of a condition must be true or false');
+            }
+
+            $params = $condition['params'] ?? null;
+            // An empty JSON object, as CanonicalJson::decode() reads it
+            if ($params instanceof \stdClass) {
+                $params = get_object_vars($params);
+            }
+
+            if (!is_array($params) || ([] !== $params && array_is_list($params))) {
+                throw new InvalidChangeSetException('The params of a condition must be an object');
+            }
+
+            /** @var array<string, mixed> $map */
+            $map = $params;
+
+            return ['kind' => $kind, 'negate' => $negate, 'params' => $map];
+        }, $conditions);
     }
 
     /**

@@ -1,5 +1,5 @@
 import { createBuilderStore, type BuilderStore } from '../src/store';
-import type { AllowedBlockType, BlockTypeDefinition, ContentTypeDefinition, Entry, EntrySettings, FieldSchema, FieldValues, Registry, StoredBlock } from '../src/types';
+import type { AllowedBlockType, BlockTypeDefinition, ConditionKindDefinition, ContentTypeDefinition, Entry, EntrySettings, FieldSchema, FieldValues, Registry, StoredBlock } from '../src/types';
 
 /** What '*' resolves to everywhere but inside Columns: every block type except Column. */
 const anyBlock: AllowedBlockType[] = ['group', 'columns', 'spacer', 'heading'].map((type) => ({ type, min: null, max: null }));
@@ -248,7 +248,42 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.rich_text.horizontal_rule': 'Horizontal line',
 };
 
-export const registry: Registry = { blockTypes, contentTypes: [page], strings };
+/** A Choice field of several values, as a condition kind's parameter. */
+function choices(label: string, options: Record<string, string>): FieldSchema {
+    return {
+        type: 'array',
+        items: { type: 'string', enum: Object.keys(options) },
+        uniqueItems: true,
+        default: [],
+        'x-cms-type': 'choice',
+        'x-cms-label': label,
+        'x-cms-help': null,
+        'x-cms-required': false,
+        'x-cms-translatable': false,
+        'x-cms-options': { choices: options, multiple: true },
+    };
+}
+
+function dateTime(label: string): FieldSchema {
+    return { type: 'string', format: 'date-time', 'x-cms-type': 'date_time', 'x-cms-label': label, 'x-cms-help': null, 'x-cms-required': false, 'x-cms-translatable': false };
+}
+
+/** The shipped condition kinds, as the registry endpoint exports them. */
+export const conditionKinds: ConditionKindDefinition[] = [
+    { code: 'channel', label: 'Channel', fields: [{ name: 'channels', schema: choices('Channels', { WEB: 'Web store', B2B: 'Wholesale' }) }] },
+    { code: 'locale', label: 'Language', fields: [{ name: 'locales', schema: choices('Languages', { en_US: 'English (United States)', da_DK: 'Danish (Denmark)' }) }] },
+    {
+        code: 'date_window',
+        label: 'Date window',
+        fields: [
+            { name: 'from', schema: dateTime('From') },
+            { name: 'until', schema: dateTime('Until') },
+        ],
+    },
+    { code: 'customer_group', label: 'Customer group', fields: [{ name: 'groups', schema: choices('Customer groups', { '@guest': 'Guests', '@no_group': 'Signed in without a group', wholesale: 'Wholesale' }) }] },
+];
+
+export const registry: Registry = { blockTypes, contentTypes: [page], conditionKinds, strings };
 
 export function block(key: string, fields: FieldValues = {}): StoredBlock {
     return blockOf('heading', key, [], fields);
@@ -289,6 +324,7 @@ export function storeWith(blocks: StoredBlock[] = [], types: BlockTypeDefinition
         locale: 'en_US',
         blockTypes: types,
         contentTypes: [contentType],
+        conditionKinds,
         entry: entry(blocks),
         status: 'never_published',
         generateKey: () => `new-${++count}`,

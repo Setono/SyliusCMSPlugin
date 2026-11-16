@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetConditions;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetShown;
@@ -22,6 +23,7 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
+use Setono\SyliusCMSPlugin\Field\DateTimeHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
@@ -33,6 +35,7 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
+use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\ChangeSet\Fixture\SharedNote;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -199,6 +202,54 @@ final class ChangeSetApplierTest extends TestCase
         );
 
         self::assertSame(['text' => ['en_US' => 'Hello'], 'level' => 'h3'], $tree->blocks[0]->fields);
+    }
+
+    /**
+     * @test
+     */
+    public function it_replaces_a_blocks_visibility_conditions_of_any_block_type(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'group', 1), new StoredBlock(self::B, 'removed', 1)]);
+        $conditions = [
+            ['kind' => 'locale_is', 'negate' => true, 'params' => ['locales' => ['da_DK']]],
+            ['kind' => 'signed_in', 'negate' => false, 'params' => []],
+        ];
+
+        $tree = $this->apply($tree, new SetConditions(self::A, $conditions), new SetConditions(self::B, $conditions));
+        self::assertSame($conditions, $tree->blocks[0]->conditions);
+        self::assertSame($conditions, $tree->blocks[1]->conditions, 'A block of a type the code no longer has keeps its conditions too');
+
+        $tree = $this->apply($tree, new SetConditions(self::A, []));
+        self::assertSame([], $tree->blocks[0]->conditions);
+    }
+
+    /**
+     * @test
+     */
+    public function it_sanitises_the_parameter_values_of_a_condition_by_their_field_types(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'group', 1)]);
+
+        $tree = $this->apply($tree, new SetConditions(self::A, [
+            ['kind' => 'date_window', 'negate' => false, 'params' => ['from' => '2026-11-27T01:00:00+01:00', 'until' => null, 'unknown' => '2026-11-27T01:00:00+01:00']],
+            ['kind' => 'removed_kind', 'negate' => false, 'params' => ['from' => '2026-11-27T01:00:00+01:00']],
+        ]));
+
+        self::assertSame([
+            ['kind' => 'date_window', 'negate' => false, 'params' => ['from' => '2026-11-27T00:00:00Z', 'until' => null, 'unknown' => '2026-11-27T01:00:00+01:00']],
+            ['kind' => 'removed_kind', 'negate' => false, 'params' => ['from' => '2026-11-27T01:00:00+01:00']],
+        ], $tree->blocks[0]->conditions, 'A kind the code no longer has, and a parameter its kind doesn\'t have, are kept as they are');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_conditions_for_a_block_the_tree_does_not_have(): void
+    {
+        $this->expectException(InvalidChangeSetException::class);
+        $this->expectExceptionMessage(sprintf('The tree has no block with the key %s', self::B));
+
+        $this->apply(new StoredTree(null, [new StoredBlock(self::A, 'group', 1)]), new SetConditions(self::B, []));
     }
 
     /**
@@ -566,11 +617,13 @@ final class ChangeSetApplierTest extends TestCase
                 TextHandler::class => static fn (): TextHandler => new TextHandler(),
                 ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
                 RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
+                DateTimeHandler::class => static fn (): DateTimeHandler => new DateTimeHandler(),
             ])),
             new ContentTypeRegistry([
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
                 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
             ]),
+            Conditions::registry(),
         );
     }
 

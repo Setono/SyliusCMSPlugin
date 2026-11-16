@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
@@ -19,7 +20,7 @@ use Setono\SyliusCMSPlugin\Tree\StoredTree;
 /**
  * Applies a change set to a working copy, all or nothing: to its block tree, and to its translations' values, shown
  * switches and translation state. The values themselves aren't validated, because invalid content saves: publish validates. They're
- * sanitised by field types that sanitise, such as rich text
+ * sanitised by field types that sanitise, such as rich text, and so are the parameter values of visibility conditions
  *
  * @internal
  */
@@ -29,6 +30,7 @@ final readonly class ChangeSetApplier
         private BlockTypeRegistryInterface $blockTypes,
         private FieldHandlerLocator $fieldHandlers,
         private ContentTypeRegistryInterface $contentTypes,
+        private ConditionKindRegistryInterface $conditionKinds,
     ) {
     }
 
@@ -50,6 +52,7 @@ final readonly class ChangeSetApplier
                 $change instanceof RemoveBlock => $this->removeBlock($change, $tree),
                 $change instanceof SetValue => $this->setValue($change, $tree),
                 $change instanceof SetStyle => $this->setStyle($change, $tree),
+                $change instanceof SetConditions => $this->setConditions($change, $tree),
                 $change instanceof SetEntryValue => $translationChanges[] = self::entryValue($change, $contentType),
                 $change instanceof SetShown => $translationChanges[] = [$change->locale, static fn (EntryTranslationInterface $translation) => $translation->setShown($change->shown)],
                 $change instanceof SetTranslated => $this->setTranslated($change, $tree),
@@ -248,6 +251,32 @@ final readonly class ChangeSetApplier
         }
 
         $block->style = $change->style;
+    }
+
+    /**
+     * A block of any type can carry conditions, also one of a type the code no longer has. The parameter values of a
+     * kind the code has are sanitised by their field types, and a condition of a kind the code no longer has is kept as
+     * it is, because the builder sends a block's conditions whole
+     */
+    private function setConditions(SetConditions $change, StoredTree $tree): void
+    {
+        $block = $tree->findBlock($change->key) ?? throw new InvalidChangeSetException(sprintf('The tree has no block with the key %s', $change->key));
+
+        $block->conditions = array_map(function (array $condition): array {
+            if (!$this->conditionKinds->has($condition['kind'])) {
+                return $condition;
+            }
+
+            $fields = $this->conditionKinds->get($condition['kind'])->fields;
+            foreach ($condition['params'] as $name => $value) {
+                $field = $fields[$name] ?? null;
+                if (null !== $field && null !== $value) {
+                    $condition['params'][$name] = $this->sanitize($field, $value);
+                }
+            }
+
+            return $condition;
+        }, $change->conditions);
     }
 
     /**

@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\Clash;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\Merge;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetConditions;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetShown;
@@ -409,6 +410,41 @@ final class ChangeSetMergerTest extends TestCase
     public function it_returns_a_clash_instead_of_deleting_a_block_a_colleague_picked_a_style_for(): void
     {
         $merge = self::merge([new SetStyle(self::B, 'dark')], [new RemoveBlock(self::A)], self::tree(self::heading(self::A, children: [self::heading(self::B)])));
+
+        self::assertSame([], $merge->changeSet->changes);
+        self::assertSame([['kind' => 'changed_block', 'key' => self::A]], self::clashes($merge));
+    }
+
+    /**
+     * @test
+     */
+    public function it_applies_the_conditions_the_editor_set_last_when_both_set_them(): void
+    {
+        $mine = [new SetConditions(self::A, [['kind' => 'locale', 'negate' => true, 'params' => ['locales' => ['da_DK']]]])];
+
+        $merge = self::merge([new SetConditions(self::A, [])], $mine, self::tree(self::heading(self::A)));
+
+        self::assertEquals($mine, $merge->changeSet->changes);
+        self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_a_clash_instead_of_setting_conditions_on_a_block_a_colleague_deleted(): void
+    {
+        $merge = self::merge([new RemoveBlock(self::A)], [new SetConditions(self::A, [])], self::tree(self::heading(self::B)));
+
+        self::assertSame([], $merge->changeSet->changes);
+        self::assertSame([['kind' => 'deleted_block', 'key' => self::A]], self::clashes($merge));
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_a_clash_instead_of_deleting_a_block_a_colleague_set_conditions_on(): void
+    {
+        $merge = self::merge([new SetConditions(self::B, [])], [new RemoveBlock(self::A)], self::tree(self::heading(self::A, children: [self::heading(self::B)])));
 
         self::assertSame([], $merge->changeSet->changes);
         self::assertSame([['kind' => 'changed_block', 'key' => self::A]], self::clashes($merge));

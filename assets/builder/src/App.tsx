@@ -64,6 +64,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: Ap
                     locales: config.locales ?? [],
                     blockTypes: registry.blockTypes,
                     contentTypes: registry.contentTypes,
+                    conditionKinds: registry.conditionKinds,
                     entry,
                     status,
                     lockToken,

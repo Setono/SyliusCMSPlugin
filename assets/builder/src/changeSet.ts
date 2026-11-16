@@ -5,7 +5,7 @@
 import { produce, type Patch } from 'immer';
 import { longestIncreasing } from './sequence';
 import { blockList, findBlock, insertBlock, removeBlockFrom } from './tree';
-import type { Entry, EntryTranslation, FieldValues, JsonValue, StoredBlock, TranslationSource, TranslationState } from './types';
+import type { Entry, EntryTranslation, FieldValues, JsonValue, StoredBlock, VisibilityCondition, TranslationSource, TranslationState } from './types';
 import { isJsonObject, jsonEqual, normalizeValue, writeEntryTranslated, writeEntryValue, writeFieldValue, writeTranslated } from './values';
 
 export interface AddBlockChange {
@@ -55,6 +55,13 @@ export interface SetStyleChange {
     style: string | null;
 }
 
+/** A block's visibility conditions, all of them, in order. */
+export interface SetConditionsChange {
+    op: 'set_conditions';
+    key: string;
+    conditions: VisibilityCondition[];
+}
+
 /** A value of one of the entry's own fields, such as a translation's title. It adds a translation the entry hasn't got. */
 export interface SetEntryValueChange {
     op: 'set_entry_value';
@@ -97,6 +104,7 @@ export type Change =
     | RemoveBlockChange
     | SetValueChange
     | SetStyleChange
+    | SetConditionsChange
     | SetEntryValueChange
     | SetShownChange
     | SetTranslatedChange
@@ -109,6 +117,7 @@ type Target =
     | { kind: 'list'; parent: string | null; depth: number }
     | { kind: 'fields'; key: string; field: string | undefined }
     | { kind: 'style'; key: string }
+    | { kind: 'conditions'; key: string }
     | { kind: 'translated'; key: string };
 
 /**
@@ -126,6 +135,7 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
     const lists = new Map<string | null, number>();
     const fieldTargets: Array<{ key: string; field: string | undefined }> = [];
     const styleTargets = new Set<string>();
+    const conditionTargets = new Set<string>();
     const translatedTargets = new Set<string>();
     const locales = new Set<string>();
 
@@ -138,6 +148,8 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
             fieldTargets.push(target);
         } else if (target?.kind === 'style') {
             styleTargets.add(target.key);
+        } else if (target?.kind === 'conditions') {
+            conditionTargets.add(target.key);
         } else if (target?.kind === 'translated') {
             translatedTargets.add(target.key);
         }
@@ -177,6 +189,13 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
         const block = findBlock(after.tree.blocks, key);
         if (block !== undefined && !addedOrRemoved.has(key)) {
             changes.push(...diffStyle(block, findBlock(before.tree.blocks, key)?.style ?? null));
+        }
+    }
+
+    for (const key of conditionTargets) {
+        const block = findBlock(after.tree.blocks, key);
+        if (block !== undefined && !addedOrRemoved.has(key)) {
+            changes.push(...diffConditions(block, findBlock(before.tree.blocks, key)?.conditions ?? []));
         }
     }
 
@@ -297,6 +316,16 @@ function applyChange(working: Entry, change: Change): boolean {
 
             return true;
         }
+        case 'set_conditions': {
+            const target = findBlock(blocks, change.key);
+            if (target === undefined) {
+                return false;
+            }
+
+            target.conditions = change.conditions;
+
+            return true;
+        }
         case 'set_entry_value':
             if (change.locale !== null) {
                 writeEntryValue(working, change.locale, change.field, change.value, false);
@@ -346,6 +375,8 @@ function mergeChange(changes: Change[], change: Change): Change[] {
             return [...changes.filter((earlier) => !isSameValue(earlier, change)), change];
         case 'set_style':
             return [...changes.filter((earlier) => !(earlier.op === 'set_style' && earlier.key === change.key)), change];
+        case 'set_conditions':
+            return [...changes.filter((earlier) => !(earlier.op === 'set_conditions' && earlier.key === change.key)), change];
         case 'set_entry_value':
             return [...changes.filter((earlier) => !(earlier.op === 'set_entry_value' && earlier.field === change.field && earlier.locale === change.locale)), change];
         case 'set_shown':
@@ -383,7 +414,7 @@ function mergeRemoval(changes: Change[], removal: RemoveBlockChange): Change[] {
         return [...changes.slice(0, additionIndex), ...later.filter((change) => !gone.has(blockKeyOf(change) ?? ''))];
     }
 
-    return [...changes.filter((change) => !((change.op === 'set_value' || change.op === 'set_style' || change.op === 'set_translated') && change.key === removal.key)), removal];
+    return [...changes.filter((change) => !((change.op === 'set_value' || change.op === 'set_style' || change.op === 'set_conditions' || change.op === 'set_translated') && change.key === removal.key)), removal];
 }
 
 /** The key of the block a change is about, or undefined for a change to the entry. */
@@ -525,6 +556,10 @@ function locate(path: Patch['path'], before: Entry, after: Entry): Target | null
             return { kind: 'style', key: block.key };
         }
 
+        if (property === 'conditions') {
+            return { kind: 'conditions', key: block.key };
+        }
+
         if (property === 'translated') {
             return { kind: 'translated', key: block.key };
         }
@@ -608,6 +643,7 @@ function diffBlockList(parent: string | null, after: readonly StoredBlock[], dif
         if (old !== undefined && old !== block) {
             changes.push(...diffFields(block, old.fields, diff.isTranslatable));
             changes.push(...diffStyle(block, old.style));
+            changes.push(...diffConditions(block, old.conditions));
             changes.push(...diffBlockTranslated(block, old.translated));
             if (old.children !== block.children) {
                 changes.push(...diffBlockList(block.key, block.children, diff));
@@ -693,6 +729,11 @@ function parentsOf(blocks: readonly StoredBlock[], parent: string | null = null,
     }
 
     return parents;
+}
+
+/** A set_conditions change when the block's conditions differ from before. */
+function diffConditions(block: StoredBlock, before: readonly VisibilityCondition[]): SetConditionsChange[] {
+    return jsonEqual(block.conditions, [...before]) ? [] : [{ op: 'set_conditions', key: block.key, conditions: block.conditions }];
 }
 
 /** A set_style change when the block's style differs from before. */

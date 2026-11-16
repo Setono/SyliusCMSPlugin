@@ -56,6 +56,15 @@
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
         </service>
 
+        <!-- A broken reference, which setono:cms:lint reports -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\DeletedCustomerGroup" class="Setono\SyliusCMSPlugin\Problem\Kind\DeletedCustomerGroup">
+            <argument type="service" id="sylius.repository.customer_group"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\UrlTakenByRoute" class="Setono\SyliusCMSPlugin\Problem\Kind\UrlTakenByRoute">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface"/>

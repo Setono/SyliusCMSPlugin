@@ -31,6 +31,7 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
+use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Translation\Fingerprint;
 use Setono\SyliusCMSPlugin\Translation\TranslatableValue;
 use Setono\SyliusCMSPlugin\Translation\TranslatableValues;
@@ -244,7 +245,7 @@ final class TranslationStateTest extends TestCase
      */
     private static function applyingAutosave(): AutosaveInterface
     {
-        $applier = new ChangeSetApplier(self::blockTypes(), self::fieldHandlers(), self::contentTypes());
+        $applier = new ChangeSetApplier(self::blockTypes(), self::fieldHandlers(), self::contentTypes(), Conditions::registry());
 
         return new class($applier) implements AutosaveInterface {
             private int $lockToken = 0;

@@ -115,7 +115,7 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($registry);
         $blockTypes = self::blockTypes($registry);
 
-        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'accordion', 'accordion_item'], array_keys($blockTypes));
+        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'accordion', 'accordion_item', 'first_match'], array_keys($blockTypes));
 
         self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
         self::assertNull($blockTypes['columns']['parents']);
@@ -128,9 +128,12 @@ final class RegistryTest extends BuilderApiTestCase
             ['type' => 'heading', 'min' => null, 'max' => null],
             ['type' => 'rich_text', 'min' => null, 'max' => null],
             ['type' => 'accordion', 'min' => null, 'max' => null],
+            ['type' => 'first_match', 'min' => null, 'max' => null],
         ];
         self::assertSame($all, $blockTypes['group']['children']);
         self::assertSame($all, $blockTypes['column']['children']);
+        self::assertSame($all, $blockTypes['first_match']['children']);
+        self::assertSame([], $blockTypes['first_match']['fields']);
         self::assertSame([], $blockTypes['spacer']['children']);
         self::assertSame([], $blockTypes['heading']['children']);
         self::assertSame([], $blockTypes['rich_text']['children']);
