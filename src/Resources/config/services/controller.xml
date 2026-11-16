@@ -158,6 +158,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
 
             <tag name="controller.service_arguments"/>
         </service>

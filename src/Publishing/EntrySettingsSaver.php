@@ -10,11 +10,15 @@ use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Event\EntrySettingsChanged;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
+use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
+use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Saves the on-save settings onto the entry's rows. It never reads or writes the draft, so changing a setting never
- * publishes someone's unfinished changes. See "What takes effect on save" in docs/spec/publishing.md
+ * publishes someone's unfinished changes. See "What takes effect on save" in docs/spec/publishing.md. A change of the
+ * channels that would give a published URL of the entry to two entries in a channel is refused, since it would take
+ * effect at once (docs/spec/urls-and-seo.md#unique-per-channel-and-locale)
  */
 final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
 {
@@ -24,6 +28,7 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
         private EventDispatcherInterface $eventDispatcher,
         private ChannelsAndAudienceModifierInterface $channelsAndAudienceModifier,
         private EditRecorder $editRecorder,
+        private EntryUrlValidatorInterface $urlValidator,
     ) {
     }
 
@@ -34,6 +39,13 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
         $changed = $settings->changesFrom(EntrySettings::of($entry));
         if ([] === $changed) {
             return;
+        }
+
+        if (in_array(EntrySettingsChanged::CHANNELS, $changed, true)) {
+            $clashes = $this->urlValidator->validateChannels($entry, $settings->channels);
+            if ([] !== $clashes) {
+                throw new InvalidEntrySettingsException(implode(' ', array_map(static fn (ValidationError $clash): string => $clash->message, $clashes)));
+            }
         }
 
         $manager->wrapInTransaction(function () use ($entry, $settings): void {

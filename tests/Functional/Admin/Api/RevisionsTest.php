@@ -153,11 +153,11 @@ final class RevisionsTest extends BuilderApiTestCase
         self::assertResponseHeaderSame('X-Robots-Tag', 'noindex');
         self::assertSelectorNotExists('script[data-cms-bridge]');
 
-        // The shop shows what was published last, and the revision's URL is no longer the page's
+        // The shop shows what was published last, and the revision's URL is an old slug of the page, which redirects
         $client->request('GET', '/en_US/about-our-shop');
         self::assertSelectorTextSame('.cms-heading', 'Hello world');
         $client->request('GET', '/en_US/about-us');
-        self::assertResponseStatusCodeSame(404);
+        self::assertResponseRedirects('/en_US/about-our-shop', 301);
     }
 
     /**

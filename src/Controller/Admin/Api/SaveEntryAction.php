@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Publishing\AutosaveInterface;
 use Setono\SyliusCMSPlugin\Publishing\StaleLockTokenException;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
+use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,7 +23,9 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Autosaves a change set onto the working copy: the rows of a never-published entry, and otherwise its draft. The body
  * carries the lock token from the builder's last load. When colleagues saved since, the save is merged onto theirs, and
- * the answer carries the working copy with their changes, for the builder to pull in, and the clashes
+ * the answer carries the working copy with their changes, for the builder to pull in, and the clashes. A slug whose URL
+ * another route takes isn't saved, and the answer carries why, by locale, in `refused`, for the builder to show on the
+ * slug field
  */
 final readonly class SaveEntryAction
 {
@@ -59,6 +62,10 @@ final readonly class SaveEntryAction
         if ($result->merged) {
             $answer['entry'] = $this->entryNormalizer->normalize($result->saved->workingCopy);
             $answer['clashes'] = array_map(static fn (Clash $clash): ListedObject => new ListedObject($clash->toArray()), $result->clashes);
+        }
+
+        if ([] !== $result->refused) {
+            $answer['refused'] = array_map(static fn (ValidationError $error): ListedObject => new ListedObject($error->jsonSerialize()), $result->refused);
         }
 
         return new JsonResponse(CanonicalJson::encode(new ListedObject($answer)), json: true);
