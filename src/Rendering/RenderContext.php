@@ -18,7 +18,9 @@ final readonly class RenderContext
     public const PREVIEW_MODE_SHARE = 'share';
 
     /**
-     * @param string $customerGroup a customer group code, "@guest" or "@no_group"
+     * @param string $customerGroup a customer group code, "@guest" or "@no_group": the preview's Shown to in preview mode
+     * @param \DateTimeImmutable $now the time date windows are compared with: the preview's Date in preview mode, which
+     *                                publishes nothing
      * @param array<string, object> $hostPageContext context key => object
      * @param self::PREVIEW_MODE_*|null $previewMode
      */

@@ -33,7 +33,9 @@ final class StartingValuesTest extends TestCase
     protected function setUp(): void
     {
         $this->clock = new MockClock('2026-11-14 10:00:00 UTC');
-        $this->customerGroups = $this->prophesize(RepositoryInterface::class);
+        /** @var ObjectProphecy<RepositoryInterface<CustomerGroupInterface>> $customerGroups */
+        $customerGroups = $this->prophesize(RepositoryInterface::class);
+        $this->customerGroups = $customerGroups;
         // In the order of their names, as Shown to lists them, so b2c comes before b2b
         $this->customerGroups->findBy([], ['name' => 'ASC'])->willReturn([
             self::group('b2c'),
