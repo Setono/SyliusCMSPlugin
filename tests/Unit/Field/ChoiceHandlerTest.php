@@ -22,7 +22,7 @@ final class ChoiceHandlerTest extends TestCase
 {
     use ProphecyTrait;
 
-    private const CHOICES = ['h1' => 'heading.h1', 'h2' => 'heading.h2'];
+    private const CHOICES = ['h1' => 'setono_sylius_cms.choice.heading_level.h1', 'h2' => 'setono_sylius_cms.choice.heading_level.h2'];
 
     /** @var ObjectProphecy<TranslatorInterface> */
     private ObjectProphecy $translator;
@@ -30,8 +30,8 @@ final class ChoiceHandlerTest extends TestCase
     protected function setUp(): void
     {
         $this->translator = $this->prophesize(TranslatorInterface::class);
-        $this->translator->trans('heading.h1')->willReturn('Heading 1');
-        $this->translator->trans('heading.h2')->willReturn('Heading 2');
+        $this->translator->trans('setono_sylius_cms.choice.heading_level.h1')->willReturn('Heading 1');
+        $this->translator->trans('setono_sylius_cms.choice.heading_level.h2')->willReturn('Heading 2');
     }
 
     /**
@@ -70,9 +70,9 @@ final class ChoiceHandlerTest extends TestCase
      */
     public function its_schema_writes_numeric_choice_values_as_strings(): void
     {
-        $this->translator->trans('One')->willReturn('One');
+        $this->translator->trans('setono_sylius_cms.choice.spacer_size.small')->willReturn('Small');
 
-        $schema = $this->handler()->schema(new Choice(label: 'Columns', choices: ['1' => 'One']));
+        $schema = $this->handler()->schema(new Choice(label: 'Size', choices: ['1' => 'setono_sylius_cms.choice.spacer_size.small']));
 
         self::assertSame(['1'], $schema['enum']);
     }

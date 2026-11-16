@@ -22,6 +22,7 @@ use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\Translation\Loader\YamlFileLoader;
 use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Component\Translation\Translator;
 
@@ -94,11 +95,16 @@ final class LintCommandTest extends TestCase
         $isPublishedContent = static fn (EntryInterface $entry): bool => $entry !== $published && 'promo' === ($entry->getBlockTree()->blocks[0]->type ?? null);
         $tester = $this->lint([
             self::kind([
-                [static fn (EntryInterface $entry): bool => $entry === $neverPublished, new Problem('first', Severity::Warning, $neverPublished, new TranslatableMessage('In the never-published one'), block: self::KEY)],
-                [$isPublishedContent, new Problem('first', Severity::Error, $published, new TranslatableMessage('In the published content'), field: 'text')],
+                [static fn (EntryInterface $entry): bool => $entry === $neverPublished, new Problem('first', Severity::Warning, $neverPublished, self::unknownBlockType('promo'), block: self::KEY)],
+                [$isPublishedContent, new Problem('first', Severity::Error, $published, new TranslatableMessage('setono_sylius_cms.problem.misfit_layout_value', [
+                    '%field%' => new TranslatableMessage('setono_sylius_cms.field.group.full_width'),
+                ]), field: 'fullWidth')],
             ]),
             self::kind([
-                [static fn (EntryInterface $entry): bool => $entry === $draft, new Problem('second', Severity::Error, $draft, new TranslatableMessage('In the draft of %title%', ['%title%' => 'About us']), block: self::KEY, field: 'text', locale: 'da_DK')],
+                [static fn (EntryInterface $entry): bool => $entry === $draft, new Problem('second', Severity::Error, $draft, new TranslatableMessage('setono_sylius_cms.problem.misfit_value', [
+                    '%field%' => new TranslatableMessage('setono_sylius_cms.field.heading.text'),
+                    '%block%' => new TranslatableMessage('setono_sylius_cms.block_type.heading'),
+                ]), block: self::KEY, field: 'text', locale: 'da_DK')],
             ]),
         ]);
 
@@ -106,9 +112,9 @@ final class LintCommandTest extends TestCase
         self::assertNotEquals($publishedTree, $published->getBlockTree());
         self::assertSame([
             'Entry Content Block Field Locale Problem',
-            sprintf('%s draft %s In the never-published one', $neverPublished->getUuid(), self::KEY),
-            sprintf('%s published text In the published content', $published->getUuid()),
-            sprintf('%s draft %s text da_DK In the draft of About us', $published->getUuid(), self::KEY),
+            sprintf('%s draft %s A block of the type "promo", which the code no longer has, isn\'t shown.', $neverPublished->getUuid(), self::KEY),
+            sprintf('%s published fullWidth Full width in the layout holds a value that doesn\'t fit its field type, so it counts as empty.', $published->getUuid()),
+            sprintf('%s draft %s text da_DK Text in the Heading block holds a value that doesn\'t fit its field type, so it counts as empty.', $published->getUuid(), self::KEY),
             '[ERROR] Found 3 problems in 2 entries.',
         ], self::lines($tester));
     }
@@ -122,7 +128,7 @@ final class LintCommandTest extends TestCase
         $this->entries->iterateAll()->willReturn([$page]);
         $this->workingCopies->getWorkingCopy($page)->willReturn($page);
 
-        $tester = $this->lint([self::kind([[static fn (): bool => true, new Problem('first', Severity::Error, $page, new TranslatableMessage('Wrong'))]])]);
+        $tester = $this->lint([self::kind([[static fn (): bool => true, new Problem('first', Severity::Error, $page, self::unknownBlockType('promo'))]])]);
 
         self::assertStringContainsString('[ERROR] Found 1 problem in 1 entry.', $tester->getDisplay());
     }
@@ -156,7 +162,7 @@ final class LintCommandTest extends TestCase
             $this->entries->reveal(),
             $this->workingCopies->reveal(),
             $this->upgrader->reveal(),
-            new Translator('en'),
+            self::translator(),
             $this->manager->reveal(),
             $kinds,
         ));
@@ -189,6 +195,23 @@ final class LintCommandTest extends TestCase
                 }
             }
         };
+    }
+
+    private static function unknownBlockType(string $type): TranslatableMessage
+    {
+        return new TranslatableMessage('setono_sylius_cms.problem.unknown_block_type', ['%type%' => $type]);
+    }
+
+    /**
+     * The plugin's English messages, which the problems are told in
+     */
+    private static function translator(): Translator
+    {
+        $translator = new Translator('en');
+        $translator->addLoader('yaml', new YamlFileLoader());
+        $translator->addResource('yaml', dirname(__DIR__, 3) . '/src/Resources/translations/messages.en.yaml', 'en');
+
+        return $translator;
     }
 
     private static function published(): Page
