@@ -59,8 +59,13 @@ final readonly class ProblemCountUpdater implements ProblemCountUpdaterInterface
     {
         $counts = [];
         foreach ($entries as $entry) {
+            // Only saved entries have counts to store, and their ids are integers
             $id = $entry->getId();
-            $count = null === $id ? null : $this->countOf($entry);
+            if (!is_int($id)) {
+                continue;
+            }
+
+            $count = $this->countOf($entry);
             if (null !== $count) {
                 $counts[$id] = $count;
             }
