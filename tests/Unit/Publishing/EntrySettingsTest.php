@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettings;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
+use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 
 final class EntrySettingsTest extends TestCase
 {
@@ -20,8 +21,8 @@ final class EntrySettingsTest extends TestCase
         $page = new Page();
         $page->setEnabled(false);
         $page->setDateWindow(self::window());
-        $page->setChannelCodes(['WEB', 'B2B']);
-        $page->setAudience(Audience::only('wholesale'));
+        ChannelsAndAudience::modifier()->setChannels($page, ['WEB', 'B2B']);
+        ChannelsAndAudience::modifier()->setAudience($page, Audience::only('wholesale'));
 
         $settings = EntrySettings::of($page);
 
@@ -34,11 +35,11 @@ final class EntrySettingsTest extends TestCase
     /**
      * @test
      */
-    public function it_applies_them_to_an_entry(): void
+    public function it_applies_them_to_an_entry_changing_its_channels_and_audience_through_the_modifier(): void
     {
         $page = new Page();
 
-        (new EntrySettings(false, self::window(), ['WEB', 'B2B', 'WEB'], Audience::except('retail')))->applyTo($page);
+        (new EntrySettings(false, self::window(), ['WEB', 'B2B', 'WEB'], Audience::except('retail')))->applyTo($page, ChannelsAndAudience::modifier());
 
         self::assertFalse($page->isEnabled());
         self::assertTrue($page->getDateWindow()->equals(self::window()));

@@ -7,12 +7,13 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Model;
 use Doctrine\Common\Collections\Collection;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Model\Entry;
-use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
-use Setono\SyliusCMSPlugin\Model\EntryChannel;
+use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
+use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
+use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -93,24 +94,24 @@ final class EntryTest extends TestCase
 
         $page->setEnabled(false);
         $page->setDateWindow($window);
-        $page->setAudience(Audience::except('wholesale', '@guest'));
-        $page->setChannelCodes(['WEB', 'B2B', 'WEB']);
+        $page->setAudience(Audience::except('wholesale', '@guest'), ChannelsAndAudience::audienceGroupFactory());
+        $page->setChannelCodes(['WEB', 'B2B', 'WEB'], ChannelsAndAudience::channelFactory());
 
         self::assertFalse($page->isEnabled());
         self::assertTrue($page->getDateWindow()->equals($window));
         self::assertTrue($page->getAudience()->equals(Audience::except('@guest', 'wholesale')));
         self::assertSame(['B2B', 'WEB'], $page->getChannelCodes());
 
-        $page->setAudience(Audience::only('retail'));
-        $page->setChannelCodes(['WEB', 'MOBILE']);
+        $page->setAudience(Audience::only('retail'), ChannelsAndAudience::audienceGroupFactory());
+        $page->setChannelCodes(['WEB', 'MOBILE'], ChannelsAndAudience::channelFactory());
         $page->setDateWindow(new DateWindow());
 
         self::assertTrue($page->getAudience()->equals(Audience::only('retail')));
         self::assertSame(['MOBILE', 'WEB'], $page->getChannelCodes());
         self::assertTrue($page->getDateWindow()->equals(new DateWindow()));
 
-        $page->setAudience(Audience::everyone());
-        $page->setChannelCodes([]);
+        $page->setAudience(Audience::everyone(), ChannelsAndAudience::audienceGroupFactory());
+        $page->setChannelCodes([], ChannelsAndAudience::channelFactory());
 
         self::assertTrue($page->getAudience()->equals(Audience::everyone()));
         self::assertSame([], $page->getChannelCodes());
@@ -118,7 +119,7 @@ final class EntryTest extends TestCase
         $page->setChannelCodes((static function (): \Generator {
             yield 'WEB';
             yield 'B2B';
-        })());
+        })(), ChannelsAndAudience::channelFactory());
 
         self::assertSame(['B2B', 'WEB'], $page->getChannelCodes());
     }
@@ -132,13 +133,13 @@ final class EntryTest extends TestCase
     public function it_keeps_the_rows_of_the_codes_that_stay_when_its_channels_and_groups_change(): void
     {
         $page = new Page();
-        $page->setChannelCodes(['WEB', 'B2B']);
-        $page->setAudience(Audience::only('retail', 'wholesale'));
+        $page->setChannelCodes(['WEB', 'B2B'], ChannelsAndAudience::channelFactory());
+        $page->setAudience(Audience::only('retail', 'wholesale'), ChannelsAndAudience::audienceGroupFactory());
         $web = self::rows($page, 'channels')['WEB'];
         $wholesale = self::rows($page, 'audienceGroups')['wholesale'];
 
-        $page->setChannelCodes(['WEB', 'MOBILE']);
-        $page->setAudience(Audience::except('wholesale', '@guest'));
+        $page->setChannelCodes(['WEB', 'MOBILE'], ChannelsAndAudience::channelFactory());
+        $page->setAudience(Audience::except('wholesale', '@guest'), ChannelsAndAudience::audienceGroupFactory());
 
         self::assertSame($web, self::rows($page, 'channels')['WEB']);
         self::assertSame(['MOBILE', 'WEB'], array_keys(self::rows($page, 'channels')));
@@ -195,21 +196,40 @@ final class EntryTest extends TestCase
     public function it_clones_the_settings_and_leaves_the_originals_alone_when_the_clones_change(): void
     {
         $page = new Page();
-        $page->setChannelCodes(['WEB']);
-        $page->setAudience(Audience::only('wholesale'));
+        $page->setChannelCodes(['WEB'], ChannelsAndAudience::channelFactory());
+        $page->setAudience(Audience::only('wholesale'), ChannelsAndAudience::audienceGroupFactory());
 
         $copy = clone $page;
 
         self::assertSame(['WEB'], $copy->getChannelCodes());
         self::assertTrue($copy->getAudience()->equals(Audience::only('wholesale')));
-        self::assertSame($copy, self::rows($copy, 'channels')['WEB']->getEntry());
-        self::assertSame($copy, self::rows($copy, 'audienceGroups')['wholesale']->getEntry());
 
-        $copy->setChannelCodes(['B2B']);
-        $copy->setAudience(Audience::except('retail'));
+        $copy->setChannelCodes(['B2B'], ChannelsAndAudience::channelFactory());
+        $copy->setAudience(Audience::except('retail'), ChannelsAndAudience::audienceGroupFactory());
 
+        self::assertSame(['B2B'], $copy->getChannelCodes());
+        self::assertTrue($copy->getAudience()->equals(Audience::except('retail')));
+        self::assertSame($copy, self::rows($copy, 'channels')['B2B']->getEntry());
+        self::assertSame($copy, self::rows($copy, 'audienceGroups')['retail']->getEntry());
         self::assertSame(['WEB'], $page->getChannelCodes());
         self::assertTrue($page->getAudience()->equals(Audience::only('wholesale')));
+    }
+
+    /**
+     * A model can't reach the factories that create rows, so a clone reads the original's rows. A row never changes
+     *
+     * @test
+     */
+    public function its_clone_reads_the_rows_of_the_original(): void
+    {
+        $page = new Page();
+        $page->setChannelCodes(['WEB'], ChannelsAndAudience::channelFactory());
+        $page->setAudience(Audience::only('wholesale'), ChannelsAndAudience::audienceGroupFactory());
+
+        $copy = clone $page;
+
+        self::assertSame(self::rows($page, 'channels'), self::rows($copy, 'channels'));
+        self::assertSame(self::rows($page, 'audienceGroups'), self::rows($copy, 'audienceGroups'));
     }
 
     /**
@@ -234,11 +254,11 @@ final class EntryTest extends TestCase
     /**
      * @param 'channels'|'audienceGroups' $property
      *
-     * @return array<string, EntryChannel|EntryAudienceGroup> by code
+     * @return array<string, EntryChannelInterface|EntryAudienceGroupInterface> by code
      */
     private static function rows(Entry $entry, string $property): array
     {
-        /** @var Collection<array-key, EntryChannel|EntryAudienceGroup> $rows */
+        /** @var Collection<array-key, EntryChannelInterface|EntryAudienceGroupInterface> $rows */
         $rows = (new \ReflectionProperty(Entry::class, $property))->getValue($entry);
 
         $byCode = [];

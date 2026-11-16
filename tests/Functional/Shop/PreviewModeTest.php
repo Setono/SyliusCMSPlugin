@@ -136,7 +136,7 @@ final class PreviewModeTest extends WebTestCase
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
         $page->setEnabled(false);
         $page->setDateWindow(new DateWindow(null, new \DateTimeImmutable('2000-01-01T00:00:00Z')));
-        $page->setAudience(Audience::only('wholesale'));
+        self::channelsAndAudience()->setAudience($page, Audience::only('wholesale'));
         /** @var ObjectManager $manager */
         $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
         $manager->flush();

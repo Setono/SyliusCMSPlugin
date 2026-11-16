@@ -9,6 +9,7 @@ use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Event\EntrySettingsChanged;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -21,6 +22,7 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
         private ManagerRegistry $managerRegistry,
         private ClockInterface $clock,
         private EventDispatcherInterface $eventDispatcher,
+        private ChannelsAndAudienceModifierInterface $channelsAndAudienceModifier,
     ) {
     }
 
@@ -34,7 +36,7 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
         }
 
         $manager->wrapInTransaction(function () use ($entry, $settings): void {
-            $settings->applyTo($entry);
+            $settings->applyTo($entry, $this->channelsAndAudienceModifier);
             $entry->setChangedAt($this->clock->now()->setTimezone(new \DateTimeZone('UTC')));
         });
 

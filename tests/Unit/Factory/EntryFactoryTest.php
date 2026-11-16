@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Factory\EntryFactory;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Sylius\Component\Channel\Model\Channel;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
@@ -20,19 +21,21 @@ final class EntryFactoryTest extends TestCase
     /**
      * @test
      */
-    public function it_starts_a_new_entry_in_every_channel_with_a_code(): void
+    public function it_starts_a_new_entry_in_every_channel_with_a_code_through_the_channels_and_audience_modifier(): void
     {
         $page = new Page();
         $decorated = $this->prophesize(FactoryInterface::class);
         $decorated->createNew()->willReturn($page);
 
         $channels = $this->prophesize(ChannelRepositoryInterface::class);
-        $channels->findAll()->willReturn([self::channel('WEB'), self::channel('B2B'), new Channel()]);
+        $channels->findAll()->willReturn([self::channel('WEB'), new Channel(), self::channel('B2B')]);
 
-        $entry = (new EntryFactory($decorated->reveal(), $channels->reveal()))->createNew();
+        $modifier = $this->prophesize(ChannelsAndAudienceModifierInterface::class);
+        $modifier->setChannels($page, ['WEB', 'B2B'])->shouldBeCalledOnce();
+
+        $entry = (new EntryFactory($decorated->reveal(), $channels->reveal(), $modifier->reveal()))->createNew();
 
         self::assertSame($page, $entry);
-        self::assertSame(['B2B', 'WEB'], $entry->getChannelCodes());
     }
 
     /**
@@ -46,7 +49,7 @@ final class EntryFactoryTest extends TestCase
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage(\stdClass::class);
 
-        (new EntryFactory($decorated->reveal(), $this->prophesize(ChannelRepositoryInterface::class)->reveal()))->createNew();
+        (new EntryFactory($decorated->reveal(), $this->prophesize(ChannelRepositoryInterface::class)->reveal(), $this->prophesize(ChannelsAndAudienceModifierInterface::class)->reveal()))->createNew();
     }
 
     private static function channel(string $code): ChannelInterface

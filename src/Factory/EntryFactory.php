@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Factory;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Resource\Factory\FactoryInterface;
@@ -26,6 +27,7 @@ final readonly class EntryFactory implements TranslatableFactoryInterface
     public function __construct(
         private FactoryInterface $decorated,
         private ChannelRepositoryInterface $channelRepository,
+        private ChannelsAndAudienceModifierInterface $channelsAndAudienceModifier,
     ) {
     }
 
@@ -40,7 +42,7 @@ final readonly class EntryFactory implements TranslatableFactoryInterface
         }
 
         $codes = array_map(static fn (ChannelInterface $channel): ?string => $channel->getCode(), $this->channelRepository->findAll());
-        $entry->setChannelCodes(array_filter($codes, static fn (?string $code): bool => null !== $code));
+        $this->channelsAndAudienceModifier->setChannels($entry, array_values(array_filter($codes, static fn (?string $code): bool => null !== $code)));
 
         return $entry;
     }

@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Factory\EntryFactory;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\InvalidCode;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Untagged;
@@ -81,6 +82,7 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
             $this->assertContainerBuilderHasService($decorator, EntryFactory::class);
             $this->assertContainerBuilderHasServiceDefinitionWithArgument($decorator, 0, new Reference($decorator . '.inner'));
             $this->assertContainerBuilderHasServiceDefinitionWithArgument($decorator, 1, new Reference('sylius.repository.channel'));
+            $this->assertContainerBuilderHasServiceDefinitionWithArgument($decorator, 2, new Reference(ChannelsAndAudienceModifierInterface::class));
             self::assertSame([$factory, null, 0], $this->container->getDefinition($decorator)->getDecoratedService());
         }
     }
