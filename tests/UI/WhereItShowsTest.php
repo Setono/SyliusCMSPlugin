@@ -17,7 +17,7 @@ final class WhereItShowsTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_sees_danish_held_back_switches_it_on_and_publishes_and_then_sees_both_live(): void
+    public function it_lets_an_admin_user_see_danish_held_back_switch_it_on_and_publish_and_then_see_both_live(): void
     {
         self::addLocales('WEB', 'da_DK');
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);

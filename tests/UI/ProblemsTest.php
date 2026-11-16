@@ -18,7 +18,7 @@ final class ProblemsTest extends UITestCase
     /**
      * @test
      */
-    public function a_block_of_an_unknown_type_shows_the_marker_in_pages_the_problem_on_the_overview_page_and_a_badge_on_content(): void
+    public function it_shows_a_block_of_an_unknown_type_as_the_marker_in_pages_the_problem_on_the_overview_page_and_a_badge_on_content(): void
     {
         $this->signInAsAdmin();
         $page = self::createPageWithBlocks('About us', 'about-us', [self::heading('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 'Hello'), new StoredBlock(self::PROMO, 'promo', 1)]);

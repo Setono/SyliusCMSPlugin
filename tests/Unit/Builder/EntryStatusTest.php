@@ -37,7 +37,7 @@ final class EntryStatusTest extends TestCase
     /**
      * @test
      */
-    public function a_scheduled_publish_publishes_at_a_time_until_it_is_overdue_five_minutes_after(): void
+    public function it_says_a_scheduled_publish_publishes_at_a_time_until_it_is_overdue_five_minutes_after(): void
     {
         $scheduledPublish = new ScheduledPublish();
         $scheduledPublish->schedule(new \DateTimeImmutable('2026-11-20 08:00:00', new \DateTimeZone('UTC')), 'Jane Roe');
@@ -49,7 +49,7 @@ final class EntryStatusTest extends TestCase
     /**
      * @test
      */
-    public function a_scheduled_publish_stopped_when_it_ran_failed(): void
+    public function it_says_failed_for_a_scheduled_publish_stopped_when_it_ran(): void
     {
         $scheduledPublish = new ScheduledPublish();
         $scheduledPublish->schedule(new \DateTimeImmutable('2026-11-20 08:00:00', new \DateTimeZone('UTC')), 'Jane Roe');

@@ -228,7 +228,7 @@ final class EntryUrlValidatorTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_without_a_url_of_its_own_has_no_url_to_check(): void
+    public function it_has_no_url_to_check_for_an_entry_without_a_url_of_its_own(): void
     {
         $recipe = new Recipe();
         $recipe->setCurrentLocale('en_US');

@@ -25,7 +25,7 @@ final class TranslationStateTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function entry_show_answers_the_untranslated_and_outdated_counts_of_each_locale_the_entry_has(): void
+    public function it_answers_entry_show_with_the_untranslated_and_outdated_counts_of_each_locale_the_entry_has(): void
     {
         $client = self::createClient();
         $page = self::translatedPage('Hello there', 'Hello');
@@ -44,7 +44,7 @@ final class TranslationStateTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_save_marks_an_outdated_value_up_to_date(): void
+    public function it_marks_an_outdated_value_up_to_date_on_save(): void
     {
         $client = self::createClient();
         $page = self::translatedPage('Hello there', 'Hello');
@@ -70,7 +70,7 @@ final class TranslationStateTest extends BuilderApiTestCase
      *
      * @test
      */
-    public function where_a_title_was_translated_from_is_drafted_and_published(): void
+    public function it_drafts_and_publishes_where_a_title_was_translated_from(): void
     {
         $client = self::createClient();
         $page = self::translatedPage('Hello', 'Hello', published: true);
@@ -113,7 +113,7 @@ final class TranslationStateTest extends BuilderApiTestCase
      *
      * @test
      */
-    public function a_translator_reads_the_values_of_the_draft_and_writes_a_translation_into_it(): void
+    public function it_lets_a_translator_read_the_values_of_the_draft_and_write_a_translation_into_it(): void
     {
         $client = self::createClient();
         $page = self::translatedPage('Hello', 'Hello', published: true);

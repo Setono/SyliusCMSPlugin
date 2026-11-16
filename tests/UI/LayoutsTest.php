@@ -20,7 +20,7 @@ final class LayoutsTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_creates_a_page_in_the_test_apps_layout_switches_it_to_standard_and_hides_its_title(): void
+    public function it_lets_an_admin_user_create_a_page_in_the_test_apps_layout_switch_it_to_standard_and_hide_its_title(): void
     {
         $this->signInAsAdmin();
 
@@ -70,7 +70,7 @@ final class LayoutsTest extends UITestCase
     /**
      * @test
      */
-    public function the_builder_flags_a_page_whose_layout_was_removed_until_the_admin_user_picks_one(): void
+    public function it_flags_a_page_whose_layout_was_removed_in_the_builder_until_the_admin_user_picks_one(): void
     {
         $this->signInAsAdmin();
         $page = self::createPage('About us', 'about-us', 'Hello');

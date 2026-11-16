@@ -76,7 +76,7 @@ final class ProblemCountProviderTest extends TestCase
     /**
      * @test
      */
-    public function its_needs_attention_condition_holds_for_the_entries_with_a_stored_error_or_warning_once_the_stale_counts_are_updated(): void
+    public function it_marks_the_entries_with_a_stored_error_or_warning_as_needing_attention_once_the_stale_counts_are_updated(): void
     {
         $this->updater->updateStale()->shouldBeCalledOnce();
         $queryBuilder = new QueryBuilder($this->prophesize(EntityManagerInterface::class)->reveal());
@@ -89,7 +89,7 @@ final class ProblemCountProviderTest extends TestCase
     /**
      * @test
      */
-    public function its_needs_attention_condition_holds_too_for_the_entries_with_a_problem_of_a_time_dependent_kind_as_of_now(): void
+    public function it_marks_the_entries_with_a_problem_of_a_time_dependent_kind_as_of_now_as_needing_attention_too(): void
     {
         $queryBuilder = new QueryBuilder($this->prophesize(EntityManagerInterface::class)->reveal());
         $overdue = $this->prophesize(TimeDependentProblemKindInterface::class);

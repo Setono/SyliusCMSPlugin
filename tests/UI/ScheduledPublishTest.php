@@ -21,7 +21,7 @@ final class ScheduledPublishTest extends UITestCase
     /**
      * @test
      */
-    public function an_editor_schedules_a_publish_cancels_it_to_edit_and_schedules_it_again_for_the_worker_to_publish(): void
+    public function it_lets_an_editor_schedule_a_publish_cancel_it_to_edit_and_schedule_it_again_for_the_worker_to_publish(): void
     {
         self::mockTime('2030-01-01 10:00:00');
         self::forgetSentMessages();
@@ -70,7 +70,7 @@ final class ScheduledPublishTest extends UITestCase
     /**
      * @test
      */
-    public function the_overview_page_schedules_a_publish_and_offers_publish_now_once_it_is_overdue(): void
+    public function it_schedules_a_publish_from_the_overview_page_and_offers_publish_now_once_it_is_overdue(): void
     {
         self::mockTime('2030-01-01 10:00:00');
         self::forgetSentMessages();

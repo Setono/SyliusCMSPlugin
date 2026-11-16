@@ -185,7 +185,7 @@ final class PageTest extends TestCase
      *
      * @test
      */
-    public function its_clone_reads_the_original_homepage_rows_and_leaves_the_original_alone_when_they_change(): void
+    public function it_clones_into_a_copy_that_reads_the_original_homepage_rows_and_leaves_the_original_alone_when_they_change(): void
     {
         $page = new Page();
         $page->setCurrentLocale('en_US');

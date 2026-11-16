@@ -18,7 +18,7 @@ final class CreateEntryTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_creates_a_page_through_the_dialog_leaves_the_builder_with_esc_and_publishes_it_from_its_overview_page(): void
+    public function it_lets_an_admin_user_create_a_page_through_the_dialog_leave_the_builder_with_esc_and_publish_it_from_its_overview_page(): void
     {
         $this->signInAsAdmin();
 
@@ -68,7 +68,7 @@ final class CreateEntryTest extends UITestCase
     /**
      * @test
      */
-    public function the_slug_follows_the_title_until_the_editor_changes_it_and_the_channels_start_all_picked(): void
+    public function it_makes_the_slug_follow_the_title_until_the_editor_changes_it_and_starts_with_all_channels_picked(): void
     {
         $this->signInAsAdmin();
         self::createChannel('B2B', 'Wholesale');
@@ -105,7 +105,7 @@ final class CreateEntryTest extends UITestCase
     /**
      * @test
      */
-    public function the_dialog_refuses_a_slug_whose_url_a_sylius_route_takes_with_the_error_on_the_slug(): void
+    public function it_refuses_a_slug_whose_url_a_sylius_route_takes_in_the_dialog_with_the_error_on_the_slug(): void
     {
         $this->signInAsAdmin();
 

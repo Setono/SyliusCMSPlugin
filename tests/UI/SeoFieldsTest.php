@@ -15,7 +15,7 @@ final class SeoFieldsTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_fills_in_the_meta_title_hides_the_page_from_search_engines_and_publishes_it(): void
+    public function it_lets_an_admin_user_fill_in_the_meta_title_hide_the_page_from_search_engines_and_publish_it(): void
     {
         $this->signInAsAdmin();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);

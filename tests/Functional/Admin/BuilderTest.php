@@ -159,7 +159,7 @@ final class BuilderTest extends WebTestCase
     /**
      * @test
      */
-    public function its_back_button_returns_to_a_local_url_it_was_opened_from_or_else_to_the_overview_page(): void
+    public function it_points_the_back_button_at_a_local_url_it_was_opened_from_or_else_at_the_overview_page(): void
     {
         $client = self::createClient();
         $client->loginUser(self::admin(), 'admin');

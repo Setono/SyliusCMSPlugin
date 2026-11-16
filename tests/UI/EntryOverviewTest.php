@@ -17,7 +17,7 @@ final class EntryOverviewTest extends UITestCase
     /**
      * @test
      */
-    public function a_row_opens_the_overview_page_which_discards_the_unpublished_changes_after_asking(): void
+    public function it_opens_the_overview_page_from_a_row_and_discards_the_unpublished_changes_there_after_asking(): void
     {
         $this->signInAsAdmin();
         $page = self::createPage('About us', 'about-us', published: true);
@@ -48,7 +48,7 @@ final class EntryOverviewTest extends UITestCase
     /**
      * @test
      */
-    public function the_builder_opens_from_the_overview_page_and_its_back_button_and_more_tab_lead_back_to_it(): void
+    public function it_opens_the_builder_from_the_overview_page_and_leads_back_to_it_from_the_back_button_and_the_more_tab(): void
     {
         $this->signInAsAdmin();
         $page = self::createPage('About us', 'about-us', 'Hello');

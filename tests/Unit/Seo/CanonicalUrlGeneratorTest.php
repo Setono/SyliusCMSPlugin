@@ -50,7 +50,7 @@ final class CanonicalUrlGeneratorTest extends TestCase
     /**
      * @test
      */
-    public function there_is_none_in_a_locale_without_a_slug(): void
+    public function it_generates_none_in_a_locale_without_a_slug(): void
     {
         $page = self::page(['en_US' => 'about-us', 'da_DK' => null]);
 
@@ -61,7 +61,7 @@ final class CanonicalUrlGeneratorTest extends TestCase
     /**
      * @test
      */
-    public function there_is_none_for_a_content_type_without_its_own_url(): void
+    public function it_generates_none_for_a_content_type_without_its_own_url(): void
     {
         $recipe = new Recipe();
         $recipe->setCurrentLocale('en_US');

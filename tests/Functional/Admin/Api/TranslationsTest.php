@@ -18,7 +18,7 @@ final class TranslationsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_translation_added_before_the_first_publish_starts_shown(): void
+    public function it_shows_a_translation_added_before_the_first_publish_from_the_start(): void
     {
         $client = self::createClient();
         self::addLocales('WEB', 'da_DK');
@@ -37,7 +37,7 @@ final class TranslationsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_translation_added_after_the_first_publish_starts_held_back(): void
+    public function it_holds_back_a_translation_added_after_the_first_publish(): void
     {
         $client = self::createClient();
         self::addLocales('WEB', 'da_DK');
@@ -62,7 +62,7 @@ final class TranslationsTest extends BuilderApiTestCase
      *
      * @test
      */
-    public function a_held_back_translation_shows_once_it_is_switched_on_and_published(): void
+    public function it_shows_a_held_back_translation_once_it_is_switched_on_and_published(): void
     {
         $client = self::createClient();
         self::addLocales('WEB', 'da_DK');
@@ -166,7 +166,7 @@ final class TranslationsTest extends BuilderApiTestCase
      *
      * @test
      */
-    public function another_entrys_translation_without_a_title_claims_no_url(): void
+    public function it_does_not_clash_with_another_entrys_translation_without_a_title(): void
     {
         $client = self::createClient();
         self::addLocales('WEB', 'da_DK');

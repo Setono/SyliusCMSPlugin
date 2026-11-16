@@ -30,7 +30,7 @@ final class ProblemsTest extends WebTestCase
     /**
      * @test
      */
-    public function the_overview_page_lists_the_entrys_problems_errors_first_each_with_where_it_is_fixed(): void
+    public function it_lists_the_entrys_problems_on_the_overview_page_errors_first_each_with_where_it_is_fixed(): void
     {
         $client = self::signedInClient();
         self::addLocales('WEB', 'da_DK');
@@ -66,7 +66,7 @@ final class ProblemsTest extends WebTestCase
      *
      * @test
      */
-    public function the_overview_page_warns_of_a_published_url_a_sylius_route_takes(): void
+    public function it_warns_of_a_published_url_a_sylius_route_takes_on_the_overview_page(): void
     {
         $client = self::signedInClient();
         // Published without the checks, as if the route was added after the page was published
@@ -84,7 +84,7 @@ final class ProblemsTest extends WebTestCase
     /**
      * @test
      */
-    public function an_entry_whose_layout_was_removed_from_code_has_a_warning_fixed_in_the_builders_entry_settings(): void
+    public function it_warns_of_an_entry_whose_layout_was_removed_from_code_fixed_in_the_builders_entry_settings(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -110,7 +110,7 @@ final class ProblemsTest extends WebTestCase
     /**
      * @test
      */
-    public function an_entry_without_problems_has_no_problems_section_and_a_missing_translation_is_no_problem(): void
+    public function it_shows_no_problems_section_for_an_entry_without_problems_and_counts_a_missing_translation_as_none(): void
     {
         $client = self::signedInClient();
         self::addLocales('WEB', 'da_DK');
@@ -125,7 +125,7 @@ final class ProblemsTest extends WebTestCase
     /**
      * @test
      */
-    public function the_lists_mark_an_entry_with_a_problem_and_link_the_marker_to_its_problems(): void
+    public function it_marks_an_entry_with_a_problem_in_the_lists_and_links_the_marker_to_its_problems(): void
     {
         $client = self::signedInClient();
         self::addLocales('WEB', 'da_DK');
@@ -156,7 +156,7 @@ final class ProblemsTest extends WebTestCase
     /**
      * @test
      */
-    public function the_needs_attention_filter_lists_the_entries_with_a_problem(): void
+    public function it_lists_the_entries_with_a_problem_under_the_needs_attention_filter(): void
     {
         $client = self::signedInClient();
         $errors = self::pageWithProblems();
@@ -176,7 +176,7 @@ final class ProblemsTest extends WebTestCase
     /**
      * @test
      */
-    public function the_needs_attention_filter_lists_nothing_when_nothing_needs_attention(): void
+    public function it_lists_nothing_under_the_needs_attention_filter_when_nothing_needs_attention(): void
     {
         $client = self::signedInClient();
         self::createPage('Clean', 'clean', 'Hello');
@@ -190,7 +190,7 @@ final class ProblemsTest extends WebTestCase
     /**
      * @test
      */
-    public function the_content_badge_counts_the_errors_and_warnings_that_need_attention_on_every_admin_page(): void
+    public function it_counts_the_errors_and_warnings_that_need_attention_in_the_content_badge_on_every_admin_page(): void
     {
         $client = self::signedInClient();
         self::createPage('Clean', 'clean', 'Hello');

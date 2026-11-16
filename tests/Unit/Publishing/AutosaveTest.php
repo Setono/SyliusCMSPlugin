@@ -562,7 +562,7 @@ final class AutosaveTest extends TestCase
     /**
      * @test
      */
-    public function a_failed_scheduled_publish_leaves_the_draft_unlocked(): void
+    public function it_leaves_the_draft_unlocked_after_a_failed_scheduled_publish(): void
     {
         $this->scheduledPublish()->fail('Not on a Sunday');
         $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);

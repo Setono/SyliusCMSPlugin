@@ -30,7 +30,7 @@ final class TranslationsTest extends WebTestCase
      *
      * @test
      */
-    public function a_page_answers_404_in_a_locale_it_has_no_translation_in(): void
+    public function it_answers_404_for_a_page_in_a_locale_it_has_no_translation_in(): void
     {
         $client = self::createClient();
         self::addLocales('WEB', 'da_DK');
@@ -46,7 +46,7 @@ final class TranslationsTest extends WebTestCase
      *
      * @test
      */
-    public function a_slug_never_falls_back(): void
+    public function it_never_falls_back_to_another_locales_slug(): void
     {
         $client = self::createClient();
         self::addLocales('WEB', 'da_DK');
@@ -67,7 +67,7 @@ final class TranslationsTest extends WebTestCase
     /**
      * @test
      */
-    public function a_page_answers_404_in_a_locale_whose_translation_is_held_back(): void
+    public function it_answers_404_for_a_page_in_a_locale_whose_translation_is_held_back(): void
     {
         $client = self::createClient();
         self::addLocales('WEB', 'da_DK');
@@ -87,7 +87,7 @@ final class TranslationsTest extends WebTestCase
      *
      * @test
      */
-    public function a_field_empty_in_de_ch_renders_the_de_de_value_and_one_missing_in_both_the_en_us_value(): void
+    public function it_renders_the_de_de_value_of_a_field_empty_in_de_ch_and_the_en_us_value_of_one_missing_in_both(): void
     {
         $client = self::createClient();
         self::addLocales('WEB', 'de_DE', 'de_CH');

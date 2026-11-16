@@ -18,7 +18,7 @@ final class AvailabilityTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_has_a_translation_in_a_locale_once_that_translation_has_a_title(): void
+    public function it_counts_an_entrys_translation_in_a_locale_once_that_translation_has_a_title(): void
     {
         $page = self::page(['en_US' => 'About us', 'da_DK' => null, 'sv_SE' => '']);
         $availability = new Availability();
@@ -47,7 +47,7 @@ final class AvailabilityTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_shows_in_a_locale_where_it_has_a_translation_that_is_not_held_back(): void
+    public function it_shows_an_entry_in_a_locale_where_it_has_a_translation_that_is_not_held_back(): void
     {
         $page = self::page(['en_US' => 'About us', 'da_DK' => 'Om os', 'sv_SE' => null], heldBack: ['da_DK', 'sv_SE']);
         $availability = new Availability();

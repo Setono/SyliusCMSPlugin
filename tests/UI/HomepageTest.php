@@ -51,7 +51,7 @@ final class HomepageTest extends UITestCase
     /**
      * @test
      */
-    public function its_overview_page_shows_which_page_is_the_channels_homepage(): void
+    public function it_shows_which_page_is_the_channels_homepage_on_its_overview_page(): void
     {
         $this->signInAsAdmin();
         $page = self::createPage('Welcome', 'welcome', published: true);

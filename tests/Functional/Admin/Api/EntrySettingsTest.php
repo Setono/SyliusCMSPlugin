@@ -239,7 +239,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
      *
      * @test
      */
-    public function choosing_a_second_page_as_a_channels_homepage_takes_the_channel_off_the_first(): void
+    public function it_takes_the_channel_off_the_first_page_when_a_second_page_becomes_its_homepage(): void
     {
         $client = self::createClient();
         $client->disableReboot();

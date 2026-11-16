@@ -52,7 +52,7 @@ final class ContentTypeRegistryTest extends TestCase
     /**
      * @test
      */
-    public function a_prefix_set_in_config_overrides_the_attributes(): void
+    public function it_lets_a_prefix_set_in_config_override_the_attributes(): void
     {
         $registry = new ContentTypeRegistry(['page' => self::PAGE, 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe']], ['page' => 'pg']);
 
@@ -63,7 +63,7 @@ final class ContentTypeRegistryTest extends TestCase
     /**
      * @test
      */
-    public function an_empty_prefix_set_in_config_puts_the_urls_at_the_root(): void
+    public function it_puts_the_urls_at_the_root_for_an_empty_prefix_set_in_config(): void
     {
         $registry = new ContentTypeRegistry(['article' => ['model' => Article::class, 'translation' => null, 'resource' => 'app.article']], ['article' => '']);
 

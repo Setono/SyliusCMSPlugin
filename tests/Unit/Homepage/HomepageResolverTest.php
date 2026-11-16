@@ -63,7 +63,7 @@ final class HomepageResolverTest extends TestCase
     /**
      * @test
      */
-    public function each_channel_shows_its_own_homepage(): void
+    public function it_resolves_each_channels_own_homepage(): void
     {
         $web = self::context('WEB');
         $b2b = self::context('B2B');
@@ -81,7 +81,7 @@ final class HomepageResolverTest extends TestCase
      *
      * @test
      */
-    public function a_channel_without_a_homepage_the_shopper_can_see_resolves_to_none(): void
+    public function it_resolves_no_homepage_for_a_channel_without_one_the_shopper_can_see(): void
     {
         self::assertNull($this->resolver()->resolve(self::context('WEB')));
     }
@@ -91,7 +91,7 @@ final class HomepageResolverTest extends TestCase
      *
      * @test
      */
-    public function the_builders_preview_of_the_channels_homepage_shows_its_working_copy(): void
+    public function it_resolves_the_working_copy_in_the_builders_preview_of_the_channels_homepage(): void
     {
         $page = $this->page('WEB');
         $workingCopy = clone $page;
@@ -105,7 +105,7 @@ final class HomepageResolverTest extends TestCase
     /**
      * @test
      */
-    public function the_preview_of_a_page_that_is_not_the_channels_homepage_shows_the_channels_homepage(): void
+    public function it_resolves_the_channels_homepage_in_the_preview_of_a_page_that_is_not_it(): void
     {
         $context = self::context('WEB');
         $home = new Page();
@@ -118,7 +118,7 @@ final class HomepageResolverTest extends TestCase
     /**
      * @test
      */
-    public function the_preview_of_an_entry_other_than_a_page_shows_the_channels_homepage(): void
+    public function it_resolves_the_channels_homepage_in_the_preview_of_an_entry_other_than_a_page(): void
     {
         $context = self::context('WEB');
         $home = new Page();
@@ -135,7 +135,7 @@ final class HomepageResolverTest extends TestCase
      *
      * @test
      */
-    public function a_preview_in_another_locale_shows_the_channels_homepage(): void
+    public function it_resolves_the_channels_homepage_in_a_preview_in_another_locale(): void
     {
         $context = self::context('WEB');
         $this->previewing($this->page('WEB'), 'WEB', 'da_DK');

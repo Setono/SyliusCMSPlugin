@@ -56,7 +56,7 @@ final class SlugTest extends TestCase
     /**
      * @test
      */
-    public function its_html_pattern_is_its_pattern_without_the_anchors(): void
+    public function it_gives_its_pattern_without_the_anchors_as_its_html_pattern(): void
     {
         self::assertSame(1, preg_match('#^' . Slug::HTML_PATTERN . '$#', 'about/team'));
         self::assertSame(0, preg_match('#^' . Slug::HTML_PATTERN . '$#', 'about//team'));

@@ -24,7 +24,7 @@ final class UrlPrefixTest extends WebTestCase
     /**
      * @test
      */
-    public function a_prefix_set_in_config_moves_the_url_without_a_redirect(): void
+    public function it_moves_the_url_without_a_redirect_when_a_prefix_is_set_in_config(): void
     {
         $client = self::createClient();
         self::createPage('About us', 'about-us', 'Hello', published: true);

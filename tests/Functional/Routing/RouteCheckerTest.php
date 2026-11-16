@@ -41,7 +41,7 @@ final class RouteCheckerTest extends KernelTestCase
     /**
      * @test
      */
-    public function no_route_takes_an_entrys_url_even_when_an_entry_has_it(): void
+    public function it_finds_no_route_taking_an_entrys_url_even_when_an_entry_has_it(): void
     {
         self::createPage('About us', 'about-us', 'Hello', published: true);
 

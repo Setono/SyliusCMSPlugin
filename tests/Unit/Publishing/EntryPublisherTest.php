@@ -234,7 +234,7 @@ final class EntryPublisherTest extends TestCase
     /**
      * @test
      */
-    public function a_publish_now_ends_the_entrys_scheduled_publish(): void
+    public function it_ends_the_entrys_scheduled_publish_on_a_publish_now(): void
     {
         $scheduledPublish = $this->scheduledPublish();
         $this->workingCopies->applyToRows($this->page, $this->workingCopy)->will($this->record('apply to rows'));
@@ -286,7 +286,7 @@ final class EntryPublisherTest extends TestCase
      *
      * @dataProvider provideStaleMessages
      */
-    public function a_message_whose_scheduled_publish_was_cancelled_replaced_or_stopped_does_nothing(?string $token, ?string $failure): void
+    public function it_does_nothing_for_a_message_whose_scheduled_publish_was_cancelled_replaced_or_stopped(?string $token, ?string $failure): void
     {
         $scheduledPublish = $this->scheduledPublish();
         if (null !== $failure) {
@@ -314,7 +314,7 @@ final class EntryPublisherTest extends TestCase
     /**
      * @test
      */
-    public function a_message_does_nothing_for_an_entry_without_a_scheduled_publish(): void
+    public function it_does_nothing_for_a_message_for_an_entry_without_a_scheduled_publish(): void
     {
         $this->workingCopies->applyToRows(Argument::cetera())->shouldNotBeCalled();
 
@@ -327,7 +327,7 @@ final class EntryPublisherTest extends TestCase
     /**
      * @test
      */
-    public function a_veto_stops_a_scheduled_publish_and_leaves_it_for_the_caller_to_flag(): void
+    public function it_stops_a_scheduled_publish_on_a_veto_and_leaves_it_for_the_caller_to_flag(): void
     {
         $scheduledPublish = $this->scheduledPublish();
         $this->workingCopies->applyToRows(Argument::cetera())->shouldNotBeCalled();
@@ -348,7 +348,7 @@ final class EntryPublisherTest extends TestCase
     /**
      * @test
      */
-    public function errors_stop_a_scheduled_publish_before_listeners_hear_of_it(): void
+    public function it_stops_a_scheduled_publish_with_errors_before_listeners_hear_of_it(): void
     {
         $scheduledPublish = $this->scheduledPublish();
         $errors = [new ValidationError(null, 'slug', 'en_US', 'This slug is taken.')];

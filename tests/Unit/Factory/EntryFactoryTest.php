@@ -68,7 +68,7 @@ final class EntryFactoryTest extends TestCase
     /**
      * @test
      */
-    public function a_new_entry_of_a_content_type_without_layouts_has_none(): void
+    public function it_creates_an_entry_of_a_content_type_without_layouts_without_a_layout(): void
     {
         $recipe = new Recipe();
         $decorated = $this->prophesize(FactoryInterface::class);

@@ -52,7 +52,7 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function its_header_shows_the_title_content_type_url_and_status_labels_with_open_in_builder(): void
+    public function it_shows_the_title_content_type_url_and_status_labels_with_open_in_builder_in_the_header(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', published: true);
@@ -75,7 +75,7 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function its_header_shows_the_working_copys_title(): void
+    public function it_shows_the_working_copys_title_in_the_header(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', published: true);
@@ -90,7 +90,7 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function its_publishing_section_offers_to_publish_an_entry_never_published(): void
+    public function it_offers_to_publish_an_entry_never_published_in_the_publishing_section(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us');
@@ -108,7 +108,7 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function its_publishing_section_offers_to_publish_or_discard_unpublished_changes(): void
+    public function it_offers_to_publish_or_discard_unpublished_changes_in_the_publishing_section(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', published: true);
@@ -127,7 +127,7 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function its_publishing_section_has_nothing_to_publish_for_a_published_entry_without_changes(): void
+    public function it_offers_nothing_to_publish_for_a_published_entry_without_changes(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', published: true);
@@ -183,7 +183,7 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function a_publish_that_validation_refuses_says_how_many_errors_need_fixing(): void
+    public function it_says_how_many_errors_need_fixing_when_validation_refuses_a_publish(): void
     {
         $client = self::signedInClient();
         $page = self::createPageWithBlocks('About us', 'about-us', [new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 'heading', 1)]);
@@ -202,7 +202,7 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function a_vetoed_publish_shows_the_listeners_message(): void
+    public function it_shows_the_listeners_message_when_a_publish_is_vetoed(): void
     {
         $client = self::signedInClient();
         $client->disableReboot();
@@ -246,7 +246,7 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function publish_and_discard_need_the_pages_csrf_token(): void
+    public function it_needs_the_pages_csrf_token_to_publish_and_discard(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', published: true);
@@ -264,7 +264,7 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function publish_and_discard_need_an_admin_user(): void
+    public function it_needs_an_admin_user_to_publish_and_discard(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us');
@@ -279,7 +279,7 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function its_urls_section_shows_the_url_per_locale(): void
+    public function it_shows_the_url_per_locale_in_the_urls_section(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', published: true);
@@ -302,7 +302,7 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function its_urls_section_shows_a_url_the_draft_changes_beside_the_published_one(): void
+    public function it_shows_a_url_the_draft_changes_beside_the_published_one_in_the_urls_section(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', published: true);
@@ -318,7 +318,7 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function its_urls_section_lists_the_old_slugs_that_redirect_to_a_url(): void
+    public function it_lists_the_old_slugs_that_redirect_to_a_url_in_the_urls_section(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about', published: true);
@@ -340,7 +340,7 @@ final class EntryOverviewTest extends WebTestCase
      *
      * @test
      */
-    public function its_urls_section_shows_which_page_is_each_channels_homepage(): void
+    public function it_shows_which_page_is_each_channels_homepage_in_the_urls_section(): void
     {
         $client = self::signedInClient();
         self::createChannel('B2B', 'Wholesale');
@@ -370,7 +370,7 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function its_translations_section_shows_a_chip_per_locale_of_the_entrys_channels_from_its_draft(): void
+    public function it_shows_a_chip_per_locale_of_the_entrys_channels_from_its_draft_in_the_translations_section(): void
     {
         $client = self::signedInClient();
         self::addLocales('WEB', 'da_DK');
@@ -391,7 +391,7 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function an_entry_in_no_channel_has_no_translations_section(): void
+    public function it_shows_no_translations_section_for_an_entry_in_no_channel(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', channels: []);
@@ -405,7 +405,7 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function an_entry_without_a_url_of_its_own_has_no_urls_section(): void
+    public function it_shows_no_urls_section_for_an_entry_without_a_url_of_its_own(): void
     {
         $client = self::signedInClient();
         /** @var FactoryInterface<Announcement> $factory */

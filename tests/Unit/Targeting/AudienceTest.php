@@ -172,7 +172,7 @@ final class AudienceTest extends TestCase
      *
      * @test
      */
-    public function a_customer_group_value_is_a_code_guest_or_no_group(): void
+    public function it_takes_a_code_guest_or_no_group_as_a_customer_group_value(): void
     {
         self::assertTrue(CustomerGroupValue::isValid('wholesale'));
         self::assertTrue(CustomerGroupValue::isValid('@guest'));

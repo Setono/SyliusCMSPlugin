@@ -44,7 +44,7 @@ final class ScheduledPublishTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function scheduling_checks_the_draft_then_sends_a_message_delayed_until_its_time_on_sylius_main_transport(): void
+    public function it_checks_the_draft_then_sends_a_message_delayed_until_its_time_on_sylius_main_transport_to_schedule(): void
     {
         $client = self::createClient();
         $client->disableReboot();
@@ -92,7 +92,7 @@ final class ScheduledPublishTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function saves_discards_and_restores_are_refused_while_it_waits_and_cancelling_unlocks_the_draft(): void
+    public function it_refuses_saves_discards_and_restores_while_a_scheduled_publish_waits_and_unlocks_the_draft_on_cancel(): void
     {
         $client = self::createClient();
         $client->disableReboot();
@@ -133,7 +133,7 @@ final class ScheduledPublishTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function consuming_the_message_publishes_the_draft_as_a_scheduled_publish_by_who_scheduled_it(): void
+    public function it_publishes_the_draft_as_a_scheduled_publish_by_who_scheduled_it_when_the_message_is_consumed(): void
     {
         $client = self::createClient();
         $client->disableReboot();
@@ -170,7 +170,7 @@ final class ScheduledPublishTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function scheduling_a_never_published_entry_schedules_its_first_publish_and_locks_its_rows(): void
+    public function it_schedules_the_first_publish_of_a_never_published_entry_and_locks_its_rows(): void
     {
         $client = self::createClient();
         $client->disableReboot();
@@ -197,7 +197,7 @@ final class ScheduledPublishTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_veto_when_it_runs_flags_the_entry_as_failed_with_the_reason_and_is_not_retried(): void
+    public function it_flags_the_entry_as_failed_with_the_reason_of_a_veto_when_it_runs_and_does_not_retry(): void
     {
         $client = self::createClient();
         $client->disableReboot();
@@ -238,7 +238,7 @@ final class ScheduledPublishTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function errors_found_when_it_runs_flag_it_as_failed_with_what_they_say(): void
+    public function it_flags_it_as_failed_with_what_the_errors_found_when_it_runs_say(): void
     {
         $client = self::createClient();
         $client->disableReboot();
@@ -264,7 +264,7 @@ final class ScheduledPublishTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_message_of_a_cancelled_or_replaced_scheduled_publish_does_nothing(): void
+    public function it_does_nothing_with_the_message_of_a_cancelled_or_replaced_scheduled_publish(): void
     {
         $client = self::createClient();
         $client->disableReboot();
@@ -342,7 +342,7 @@ final class ScheduledPublishTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function scheduling_and_cancelling_need_the_builders_csrf_token(): void
+    public function it_needs_the_builders_csrf_token_to_schedule_and_cancel(): void
     {
         $client = self::createClient();
         [$page] = self::publishedPageWithDraft($client);

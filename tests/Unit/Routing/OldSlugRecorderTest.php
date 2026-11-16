@@ -104,7 +104,7 @@ final class OldSlugRecorderTest extends TestCase
      *
      * @test
      */
-    public function a_slug_the_entry_has_again_is_no_longer_an_old_one(): void
+    public function it_forgets_an_old_slug_the_entry_has_again(): void
     {
         $again = self::oldSlug('en_US', 'about');
         $other = self::oldSlug('en_US', 'about-our-shop');

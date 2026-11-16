@@ -97,7 +97,7 @@ final class ProblemCountsQueryTest extends KernelTestCase
      *
      * @test
      */
-    public function an_entry_left_out_of_the_counts_keeps_its_counts(): void
+    public function it_keeps_the_counts_of_an_entry_left_out_of_the_counts(): void
     {
         self::bootKernel();
         $page = self::createPage('Page', 'page');

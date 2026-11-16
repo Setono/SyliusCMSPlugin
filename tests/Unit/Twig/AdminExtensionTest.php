@@ -100,7 +100,7 @@ final class AdminExtensionTest extends IntegrationTestCase
     /**
      * @test
      */
-    public function its_runtime_reads_the_customer_groups_once_until_it_is_reset(): void
+    public function it_reads_the_customer_groups_in_its_runtime_once_until_it_is_reset(): void
     {
         $this->customerGroups->findAll()->willReturn([self::customerGroup('wholesale', 'Wholesale')])->shouldBeCalledTimes(2);
         $runtime = $this->runtime();

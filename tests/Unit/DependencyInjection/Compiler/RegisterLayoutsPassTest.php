@@ -143,7 +143,7 @@ final class RegisterLayoutsPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function a_default_layout_named_in_the_config_settles_two_defaults(): void
+    public function it_settles_two_defaults_with_a_default_layout_named_in_the_config(): void
     {
         $this->setDefinition('app.standard', (new Definition(Standard::class))->addTag('setono_sylius_cms.layout'));
         $this->setDefinition('app.wide', (new Definition(Wide::class))->addTag('setono_sylius_cms.layout'));
@@ -235,7 +235,7 @@ final class RegisterLayoutsPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function content_types_with_their_own_url_and_layouts_and_those_without_a_url_pass(): void
+    public function it_passes_content_types_with_their_own_url_and_layouts_and_those_without_a_url(): void
     {
         $this->setDefinition(ContentTypeRegistry::class, new Definition(ContentTypeRegistry::class, [[
             'page' => ['model' => Page::class, 'translation' => null, 'resource' => 'setono_sylius_cms.page'],

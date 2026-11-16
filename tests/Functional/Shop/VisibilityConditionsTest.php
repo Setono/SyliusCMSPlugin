@@ -140,7 +140,7 @@ final class VisibilityConditionsTest extends WebTestCase
     /**
      * @test
      */
-    public function a_hidden_parent_hides_its_children(): void
+    public function it_hides_the_children_of_a_hidden_parent(): void
     {
         $client = self::createClient();
         $group = self::blockIf('0193a5be-0000-7000-8000-000000000001', 'group', ['kind' => 'customer_group', 'negate' => false, 'params' => ['groups' => ['@no_group']]]);
@@ -156,7 +156,7 @@ final class VisibilityConditionsTest extends WebTestCase
     /**
      * @test
      */
-    public function a_first_match_block_shows_only_its_first_child_whose_conditions_match_with_no_markup_of_its_own(): void
+    public function it_shows_only_the_first_child_of_a_first_match_block_whose_conditions_match_with_no_markup_of_its_own(): void
     {
         $client = self::createClient();
         self::createCustomerGroup('wholesale', 'Wholesale');

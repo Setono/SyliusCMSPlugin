@@ -147,7 +147,7 @@ final class TakenUrlFinderTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_without_a_url_of_its_own_or_a_slug_has_no_url_to_take(): void
+    public function it_finds_no_url_to_take_for_an_entry_without_a_url_of_its_own_or_a_slug(): void
     {
         self::assertSame([], $this->finder()->find(new Recipe(), ['en_US' => 'cart'], ['WEB']));
         self::assertEquals(

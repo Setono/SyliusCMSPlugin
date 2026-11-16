@@ -200,7 +200,7 @@ final class ChoiceHandlerTest extends TestCase
     /**
      * @test
      */
-    public function its_schema_has_the_choices_a_provider_gives_in_the_translators_locale(): void
+    public function it_puts_the_choices_a_provider_gives_in_the_translators_locale_in_its_schema(): void
     {
         $translator = new IdentityTranslator();
         $translator->setLocale('da_DK');

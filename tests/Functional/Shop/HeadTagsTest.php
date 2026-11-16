@@ -22,7 +22,7 @@ final class HeadTagsTest extends WebTestCase
     /**
      * @test
      */
-    public function a_pages_head_has_its_title_description_robots_tag_canonical_url_and_a_hreflang_link_per_locale_it_shows_in(): void
+    public function it_gives_a_pages_head_its_title_description_robots_tag_canonical_url_and_a_hreflang_link_per_locale_it_shows_in(): void
     {
         $client = self::createClient();
         self::addLocales('WEB', 'da_DK');
@@ -48,7 +48,7 @@ final class HeadTagsTest extends WebTestCase
     /**
      * @test
      */
-    public function the_danish_page_has_its_own_canonical_url_and_the_same_hreflang_links(): void
+    public function it_gives_the_danish_page_its_own_canonical_url_and_the_same_hreflang_links(): void
     {
         $client = self::createClient();
         self::addLocales('WEB', 'da_DK');
@@ -69,7 +69,7 @@ final class HeadTagsTest extends WebTestCase
     /**
      * @test
      */
-    public function a_page_without_seo_fields_has_its_title_and_neither_a_description_nor_a_robots_tag(): void
+    public function it_gives_a_page_without_seo_fields_its_title_and_neither_a_description_nor_a_robots_tag(): void
     {
         $client = self::createClient();
         self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -84,7 +84,7 @@ final class HeadTagsTest extends WebTestCase
     /**
      * @test
      */
-    public function a_held_back_locale_is_left_out_of_hreflang(): void
+    public function it_leaves_a_held_back_locale_out_of_hreflang(): void
     {
         $client = self::createClient();
         self::addLocales('WEB', 'da_DK');
@@ -102,7 +102,7 @@ final class HeadTagsTest extends WebTestCase
     /**
      * @test
      */
-    public function the_canonical_url_drops_the_query_string(): void
+    public function it_drops_the_query_string_from_the_canonical_url(): void
     {
         $client = self::createClient();
         self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -118,7 +118,7 @@ final class HeadTagsTest extends WebTestCase
      *
      * @test
      */
-    public function seo_fields_saved_in_a_draft_show_once_they_are_published(): void
+    public function it_shows_seo_fields_saved_in_a_draft_once_they_are_published(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);

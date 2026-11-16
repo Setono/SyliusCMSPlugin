@@ -61,7 +61,7 @@ final class LayoutRendererTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_whose_layout_was_removed_renders_in_the_default_layout_without_the_stored_values(): void
+    public function it_renders_an_entry_whose_layout_was_removed_in_the_default_layout_without_the_stored_values(): void
     {
         $page = new Page();
 
@@ -73,7 +73,7 @@ final class LayoutRendererTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_whose_layout_is_disabled_renders_in_the_default_layout_without_the_stored_values(): void
+    public function it_renders_an_entry_whose_layout_is_disabled_in_the_default_layout_without_the_stored_values(): void
     {
         $page = new Page();
 
@@ -85,7 +85,7 @@ final class LayoutRendererTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_in_the_default_layout_gets_its_stored_values_and_one_without_a_layout_the_defaults(): void
+    public function it_gives_an_entry_in_the_default_layout_its_stored_values_and_one_without_a_layout_the_defaults(): void
     {
         $page = new Page();
 
@@ -96,7 +96,7 @@ final class LayoutRendererTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_of_a_content_type_without_layouts_has_no_page_to_render(): void
+    public function it_has_no_page_to_render_for_an_entry_of_a_content_type_without_layouts(): void
     {
         $recipe = new Recipe();
 

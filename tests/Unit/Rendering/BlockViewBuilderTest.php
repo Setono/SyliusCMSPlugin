@@ -231,7 +231,7 @@ final class BlockViewBuilderTest extends TestCase
     /**
      * @test
      */
-    public function a_first_match_block_shows_only_its_first_child_whose_conditions_match(): void
+    public function it_shows_only_the_first_child_of_a_first_match_block_whose_conditions_match(): void
     {
         $firstMatch = new StoredBlock(self::A, 'first_match', 1);
         $firstMatch->children = [
@@ -253,7 +253,7 @@ final class BlockViewBuilderTest extends TestCase
     /**
      * @test
      */
-    public function a_first_match_block_whose_children_all_hide_shows_nothing_inside(): void
+    public function it_shows_nothing_inside_a_first_match_block_whose_children_all_hide(): void
     {
         $firstMatch = new StoredBlock(self::A, 'first_match', 1);
         $firstMatch->children = [self::onlyIn(new StoredBlock(self::B, 'heading', 1), 'da_DK')];
@@ -269,7 +269,7 @@ final class BlockViewBuilderTest extends TestCase
      *
      * @test
      */
-    public function the_child_a_first_match_block_shows_keeps_all_its_children(): void
+    public function it_keeps_all_the_children_of_the_child_a_first_match_block_shows(): void
     {
         $group = new StoredBlock(self::B, 'group', 1);
         $group->children = [new StoredBlock(self::C, 'heading', 1), new StoredBlock(self::D, 'heading', 1)];

@@ -104,7 +104,7 @@ final class EntryPathTest extends TestCase
     /**
      * @test
      */
-    public function a_path_that_is_only_the_prefix_holds_no_slug_under_it(): void
+    public function it_finds_no_slug_under_a_path_that_is_only_the_prefix(): void
     {
         self::assertSame([], EntryPath::slugs([self::contentType('blog', 'blog_post')], 'blog'));
         self::assertSame([], EntryPath::slugs([self::contentType('blog', 'blog_post')], 'blog/'));

@@ -24,7 +24,7 @@ final class HomepageTest extends WebTestCase
     /**
      * @test
      */
-    public function the_channels_root_url_renders_its_homepage_in_its_layout(): void
+    public function it_renders_the_channels_homepage_in_its_layout_at_the_channels_root_url(): void
     {
         $client = self::createClient();
         $page = self::createPage('Welcome', 'welcome', 'Hello shoppers', published: true);
@@ -41,7 +41,7 @@ final class HomepageTest extends WebTestCase
     /**
      * @test
      */
-    public function a_channel_without_a_homepage_shows_the_stores_own(): void
+    public function it_shows_the_stores_own_homepage_in_a_channel_without_one(): void
     {
         $client = self::createClient();
         self::createPage('Welcome', 'welcome', 'Hello shoppers', published: true);
@@ -58,7 +58,7 @@ final class HomepageTest extends WebTestCase
      *
      * @test
      */
-    public function a_disabled_homepage_falls_back_to_the_stores_own_homepage(): void
+    public function it_falls_back_to_the_stores_own_homepage_for_a_disabled_homepage(): void
     {
         $client = self::createClient();
         $page = self::createPage('Welcome', 'welcome', 'Hello shoppers', published: true);
@@ -77,7 +77,7 @@ final class HomepageTest extends WebTestCase
     /**
      * @test
      */
-    public function a_never_published_homepage_falls_back_to_the_stores_own_homepage(): void
+    public function it_falls_back_to_the_stores_own_homepage_for_a_never_published_homepage(): void
     {
         $client = self::createClient();
         self::setHomepageOf(self::createPage('Welcome', 'welcome', 'Hello shoppers'), 'WEB');
@@ -93,7 +93,7 @@ final class HomepageTest extends WebTestCase
      *
      * @test
      */
-    public function a_locale_the_homepage_has_no_translation_in_shows_the_stores_own_homepage(): void
+    public function it_shows_the_stores_own_homepage_in_a_locale_the_homepage_has_no_translation_in(): void
     {
         $client = self::createClient();
         self::addLocales('WEB', 'da_DK');
@@ -109,7 +109,7 @@ final class HomepageTest extends WebTestCase
     /**
      * @test
      */
-    public function the_homepage_of_another_channel_does_not_show_here(): void
+    public function it_does_not_show_the_homepage_of_another_channel(): void
     {
         $client = self::createClient();
         self::createChannel('B2B');
@@ -127,7 +127,7 @@ final class HomepageTest extends WebTestCase
      *
      * @test
      */
-    public function the_pages_own_url_answers_301_to_the_channels_root(): void
+    public function it_answers_the_pages_own_url_with_301_to_the_channels_root(): void
     {
         $client = self::createClient();
         self::setHomepageOf(self::createPage('Welcome', 'welcome', 'Hello shoppers', published: true), 'WEB');
@@ -142,7 +142,7 @@ final class HomepageTest extends WebTestCase
     /**
      * @test
      */
-    public function an_old_slug_of_the_homepage_answers_301_straight_to_the_channels_root(): void
+    public function it_answers_an_old_slug_of_the_homepage_with_301_straight_to_the_channels_root(): void
     {
         $client = self::createClient();
         $page = self::createPage('Welcome', 'welcome', 'Hello shoppers', published: true);
@@ -158,7 +158,7 @@ final class HomepageTest extends WebTestCase
     /**
      * @test
      */
-    public function the_pages_own_url_does_not_redirect_in_a_channel_it_is_not_the_homepage_of(): void
+    public function it_does_not_redirect_the_pages_own_url_in_a_channel_it_is_not_the_homepage_of(): void
     {
         $client = self::createClient();
         self::createChannel('B2B');
@@ -175,7 +175,7 @@ final class HomepageTest extends WebTestCase
      *
      * @test
      */
-    public function an_unavailable_homepages_own_url_answers_404(): void
+    public function it_answers_404_to_an_unavailable_homepages_own_url(): void
     {
         $client = self::createClient();
         self::setHomepageOf(self::createPage('Welcome', 'welcome', 'Hello shoppers'), 'WEB');
@@ -188,7 +188,7 @@ final class HomepageTest extends WebTestCase
     /**
      * @test
      */
-    public function the_homepages_canonical_url_and_hreflang_links_are_the_channels_root_in_each_locale(): void
+    public function it_makes_the_channels_root_the_homepages_canonical_url_and_hreflang_links_in_each_locale(): void
     {
         $client = self::createClient();
         self::addLocales('WEB', 'da_DK');
@@ -216,7 +216,7 @@ final class HomepageTest extends WebTestCase
      *
      * @test
      */
-    public function the_builders_preview_shows_the_homepages_working_copy_at_the_channels_root(): void
+    public function it_shows_the_homepages_working_copy_at_the_channels_root_in_the_builders_preview(): void
     {
         $client = self::createClient();
         $page = self::createPage('Welcome', 'welcome', 'Hello shoppers');

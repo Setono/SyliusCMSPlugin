@@ -46,7 +46,7 @@ final class EntrySettingsTest extends TestCase
      *
      * @test
      */
-    public function an_entry_other_than_a_page_is_the_homepage_of_no_channel(): void
+    public function it_reads_no_homepage_channels_of_an_entry_other_than_a_page(): void
     {
         self::assertSame([], EntrySettings::of(new Announcement())->homepageOf);
     }

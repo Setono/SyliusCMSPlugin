@@ -33,7 +33,7 @@ final class EntryShareLinksTest extends WebTestCase
     /**
      * @test
      */
-    public function share_draft_makes_a_share_link_for_the_channel_and_locale_picked_and_comes_back_to_the_overview_page(): void
+    public function it_makes_a_share_link_for_the_channel_and_locale_picked_in_share_draft_and_comes_back_to_the_overview_page(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -113,7 +113,7 @@ final class EntryShareLinksTest extends WebTestCase
      *
      * @test
      */
-    public function share_draft_offers_only_where_the_draft_has_a_url(): void
+    public function it_offers_share_draft_only_where_the_draft_has_a_url(): void
     {
         $client = self::signedInClient();
         self::addLocales('WEB', 'da_DK', 'de_DE');
@@ -132,7 +132,7 @@ final class EntryShareLinksTest extends WebTestCase
     /**
      * @test
      */
-    public function share_draft_says_why_when_the_draft_has_no_url_to_share(): void
+    public function it_says_why_in_share_draft_when_the_draft_has_no_url_to_share(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', 'Hello', channels: []);
@@ -147,7 +147,7 @@ final class EntryShareLinksTest extends WebTestCase
     /**
      * @test
      */
-    public function share_draft_says_why_it_made_no_share_link(): void
+    public function it_says_why_share_draft_made_no_share_link(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -170,7 +170,7 @@ final class EntryShareLinksTest extends WebTestCase
     /**
      * @test
      */
-    public function revoking_a_share_link_deletes_it_so_its_token_answers_as_for_a_shopper(): void
+    public function it_deletes_a_revoked_share_link_so_its_token_answers_as_for_a_shopper(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -193,7 +193,7 @@ final class EntryShareLinksTest extends WebTestCase
     /**
      * @test
      */
-    public function share_draft_and_revoke_need_the_pages_csrf_token_and_a_share_link_of_the_entry(): void
+    public function it_needs_the_pages_csrf_token_and_a_share_link_of_the_entry_to_share_the_draft_and_revoke(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -220,7 +220,7 @@ final class EntryShareLinksTest extends WebTestCase
     /**
      * @test
      */
-    public function share_draft_and_revoke_need_an_admin_user(): void
+    public function it_needs_an_admin_user_to_share_the_draft_and_revoke(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -238,7 +238,7 @@ final class EntryShareLinksTest extends WebTestCase
      *
      * @test
      */
-    public function an_entry_without_a_url_of_its_own_has_no_share_draft_and_no_share_links_section(): void
+    public function it_shows_neither_share_draft_nor_a_share_links_section_for_an_entry_without_a_url_of_its_own(): void
     {
         $client = self::signedInClient();
         /** @var FactoryInterface<Announcement> $factory */
@@ -262,7 +262,7 @@ final class EntryShareLinksTest extends WebTestCase
     /**
      * @test
      */
-    public function deleting_an_entry_deletes_its_share_links(): void
+    public function it_deletes_an_entrys_share_links_with_the_entry(): void
     {
         self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');

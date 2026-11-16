@@ -41,7 +41,7 @@ final class ShownToAndDateTest extends WebTestCase
     /**
      * @test
      */
-    public function a_token_shown_to_wholesale_renders_a_block_only_for_wholesale(): void
+    public function it_renders_a_block_only_for_wholesale_with_a_token_shown_to_wholesale(): void
     {
         $client = self::createClient();
         self::createCustomerGroup('wholesale', 'Wholesale');
@@ -56,7 +56,7 @@ final class ShownToAndDateTest extends WebTestCase
      *
      * @test
      */
-    public function a_token_shown_to_guests_renders_for_guests_while_a_wholesale_customer_is_signed_in(): void
+    public function it_renders_for_guests_with_a_token_shown_to_guests_while_a_wholesale_customer_is_signed_in(): void
     {
         $client = self::createClient();
         self::createCustomerGroup('wholesale', 'Wholesale');
@@ -70,7 +70,7 @@ final class ShownToAndDateTest extends WebTestCase
     /**
      * @test
      */
-    public function a_future_date_shows_a_block_whose_window_starts_then(): void
+    public function it_shows_a_block_on_the_future_date_its_window_starts(): void
     {
         $client = self::createClient();
         $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
@@ -83,7 +83,7 @@ final class ShownToAndDateTest extends WebTestCase
     /**
      * @test
      */
-    public function a_disabled_edited_entry_outside_its_audience_and_date_window_renders_while_its_blocks_follow_shown_to_and_date(): void
+    public function it_renders_a_disabled_edited_entry_outside_its_audience_and_date_window_while_its_blocks_follow_shown_to_and_date(): void
     {
         $client = self::createClient();
         self::createCustomerGroup('wholesale', 'Wholesale');
@@ -105,7 +105,7 @@ final class ShownToAndDateTest extends WebTestCase
      *
      * @test
      */
-    public function another_entry_shows_in_the_preview_when_its_audience_allows_shown_to(): void
+    public function it_shows_another_entry_in_the_preview_when_its_audience_allows_shown_to(): void
     {
         $client = self::createClient();
         self::createCustomerGroup('wholesale', 'Wholesale');
@@ -126,7 +126,7 @@ final class ShownToAndDateTest extends WebTestCase
      *
      * @test
      */
-    public function another_entry_shows_in_the_preview_when_its_date_window_contains_the_date(): void
+    public function it_shows_another_entry_in_the_preview_when_its_date_window_contains_the_date(): void
     {
         $client = self::createClient();
         $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
@@ -148,7 +148,7 @@ final class ShownToAndDateTest extends WebTestCase
      *
      * @test
      */
-    public function the_date_publishes_nothing(): void
+    public function it_applies_the_date_to_date_windows_only_and_publishes_nothing(): void
     {
         $client = self::createClient();
         $nextWeek = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->modify('+7 days');

@@ -71,7 +71,7 @@ final class LayoutRegistryTest extends TestCase
     /**
      * @test
      */
-    public function the_default_layout_is_the_one_marked_as_the_default(): void
+    public function it_takes_the_layout_marked_as_the_default_as_the_default(): void
     {
         $registry = new LayoutRegistry(['page' => ['landing' => Landing::class, 'standard' => Standard::class]], new FieldReader());
 
@@ -81,7 +81,7 @@ final class LayoutRegistryTest extends TestCase
     /**
      * @test
      */
-    public function a_class_without_the_layout_attribute_is_no_default(): void
+    public function it_takes_no_class_without_the_layout_attribute_as_the_default(): void
     {
         $registry = new LayoutRegistry(['page' => ['plain' => Plain::class, 'standard' => Standard::class]], new FieldReader());
 
@@ -91,7 +91,7 @@ final class LayoutRegistryTest extends TestCase
     /**
      * @test
      */
-    public function a_default_layout_named_in_the_config_wins_over_the_ones_marked_as_the_default(): void
+    public function it_prefers_a_default_layout_named_in_the_config_over_the_ones_marked_as_the_default(): void
     {
         $registry = new LayoutRegistry(['page' => ['standard' => Standard::class, 'wide' => Wide::class, 'landing' => Landing::class]], new FieldReader(), ['page' => 'landing']);
 
@@ -102,7 +102,7 @@ final class LayoutRegistryTest extends TestCase
     /**
      * @test
      */
-    public function two_layouts_marked_as_the_default_of_one_content_type_are_refused(): void
+    public function it_refuses_two_layouts_marked_as_the_default_of_one_content_type(): void
     {
         $registry = new LayoutRegistry(['page' => ['standard' => Standard::class, 'wide' => Wide::class]], new FieldReader());
 
@@ -115,7 +115,7 @@ final class LayoutRegistryTest extends TestCase
     /**
      * @test
      */
-    public function a_content_type_whose_layouts_are_none_of_them_the_default_is_refused(): void
+    public function it_refuses_a_content_type_whose_layouts_are_none_of_them_the_default(): void
     {
         $registry = new LayoutRegistry(['page' => ['landing' => Landing::class]], new FieldReader());
 
@@ -128,7 +128,7 @@ final class LayoutRegistryTest extends TestCase
     /**
      * @test
      */
-    public function a_default_layout_named_in_the_config_must_be_one_of_the_content_types(): void
+    public function it_refuses_a_default_layout_named_in_the_config_that_is_not_one_of_the_content_types(): void
     {
         $registry = new LayoutRegistry(['page' => ['standard' => Standard::class]], new FieldReader(), ['page' => 'landing']);
 
@@ -141,7 +141,7 @@ final class LayoutRegistryTest extends TestCase
     /**
      * @test
      */
-    public function the_default_layout_cant_be_disabled(): void
+    public function it_refuses_to_disable_the_default_layout(): void
     {
         $registry = new LayoutRegistry(['page' => ['standard' => Standard::class, 'landing' => Landing::class]], new FieldReader(), ['page' => 'landing'], ['page.landing']);
 
@@ -154,7 +154,7 @@ final class LayoutRegistryTest extends TestCase
     /**
      * @test
      */
-    public function a_content_type_without_layouts_has_no_default(): void
+    public function it_has_no_default_for_a_content_type_without_layouts(): void
     {
         $this->expectException(UnknownLayoutException::class);
         $this->expectExceptionMessage('The content type "recipe" has no layouts');
@@ -165,7 +165,7 @@ final class LayoutRegistryTest extends TestCase
     /**
      * @test
      */
-    public function a_disabled_layout_is_known_but_flagged(): void
+    public function it_knows_a_disabled_layout_but_flags_it(): void
     {
         $registry = new LayoutRegistry(['page' => ['standard' => Standard::class, 'landing' => Landing::class]], new FieldReader(), disabled: ['page.landing', 'blog_post.standard']);
 
@@ -177,7 +177,7 @@ final class LayoutRegistryTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_renders_in_its_own_layout_unless_it_was_removed_or_disabled_and_then_in_the_default(): void
+    public function it_renders_an_entry_in_its_own_layout_unless_it_was_removed_or_disabled_and_then_in_the_default(): void
     {
         $registry = new LayoutRegistry(['page' => ['standard' => Standard::class, 'landing' => Landing::class, 'wide' => Wide::class]], new FieldReader(), ['page' => 'standard'], ['page.wide']);
 

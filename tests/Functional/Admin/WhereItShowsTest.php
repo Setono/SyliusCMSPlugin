@@ -162,7 +162,7 @@ final class WhereItShowsTest extends WebTestCase
      *
      * @test
      */
-    public function its_cells_are_live_exactly_where_the_visible_entries_query_finds_the_entry_and_no_route_takes_its_url(): void
+    public function it_says_live_exactly_where_the_visible_entries_query_finds_the_entry_and_no_route_takes_its_url(): void
     {
         self::bootKernel();
         self::addLocales('WEB', 'da_DK');

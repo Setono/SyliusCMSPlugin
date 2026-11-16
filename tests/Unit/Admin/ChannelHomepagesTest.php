@@ -84,7 +84,7 @@ final class ChannelHomepagesTest extends TestCase
      *
      * @test
      */
-    public function an_entry_other_than_a_page_has_none(): void
+    public function it_lists_none_for_an_entry_other_than_a_page(): void
     {
         self::assertSame([], $this->channelHomepages()->of(new Announcement()));
 

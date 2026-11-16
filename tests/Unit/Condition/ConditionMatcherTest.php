@@ -19,7 +19,7 @@ final class ConditionMatcherTest extends TestCase
     /**
      * @test
      */
-    public function a_block_without_conditions_shows(): void
+    public function it_shows_a_block_without_conditions(): void
     {
         self::assertTrue($this->matcher()->matchesAll([], $this->context('da_DK')));
     }
@@ -27,7 +27,7 @@ final class ConditionMatcherTest extends TestCase
     /**
      * @test
      */
-    public function the_values_within_one_condition_combine_with_or(): void
+    public function it_combines_the_values_within_one_condition_with_or(): void
     {
         $condition = self::localeIs(['en_US', 'da_DK']);
 
@@ -39,7 +39,7 @@ final class ConditionMatcherTest extends TestCase
     /**
      * @test
      */
-    public function a_blocks_conditions_combine_with_and(): void
+    public function it_combines_a_blocks_conditions_with_and(): void
     {
         $conditions = [self::localeIs(['da_DK']), ['kind' => 'signed_in', 'negate' => false, 'params' => []]];
 
@@ -51,7 +51,7 @@ final class ConditionMatcherTest extends TestCase
     /**
      * @test
      */
-    public function negate_gives_is_not_one_of(): void
+    public function it_reads_negate_as_is_not_one_of(): void
     {
         $condition = self::localeIs(['da_DK'], negate: true);
 
@@ -62,7 +62,7 @@ final class ConditionMatcherTest extends TestCase
     /**
      * @test
      */
-    public function only_a_negate_of_true_negates(): void
+    public function it_negates_only_for_a_negate_of_true(): void
     {
         self::assertTrue($this->matcher()->matches(['kind' => 'locale_is', 'negate' => 1, 'params' => ['locales' => ['da_DK']]], $this->context('da_DK')));
         self::assertTrue($this->matcher()->matches(['kind' => 'locale_is', 'params' => ['locales' => ['da_DK']]], $this->context('da_DK')));
@@ -71,7 +71,7 @@ final class ConditionMatcherTest extends TestCase
     /**
      * @test
      */
-    public function a_kind_without_parameters_gets_no_params(): void
+    public function it_gives_a_kind_without_parameters_no_params(): void
     {
         self::assertTrue($this->matcher()->matches(['kind' => 'signed_in', 'negate' => false, 'params' => new \stdClass()], $this->context('en_US', signedIn: true)));
         self::assertFalse($this->matcher()->matches(['kind' => 'signed_in', 'negate' => false, 'params' => []], $this->context('en_US')));
@@ -80,7 +80,7 @@ final class ConditionMatcherTest extends TestCase
     /**
      * @test
      */
-    public function a_condition_of_a_kind_the_code_no_longer_has_never_matches_even_negated(): void
+    public function it_never_matches_a_condition_of_a_kind_the_code_no_longer_has_even_negated(): void
     {
         self::assertFalse($this->matcher()->matches(['kind' => 'removed', 'negate' => false, 'params' => []], $this->context('en_US')));
         self::assertFalse($this->matcher()->matches(['kind' => 'removed', 'negate' => true, 'params' => []], $this->context('en_US')));
@@ -91,7 +91,7 @@ final class ConditionMatcherTest extends TestCase
     /**
      * @test
      */
-    public function parameter_values_that_are_missing_or_do_not_fit_leave_the_parameters_default(): void
+    public function it_leaves_the_parameters_default_for_parameter_values_that_are_missing_or_do_not_fit(): void
     {
         // A locale the choices don't have is left out, so the condition matches nobody through it
         self::assertFalse($this->matcher()->matches(['kind' => 'locale_is', 'negate' => false, 'params' => ['locales' => ['fr_FR']]], $this->context('fr_FR')));

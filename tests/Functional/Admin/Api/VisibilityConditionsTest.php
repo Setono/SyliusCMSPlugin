@@ -21,7 +21,7 @@ final class VisibilityConditionsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_registry_has_the_condition_kinds_with_their_parameters_as_shared_fields_with_the_stores_choices(): void
+    public function it_puts_the_condition_kinds_in_the_registry_with_their_parameters_as_shared_fields_with_the_stores_choices(): void
     {
         $client = self::createClient();
         $client->loginUser(self::admin(), 'admin');
@@ -106,7 +106,7 @@ final class VisibilityConditionsTest extends BuilderApiTestCase
      *
      * @test
      */
-    public function the_preview_renders_nothing_for_a_block_its_conditions_hide(): void
+    public function it_renders_nothing_in_the_preview_for_a_block_its_conditions_hide(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -133,7 +133,7 @@ final class VisibilityConditionsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_customer_group_search_finds_guests_customers_without_a_group_and_the_stores_groups_by_name_or_code(): void
+    public function it_finds_guests_customers_without_a_group_and_the_stores_groups_by_name_or_code_in_the_customer_group_search(): void
     {
         $client = self::createClient();
         $client->loginUser(self::admin(), 'admin');
@@ -157,7 +157,7 @@ final class VisibilityConditionsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_search_answers_404_for_a_kind_it_cannot_search_and_needs_an_admin_user(): void
+    public function it_answers_404_to_a_search_of_a_kind_it_cannot_search_and_needs_an_admin_user_to_search(): void
     {
         $client = self::createClient();
 
@@ -172,7 +172,7 @@ final class VisibilityConditionsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_block_of_any_type_keeps_its_conditions_when_it_is_published(): void
+    public function it_keeps_the_conditions_of_a_block_of_any_type_when_it_is_published(): void
     {
         $client = self::createClient();
         $block = new StoredBlock(self::KEY, 'group', 1, conditions: [['kind' => 'channel', 'negate' => false, 'params' => ['channels' => ['WEB']]]]);

@@ -116,7 +116,7 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function a_prefix_set_in_config_for_a_code_no_content_type_has_fails_the_build(): void
+    public function it_fails_the_build_for_a_prefix_set_in_config_for_a_code_no_content_type_has(): void
     {
         $this->setParameter('sylius.resources', ['setono_sylius_cms.page' => self::PAGE]);
         $this->setParameter(RegisterContentTypesPass::CONFIG_PARAMETER, ['blog_post' => ['prefix' => 'news']]);
@@ -130,7 +130,7 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function a_prefix_set_in_config_for_a_content_type_without_a_url_of_its_own_fails_the_build(): void
+    public function it_fails_the_build_for_a_prefix_set_in_config_for_a_content_type_without_a_url_of_its_own(): void
     {
         $this->setParameter('sylius.resources', ['app.recipe' => ['classes' => ['model' => Recipe::class]]]);
         $this->setParameter(RegisterContentTypesPass::CONFIG_PARAMETER, ['recipe' => ['prefix' => 'recipes']]);
@@ -144,7 +144,7 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
-    public function a_content_type_may_name_a_property_of_its_translations_for_the_meta_description_to_fall_back_to(): void
+    public function it_lets_a_content_type_name_a_property_of_its_translations_for_the_meta_description_to_fall_back_to(): void
     {
         $this->setParameter('sylius.resources', ['app.post' => ['classes' => ['model' => Post::class], 'translation' => ['classes' => ['model' => PostTranslation::class]]]]);
 
@@ -162,7 +162,7 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
      *
      * @param array<string, mixed> $resource
      */
-    public function a_field_for_the_meta_description_to_fall_back_to_that_its_translations_do_not_have_fails_the_build(array $resource): void
+    public function it_fails_the_build_for_a_field_for_the_meta_description_to_fall_back_to_that_its_translations_do_not_have(array $resource): void
     {
         $this->setParameter('sylius.resources', ['app.post' => ['classes' => ['model' => Post::class]] + $resource]);
 

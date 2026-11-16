@@ -47,7 +47,7 @@ final class StartingValuesTest extends TestCase
     /**
      * @test
      */
-    public function shown_to_starts_as_guest_when_the_audience_is_everyone(): void
+    public function it_starts_shown_to_as_guest_when_the_audience_is_everyone(): void
     {
         $this->customerGroups->findBy()->shouldNotBeCalled();
 
@@ -59,7 +59,7 @@ final class StartingValuesTest extends TestCase
      *
      * @dataProvider audiences
      */
-    public function shown_to_starts_as_guest_when_the_audience_allows_guests_and_otherwise_as_the_first_group_it_allows(Audience $audience, string $shownTo): void
+    public function it_starts_shown_to_as_guest_when_the_audience_allows_guests_and_otherwise_as_the_first_group_it_allows(Audience $audience, string $shownTo): void
     {
         $page = new Page();
         ChannelsAndAudience::modifier()->setAudience($page, $audience);
@@ -87,7 +87,7 @@ final class StartingValuesTest extends TestCase
      *
      * @test
      */
-    public function shown_to_starts_as_guest_when_the_audience_allows_no_one_shown_to_offers(): void
+    public function it_starts_shown_to_as_guest_when_the_audience_allows_no_one_shown_to_offers(): void
     {
         $nobody = new Page();
         ChannelsAndAudience::modifier()->setAudience($nobody, Audience::except('@guest', '@no_group', 'b2b', 'b2c'));
@@ -101,7 +101,7 @@ final class StartingValuesTest extends TestCase
     /**
      * @test
      */
-    public function date_starts_as_now_without_a_date_window(): void
+    public function it_starts_the_date_as_now_without_a_date_window(): void
     {
         self::assertNull($this->startingValues()->date(new Page()));
     }
@@ -109,7 +109,7 @@ final class StartingValuesTest extends TestCase
     /**
      * @test
      */
-    public function date_starts_as_the_start_of_the_date_window_when_that_is_in_the_future(): void
+    public function it_starts_the_date_as_the_start_of_the_date_window_when_that_is_in_the_future(): void
     {
         $page = new Page();
         $page->setDateWindow(new DateWindow(new \DateTimeImmutable('2026-11-14 10:00:01 UTC'), new \DateTimeImmutable('2026-12-01 00:00:00 UTC')));
@@ -122,7 +122,7 @@ final class StartingValuesTest extends TestCase
      *
      * @dataProvider windowsStartedOrWithoutAStart
      */
-    public function date_starts_as_now_when_the_date_window_has_started_or_has_no_start(DateWindow $window): void
+    public function it_starts_the_date_as_now_when_the_date_window_has_started_or_has_no_start(DateWindow $window): void
     {
         $page = new Page();
         $page->setDateWindow($window);

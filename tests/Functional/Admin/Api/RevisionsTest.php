@@ -21,7 +21,7 @@ final class RevisionsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function two_publishes_give_two_revisions_newest_first_with_who_published_each_and_when(): void
+    public function it_gives_two_publishes_two_revisions_newest_first_with_who_published_each_and_when(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -70,7 +70,7 @@ final class RevisionsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function restoring_a_revision_puts_its_content_in_the_draft_and_leaves_the_shop_as_it_was(): void
+    public function it_puts_a_restored_revisions_content_in_the_draft_and_leaves_the_shop_as_it_was(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -106,7 +106,7 @@ final class RevisionsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function restoring_needs_the_builders_csrf_token_and_a_revision_that_exists(): void
+    public function it_needs_the_builders_csrf_token_and_a_revision_that_exists_to_restore(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -125,7 +125,7 @@ final class RevisionsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_revisions_preview_renders_its_old_content_at_its_old_url_read_only(): void
+    public function it_renders_a_revisions_preview_with_its_old_content_at_its_old_url_read_only(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -163,7 +163,7 @@ final class RevisionsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_revisions_preview_can_be_asked_for_in_a_channel_and_locale_and_says_why_there_is_none(): void
+    public function it_previews_a_revision_in_the_channel_and_locale_asked_for_and_says_why_there_is_none(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');

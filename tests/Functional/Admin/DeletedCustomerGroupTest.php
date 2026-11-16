@@ -32,7 +32,7 @@ final class DeletedCustomerGroupTest extends WebTestCase
     /**
      * @test
      */
-    public function a_deleted_group_in_a_condition_or_the_audience_is_flagged_as_an_error_on_the_overview_page(): void
+    public function it_flags_a_deleted_group_in_a_condition_or_the_audience_as_an_error_on_the_overview_page(): void
     {
         $client = self::createClient();
         $client->loginUser(self::admin(), 'admin');
@@ -62,7 +62,7 @@ final class DeletedCustomerGroupTest extends WebTestCase
     /**
      * @test
      */
-    public function a_group_that_still_exists_raises_no_problem(): void
+    public function it_raises_no_problem_for_a_group_that_still_exists(): void
     {
         $client = self::createClient();
         $client->loginUser(self::admin(), 'admin');
@@ -79,7 +79,7 @@ final class DeletedCustomerGroupTest extends WebTestCase
      *
      * @test
      */
-    public function a_deleted_groups_code_matches_nobody_in_the_shop(): void
+    public function it_matches_nobody_in_the_shop_with_a_deleted_groups_code(): void
     {
         $client = self::createClient();
         self::createPageWithBlocks('Prices', 'prices', [
@@ -99,7 +99,7 @@ final class DeletedCustomerGroupTest extends WebTestCase
     /**
      * @test
      */
-    public function setono_cms_lint_reports_it_as_a_broken_reference(): void
+    public function it_reports_it_as_a_broken_reference_in_setono_cms_lint(): void
     {
         $kernel = self::bootKernel();
         $page = self::pageForWholesalers();

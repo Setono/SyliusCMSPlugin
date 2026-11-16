@@ -34,7 +34,7 @@ final class LayoutsTest extends WebTestCase
     /**
      * @test
      */
-    public function a_page_renders_in_the_standard_layout_by_default_with_its_title_and_then_its_tree(): void
+    public function it_renders_a_page_in_the_standard_layout_by_default_with_its_title_and_then_its_tree(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -50,7 +50,7 @@ final class LayoutsTest extends WebTestCase
     /**
      * @test
      */
-    public function show_title_off_hides_the_title(): void
+    public function it_hides_the_title_when_show_title_is_off(): void
     {
         $client = self::createClient();
         self::inLayout(self::createPage('About us', 'about-us', 'Hello', published: true), new StoredLayout('standard', 1, ['showTitle' => false]));
@@ -65,7 +65,7 @@ final class LayoutsTest extends WebTestCase
     /**
      * @test
      */
-    public function a_page_renders_in_the_layout_its_tree_names_with_that_layouts_fields(): void
+    public function it_renders_a_page_in_the_layout_its_tree_names_with_that_layouts_fields(): void
     {
         $client = self::createClient();
         self::inLayout(self::createPage('About us', 'about-us', 'Hello', published: true), new StoredLayout('landing', 1, ['tagline' => ['en_US' => 'Big news'], 'transparentHeader' => true]));
@@ -81,7 +81,7 @@ final class LayoutsTest extends WebTestCase
     /**
      * @test
      */
-    public function a_page_whose_layout_was_removed_from_code_renders_in_the_default_layout_ignoring_the_stored_values(): void
+    public function it_renders_a_page_whose_layout_was_removed_from_code_in_the_default_layout_ignoring_the_stored_values(): void
     {
         $client = self::createClient();
         self::inLayout(self::createPage('About us', 'about-us', 'Hello', published: true), new StoredLayout('gone', 1, ['showTitle' => false]));
@@ -96,7 +96,7 @@ final class LayoutsTest extends WebTestCase
     /**
      * @test
      */
-    public function a_page_without_a_layout_in_its_tree_renders_in_the_default_layout(): void
+    public function it_renders_a_page_without_a_layout_in_its_tree_in_the_default_layout(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -112,7 +112,7 @@ final class LayoutsTest extends WebTestCase
     /**
      * @test
      */
-    public function a_page_whose_layout_is_disabled_renders_in_the_default_layout(): void
+    public function it_renders_a_page_whose_layout_is_disabled_in_the_default_layout(): void
     {
         self::$fixtureKernel = DisabledLayoutKernel::class;
         $client = self::createClient();
@@ -128,7 +128,7 @@ final class LayoutsTest extends WebTestCase
     /**
      * @test
      */
-    public function two_default_layouts_of_one_content_type_fail_the_build(): void
+    public function it_fails_the_build_with_two_default_layouts_of_one_content_type(): void
     {
         self::$fixtureKernel = TwoDefaultLayoutsKernel::class;
 

@@ -53,7 +53,7 @@ final class LocaleKindTest extends TestCase
      *
      * @test
      */
-    public function a_locale_condition_without_locales_hides_a_block_unless_negated(): void
+    public function it_hides_a_block_with_a_locale_condition_without_locales_unless_negated(): void
     {
         self::assertTrue(LocaleKind::hidesIn([['kind' => 'locale', 'negate' => false, 'params' => []]], 'en_US'));
         self::assertTrue(LocaleKind::hidesIn([['kind' => 'locale', 'params' => ['locales' => 'en_US']]], 'en_US'));

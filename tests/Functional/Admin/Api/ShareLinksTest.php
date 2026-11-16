@@ -75,7 +75,7 @@ final class ShareLinksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function its_url_is_on_the_channels_hostname(): void
+    public function it_puts_a_share_links_url_on_the_channels_hostname(): void
     {
         $client = self::createClient();
         self::createChannel('B2B', hostname: 'b2b.localhost');
@@ -169,7 +169,7 @@ final class ShareLinksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function revoking_a_share_link_deletes_it_so_its_token_answers_as_for_a_shopper(): void
+    public function it_deletes_a_revoked_share_link_so_its_token_answers_as_for_a_shopper(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -204,7 +204,7 @@ final class ShareLinksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function making_and_revoking_a_share_link_need_the_builders_csrf_token(): void
+    public function it_needs_the_builders_csrf_token_to_make_and_revoke_a_share_link(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -223,7 +223,7 @@ final class ShareLinksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function share_links_are_for_admin_users_only(): void
+    public function it_makes_share_links_for_admin_users_only(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');

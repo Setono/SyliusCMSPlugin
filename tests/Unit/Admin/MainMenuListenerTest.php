@@ -68,7 +68,7 @@ final class MainMenuListenerTest extends TestCase
     /**
      * @test
      */
-    public function its_badge_counts_the_errors_and_warnings_that_need_attention_marked_as_an_error_when_there_is_one(): void
+    public function it_counts_the_errors_and_warnings_that_need_attention_in_the_badge_marked_as_an_error_when_there_is_one(): void
     {
         $content = $this->syliusMenu(['configuration'], new ProblemCount(1, 2))->getChild('setono_sylius_cms')?->getChild('content');
         self::assertNotNull($content);
@@ -83,7 +83,7 @@ final class MainMenuListenerTest extends TestCase
     /**
      * @test
      */
-    public function its_badge_is_a_warning_when_only_warnings_need_attention(): void
+    public function it_marks_the_badge_as_a_warning_when_only_warnings_need_attention(): void
     {
         $content = $this->syliusMenu(['configuration'], new ProblemCount(0, 1))->getChild('setono_sylius_cms')?->getChild('content');
         self::assertNotNull($content);

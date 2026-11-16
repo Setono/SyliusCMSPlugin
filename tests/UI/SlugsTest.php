@@ -17,7 +17,7 @@ final class SlugsTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_renames_a_published_pages_slug_publishes_it_and_its_old_url_lands_on_the_new_one(): void
+    public function it_lets_an_admin_user_rename_a_published_pages_slug_and_publish_it_and_lands_its_old_url_on_the_new_one(): void
     {
         $this->signInAsAdmin();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -47,7 +47,7 @@ final class SlugsTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_types_a_slug_a_sylius_route_takes_and_sees_why_on_the_field_while_the_last_saved_one_is_kept(): void
+    public function it_tells_an_admin_user_who_types_a_slug_a_sylius_route_takes_why_on_the_field_and_keeps_the_last_saved_one(): void
     {
         $this->signInAsAdmin();
         $page = self::createPage('About us', 'about-us', 'Hello');

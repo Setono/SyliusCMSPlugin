@@ -26,7 +26,7 @@ final class ChoicesProvidersTest extends TestCase
     /**
      * @test
      */
-    public function the_channels_are_the_stores_channels_with_a_code_by_name_read_once_until_reset(): void
+    public function it_gives_the_stores_channels_with_a_code_by_name_as_the_channels_read_once_until_reset(): void
     {
         $web = $this->prophesize(ChannelInterface::class);
         $web->getCode()->willReturn('WEB');
@@ -54,7 +54,7 @@ final class ChoicesProvidersTest extends TestCase
     /**
      * @test
      */
-    public function the_locales_are_the_stores_locales_named_in_the_locale_asked_for_read_once_until_reset(): void
+    public function it_gives_the_stores_locales_named_in_the_locale_asked_for_as_the_locales_read_once_until_reset(): void
     {
         $danish = $this->prophesize(LocaleInterface::class);
         $danish->getCode()->willReturn('da_DK');
@@ -85,7 +85,7 @@ final class ChoicesProvidersTest extends TestCase
     /**
      * @test
      */
-    public function the_customer_groups_are_guests_and_customers_without_a_group_then_the_stores_groups_read_once_until_reset(): void
+    public function it_gives_guests_and_customers_without_a_group_then_the_stores_groups_as_the_customer_groups_read_once_until_reset(): void
     {
         $wholesale = $this->prophesize(CustomerGroupInterface::class);
         $wholesale->getCode()->willReturn('wholesale');

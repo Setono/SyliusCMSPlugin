@@ -95,7 +95,7 @@ final class RouteCheckerTest extends TestCase
     /**
      * @test
      */
-    public function the_entry_route_takes_no_url(): void
+    public function it_never_counts_the_entry_route_as_taking_a_url(): void
     {
         $this->routeMatches(['_route' => 'setono_sylius_cms_shop_entry']);
 
@@ -105,7 +105,7 @@ final class RouteCheckerTest extends TestCase
     /**
      * @test
      */
-    public function a_match_without_a_route_name_takes_no_url(): void
+    public function it_never_counts_a_match_without_a_route_name_as_taking_a_url(): void
     {
         $this->routeMatches(['_controller' => 'somewhere']);
 
@@ -117,7 +117,7 @@ final class RouteCheckerTest extends TestCase
      *
      * @test
      */
-    public function no_route_takes_a_url_no_route_matches_a_get_of(): void
+    public function it_finds_no_route_taking_a_url_no_route_matches_a_get_of(): void
     {
         $this->router->matchRequest(Argument::type(Request::class))->willThrow(new ResourceNotFoundException());
         self::assertNull($this->checker()->takenBy(self::channel('shop.example.com'), 'en_US', 'about-us'));
@@ -131,7 +131,7 @@ final class RouteCheckerTest extends TestCase
     /**
      * @test
      */
-    public function a_url_the_entry_route_cannot_make_is_taken_by_no_route(): void
+    public function it_finds_no_route_taking_a_url_the_entry_route_cannot_make(): void
     {
         $this->router->generate('setono_sylius_cms_shop_entry', Argument::type('array'))->willThrow(new InvalidParameterException());
         $this->router->matchRequest(Argument::cetera())->shouldNotBeCalled();

@@ -37,7 +37,7 @@ final class ScheduledPublishOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function an_editor_schedules_a_publish_which_locks_the_draft_until_it_runs_or_is_cancelled(): void
+    public function it_lets_an_editor_schedule_a_publish_which_locks_the_draft_until_it_runs_or_is_cancelled(): void
     {
         $client = self::signedInClient();
         $page = self::pageWithDraft();
@@ -79,7 +79,7 @@ final class ScheduledPublishOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function an_entry_with_nothing_to_publish_offers_no_schedule(): void
+    public function it_offers_no_schedule_for_an_entry_with_nothing_to_publish(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -119,7 +119,7 @@ final class ScheduledPublishOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function a_schedule_that_validation_refuses_says_how_many_errors_need_fixing(): void
+    public function it_says_how_many_errors_need_fixing_when_validation_refuses_a_schedule(): void
     {
         $client = self::signedInClient();
         $page = self::createPageWithBlocks('About us', 'about-us', [new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 'heading', 1)]);
@@ -135,7 +135,7 @@ final class ScheduledPublishOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function discarding_the_draft_is_refused_while_a_scheduled_publish_locks_it(): void
+    public function it_refuses_to_discard_the_draft_while_a_scheduled_publish_locks_it(): void
     {
         $client = self::signedInClient();
         $page = self::pageWithDraft();
@@ -154,7 +154,7 @@ final class ScheduledPublishOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function an_overdue_scheduled_publish_warns_that_the_worker_may_not_be_running_and_offers_publish_now(): void
+    public function it_warns_that_the_worker_may_not_be_running_for_an_overdue_scheduled_publish_and_offers_publish_now(): void
     {
         $client = self::signedInClient();
         $page = self::pageWithDraft();
@@ -198,7 +198,7 @@ final class ScheduledPublishOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function a_failed_scheduled_publish_shows_its_reason_and_offers_schedule_again(): void
+    public function it_shows_the_reason_of_a_failed_scheduled_publish_and_offers_schedule_again(): void
     {
         $client = self::signedInClient();
         $client->disableReboot();
@@ -244,7 +244,7 @@ final class ScheduledPublishOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function dismissing_a_failed_scheduled_publish_clears_it(): void
+    public function it_clears_a_failed_scheduled_publish_when_it_is_dismissed(): void
     {
         $client = self::signedInClient();
         $client->disableReboot();
@@ -265,7 +265,7 @@ final class ScheduledPublishOverviewTest extends WebTestCase
     /**
      * @test
      */
-    public function the_lists_label_scheduled_publishes_and_the_scheduled_filter_lists_those_that_wait(): void
+    public function it_labels_scheduled_publishes_in_the_lists_and_lists_those_that_wait_under_the_scheduled_filter(): void
     {
         $client = self::signedInClient();
         $client->disableReboot();

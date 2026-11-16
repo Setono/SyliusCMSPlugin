@@ -43,7 +43,7 @@ final class ProblemCountsTest extends WebTestCase
     /**
      * @test
      */
-    public function an_autosave_counts_the_problems_of_the_entry_it_saves_and_no_other_entrys(): void
+    public function it_counts_the_problems_of_the_entry_an_autosave_saves_and_no_other_entrys(): void
     {
         self::bootKernel();
         $saved = self::createPageWithBlocks('About us', 'about-us', [new StoredBlock(self::PROMO, 'promo', 1)]);
@@ -66,7 +66,7 @@ final class ProblemCountsTest extends WebTestCase
      *
      * @test
      */
-    public function a_scheduled_publish_that_becomes_overdue_needs_attention_without_anything_written(): void
+    public function it_counts_a_scheduled_publish_that_becomes_overdue_as_needing_attention_without_anything_written(): void
     {
         self::mockTime('2026-11-20 10:00:00');
         $client = self::createClient();
@@ -99,7 +99,7 @@ final class ProblemCountsTest extends WebTestCase
      *
      * @test
      */
-    public function a_block_type_a_deploy_removed_shows_on_the_next_admin_page(): void
+    public function it_shows_a_block_type_a_deploy_removed_on_the_next_admin_page(): void
     {
         // The code had the Greeting block type when the page was saved
         static::$class = GreetingKernel::class;
@@ -126,7 +126,7 @@ final class ProblemCountsTest extends WebTestCase
      *
      * @test
      */
-    public function deleting_a_customer_group_counts_the_entries_that_name_it_again_and_no_other(): void
+    public function it_counts_the_entries_that_name_a_deleted_customer_group_again_and_no_other(): void
     {
         self::bootKernel();
         self::createCustomerGroup('wholesale', 'Wholesale');

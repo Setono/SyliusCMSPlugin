@@ -26,7 +26,7 @@ final class EntryFilterTypesTest extends TypeTestCase
     /**
      * @test
      */
-    public function the_status_filter_offers_the_statuses_with_labels_and_any_status(): void
+    public function it_offers_the_statuses_with_labels_and_any_status_in_the_status_filter(): void
     {
         $form = $this->factory->createNamed('status', EntryStatusFilterType::class);
         $view = $form->createView();
@@ -55,7 +55,7 @@ final class EntryFilterTypesTest extends TypeTestCase
     /**
      * @test
      */
-    public function the_status_filter_refuses_a_status_it_does_not_offer(): void
+    public function it_refuses_a_status_the_status_filter_does_not_offer(): void
     {
         $form = $this->factory->createNamed('status', EntryStatusFilterType::class);
 
@@ -67,7 +67,7 @@ final class EntryFilterTypesTest extends TypeTestCase
     /**
      * @test
      */
-    public function the_channel_filter_offers_the_channels_by_name_and_any_channel(): void
+    public function it_offers_the_channels_by_name_and_any_channel_in_the_channel_filter(): void
     {
         $form = $this->factory->createNamed('channel', EntryChannelFilterType::class);
         $view = $form->createView();
@@ -87,7 +87,7 @@ final class EntryFilterTypesTest extends TypeTestCase
     /**
      * @test
      */
-    public function the_channel_filter_refuses_a_channel_it_does_not_offer(): void
+    public function it_refuses_a_channel_the_channel_filter_does_not_offer(): void
     {
         $form = $this->factory->createNamed('channel', EntryChannelFilterType::class);
 

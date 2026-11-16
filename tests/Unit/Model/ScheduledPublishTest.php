@@ -91,7 +91,7 @@ final class ScheduledPublishTest extends TestCase
     /**
      * @test
      */
-    public function a_failed_scheduled_publish_is_never_overdue(): void
+    public function it_is_never_overdue_once_it_has_failed(): void
     {
         $scheduledPublish = new ScheduledPublish();
         $scheduledPublish->schedule(new \DateTimeImmutable('2026-11-20 08:00:00', new \DateTimeZone('UTC')), 'Jane Roe');

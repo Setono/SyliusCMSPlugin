@@ -15,7 +15,7 @@ final class ContentHubTest extends WebTestCase
     /**
      * @test
      */
-    public function the_sylius_admin_menu_has_one_content_item_that_opens_the_hub(): void
+    public function it_adds_one_content_item_that_opens_the_hub_to_the_sylius_admin_menu(): void
     {
         $client = self::createClient();
         $client->loginUser(self::admin(), 'admin');
@@ -37,7 +37,7 @@ final class ContentHubTest extends WebTestCase
     /**
      * @test
      */
-    public function the_hub_needs_an_admin_user(): void
+    public function it_needs_an_admin_user_for_the_hub(): void
     {
         $client = self::createClient();
 
@@ -49,7 +49,7 @@ final class ContentHubTest extends WebTestCase
     /**
      * @test
      */
-    public function the_hub_has_its_own_menu_with_the_overview_and_the_entry_lists_with_their_counts(): void
+    public function it_gives_the_hub_its_own_menu_with_the_overview_and_the_entry_lists_with_their_counts(): void
     {
         $client = self::createClient();
         $client->loginUser(self::admin(), 'admin');

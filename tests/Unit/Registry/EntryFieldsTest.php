@@ -16,7 +16,7 @@ final class EntryFieldsTest extends TestCase
     /**
      * @test
      */
-    public function a_content_type_with_its_own_url_has_a_slug_and_the_seo_fields(): void
+    public function it_gives_a_content_type_with_its_own_url_a_slug_and_the_seo_fields(): void
     {
         $page = self::registry()->get('page');
 
@@ -27,7 +27,7 @@ final class EntryFieldsTest extends TestCase
     /**
      * @test
      */
-    public function a_content_type_without_its_own_url_has_only_a_title(): void
+    public function it_gives_a_content_type_without_its_own_url_only_a_title(): void
     {
         $recipe = self::registry()->get('recipe');
 

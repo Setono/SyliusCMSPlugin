@@ -32,7 +32,7 @@ final class DateWindowKindTest extends TestCase
     /**
      * @test
      */
-    public function either_end_is_optional(): void
+    public function it_takes_either_end_as_optional(): void
     {
         self::assertTrue((new DateWindowKind())->matches(self::window(null, null), $this->context('2026-11-16T12:00:00Z')));
 
@@ -57,7 +57,7 @@ final class DateWindowKindTest extends TestCase
     /**
      * @test
      */
-    public function its_next_change_is_its_start_while_that_is_ahead_then_its_end(): void
+    public function it_changes_next_at_its_start_while_that_is_ahead_then_at_its_end(): void
     {
         $params = self::window('2026-11-27T00:00:00Z', '2026-12-01T00:00:00Z');
         $kind = new DateWindowKind();
@@ -71,7 +71,7 @@ final class DateWindowKindTest extends TestCase
     /**
      * @test
      */
-    public function an_open_end_never_changes(): void
+    public function it_never_changes_at_an_open_end(): void
     {
         $kind = new DateWindowKind();
 

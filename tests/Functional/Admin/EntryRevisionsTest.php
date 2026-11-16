@@ -74,7 +74,7 @@ final class EntryRevisionsTest extends WebTestCase
     /**
      * @test
      */
-    public function its_preview_opens_the_revisions_read_only_preview_in_the_shop(): void
+    public function it_opens_the_revisions_read_only_preview_in_the_shop(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', 'Hello world', published: true);
@@ -95,7 +95,7 @@ final class EntryRevisionsTest extends WebTestCase
     /**
      * @test
      */
-    public function its_preview_comes_back_and_says_why_when_the_revision_has_no_page_to_show(): void
+    public function it_comes_back_from_the_preview_and_says_why_when_the_revision_has_no_page_to_show(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true, channels: []);
@@ -137,7 +137,7 @@ final class EntryRevisionsTest extends WebTestCase
     /**
      * @test
      */
-    public function restoring_needs_the_pages_csrf_token_and_a_revision_of_the_entry(): void
+    public function it_needs_the_pages_csrf_token_and_a_revision_of_the_entry_to_restore(): void
     {
         $client = self::signedInClient();
         $page = self::createPage('About us', 'about-us', 'Hello world', published: true);
@@ -163,7 +163,7 @@ final class EntryRevisionsTest extends WebTestCase
     /**
      * @test
      */
-    public function preview_and_restore_need_an_admin_user(): void
+    public function it_needs_an_admin_user_to_preview_and_restore(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -179,7 +179,7 @@ final class EntryRevisionsTest extends WebTestCase
     /**
      * @test
      */
-    public function deleting_an_entry_deletes_its_revisions(): void
+    public function it_deletes_an_entrys_revisions_with_the_entry(): void
     {
         self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);

@@ -23,7 +23,7 @@ final class OldSlugTest extends WebTestCase
     /**
      * @test
      */
-    public function a_publish_that_changes_a_slug_keeps_the_old_one(): void
+    public function it_keeps_the_old_slug_when_a_publish_changes_it(): void
     {
         self::createClient();
         $page = self::createPage('About us', 'about', 'Hello', published: true);
@@ -37,7 +37,7 @@ final class OldSlugTest extends WebTestCase
     /**
      * @test
      */
-    public function an_old_slug_answers_301_to_the_current_url_keeping_the_query_string(): void
+    public function it_answers_an_old_slug_with_301_to_the_current_url_keeping_the_query_string(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about', 'Hello', published: true);
@@ -54,7 +54,7 @@ final class OldSlugTest extends WebTestCase
     /**
      * @test
      */
-    public function an_old_slug_stops_redirecting_once_another_entry_is_published_at_its_url(): void
+    public function it_stops_redirecting_an_old_slug_once_another_entry_is_published_at_its_url(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about', 'Hello', published: true);
@@ -75,7 +75,7 @@ final class OldSlugTest extends WebTestCase
     /**
      * @test
      */
-    public function an_unavailable_entrys_old_slug_answers_404(): void
+    public function it_answers_404_to_an_unavailable_entrys_old_slug(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about', 'Hello', published: true);
@@ -94,7 +94,7 @@ final class OldSlugTest extends WebTestCase
     /**
      * @test
      */
-    public function an_old_slug_redirects_only_in_its_own_locale_and_the_entrys_channels(): void
+    public function it_redirects_an_old_slug_only_in_its_own_locale_and_the_entrys_channels(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about', 'Hello', published: true);
@@ -113,7 +113,7 @@ final class OldSlugTest extends WebTestCase
     /**
      * @test
      */
-    public function going_back_to_an_old_slug_makes_it_current_again(): void
+    public function it_makes_an_old_slug_current_again_when_the_entry_goes_back_to_it(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about', 'Hello', published: true);

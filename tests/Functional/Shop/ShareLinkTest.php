@@ -108,7 +108,7 @@ final class ShareLinkTest extends WebTestCase
     /**
      * @test
      */
-    public function a_revoked_token_answers_as_for_a_shopper(): void
+    public function it_answers_a_revoked_token_as_for_a_shopper(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -127,7 +127,7 @@ final class ShareLinkTest extends WebTestCase
     /**
      * @test
      */
-    public function a_token_no_share_link_has_answers_as_for_a_shopper(): void
+    public function it_answers_a_token_no_share_link_has_as_for_a_shopper(): void
     {
         $client = self::createClient();
         self::createPage('About us', 'about-us', 'Hello');
@@ -141,7 +141,7 @@ final class ShareLinkTest extends WebTestCase
     /**
      * @test
      */
-    public function one_entrys_token_does_not_apply_to_another_entrys_url(): void
+    public function it_does_not_apply_one_entrys_token_to_another_entrys_url(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -156,7 +156,7 @@ final class ShareLinkTest extends WebTestCase
     /**
      * @test
      */
-    public function a_token_does_not_apply_in_another_locale(): void
+    public function it_does_not_apply_a_token_in_another_locale(): void
     {
         $client = self::createClient();
         self::addLocales('WEB', 'da_DK');
@@ -174,7 +174,7 @@ final class ShareLinkTest extends WebTestCase
      *
      * @test
      */
-    public function the_fixed_shown_to_applies(): void
+    public function it_applies_the_shown_to_fixed_when_the_link_was_made(): void
     {
         $client = self::createClient();
         self::createCustomerGroup('wholesale', 'Wholesale');
@@ -200,7 +200,7 @@ final class ShareLinkTest extends WebTestCase
      *
      * @test
      */
-    public function the_fixed_date_applies(): void
+    public function it_applies_the_date_fixed_when_the_link_was_made(): void
     {
         $client = self::createClient();
         $page = self::createPageWithBlocks('Christmas', 'christmas', [
@@ -224,7 +224,7 @@ final class ShareLinkTest extends WebTestCase
      *
      * @test
      */
-    public function a_token_outside_the_query_string_is_ignored(): void
+    public function it_ignores_a_token_outside_the_query_string(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');

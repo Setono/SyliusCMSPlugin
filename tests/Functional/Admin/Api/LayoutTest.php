@@ -22,7 +22,7 @@ final class LayoutTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_layout_switch_in_the_draft_does_not_change_the_shop_until_it_is_published(): void
+    public function it_leaves_the_shop_as_it_is_until_a_layout_switch_in_the_draft_is_published(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
@@ -66,7 +66,7 @@ final class LayoutTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_translator_writes_a_layout_value_into_the_draft(): void
+    public function it_lets_a_translator_write_a_layout_value_into_the_draft(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');

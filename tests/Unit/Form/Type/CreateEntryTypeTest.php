@@ -302,7 +302,7 @@ final class CreateEntryTypeTest extends TypeTestCase
     /**
      * @test
      */
-    public function its_layouts_option_is_an_array(): void
+    public function it_refuses_a_layouts_option_that_is_not_an_array(): void
     {
         $this->expectException(InvalidOptionsException::class);
 

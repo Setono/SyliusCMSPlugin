@@ -38,7 +38,7 @@ final class ParamsHydratorTest extends TestCase
     /**
      * @test
      */
-    public function a_missing_value_or_one_that_does_not_fit_leaves_the_default(): void
+    public function it_leaves_the_default_for_a_missing_value_or_one_that_does_not_fit(): void
     {
         $params = $this->hydrate(DateWindowParams::class, ['from' => '', 'until' => 'next friday']);
 
@@ -50,7 +50,7 @@ final class ParamsHydratorTest extends TestCase
     /**
      * @test
      */
-    public function a_later_field_is_hydrated_after_one_that_is_missing_or_does_not_fit(): void
+    public function it_hydrates_a_later_field_after_one_that_is_missing_or_does_not_fit(): void
     {
         foreach ([['until' => '2026-12-01T00:00:00Z'], ['from' => 'next friday', 'until' => '2026-12-01T00:00:00Z']] as $values) {
             $params = $this->hydrate(DateWindowParams::class, $values);
@@ -64,7 +64,7 @@ final class ParamsHydratorTest extends TestCase
     /**
      * @test
      */
-    public function a_value_the_property_cannot_hold_leaves_the_default(): void
+    public function it_leaves_the_default_for_a_value_the_property_cannot_hold(): void
     {
         $params = $this->hydrate(MismatchedParams::class, ['count' => 'many', 'name' => 'Spring']);
 
@@ -76,7 +76,7 @@ final class ParamsHydratorTest extends TestCase
     /**
      * @test
      */
-    public function values_of_fields_the_class_does_not_have_are_ignored(): void
+    public function it_ignores_values_of_fields_the_class_does_not_have(): void
     {
         $params = $this->hydrate(LocaleIsParams::class, ['locales' => ['da_DK'], 'channels' => ['WEB']]);
 
@@ -87,7 +87,7 @@ final class ParamsHydratorTest extends TestCase
     /**
      * @test
      */
-    public function without_a_parameters_class_it_gives_no_params(): void
+    public function it_gives_no_params_without_a_parameters_class(): void
     {
         self::assertInstanceOf(NoParams::class, $this->hydrate(null, ['locales' => ['da_DK']]));
     }

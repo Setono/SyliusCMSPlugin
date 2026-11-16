@@ -40,7 +40,7 @@ final class HomepageCanonicalUrlGeneratorTest extends TestCase
     /**
      * @test
      */
-    public function a_channels_homepage_lives_at_the_channels_root_in_each_locale(): void
+    public function it_puts_a_channels_homepage_at_the_channels_root_in_each_locale(): void
     {
         $page = new Page();
         Homepages::modifier($this->prophesize(HomepageRepositoryInterface::class)->reveal())->setHomepageOf($page, ['B2B', 'WEB']);
@@ -53,7 +53,7 @@ final class HomepageCanonicalUrlGeneratorTest extends TestCase
     /**
      * @test
      */
-    public function a_page_lives_at_its_own_url_in_a_channel_it_is_not_the_homepage_of(): void
+    public function it_leaves_a_page_at_its_own_url_in_a_channel_it_is_not_the_homepage_of(): void
     {
         $page = new Page();
         Homepages::modifier($this->prophesize(HomepageRepositoryInterface::class)->reveal())->setHomepageOf($page, ['B2B']);
@@ -66,7 +66,7 @@ final class HomepageCanonicalUrlGeneratorTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_other_than_a_page_lives_at_its_own_url(): void
+    public function it_leaves_an_entry_other_than_a_page_at_its_own_url(): void
     {
         $announcement = new Announcement();
         $this->decorated->generate($announcement, Argument::cetera())->willReturn(null);

@@ -31,7 +31,7 @@ final class EntryListTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function its_lists_need_an_admin_user(): void
+    public function it_needs_an_admin_user_for_the_lists(): void
     {
         $client = self::createClient();
 
@@ -45,7 +45,7 @@ final class EntryListTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function all_entries_lists_every_entry_with_its_title_url_type_status_and_last_edit(): void
+    public function it_lists_every_entry_in_all_entries_with_its_title_url_type_status_and_last_edit(): void
     {
         $client = self::signedInClient();
         $about = self::createPage('About us', 'about-us', published: true);
@@ -82,7 +82,7 @@ final class EntryListTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_content_types_list_lists_its_entries_without_their_type(): void
+    public function it_lists_a_content_types_entries_in_its_list_without_their_type(): void
     {
         $client = self::signedInClient();
         $about = self::createPage('About us', 'about-us');

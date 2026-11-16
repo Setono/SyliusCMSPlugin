@@ -65,7 +65,7 @@ final class UrlClashFinderTest extends TestCase
     /**
      * @test
      */
-    public function entries_with_no_channel_in_common_share_a_url(): void
+    public function it_lets_entries_with_no_channel_in_common_share_a_url(): void
     {
         $this->published[] = self::claim('page', 'en_US', 'about-us', ['B2B']);
 
@@ -75,7 +75,7 @@ final class UrlClashFinderTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_in_no_channel_clashes_with_none_and_asks_nothing(): void
+    public function it_finds_no_clash_for_an_entry_in_no_channel_and_asks_nothing(): void
     {
         $this->claims->published(Argument::cetera())->shouldNotBeCalled();
 
@@ -85,7 +85,7 @@ final class UrlClashFinderTest extends TestCase
     /**
      * @test
      */
-    public function a_url_is_unique_per_locale(): void
+    public function it_keeps_a_url_unique_per_locale(): void
     {
         $this->published[] = self::claim('page', 'da_DK', 'about-us', ['WEB']);
         $this->published[] = $english = self::claim('page', 'en_US', 'om-os', ['WEB']);
@@ -102,7 +102,7 @@ final class UrlClashFinderTest extends TestCase
      *
      * @test
      */
-    public function the_url_is_the_prefix_plus_the_slug_across_content_types(): void
+    public function it_takes_the_url_as_the_prefix_plus_the_slug_across_content_types(): void
     {
         $this->published[] = $article = self::claim('article', 'en_US', 'hello', ['WEB']);
         $this->published[] = $page = self::claim('page', 'en_US', 'hello', ['WEB']);
@@ -161,7 +161,7 @@ final class UrlClashFinderTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_without_a_url_of_its_own_clashes_with_none(): void
+    public function it_finds_no_clash_for_an_entry_without_a_url_of_its_own(): void
     {
         $this->published[] = self::claim('page', 'en_US', 'pancakes', ['WEB']);
         $this->claims->published(Argument::cetera())->shouldNotBeCalled();

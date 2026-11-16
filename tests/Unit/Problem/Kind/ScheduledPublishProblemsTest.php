@@ -56,7 +56,7 @@ final class ScheduledPublishProblemsTest extends TestCase
     /**
      * @test
      */
-    public function a_scheduled_publish_that_has_not_run_five_minutes_after_its_time_is_an_overdue_error(): void
+    public function it_finds_an_overdue_error_in_a_scheduled_publish_that_has_not_run_five_minutes_after_its_time(): void
     {
         $this->scheduledPublish('2026-11-16 11:55:00');
 
@@ -72,7 +72,7 @@ final class ScheduledPublishProblemsTest extends TestCase
     /**
      * @test
      */
-    public function a_scheduled_publish_that_waits_is_not_overdue_until_five_minutes_after_its_time(): void
+    public function it_finds_a_scheduled_publish_that_waits_not_overdue_until_five_minutes_after_its_time(): void
     {
         $this->scheduledPublish('2026-11-16 11:55:01');
 
@@ -84,7 +84,7 @@ final class ScheduledPublishProblemsTest extends TestCase
      *
      * @test
      */
-    public function an_overdue_error_is_found_in_queries_as_of_now_as_the_time_it_becomes_overdue_writes_nothing(): void
+    public function it_finds_an_overdue_error_in_queries_as_of_now_as_the_time_it_becomes_overdue_writes_nothing(): void
     {
         $kind = new ScheduledPublishOverdue($this->scheduledPublishes->reveal(), new MockClock());
         $queryBuilder = new QueryBuilder($this->prophesize(EntityManagerInterface::class)->reveal());
@@ -109,7 +109,7 @@ final class ScheduledPublishProblemsTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_without_a_scheduled_publish_has_neither_problem(): void
+    public function it_finds_neither_problem_in_an_entry_without_a_scheduled_publish(): void
     {
         self::assertSame([], [...$this->overdue('2026-11-16 12:00:00')]);
         self::assertSame([], [...$this->failed()]);
@@ -118,7 +118,7 @@ final class ScheduledPublishProblemsTest extends TestCase
     /**
      * @test
      */
-    public function a_failed_scheduled_publish_is_an_error_with_its_reason_and_not_overdue(): void
+    public function it_finds_a_failed_scheduled_publish_an_error_with_its_reason_and_not_overdue(): void
     {
         $this->scheduledPublish('2026-11-16 11:00:00')->fail('Not on a Sunday');
 
@@ -135,7 +135,7 @@ final class ScheduledPublishProblemsTest extends TestCase
     /**
      * @test
      */
-    public function a_scheduled_publish_that_waits_has_not_failed(): void
+    public function it_finds_no_failure_in_a_scheduled_publish_that_waits(): void
     {
         $this->scheduledPublish('2026-11-16 11:00:00');
 

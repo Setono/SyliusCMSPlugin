@@ -38,7 +38,7 @@ final class MetaValuesTest extends TestCase
     /**
      * @test
      */
-    public function the_meta_title_falls_back_through_the_chain_before_it_falls_back_to_the_title(): void
+    public function it_falls_back_through_the_chain_for_the_meta_title_before_it_falls_back_to_the_title(): void
     {
         $page = self::page([
             'de_CH' => ['title' => 'Über uns (CH)', 'metaTitle' => ''],
@@ -51,7 +51,7 @@ final class MetaValuesTest extends TestCase
     /**
      * @test
      */
-    public function the_meta_title_falls_back_to_the_title_through_the_chain_when_the_chain_has_no_meta_title(): void
+    public function it_falls_back_to_the_title_through_the_chain_when_the_chain_has_no_meta_title(): void
     {
         $page = self::page([
             'de_CH' => ['title' => '', 'metaTitle' => null],
@@ -65,7 +65,7 @@ final class MetaValuesTest extends TestCase
     /**
      * @test
      */
-    public function there_is_no_meta_title_without_a_title(): void
+    public function it_gives_no_meta_title_without_a_title(): void
     {
         self::assertNull($this->metaValues()->title(self::page(['de_CH' => ['title' => null]]), 'de_CH'));
     }
@@ -73,7 +73,7 @@ final class MetaValuesTest extends TestCase
     /**
      * @test
      */
-    public function the_meta_description_falls_back_through_the_chain(): void
+    public function it_falls_back_through_the_chain_for_the_meta_description(): void
     {
         $post = self::post([
             'de_CH' => ['metaDescription' => '', 'excerpt' => 'Auszug (CH)'],
@@ -88,7 +88,7 @@ final class MetaValuesTest extends TestCase
      *
      * @test
      */
-    public function the_meta_description_falls_back_to_the_field_the_content_type_names_through_the_chain_when_the_chain_has_none(): void
+    public function it_falls_back_to_the_field_the_content_type_names_through_the_chain_when_the_chain_has_no_meta_description(): void
     {
         $post = self::post([
             'de_CH' => ['metaDescription' => null, 'excerpt' => ''],
@@ -102,7 +102,7 @@ final class MetaValuesTest extends TestCase
     /**
      * @test
      */
-    public function there_is_no_meta_description_when_neither_it_nor_the_field_it_names_has_a_value(): void
+    public function it_gives_no_meta_description_when_neither_it_nor_the_field_it_names_has_a_value(): void
     {
         self::assertNull($this->metaValues()->description(self::post(['de_CH' => ['metaDescription' => null, 'excerpt' => null]]), 'de_CH'));
     }
@@ -110,7 +110,7 @@ final class MetaValuesTest extends TestCase
     /**
      * @test
      */
-    public function a_value_of_the_field_it_names_that_is_not_text_is_no_meta_description(): void
+    public function it_gives_no_meta_description_for_a_value_of_the_field_it_names_that_is_not_text(): void
     {
         $post = self::post(['de_CH' => ['metaDescription' => null]]);
         $translation = $post->getTranslation('de_CH');
@@ -123,7 +123,7 @@ final class MetaValuesTest extends TestCase
     /**
      * @test
      */
-    public function there_is_no_meta_description_to_fall_back_to_when_the_content_type_names_no_field(): void
+    public function it_has_no_meta_description_to_fall_back_to_when_the_content_type_names_no_field(): void
     {
         $page = self::page(['en_US' => ['title' => 'About us', 'metaDescription' => 'All about us']]);
 

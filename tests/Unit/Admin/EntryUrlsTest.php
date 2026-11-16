@@ -65,7 +65,7 @@ final class EntryUrlsTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_never_published_or_without_a_url_of_its_own_has_no_old_slugs_to_read(): void
+    public function it_reads_no_old_slugs_of_an_entry_never_published_or_without_a_url_of_its_own(): void
     {
         $this->oldSlugs->findByEntry(Argument::any())->shouldNotBeCalled();
         $recipe = new Recipe();
@@ -167,7 +167,7 @@ final class EntryUrlsTest extends TestCase
     /**
      * @test
      */
-    public function an_entry_whose_content_type_has_no_url_of_its_own_has_no_urls(): void
+    public function it_gives_no_urls_for_an_entry_whose_content_type_has_no_url_of_its_own(): void
     {
         $recipe = new Recipe();
         $recipe->setCurrentLocale('en_US');

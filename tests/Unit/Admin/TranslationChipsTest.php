@@ -165,7 +165,7 @@ final class TranslationChipsTest extends TestCase
     /**
      * @test
      */
-    public function a_chip_is_complete_when_the_locale_has_a_translation_with_nothing_untranslated_or_outdated(): void
+    public function it_marks_a_chip_complete_when_the_locale_has_a_translation_with_nothing_untranslated_or_outdated(): void
     {
         self::assertTrue((new TranslationChip('en_US', true, false, 0, 0))->isComplete());
         self::assertTrue((new TranslationChip('en_US', true, true, 0, 0))->isComplete());

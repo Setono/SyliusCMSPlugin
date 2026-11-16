@@ -16,7 +16,7 @@ final class RevisionsTest extends UITestCase
     /**
      * @test
      */
-    public function an_editor_previews_an_earlier_revision_restores_it_into_the_draft_and_publishes_it(): void
+    public function it_lets_an_editor_preview_an_earlier_revision_restore_it_into_the_draft_and_publish_it(): void
     {
         $this->signInAsAdmin();
         $page = self::createPage('About us', 'about-us', 'Hello');

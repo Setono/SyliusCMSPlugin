@@ -17,7 +17,7 @@ final class ShareLinksTest extends UITestCase
     /**
      * @test
      */
-    public function an_editor_shares_the_draft_with_someone_who_is_not_signed_in_and_revokes_the_link(): void
+    public function it_lets_an_editor_share_the_draft_with_someone_who_is_not_signed_in_and_revoke_the_link(): void
     {
         $this->signInAsAdmin();
         $page = self::createPage('About us', 'about-us', 'Hello');

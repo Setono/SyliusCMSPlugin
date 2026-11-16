@@ -63,7 +63,7 @@ final class ScheduledPublishDueHandlerTest extends TestCase
     /**
      * @test
      */
-    public function a_stale_message_is_ignored(): void
+    public function it_ignores_a_stale_message(): void
     {
         $this->publisher->publishScheduled($this->page, self::TOKEN)->willReturn(false)->shouldBeCalledOnce();
         $this->scheduler->fail(Argument::cetera())->shouldNotBeCalled();
@@ -74,7 +74,7 @@ final class ScheduledPublishDueHandlerTest extends TestCase
     /**
      * @test
      */
-    public function a_message_for_an_entry_deleted_since_does_nothing(): void
+    public function it_does_nothing_for_a_message_for_an_entry_deleted_since(): void
     {
         $this->entries->findOneByUuid($this->page->getUuid())->willReturn(null);
         $this->publisher->publishScheduled(Argument::cetera())->shouldNotBeCalled();
@@ -85,7 +85,7 @@ final class ScheduledPublishDueHandlerTest extends TestCase
     /**
      * @test
      */
-    public function a_veto_flags_the_scheduled_publish_as_failed_with_its_message_instead_of_retrying(): void
+    public function it_flags_the_scheduled_publish_as_failed_with_a_vetos_message_instead_of_retrying(): void
     {
         $this->publisher->publishScheduled($this->page, self::TOKEN)->willThrow(new PublishVetoedException('Not on a Sunday'));
         $this->scheduler->fail($this->page, self::TOKEN, 'Not on a Sunday')->shouldBeCalledOnce();
@@ -96,7 +96,7 @@ final class ScheduledPublishDueHandlerTest extends TestCase
     /**
      * @test
      */
-    public function validation_errors_flag_the_scheduled_publish_as_failed_with_what_they_say(): void
+    public function it_flags_the_scheduled_publish_as_failed_with_what_validation_errors_say(): void
     {
         $this->publisher->publishScheduled($this->page, self::TOKEN)->willThrow(new InvalidEntryException([
             new ValidationError(null, 'slug', 'en_US', 'Another entry has this URL.'),

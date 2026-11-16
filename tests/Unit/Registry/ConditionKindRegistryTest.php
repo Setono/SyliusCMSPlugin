@@ -41,7 +41,7 @@ final class ConditionKindRegistryTest extends TestCase
     /**
      * @test
      */
-    public function a_kind_without_parameters_has_no_fields_and_may_not_say_what_it_reads(): void
+    public function it_gives_a_kind_without_parameters_no_fields_and_lets_it_not_say_what_it_reads(): void
     {
         $metadata = $this->registry(['signed_in' => new SignedIn()])->get('signed_in');
 

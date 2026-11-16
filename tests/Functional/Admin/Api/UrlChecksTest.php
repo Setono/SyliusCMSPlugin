@@ -15,7 +15,7 @@ final class UrlChecksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_publish_is_refused_on_a_url_another_entry_has_published_in_a_channel_and_locale_they_share(): void
+    public function it_refuses_a_publish_on_a_url_another_entry_has_published_in_a_channel_and_locale_they_share(): void
     {
         $client = self::createClient();
         self::createPage('About', 'about-us', 'The first', published: true, channels: ['WEB', 'MOBILE']);
@@ -35,7 +35,7 @@ final class UrlChecksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_publish_is_allowed_when_the_entries_have_no_channel_in_common(): void
+    public function it_allows_a_publish_when_the_entries_have_no_channel_in_common(): void
     {
         $client = self::createClient();
         self::createPage('Elsewhere', 'about-us', 'In the other channel', published: true, channels: ['OTHER']);
@@ -51,7 +51,7 @@ final class UrlChecksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_publish_is_refused_on_a_url_a_sylius_route_takes(): void
+    public function it_refuses_a_publish_on_a_url_a_sylius_route_takes(): void
     {
         $client = self::createClient();
         // Made without the builder, whose save would have refused the slug
@@ -70,7 +70,7 @@ final class UrlChecksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_save_keeps_the_slug_whose_url_a_route_takes_names_the_route_and_saves_the_rest(): void
+    public function it_keeps_the_slug_whose_url_a_route_takes_on_save_names_the_route_and_saves_the_rest(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -97,7 +97,7 @@ final class UrlChecksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_save_answers_without_refusals_when_it_refuses_nothing(): void
+    public function it_answers_a_save_without_refusals_when_it_refuses_nothing(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about-us', 'Hello');
@@ -116,7 +116,7 @@ final class UrlChecksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_builder_is_warned_of_a_url_another_entry_has_drafted_and_validation_refuses_one_it_has_published(): void
+    public function it_warns_the_builder_of_a_url_another_entry_has_drafted_and_refuses_one_it_has_published(): void
     {
         $client = self::createClient();
         self::createPage('Our team', 'team', 'Meet us');
@@ -155,7 +155,7 @@ final class UrlChecksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_builder_is_warned_of_a_url_in_a_published_entrys_draft(): void
+    public function it_warns_the_builder_of_a_url_in_a_published_entrys_draft(): void
     {
         $client = self::createClient();
         $other = self::createPage('Sale', 'sale', 'Cheap', published: true);
@@ -181,7 +181,7 @@ final class UrlChecksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_builder_is_warned_of_a_published_url_a_route_takes_now(): void
+    public function it_warns_the_builder_of_a_published_url_a_route_takes_now(): void
     {
         $client = self::createClient();
         $page = self::createPage('Log in', 'login', 'Hello', published: true);
@@ -198,7 +198,7 @@ final class UrlChecksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_builder_gets_the_urls_of_the_old_slugs_that_redirect(): void
+    public function it_gives_the_builder_the_urls_of_the_old_slugs_that_redirect(): void
     {
         $client = self::createClient();
         $page = self::createPage('About us', 'about', 'Hello', published: true);
@@ -215,7 +215,7 @@ final class UrlChecksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_channel_change_that_would_make_a_published_url_clash_is_refused_on_save(): void
+    public function it_refuses_a_channel_change_on_save_that_would_make_a_published_url_clash(): void
     {
         $client = self::createClient();
         self::createChannel('MOBILE', 'Mobile');
@@ -234,7 +234,7 @@ final class UrlChecksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_channel_change_of_a_never_published_entry_is_saved_and_checked_on_publish(): void
+    public function it_saves_a_channel_change_of_a_never_published_entry_and_checks_it_on_publish(): void
     {
         $client = self::createClient();
         self::createChannel('MOBILE', 'Mobile');

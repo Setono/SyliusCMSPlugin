@@ -247,7 +247,7 @@ final class EntryTest extends TestCase
     /**
      * @test
      */
-    public function a_new_entry_was_last_edited_when_it_was_created_by_no_one_it_knows(): void
+    public function it_starts_last_edited_when_it_was_created_by_no_one_it_knows(): void
     {
         $page = new Page();
 
@@ -286,7 +286,7 @@ final class EntryTest extends TestCase
      *
      * @test
      */
-    public function its_clone_reads_the_original_rows_and_leaves_the_original_alone_when_its_rows_change(): void
+    public function it_clones_into_a_copy_that_reads_the_original_rows_and_leaves_the_original_alone_when_its_rows_change(): void
     {
         $page = new Page();
         $web = self::channel($page, 'WEB');

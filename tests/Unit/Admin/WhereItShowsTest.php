@@ -60,7 +60,7 @@ final class WhereItShowsTest extends TestCase
     /**
      * @test
      */
-    public function its_grid_has_the_store_s_channels_and_each_channel_s_locales_its_default_locale_first(): void
+    public function it_lays_out_the_store_s_channels_and_each_channel_s_locales_its_default_locale_first(): void
     {
         $grid = $this->whereItShows()->of(self::row(self::page()));
 
@@ -74,7 +74,7 @@ final class WhereItShowsTest extends TestCase
     /**
      * @test
      */
-    public function a_channel_without_a_default_locale_has_its_locales_by_code(): void
+    public function it_orders_the_locales_of_a_channel_without_a_default_locale_by_code(): void
     {
         $this->channels->findBy([], ['id' => 'ASC'])->willReturn([self::channel('B2B', null, null, 'sv_SE', 'da_DK', 'nb_NO')]);
 
@@ -86,7 +86,7 @@ final class WhereItShowsTest extends TestCase
     /**
      * @test
      */
-    public function a_channel_is_named_by_its_name_or_else_by_its_code_and_says_whether_it_is_enabled(): void
+    public function it_names_a_channel_by_its_name_or_else_by_its_code_and_says_whether_it_is_enabled(): void
     {
         $disabled = self::channel('B2B', 'Wholesale', 'en_US', 'en_US');
         $disabled->setEnabled(false);
@@ -101,7 +101,7 @@ final class WhereItShowsTest extends TestCase
     /**
      * @test
      */
-    public function a_cell_is_live_where_the_entry_is_visible(): void
+    public function it_says_live_where_the_entry_is_visible(): void
     {
         $page = self::page(['en_US' => 'About us', 'da_DK' => 'Om os']);
 
@@ -112,7 +112,7 @@ final class WhereItShowsTest extends TestCase
     /**
      * @test
      */
-    public function a_cell_says_not_in_the_channel_in_a_channel_the_entry_is_not_in(): void
+    public function it_says_not_in_the_channel_in_a_channel_the_entry_is_not_in(): void
     {
         $page = self::page(['en_US' => 'About us', 'da_DK' => 'Om os']);
         ChannelsAndAudience::modifier()->setChannels($page, ['WEB']);
@@ -124,7 +124,7 @@ final class WhereItShowsTest extends TestCase
     /**
      * @test
      */
-    public function a_cell_says_no_translation_in_a_locale_the_entry_has_no_translation_with_a_title_in(): void
+    public function it_says_no_translation_in_a_locale_the_entry_has_no_translation_with_a_title_in(): void
     {
         $page = self::page(['en_US' => 'About us', 'sv_SE' => '']);
 
@@ -135,7 +135,7 @@ final class WhereItShowsTest extends TestCase
     /**
      * @test
      */
-    public function a_cell_says_held_back_in_a_locale_whose_translation_is_held_back(): void
+    public function it_says_held_back_in_a_locale_whose_translation_is_held_back(): void
     {
         $page = self::page(['en_US' => 'About us', 'da_DK' => 'Om os'], heldBack: ['da_DK']);
 
@@ -146,7 +146,7 @@ final class WhereItShowsTest extends TestCase
     /**
      * @test
      */
-    public function a_cell_says_disabled_for_a_disabled_entry(): void
+    public function it_says_disabled_for_a_disabled_entry(): void
     {
         $page = self::page();
         $page->setEnabled(false);
@@ -157,7 +157,7 @@ final class WhereItShowsTest extends TestCase
     /**
      * @test
      */
-    public function a_cell_says_not_published_yet_for_an_entry_never_published(): void
+    public function it_says_not_published_yet_for_an_entry_never_published(): void
     {
         $page = self::page(published: false);
 
@@ -167,7 +167,7 @@ final class WhereItShowsTest extends TestCase
     /**
      * @test
      */
-    public function a_cell_says_when_an_entry_never_published_publishes_while_its_scheduled_publish_waits(): void
+    public function it_says_when_an_entry_never_published_publishes_while_its_scheduled_publish_waits(): void
     {
         $page = self::page(published: false);
         $scheduledPublish = self::scheduledPublish('2026-11-28 09:00:00');
@@ -183,7 +183,7 @@ final class WhereItShowsTest extends TestCase
      *
      * @test
      */
-    public function a_cell_says_not_published_yet_for_an_entry_never_published_whose_scheduled_publish_is_overdue_or_failed(): void
+    public function it_says_not_published_yet_for_an_entry_never_published_whose_scheduled_publish_is_overdue_or_failed(): void
     {
         $page = self::page(published: false);
         $failed = self::scheduledPublish('2026-11-28 09:00:00');
@@ -198,7 +198,7 @@ final class WhereItShowsTest extends TestCase
      *
      * @test
      */
-    public function a_scheduled_publish_does_not_stop_a_published_entry_from_being_live(): void
+    public function it_says_live_for_a_published_entry_whose_scheduled_publish_waits(): void
     {
         self::assertEquals(new WhereItShowsCell(WhereItShowsCell::LIVE), $this->cell(self::page(), 'WEB', 'en_US', self::scheduledPublish('2026-11-28 09:00:00')));
     }
@@ -208,7 +208,7 @@ final class WhereItShowsTest extends TestCase
      *
      * @test
      */
-    public function a_cell_says_ended_once_the_entry_s_date_window_has_ended(): void
+    public function it_says_ended_once_the_entry_s_date_window_has_ended(): void
     {
         $page = self::page();
         $page->setDateWindow(new DateWindow(self::utc('2026-11-01 00:00:00'), self::utc(self::NOW)));
@@ -219,7 +219,7 @@ final class WhereItShowsTest extends TestCase
     /**
      * @test
      */
-    public function a_cell_says_from_when_the_entry_shows_before_its_date_window_starts(): void
+    public function it_says_from_when_the_entry_shows_before_its_date_window_starts(): void
     {
         $page = self::page();
         $page->setDateWindow(new DateWindow(self::utc('2026-11-27 12:00:01')));
@@ -230,7 +230,7 @@ final class WhereItShowsTest extends TestCase
     /**
      * @test
      */
-    public function a_cell_is_live_inside_the_entry_s_date_window(): void
+    public function it_says_live_inside_the_entry_s_date_window(): void
     {
         $page = self::page();
         $page->setDateWindow(new DateWindow(self::utc(self::NOW), self::utc('2026-11-27 12:00:01')));
@@ -241,7 +241,7 @@ final class WhereItShowsTest extends TestCase
     /**
      * @test
      */
-    public function a_cell_says_hidden_by_a_sylius_route_where_another_route_takes_the_entry_s_url(): void
+    public function it_says_hidden_by_a_sylius_route_where_another_route_takes_the_entry_s_url(): void
     {
         $page = self::page(['en_US' => 'About us', 'da_DK' => 'Om os']);
         $this->takenUrls->findLive($page)->willReturn([
@@ -283,7 +283,7 @@ final class WhereItShowsTest extends TestCase
      *
      * @test
      */
-    public function a_cell_gives_the_first_reason_that_applies(): void
+    public function it_gives_the_first_reason_that_applies(): void
     {
         $page = self::page(['en_US' => 'About us', 'da_DK' => 'Om os'], heldBack: ['da_DK'], published: false);
         ChannelsAndAudience::modifier()->setChannels($page, ['WEB']);
