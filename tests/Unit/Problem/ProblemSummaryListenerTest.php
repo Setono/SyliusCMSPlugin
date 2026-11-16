@@ -17,6 +17,7 @@ use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
 use Setono\SyliusCMSPlugin\Problem\ProblemSummaryListener;
 use Setono\SyliusCMSPlugin\Problem\ProblemSummaryProviderInterface;
 
@@ -67,6 +68,7 @@ final class ProblemSummaryListenerTest extends TestCase
         yield 'a draft' => [[[new Draft()], [], []]];
         yield 'a channel' => [[[], [], [new EntryChannel(new Page(), 'WEB')]]];
         yield 'an audience group' => [[[new EntryAudienceGroup(new Page(), 'wholesale')], [], []]];
+        yield 'a scheduled publish' => [[[], [new ScheduledPublish()], []]];
     }
 
     /**

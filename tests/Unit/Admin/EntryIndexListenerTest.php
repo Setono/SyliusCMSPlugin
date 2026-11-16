@@ -17,6 +17,7 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Sylius\Bundle\ResourceBundle\Event\ResourceControllerEvent;
 use Sylius\Component\Grid\Definition\Grid;
@@ -51,6 +52,8 @@ final class EntryIndexListenerTest extends TestCase
         $translationLocaleProvider->getDefaultLocaleCode()->willReturn('en_US');
         $localeContext = $this->prophesize(LocaleContextInterface::class);
         $localeContext->getLocaleCode()->willReturn('en_US');
+        $scheduledPublishes = $this->prophesize(ScheduledPublishRepositoryInterface::class);
+        $scheduledPublishes->findByEntries(Argument::any())->willReturn([]);
 
         $this->entryRows = new EntryRows(
             $this->drafts->reveal(),
@@ -59,6 +62,8 @@ final class EntryIndexListenerTest extends TestCase
             $this->prophesize(UrlGeneratorInterface::class)->reveal(),
             $translationLocaleProvider->reveal(),
             $localeContext->reveal(),
+            $scheduledPublishes->reveal(),
+            new MockClock(),
         );
     }
 

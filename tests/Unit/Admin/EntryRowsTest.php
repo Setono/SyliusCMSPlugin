@@ -20,8 +20,10 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
@@ -35,6 +37,9 @@ final class EntryRowsTest extends TestCase
     /** @var ObjectProphecy<DraftRepositoryInterface> */
     private ObjectProphecy $drafts;
 
+    /** @var ObjectProphecy<ScheduledPublishRepositoryInterface> */
+    private ObjectProphecy $scheduledPublishes;
+
     /** @var ObjectProphecy<UrlGeneratorInterface> */
     private ObjectProphecy $urlGenerator;
 
@@ -42,6 +47,8 @@ final class EntryRowsTest extends TestCase
     {
         $this->drafts = $this->prophesize(DraftRepositoryInterface::class);
         $this->drafts->findByEntries(Argument::any())->willReturn([]);
+        $this->scheduledPublishes = $this->prophesize(ScheduledPublishRepositoryInterface::class);
+        $this->scheduledPublishes->findByEntries(Argument::any())->willReturn([]);
 
         $this->urlGenerator = $this->prophesize(UrlGeneratorInterface::class);
         $this->urlGenerator->generate('setono_sylius_cms_shop_entry', Argument::type('array'))->will(static function (array $arguments): string {
@@ -67,6 +74,34 @@ final class EntryRowsTest extends TestCase
         self::assertSame('/en_US/about-us', $row->url);
         self::assertEquals([new StatusLabel(StatusLabel::NEVER_PUBLISHED)], $row->statusLabels);
         self::assertSame(EntryStatus::NEVER_PUBLISHED, $row->status);
+        self::assertNull($row->scheduledPublish);
+        self::assertNull($row->scheduledPublishStatus);
+    }
+
+    /**
+     * @test
+     */
+    public function it_loads_the_scheduled_publishes_of_a_page_of_entries_in_one_query_and_labels_them(): void
+    {
+        $about = self::page(['en_US' => ['About us', 'about-us']]);
+        $contact = self::page(['en_US' => ['Contact', 'contact']]);
+        $scheduledPublish = new ScheduledPublish();
+        $scheduledPublish->setEntry($contact);
+        $scheduledPublish->schedule(new \DateTimeImmutable('2026-11-16 11:55:00', new \DateTimeZone('UTC')), 'Jane Roe');
+        $this->scheduledPublishes->findByEntries([$about, $contact])->willReturn([$scheduledPublish])->shouldBeCalledOnce();
+
+        [$aboutRow, $contactRow] = $this->rows([$about, $contact]);
+
+        self::assertNull($aboutRow->scheduledPublish);
+        self::assertNull($aboutRow->scheduledPublishStatus);
+        self::assertSame($scheduledPublish, $contactRow->scheduledPublish);
+        // Five minutes after its time, by the clock
+        self::assertSame(EntryStatus::SCHEDULED_PUBLISH_OVERDUE, $contactRow->scheduledPublishStatus);
+        self::assertEquals(
+            [new StatusLabel(StatusLabel::NEVER_PUBLISHED), new StatusLabel(StatusLabel::SCHEDULED_PUBLISH_OVERDUE, ['at' => new \DateTimeImmutable('2026-11-16 11:55:00', new \DateTimeZone('UTC'))])],
+            $contactRow->statusLabels,
+        );
+        self::assertSame(EntryStatus::NEVER_PUBLISHED, $contactRow->status);
     }
 
     /**
@@ -223,6 +258,7 @@ final class EntryRowsTest extends TestCase
     public function it_loads_nothing_for_a_page_without_entries(): void
     {
         $this->drafts->findByEntries(Argument::any())->shouldNotBeCalled();
+        $this->scheduledPublishes->findByEntries(Argument::any())->shouldNotBeCalled();
 
         $this->entryRows()->load(self::pageOf([]));
     }
@@ -306,10 +342,12 @@ final class EntryRowsTest extends TestCase
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
                 'recipe' => ['model' => Recipe::class, 'translation' => EntryTranslation::class, 'resource' => 'app.recipe'],
             ]),
-            new StatusLabeler(new MockClock('2026-11-16 12:00:00')),
+            new StatusLabeler(new MockClock('2026-11-16 12:00:00', 'UTC')),
             $this->urlGenerator->reveal(),
             $translationLocaleProvider->reveal(),
             $localeContext->reveal(),
+            $this->scheduledPublishes->reveal(),
+            new MockClock('2026-11-16 12:00:00', 'UTC'),
         );
     }
 

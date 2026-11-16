@@ -80,6 +80,8 @@ setono_sylius_cms:
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
+        scheduled_publish_failed: 'The publish scheduled for %at% was stopped: %reason%'
+        scheduled_publish_overdue: 'The publish scheduled for %at% hasn''t run. The Messenger worker may not be running.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
     publish:
         invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'
@@ -96,6 +98,7 @@ setono_sylius_cms:
             no_group: Signed in without a group
             only: 'Only %groups%'
         by: 'by %name%'
+        cancel_schedule: Cancel the schedule
         channel: Channel
         close: Close
         content: Content
@@ -103,8 +106,10 @@ setono_sylius_cms:
         create: Create
         create_dialog_load_failed: Couldn't load the form. Try again.
         discard_changes: Discard changes
+        dismiss: Dismiss
         error_count: '{0} No errors|{1} 1 error|]1,Inf[ %count% errors'
         fix_in_builder: Fix in builder
+        fix_in_publishing: Go to Publishing
         language: Language
         last_edited: Last edited
         last_published: 'Last published %date%'
@@ -122,6 +127,7 @@ setono_sylius_cms:
             warning: Warning
         problems: Problems
         publish: Publish
+        publish_now: Publish now
         published_at: Published
         published_by: By
         publishing: Publishing
@@ -132,13 +138,24 @@ setono_sylius_cms:
         restore: Restore
         revisions: Revisions
         revisions_help: Every publish stores a revision. Preview one as it was, or restore it into the draft to review and publish it.
+        schedule: Schedule
+        schedule_again: Schedule again
+        schedule_at: Publish at
         scheduled: Scheduled
+        scheduled_publish:
+            by: 'Scheduled by %name%.'
+            failed: 'The publish scheduled for %at% was stopped when it ran'
+            locked: The draft is locked until then. Cancel the schedule to change it.
+            overdue: 'The publish scheduled for %at% hasn''t run'
+            overdue_help: The Messenger worker may not be running. Publish now, or cancel the schedule.
+            waiting: 'Publishes %at%'
         search: Search
         status: Status
         status_filter:
             needs_attention: Needs attention
             disabled_or_outside_date_window: Disabled or outside its date window
             never_published: Never published
+            scheduled: Scheduled
             unpublished_changes: Unpublished changes
         status_label:
             date_window: 'Shows %from%–%until%'
@@ -146,6 +163,10 @@ setono_sylius_cms:
             ended: 'Ended %until%'
             never_published: Never published
             published: Published
+            publishes_at_a_time: 'Publishes %at%'
+            scheduled_for: 'Scheduled for %at%'
+            scheduled_publish_failed: Scheduled publish failed
+            scheduled_publish_overdue: Scheduled publish overdue
             shows_from: 'Shows from %from%'
             shows_until: 'Shows until %until%'
             unpublished_changes: Unpublished changes
@@ -185,6 +206,9 @@ setono_sylius_cms:
         block_style: Style
         blocks: Blocks
         blocks_selected: '%count% blocks selected'
+        cancel_schedule: Cancel the schedule
+        cancel_schedule_failed: Couldn't cancel the schedule
+        cancelling_schedule: Cancelling…
         channels: Channels
         children: Blocks inside
         condition: 'Condition %number%'
@@ -225,6 +249,8 @@ setono_sylius_cms:
         load_failed: Couldn't load the entry
         loading: Loading…
         locale: Language
+        locked: 'The draft is locked: it publishes %at%. Cancel the schedule to edit it.'
+        locked_overdue: 'The draft is locked: its publish was scheduled for %at% and hasn''t run. The Messenger worker may not be running.'
         locale_no_translation: no translation
         locale_outdated: '%count% outdated'
         locale_untranslated: '%count% untranslated'
@@ -249,7 +275,9 @@ setono_sylius_cms:
         preview_width: Preview width
         publish: Publish
         publish_failed: Couldn't publish
+        publish_options: More ways to publish
         published: Published
+        publishes_at: 'Publishes %at%'
         publishing: Publishing…
         redo: Redo
         reload: Reload
@@ -270,6 +298,14 @@ setono_sylius_cms:
         save_stale: Colleagues' changes can't be merged with yours
         saved: Saved
         saving: Saving…
+        schedule: Schedule…
+        schedule_at: Publish at
+        schedule_failed: Couldn't schedule
+        schedule_in_the_past: Pick a time in the future.
+        schedule_publish: Schedule the publish
+        scheduled_publish_failed: Scheduled publish failed
+        scheduled_publish_overdue: Scheduled publish overdue
+        scheduling: Scheduling…
         search_block_types: Search block types
         select_parent: Select parent
         settings: Settings

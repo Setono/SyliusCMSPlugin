@@ -64,5 +64,19 @@
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
             <tag name="kernel.reset" method="reset"/>
         </service>
+
+        <!-- A scheduled publish that's overdue, or failed: errors of the admin's, not of the content, so lint leaves them out -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishOverdue" class="Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishOverdue">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+            <argument type="service" id="clock"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishFailed" class="Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishFailed">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
     </services>
 </container>

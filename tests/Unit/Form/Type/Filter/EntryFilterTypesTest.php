@@ -41,6 +41,7 @@ final class EntryFilterTypesTest extends TypeTestCase
                 'needs_attention' => 'setono_sylius_cms.ui.status_filter.needs_attention',
                 'unpublished_changes' => 'setono_sylius_cms.ui.status_filter.unpublished_changes',
                 'never_published' => 'setono_sylius_cms.ui.status_filter.never_published',
+                'scheduled' => 'setono_sylius_cms.ui.status_filter.scheduled',
                 'disabled_or_outside_date_window' => 'setono_sylius_cms.ui.status_filter.disabled_or_outside_date_window',
             ],
             self::labels($vars['choices']),

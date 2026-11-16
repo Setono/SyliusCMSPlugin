@@ -33,4 +33,13 @@ final readonly class Fix
             static fn (?string $parameter): bool => null !== $parameter,
         ));
     }
+
+    /**
+     * Goes to the Publishing section of the entry's overview page, where its scheduled publish is published now,
+     * scheduled again or cancelled
+     */
+    public static function inPublishing(EntryInterface $entry): self
+    {
+        return new self('setono_sylius_cms.ui.fix_in_publishing', 'setono_sylius_cms_admin_entry_show', ['uuid' => $entry->getUuid(), '_fragment' => 'cms-section-publishing']);
+    }
 }

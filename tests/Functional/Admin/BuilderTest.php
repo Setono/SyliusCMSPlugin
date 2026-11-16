@@ -59,6 +59,7 @@ final class BuilderTest extends WebTestCase
             'validate' => sprintf('/admin/cms/api/entries/%s/validate', $uuid),
             'publish' => sprintf('/admin/cms/api/entries/%s/publish', $uuid),
             'discard' => sprintf('/admin/cms/api/entries/%s/discard', $uuid),
+            'schedule' => sprintf('/admin/cms/api/entries/%s/schedule', $uuid),
             'settings' => sprintf('/admin/cms/api/entries/%s/settings', $uuid),
             'previewToken' => '/admin/cms/api/preview/token',
             'previewRender' => '/admin/cms/api/preview/render',
