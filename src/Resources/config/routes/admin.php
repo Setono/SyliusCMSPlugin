@@ -21,7 +21,9 @@ use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction as DiscardEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\PreviewRevisionAction as PreviewRevisionPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PublishEntryAction as PublishEntryPageAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\RestoreRevisionAction as RestoreRevisionPageAction;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Routing\Requirement\Requirement;
 
@@ -94,6 +96,19 @@ return static function (RoutingConfigurator $routes): void {
         ->controller(DiscardEntryPageAction::class)
         ->methods(['POST'])
         ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    // The overview page's Preview and Restore of a revision. Preview changes nothing, so it's a link
+    $routes->add('setono_sylius_cms_admin_entry_revision_preview', '/cms/entry/{uuid}/revisions/{id}/preview')
+        ->controller(PreviewRevisionPageAction::class)
+        ->methods(['GET'])
+        ->requirements(['uuid' => Requirement::UUID, 'id' => Requirement::DIGITS])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_entry_revision_restore', '/cms/entry/{uuid}/revisions/{id}/restore')
+        ->controller(RestoreRevisionPageAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID, 'id' => Requirement::DIGITS])
     ;
 
     $routes->add('setono_sylius_cms_admin_entry_delete', '/cms/entry/{uuid}')

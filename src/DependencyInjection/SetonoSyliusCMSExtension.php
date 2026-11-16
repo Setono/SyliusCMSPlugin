@@ -117,6 +117,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 'setono_sylius_cms.admin.entry.show.sections' => [
                     'blocks' => [
                         'publishing' => $block('_publishing', 100),
+                        'revisions' => $block('_revisions', 60),
                         'urls' => $block('_urls', 40),
                     ],
                 ],

@@ -7,14 +7,17 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Twig;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Admin\EntryRevisions;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\EntryUrls;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Revision;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Twig\AdminExtension;
 use Setono\SyliusCMSPlugin\Twig\AdminRuntime;
@@ -120,11 +123,18 @@ final class AdminExtensionTest extends IntegrationTestCase
             $localeContext->reveal(),
         );
         $entryUrls = new EntryUrls($drafts->reveal(), self::contentTypes(), $urlGenerator->reveal());
+        $revisions = $this->prophesize(RevisionRepositoryInterface::class);
+        $revisions->findByEntry(Argument::type(Page::class))->willReturn([
+            self::revision('2026-11-14 10:00:00', 'Jane Roe'),
+            self::revision('2026-11-01 10:00:00', 'John Doe'),
+        ]);
+        $entryRevisions = new EntryRevisions($revisions->reveal());
         $runtime = $this->runtime();
 
         return [new FactoryRuntimeLoader([
             EntryRows::class => static fn (): EntryRows => $entryRows,
             EntryUrls::class => static fn (): EntryUrls => $entryUrls,
+            EntryRevisions::class => static fn (): EntryRevisions => $entryRevisions,
             AdminRuntime::class => static fn (): AdminRuntime => $runtime,
         ])];
     }
@@ -140,6 +150,15 @@ final class AdminExtensionTest extends IntegrationTestCase
             'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             'recipe' => ['model' => Recipe::class, 'translation' => EntryTranslation::class, 'resource' => 'app.recipe'],
         ]);
+    }
+
+    private static function revision(string $publishedAt, string $publishedBy): Revision
+    {
+        $revision = new Revision();
+        $revision->setPublishedAt(new \DateTimeImmutable($publishedAt, new \DateTimeZone('UTC')));
+        $revision->setPublishedBy($publishedBy);
+
+        return $revision;
     }
 
     private static function customerGroup(?string $code, ?string $name): CustomerGroupInterface
