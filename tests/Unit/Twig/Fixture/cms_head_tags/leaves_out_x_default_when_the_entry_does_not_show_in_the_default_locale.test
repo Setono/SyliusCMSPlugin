@@ -1,9 +1,7 @@
 --TEST--
 cms_head_tags() leaves out x-default when the entry doesn't show in the channel's default locale
 --TEMPLATE--
-{% for link in cms_head_tags(entry).alternates %}
-{{ link.hreflang }} {{ link.url }}
-{% endfor %}
+{{ cms_head_tags(entry) }}
 --DATA--
 return $this->rendering(
     ['entry' => $this->pageWith(['en_US' => ['title' => 'About us', 'slug' => 'about-us', 'shown' => false], 'da_DK' => ['title' => 'Om os', 'slug' => 'om-os']])],
@@ -11,4 +9,5 @@ return $this->rendering(
     channel: $this->channel(['en_US', 'da_DK'], 'en_US'),
 )
 --EXPECT--
-da-DK https://shop.example/da_DK/om-os
+<link rel="canonical" href="https://shop.example/da_DK/om-os">
+<link rel="alternate" hreflang="da-DK" href="https://shop.example/da_DK/om-os">

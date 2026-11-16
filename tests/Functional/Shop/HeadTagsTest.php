@@ -11,8 +11,9 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
- * The head tags of an entry shown at its own URL, which layout/base.html.twig prints into the shop layout's title and
- * metatags blocks. The test app's channel WEB is on localhost, with en_US as its default locale.
+ * The head tags of an entry shown at its own URL, which layout/base.html.twig prints into the shop layout's title block
+ * with cms_meta_title() and its metatags block with cms_head_tags(). The test app's channel WEB is on localhost, with
+ * en_US as its default locale.
  * See "SEO fields" and "Head tags" in docs/spec/urls-and-seo.md
  */
 final class HeadTagsTest extends WebTestCase
@@ -43,6 +44,17 @@ final class HeadTagsTest extends WebTestCase
             'x-default' => 'http://localhost/en_US/about-us',
         ], self::alternates($head));
         self::assertCount(0, $head->filter('meta[property^="og:"]'), 'The CMS prints no Open Graph tags');
+
+        // cms_head_tags() prints them in the metatags block, one per line, with their values escaped
+        self::assertStringContainsString(implode("\n", [
+            '<meta name="description" content="All about &quot;us&quot;">',
+            '<meta name="robots" content="noindex">',
+            '<link rel="canonical" href="http://localhost/en_US/about-us">',
+            '<link rel="alternate" hreflang="da-DK" href="http://localhost/da_DK/om-os">',
+            '<link rel="alternate" hreflang="en-US" href="http://localhost/en_US/about-us">',
+            '<link rel="alternate" hreflang="x-default" href="http://localhost/en_US/about-us">',
+        ]), (string) $client->getResponse()->getContent());
+        self::assertStringContainsString('<title>About us | Shop</title>', (string) $client->getResponse()->getContent());
     }
 
     /**

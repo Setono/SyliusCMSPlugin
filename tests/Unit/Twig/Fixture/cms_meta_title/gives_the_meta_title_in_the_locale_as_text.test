@@ -1,0 +1,8 @@
+--TEST--
+cms_meta_title() gives the entry's meta title in the render context's locale, as text for the shop layout's title block, which Twig escapes
+--TEMPLATE--
+<title>{{ cms_meta_title(entry) }}</title>
+--DATA--
+return $this->rendering(['entry' => $this->pageWith(['en_US' => ['title' => 'About us', 'slug' => 'about-us', 'metaTitle' => 'About us & <more> | Shop'], 'da_DK' => ['title' => 'Om os', 'slug' => 'om-os', 'metaTitle' => 'Om os | Butik']])])
+--EXPECT--
+<title>About us &amp; &lt;more&gt; | Shop</title>

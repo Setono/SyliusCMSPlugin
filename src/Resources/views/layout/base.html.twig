@@ -5,29 +5,17 @@
  #   blocks   the visible top-level blocks, as BlockViews: render them with cms_blocks(blocks)
  #   context  the host-page context: {entry: entry}
  #
- # It fills the shop layout's title and metatags blocks with the entry's head tags: the meta title, the meta description,
- # robots, the canonical URL and the hreflang links. No Open Graph tags (docs/spec/urls-and-seo.md#head-tags)
+ # It fills the shop layout's title block with the entry's meta title, and its metatags block with the entry's head
+ # tags: the meta description, robots, the canonical URL and the hreflang links. No Open Graph tags
+ # (docs/spec/urls-and-seo.md#head-tags). A layout that overrides either block calls the same function
  #}
 {% extends '@SyliusShop/layout.html.twig' %}
 
-{% set cms_head_tags = cms_head_tags(entry) %}
-
-{% block title %}{% if cms_head_tags.title is not null %}{{ cms_head_tags.title }}{% else %}{{ parent() }}{% endif %}{% endblock %}
+{% block title %}{{ cms_meta_title(entry) }}{% endblock %}
 
 {% block metatags %}
     {{ parent() }}
-    {% if cms_head_tags.description is not null %}
-        <meta name="description" content="{{ cms_head_tags.description }}">
-    {% endif %}
-    {% if cms_head_tags.noindex %}
-        <meta name="robots" content="noindex">
-    {% endif %}
-    {% if cms_head_tags.canonicalUrl is not null %}
-        <link rel="canonical" href="{{ cms_head_tags.canonicalUrl }}">
-    {% endif %}
-    {% for alternate in cms_head_tags.alternates %}
-        <link rel="alternate" hreflang="{{ alternate.hreflang }}" href="{{ alternate.url }}">
-    {% endfor %}
+    {{ cms_head_tags(entry) }}
 {% endblock %}
 
 {% block content %}

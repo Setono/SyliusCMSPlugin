@@ -16,8 +16,9 @@ use Sylius\Component\Core\Model\ChannelInterface;
 use Twig\Extension\RuntimeExtensionInterface;
 
 /**
- * cms_head_tags(entry): the head tags of an entry shown at its own URL, which layout/base.html.twig prints into the shop
- * layout's title and metatags blocks. See "Head tags" in docs/spec/urls-and-seo.md
+ * The head tags of an entry shown at its own URL, which layout/base.html.twig prints into the shop layout's title and
+ * metatags blocks: cms_meta_title(entry) gives the title, as text, and cms_head_tags(entry) prints the rest, as HTML, so
+ * a layout that calls it gets a tag added later without a change. See "Head tags" in docs/spec/urls-and-seo.md
  */
 final readonly class HeadTagsRuntime implements RuntimeExtensionInterface
 {
@@ -29,9 +30,49 @@ final readonly class HeadTagsRuntime implements RuntimeExtensionInterface
     }
 
     /**
+     * The meta description, robots, the canonical link and the hreflang links, one per line, each left out when it has no
+     * value
+     *
      * @param array<string, mixed> $context
      */
-    public function headTags(array $context, EntryInterface $entry): HeadTags
+    public function headTags(array $context, EntryInterface $entry): string
+    {
+        $tags = $this->tags($context, $entry);
+
+        $html = [];
+        if (null !== $tags->description) {
+            $html[] = sprintf('<meta name="description" content="%s">', self::escape($tags->description));
+        }
+
+        if ($tags->noindex) {
+            $html[] = '<meta name="robots" content="noindex">';
+        }
+
+        if (null !== $tags->canonicalUrl) {
+            $html[] = sprintf('<link rel="canonical" href="%s">', self::escape($tags->canonicalUrl));
+        }
+
+        foreach ($tags->alternates as $alternate) {
+            $html[] = sprintf('<link rel="alternate" hreflang="%s" href="%s">', self::escape($alternate->hreflang), self::escape($alternate->url));
+        }
+
+        return implode("\n", $html);
+    }
+
+    /**
+     * The meta title, or else the title, each through the fallback chain, as text. Empty when neither has a value
+     *
+     * @param array<string, mixed> $context
+     */
+    public function metaTitle(array $context, EntryInterface $entry): string
+    {
+        return $this->tags($context, $entry)->title ?? '';
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function tags(array $context, EntryInterface $entry): HeadTags
     {
         $renderContext = $context[CMSRuntime::RENDER_CONTEXT] ?? null;
         if (!$renderContext instanceof RenderContext) {
@@ -79,5 +120,13 @@ final readonly class HeadTagsRuntime implements RuntimeExtensionInterface
         }
 
         return $links;
+    }
+
+    /**
+     * As Twig escapes HTML and its attributes
+     */
+    private static function escape(string $value): string
+    {
+        return htmlspecialchars($value, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8');
     }
 }

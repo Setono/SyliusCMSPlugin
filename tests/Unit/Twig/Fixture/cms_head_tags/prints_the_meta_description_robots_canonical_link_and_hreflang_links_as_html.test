@@ -1,0 +1,24 @@
+--TEST--
+cms_head_tags() prints the tags of the shop layout's metatags block as safe HTML, with their values escaped: the entry's meta description in the render context's locale, robots noindex when "Hide from search engines" is on, its canonical link, and a hreflang link per locale it shows in, plus x-default. It leaves the title to cms_meta_title()
+--TEMPLATE--
+{{ cms_head_tags(entry) }}
+--DATA--
+return $this->rendering(
+    [
+        'entry' => $this->pageWith(
+            [
+                'en_US' => ['title' => 'About us', 'slug' => 'about-us', 'metaTitle' => 'About us | Shop', 'metaDescription' => 'All about "us" & <more>'],
+                'da_DK' => ['title' => 'Om os', 'slug' => 'om-os', 'metaDescription' => 'Alt om os'],
+            ],
+            noindex: true,
+        ),
+    ],
+    channel: $this->channel(['en_US', 'da_DK'], 'en_US'),
+)
+--EXPECT--
+<meta name="description" content="All about &quot;us&quot; &amp; &lt;more&gt;">
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://shop.example/en_US/about-us">
+<link rel="alternate" hreflang="da-DK" href="https://shop.example/da_DK/om-os">
+<link rel="alternate" hreflang="en-US" href="https://shop.example/en_US/about-us">
+<link rel="alternate" hreflang="x-default" href="https://shop.example/en_US/about-us">

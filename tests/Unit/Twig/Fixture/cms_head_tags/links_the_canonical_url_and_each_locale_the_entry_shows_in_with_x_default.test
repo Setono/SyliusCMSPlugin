@@ -1,11 +1,7 @@
 --TEST--
-cms_head_tags() gives the entry's absolute URL in the locale as its canonical URL, and a hreflang link per locale of the channel the entry shows in, by code, plus x-default for the channel's default locale. A held-back translation, one without a title or a slug, a locale without a translation, and a locale the channel doesn't have get none
+cms_head_tags() links the entry's absolute URL in the locale as its canonical URL, and a hreflang link per locale of the channel the entry shows in, by code, plus x-default for the channel's default locale. A held-back translation, one without a title or a slug, a locale without a translation, and a locale the channel doesn't have get none
 --TEMPLATE--
-{% set tags = cms_head_tags(entry) %}
-{{ tags.canonicalUrl }}
-{% for link in tags.alternates %}
-{{ link.hreflang }} {{ link.url }}
-{% endfor %}
+{{ cms_head_tags(entry) }}
 --DATA--
 return $this->rendering(
     [
@@ -23,7 +19,7 @@ return $this->rendering(
     channel: $this->channel(['en_US', 'da_DK', 'de_DE', 'nb_NO', 'it_IT', 'sv_SE', 'fi_FI'], 'en_US'),
 )
 --EXPECT--
-https://shop.example/da_DK/om-os
-da-DK https://shop.example/da_DK/om-os
-en-US https://shop.example/en_US/about-us
-x-default https://shop.example/en_US/about-us
+<link rel="canonical" href="https://shop.example/da_DK/om-os">
+<link rel="alternate" hreflang="da-DK" href="https://shop.example/da_DK/om-os">
+<link rel="alternate" hreflang="en-US" href="https://shop.example/en_US/about-us">
+<link rel="alternate" hreflang="x-default" href="https://shop.example/en_US/about-us">

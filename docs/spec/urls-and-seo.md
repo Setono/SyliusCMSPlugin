@@ -128,7 +128,7 @@ These fallbacks are separate from the fallback chain: each SEO field first falls
 
 ## Head tags
 
-An entry shown at its own URL, or as a homepage, prints these into the shop layout. `@SetonoSyliusCMSPlugin/layout/base.html.twig` fills the shop layout's `title` and `metatags` blocks with them, so every layout that extends it gets them ([Extending](extending.md#layout-templates)).
+An entry shown at its own URL, or as a homepage, prints these into the shop layout. `@SetonoSyliusCMSPlugin/layout/base.html.twig` fills the shop layout's `title` and `metatags` blocks with them, through `cms_meta_title(entry)` and `cms_head_tags(entry)`, so every layout that extends it gets them ([Extending](extending.md#layout-templates)).
 
 - **Title:** the meta title, or the title.
 - **Meta description:** `<meta name="description">`, left out when empty.

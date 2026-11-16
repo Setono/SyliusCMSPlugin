@@ -1,7 +1,7 @@
 --TEST--
 cms_head_tags() needs the render context, whose channel and locale the tags are for
 --TEMPLATE--
-{{ cms_head_tags(entry).title }}
+{{ cms_head_tags(entry) }}
 --DATA--
 return ['entry' => $this->pageWith(['en_US' => ['title' => 'About us', 'slug' => 'about-us']])]
 --EXCEPTION--

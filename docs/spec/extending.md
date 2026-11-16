@@ -132,7 +132,7 @@ Layout fields are the class's typed properties, stored in the tree's `layout.fie
 
 ### Layout templates
 
-A layout template extends `@SetonoSyliusCMSPlugin/layout/base.html.twig`. That template extends `@SyliusShop/layout.html.twig`, fills its `title` and `metatags` blocks from `cms_head_tags(entry)` ([URLs and SEO](urls-and-seo.md#head-tags), [Twig](#twig)), and renders the block `cms_content` inside `content`. A layout template gets:
+A layout template extends `@SetonoSyliusCMSPlugin/layout/base.html.twig`. That template extends `@SyliusShop/layout.html.twig`, fills its `title` block with `cms_meta_title(entry)` and its `metatags` block with `cms_head_tags(entry)` ([URLs and SEO](urls-and-seo.md#head-tags), [Twig](#twig)), and renders the block `cms_content` inside `content`. A layout that overrides those blocks calls both. A layout template gets:
 
 | Variable | Value |
 | --- | --- |
@@ -642,7 +642,8 @@ Every event that changes shopper output implements `StorefrontChangedInterface`,
 | `cms_image(media, options = {})` | safe HTML | Renders an image media item ([Media](media.md#the-image-helper)). |
 | `cms_link(link)` | `?ResolvedLink` | Resolves a `Link` value. `null` means don't render the link. |
 | `cms_url(entry)` | `?string` | An entry's URL in the current channel and locale, or `null` when it has none or isn't visible. |
-| `cms_head_tags(entry)` | `HeadTags` | The head tags of an entry shown at its own URL or as a homepage: its title, meta description, robots, canonical URL and hreflang links ([URLs and SEO](urls-and-seo.md#head-tags)). `layout/base.html.twig` calls it and prints them into the shop layout's `title` and `metatags` blocks. A layout that overrides those blocks must call it and print them too. |
+| `cms_head_tags(entry)` | safe HTML | Prints the meta and link tags of an entry shown at its own URL or as a homepage, for the shop layout's `metatags` block: the meta description, robots, the canonical link and the hreflang links ([URLs and SEO](urls-and-seo.md#head-tags)). A tag added later reaches every layout that calls it. |
+| `cms_meta_title(entry)` | `string` | The title text of an entry shown at its own URL or as a homepage, for the shop layout's `title` block: the meta title, or else the title, each through the fallback chain. |
 | `cms_preview_mode()` | `?string` | `builder` in the builder's preview, `share` on a share link, otherwise `null`. Themes use it to leave out analytics and other tracking ([Rendering](rendering.md#preview-mode-and-share-links)). |
 
 **Templates** are overridden the Symfony way, under `templates/bundles/SetonoSyliusCMSPlugin/`, or in a Sylius theme. There's no template suggestion chain. The shipped templates are at:

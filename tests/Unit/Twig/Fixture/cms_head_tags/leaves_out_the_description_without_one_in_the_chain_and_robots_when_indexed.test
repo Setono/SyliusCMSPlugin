@@ -1,0 +1,8 @@
+--TEST--
+cms_head_tags() leaves out the meta description when no locale in the fallback chain has one, and robots when the entry may be indexed
+--TEMPLATE--
+{{ cms_head_tags(entry) }}
+--DATA--
+return $this->rendering(['entry' => $this->pageWith(['en_US' => ['title' => 'About us', 'slug' => 'about-us'], 'de_DE' => ['title' => 'Über uns', 'slug' => 'ueber-uns'], 'de_CH' => ['title' => '', 'slug' => 'ueber-uns']])], locale: 'de_CH')
+--EXPECT--
+<link rel="canonical" href="https://shop.example/de_CH/ueber-uns">
