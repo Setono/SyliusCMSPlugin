@@ -90,11 +90,9 @@ final class VideoDimensions
             }
 
             if ('moov' === $header['type']) {
-                if ($boxSize > self::MAX_READ) {
-                    return null;
-                }
+                $length = $boxSize - $headerSize;
 
-                return self::tracks((string) fread($file, $boxSize - $headerSize));
+                return $length < 1 || $length > self::MAX_READ ? null : self::tracks((string) fread($file, $length));
             }
 
             $offset += $boxSize;
@@ -238,7 +236,7 @@ final class VideoDimensions
         $end = min($end, strlen($data));
         while ($offset < $end) {
             $id = self::vint($data, $offset, true);
-            if (null === $id) {
+            if (null === $id || null === $id[0]) {
                 return;
             }
 
@@ -269,7 +267,11 @@ final class VideoDimensions
         }
 
         $first = ord($data[$offset]);
-        for ($length = 1; $length <= 8 && 0 === ($first & (0x80 >> ($length - 1))); ++$length);
+        $length = 1;
+        while ($length <= 8 && 0 === ($first & (0x80 >> ($length - 1)))) {
+            ++$length;
+        }
+
         if ($length > 8 || $offset + $length > strlen($data)) {
             return null;
         }

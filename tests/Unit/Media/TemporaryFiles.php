@@ -20,7 +20,8 @@ trait TemporaryFiles
             return;
         }
 
-        foreach (glob($this->temporaryDirectory . '/*') ?: [] as $file) {
+        $files = glob($this->temporaryDirectory . '/*');
+        foreach (false === $files ? [] : $files as $file) {
             unlink($file);
         }
 

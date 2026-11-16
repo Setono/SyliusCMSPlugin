@@ -62,6 +62,7 @@ final class MediaFoldersTest extends MediaApiTestCase
         self::assertIsArray($media);
         self::assertIsArray($media['items']);
         self::assertSame([$beach->getUuid()], array_column($media['items'], 'uuid'));
+        self::assertIsArray($media['items'][0]);
         self::assertSame('/media/cms/' . $path, $media['items'][0]['url']);
         self::assertFileExists(self::mediaDirectory() . '/' . $path);
     }

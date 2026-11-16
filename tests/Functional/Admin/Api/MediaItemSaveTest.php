@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Event\MediaItemSaved;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Saving a media item's metadata or moving its focal point takes effect at once, bumps changedAt and dispatches
@@ -49,7 +50,9 @@ final class MediaItemSaveTest extends MediaApiTestCase
         self::assertNotSame($changedAt->format(\DATE_ATOM), $answer['changedAt']);
 
         // Stored
-        self::getContainer()->get('doctrine')->getManager()->clear();
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.media_item');
+        $manager->clear();
         $saved = self::mediaItems()->findOneByUuid($uuid);
         self::assertNotNull($saved);
         self::assertSame('Golden retriever', $saved->getName());

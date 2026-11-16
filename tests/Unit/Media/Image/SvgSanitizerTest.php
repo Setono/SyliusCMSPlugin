@@ -65,6 +65,8 @@ final class SvgSanitizerTest extends TestCase
      * @test
      *
      * @dataProvider dimensions
+     *
+     * @param array{int, int}|null $dimensions
      */
     public function it_reads_the_dimensions_from_the_width_and_height_or_else_the_view_box(string $svg, ?array $dimensions): void
     {

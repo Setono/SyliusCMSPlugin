@@ -73,7 +73,7 @@ final class UploadLimitTest extends TestCase
             };
         };
 
-        $limits = array_filter([$bytes((string) ini_get('upload_max_filesize')), $bytes((string) ini_get('post_max_size'))]);
+        $limits = array_filter([$bytes((string) ini_get('upload_max_filesize')), $bytes((string) ini_get('post_max_size'))], static fn (int $limit): bool => $limit > 0);
 
         return [] === $limits ? \PHP_INT_MAX : min($limits);
     }

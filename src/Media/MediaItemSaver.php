@@ -78,8 +78,8 @@ final readonly class MediaItemSaver implements MediaItemSaverInterface
             throw new InvalidMediaChangeException(sprintf('The store has no locale %s', implode(', ', $unknown)));
         }
 
-        if ($metadata->poster !== $before->poster && null !== $metadata->poster
-            && (MediaKind::Video !== $mediaItem->getKind() || MediaKind::Image !== $metadata->poster->getKind())) {
+        if ($metadata->poster !== $before->poster && null !== $metadata->poster &&
+            (MediaKind::Video !== $mediaItem->getKind() || MediaKind::Image !== $metadata->poster->getKind())) {
             throw new InvalidMediaChangeException('Only a video has a poster, and its poster is an image');
         }
     }

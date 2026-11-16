@@ -62,7 +62,8 @@ final class MediaUploadTest extends MediaApiTestCase
         self::assertFalse($prices['missingAlt']);
 
         // The file is public at its URL, and its checksum and size are the stored file's
-        $mediaItem = self::mediaItems()->findOneByUuid((string) $sale['uuid']);
+        self::assertIsString($sale['uuid']);
+        $mediaItem = self::mediaItems()->findOneByUuid($sale['uuid']);
         self::assertNotNull($mediaItem);
         self::assertIsString($sale['url']);
         $stored = self::mediaDirectory() . substr($sale['url'], strlen('/media/cms'));

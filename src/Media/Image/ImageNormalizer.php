@@ -68,7 +68,7 @@ final readonly class ImageNormalizer
         }
 
         // Image libraries write metadata of their own, such as GD's comment in a JPEG
-        return self::strip($encoded, $mimeType)?->content ?? $encoded;
+        return self::strip($encoded, $mimeType)->content ?? $encoded;
     }
 
     private static function strip(string $content, string $mimeType): ?StrippedImage

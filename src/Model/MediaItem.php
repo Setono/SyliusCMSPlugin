@@ -184,7 +184,7 @@ class MediaItem implements MediaItemInterface
         $translation = $this->translations->get($localeCode);
 
         if (null === $altText) {
-            if (null !== $translation) {
+            if ($translation instanceof TranslationInterface) {
                 $this->removeTranslation($translation);
             }
 

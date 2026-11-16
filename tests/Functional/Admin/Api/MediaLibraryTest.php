@@ -105,6 +105,7 @@ final class MediaLibraryTest extends MediaApiTestCase
         self::assertIsArray($answer);
         self::assertIsArray($answer['items']);
         self::assertSame([true, true, false], array_column($answer['items'], 'missingAlt'));
+        self::assertIsArray($answer['items'][2]);
         self::assertSame(['de_DE' => 'Ein Hund', 'en_US' => 'A dog'], $answer['items'][2]['altTexts']);
     }
 
@@ -129,6 +130,7 @@ final class MediaLibraryTest extends MediaApiTestCase
         self::assertCount(60, $first['items']);
         self::assertIsArray($second['items']);
         self::assertCount(1, $second['items']);
+        self::assertIsArray($second['items'][0]);
         self::assertSame('pixel-1', $second['items'][0]['name']);
     }
 
@@ -156,7 +158,14 @@ final class MediaLibraryTest extends MediaApiTestCase
         self::assertIsArray($answer);
         self::assertIsArray($answer['items']);
 
-        return array_column($answer['items'], 'uuid');
+        $uuids = [];
+        foreach ($answer['items'] as $item) {
+            self::assertIsArray($item);
+            self::assertIsString($item['uuid']);
+            $uuids[] = $item['uuid'];
+        }
+
+        return $uuids;
     }
 
     private static function flush(): void

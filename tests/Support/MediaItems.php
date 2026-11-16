@@ -55,7 +55,9 @@ trait MediaItems
     /**
      * A PNG of this size in one colour
      *
-     * @param array{int, int, int} $rgb
+     * @param int<1, max> $width
+     * @param int<1, max> $height
+     * @param array{int<0, 255>, int<0, 255>, int<0, 255>} $rgb
      */
     protected static function png(int $width = 40, int $height = 20, array $rgb = [200, 30, 30]): string
     {
@@ -70,7 +72,9 @@ trait MediaItems
     /**
      * A JPEG of this size in one colour
      *
-     * @param array{int, int, int} $rgb
+     * @param int<1, max> $width
+     * @param int<1, max> $height
+     * @param array{int<0, 255>, int<0, 255>, int<0, 255>} $rgb
      */
     protected static function jpeg(int $width = 40, int $height = 20, array $rgb = [30, 30, 200]): string
     {
@@ -123,7 +127,9 @@ trait MediaItems
      */
     private static function storedMedia(): array
     {
-        return is_dir(self::mediaDirectory()) ? array_values(array_diff(scandir(self::mediaDirectory()) ?: [], ['.', '..'])) : [];
+        $entries = is_dir(self::mediaDirectory()) ? scandir(self::mediaDirectory()) : false;
+
+        return false === $entries ? [] : array_values(array_diff($entries, ['.', '..']));
     }
 
     private static function removeDirectory(string $directory): void

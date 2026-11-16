@@ -59,11 +59,11 @@ final readonly class MediaItemMetadata
 
     public function equals(self $other): bool
     {
-        return $this->name === $other->name
-            && $this->folder === $other->folder
-            && $this->credit === $other->credit
-            && $this->altTexts === $other->altTexts
-            && $this->focalPoint->equals($other->focalPoint)
-            && $this->poster === $other->poster;
+        return $this->name === $other->name &&
+            $this->folder === $other->folder &&
+            $this->credit === $other->credit &&
+            $this->altTexts === $other->altTexts &&
+            $this->focalPoint->equals($other->focalPoint) &&
+            $this->poster === $other->poster;
     }
 }
