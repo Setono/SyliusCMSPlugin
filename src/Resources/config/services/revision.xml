@@ -23,5 +23,14 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Revision\RevisionRestorerInterface" alias="Setono\SyliusCMSPlugin\Revision\RevisionRestorer"/>
+
+        <!-- The URL of a revision's read-only preview -->
+        <service id="Setono\SyliusCMSPlugin\Revision\RevisionPreviewUrlGenerator" class="Setono\SyliusCMSPlugin\Revision\RevisionPreviewUrlGenerator">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionReader"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner"/>
+            <argument type="service" id="router"/>
+        </service>
     </services>
 </container>

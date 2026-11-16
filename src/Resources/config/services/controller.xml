@@ -215,5 +215,13 @@
 
             <tag name="controller.service_arguments"/>
         </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRevisionAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRevisionAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionPreviewUrlGenerator"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
     </services>
 </container>

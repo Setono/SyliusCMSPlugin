@@ -123,6 +123,74 @@ final class RevisionsTest extends BuilderApiTestCase
     }
 
     /**
+     * @test
+     */
+    public function a_revisions_preview_renders_its_old_content_at_its_old_url_read_only(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('About us', 'about-us', 'Hello');
+        $csrfToken = self::openBuilder($client, $page);
+        self::publish($client, $page, $csrfToken);
+        self::json($client, 'PATCH', '/admin/cms/api/entries/' . $page->getUuid(), ['lockToken' => self::lockToken($client, $page), 'changes' => [
+            ['op' => 'set_value', 'key' => self::KEY, 'field' => 'text', 'locale' => 'en_US', 'value' => 'Hello world'],
+            ['op' => 'set_entry_value', 'field' => 'slug', 'locale' => 'en_US', 'value' => 'about-our-shop'],
+        ]], $csrfToken);
+        self::assertResponseIsSuccessful();
+        self::publish($client, $page, $csrfToken);
+        self::saveHeading($client, $page, 'Hello drafts', $csrfToken);
+        [, $first] = self::revisionIds($client, $page);
+
+        $response = self::json($client, 'POST', sprintf('/admin/cms/api/revisions/%d/preview', $first), null, $csrfToken);
+
+        self::assertResponseIsSuccessful();
+        self::assertIsArray($response);
+        self::assertIsString($response['url'] ?? null);
+        self::assertStringStartsWith('http://localhost/en_US/about-us?_cms_preview=', $response['url']);
+
+        $client->request('GET', $response['url']);
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextSame('.cms-heading', 'Hello');
+        self::assertResponseHeaderSame('X-Robots-Tag', 'noindex');
+        self::assertSelectorNotExists('script[data-cms-bridge]');
+
+        // The shop shows what was published last, and the revision's URL is no longer the page's
+        $client->request('GET', '/en_US/about-our-shop');
+        self::assertSelectorTextSame('.cms-heading', 'Hello world');
+        $client->request('GET', '/en_US/about-us');
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    /**
+     * @test
+     */
+    public function a_revisions_preview_can_be_asked_for_in_a_channel_and_locale_and_says_why_there_is_none(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('About us', 'about-us', 'Hello');
+        $csrfToken = self::openBuilder($client, $page);
+        self::publish($client, $page, $csrfToken);
+        [$revision] = self::revisionIds($client, $page);
+
+        $response = self::json($client, 'POST', sprintf('/admin/cms/api/revisions/%d/preview', $revision), ['channel' => 'WEB', 'locale' => 'en_US'], $csrfToken);
+        self::assertResponseIsSuccessful();
+        self::assertIsArray($response);
+        self::assertStringStartsWith('http://localhost/en_US/about-us?_cms_preview=', (string) ($response['url'] ?? null));
+
+        $response = self::json($client, 'POST', sprintf('/admin/cms/api/revisions/%d/preview', $revision), ['channel' => 'WEB', 'locale' => 'da_DK'], $csrfToken);
+        self::assertResponseStatusCodeSame(400);
+        self::assertSame(['error' => 'The channel WEB has no locale da_DK'], $response);
+
+        self::json($client, 'POST', sprintf('/admin/cms/api/revisions/%d/preview', $revision), ['channel' => 1], $csrfToken);
+        self::assertResponseStatusCodeSame(400);
+
+        self::json($client, 'POST', sprintf('/admin/cms/api/revisions/%d/preview', $revision), null, 'forged');
+        self::assertResponseStatusCodeSame(403);
+
+        self::json($client, 'POST', sprintf('/admin/cms/api/revisions/%d/preview', $revision + 1000), null, $csrfToken);
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    /**
      * The ids of the page's revisions, newest first, as revision_index lists them
      *
      * @return list<int>

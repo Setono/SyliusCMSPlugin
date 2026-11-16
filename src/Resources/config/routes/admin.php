@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DiscardEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PresenceAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRenderAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRevisionAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewTokenAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PublishEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RegistryAction;
@@ -178,6 +179,12 @@ return static function (RoutingConfigurator $routes): void {
 
     $routes->add('setono_sylius_cms_admin_api_revision_restore', '/cms/api/revisions/{id}/restore')
         ->controller(RestoreRevisionAction::class)
+        ->methods(['POST'])
+        ->requirements(['id' => Requirement::DIGITS])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_revision_preview', '/cms/api/revisions/{id}/preview')
+        ->controller(PreviewRevisionAction::class)
         ->methods(['POST'])
         ->requirements(['id' => Requirement::DIGITS])
     ;
