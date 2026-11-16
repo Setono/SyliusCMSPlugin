@@ -258,5 +258,47 @@
 
             <tag name="controller.service_arguments"/>
         </service>
+
+        <!-- Share links: the builder's endpoints and the overview page's forms -->
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkAnswer" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkAnswer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkIndexAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkIndexAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkAnswer"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateShareLinkAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateShareLinkAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\ShareLink\ShareLinkCreatorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkAnswer"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\RevokeShareLinkAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\RevokeShareLinkAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\CreateShareLinkAction" class="Setono\SyliusCMSPlugin\Controller\Admin\CreateShareLinkAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\ShareLink\ShareLinkCreatorInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\RevokeShareLinkAction" class="Setono\SyliusCMSPlugin\Controller\Admin\RevokeShareLinkAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
     </services>
 </container>

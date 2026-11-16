@@ -22,11 +22,27 @@ class ShareLinkRepository extends EntityRepository implements ShareLinkRepositor
         return $shareLink instanceof ShareLinkInterface ? $shareLink : null;
     }
 
-    public function findOneByToken(string $token): ?ShareLinkInterface
+    public function lookUpToken(string $token): ?array
     {
-        $shareLink = $this->findOneBy(['token' => $token]);
+        /** @var array{entry: string, channel: string, locale: string, shownTo: string, date: \DateTimeImmutable|null}|null $shareLink */
+        $shareLink = $this->createQueryBuilder('o')
+            ->select('sharedEntry.uuid AS entry', 'o.channelCode AS channel', 'o.localeCode AS locale', 'o.shownTo AS shownTo', 'o.date AS date')
+            ->join('o.entry', 'sharedEntry')
+            ->andWhere('o.token = :token')
+            ->setParameter('token', $token)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
 
-        return $shareLink instanceof ShareLinkInterface ? $shareLink : null;
+        if (null === $shareLink) {
+            return null;
+        }
+
+        // Doctrine hydrates the column in PHP's default time zone, but it holds UTC
+        $date = $shareLink['date'];
+        $shareLink['date'] = null === $date ? null : new \DateTimeImmutable($date->format('Y-m-d H:i:s'), new \DateTimeZone('UTC'));
+
+        return $shareLink;
     }
 
     public function findByEntry(EntryInterface $entry): array
