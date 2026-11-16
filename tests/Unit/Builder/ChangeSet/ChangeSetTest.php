@@ -377,6 +377,7 @@ final class ChangeSetTest extends TestCase
         yield 'no locale' => [['fingerprint' => $fingerprint]];
         yield 'an empty locale' => [['from' => '', 'fingerprint' => $fingerprint]];
         yield 'a locale that is a number' => [['from' => 1, 'fingerprint' => $fingerprint]];
+        yield 'a locale that is not a locale code' => [['from' => '$en_US', 'fingerprint' => $fingerprint]];
         yield 'no fingerprint' => [['from' => 'en_US']];
         yield 'a fingerprint that is a number' => [['from' => 'en_US', 'fingerprint' => 1]];
         yield 'a fingerprint that is not a SHA-256' => [['from' => 'en_US', 'fingerprint' => strtoupper($fingerprint)]];
@@ -423,6 +424,9 @@ final class ChangeSetTest extends TestCase
         yield 'set_value with an empty field' => [['changes' => [['field' => ''] + $setValue]]];
         yield 'set_value with a non-string locale' => [['changes' => [['locale' => 1] + $setValue]]];
         yield 'set_value with an empty locale' => [['changes' => [['locale' => ''] + $setValue]]];
+        yield 'set_value with a locale that is not a locale code' => [['changes' => [['locale' => '$en_US'] + $setValue]]];
+        yield 'set_entry_value with a locale that is not a locale code' => [['changes' => [['op' => 'set_entry_value', 'field' => 'title', 'locale' => 'en US', 'value' => 'Om os']]]];
+        yield 'set_shown with a locale that is not a locale code' => [['changes' => [['op' => 'set_shown', 'locale' => '__proto__', 'shown' => true]]]];
         yield 'set_value without a value' => [['changes' => [array_diff_key($setValue, ['value' => true])]]];
         yield 'remove_block without a key' => [['changes' => [['op' => 'remove_block']]]];
         yield 'add_block with a negative index' => [['changes' => [['index' => -1] + $addBlock]]];

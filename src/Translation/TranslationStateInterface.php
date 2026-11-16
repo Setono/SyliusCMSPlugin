@@ -28,7 +28,7 @@ interface TranslationStateInterface
      * change is, so editors with the entry open pull it in, and a value an editor set in the same field and locale in
      * the meantime wins
      *
-     * @param string $path entry.<field> or block.<key>.<field>, as values() gives it
+     * @param string $path entry.<field>, layout.<field> or block.<key>.<field>, as values() gives it
      *
      * @throws \InvalidArgumentException when the path isn't one of the entry's values, or $sourceFingerprint isn't a fingerprint
      * @throws InvalidChangeSetException when the value doesn't fit the field

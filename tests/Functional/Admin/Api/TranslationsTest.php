@@ -21,6 +21,7 @@ final class TranslationsTest extends BuilderApiTestCase
     public function a_translation_added_before_the_first_publish_starts_shown(): void
     {
         $client = self::createClient();
+        self::addLocales('WEB', 'da_DK');
         $page = self::createPage('About us', 'about-us', 'Hello');
         $csrfToken = self::openBuilder($client, $page);
 
@@ -39,6 +40,7 @@ final class TranslationsTest extends BuilderApiTestCase
     public function a_translation_added_after_the_first_publish_starts_held_back(): void
     {
         $client = self::createClient();
+        self::addLocales('WEB', 'da_DK');
         $page = self::createPage('About us', 'about-us', 'Hello', published: true);
         $csrfToken = self::openBuilder($client, $page);
 
@@ -103,6 +105,7 @@ final class TranslationsTest extends BuilderApiTestCase
     public function it_answers_a_clash_over_a_title_a_colleague_changed_in_the_same_locale(): void
     {
         $client = self::createClient();
+        self::addLocales('WEB', 'da_DK');
         $page = self::createPage('About us', 'about-us', 'Hello');
         $csrfToken = self::openBuilder($client, $page);
 

@@ -15,7 +15,7 @@ final readonly class Problem
 {
     /**
      * @param string $kind the code of its kind, such as "unknown_block_type"
-     * @param EntryInterface $entry the record it's on
+     * @param EntryInterface $entry the entry it's on
      * @param TranslatableInterface $message what's wrong, to translate where it's shown
      * @param Fix|null $fix where it's fixed, or null when there's no one place
      * @param string|null $block the key of the block it's in, or null when it isn't in a block

@@ -33,6 +33,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\ChannelLocales"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface" alias="Setono\SyliusCMSPlugin\Publishing\Autosave"/>
 

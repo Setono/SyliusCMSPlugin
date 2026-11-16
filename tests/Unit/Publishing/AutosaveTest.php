@@ -27,6 +27,7 @@ use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
+use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
@@ -43,11 +44,16 @@ use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
+use Sylius\Component\Channel\Model\ChannelInterface;
+use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
+use Sylius\Component\Core\Model\Channel;
+use Sylius\Component\Locale\Model\Locale;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
@@ -78,6 +84,9 @@ final class AutosaveTest extends TestCase
     /** @var ObjectProphecy<ScheduledPublishRepositoryInterface> */
     private ObjectProphecy $scheduledPublishes;
 
+    /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> */
+    private ObjectProphecy $channelRepository;
+
     /** @var ObjectProphecy<EntryUrlValidatorInterface> */
     private ObjectProphecy $urlValidator;
 
@@ -95,6 +104,7 @@ final class AutosaveTest extends TestCase
         $this->entry = new Page();
         $this->workingCopy = new Page();
         $this->workingCopy->setBlockTree(new StoredTree(null, [self::heading(self::A, 'Hello'), self::heading(self::B, 'World')]));
+        ChannelsAndAudience::modifier()->setChannels($this->workingCopy, ['WEB']);
 
         $this->manager = $this->prophesize(EntityManagerInterface::class);
         $this->managerRegistry = $this->prophesize(ManagerRegistry::class);
@@ -129,6 +139,19 @@ final class AutosaveTest extends TestCase
         $this->scheduledPublishes->findOneByEntry($this->entry)->willReturn(null);
         $this->urlValidator = $this->prophesize(EntryUrlValidatorInterface::class);
         $this->urlValidator->refuse(Argument::cetera())->willReturn([]);
+
+        // The store's one channel has English and Danish
+        $channel = new Channel();
+        $channel->setCode('WEB');
+        foreach (['en_US', 'da_DK'] as $localeCode) {
+            $locale = new Locale();
+            $locale->setCode($localeCode);
+            $channel->addLocale($locale);
+        }
+        /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $channelRepository */
+        $channelRepository = $this->prophesize(ChannelRepositoryInterface::class);
+        $this->channelRepository = $channelRepository;
+        $this->channelRepository->findAll()->willReturn([$channel]);
 
         // Whoever saves is recorded on the entry. The name is read when the edit is recorded
         $calls = &$this->calls;
@@ -361,6 +384,26 @@ final class AutosaveTest extends TestCase
     }
 
     /**
+     * The admin offers a translation for each locale of the entry's channels. See "Which locales an entry has" in
+     * docs/spec/localization.md
+     *
+     * @test
+     */
+    public function it_refuses_a_translation_in_a_locale_none_of_the_entrys_channels_has(): void
+    {
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
+        $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
+
+        $this->autosave()->save($this->entry, new ChangeSet([new SetEntryValue('title', 'da_DK', 'Om os')]), 3);
+        self::assertSame('Om os', $this->workingCopy->getTranslation('da_DK')->getTitle());
+
+        $this->expectException(InvalidChangeSetException::class);
+        $this->expectExceptionMessage('The entry\'s channels have no locale "sv_SE" to add a translation in');
+
+        $this->autosave()->save($this->entry, new ChangeSet([new SetEntryValue('title', 'sv_SE', 'Om oss')]), 3);
+    }
+
+    /**
      * @test
      */
     public function it_saves_nothing_when_the_changes_do_not_apply(): void
@@ -568,6 +611,7 @@ final class AutosaveTest extends TestCase
             new EntryDenormalizer(self::contentTypes()),
             $this->urlValidator->reveal(),
             $this->scheduledPublishes->reveal(),
+            new ChannelLocales($this->channelRepository->reveal()),
         );
     }
 

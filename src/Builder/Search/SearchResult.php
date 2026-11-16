@@ -6,7 +6,7 @@ namespace Setono\SyliusCMSPlugin\Builder\Search;
 
 /**
  * One thing a picker's search found: what a field stores to refer to it, its name and its thumbnail.
- * See "Widgets" in docs/spec/extending.md
+ * See "Field controls" in docs/spec/extending.md
  */
 final readonly class SearchResult implements \JsonSerializable
 {

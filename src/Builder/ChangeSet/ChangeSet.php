@@ -21,6 +21,9 @@ use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
  */
 final readonly class ChangeSet
 {
+    /** A locale code, such as en_US, as the shop's URLs allow one */
+    private const LOCALE_CODE = '/^[A-Za-z]{2,4}(_([A-Za-z]{4}|[0-9]{3}))?(_([A-Za-z]{2}|[0-9]{3}))?$/';
+
     /**
      * @param list<Change> $changes in the order they were made
      */
@@ -146,7 +149,7 @@ final readonly class ChangeSet
             'set_value' => new SetValue(
                 self::string($change, 'key'),
                 self::string($change, 'field'),
-                self::nullableString($change, 'locale'),
+                self::nullableLocale($change),
                 array_key_exists('value', $change) ? $change['value'] : throw new InvalidChangeSetException('A set_value change must have a value'),
             ),
             'set_style' => new SetStyle(
@@ -156,35 +159,35 @@ final readonly class ChangeSet
             'set_conditions' => new SetConditions(self::string($change, 'key'), self::conditions($change)),
             'set_entry_value' => new SetEntryValue(
                 self::string($change, 'field'),
-                self::nullableString($change, 'locale'),
+                self::nullableLocale($change),
                 array_key_exists('value', $change) ? $change['value'] : throw new InvalidChangeSetException('A set_entry_value change must have a value'),
             ),
             'set_shown' => new SetShown(
-                self::string($change, 'locale'),
+                self::locale($change),
                 is_bool($change['shown'] ?? null) ? $change['shown'] : throw new InvalidChangeSetException('A set_shown change must have a shown switch that is true or false'),
             ),
             'set_translated' => new SetTranslated(
                 self::string($change, 'key'),
                 self::string($change, 'field'),
-                self::string($change, 'locale'),
+                self::locale($change),
                 self::translated($change),
             ),
             'set_entry_translated' => new SetEntryTranslated(
                 self::string($change, 'field'),
-                self::string($change, 'locale'),
+                self::locale($change),
                 self::translated($change),
             ),
             'set_layout' => new SetLayout(self::layout($change, $serializer)),
             'set_layout_value' => new SetLayoutValue(
                 self::string($change, 'layout'),
                 self::string($change, 'field'),
-                self::nullableString($change, 'locale'),
+                self::nullableLocale($change),
                 array_key_exists('value', $change) ? $change['value'] : throw new InvalidChangeSetException('A set_layout_value change must have a value'),
             ),
             'set_layout_translated' => new SetLayoutTranslated(
                 self::string($change, 'layout'),
                 self::string($change, 'field'),
-                self::string($change, 'locale'),
+                self::locale($change),
                 self::translated($change),
             ),
             default => throw new InvalidChangeSetException('A change must have the op add_block, move_block, remove_block, set_value, set_style, set_conditions, set_entry_value, set_shown, set_translated, set_entry_translated, set_layout, set_layout_value or set_layout_translated'),
@@ -212,7 +215,7 @@ final readonly class ChangeSet
 
         $from = is_array($translated) ? $translated['from'] ?? null : null;
         $fingerprint = is_array($translated) ? $translated['fingerprint'] ?? null : null;
-        if (!is_string($from) || '' === $from || !is_string($fingerprint) || !Fingerprint::isValid($fingerprint)) {
+        if (!is_string($from) || !self::isLocaleCode($from) || !is_string($fingerprint) || !Fingerprint::isValid($fingerprint)) {
             throw new InvalidChangeSetException('The "translated" of a change must be null, or have the locale the value was translated from and its fingerprint');
         }
 
@@ -225,6 +228,34 @@ final readonly class ChangeSet
     private static function source(?array $translated): ?ListedObject
     {
         return null === $translated ? null : new ListedObject(['from' => $translated['from'], 'fingerprint' => $translated['fingerprint']]);
+    }
+
+    /**
+     * The locale of a change, a locale code such as en_US, as the shop's URLs have it
+     *
+     * @param array<array-key, mixed> $change
+     */
+    private static function locale(array $change): string
+    {
+        $locale = self::string($change, 'locale');
+        if (!self::isLocaleCode($locale)) {
+            throw new InvalidChangeSetException(sprintf('The locale "%s" of a change must be a locale code, such as en_US', $locale));
+        }
+
+        return $locale;
+    }
+
+    /**
+     * @param array<array-key, mixed> $change
+     */
+    private static function nullableLocale(array $change): ?string
+    {
+        return null === ($change['locale'] ?? null) ? null : self::locale($change);
+    }
+
+    private static function isLocaleCode(string $value): bool
+    {
+        return 1 === preg_match(self::LOCALE_CODE, $value);
     }
 
     /**

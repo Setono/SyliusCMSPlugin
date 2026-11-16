@@ -432,6 +432,32 @@ final class ChangeSetApplierTest extends TestCase
     }
 
     /**
+     * The admin offers a translation for each locale of the entry's channels, which the caller gives. See "Which locales
+     * an entry has" in docs/spec/localization.md
+     *
+     * @test
+     */
+    public function it_adds_a_translation_only_in_one_of_the_locales_it_is_given_and_changes_one_the_entry_has_in_any(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('title', 'da_DK', 'Om os'), new SetEntryValue('title', 'en_US', 'About')]), $page, ['da_DK']);
+
+        self::assertSame('Om os', $page->getTranslation('da_DK')->getTitle());
+        self::assertSame('About', $page->getTranslation('en_US')->getTitle());
+
+        try {
+            self::applier()->apply(new ChangeSet([new SetEntryValue('title', 'sv_SE', 'Om oss'), new SetEntryValue('title', 'da_DK', 'Om')]), $page, ['da_DK']);
+            self::fail('A translation was added in a locale the entry\'s channels don\'t have');
+        } catch (InvalidChangeSetException $exception) {
+            self::assertSame('The entry\'s channels have no locale "sv_SE" to add a translation in', $exception->getMessage());
+        }
+
+        self::assertSame(['en_US', 'da_DK'], array_keys([...$page->getTranslations()]));
+        self::assertSame('Om os', $page->getTranslation('da_DK')->getTitle());
+    }
+
+    /**
      * A translation added after the first publish starts held back
      *
      * @test

@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\Merge;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
+use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
@@ -46,6 +47,7 @@ final readonly class Autosave implements AutosaveInterface
         private EntryDenormalizer $entryDenormalizer,
         private EntryUrlValidatorInterface $urlValidator,
         private ScheduledPublishRepositoryInterface $scheduledPublishes,
+        private ChannelLocales $channelLocales,
     ) {
     }
 
@@ -82,7 +84,7 @@ final readonly class Autosave implements AutosaveInterface
             )));
 
             if ([] !== $changes->changes) {
-                $this->applier->apply($changes, $workingCopy);
+                $this->applier->apply($changes, $workingCopy, $this->channelLocales->ofChannels($workingCopy->getChannelCodes()));
 
                 $this->number($entry, ++$latest, $changes);
                 $this->editRecorder->record($entry);

@@ -39,9 +39,12 @@ final readonly class ChangeSetApplier
     }
 
     /**
+     * @param list<string>|null $locales the locales a translation may be added in, the locales of the entry's channels,
+     *                                   or null for any. A translation the entry has may be changed in any locale
+     *
      * @throws InvalidChangeSetException
      */
-    public function apply(ChangeSet $changeSet, EntryInterface $workingCopy): void
+    public function apply(ChangeSet $changeSet, EntryInterface $workingCopy, ?array $locales = null): void
     {
         $contentType = $this->contentTypes->getByEntry($workingCopy);
         // A copy, so nothing changes until every change is known to apply
@@ -72,6 +75,11 @@ final readonly class ChangeSetApplier
         }
 
         self::assertUniqueKeys($tree);
+        foreach ($translationChanges as [$locale]) {
+            if (null !== $locales && !$workingCopy->getTranslations()->containsKey($locale) && !in_array($locale, $locales, true)) {
+                throw new InvalidChangeSetException(sprintf('The entry\'s channels have no locale "%s" to add a translation in', $locale));
+            }
+        }
 
         $workingCopy->setBlockTree($tree);
         foreach ($entryChanges as $changeEntry) {
