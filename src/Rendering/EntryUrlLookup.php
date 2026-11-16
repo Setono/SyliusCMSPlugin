@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Routing\EntryPath;
 use Sylius\Component\Core\Model\ChannelInterface;
 
 /**
@@ -27,7 +28,7 @@ final readonly class EntryUrlLookup implements EntryUrlLookupInterface
 
     public function lookup(ChannelInterface $channel, string $localeCode, string $path): ?EntryUrlMatch
     {
-        $slugs = $this->slugsByContentType($path);
+        $slugs = EntryPath::slugs($this->contentTypes->all(), $path);
         if ([] === $slugs) {
             return null;
         }
@@ -63,31 +64,5 @@ final readonly class EntryUrlLookup implements EntryUrlLookupInterface
         }
 
         return new EntryUrlMatch($row['uuid'], $row['content_type']);
-    }
-
-    /**
-     * @return array<string, string> content type code => the slug the path holds for it
-     */
-    private function slugsByContentType(string $path): array
-    {
-        $slugs = [];
-
-        foreach ($this->contentTypes->all() as $contentType) {
-            if (null === $contentType->prefix) {
-                continue;
-            }
-
-            if ('' === $contentType->prefix) {
-                $slugs[$contentType->code] = $path;
-
-                continue;
-            }
-
-            if (str_starts_with($path, $contentType->prefix . '/')) {
-                $slugs[$contentType->code] = substr($path, strlen($contentType->prefix) + 1);
-            }
-        }
-
-        return $slugs;
     }
 }

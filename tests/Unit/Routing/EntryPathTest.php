@@ -81,9 +81,39 @@ final class EntryPathTest extends TestCase
         self::assertNull(EntryPath::ofSlug(self::contentType('blog'), ''));
     }
 
-    private static function contentType(?string $prefix): ContentTypeMetadata
+    /**
+     * @test
+     */
+    public function it_finds_the_slug_a_path_holds_for_each_content_type_whose_prefix_fits_it(): void
     {
-        return new ContentTypeMetadata('page', 'Page', 1, $prefix, null, Page::class, PageTranslation::class, 'setono_sylius_cms.page');
+        $contentTypes = [
+            self::contentType('', 'page'),
+            self::contentType('blog', 'blog_post'),
+            self::contentType('blog/category', 'blog_category'),
+            self::contentType(null, 'snippet'),
+        ];
+
+        self::assertSame(['page' => 'about-us'], EntryPath::slugs($contentTypes, 'about-us'));
+        self::assertSame(['page' => 'blog/hello', 'blog_post' => 'hello'], EntryPath::slugs($contentTypes, 'blog/hello'));
+        self::assertSame(
+            ['page' => 'blog/category/news', 'blog_post' => 'category/news', 'blog_category' => 'news'],
+            EntryPath::slugs($contentTypes, 'blog/category/news'),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function a_path_that_is_only_the_prefix_holds_no_slug_under_it(): void
+    {
+        self::assertSame([], EntryPath::slugs([self::contentType('blog', 'blog_post')], 'blog'));
+        self::assertSame([], EntryPath::slugs([self::contentType('blog', 'blog_post')], 'blog/'));
+        self::assertSame([], EntryPath::slugs([self::contentType('blog', 'blog_post')], 'blogs/hello'));
+    }
+
+    private static function contentType(?string $prefix, string $code = 'page'): ContentTypeMetadata
+    {
+        return new ContentTypeMetadata($code, 'Page', 1, $prefix, null, Page::class, PageTranslation::class, 'setono_sylius_cms.page');
     }
 
     private static function page(?string $slug): Page
