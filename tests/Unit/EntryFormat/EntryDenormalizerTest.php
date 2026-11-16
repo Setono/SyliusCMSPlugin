@@ -90,12 +90,15 @@ final class EntryDenormalizerTest extends TestCase
         $rows->getTranslation('en_US')->setTranslated(['title' => ['from' => 'da_DK', 'fingerprint' => $fingerprint]]);
         $draft = clone $rows;
         $draft->getTranslation('en_US')->setTranslated([]);
-        $draft->getTranslation('da_DK')->setTranslated(['title' => ['from' => 'en_US', 'fingerprint' => $fingerprint]]);
+        $draft->getTranslation('da_DK')->setTranslated(['title' => ['from' => 'en_US', 'fingerprint' => $fingerprint], 'slug' => ['from' => 'en_US', 'fingerprint' => $fingerprint]]);
 
         $this->denormalizer()->denormalize(CanonicalJson::decode(CanonicalJson::encode($this->normalizer()->normalize($draft))), $rows);
 
         self::assertSame([], $rows->getTranslation('en_US')->getTranslated());
-        self::assertSame(['title' => ['from' => 'en_US', 'fingerprint' => $fingerprint]], $rows->getTranslation('da_DK')->getTranslated());
+        self::assertSame(
+            ['slug' => ['from' => 'en_US', 'fingerprint' => $fingerprint], 'title' => ['from' => 'en_US', 'fingerprint' => $fingerprint]],
+            $rows->getTranslation('da_DK')->getTranslated(),
+        );
     }
 
     /**

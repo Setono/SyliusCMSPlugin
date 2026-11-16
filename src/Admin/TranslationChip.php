@@ -17,9 +17,9 @@ final readonly class TranslationChip
     public function __construct(
         public string $localeCode,
         public bool $translated,
-        public bool $heldBack = false,
-        public int $untranslated = 0,
-        public int $outdated = 0,
+        public bool $heldBack,
+        public int $untranslated,
+        public int $outdated,
     ) {
     }
 

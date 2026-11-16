@@ -45,7 +45,7 @@ final class TranslationChips implements ResetInterface
         foreach ($this->localesOf($row->entry->getChannelCodes()) as $localeCode) {
             $translation = $translations->get($localeCode);
             if (!$translation instanceof EntryTranslationInterface || null === $translation->getTitle() || '' === $translation->getTitle()) {
-                $chips[] = new TranslationChip($localeCode, false);
+                $chips[] = new TranslationChip($localeCode, false, false, 0, 0);
 
                 continue;
             }
@@ -101,12 +101,9 @@ final class TranslationChips implements ResetInterface
                 foreach ($channel->getLocales() as $locale) {
                     $localeCodes[] = $locale->getCode() ?? '';
                 }
-                sort($localeCodes);
 
                 $default = $channel->getDefaultLocale()?->getCode();
-                if (in_array($default, $localeCodes, true)) {
-                    $localeCodes = [$default, ...array_diff($localeCodes, [$default])];
-                }
+                usort($localeCodes, static fn (string $a, string $b): int => [$a !== $default, $a] <=> [$b !== $default, $b]);
             }
 
             $this->channelLocales[$channel->getCode() ?? ''] = $localeCodes;

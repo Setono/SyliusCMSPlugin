@@ -49,7 +49,8 @@ final readonly class TranslatableValues
         $translations = $workingCopy->getTranslations()->toArray();
         $entryFields = $contentType->hasOwnUrl() ? ['title', 'slug'] : ['title'];
         foreach ($entryFields as $field) {
-            $values[] = $this->value(
+            $this->add(
+                $values,
                 sprintf('entry.%s', $field),
                 null,
                 array_map(static fn (EntryTranslationInterface $translation): ?string => 'slug' === $field ? $translation->getSlug() : $translation->getTitle(), $translations),
@@ -62,7 +63,7 @@ final readonly class TranslatableValues
         $layout = $tree->layout;
         if (null !== $layout && $this->layouts->has($contentType->code, $layout->code)) {
             foreach ($this->translatable($this->layouts->get($contentType->code, $layout->code)->fields) as $name => $field) {
-                $values[] = $this->value(sprintf('layout.%s', $name), $field, $layout->fields[$name] ?? null, $layout->translated[$name] ?? null, $localeCode);
+                $this->add($values, sprintf('layout.%s', $name), $field, $layout->fields[$name] ?? null, $layout->translated[$name] ?? null, $localeCode);
             }
         }
 
@@ -70,7 +71,7 @@ final readonly class TranslatableValues
             $this->blockValues($block, $localeCode, $values);
         }
 
-        return array_values(array_filter($values));
+        return $values;
     }
 
     public function completeness(EntryInterface $workingCopy, string $localeCode): Completeness
@@ -79,14 +80,14 @@ final readonly class TranslatableValues
     }
 
     /**
-     * @param list<TranslatableValue|null> $values
+     * @param list<TranslatableValue> $values
      */
     private function blockValues(StoredBlock $block, string $localeCode, array &$values): void
     {
         // A block of a type the code no longer has isn't rendered, so there's nothing in it to translate
         if ($this->blockTypes->has($block->type)) {
             foreach ($this->translatable($this->blockTypes->get($block->type)->fields) as $name => $field) {
-                $values[] = $this->value(sprintf('block.%s.%s', $block->key, $name), $field, $block->fields[$name] ?? null, $block->translated[$name] ?? null, $localeCode);
+                $this->add($values, sprintf('block.%s.%s', $block->key, $name), $field, $block->fields[$name] ?? null, $block->translated[$name] ?? null, $localeCode);
             }
         }
 
@@ -109,10 +110,21 @@ final readonly class TranslatableValues
     }
 
     /**
+     * Adds the value at the path to the values, unless no locale has a value there
+     *
+     * @param list<TranslatableValue> $values
      * @param Field|null $field the field, or null for an entry field, which is a string
      * @param mixed $stored what the field stores: a map from locale to value
      * @param mixed $translated where each locale's value was translated from
      */
+    private function add(array &$values, string $path, ?Field $field, mixed $stored, mixed $translated, string $localeCode): void
+    {
+        $value = $this->value($path, $field, $stored, $translated, $localeCode);
+        if (null !== $value) {
+            $values[] = $value;
+        }
+    }
+
     private function value(string $path, ?Field $field, mixed $stored, mixed $translated, string $localeCode): ?TranslatableValue
     {
         /** @var array<string, mixed> $stored a map from locale code to value */

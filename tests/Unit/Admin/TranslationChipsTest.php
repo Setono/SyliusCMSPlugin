@@ -97,7 +97,7 @@ final class TranslationChipsTest extends TestCase
         self::assertEquals([
             new TranslationChip('en_US', true, false, 0, 0),
             new TranslationChip('da_DK', true, false, 1, 1),
-            new TranslationChip('sv_SE', false),
+            new TranslationChip('sv_SE', false, false, 0, 0),
         ], $this->chips()->of(self::row($page, $draft)));
     }
 
@@ -127,7 +127,7 @@ final class TranslationChipsTest extends TestCase
         $page->addTranslation($translation);
         $this->workingCopies->getWorkingCopyWithDraft($page, null)->willReturn($page);
 
-        self::assertEquals([new TranslationChip('nb_NO', false)], $this->chips()->of(self::row($page)));
+        self::assertEquals([new TranslationChip('nb_NO', false, false, 0, 0)], $this->chips()->of(self::row($page)));
     }
 
     /**
@@ -180,9 +180,9 @@ final class TranslationChipsTest extends TestCase
      */
     public function a_chip_is_complete_when_the_locale_has_a_translation_with_nothing_untranslated_or_outdated(): void
     {
-        self::assertTrue((new TranslationChip('en_US', true))->isComplete());
-        self::assertTrue((new TranslationChip('en_US', true, true))->isComplete());
-        self::assertFalse((new TranslationChip('en_US', false))->isComplete());
+        self::assertTrue((new TranslationChip('en_US', true, false, 0, 0))->isComplete());
+        self::assertTrue((new TranslationChip('en_US', true, true, 0, 0))->isComplete());
+        self::assertFalse((new TranslationChip('en_US', false, false, 0, 0))->isComplete());
         self::assertFalse((new TranslationChip('en_US', true, false, 1, 0))->isComplete());
         self::assertFalse((new TranslationChip('en_US', true, false, 0, 1))->isComplete());
     }

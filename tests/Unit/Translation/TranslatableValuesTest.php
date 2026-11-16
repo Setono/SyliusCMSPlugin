@@ -17,6 +17,7 @@ use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
@@ -67,6 +68,19 @@ final class TranslatableValuesTest extends TestCase
     /**
      * @test
      */
+    public function it_gives_an_untranslated_value_the_locale_its_fallback_chain_reaches_before_one_first_by_code(): void
+    {
+        $page = self::page([self::heading(self::A, ['da_DK' => 'Hej', 'en_US' => 'Hello', 'fr_FR' => ''])]);
+
+        self::assertEquals(
+            [new TranslatableValue('block.' . self::A . '.text', ValueState::Untranslated, 'en_US', 'Hello', Fingerprint::of('Hello'), null)],
+            $this->blockValues($page, 'de_CH'),
+        );
+    }
+
+    /**
+     * @test
+     */
     public function it_gives_an_untranslated_value_the_first_locale_by_code_that_has_one_when_its_fallback_chain_reaches_none(): void
     {
         $page = self::page([self::heading(self::A, ['sv_SE' => 'Hej', 'nb_NO' => 'Hei', 'da_DK' => ''])]);
@@ -74,6 +88,20 @@ final class TranslatableValuesTest extends TestCase
         self::assertEquals(
             [new TranslatableValue('block.' . self::A . '.text', ValueState::Untranslated, 'nb_NO', 'Hei', Fingerprint::of('Hei'), null)],
             $this->blockValues($page, 'da_DK'),
+        );
+
+        // The translations of the rows come in the order they were added, unlike the tree's values, which are sorted
+        $recipe = new Recipe();
+        foreach (['sv_SE' => 'Pannkakor', 'nb_NO' => 'Pannekaker'] as $localeCode => $title) {
+            $translation = new EntryTranslation();
+            $translation->setLocale($localeCode);
+            $translation->setTitle($title);
+            $recipe->addTranslation($translation);
+        }
+
+        self::assertEquals(
+            [new TranslatableValue('entry.title', ValueState::Untranslated, 'nb_NO', 'Pannekaker', Fingerprint::of('Pannekaker'), null)],
+            $this->values()->of($recipe, 'da_DK'),
         );
     }
 
@@ -85,7 +113,7 @@ final class TranslatableValuesTest extends TestCase
         $page = self::page([
             self::heading(self::A, ['en_US' => '', 'da_DK' => null]),
             new StoredBlock(self::B, 'heading', 1),
-            new StoredBlock(self::C, 'heading', 1, fields: ['text' => 'not a locale map']),
+            new StoredBlock(self::C, 'heading', 1, fields: ['text' => 'not a locale map', 'level' => ['en_US' => 'h2']]),
         ]);
 
         self::assertSame([], $this->blockValues($page, 'da_DK'));
