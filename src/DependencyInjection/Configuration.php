@@ -55,6 +55,12 @@ final class Configuration implements ConfigurationInterface
                             ->info('Block type codes')
                             ->scalarPrototype()->end()
                         ->end()
+                        ->arrayNode('layouts')
+                            ->info('"<content type code>.<layout code>", such as page.standard. Their entries render in the default layout, which can\'t be disabled')
+                            ->scalarPrototype()
+                                ->validate()->always(self::assertDisabledLayout(...))->end()
+                            ->end()
+                        ->end()
                     ->end()
                 ->end()
                 ->booleanNode('assets')
@@ -65,6 +71,7 @@ final class Configuration implements ConfigurationInterface
         ;
 
         $this->addBlockStylesSection($rootNode);
+        $this->addContentTypesSection($rootNode);
         $this->addFallbackLocalesSection($rootNode);
         $this->addRevisionsSection($rootNode);
         $this->addResourcesSection($rootNode);
@@ -94,6 +101,32 @@ final class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                     ->validate()->always(self::assertBlockStyleCodes(...))->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * Settings of each content type, shipped or not, by content type code. See "Configuration" in docs/spec/extending.md
+     */
+    private function addContentTypesSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('content_types')
+                    ->info('Settings of each content type, shipped or not, by content type code')
+                    ->useAttributeAsKey('content_type')
+                    ->normalizeKeys(false)
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('default_layout')
+                                ->info('A layout code, which overrides #[Layout(default: true)]')
+                                ->cannotBeEmpty()
+                                ->validate()->always(static fn (mixed $code): mixed => self::assertCode('layout', (string) $code))->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                    ->validate()->always(self::assertContentTypeCodes(...))->end()
                 ->end()
             ->end()
         ;
@@ -157,11 +190,37 @@ final class Configuration implements ConfigurationInterface
         return $blockStyles;
     }
 
-    private static function assertCode(string $kind, string $code): void
+    /**
+     * @param array<array-key, array<string, string>> $contentTypes
+     *
+     * @return array<array-key, array<string, string>>
+     */
+    private static function assertContentTypeCodes(array $contentTypes): array
+    {
+        foreach (array_keys($contentTypes) as $contentType) {
+            self::assertCode('content type', (string) $contentType);
+        }
+
+        return $contentTypes;
+    }
+
+    private static function assertDisabledLayout(mixed $layout): string
+    {
+        $parts = explode('.', (string) $layout);
+        if (2 !== count($parts) || !Code::isValid($parts[0]) || !Code::isValid($parts[1])) {
+            throw new \InvalidArgumentException(sprintf('A disabled layout must be "<content type code>.<layout code>", such as page.standard, not "%s"', (string) $layout));
+        }
+
+        return (string) $layout;
+    }
+
+    private static function assertCode(string $kind, string $code): string
     {
         if (!Code::isValid($code)) {
             throw new \InvalidArgumentException(sprintf('The %s code "%s" must match %s', $kind, $code, trim(Code::PATTERN, '/')));
         }
+
+        return $code;
     }
 
     /**

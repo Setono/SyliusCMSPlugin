@@ -152,6 +152,20 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_hands_the_disabled_layouts_and_the_configured_default_layouts_to_the_layouts_pass(): void
+    {
+        $this->load([
+            'disabled' => ['layouts' => ['page.landing']],
+            'content_types' => ['page' => ['default_layout' => 'wide'], 'recipe' => []],
+        ]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.layouts', ['page.landing']);
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.default_layouts', ['page' => 'wide']);
+    }
+
+    /**
+     * @test
+     */
     public function it_hands_the_block_styles_added_in_config_to_the_block_type_registry(): void
     {
         $blockStyles = ['group' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-group--brand']]];

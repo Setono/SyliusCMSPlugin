@@ -57,8 +57,9 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             [],
         ], [
-            'disabled' => ['block_types' => []],
+            'disabled' => ['block_types' => [], 'layouts' => []],
             'assets' => true,
+            'content_types' => [],
             'block_styles' => [],
             'fallback_locales' => [],
             'revisions' => ['keep' => 50],
@@ -148,7 +149,75 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             ['disabled' => ['block_types' => ['spacer']]],
             ['disabled' => ['block_types' => ['group']]],
-        ], ['disabled' => ['block_types' => ['spacer', 'group']]], 'disabled');
+        ], ['disabled' => ['block_types' => ['spacer', 'group'], 'layouts' => []]], 'disabled');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_switch_off_layouts_by_content_type_and_code(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['disabled' => ['layouts' => ['page.landing']]],
+            ['disabled' => ['layouts' => ['blog_post.wide']]],
+        ], ['disabled' => ['block_types' => [], 'layouts' => ['page.landing', 'blog_post.wide']]], 'disabled');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidDisabledLayouts
+     */
+    public function it_refuses_a_disabled_layout_that_is_not_a_content_type_code_and_a_layout_code(string $layout): void
+    {
+        $this->assertConfigurationIsInvalid([['disabled' => ['layouts' => [$layout]]]], sprintf('A disabled layout must be "<content type code>.<layout code>", such as page.standard, not "%s"', $layout));
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public function provideInvalidDisabledLayouts(): iterable
+    {
+        yield 'a layout code alone' => ['landing'];
+        yield 'a content type code that is no code' => ['Page.landing'];
+        yield 'a layout code that is no code' => ['page.Landing'];
+        yield 'three parts' => ['page.landing.wide'];
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_change_a_content_types_default_layout(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['content_types' => ['page' => ['default_layout' => 'landing']]],
+            ['content_types' => ['blog_post' => ['default_layout' => 'wide']]],
+        ], ['content_types' => [
+            'page' => ['default_layout' => 'landing'],
+            'blog_post' => ['default_layout' => 'wide'],
+        ]], 'content_types');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidContentTypes
+     *
+     * @param array<array-key, mixed> $contentTypes
+     */
+    public function it_refuses_an_invalid_content_type_setting(array $contentTypes, string $message): void
+    {
+        $this->assertConfigurationIsInvalid([['content_types' => $contentTypes]], $message);
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>, string}>
+     */
+    public function provideInvalidContentTypes(): iterable
+    {
+        yield 'a content type code that is no code' => [['blog-post' => ['default_layout' => 'wide']], 'The content type code "blog-post" must match ^[a-z][a-z0-9_]*$'];
+        yield 'a default layout that is no code' => [['page' => ['default_layout' => 'Landing']], 'The layout code "Landing" must match ^[a-z][a-z0-9_]*$'];
+        yield 'an empty default layout' => [['page' => ['default_layout' => '']], 'cannot contain an empty value'];
     }
 
     /**

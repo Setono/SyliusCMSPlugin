@@ -39,6 +39,11 @@ setono_sylius_cms:
             content: Content
         spacer:
             size: Size
+        standard:
+            show_title: Show title
+    layout:
+        page:
+            standard: Standard
     menu:
         admin:
             hub:

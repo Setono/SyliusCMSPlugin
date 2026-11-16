@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Registry;
 
 /**
- * A layout as the registry knows it: what upgrading its stored data needs. The rest of its #[Layout] options come
- * with the layout machinery (#236)
+ * A layout as the registry knows it: its #[Layout] options and its fields
  */
 final readonly class LayoutMetadata
 {
@@ -14,6 +13,11 @@ final readonly class LayoutMetadata
      * @param string $contentType the code of the content type it belongs to
      * @param class-string $class
      * @param array<string, FieldMetadata> $fields
+     * @param string $label a translation key
+     * @param string|null $thumbnail a public path to the wireframe card in the create dialog and the entry settings
+     * @param list<string> $shows the entry fields its template prints, by property name
+     * @param bool $disabled switched off in setono_sylius_cms.disabled.layouts: editors can't pick it, and its
+     *                       entries render in the default layout
      */
     public function __construct(
         public string $code,
@@ -21,6 +25,11 @@ final readonly class LayoutMetadata
         public int $version,
         public string $class,
         public array $fields,
+        public string $label,
+        public string $template,
+        public ?string $thumbnail = null,
+        public array $shows = [],
+        public bool $disabled = false,
     ) {
     }
 }
