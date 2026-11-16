@@ -199,6 +199,8 @@ setono_sylius_cms:
         guests: Guests
         has_errors: Has errors
         keep_mine: Keep mine
+        layout: Layout
+        layout_removed: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
         load_failed: Couldn't load the entry
         loading: Loading…
         locale: Language
@@ -213,6 +215,7 @@ setono_sylius_cms:
         move_up: Move up
         never_published: Never published
         no_blocks: No blocks yet
+        not_shown_in_layout: Not shown in this layout
         no_group: Signed in without a group
         no_matching_block_types: No block types match
         no_style: None

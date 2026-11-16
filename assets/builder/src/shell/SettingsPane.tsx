@@ -4,10 +4,12 @@ import { fromLocalInput, toLocalInput } from '../dates';
 import { FieldRow } from '../form/FieldRow';
 import formStyles from '../form/Form.module.css';
 import { useTranslator, type MessageKey } from '../i18n';
+import { isRemovedLayout, layoutOf, pickableLayouts, renderedLayout } from '../layouts';
 import { fieldFallback, localeOf, outdatedValue } from '../locales';
 import { entryTranslated, entryValues } from '../translationState';
 import type { AudienceMode, FieldSchema } from '../types';
 import { entryMessages } from '../validation';
+import { readFieldValue } from '../values';
 import { saveStateText } from './saveStateText';
 import styles from './SettingsPane.module.css';
 
@@ -19,8 +21,9 @@ interface Tab {
 }
 
 /**
- * The tabs of the entry's settings. The Settings tab holds the edited locale's title and its shown switch, which are
- * drafted, and the on-save settings, which take effect as soon as they're saved, outside the draft. The More tab links
+ * The tabs of the entry's settings. The Settings tab holds the edited locale's title and its shown switch, and the
+ * layout with its fields, which are drafted, and the on-save settings, which take effect as soon as they're saved,
+ * outside the draft. The More tab links
  * to the overview page. The URL & SEO tab joins them with its ticket, between the two.
  */
 const tabs: Tab[] = [
@@ -98,6 +101,7 @@ function SettingsTab() {
         <>
             <Title />
             <Shown />
+            <Layout />
             <Enabled />
             <DateWindow />
             <Channels />
@@ -144,17 +148,21 @@ function EntryErrors() {
     );
 }
 
-/** The edited locale's title, which shows the title it falls back to while it's empty. Typing one adds a translation. */
+/**
+ * The edited locale's title, which shows the title it falls back to while it's empty. Typing one adds a translation.
+ * It says so when the layout doesn't show it.
+ */
 function Title() {
     const t = useTranslator();
     const { store, locales } = useBuilder();
     const locale = useBuilderState((state) => state.locale);
     const translations = useBuilderState((state) => state.entry.translations);
+    const shown = useShownByLayout('title');
     const titles = entryValues({ translations }, 'title');
     const schema: FieldSchema = {
         'x-cms-type': 'text',
         'x-cms-label': t('setono_sylius_cms.builder.entry_title'),
-        'x-cms-help': null,
+        'x-cms-help': shown ? null : t('setono_sylius_cms.builder.not_shown_in_layout'),
         'x-cms-required': true,
         'x-cms-translatable': true,
     };
@@ -169,6 +177,97 @@ function Title() {
             fallback={fieldFallback(locales, titles, locale)}
             outdated={outdatedValue(locales, titles, entryTranslated({ translations }, 'title'), locale, () => store.getState().markEntryValueUpToDate('title'))}
         />
+    );
+}
+
+/**
+ * Whether the layout the entry renders in prints an entry field. Without layouts, as for a content type without its own
+ * URL, there's no layout to leave it out.
+ */
+function useShownByLayout(field: string): boolean {
+    const layouts = useBuilderState((state) => state.layouts);
+    const stored = useBuilderState((state) => state.entry.tree.layout);
+    const rendered = renderedLayout(layouts, stored);
+
+    return rendered === undefined || rendered.shows.includes(field);
+}
+
+/**
+ * The entry's layout: a card per layout to pick from, when there's more than one, the fields of the layout it's in, and a
+ * warning when its layout was removed from code or disabled, until another is picked. Switching layout and the layout's
+ * fields are drafted. See "Picking and switching" in docs/spec/layouts-and-presets.md
+ */
+function Layout() {
+    const t = useTranslator();
+    const { store, locales } = useBuilder();
+    const layouts = useBuilderState((state) => state.layouts);
+    const stored = useBuilderState((state) => state.entry.tree.layout);
+    const locale = useBuilderState((state) => state.locale);
+    const name = useId();
+
+    if (layouts.length === 0) {
+        return null;
+    }
+
+    const pickable = pickableLayouts(layouts);
+    const removed = isRemovedLayout(layouts, stored);
+    const rendered = renderedLayout(layouts, stored);
+    // The fields of a layout that was removed or disabled aren't shown, and the default layout ignores its values
+    const own = removed || stored === null ? undefined : layoutOf(layouts, stored);
+
+    return (
+        <>
+            {removed && stored !== null && (
+                <p className={styles.warning} role="status">
+                    {t('setono_sylius_cms.builder.layout_removed', { '%layout%': stored.code, '%default%': rendered?.label ?? '' })}
+                </p>
+            )}
+            {(pickable.length > 1 || removed) && (
+                <fieldset className={styles.setting}>
+                    <legend className={formStyles.label}>{t('setono_sylius_cms.builder.layout')}</legend>
+                    <div className={styles.layouts}>
+                        {pickable.map((layout) => (
+                            <label key={layout.code} className={styles.layout}>
+                                <input
+                                    type="radio"
+                                    className={styles.layoutRadio}
+                                    name={name}
+                                    value={layout.code}
+                                    checked={!removed && rendered?.code === layout.code}
+                                    onChange={() => store.getState().setLayout(layout.code)}
+                                />
+                                {layout.thumbnail === null ? (
+                                    <span className={styles.layoutThumbnail} />
+                                ) : (
+                                    <img className={styles.layoutThumbnail} src={layout.thumbnail} alt="" />
+                                )}
+                                <span className={styles.layoutLabel}>{layout.label}</span>
+                            </label>
+                        ))}
+                    </div>
+                </fieldset>
+            )}
+            {own !== undefined && stored !== null && own.fields.length > 0 && (
+                <div key={own.code} className={styles.layoutFields}>
+                    {own.fields.map(({ name: field, schema }) => (
+                        <FieldRow
+                            key={field}
+                            id={`cms-layout-field-${field}`}
+                            schema={schema}
+                            locale={locale}
+                            value={readFieldValue(stored.fields, field, schema['x-cms-translatable'], locale)}
+                            onChange={(value) => store.getState().setLayoutValue(field, value)}
+                            fallback={schema['x-cms-translatable'] ? fieldFallback(locales, stored.fields[field], locale) : undefined}
+                            outdated={
+                                schema['x-cms-translatable']
+                                    ? outdatedValue(locales, stored.fields[field], stored.translated[field], locale, () => store.getState().markLayoutValueUpToDate(field))
+                                    : undefined
+                            }
+                        />
+                    ))}
+                </div>
+            )}
+        </>
     );
 }
 

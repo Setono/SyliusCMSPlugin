@@ -224,6 +224,9 @@ export const landing: LayoutDefinition = {
 export const page: ContentTypeDefinition = { code: 'page', label: 'Page', blocks: anyBlock, layouts: [standard, landing] };
 
 export const strings: Record<string, string> = {
+    'setono_sylius_cms.builder.layout': 'Layout',
+    'setono_sylius_cms.builder.layout_removed': 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.',
+    'setono_sylius_cms.builder.not_shown_in_layout': 'Not shown in this layout',
     'setono_sylius_cms.builder.loading': 'Loading…',
     'setono_sylius_cms.builder.back': 'Back',
     'setono_sylius_cms.builder.saving': 'Saving…',
