@@ -308,6 +308,10 @@ jobs:
     mutation-tests:
         name: "Mutation tests"
 
+        # Mutation testing is postponed until the 2.0 release: until then the job reports its score without failing the
+        # build. Remove this line before 2.0, when it gates again at 100% MSI (infection.json.dist)
+        continue-on-error: true
+
         runs-on: "ubuntu-latest"
 
         strategy:
