@@ -1,0 +1,25 @@
+--TEST--
+cms_head_tags() links the entry's absolute URL in the locale as its canonical URL, and a hreflang link per locale of the channel the entry shows in, by code, plus x-default for the channel's default locale. A held-back translation, one without a title or a slug, a locale without a translation, and a locale the channel doesn't have get none
+--TEMPLATE--
+{{ cms_head_tags(entry) }}
+--DATA--
+return $this->rendering(
+    [
+        'entry' => $this->pageWith([
+            'en_US' => ['title' => 'About us', 'slug' => 'about-us'],
+            'da_DK' => ['title' => 'Om os', 'slug' => 'om-os'],
+            'de_DE' => ['title' => 'Über uns', 'slug' => 'ueber-uns', 'shown' => false],
+            'nb_NO' => ['title' => '', 'slug' => 'om-oss'],
+            'it_IT' => ['title' => null, 'slug' => 'chi-siamo'],
+            'sv_SE' => ['title' => 'Om oss', 'slug' => null],
+            'fr_FR' => ['title' => 'À propos', 'slug' => 'a-propos'],
+        ]),
+    ],
+    locale: 'da_DK',
+    channel: $this->channel(['en_US', 'da_DK', 'de_DE', 'nb_NO', 'it_IT', 'sv_SE', 'fi_FI'], 'en_US'),
+)
+--EXPECT--
+<link rel="canonical" href="https://shop.example/da_DK/om-os">
+<link rel="alternate" hreflang="da-DK" href="https://shop.example/da_DK/om-os">
+<link rel="alternate" hreflang="en-US" href="https://shop.example/en_US/about-us">
+<link rel="alternate" hreflang="x-default" href="https://shop.example/en_US/about-us">

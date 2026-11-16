@@ -188,3 +188,85 @@
     outline: 2px solid var(--builder-color-focus);
     outline-offset: 2px;
 }
+
+/* The visibility conditions */
+.hint {
+    margin: 0;
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}
+
+.conditions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.condition {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+    padding: var(--builder-space-3);
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-md);
+}
+
+.conditionHeader {
+    display: flex;
+    gap: var(--builder-space-2);
+    align-items: center;
+}
+
+.conditionHeader > select {
+    flex: 1;
+    min-width: 0;
+}
+
+.addCondition {
+    display: inline-flex;
+    gap: var(--builder-space-1);
+    align-items: center;
+    align-self: flex-start;
+    height: var(--builder-control-height);
+    padding: 0 var(--builder-space-3);
+    border: 1px dashed var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-md);
+    background: none;
+    color: var(--builder-color-text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.addCondition:hover {
+    border-color: var(--builder-color-accent);
+    color: var(--builder-color-accent);
+}
+
+.addCondition:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}
+
+.visuallyHidden {
+    position: absolute;
+    overflow: hidden;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* Holds what changes the block, which a scheduled publish disables while it locks the working copy */
+.locked {
+    display: contents;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}

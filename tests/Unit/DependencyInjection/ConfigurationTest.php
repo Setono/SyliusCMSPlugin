@@ -7,23 +7,45 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection;
 use Matthias\SymfonyConfigTest\PhpUnit\ConfigurationTestCaseTrait;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\DependencyInjection\Configuration;
+use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
+use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
+use Setono\SyliusCMSPlugin\Factory\HomepageFactory;
+use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
 use Setono\SyliusCMSPlugin\Model\EntryChannel;
 use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
+use Setono\SyliusCMSPlugin\Model\Homepage;
+use Setono\SyliusCMSPlugin\Model\HomepageInterface;
+use Setono\SyliusCMSPlugin\Model\OldSlug;
+use Setono\SyliusCMSPlugin\Model\OldSlugInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\Revision;
+use Setono\SyliusCMSPlugin\Model\RevisionInterface;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSetInterface;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
+use Setono\SyliusCMSPlugin\Model\ShareLink;
+use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
+use Setono\SyliusCMSPlugin\Repository\EntryRepository;
+use Setono\SyliusCMSPlugin\Repository\HomepageRepository;
+use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
+use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
+use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepository;
+use Setono\SyliusCMSPlugin\Repository\ShareLinkRepository;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 use Sylius\Resource\Factory\Factory;
@@ -44,15 +66,27 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
-    public function it_declares_page_the_draft_and_the_rows_beside_an_entry_as_resources_by_default(): void
+    public function it_declares_the_entry_page_the_draft_and_the_rows_beside_an_entry_as_resources_by_default(): void
     {
         $this->assertProcessedConfigurationEquals([
             [],
         ], [
-            'disabled' => ['block_types' => []],
+            'disabled' => ['block_types' => [], 'layouts' => []],
             'assets' => true,
+            'content_types' => [],
             'block_styles' => [],
+            'fallback_locales' => [],
+            'revisions' => ['keep' => 50],
             'resources' => [
+                'entry' => [
+                    'classes' => [
+                        'model' => Entry::class,
+                        'interface' => EntryInterface::class,
+                        'controller' => ResourceController::class,
+                        'repository' => EntryRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
                 'draft' => [
                     'classes' => [
                         'model' => Draft::class,
@@ -66,7 +100,7 @@ final class ConfigurationTest extends TestCase
                         'model' => EntryChannel::class,
                         'interface' => EntryChannelInterface::class,
                         'repository' => EntityRepository::class,
-                        'factory' => Factory::class,
+                        'factory' => EntryChannelFactory::class,
                     ],
                 ],
                 'entry_audience_group' => [
@@ -74,7 +108,7 @@ final class ConfigurationTest extends TestCase
                         'model' => EntryAudienceGroup::class,
                         'interface' => EntryAudienceGroupInterface::class,
                         'repository' => EntityRepository::class,
-                        'factory' => Factory::class,
+                        'factory' => EntryAudienceGroupFactory::class,
                     ],
                 ],
                 'entry_presence' => [
@@ -91,6 +125,46 @@ final class ConfigurationTest extends TestCase
                         'interface' => SavedChangeSetInterface::class,
                         'repository' => SavedChangeSetRepository::class,
                         'factory' => Factory::class,
+                    ],
+                ],
+                'revision' => [
+                    'classes' => [
+                        'model' => Revision::class,
+                        'interface' => RevisionInterface::class,
+                        'repository' => RevisionRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'old_slug' => [
+                    'classes' => [
+                        'model' => OldSlug::class,
+                        'interface' => OldSlugInterface::class,
+                        'repository' => OldSlugRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'scheduled_publish' => [
+                    'classes' => [
+                        'model' => ScheduledPublish::class,
+                        'interface' => ScheduledPublishInterface::class,
+                        'repository' => ScheduledPublishRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'share_link' => [
+                    'classes' => [
+                        'model' => ShareLink::class,
+                        'interface' => ShareLinkInterface::class,
+                        'repository' => ShareLinkRepository::class,
+                        'factory' => ShareLinkFactory::class,
+                    ],
+                ],
+                'homepage' => [
+                    'classes' => [
+                        'model' => Homepage::class,
+                        'interface' => HomepageInterface::class,
+                        'repository' => HomepageRepository::class,
+                        'factory' => HomepageFactory::class,
                     ],
                 ],
                 'page' => [
@@ -121,7 +195,78 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             ['disabled' => ['block_types' => ['spacer']]],
             ['disabled' => ['block_types' => ['group']]],
-        ], ['disabled' => ['block_types' => ['spacer', 'group']]], 'disabled');
+        ], ['disabled' => ['block_types' => ['spacer', 'group'], 'layouts' => []]], 'disabled');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_switch_off_layouts_by_content_type_and_code(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['disabled' => ['layouts' => ['page.landing']]],
+            ['disabled' => ['layouts' => ['blog_post.wide']]],
+        ], ['disabled' => ['block_types' => [], 'layouts' => ['page.landing', 'blog_post.wide']]], 'disabled');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidDisabledLayouts
+     */
+    public function it_refuses_a_disabled_layout_that_is_not_a_content_type_code_and_a_layout_code(int|string $layout): void
+    {
+        $this->assertConfigurationIsInvalid([['disabled' => ['layouts' => [$layout]]]], sprintf('A disabled layout must be "<content type code>.<layout code>", such as page.standard, not "%s"', $layout));
+    }
+
+    /**
+     * @return iterable<string, array{int|string}>
+     */
+    public function provideInvalidDisabledLayouts(): iterable
+    {
+        yield 'a number' => [42];
+        yield 'a layout code alone' => ['landing'];
+        yield 'a content type code that is no code' => ['Page.landing'];
+        yield 'a layout code that is no code' => ['page.Landing'];
+        yield 'three parts' => ['page.landing.wide'];
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_change_a_content_types_default_layout(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['content_types' => ['page' => ['default_layout' => 'landing']]],
+            ['content_types' => ['blog_post' => ['default_layout' => 'wide']]],
+        ], ['content_types' => [
+            'page' => ['default_layout' => 'landing'],
+            'blog_post' => ['default_layout' => 'wide'],
+        ]], 'content_types');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidDefaultLayouts
+     *
+     * @param array<array-key, mixed> $contentTypes
+     */
+    public function it_refuses_an_invalid_default_layout_or_code(array $contentTypes, string $message): void
+    {
+        $this->assertConfigurationIsInvalid([['content_types' => $contentTypes]], $message);
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>, string}>
+     */
+    public function provideInvalidDefaultLayouts(): iterable
+    {
+        yield 'a content type code that is no code' => [['blog-post' => ['default_layout' => 'wide']], 'The content type code "blog-post" must match ^[a-z][a-z0-9_]*$'];
+        yield 'a default layout that is no code' => [['page' => ['default_layout' => 'Landing']], 'The layout code "Landing" must match ^[a-z][a-z0-9_]*$'];
+        yield 'an empty default layout' => [['page' => ['default_layout' => '']], 'cannot contain an empty value'];
+        yield 'a numeric default layout' => [['page' => ['default_layout' => 42]], 'The layout code "42" must match ^[a-z][a-z0-9_]*$'];
+        yield 'a numeric content type code' => [[42 => ['default_layout' => 'wide']], 'The content type code "42" must match ^[a-z][a-z0-9_]*$'];
     }
 
     /**
@@ -226,6 +371,115 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
+    public function it_lets_a_project_set_the_locales_a_locale_falls_back_through_in_order(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['fallback_locales' => ['de_CH' => ['de_DE']]],
+            ['fallback_locales' => ['fr_CH' => ['fr_FR', 'de_DE']]],
+        ], ['fallback_locales' => [
+            'de_CH' => ['de_DE'],
+            'fr_CH' => ['fr_FR', 'de_DE'],
+        ]], 'fallback_locales');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_later_config_replace_the_fallback_locales_of_a_locale(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['fallback_locales' => ['fr_CH' => ['fr_FR', 'de_DE']]],
+            ['fallback_locales' => ['fr_CH' => ['de_DE']]],
+        ], ['fallback_locales' => ['fr_CH' => ['de_DE']]], 'fallback_locales');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_an_empty_fallback_locale(): void
+    {
+        $this->assertConfigurationIsInvalid([['fallback_locales' => ['de_CH' => ['']]]], 'The path "setono_sylius_cms.fallback_locales.de_CH.0" cannot contain an empty value');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_change_the_url_prefix_of_a_content_type_by_its_code(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['content_types' => ['page' => ['prefix' => 'pg'], 'blog_post' => ['prefix' => 'news/all']]],
+            ['content_types' => ['app_store' => ['prefix' => '']]],
+        ], ['content_types' => [
+            'page' => ['prefix' => 'pg'],
+            'blog_post' => ['prefix' => 'news/all'],
+            'app_store' => ['prefix' => ''],
+        ]], 'content_types');
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_out_a_prefix_a_project_does_not_set(): void
+    {
+        $this->assertProcessedConfigurationEquals([['content_types' => ['page' => []]]], ['content_types' => ['page' => []]], 'content_types');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidContentTypes
+     *
+     * @param array<array-key, mixed> $contentTypes
+     */
+    public function it_refuses_an_invalid_content_type_prefix_or_code(array $contentTypes, string $message): void
+    {
+        $this->assertConfigurationIsInvalid([['content_types' => $contentTypes]], $message);
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>, string}>
+     */
+    public function provideInvalidContentTypes(): iterable
+    {
+        yield 'a slash first' => [['page' => ['prefix' => '/pg']], 'The prefix "/pg" must be empty or a string that doesn\'t start or end with a slash or contain two slashes in a row'];
+        yield 'a slash last' => [['page' => ['prefix' => 'pg/']], 'The prefix "pg/" must be empty'];
+        yield 'two slashes in a row' => [['page' => ['prefix' => 'a//b']], 'The prefix "a//b" must be empty'];
+        yield 'not a string' => [['page' => ['prefix' => 7]], 'The prefix int must be empty'];
+        yield 'an invalid code' => [['Page' => ['prefix' => 'pg']], 'The content type code "Page" must match ^[a-z][a-z0-9_]*$'];
+        yield 'a number as a code' => [[7 => ['prefix' => 'pg']], 'The content type code "7" must match ^[a-z][a-z0-9_]*$'];
+        yield 'a dash in the code, which is kept' => [['blog-post' => ['prefix' => 'pg']], 'The content type code "blog-post" must match ^[a-z][a-z0-9_]*$'];
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_set_how_many_revisions_per_entry_are_kept(): void
+    {
+        $this->assertProcessedConfigurationEquals([['revisions' => ['keep' => 10]]], ['revisions' => ['keep' => 10]], 'revisions');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidRevisionsToKeep
+     */
+    public function it_keeps_at_least_one_revision_per_entry(mixed $keep, string $message): void
+    {
+        $this->assertConfigurationIsInvalid([['revisions' => ['keep' => $keep]]], $message);
+    }
+
+    /**
+     * @return iterable<string, array{mixed, string}>
+     */
+    public function provideInvalidRevisionsToKeep(): iterable
+    {
+        yield 'none' => [0, 'Should be greater than or equal to 1'];
+        yield 'not a number' => ['all', 'Invalid type for path "setono_sylius_cms.revisions.keep"'];
+    }
+
+    /**
+     * @test
+     */
     public function it_lets_a_project_override_the_draft_model(): void
     {
         $this->assertProcessedConfigurationEquals([
@@ -242,6 +496,57 @@ final class ConfigurationTest extends TestCase
                 ],
             ],
         ], 'resources.draft');
+    }
+
+    /**
+     * A project's own row models are created by the shipped factories, which create the configured model
+     *
+     * @test
+     */
+    public function it_lets_a_project_override_the_models_of_the_channel_and_audience_group_rows(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['resources' => ['entry_channel' => ['classes' => ['model' => 'App\\Entity\\EntryChannel']]]],
+        ], [
+            'resources' => [
+                'entry_channel' => [
+                    'classes' => [
+                        'model' => 'App\\Entity\\EntryChannel',
+                        'interface' => EntryChannelInterface::class,
+                        'repository' => EntityRepository::class,
+                        'factory' => EntryChannelFactory::class,
+                    ],
+                ],
+            ],
+        ], 'resources.entry_channel');
+        $this->assertProcessedConfigurationEquals([
+            ['resources' => ['entry_audience_group' => ['classes' => ['model' => 'App\\Entity\\EntryAudienceGroup']]]],
+        ], [
+            'resources' => [
+                'entry_audience_group' => [
+                    'classes' => [
+                        'model' => 'App\\Entity\\EntryAudienceGroup',
+                        'interface' => EntryAudienceGroupInterface::class,
+                        'repository' => EntityRepository::class,
+                        'factory' => EntryAudienceGroupFactory::class,
+                    ],
+                ],
+            ],
+        ], 'resources.entry_audience_group');
+        $this->assertProcessedConfigurationEquals([
+            ['resources' => ['homepage' => ['classes' => ['model' => 'App\\Entity\\Homepage']]]],
+        ], [
+            'resources' => [
+                'homepage' => [
+                    'classes' => [
+                        'model' => 'App\\Entity\\Homepage',
+                        'interface' => HomepageInterface::class,
+                        'repository' => HomepageRepository::class,
+                        'factory' => HomepageFactory::class,
+                    ],
+                ],
+            ],
+        ], 'resources.homepage');
     }
 
     /**

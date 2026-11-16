@@ -5,8 +5,9 @@
  * "The bridge", "Working in the preview" and "Updating the preview" in docs/spec/builder.md
  */
 import type { BridgeStrings, FromBridge, RenderedBlock, ToBridge } from './bridge/protocol';
+import { renderedLayout } from './layouts';
 import { planPreviewUpdate, type PreviewPlan } from './previewPlan';
-import { actedOn, type BuilderStore } from './store';
+import { actedOn, locks, type BuilderStore } from './store';
 import { blockList, findBlock, locateBlock, type BlockSpot } from './tree';
 import type { JsonValue, StoredBlock } from './types';
 import { isJsonObject } from './values';
@@ -22,6 +23,8 @@ export interface PreviewSyncOptions {
     openBlockPicker(spot: BlockSpot, at: { x: number; y: number }): void;
     /** Takes the editor to the selected block's settings in the right pane. */
     openSettings(): void;
+    /** Leaves the builder, on Esc pressed in the page. */
+    leave(): void;
 }
 
 export interface PreviewSync {
@@ -33,7 +36,7 @@ export interface PreviewSync {
     dispose(): void;
 }
 
-export function createPreviewSync({ store, strings, render, reload, openBlockPicker, openSettings }: PreviewSyncOptions): PreviewSync {
+export function createPreviewSync({ store, strings, render, reload, openBlockPicker, openSettings, leave }: PreviewSyncOptions): PreviewSync {
     let bridge: { post: (message: ToBridge) => void; token: string } | null = null;
     // Counts the pages, so an answer for a page that's gone is dropped
     let page = 0;
@@ -137,7 +140,8 @@ export function createPreviewSync({ store, strings, render, reload, openBlockPic
         if (state.entry !== previous.entry) {
             // An entry loaded from the server rather than edited, such as the published content after discarding
             // changes, is what the server renders, so the page reloads
-            const plan: PreviewPlan = state.changeCount === previous.changeCount ? { reload: true, patch: [], insert: [], remove: [] } : planPreviewUpdate(previous.entry, state.entry);
+            const shows = renderedLayout(state.layouts, previous.entry.tree.layout)?.shows ?? [];
+            const plan: PreviewPlan = state.changeCount === previous.changeCount ? { reload: true, patch: [], insert: [], remove: [] } : planPreviewUpdate(previous.entry, state.entry, shows);
             if (plan.reload) {
                 startOver();
             } else {
@@ -149,6 +153,11 @@ export function createPreviewSync({ store, strings, render, reload, openBlockPic
         if (state.selectedKey !== previous.selectedKey) {
             bridge?.post({ type: 'select', key: state.selectedKey });
         }
+
+        // A scheduled publish locks the working copy, or cancelling it unlocks it, so the page is read-only or editable
+        if (locks(state.schedule) !== locks(previous.schedule)) {
+            bridge?.post({ type: 'init', strings, readOnly: locks(state.schedule) });
+        }
     });
 
     return {
@@ -156,7 +165,7 @@ export function createPreviewSync({ store, strings, render, reload, openBlockPic
             bridge = { post, token };
             page++;
             rendering = false;
-            post({ type: 'init', strings });
+            post({ type: 'init', strings, readOnly: locks(store.getState().schedule) });
             post({ type: 'select', key: store.getState().selectedKey });
             flush();
         },
@@ -210,6 +219,9 @@ export function createPreviewSync({ store, strings, render, reload, openBlockPic
                     break;
                 case 'redo':
                     state.redo();
+                    break;
+                case 'leave':
+                    leave();
                     break;
                 case 'add': {
                     const spot = locateBlock(blocks, message.key);

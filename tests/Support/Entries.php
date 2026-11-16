@@ -5,17 +5,27 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Support;
 
 use Doctrine\Persistence\ObjectManager;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
+use Setono\SyliusCMSPlugin\Publishing\AutosaveInterface;
+use Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface;
+use Setono\SyliusCMSPlugin\Publishing\EntrySettings;
+use Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaverInterface;
+use Setono\SyliusCMSPlugin\Publishing\SaveResult;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
+use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Bundle\CoreBundle\Fixture\Factory\ExampleFactoryInterface;
 use Sylius\Component\Core\Model\AdminUserInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
+use Sylius\Component\Locale\Model\LocaleInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -60,7 +70,7 @@ trait Entries
         $page->setBlockTree(new StoredTree($page->getBlockTree()->layout, $blocks));
 
         if (null !== $channels) {
-            $page->setChannelCodes($channels);
+            self::channelsAndAudience()->setChannels($page, $channels);
         }
 
         if ($published) {
@@ -73,6 +83,54 @@ trait Entries
         $manager->flush();
 
         return $page;
+    }
+
+    /**
+     * Adds a translation to the page, created through the page translation resource's own factory, and flushes. On a
+     * working copy, which Doctrine doesn't manage, the translation is only added. A locale the page has a translation
+     * in already must go through that translation, since Sylius's getTranslation() falls back to another locale's
+     */
+    protected static function addTranslation(EntryInterface $page, string $localeCode, ?string $title, ?string $slug = null, bool $shown = true): PageTranslationInterface
+    {
+        /** @var FactoryInterface<PageTranslationInterface> $factory */
+        $factory = self::getContainer()->get('setono_sylius_cms.factory.page_translation');
+
+        $translation = $factory->createNew();
+        $translation->setLocale($localeCode);
+        $translation->setTitle($title);
+        $translation->setSlug($slug);
+        $translation->setShown($shown);
+        $page->addTranslation($translation);
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
+        $manager->flush();
+
+        return $translation;
+    }
+
+    /**
+     * Changes an entry's channels and audience as the plugin does, creating their rows through the resources' factories
+     */
+    protected static function channelsAndAudience(): ChannelsAndAudienceModifierInterface
+    {
+        $modifier = self::getContainer()->get(ChannelsAndAudienceModifierInterface::class);
+        self::assertInstanceOf(ChannelsAndAudienceModifierInterface::class, $modifier);
+
+        return $modifier;
+    }
+
+    /**
+     * Makes the page the homepage of these channels as saving its settings does, which takes them off the pages that
+     * were their homepages
+     */
+    protected static function setHomepageOf(PageInterface $page, string ...$channelCodes): void
+    {
+        $current = EntrySettings::of($page);
+
+        /** @var EntrySettingsSaverInterface $saver */
+        $saver = self::getContainer()->get(EntrySettingsSaverInterface::class);
+        $saver->save($page, new EntrySettings($current->enabled, $current->dateWindow, $current->channels, $current->audience, $channelCodes));
     }
 
     /**
@@ -112,14 +170,15 @@ trait Entries
     }
 
     /**
-     * A preview token of the entry in a channel and a locale, as the builder gets one for its preview
+     * A preview token of the entry in a channel and a locale, as the builder gets one for its preview, shown to a
+     * customer group value at a date, or to the shopper now
      */
-    protected static function previewToken(EntryInterface|string $entry, string $channel = 'WEB', string $locale = 'en_US'): string
+    protected static function previewToken(EntryInterface|string $entry, string $channel = 'WEB', string $locale = 'en_US', ?string $shownTo = null, ?\DateTimeImmutable $date = null): string
     {
         /** @var PreviewTokenSigner $signer */
         $signer = self::getContainer()->get(PreviewTokenSigner::class);
 
-        return $signer->sign(new Preview(is_string($entry) ? $entry : $entry->getUuid(), $channel, $locale));
+        return $signer->sign(new Preview(is_string($entry) ? $entry : $entry->getUuid(), $channel, $locale, null, $shownTo, $date));
     }
 
     /**
@@ -147,6 +206,62 @@ trait Entries
         $manager = self::getContainer()->get('sylius.manager.channel');
         $manager->persist($channel);
         $manager->flush();
+    }
+
+    /**
+     * Adds locales to a channel, after the ones it has, creating those the store doesn't have yet
+     */
+    protected static function addLocales(string $channelCode, string ...$localeCodes): void
+    {
+        /** @var RepositoryInterface<LocaleInterface> $locales */
+        $locales = self::getContainer()->get('sylius.repository.locale');
+        /** @var FactoryInterface<LocaleInterface> $localeFactory */
+        $localeFactory = self::getContainer()->get('sylius.factory.locale');
+        /** @var RepositoryInterface<ChannelInterface> $channels */
+        $channels = self::getContainer()->get('sylius.repository.channel');
+        $channel = $channels->findOneBy(['code' => $channelCode]);
+        self::assertInstanceOf(ChannelInterface::class, $channel);
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('sylius.manager.channel');
+        foreach ($localeCodes as $localeCode) {
+            $locale = $locales->findOneBy(['code' => $localeCode]);
+            if (!$locale instanceof LocaleInterface) {
+                $locale = $localeFactory->createNew();
+                $locale->setCode($localeCode);
+                $manager->persist($locale);
+            }
+
+            $channel->addLocale($locale);
+        }
+
+        $manager->flush();
+    }
+
+    /**
+     * Autosaves changes onto the entry's working copy as the builder does, such as
+     * ['op' => 'set_entry_value', 'field' => 'slug', 'locale' => 'en_US', 'value' => 'about-us']
+     *
+     * @param list<array<string, mixed>> $changes
+     */
+    protected static function saveChanges(EntryInterface $entry, array $changes): SaveResult
+    {
+        /** @var AutosaveInterface $autosave */
+        $autosave = self::getContainer()->get(AutosaveInterface::class);
+        /** @var SavedChangeSetRepositoryInterface $savedChangeSets */
+        $savedChangeSets = self::getContainer()->get(SavedChangeSetRepositoryInterface::class);
+
+        return $autosave->save($entry, ChangeSet::fromArray(['changes' => $changes]), $savedChangeSets->findLatestLockToken($entry));
+    }
+
+    /**
+     * Publishes the entry's working copy as the builder's Publish does
+     */
+    protected static function publishEntry(EntryInterface $entry): void
+    {
+        /** @var EntryPublisherInterface $publisher */
+        $publisher = self::getContainer()->get(EntryPublisherInterface::class);
+        $publisher->publish($entry);
     }
 
     /**

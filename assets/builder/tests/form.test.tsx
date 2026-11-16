@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { fromLocalInput, toLocalInput } from '../src/dates';
 import { FieldRow } from '../src/form/FieldRow';
 import { createTranslator, TranslatorProvider } from '../src/i18n';
 import type { FieldSchema, JsonValue } from '../src/types';
@@ -121,5 +122,45 @@ describe('rendering a form from a field schema', () => {
 
         fireEvent.click(checkbox);
         expect(onChange).toHaveBeenLastCalledWith(false);
+    });
+});
+
+describe('date fields', () => {
+    const dateSchema: FieldSchema = { type: 'string', format: 'date', 'x-cms-type': 'date', 'x-cms-label': 'Day', 'x-cms-help': null, 'x-cms-required': false, 'x-cms-translatable': false };
+    const dateTimeSchema: FieldSchema = { ...dateSchema, format: 'date-time', 'x-cms-type': 'date_time', 'x-cms-label': 'At' };
+
+    it('should render a date field as a date input that reports the day as it is, and nothing for an empty one', () => {
+        const onChange = renderField(dateSchema, '2026-11-13');
+
+        const input = screen.getByLabelText('Day');
+        expect(input).toHaveAttribute('type', 'date');
+        expect(input).toHaveValue('2026-11-13');
+
+        fireEvent.change(input, { target: { value: '2026-11-27' } });
+        expect(onChange).toHaveBeenLastCalledWith('2026-11-27');
+
+        fireEvent.change(input, { target: { value: '' } });
+        expect(onChange).toHaveBeenLastCalledWith('');
+    });
+
+    it("should render a date and time field in the editor's time zone and report it in UTC once it's whole", () => {
+        const onChange = renderField(dateTimeSchema, '2026-11-13T09:30:00Z');
+
+        const input = screen.getByLabelText('At');
+        expect(input).toHaveAttribute('type', 'datetime-local');
+        expect(input).toHaveValue(toLocalInput('2026-11-13T09:30:00Z'));
+
+        fireEvent.change(input, { target: { value: '2026-11-27T00:00' } });
+        expect(onChange).toHaveBeenLastCalledWith(fromLocalInput('2026-11-27T00:00'));
+
+        fireEvent.change(input, { target: { value: '' } });
+        expect(onChange).toHaveBeenLastCalledWith(null);
+        expect(onChange).toHaveBeenCalledTimes(2);
+    });
+
+    it('should show an empty date and time input for a value that is no time', () => {
+        renderField(dateTimeSchema, 'next friday');
+
+        expect(screen.getByLabelText('At')).toHaveValue('');
     });
 });

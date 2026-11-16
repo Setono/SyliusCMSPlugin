@@ -17,9 +17,15 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Rendering\ParamsHydrator" class="Setono\SyliusCMSPlugin\Rendering\ParamsHydrator">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder" class="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockHydrator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Condition\ConditionMatcher"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer" class="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer">
@@ -27,6 +33,17 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface" alias="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer"/>
+
+        <!-- Renders an entry with its own URL in its layout: at its URL, and as a homepage -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\LayoutRenderer" class="Setono\SyliusCMSPlugin\Rendering\LayoutRenderer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockHydrator"/>
+            <argument type="service" id="twig"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\LayoutRendererInterface" alias="Setono\SyliusCMSPlugin\Rendering\LayoutRenderer"/>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookup" class="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookup">
             <argument type="service" id="doctrine"/>

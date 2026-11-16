@@ -11,12 +11,14 @@ const config: BuilderConfig = {
     locale: 'en_US',
     csrfToken: 'abc123',
     backUrl: '/admin/',
+    overviewUrl: '/admin/cms/entry/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e',
     endpoints: {
         registry: '/registry',
         entry: '/entry',
         validate: '/validate',
         publish: '/publish',
         discard: '/discard',
+        schedule: '/schedule',
         settings: '/settings',
         previewToken: '/preview/token',
         previewRender: '/preview/render',
@@ -47,6 +49,8 @@ function fakeApi(overrides: Partial<BuilderApi> = {}) {
         saveSettings: vi.fn(async () => settings({ channels: ['WEB', 'B2B'] })),
         createPreviewUrl: previewUrls(),
         renderPreview: vi.fn(async (): Promise<Record<string, string>> => ({})),
+        schedule: vi.fn(() => Promise.reject(new Error('Not scheduled in this test'))),
+        cancelSchedule: vi.fn(() => Promise.reject(new Error('Not scheduled in this test'))),
         presence: vi.fn(async (): Promise<PresenceResponse> => ({ editors: [], lockToken: 0 })),
         ...overrides,
     };
@@ -76,7 +80,7 @@ describe('the preview', () => {
         await openBuilder(api);
 
         await waitFor(() => expect(preview()).toHaveAttribute('src', 'http://admin.example/en_US/about-us?channel=WEB&_cms_preview=1'));
-        expect(api.createPreviewUrl).toHaveBeenCalledExactlyOnceWith({ channel: 'WEB', locale: 'en_US' });
+        expect(api.createPreviewUrl).toHaveBeenCalledExactlyOnceWith({ channel: 'WEB', locale: 'en_US', shownTo: '@guest', date: null });
         expect(screen.getByRole('combobox', { name: 'Preview channel' })).toHaveValue('WEB');
     });
 
@@ -141,7 +145,7 @@ describe('the preview', () => {
 
         expect(picker).toHaveValue('B2B');
         await waitFor(() => expect(preview()).toHaveAttribute('src', expect.stringContaining('channel=B2B')));
-        expect(api.createPreviewUrl).toHaveBeenLastCalledWith({ channel: 'B2B', locale: 'en_US' });
+        expect(api.createPreviewUrl).toHaveBeenLastCalledWith({ channel: 'B2B', locale: 'en_US', shownTo: '@guest', date: null });
     });
 
     it('should show the latest preview asked for when the answers come back out of order', async () => {

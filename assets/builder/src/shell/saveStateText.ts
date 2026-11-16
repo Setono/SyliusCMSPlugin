@@ -11,5 +11,6 @@ export function saveStateText(t: Translate, state: SaveState, error: string | nu
         saved: t('setono_sylius_cms.builder.saved'),
         failed: error === null ? failed : `${failed}: ${error}`,
         stale: t('setono_sylius_cms.builder.save_stale'),
+        locked: t('setono_sylius_cms.builder.save_locked'),
     }[state];
 }

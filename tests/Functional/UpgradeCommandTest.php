@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\UpgradesKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\Revisions;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -23,6 +24,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 final class UpgradeCommandTest extends KernelTestCase
 {
     use Entries;
+    use Revisions;
 
     private const CALLOUT = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e60';
 
@@ -88,6 +90,28 @@ final class UpgradeCommandTest extends KernelTestCase
         $display = self::display(self::upgrade());
         self::assertStringContainsString('Everything is up to date.', $display);
         self::assertStringNotContainsString('Upgraded the', $display);
+    }
+
+    /**
+     * @test
+     */
+    public function it_rewrites_the_revisions_that_need_upgrading(): void
+    {
+        self::bootKernel();
+        $page = self::createPage('About us', 'about-us', 'Hello', published: true);
+        self::storeRevision($page, [new StoredBlock(self::CALLOUT, 'callout', 1, fields: ['text' => ['en_US' => 'Published with version 1']])], '2026-11-01 10:00:00');
+        $current = self::storeRevision($page, [new StoredBlock(self::CALLOUT, 'callout', 2, fields: ['message' => ['en_US' => 'Published with version 2']])], '2026-11-02 10:00:00')->getContent();
+
+        $display = self::display(self::upgrade());
+
+        self::assertStringContainsString(sprintf('Upgraded 1 revision of the page %s', $page->getUuid()), $display);
+        self::assertStringContainsString('Upgraded 1 revision.', $display);
+        [$newest, $oldest] = self::revisionsOf($page);
+        self::assertSame($current, $newest->getContent());
+        self::assertStringContainsString(
+            sprintf('"tree":{"layout":{"code":"standard","version":1,"fields":{},"translated":{}},"blocks":[{"key":"%s","type":"callout","version":2,"style":null,"fields":{"message":{"en_US":"Published with version 1"}},"translated":{},"conditions":[],"children":[]}]}}', self::CALLOUT),
+            $oldest->getContent(),
+        );
     }
 
     /**

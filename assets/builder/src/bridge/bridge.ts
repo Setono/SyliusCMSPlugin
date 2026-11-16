@@ -7,7 +7,7 @@ import type { Editor } from '@tiptap/core';
 import { caretAt, fieldAt, startTyping, type Caret, type TypingInPlace } from './inPlace';
 import { blockContaining, blockElements, blockHolds, blockNodes, findBlock, rootElement, type BlockRange, type FieldRange } from './markers';
 import { morphBlock, parseHtml } from './morph';
-import { shortcutOf } from '../shortcuts';
+import { leavesOn, shortcutOf } from '../shortcuts';
 import type { BridgeStrings, FromBridge, RenderedBlock, ToBridge } from './protocol';
 
 export interface Bridge {
@@ -57,6 +57,7 @@ const MARKS = [
 export function createBridge(document: Document, post: (message: FromBridge) => void): Bridge {
     const window = document.defaultView;
     let strings: BridgeStrings | null = null;
+    let readOnly = false;
     let selected: string | null = null;
     let hovered: string | null = null;
     let controls: Controls | null = null;
@@ -67,7 +68,7 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
     post({ type: 'ready' });
 
     const refresh = (): void => {
-        controls?.draw(selected === null ? null : findBlock(document, selected), hovered === null || hovered === selected ? null : findBlock(document, hovered));
+        controls?.draw(selected === null ? null : findBlock(document, selected), hovered === null || hovered === selected ? null : findBlock(document, hovered), !readOnly);
     };
 
     const typeInPlace = (field: FieldRange, caret: Caret | null, at: { x: number; y: number }): void => {
@@ -117,7 +118,7 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
         event.stopPropagation();
         post({ type: 'select', key });
 
-        if (field !== null) {
+        if (field !== null && !readOnly) {
             typeInPlace(field, caret, { x: event.clientX, y: event.clientY });
         }
     };
@@ -134,14 +135,21 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
         refresh();
     };
 
-    // Undo and redo work wherever the editor is, so the keys pressed in the page go to the builder
+    // Undo, redo and Esc work wherever the editor is, so the keys pressed in the page go to the builder
     const onKeyDown = (event: KeyboardEvent): void => {
-        const shortcut = strings === null || event.defaultPrevented ? null : shortcutOf(event);
+        if (strings === null) {
+            return;
+        }
+
+        const shortcut = event.defaultPrevented ? null : shortcutOf(event);
         if (shortcut !== null) {
             event.preventDefault();
             // Undo changes the working copy, which the field being typed in shows only once the typing ends
             typing?.stop();
             post({ type: shortcut });
+        } else if (leavesOn(event)) {
+            event.preventDefault();
+            post({ type: 'leave' });
         }
     };
 
@@ -209,6 +217,10 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
             switch (message.type) {
                 case 'init':
                     strings = message.strings;
+                    readOnly = message.readOnly === true;
+                    if (readOnly) {
+                        typing?.stop();
+                    }
                     controls ??= createControls(document, strings, (action, target) => {
                         const key = target === 'hovered' ? hovered : selected;
                         if (key !== null) {
@@ -280,7 +292,8 @@ interface Formatting {
 }
 
 interface Controls {
-    draw(selected: BlockRange | null, hovered: BlockRange | null): void;
+    /** Outlines the blocks. Only an editable page gets the selected block's toolbar and the + between blocks. */
+    draw(selected: BlockRange | null, hovered: BlockRange | null, editable: boolean): void;
     /** Shows the formatting toolbar for rich text typed in place, or hides it. */
     format(formatting: Formatting | null): void;
     /** Whether the event happened on the bridge's own controls. */
@@ -346,15 +359,15 @@ function createControls(document: Document, strings: BridgeStrings, act: (action
     document.body.append(host);
 
     return {
-        draw(selected, hovered) {
+        draw(selected, hovered, editable) {
             const hoverBox = hovered === null ? null : boxOf(hovered);
             place(hover, hoverBox);
-            placeAdds(hoverAddBefore, hoverAddAfter, hoverBox, 'left');
+            placeAdds(hoverAddBefore, hoverAddAfter, editable ? hoverBox : null, 'left');
 
             const box = selected === null ? null : boxOf(selected);
             place(selection, box);
-            placeAdds(addBefore, addAfter, box);
-            toolbar.hidden = box === null;
+            placeAdds(addBefore, addAfter, editable ? box : null);
+            toolbar.hidden = box === null || !editable;
             if (box !== null) {
                 Object.assign(toolbar.style, { left: `${box.right}px`, top: `${Math.max(box.top, 30)}px` });
             }

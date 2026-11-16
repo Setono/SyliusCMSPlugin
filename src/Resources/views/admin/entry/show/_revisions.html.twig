@@ -1,0 +1,51 @@
+{#
+ # The overview page's Revisions section, a block of setono_sylius_cms.admin.entry.show.sections: who published each
+ # revision and when, newest first. Each opens read-only in the shop, for a content type with its own URL, and restores
+ # into the draft with a form that comes back to the overview page. See "Entry overview page" in docs/spec/admin.md and
+ # "Revisions" in docs/spec/publishing.md
+ #}
+{% set revisions = cms_admin_entry_revisions(entry) %}
+<section class="ui segment" data-section="revisions" aria-labelledby="cms-section-revisions">
+    <h2 class="ui dividing header" id="cms-section-revisions">{{ 'setono_sylius_cms.ui.revisions'|trans }}</h2>
+
+    {% if revisions is empty %}
+        <p>{{ 'setono_sylius_cms.ui.no_revisions'|trans }}</p>
+    {% else %}
+        <p>{{ 'setono_sylius_cms.ui.revisions_help'|trans }}</p>
+        <table class="ui very basic table">
+            <thead>
+                <tr>
+                    <th>{{ 'setono_sylius_cms.ui.published_at'|trans }}</th>
+                    <th>{{ 'setono_sylius_cms.ui.published_by'|trans }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for revision in revisions %}
+                    <tr data-revision="{{ revision.id }}">
+                        <td>
+                            <span data-published-at>{{ revision.publishedAt|date('Y-m-d H:i') }}</span>
+                            {% if revision.scheduled %}
+                                <span class="ui mini basic label" data-scheduled>{{ 'setono_sylius_cms.ui.scheduled'|trans }}</span>
+                            {% endif %}
+                        </td>
+                        <td data-published-by>{{ revision.publishedBy|default('—') }}</td>
+                        <td class="right aligned">
+                            <div class="ui buttons">
+                                {% if row.contentType.hasOwnUrl() %}
+                                    <a class="ui labeled icon button" href="{{ path('setono_sylius_cms_admin_entry_revision_preview', {'uuid': entry.uuid, 'id': revision.id}) }}" target="_blank" rel="noopener">
+                                        <i class="eye icon"></i> {{ 'setono_sylius_cms.ui.preview'|trans }}
+                                    </a>
+                                {% endif %}
+                                <form method="post" action="{{ path('setono_sylius_cms_admin_entry_revision_restore', {'uuid': entry.uuid, 'id': revision.id}) }}">
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
+                                    <button type="submit" class="ui labeled icon button" data-requires-confirmation><i class="history icon"></i> {{ 'setono_sylius_cms.ui.restore'|trans }}</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</section>

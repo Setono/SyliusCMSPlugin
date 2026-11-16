@@ -9,15 +9,15 @@
             <tag name="doctrine.event_listener" event="loadClassMetadata"/>
         </service>
 
-        <service id="Setono\SyliusCMSPlugin\Repository\EntryRepository" class="Setono\SyliusCMSPlugin\Repository\EntryRepository">
-            <factory service="doctrine" method="getRepository"/>
-            <argument>Setono\SyliusCMSPlugin\Model\Entry</argument>
-        </service>
-        <service id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface" alias="Setono\SyliusCMSPlugin\Repository\EntryRepository"/>
-
         <!-- The repositories of the shipped resources are registered with them -->
+        <service id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface" alias="setono_sylius_cms.repository.entry"/>
         <service id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface" alias="setono_sylius_cms.repository.draft"/>
         <service id="Setono\SyliusCMSPlugin\Repository\EntryPresenceRepositoryInterface" alias="setono_sylius_cms.repository.entry_presence"/>
         <service id="Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface" alias="setono_sylius_cms.repository.saved_change_set"/>
+        <service id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface" alias="setono_sylius_cms.repository.revision"/>
+        <service id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface" alias="setono_sylius_cms.repository.scheduled_publish"/>
+        <service id="Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface" alias="setono_sylius_cms.repository.old_slug"/>
+        <service id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface" alias="setono_sylius_cms.repository.share_link"/>
+        <service id="Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface" alias="setono_sylius_cms.repository.homepage"/>
     </services>
 </container>

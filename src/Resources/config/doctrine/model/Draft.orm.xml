@@ -16,7 +16,7 @@
         <!-- Text, not a database JSON type: MySQL's JSON type reorders keys, and the column holds canonical JSON -->
         <field name="content" type="text"/>
 
-        <one-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\Entry">
+        <one-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\EntryInterface">
             <join-column name="entry_id" referenced-column-name="id" nullable="false" unique="true" on-delete="CASCADE"/>
         </one-to-one>
     </mapped-superclass>

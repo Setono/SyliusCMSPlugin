@@ -7,12 +7,11 @@
             <argument type="service" id="clock"/>
         </service>
 
-        <!-- Also the runtime of cms_preview_mode() -->
+        <!-- Reads the builder's preview tokens and share links' tokens. cms_preview_mode() reads it through CMSRuntime -->
         <service id="Setono\SyliusCMSPlugin\Preview\PreviewContext" class="Setono\SyliusCMSPlugin\Preview\PreviewContext">
             <argument type="service" id="request_stack"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner"/>
-
-            <tag name="twig.runtime"/>
+            <argument type="service_closure" id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider" class="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider">
@@ -20,7 +19,16 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionReader"/>
         </service>
+
+        <!-- Where Shown to and Date start in the builder's preview, and what a share link fixes them at -->
+        <service id="Setono\SyliusCMSPlugin\Preview\StartingValues" class="Setono\SyliusCMSPlugin\Preview\StartingValues">
+            <argument type="service" id="sylius.repository.customer_group"/>
+            <argument type="service" id="clock"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Preview\StartingValuesInterface" alias="Setono\SyliusCMSPlugin\Preview\StartingValues"/>
 
         <!-- Ahead of Sylius's hostname-based channel context, which has the default priority 0 -->
         <service id="Setono\SyliusCMSPlugin\Preview\PreviewChannelContext" class="Setono\SyliusCMSPlugin\Preview\PreviewChannelContext">

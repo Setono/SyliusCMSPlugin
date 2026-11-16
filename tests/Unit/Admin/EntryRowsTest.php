@@ -1,0 +1,456 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Setono\SyliusCMSPlugin\Tests\Unit\Admin;
+
+use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
+use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Admin\EntryRow;
+use Setono\SyliusCMSPlugin\Admin\EntryRows;
+use Setono\SyliusCMSPlugin\Admin\StatusLabel;
+use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
+use Setono\SyliusCMSPlugin\Builder\EntryStatus;
+use Setono\SyliusCMSPlugin\Json\CanonicalJson;
+use Setono\SyliusCMSPlugin\Localization\Availability;
+use Setono\SyliusCMSPlugin\Model\Draft;
+use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
+use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
+use Setono\SyliusCMSPlugin\Problem\ProblemCount;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Sylius\Component\Locale\Context\LocaleContextInterface;
+use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
+use Symfony\Component\Clock\MockClock;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+
+final class EntryRowsTest extends TestCase
+{
+    use ProphecyTrait;
+
+    /** @var ObjectProphecy<DraftRepositoryInterface> */
+    private ObjectProphecy $drafts;
+
+    /** @var ObjectProphecy<ScheduledPublishRepositoryInterface> */
+    private ObjectProphecy $scheduledPublishes;
+
+    /** @var ObjectProphecy<UrlGeneratorInterface> */
+    private ObjectProphecy $urlGenerator;
+
+    /** @var ObjectProphecy<ProblemCountProviderInterface> */
+    private ObjectProphecy $problemCounts;
+
+    protected function setUp(): void
+    {
+        $this->drafts = $this->prophesize(DraftRepositoryInterface::class);
+        $this->drafts->findByEntries(Argument::any())->willReturn([]);
+        $this->scheduledPublishes = $this->prophesize(ScheduledPublishRepositoryInterface::class);
+        $this->scheduledPublishes->findByEntries(Argument::any())->willReturn([]);
+        $this->problemCounts = $this->prophesize(ProblemCountProviderInterface::class);
+        $this->problemCounts->getCounts(Argument::any())->will(static function (array $arguments): array {
+            /** @var list<EntryInterface> $entries */
+            $entries = $arguments[0];
+
+            return array_fill_keys(array_map(static fn (EntryInterface $entry): string => $entry->getUuid(), $entries), new ProblemCount());
+        });
+
+        $this->urlGenerator = $this->prophesize(UrlGeneratorInterface::class);
+        $this->urlGenerator->generate('setono_sylius_cms_shop_entry', Argument::type('array'))->will(static function (array $arguments): string {
+            /** @var array{_locale: string, path: string} $parameters */
+            $parameters = $arguments[1];
+
+            return sprintf('/%s/%s', $parameters['_locale'], $parameters['path']);
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function it_shows_an_entry_that_has_no_draft_with_its_title_and_url_from_its_rows(): void
+    {
+        $page = self::page(['en_US' => ['About us', 'about-us']]);
+
+        [$row] = $this->rows([$page]);
+
+        self::assertSame($page, $row->entry);
+        self::assertSame('page', $row->contentType->code);
+        self::assertSame('About us', $row->title);
+        self::assertSame('/en_US/about-us', $row->url);
+        self::assertEquals([new StatusLabel(EntryStatus::NeverPublished->value)], $row->statusLabels);
+        self::assertSame(EntryStatus::NeverPublished, $row->status);
+        self::assertNull($row->scheduledPublish);
+        self::assertNull($row->scheduledPublishStatus);
+    }
+
+    /**
+     * @test
+     */
+    public function it_loads_the_scheduled_publishes_of_a_page_of_entries_in_one_query_and_labels_them(): void
+    {
+        $about = self::page(['en_US' => ['About us', 'about-us']]);
+        $contact = self::page(['en_US' => ['Contact', 'contact']]);
+        $scheduledPublish = new ScheduledPublish();
+        $scheduledPublish->setEntry($contact);
+        $scheduledPublish->schedule(new \DateTimeImmutable('2026-11-16 11:55:00', new \DateTimeZone('UTC')), 'Jane Roe');
+        $this->scheduledPublishes->findByEntries([$about, $contact])->willReturn([$scheduledPublish])->shouldBeCalledOnce();
+
+        [$aboutRow, $contactRow] = $this->rows([$about, $contact]);
+
+        self::assertNull($aboutRow->scheduledPublish);
+        self::assertNull($aboutRow->scheduledPublishStatus);
+        self::assertSame($scheduledPublish, $contactRow->scheduledPublish);
+        // Five minutes after its time, by the clock
+        self::assertSame(EntryStatus::ScheduledPublishOverdue, $contactRow->scheduledPublishStatus);
+        self::assertEquals(
+            [new StatusLabel(EntryStatus::NeverPublished->value), new StatusLabel(EntryStatus::ScheduledPublishOverdue->value, ['at' => new \DateTimeImmutable('2026-11-16 11:55:00', new \DateTimeZone('UTC'))])],
+            $contactRow->statusLabels,
+        );
+        self::assertSame(EntryStatus::NeverPublished, $contactRow->status);
+    }
+
+    /**
+     * @test
+     */
+    public function it_reads_the_title_and_url_of_an_entry_with_a_draft_from_the_drafts_json(): void
+    {
+        $page = self::page(['en_US' => ['About us', 'about-us']]);
+        $page->publish(new \DateTimeImmutable('2026-11-01T00:00:00Z'));
+        $other = self::page(['en_US' => ['Contact', 'contact']]);
+        $other->publish(new \DateTimeImmutable('2026-11-01T00:00:00Z'));
+        $draft = self::draft($page, ['en_US' => ['About our shop', 'about-our-shop']]);
+        $this->drafts->findByEntries([$page, $other])->willReturn([$draft]);
+
+        [$row, $otherRow] = $this->rows([$page, $other]);
+
+        // The row keeps the draft, for what else reads the working copy, such as its translation chips
+        self::assertSame($draft, $row->draft);
+        self::assertNull($otherRow->draft);
+        self::assertSame('About our shop', $row->title);
+        self::assertSame('/en_US/about-our-shop', $row->url);
+        self::assertEquals([new StatusLabel(EntryStatus::Published->value), new StatusLabel(EntryStatus::UnpublishedChanges->value)], $row->statusLabels);
+        self::assertSame(EntryStatus::UnpublishedChanges, $row->status);
+
+        self::assertSame('Contact', $otherRow->title);
+        self::assertEquals([new StatusLabel(EntryStatus::Published->value)], $otherRow->statusLabels);
+        self::assertSame(EntryStatus::Published, $otherRow->status);
+    }
+
+    /**
+     * @test
+     */
+    public function it_shows_the_admin_users_locale_or_else_the_stores_default_locale_or_else_the_first(): void
+    {
+        $both = self::page(['en_US' => ['About us', 'about-us'], 'da_DK' => ['Om os', 'om-os']]);
+        $english = self::page(['en_US' => ['Contact', 'contact']]);
+        $german = self::page(['de_DE' => ['Impressum', 'impressum'], 'fr_FR' => ['Mentions légales', 'mentions']]);
+
+        $rows = $this->rows([$both, $english, $german], 'da_DK');
+
+        self::assertSame(['Om os', 'Contact', 'Impressum'], array_map(static fn (EntryRow $row): ?string => $row->title, $rows));
+        self::assertSame(['/da_DK/om-os', '/en_US/contact', '/de_DE/impressum'], array_map(static fn (EntryRow $row): ?string => $row->url, $rows));
+    }
+
+    /**
+     * @test
+     */
+    public function it_shows_the_admin_users_locale_from_a_draft_too(): void
+    {
+        $page = self::page(['en_US' => ['About us', 'about-us']]);
+        $page->publish(new \DateTimeImmutable('2026-11-01T00:00:00Z'));
+        $this->drafts->findByEntries([$page])->willReturn([self::draft($page, ['en_US' => ['About us', 'about-us'], 'da_DK' => ['Om os', 'om-os']])]);
+
+        [$row] = $this->rows([$page], 'da_DK');
+
+        self::assertSame('Om os', $row->title);
+        self::assertSame('/da_DK/om-os', $row->url);
+
+        [$row] = $this->rows([$page], 'en_US');
+
+        self::assertSame('About us', $row->title);
+        self::assertSame('/en_US/about-us', $row->url);
+    }
+
+    /**
+     * @test
+     */
+    public function it_reads_the_translations_of_a_draft_it_can_read_beside_one_it_cannot(): void
+    {
+        $page = self::page(['en_US' => ['About us', 'about-us']]);
+        $page->publish(new \DateTimeImmutable('2026-11-01T00:00:00Z'));
+        $draft = new Draft();
+        $draft->setEntry($page);
+        $draft->setContent(CanonicalJson::encode(['translations' => [
+            'da_DK' => 'Om os',
+            'en_US' => ['fields' => ['slug' => 'about-our-shop', 'title' => 'About our shop']],
+        ]]));
+        $this->drafts->findByEntries([$page])->willReturn([$draft]);
+
+        [$row] = $this->rows([$page], 'da_DK');
+
+        self::assertSame('About our shop', $row->title);
+        self::assertSame('/en_US/about-our-shop', $row->url);
+    }
+
+    /**
+     * A draft that isn't JSON fails where it's opened, not in the lists
+     *
+     * @test
+     */
+    public function it_reads_no_title_or_url_of_a_draft_that_is_not_json(): void
+    {
+        $page = self::page(['en_US' => ['About us', 'about-us']]);
+        $page->publish(new \DateTimeImmutable('2026-11-01T00:00:00Z'));
+        $draft = new Draft();
+        $draft->setEntry($page);
+        $draft->setContent('{"translations":');
+        $this->drafts->findByEntries([$page])->willReturn([$draft]);
+
+        [$row] = $this->rows([$page], 'en_US');
+
+        self::assertNull($row->title);
+        self::assertNull($row->url);
+    }
+
+    /**
+     * @test
+     */
+    public function it_has_no_url_for_a_content_type_without_its_own_url_or_an_entry_without_a_slug(): void
+    {
+        $recipe = new Recipe();
+        $recipe->setCurrentLocale('en_US');
+        $recipe->setTitle('Apple pie');
+        $withoutSlug = self::page(['en_US' => ['About us', null]]);
+
+        $rows = $this->rows([$recipe, $withoutSlug]);
+
+        self::assertSame('recipe', $rows[0]->contentType->code);
+        self::assertSame('Apple pie', $rows[0]->title);
+        self::assertNull($rows[0]->url);
+        self::assertSame('About us', $rows[1]->title);
+        self::assertNull($rows[1]->url);
+    }
+
+    /**
+     * @test
+     */
+    public function it_has_neither_a_title_nor_a_url_for_an_entry_without_translations(): void
+    {
+        [$row] = $this->rows([new Page()]);
+
+        self::assertNull($row->title);
+        self::assertNull($row->url);
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideDraftsItCannotRead
+     */
+    public function it_shows_nothing_of_a_draft_whose_translations_it_cannot_read(mixed $content): void
+    {
+        $page = self::page(['en_US' => ['About us', 'about-us']]);
+        $page->publish(new \DateTimeImmutable('2026-11-01T00:00:00Z'));
+        $draft = new Draft();
+        $draft->setEntry($page);
+        $draft->setContent(CanonicalJson::encode($content));
+        $this->drafts->findByEntries([$page])->willReturn([$draft]);
+
+        [$row] = $this->rows([$page]);
+
+        self::assertNull($row->title);
+        self::assertNull($row->url);
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function provideDraftsItCannotRead(): iterable
+    {
+        yield 'not an object' => [7];
+        yield 'no translations' => [['uuid' => '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e']];
+        yield 'translations that are a list' => [['translations' => [['fields' => ['slug' => 'about-us', 'title' => 'About us']]]]];
+        yield 'a translation that is not an object' => [['translations' => ['en_US' => 'About us']]];
+        yield 'a translation without fields' => [['translations' => ['en_US' => ['shown' => true]]]];
+        yield 'fields that are not an object' => [['translations' => ['en_US' => ['fields' => 'About us']]]];
+        yield 'no title or slug' => [['translations' => ['en_US' => ['fields' => []]]]];
+        yield 'a title and a slug that are not text' => [['translations' => ['en_US' => ['fields' => ['slug' => ['about-us'], 'title' => 7]]]]];
+    }
+
+    /**
+     * @test
+     */
+    public function it_reads_the_problem_counts_of_a_page_of_entries_at_once_for_the_problem_marker(): void
+    {
+        $about = self::page(['en_US' => ['About us', 'about-us']]);
+        $contact = self::page(['en_US' => ['Contact', 'contact']]);
+        $this->problemCounts->getCounts([$about, $contact])->willReturn([$about->getUuid() => new ProblemCount(1, 2), $contact->getUuid() => new ProblemCount()])->shouldBeCalledOnce();
+
+        [$aboutRow, $contactRow] = $this->rows([$about, $contact]);
+
+        self::assertEquals(new ProblemCount(1, 2), $aboutRow->problems);
+        self::assertEquals(new ProblemCount(), $contactRow->problems);
+    }
+
+    /**
+     * @test
+     */
+    public function it_loads_nothing_for_a_page_without_entries(): void
+    {
+        $this->drafts->findByEntries(Argument::any())->shouldNotBeCalled();
+        $this->scheduledPublishes->findByEntries(Argument::any())->shouldNotBeCalled();
+        $this->problemCounts->getCounts(Argument::any())->shouldNotBeCalled();
+
+        $this->entryRows()->load(self::pageOf([]));
+    }
+
+    /**
+     * @test
+     */
+    public function it_loads_the_drafts_of_a_page_of_entries_in_one_query_and_keeps_their_rows(): void
+    {
+        $about = self::page(['en_US' => ['About us', 'about-us']]);
+        $contact = self::page(['en_US' => ['Contact', 'contact']]);
+        $this->drafts->findByEntries([$about, $contact])->willReturn([])->shouldBeCalledOnce();
+        $rows = $this->entryRows();
+
+        $rows->load(self::pageOf([$about, $contact]));
+
+        self::assertSame('About us', $rows->get($about)->title);
+        self::assertSame('Contact', $rows->get($contact)->title);
+        self::assertSame($rows->get($about), $rows->get($about));
+    }
+
+    /**
+     * @test
+     */
+    public function it_loads_the_row_of_an_entry_that_was_not_on_a_page_alone(): void
+    {
+        $about = self::page(['en_US' => ['About us', 'about-us']]);
+        $contact = self::page(['en_US' => ['Contact', 'contact']]);
+        $this->drafts->findByEntries([$about])->willReturn([])->shouldBeCalledOnce();
+        $this->drafts->findByEntries([$contact])->willReturn([])->shouldBeCalledOnce();
+        $rows = $this->entryRows();
+
+        $rows->load(self::pageOf([$about]));
+
+        self::assertSame('Contact', $rows->get($contact)->title);
+        self::assertSame('Contact', $rows->get($contact)->title);
+    }
+
+    /**
+     * @test
+     */
+    public function it_forgets_the_rows_it_loaded_when_it_is_reset(): void
+    {
+        $about = self::page(['en_US' => ['About us', 'about-us']]);
+        $this->drafts->findByEntries([$about])->willReturn([])->shouldBeCalledTimes(2);
+        $rows = $this->entryRows();
+        $rows->load(self::pageOf([$about]));
+        $before = $rows->get($about);
+
+        $rows->reset();
+
+        self::assertNotSame($before, $rows->get($about));
+    }
+
+    /**
+     * @param list<EntryInterface> $entries
+     *
+     * @return list<EntryRow>
+     */
+    private function rows(array $entries, string $localeCode = 'en_US'): array
+    {
+        $rows = $this->entryRows($localeCode);
+        $rows->load(self::pageOf($entries));
+
+        return array_map($rows->get(...), $entries);
+    }
+
+    /**
+     * @param string $localeCode the admin user's locale
+     */
+    private function entryRows(string $localeCode = 'en_US'): EntryRows
+    {
+        $translationLocaleProvider = $this->prophesize(TranslationLocaleProviderInterface::class);
+        $translationLocaleProvider->getDefaultLocaleCode()->willReturn('en_US');
+        $localeContext = $this->prophesize(LocaleContextInterface::class);
+        $localeContext->getLocaleCode()->willReturn($localeCode);
+
+        return new EntryRows(
+            $this->drafts->reveal(),
+            new ContentTypeRegistry([
+                'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+                'recipe' => ['model' => Recipe::class, 'translation' => EntryTranslation::class, 'resource' => 'app.recipe'],
+            ]),
+            new StatusLabeler(new MockClock('2026-11-16 12:00:00', 'UTC'), new Availability()),
+            $this->urlGenerator->reveal(),
+            $translationLocaleProvider->reveal(),
+            $localeContext->reveal(),
+            $this->scheduledPublishes->reveal(),
+            new MockClock('2026-11-16 12:00:00', 'UTC'),
+            $this->problemCounts->reveal(),
+        );
+    }
+
+    /**
+     * A page of entries as Pagerfanta gives one: an iterable, whose keys don't matter
+     *
+     * @param list<EntryInterface> $entries
+     *
+     * @return iterable<EntryInterface>
+     */
+    private static function pageOf(array $entries): iterable
+    {
+        return (static function () use ($entries): \Generator {
+            foreach ($entries as $entry) {
+                yield $entry->getUuid() => $entry;
+            }
+        })();
+    }
+
+    /**
+     * @param array<string, array{string, string|null}> $translations locale => [title, slug]
+     */
+    private static function page(array $translations): Page
+    {
+        $page = new Page();
+        foreach ($translations as $localeCode => [$title, $slug]) {
+            $page->setCurrentLocale($localeCode);
+            $page->setTitle($title);
+            $page->setSlug($slug);
+        }
+
+        return $page;
+    }
+
+    /**
+     * A draft in the entry format, with these translations
+     *
+     * @param array<string, array{string, string|null}> $translations locale => [title, slug]
+     */
+    private static function draft(Page $page, array $translations): DraftInterface
+    {
+        $draft = new Draft();
+        $draft->setEntry($page);
+        $draft->setContent(CanonicalJson::encode([
+            'uuid' => $page->getUuid(),
+            'contentType' => 'page',
+            'translations' => array_map(static fn (array $translation): array => [
+                'shown' => true,
+                'fields' => ['slug' => $translation[1], 'title' => $translation[0]],
+                'translated' => new \stdClass(),
+            ], $translations),
+        ]));
+
+        return $draft;
+    }
+}

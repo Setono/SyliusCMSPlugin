@@ -1,0 +1,203 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Setono\SyliusCMSPlugin\Tests\Unit\Command;
+
+use Doctrine\Persistence\ObjectManager;
+use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
+use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Command\CheckRoutesCommand;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface;
+use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Routing\TakenUrl;
+use Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Tester\CommandTester;
+
+final class CheckRoutesCommandTest extends TestCase
+{
+    use ProphecyTrait;
+
+    /** @var ObjectProphecy<EntryRepositoryInterface> */
+    private ObjectProphecy $entries;
+
+    /** @var ObjectProphecy<TakenUrlFinderInterface> */
+    private ObjectProphecy $takenUrls;
+
+    /** @var ObjectProphecy<ObjectManager> */
+    private ObjectProphecy $manager;
+
+    /** @var ObjectProphecy<ProblemCountUpdaterInterface> */
+    private ObjectProphecy $problemCounts;
+
+    /** @var list<string> what happened to the entries, in order: "counted <n>" and "cleared" */
+    private array $happened = [];
+
+    /** @var list<list<EntryInterface>> the entries of each update() */
+    private array $counted = [];
+
+    protected function setUp(): void
+    {
+        $this->entries = $this->prophesize(EntryRepositoryInterface::class);
+        $this->takenUrls = $this->prophesize(TakenUrlFinderInterface::class);
+        $this->takenUrls->findLive(Argument::any())->willReturn([]);
+        $this->manager = $this->prophesize(ObjectManager::class);
+        $this->problemCounts = $this->prophesize(ProblemCountUpdaterInterface::class);
+
+        $happened = &$this->happened;
+        $counted = &$this->counted;
+        $this->problemCounts->update(Argument::any())->will(static function (array $arguments) use (&$happened, &$counted): void {
+            /** @var list<EntryInterface> $entries */
+            $entries = $arguments[0];
+            $happened[] = sprintf('counted %d', count($entries));
+            $counted[] = $entries;
+        });
+        $this->manager->clear()->will(static function () use (&$happened): void {
+            $happened[] = 'cleared';
+        });
+    }
+
+    /**
+     * @test
+     */
+    public function it_succeeds_when_no_other_route_matches_an_entry_url(): void
+    {
+        $page = self::page(['en_US' => 'about-us', 'da_DK' => 'om-os'], ['WEB'], true);
+        $this->entries->iterateAll()->willReturn([$page]);
+        $this->manager->clear()->shouldNotBeCalled();
+
+        $tester = $this->check();
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode());
+        self::assertStringContainsString('[OK] No other route matches an entry URL.', $tester->getDisplay());
+        $this->takenUrls->findLive($page)->shouldHaveBeenCalledOnce();
+    }
+
+    /**
+     * @test
+     */
+    public function it_lists_each_live_url_another_route_matches_and_fails(): void
+    {
+        $cart = self::page(['en_US' => 'cart', 'da_DK' => 'kurv', 'de_DE' => '/bad'], ['B2B', 'WEB'], true);
+        $login = self::page(['en_US' => 'login'], ['WEB'], true);
+        $this->entries->iterateAll()->willReturn([$cart, $login]);
+        $this->takenUrls->findLive($cart)->willReturn([
+            new TakenUrl('B2B', 'en_US', 'cart', 'sylius_shop_cart_summary'),
+            new TakenUrl('WEB', 'en_US', 'cart', 'sylius_shop_cart_summary'),
+        ]);
+        $this->takenUrls->findLive($login)->willReturn([new TakenUrl('WEB', 'en_US', 'login', 'sylius_shop_login')]);
+
+        $tester = $this->check();
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        $display = $tester->getDisplay();
+        self::assertMatchesRegularExpression('/Channel\s+Locale\s+URL\s+Route/', $display);
+        self::assertMatchesRegularExpression('#B2B\s+en_US\s+/en_US/cart\s+sylius_shop_cart_summary#', $display);
+        self::assertMatchesRegularExpression('#WEB\s+en_US\s+/en_US/cart\s+sylius_shop_cart_summary#', $display);
+        self::assertMatchesRegularExpression('#WEB\s+en_US\s+/en_US/login\s+sylius_shop_login#', $display);
+        self::assertStringContainsString('Another route matches 3 entry URLs', $display);
+    }
+
+    /**
+     * @test
+     */
+    public function it_names_one_url_as_one(): void
+    {
+        $login = self::page(['en_US' => 'login'], ['WEB'], true);
+        $this->entries->iterateAll()->willReturn([$login]);
+        $this->takenUrls->findLive($login)->willReturn([new TakenUrl('WEB', 'en_US', 'login', 'sylius_shop_login')]);
+
+        self::assertStringContainsString('Another route matches 1 entry URL, so shoppers', $this->check()->getDisplay());
+    }
+
+    /**
+     * @test
+     *
+     * @testWith [199, 1]
+     *           [200, 2]
+     */
+    public function it_drops_the_entries_it_has_checked_every_hundred_entries(int $entries, int $clears): void
+    {
+        $pages = [];
+        for ($i = 0; $i < $entries; ++$i) {
+            $pages[] = new Page();
+        }
+
+        $this->entries->iterateAll()->willReturn($pages);
+        $this->manager->clear()->shouldBeCalledTimes($clears);
+
+        self::assertSame(Command::SUCCESS, $this->check()->getStatusCode());
+    }
+
+    /**
+     * A route added since may take a published entry's URL, so the entries it checks are counted again, a batch at a
+     * time, before the batch is dropped. See "Problems" in docs/spec/admin.md
+     *
+     * @test
+     */
+    public function it_counts_the_problems_of_the_published_entries_again_a_batch_at_a_time_before_dropping_it(): void
+    {
+        $pages = [];
+        for ($i = 0; $i < 150; ++$i) {
+            $pages[] = self::page([], ['WEB'], true);
+        }
+        $first = $pages[0];
+        array_splice($pages, 10, 0, [self::page(['en_US' => 'cart'], ['WEB'], false)]);
+        $this->entries->iterateAll()->willReturn($pages);
+
+        $this->check();
+
+        // The never-published entry has no URL to take
+        self::assertSame(['counted 99', 'cleared', 'counted 51'], $this->happened);
+        self::assertSame($first, $this->counted[0][0]);
+        self::assertSame($pages[100], $this->counted[1][0]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_counts_nothing_again_without_published_entries(): void
+    {
+        $this->entries->iterateAll()->willReturn([self::page(['en_US' => 'cart'], ['WEB'], false)]);
+
+        $this->check();
+
+        self::assertSame([], $this->happened);
+    }
+
+    private function check(): CommandTester
+    {
+        $tester = new CommandTester(new CheckRoutesCommand($this->entries->reveal(), $this->takenUrls->reveal(), $this->manager->reveal(), $this->problemCounts->reveal()));
+        $tester->execute([], ['decorated' => false]);
+
+        return $tester;
+    }
+
+    /**
+     * @param array<string, string> $slugs
+     * @param list<string> $channelCodes
+     */
+    private static function page(array $slugs, array $channelCodes, bool $published): Page
+    {
+        $page = new Page();
+        foreach ($slugs as $localeCode => $slug) {
+            $translation = new PageTranslation();
+            $translation->setLocale($localeCode);
+            $translation->setSlug($slug);
+            $page->addTranslation($translation);
+        }
+        ChannelsAndAudience::modifier()->setChannels($page, $channelCodes);
+        if ($published) {
+            $page->publish(new \DateTimeImmutable());
+        }
+
+        return $page;
+    }
+}

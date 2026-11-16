@@ -46,6 +46,6 @@ final readonly class PublishEntryAction
         }
 
         // A publish leaves no draft
-        return new JsonResponse(['status' => EntryStatus::of($entry, false)]);
+        return new JsonResponse(['status' => EntryStatus::of($entry, false)->value]);
     }
 }

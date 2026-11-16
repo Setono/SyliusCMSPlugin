@@ -13,7 +13,7 @@ class EntryPresence implements EntryPresenceInterface
      * @param string $name the admin user's name, as the builder shows it
      */
     public function __construct(
-        protected Entry $entry,
+        protected EntryInterface $entry,
         protected string $editor,
         protected string $name,
         protected \DateTimeImmutable $seenAt,
@@ -25,7 +25,7 @@ class EntryPresence implements EntryPresenceInterface
         return $this->id;
     }
 
-    public function getEntry(): Entry
+    public function getEntry(): EntryInterface
     {
         return $this->entry;
     }

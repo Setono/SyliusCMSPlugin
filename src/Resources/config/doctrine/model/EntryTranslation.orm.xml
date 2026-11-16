@@ -32,6 +32,11 @@
         <field name="locale" type="string"/>
         <field name="title" type="string" nullable="true"/>
         <field name="slug" type="string" nullable="true"/>
+        <!-- The SEO fields of a content type with its own URL. A meta description may run past 255 characters -->
+        <field name="metaTitle" column="meta_title" type="string" nullable="true"/>
+        <field name="metaDescription" column="meta_description" type="text" nullable="true"/>
+        <field name="shown" type="boolean"/>
+        <field name="translated" type="json"/>
 
         <many-to-one field="translatable" target-entity="Setono\SyliusCMSPlugin\Model\Entry" inversed-by="translations">
             <join-column name="translatable_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>

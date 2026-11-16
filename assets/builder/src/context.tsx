@@ -1,11 +1,13 @@
 import { createContext, useContext } from 'react';
 import { useStore } from 'zustand';
 import type { BuilderApi, PreviewRequest } from './api';
-import type { Channel, CustomerGroup } from './config';
+import type { Channel, CustomerGroup, Locale } from './config';
+import type { LeavingState, LeavingStore } from './leaving';
 import type { PresenceState, PresenceStore } from './presence';
 import type { PreviewState, PreviewStore } from './preview';
 import type { SettingsState, SettingsStore } from './settings';
 import type { BuilderState, BuilderStore } from './store';
+import type { UrlsState, UrlsStore } from './urls';
 import type { ValidationState, ValidationStore } from './validation';
 
 /** One open entry in the builder. */
@@ -15,9 +17,20 @@ export interface BuilderSession {
     validation: ValidationStore;
     publish: () => Promise<void>;
     discard: () => Promise<void>;
+    /** Schedules a publish at a time in UTC, and resolves to whether it was scheduled. */
+    schedule: (at: string) => Promise<boolean>;
+    /** Cancels the scheduled publish, which unlocks the working copy. */
+    cancelSchedule: () => Promise<void>;
     /** Loads the working copy again, when the server can't merge a save onto what colleagues saved. */
     reload: () => Promise<void>;
+    /** Where the back button and Esc go: where the builder was opened from. */
     backUrl: string;
+    /** Leaves the builder for backUrl, once the unsaved changes are sent, or stays when they can't be. */
+    leave: () => void;
+    /** Whether leaving stayed because the unsaved changes couldn't be sent, and the way to stay or leave anyway. */
+    leaving: LeavingStore;
+    /** The entry's overview page, for publishing history, revisions, share links and placements. */
+    overviewUrl: string;
     preview: PreviewStore;
     /** Asks for a preview token, and answers with the URL of the preview it turns on. */
     createPreviewUrl: (preview: PreviewRequest) => Promise<string>;
@@ -29,8 +42,18 @@ export interface BuilderSession {
     presence: PresenceStore;
     /** The store's channels, which the entry's channels are picked from. */
     channels: Channel[];
+    /** The locales of the store's channels, with their names and fallback chains. */
+    locales: Locale[];
     /** The store's customer groups, which the audience names. */
     customerGroups: CustomerGroup[];
+    /** The URL prefix of the entry's content type, '' for URLs at the root, or null when it has no URL of its own. */
+    urlPrefix: string | null;
+    /** Whether the entry can be a channel's homepage, which only a page can. */
+    homepage: boolean;
+    /** The warnings about the entry's URLs and the URLs of its old slugs, as the server has them. */
+    urls: UrlsStore;
+    /** Says the editor changed the title in a locale, so the slug can follow it. */
+    titleChanged: (locale: string, before: string | null) => void;
 }
 
 const BuilderContext = createContext<BuilderSession | null>(null);
@@ -66,7 +89,17 @@ export function useValidationState<T>(selector: (state: ValidationState) => T): 
     return useStore(useBuilder().validation, selector);
 }
 
+/** Selects from the URL warnings and old URLs. The selector must return state as it is, not a new object. */
+export function useUrlsState<T>(selector: (state: UrlsState) => T): T {
+    return useStore(useBuilder().urls, selector);
+}
+
 /** Selects from what the preview shows. The selector must return state as it is, not a new object. */
 export function usePreviewState<T>(selector: (state: PreviewState) => T): T {
     return useStore(useBuilder().preview, selector);
+}
+
+/** Selects from leaving the builder. The selector must return state as it is, not a new object. */
+export function useLeavingState<T>(selector: (state: LeavingState) => T): T {
+    return useStore(useBuilder().leaving, selector);
 }

@@ -19,4 +19,21 @@ class DraftRepository extends EntityRepository implements DraftRepositoryInterfa
 
         return $draft instanceof DraftInterface ? $draft : null;
     }
+
+    public function findByEntries(array $entries): array
+    {
+        if ([] === $entries) {
+            return [];
+        }
+
+        /** @var list<DraftInterface> $drafts */
+        $drafts = $this->createQueryBuilder('draft')
+            ->andWhere('draft.entry IN (:entries)')
+            ->setParameter('entries', $entries)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $drafts;
+    }
 }

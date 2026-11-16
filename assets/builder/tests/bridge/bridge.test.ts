@@ -148,6 +148,25 @@ describe('the bridge', () => {
             expect(other.defaultPrevented).toBe(false);
         });
 
+        it('should pass Esc pressed in the page on to the builder, which leaves, but not Esc pressed in a field or that the page handled', () => {
+            document.body.insertAdjacentHTML('beforeend', '<form><input name="q"><textarea></textarea><select><option>A</option></select></form><div contenteditable="true">Note</div>');
+            const escape = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+            const handled = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+            const withModifier = new KeyboardEvent('keydown', { key: 'Escape', altKey: true, bubbles: true, cancelable: true });
+
+            document.querySelector('h2')?.dispatchEvent(escape);
+            for (const field of document.querySelectorAll('input, textarea, select, [contenteditable]')) {
+                field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+            }
+            handled.preventDefault();
+            document.body.dispatchEvent(handled);
+            document.body.dispatchEvent(withModifier);
+
+            expect(posted).toEqual([{ type: 'leave' }]);
+            expect(escape.defaultPrevented).toBe(true);
+            expect(withModifier.defaultPrevented).toBe(false);
+        });
+
         it('should offer + above and below the selected block, which asks the builder for the block picker at that spot', () => {
             bridge.receive({ type: 'select', key: 'a' });
 
@@ -175,6 +194,26 @@ describe('the bridge', () => {
                 { type: 'add', key: 'd', position: 'before', x: 0, y: 0 },
                 { type: 'add', key: 'd', position: 'after', x: 0, y: 0 },
             ]);
+        });
+
+        it('should only outline and select blocks while the working copy is read-only, as while a scheduled publish locks it', () => {
+            bridge.receive({ type: 'init', strings, readOnly: true });
+            bridge.receive({ type: 'select', key: 'a' });
+            fireEvent.mouseOver(document.querySelectorAll('h2')[2]!);
+
+            expect(outline()).toBeVisible();
+            expect(within(controls()).queryByRole('toolbar')).toBeNull();
+            expect(within(controls()).queryAllByRole('button', { name: 'Add block above' })).toHaveLength(0);
+            expect(within(controls()).queryAllByRole('button', { name: 'Add block below' })).toHaveLength(0);
+
+            document.querySelectorAll('h2')[0]?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            expect(posted).toEqual([{ type: 'select', key: 'a' }]);
+
+            // Unlocked, it offers them again. jsdom keeps the styles it computed for the hidden controls, so this reads hidden
+            bridge.receive({ type: 'init', strings, readOnly: false });
+            const shown = [...controls().querySelectorAll<HTMLElement>('[role="toolbar"], button')].filter((control) => !control.hidden && control.parentElement?.hidden !== true);
+            expect(shown.filter((control) => control.getAttribute('role') === 'toolbar')).toHaveLength(1);
+            expect(shown.filter((control) => control.getAttribute('aria-label') === 'Add block above')).toHaveLength(2);
         });
 
         it('should offer only the selected block\'s + when the pointer is over the selected block', () => {

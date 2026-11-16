@@ -115,7 +115,7 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($registry);
         $blockTypes = self::blockTypes($registry);
 
-        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'accordion', 'accordion_item'], array_keys($blockTypes));
+        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'accordion', 'accordion_item', 'first_match'], array_keys($blockTypes));
 
         self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
         self::assertNull($blockTypes['columns']['parents']);
@@ -128,9 +128,12 @@ final class RegistryTest extends BuilderApiTestCase
             ['type' => 'heading', 'min' => null, 'max' => null],
             ['type' => 'rich_text', 'min' => null, 'max' => null],
             ['type' => 'accordion', 'min' => null, 'max' => null],
+            ['type' => 'first_match', 'min' => null, 'max' => null],
         ];
         self::assertSame($all, $blockTypes['group']['children']);
         self::assertSame($all, $blockTypes['column']['children']);
+        self::assertSame($all, $blockTypes['first_match']['children']);
+        self::assertSame([], $blockTypes['first_match']['fields']);
         self::assertSame([], $blockTypes['spacer']['children']);
         self::assertSame([], $blockTypes['heading']['children']);
         self::assertSame([], $blockTypes['rich_text']['children']);
@@ -143,8 +146,23 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertSame('/bundles/setonosyliuscmsplugin/thumbnail/block/columns.svg', $blockTypes['columns']['thumbnail']);
         self::assertFalse($blockTypes['spacer']['disabled']);
 
-        // The test application adds a content type of its own
-        self::assertSame([['code' => 'announcement', 'label' => 'Announcement', 'blocks' => $all], ['code' => 'page', 'label' => 'Page', 'blocks' => $all]], $registry['contentTypes']);
+        // The test application adds a content type of its own, without a URL and so without layouts, and a layout of its own to pages
+        self::assertIsArray($registry['contentTypes']);
+        self::assertSame(['code' => 'announcement', 'label' => 'Announcement', 'blocks' => $all, 'prefix' => null, 'homepage' => false, 'layouts' => []], $registry['contentTypes'][0]);
+        $page = $registry['contentTypes'][1];
+        self::assertIsArray($page);
+        self::assertSame(['page', 'Page', $all, '', true], [$page['code'], $page['label'], $page['blocks'], $page['prefix'], $page['homepage']]);
+        self::assertIsArray($page['layouts']);
+        $layouts = [];
+        foreach ($page['layouts'] as $layout) {
+            self::assertIsArray($layout);
+            self::assertIsArray($layout['fields']);
+            $layouts[] = [$layout['code'], $layout['label'], $layout['thumbnail'], $layout['default'], $layout['shows'], array_column($layout['fields'], 'name')];
+        }
+        self::assertSame([
+            ['standard', 'Standard', '/bundles/setonosyliuscmsplugin/thumbnail/layout/page/standard.svg', true, ['title'], ['showTitle']],
+            ['landing', 'Landing', null, false, [], ['tagline', 'transparentHeader']],
+        ], $layouts);
     }
 
     /**

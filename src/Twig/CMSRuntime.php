@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig;
 
+use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Preview\FieldMarker;
+use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
@@ -22,21 +25,41 @@ final readonly class CMSRuntime implements RuntimeExtensionInterface
     public function __construct(
         private BlockRendererInterface $blockRenderer,
         private FieldMarker $fieldMarker,
+        private FallbackValues $fallbackValues,
+        private PreviewContext $previewContext,
     ) {
     }
 
     /**
-     * Prints a field of a block or a layout. Its value is already hydrated, with fallback resolved, and rich text is
-     * printed as its HTML. In the builder's preview, a field of a block being rendered is marked, so editors can type
-     * it in place
+     * The mode of the preview the page is rendered in, builder or share, or null outside a preview
+     */
+    public function previewMode(): ?string
+    {
+        return $this->previewContext->getMode();
+    }
+
+    /**
+     * Prints a field of a block, a layout or an entry. A block's or a layout's value is already hydrated, with fallback
+     * resolved, and rich text is printed as its HTML. An entry's translatable field falls back through the fallback chain
+     * of the render context's locale. In the builder's preview, a field of a block being rendered is marked, so editors
+     * can type it in place
      *
      * @param array<string, mixed> $context
      */
     public function field(array $context, object $subject, string $name): string
     {
+        $renderContext = $context[self::RENDER_CONTEXT] ?? null;
+
+        if ($subject instanceof EntryInterface) {
+            if (!$renderContext instanceof RenderContext) {
+                throw new \LogicException(sprintf('An entry\'s fields can only be printed from a template that has the render context in "%s", such as a layout template', self::RENDER_CONTEXT));
+            }
+
+            return self::escape($subject, $name, $this->fallbackValues->entryValue($subject, $name, $renderContext->localeCode));
+        }
+
         $html = self::print($subject, $name);
 
-        $renderContext = $context[self::RENDER_CONTEXT] ?? null;
         $view = self::viewOf($context['view'] ?? null, $subject);
         if (!$renderContext instanceof RenderContext || null === $view) {
             return $html;
@@ -56,8 +79,11 @@ final readonly class CMSRuntime implements RuntimeExtensionInterface
             throw new \InvalidArgumentException(sprintf('The field "%s" of %s must be a public property', $name, $subject::class));
         }
 
-        $value = $property->getValue($subject);
+        return self::escape($subject, $name, $property->getValue($subject));
+    }
 
+    private static function escape(object $subject, string $name, mixed $value): string
+    {
         if (null === $value) {
             return '';
         }

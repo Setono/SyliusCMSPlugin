@@ -6,8 +6,36 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\EntryRewriterInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
-            <!-- The manager of drafts, which is also the manager of entries -->
-            <argument type="service" id="setono_sylius_cms.manager.draft"/>
+            <!-- The manager of entries, which is also the manager of drafts and revisions, which it rewrites too -->
+            <argument type="service" id="setono_sylius_cms.manager.entry"/>
+
+            <tag name="console.command"/>
+        </service>
+
+        <!-- RegisterProblemKindsPass hands it the problem kinds it reports -->
+        <service id="Setono\SyliusCMSPlugin\Command\LintCommand" class="Setono\SyliusCMSPlugin\Command\LintCommand">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="translator"/>
+            <!-- The manager of entries, which also loads their drafts -->
+            <argument type="service" id="setono_sylius_cms.manager.entry"/>
+            <argument type="collection"/>
+
+            <tag name="console.command"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Command\CheckRoutesCommand" class="Setono\SyliusCMSPlugin\Command\CheckRoutesCommand">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface"/>
+            <argument type="service" id="setono_sylius_cms.manager.entry"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface"/>
+
+            <tag name="console.command"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Command\PruneRevisionsCommand" class="Setono\SyliusCMSPlugin\Command\PruneRevisionsCommand">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionPruner"/>
 
             <tag name="console.command"/>
         </service>

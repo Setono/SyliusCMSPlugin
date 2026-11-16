@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    An entry's published content as it was at one publish: the whole entry in the entry format, like a draft (ADR 0009),
+    with who published it, when, and whether it was scheduled. Deleting the entry deletes its revisions
+    -->
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\Revision" table="setono_sylius_cms__revision">
+        <indexes>
+            <index name="setono_sylius_cms__revision_entry_published_idx" columns="entry_id,published_at"/>
+        </indexes>
+
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <!-- Text, not a database JSON type: MySQL's JSON type reorders keys, and the column holds canonical JSON -->
+        <field name="content" type="text"/>
+        <field name="publishedAt" column="published_at" type="datetime_immutable"/>
+        <field name="publishedBy" column="published_by" type="string" nullable="true"/>
+        <field name="scheduled" type="boolean"/>
+
+        <many-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\EntryInterface">
+            <join-column name="entry_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
+        </many-to-one>
+    </mapped-superclass>
+</doctrine-mapping>

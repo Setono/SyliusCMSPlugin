@@ -231,7 +231,7 @@ final class EntryUrlTest extends WebTestCase
         $wholesaler = self::createShopUser('wholesaler@example.com', 'wholesale');
         $retailer = self::createShopUser('retailer@example.com', 'retail');
         $withoutGroup = self::createShopUser('shopper@example.com');
-        self::change(self::createPage('Prices', 'prices', 'Wholesale prices', published: true), static fn (PageInterface $page) => $page->setAudience(Audience::only('wholesale')));
+        self::change(self::createPage('Prices', 'prices', 'Wholesale prices', published: true), static fn (PageInterface $page) => self::channelsAndAudience()->setAudience($page, Audience::only('wholesale')));
 
         $client->request('GET', '/en_US/prices');
         self::assertResponseStatusCodeSame(404, 'A guest is outside the audience, and gets no redirect to sign in');
@@ -259,7 +259,7 @@ final class EntryUrlTest extends WebTestCase
         $client = self::createClient();
         self::createCustomerGroup('wholesale', 'Wholesale');
         $wholesaler = self::createShopUser('wholesaler@example.com', 'wholesale');
-        self::change(self::createPage('Offers', 'offers', 'Offers', published: true), static fn (PageInterface $page) => $page->setAudience(Audience::except('wholesale')));
+        self::change(self::createPage('Offers', 'offers', 'Offers', published: true), static fn (PageInterface $page) => self::channelsAndAudience()->setAudience($page, Audience::except('wholesale')));
 
         $client->request('GET', '/en_US/offers');
         self::assertResponseStatusCodeSame(200);

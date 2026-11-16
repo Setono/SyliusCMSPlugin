@@ -1,11 +1,13 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { useId } from 'react';
+import type { Locale } from '../config';
 import { useBuilder, useBuilderState } from '../context';
 import { useTranslator, type Translate } from '../i18n';
 import type { HeldClash } from '../pullIn';
 import { findBlock } from '../tree';
+import { localeOf } from '../locales';
 import type { BlockTypeDefinition, JsonValue } from '../types';
-import { isJsonObject } from '../values';
+import { plainText } from '../values';
 import styles from './ClashDialog.module.css';
 
 /**
@@ -14,7 +16,7 @@ import styles from './ClashDialog.module.css';
  */
 export function ClashDialog() {
     const t = useTranslator();
-    const { store } = useBuilder();
+    const { store, locales } = useBuilder();
     const clashes = useBuilderState((state) => state.clashes);
     const blockTypes = useBuilderState((state) => state.blockTypes);
     const blocks = useBuilderState((state) => state.entry.tree.blocks);
@@ -25,7 +27,7 @@ export function ClashDialog() {
         return null;
     }
 
-    const blockType = blockTypes.find(({ code }) => code === (clash.kind === 'deleted_block' ? clash.block.type : findBlock(blocks, clash.key)?.type));
+    const blockType = clash.kind === 'entry_value' ? undefined : blockTypes.find(({ code }) => code === (clash.kind === 'deleted_block' ? clash.block.type : findBlock(blocks, clash.key)?.type));
     const index = String(resolved + 1);
     const count = String(resolved + clashes.length);
 
@@ -38,8 +40,8 @@ export function ClashDialog() {
                         <Dialog.Title className={styles.title}>{t('setono_sylius_cms.builder.clash')}</Dialog.Title>
                         <span className={styles.count}>{t('setono_sylius_cms.builder.clash_count', { '%index%': index, '%count%': count })}</span>
                     </header>
-                    <Dialog.Description className={styles.description}>{describe(clash, blockType, t)}</Dialog.Description>
-                    {clash.kind === 'value' && (
+                    <Dialog.Description className={styles.description}>{describe(clash, blockType, locales, t)}</Dialog.Description>
+                    {(clash.kind === 'value' || clash.kind === 'entry_value') && (
                         <dl className={styles.values}>
                             <Side term={t('setono_sylius_cms.builder.clash_yours')} value={clash.mine} t={t} />
                             <Side term={t('setono_sylius_cms.builder.clash_theirs')} value={clash.theirs} t={t} />
@@ -74,7 +76,7 @@ function Side({ term, value, t }: { term: string; value: JsonValue | null; t: Tr
     );
 }
 
-function describe(clash: HeldClash, blockType: BlockTypeDefinition | undefined, t: Translate): string {
+function describe(clash: HeldClash, blockType: BlockTypeDefinition | undefined, locales: readonly Locale[], t: Translate): string {
     const block = blockType?.label ?? '';
 
     switch (clash.kind) {
@@ -83,6 +85,11 @@ function describe(clash: HeldClash, blockType: BlockTypeDefinition | undefined, 
 
             return t('setono_sylius_cms.builder.clash_value', { '%field%': field, '%block%': block });
         }
+        case 'entry_value':
+            return t('setono_sylius_cms.builder.clash_entry_value', {
+                '%field%': entryFieldLabel(clash.field, t),
+                '%locale%': clash.locale === null ? '' : localeOf(locales, clash.locale).name,
+            });
         case 'deleted_block':
             return t('setono_sylius_cms.builder.clash_deleted_block', { '%block%': block });
         case 'changed_block':
@@ -90,29 +97,20 @@ function describe(clash: HeldClash, blockType: BlockTypeDefinition | undefined, 
     }
 }
 
-/** A value as text: the text of rich text, and anything else as it's written. */
-export function plainText(value: JsonValue): string {
-    if (typeof value === 'string') {
-        return value;
+/** The label of an entry field: a translation's title, slug, meta title or meta description, or "Hide from search engines". */
+export function entryFieldLabel(field: string, t: Translate): string {
+    switch (field) {
+        case 'title':
+            return t('setono_sylius_cms.builder.entry_title');
+        case 'slug':
+            return t('setono_sylius_cms.builder.slug');
+        case 'metaTitle':
+            return t('setono_sylius_cms.builder.meta_title');
+        case 'metaDescription':
+            return t('setono_sylius_cms.builder.meta_description');
+        case 'noindex':
+            return t('setono_sylius_cms.builder.noindex');
+        default:
+            return field;
     }
-
-    if (isJsonObject(value) && value.type === 'doc') {
-        return textOf(value).trim();
-    }
-
-    return typeof value === 'object' ? JSON.stringify(value) : String(value);
-}
-
-function textOf(node: JsonValue | undefined): string {
-    if (!isJsonObject(node)) {
-        return '';
-    }
-
-    if (typeof node.text === 'string') {
-        return node.text;
-    }
-
-    const children = Array.isArray(node.content) ? node.content.map(textOf).join('') : '';
-
-    return node.type === 'paragraph' || node.type === 'heading' ? `${children}\n` : children;
 }

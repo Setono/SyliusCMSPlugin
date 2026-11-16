@@ -1,0 +1,16 @@
+{# An audience that isn't everyone: label.parameters.mode (only or except) and label.parameters.groups (customer group values) #}
+{% set names = cms_admin_customer_group_names() %}
+{% set groups = [] %}
+{% for group in label.parameters.groups %}
+    {% if group == '@guest' %}
+        {% set groups = groups|merge(['setono_sylius_cms.ui.audience.guests'|trans]) %}
+    {% elseif group == '@no_group' %}
+        {% set groups = groups|merge(['setono_sylius_cms.ui.audience.no_group'|trans]) %}
+    {% else %}
+        {% set groups = groups|merge([names[group]|default(group)]) %}
+    {% endif %}
+{% endfor %}
+<span class="ui purple basic label">
+    <i class="users icon"></i>
+    {{- ('setono_sylius_cms.ui.audience.' ~ label.parameters.mode)|trans({'%groups%': groups|sort|join(', ')}) -}}
+</span>

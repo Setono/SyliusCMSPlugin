@@ -1,3 +1,4 @@
+import { fingerprint } from '../src/fingerprint';
 import { describe, expect, it, vi } from 'vitest';
 import type { BridgeStrings } from '../src/bridge/protocol';
 import { createPreviewSync } from '../src/previewSync';
@@ -24,7 +25,7 @@ const strings: BridgeStrings = {
 
 /** Hears what the bridge in the preview sends, as the builder does. */
 function listen(store: BuilderStore) {
-    return createPreviewSync({ store, strings, render: vi.fn(async () => ({})), reload: vi.fn(), openBlockPicker: vi.fn(), openSettings: vi.fn() });
+    return createPreviewSync({ store, strings, render: vi.fn(async () => ({})), reload: vi.fn(), openBlockPicker: vi.fn(), openSettings: vi.fn(), leave: vi.fn() });
 }
 
 function doc(text: string, marks: string[] = []): JsonObject {
@@ -53,6 +54,20 @@ describe('an edit typed in place in the preview', () => {
 
         expect(store.getState().undo()).toBe(true);
         expect(store.getState().entry).toEqual(before);
+    });
+
+    it('should write a value for the edited locale when the editor types over the value it falls back to', () => {
+        const store = storeWith([block('a', { text: { en_US: 'Welcome' } })]);
+        store.getState().setLocale('da_DK');
+
+        // The preview renders the English heading in Danish, as the field falls back, and the editor types over it
+        listen(store).receive({ type: 'edit', key: 'a', field: 'text', value: 'Velkommen' });
+
+        expect(store.getState().entry.tree.blocks[0]?.fields).toEqual({ text: { en_US: 'Welcome', da_DK: 'Velkommen' } });
+        expect(store.getState().unsaved).toEqual([
+            { op: 'set_value', key: 'a', field: 'text', locale: 'da_DK', value: 'Velkommen' },
+            { op: 'set_translated', key: 'a', field: 'text', locale: 'da_DK', translated: { from: 'en_US', fingerprint: fingerprint('Welcome') } },
+        ]);
     });
 
     it('should undo what was typed in one field in one step, as typing in the right pane does', () => {

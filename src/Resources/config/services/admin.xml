@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- The Content item in the Sylius admin menu -->
+        <service id="Setono\SyliusCMSPlugin\Admin\MainMenuListener" class="Setono\SyliusCMSPlugin\Admin\MainMenuListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="kernel.event_listener" event="sylius.menu.admin.main"/>
+        </service>
+
+        <!-- The hub's side menu. Listeners of setono_sylius_cms.menu.admin.hub add items to it -->
+        <service id="Setono\SyliusCMSPlugin\Admin\HubMenuBuilder" class="Setono\SyliusCMSPlugin\Admin\HubMenuBuilder">
+            <argument type="service" id="knp_menu.factory"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+
+            <tag name="knp_menu.menu_builder" method="createMenu" alias="setono_sylius_cms.admin.hub"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Admin\StatusLabeler" class="Setono\SyliusCMSPlugin\Admin\StatusLabeler">
+            <argument type="service" id="clock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Admin\StatusLabelerInterface" alias="Setono\SyliusCMSPlugin\Admin\StatusLabeler"/>
+
+        <!-- The rows of the entry lists, which their grids' field templates get through cms_admin_entry_row() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryRows" class="Setono\SyliusCMSPlugin\Admin\EntryRows">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\StatusLabelerInterface"/>
+            <argument type="service" id="router"/>
+            <argument type="service" id="sylius.translation_locale_provider"/>
+            <!-- In the admin, the admin user's locale -->
+            <argument type="service" id="sylius.context.locale"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+            <argument type="service" id="clock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface"/>
+
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
+        <!-- Loads the rows of the page of entries a list shows, once its grid has them -->
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryIndexListener" class="Setono\SyliusCMSPlugin\Admin\EntryIndexListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryRows"/>
+
+            <tag name="kernel.event_listener" event="setono_sylius_cms.entry.index"/>
+        </service>
+
+        <!-- Checks the admin user on the entry overview page, which the entry resource's controller shows -->
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryShowListener" class="Setono\SyliusCMSPlugin\Admin\EntryShowListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+
+            <tag name="kernel.event_listener" event="setono_sylius_cms.entry.show"/>
+        </service>
+
+        <!-- The URLs of an entry per locale, which its overview page gets through cms_admin_entry_urls() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryUrls" class="Setono\SyliusCMSPlugin\Admin\EntryUrls">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="router"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface"/>
+        </service>
+
+        <!-- "Homepage of" per channel, which a page's overview page gets through cms_admin_channel_homepages() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\ChannelHomepages" class="Setono\SyliusCMSPlugin\Admin\ChannelHomepages">
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface"/>
+        </service>
+
+        <!-- The translation chips of an entry's row, for the Translations column and section -->
+        <service id="Setono\SyliusCMSPlugin\Admin\TranslationChips" class="Setono\SyliusCMSPlugin\Admin\TranslationChips">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Translation\TranslatableValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\ChannelLocales"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
+        </service>
+
+        <!-- The share links of an entry and where its Share draft offers to share it, which its overview page gets
+             through cms_admin_entry_share_links() and cms_admin_share_link_targets() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryShareLinks" class="Setono\SyliusCMSPlugin\Admin\EntryShareLinks">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGeneratorInterface"/>
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+        </service>
+
+        <!-- Where an entry shows, per channel and locale, which its overview page gets through cms_admin_where_it_shows() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\WhereItShows" class="Setono\SyliusCMSPlugin\Admin\WhereItShows">
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface"/>
+            <argument type="service" id="clock"/>
+        </service>
+
+        <!-- The locale a new entry's title and slug go into -->
+        <service id="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver" class="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver">
+            <!-- In the admin, the admin user's locale -->
+            <argument type="service" id="sylius.context.locale"/>
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="sylius.translation_locale_provider"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolverInterface" alias="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver"/>
+
+        <!-- The entry lists' grid filters -->
+        <service id="Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter" class="Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter">
+            <argument type="service" id="clock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface"/>
+
+            <tag name="sylius.grid_filter" type="setono_sylius_cms_entry_status" form_type="Setono\SyliusCMSPlugin\Form\Type\Filter\EntryStatusFilterType"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter" class="Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter">
+            <tag name="sylius.grid_filter" type="setono_sylius_cms_entry_channel" form_type="Setono\SyliusCMSPlugin\Form\Type\Filter\EntryChannelFilterType"/>
+        </service>
+    </services>
+</container>

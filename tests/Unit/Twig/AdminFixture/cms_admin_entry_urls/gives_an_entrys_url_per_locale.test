@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_entry_urls() gives an entry's URL per locale
+--TEMPLATE--
+{% for url in cms_admin_entry_urls(page) %}{{ url.localeCode }} {{ url.url }}{% endfor %}
+--DATA--
+return $this->aPage('About us')
+--EXPECT--
+en_US /en_US/about-us

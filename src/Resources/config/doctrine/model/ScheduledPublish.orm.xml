@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    An entry's scheduled publish. An entry has at most one, and deleting the entry deletes it. The token is what the
+    delayed message that runs it carries, new each time it's scheduled. Lists ask whether it waits, and what's coming up
+    reads it by time
+    -->
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\ScheduledPublish" table="setono_sylius_cms__scheduled_publish">
+        <indexes>
+            <index name="setono_sylius_cms__scheduled_publish_publish_at_idx" columns="publish_at"/>
+        </indexes>
+
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="token" type="string" length="36"/>
+        <field name="publishAt" column="publish_at" type="datetime_immutable"/>
+        <field name="scheduledBy" column="scheduled_by" type="string" nullable="true"/>
+        <field name="failureReason" column="failure_reason" type="text" nullable="true"/>
+
+        <one-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\EntryInterface">
+            <join-column name="entry_id" referenced-column-name="id" nullable="false" unique="true" on-delete="CASCADE"/>
+        </one-to-one>
+    </mapped-superclass>
+</doctrine-mapping>

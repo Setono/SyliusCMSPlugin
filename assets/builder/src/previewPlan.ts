@@ -5,7 +5,7 @@
  * See "Updating the preview" in docs/spec/builder.md
  */
 import { longestIncreasing } from './sequence';
-import type { Entry, StoredBlock } from './types';
+import type { Entry, FieldValues, StoredBlock } from './types';
 
 export interface PreviewPlan {
     /** Only the whole page shows the change. */
@@ -18,18 +18,21 @@ export interface PreviewPlan {
     remove: string[];
 }
 
-export function planPreviewUpdate(before: Entry, after: Entry): PreviewPlan {
+/**
+ * @param shows the entry fields the layout prints, whose changes only a reload shows
+ */
+export function planPreviewUpdate(before: Entry, after: Entry, shows: readonly string[]): PreviewPlan {
     const plan: PreviewPlan = { reload: false, patch: [], insert: [], remove: [] };
     if (before === after) {
         return plan;
     }
 
-    // Entry fields, translations and the layout show around the blocks, so they need the whole page
-    const { tree: treeBefore, ...restBefore } = before;
-    const { tree: treeAfter, ...restAfter } = after;
-    if (treeBefore.layout !== treeAfter.layout || (Object.keys(restBefore) as Array<keyof typeof restBefore>).some((key) => restBefore[key] !== restAfter[key])) {
+    if (needsReload(before, after, shows)) {
         return { ...plan, reload: true };
     }
+
+    const { tree: treeBefore } = before;
+    const { tree: treeAfter } = after;
 
     const keysBefore = keysIn(treeBefore.blocks);
     const keysAfter = keysIn(treeAfter.blocks);
@@ -48,13 +51,55 @@ export function planPreviewUpdate(before: Entry, after: Entry): PreviewPlan {
     return plan;
 }
 
-/** The longest run of the numbers, in their order, that only goes up. */
+/**
+ * The layout and its fields show around the blocks, and so do the entry fields the layout shows, so they need the whole
+ * page. So does a translation shown or held back, and the slug, which moves the page. Entry fields the layout doesn't
+ * show, and where values were translated from, don't change the page.
+ */
+function needsReload(before: Entry, after: Entry, shows: readonly string[]): boolean {
+    if (before.tree.layout !== after.tree.layout || changedFields(before.fields, after.fields).some((field) => shows.includes(field))) {
+        return true;
+    }
+
+    for (const locale of new Set([...Object.keys(before.translations), ...Object.keys(after.translations)])) {
+        const translationBefore = before.translations[locale];
+        const translationAfter = after.translations[locale];
+        if (translationBefore === translationAfter) {
+            continue;
+        }
+
+        if (translationBefore?.shown !== translationAfter?.shown) {
+            return true;
+        }
+
+        if (changedFields(translationBefore?.fields ?? {}, translationAfter?.fields ?? {}).some((field) => field === 'slug' || shows.includes(field))) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function changedFields(before: FieldValues, after: FieldValues): string[] {
+    return [...new Set([...Object.keys(before), ...Object.keys(after)])].filter((field) => before[field] !== after[field]);
+}
 
 function keysIn(blocks: readonly StoredBlock[]): string[] {
     return blocks.map((block) => block.key);
 }
 
-/** Adds the blocks of a list that changed to the patch list: the block itself, or the blocks in it that changed. */
+/** Whether a block in the list has other visibility conditions than it had. */
+function conditionsChanged(before: readonly StoredBlock[], after: readonly StoredBlock[]): boolean {
+    const previous = new Map(before.map((block) => [block.key, block.conditions]));
+
+    return after.some((block) => previous.has(block.key) && previous.get(block.key) !== block.conditions);
+}
+
+/**
+ * Adds the blocks of a list that changed to the patch list: the block itself, or the blocks in it that changed. A block's
+ * template gets only the children that show, and a First match block shows only one of them, so a child whose visibility
+ * conditions changed re-renders its parent.
+ */
 function planChanges(before: readonly StoredBlock[], after: readonly StoredBlock[], patch: string[]): void {
     const previous = new Map(before.map((block) => [block.key, block]));
 
@@ -68,8 +113,8 @@ function planChanges(before: readonly StoredBlock[], after: readonly StoredBlock
         const { children, ...own } = block;
         const ownChanged = (Object.keys(own) as Array<keyof typeof own>).some((key) => own[key] !== oldOwn[key]);
 
-        // A block renders its children, so a child added, removed or moved re-renders it
-        if (ownChanged || keysIn(oldChildren).join() !== keysIn(children).join()) {
+        // A block renders its children, so a child added, removed or moved re-renders it, and so does one that shows or hides
+        if (ownChanged || keysIn(oldChildren).join() !== keysIn(children).join() || conditionsChanged(oldChildren, children)) {
             patch.push(block.key);
         } else {
             planChanges(oldChildren, children, patch);

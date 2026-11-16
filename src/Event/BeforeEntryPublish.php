@@ -13,7 +13,7 @@ use Symfony\Contracts\EventDispatcher\Event;
  */
 final class BeforeEntryPublish extends Event
 {
-    private ?string $vetoMessage = null;
+    use VetoTrait;
 
     /**
      * @param EntryInterface $entry the entry as it will be published: its working copy, which is the draft, or the rows of
@@ -23,24 +23,5 @@ final class BeforeEntryPublish extends Event
         public readonly EntryInterface $entry,
         public readonly bool $scheduled,
     ) {
-    }
-
-    /**
-     * Stops the publish, and the listeners after this one
-     */
-    public function veto(string $message): void
-    {
-        $this->vetoMessage = $message;
-        $this->stopPropagation();
-    }
-
-    public function isVetoed(): bool
-    {
-        return null !== $this->vetoMessage;
-    }
-
-    public function getVetoMessage(): ?string
-    {
-        return $this->vetoMessage;
     }
 }

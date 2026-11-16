@@ -12,6 +12,9 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\UnknownContentTypeException;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Untagged;
+use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\Post;
+use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\PostTranslation;
+use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\Article;
 
 final class ContentTypeRegistryTest extends TestCase
 {
@@ -33,6 +36,39 @@ final class ContentTypeRegistryTest extends TestCase
         self::assertSame(PageTranslation::class, $page->translationModelClass);
         self::assertSame('setono_sylius_cms.page', $page->resourceAlias);
         self::assertTrue($page->hasOwnUrl());
+        self::assertNull($page->descriptionField, 'A page\'s meta description falls back to nothing');
+    }
+
+    /**
+     * @test
+     */
+    public function it_reads_the_field_the_meta_description_falls_back_to(): void
+    {
+        $registry = new ContentTypeRegistry(['post' => ['model' => Post::class, 'translation' => PostTranslation::class, 'resource' => 'app.post']]);
+
+        self::assertSame('excerpt', $registry->get('post')->descriptionField);
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_prefix_set_in_config_override_the_attributes(): void
+    {
+        $registry = new ContentTypeRegistry(['page' => self::PAGE, 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe']], ['page' => 'pg']);
+
+        self::assertSame('pg', $registry->get('page')->prefix);
+        self::assertNull($registry->get('recipe')->prefix);
+    }
+
+    /**
+     * @test
+     */
+    public function it_puts_the_urls_at_the_root_for_an_empty_prefix_set_in_config(): void
+    {
+        $registry = new ContentTypeRegistry(['article' => ['model' => Article::class, 'translation' => null, 'resource' => 'app.article']], ['article' => '']);
+
+        self::assertSame('', $registry->get('article')->prefix);
+        self::assertTrue($registry->get('article')->hasOwnUrl());
     }
 
     /**
@@ -45,6 +81,30 @@ final class ContentTypeRegistryTest extends TestCase
         self::assertSame('page', $registry->getByEntry(new Page())->code);
         self::assertSame('page', $registry->getByEntry(new class() extends Page {
         })->code);
+    }
+
+    /**
+     * @test
+     */
+    public function it_creates_a_translation_of_a_content_type_in_a_locale(): void
+    {
+        $translation = (new ContentTypeRegistry(['page' => self::PAGE]))->get('page')->createTranslation('da_DK');
+
+        self::assertInstanceOf(PageTranslation::class, $translation);
+        self::assertSame('da_DK', $translation->getLocale());
+    }
+
+    /**
+     * @test
+     */
+    public function it_needs_a_translation_model_to_create_a_translation(): void
+    {
+        $recipe = (new ContentTypeRegistry(['recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe']]))->get('recipe');
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('The content type "recipe" has no translation model to add the locale da_DK with');
+
+        $recipe->createTranslation('da_DK');
     }
 
     /**

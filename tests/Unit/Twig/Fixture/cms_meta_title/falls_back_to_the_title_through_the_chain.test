@@ -1,0 +1,8 @@
+--TEST--
+cms_meta_title() gives the title, through the fallback chain, when no locale in the chain has a meta title
+--TEMPLATE--
+{{ cms_meta_title(entry) }}
+--DATA--
+return $this->rendering(['entry' => $this->pageWith(['en_US' => ['title' => 'About us', 'slug' => 'about-us'], 'de_DE' => ['title' => 'Über uns', 'slug' => 'ueber-uns'], 'de_CH' => ['title' => '', 'slug' => 'ueber-uns']])], locale: 'de_CH')
+--EXPECT--
+Über uns

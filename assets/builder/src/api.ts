@@ -1,6 +1,6 @@
 import type { Change } from './changeSet';
-import type { BuilderConfig } from './config';
-import type { EntryResponse, EntrySettings, EntryStatus, PresenceResponse, Registry, SaveResponse, StoredBlock, ValidationError } from './types';
+import type { BuilderConfig, ShownToAndDate } from './config';
+import type { EntryResponse, EntrySettings, EntryStatus, EntryUrlsResponse, PresenceResponse, Registry, SaveResponse, StoredBlock, ValidationError } from './types';
 
 /** The builder's JSON endpoints. They're internal, and change together with the app. */
 export interface BuilderApi {
@@ -23,6 +23,14 @@ export interface BuilderApi {
     /** Deletes the draft, and answers with the working copy that's left: the published content. */
     discard(): Promise<EntryResponse>;
     /**
+     * Schedules a publish of the working copy at a time in UTC, and answers with the working copy, which it locks. Fails
+     * with an ApiError of status 422 and the reason when the server refuses, as for a publish, or for a time that isn't
+     * in the future.
+     */
+    schedule(at: string): Promise<EntryResponse>;
+    /** Cancels the scheduled publish, and answers with the working copy, unlocked. */
+    cancelSchedule(): Promise<EntryResponse>;
+    /**
      * Saves the on-save settings that changed, outside the draft, and answers with all of them. Fails with an ApiError
      * of status 400 and the reason when the server refuses, such as a date window that ends before it starts.
      */
@@ -33,8 +41,8 @@ export interface BuilderApi {
     renderPreview(token: string, blocks: readonly StoredBlock[]): Promise<Record<string, string>>;
 }
 
-/** What the preview shows the working copy in. Shown to, Date, the sample object and the placement come later. */
-export interface PreviewRequest {
+/** What the preview shows the working copy in, to whom and when. The sample object and the placement come later. */
+export interface PreviewRequest extends ShownToAndDate {
     channel: string;
     locale: string;
 }
@@ -54,31 +62,36 @@ export class ApiError extends Error {
 type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
 interface Request {
-    method?: 'GET' | 'PATCH' | 'POST' | 'PUT';
+    method?: 'GET' | 'PATCH' | 'POST' | 'PUT' | 'DELETE';
     headers?: Record<string, string>;
     body?: string;
 }
 
-export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) => fetch(input, init)): BuilderApi {
-    const request = async (url: string, { method = 'GET', headers = {}, body: requestBody }: Request = {}): Promise<unknown> => {
-        const response = await fetchFn(url, {
-            method,
-            credentials: 'same-origin',
-            headers: { Accept: 'application/json', ...headers },
-            ...(requestBody === undefined ? {} : { body: requestBody }),
-        });
+const defaultFetch: Fetch = (input, init) => fetch(input, init);
 
-        const body: unknown = await response.json().catch(() => undefined);
-        if (response.status !== 200) {
-            throw new ApiError(errorMessage(body) ?? `${url} answered ${response.status}.`, response.status, (isObject(body) ? validationErrors(body.errors) : null) ?? []);
-        }
+/** Sends a request to one of the builder's endpoints, and answers with the JSON it answers 200 with. */
+async function send(fetchFn: Fetch, url: string, { method = 'GET', headers = {}, body: requestBody }: Request = {}): Promise<unknown> {
+    const response = await fetchFn(url, {
+        method,
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json', ...headers },
+        ...(requestBody === undefined ? {} : { body: requestBody }),
+    });
 
-        if (body === undefined) {
-            throw new ApiError(`${url} didn't answer with JSON.`, response.status);
-        }
+    const body: unknown = await response.json().catch(() => undefined);
+    if (response.status !== 200) {
+        throw new ApiError(errorMessage(body) ?? `${url} answered ${response.status}.`, response.status, (isObject(body) ? validationErrors(body.errors) : null) ?? []);
+    }
 
-        return body;
-    };
+    if (body === undefined) {
+        throw new ApiError(`${url} didn't answer with JSON.`, response.status);
+    }
+
+    return body;
+}
+
+export function createApi(config: BuilderConfig, fetchFn: Fetch = defaultFetch): BuilderApi {
+    const request = async (url: string, init: Request = {}): Promise<unknown> => send(fetchFn, url, init);
 
     const write = { 'X-CSRF-Token': config.csrfToken };
 
@@ -134,6 +147,18 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) 
             return (await request(config.endpoints.discard, { method: 'POST', headers: write })) as EntryResponse;
         },
 
+        async schedule(at) {
+            return (await request(config.endpoints.schedule, {
+                method: 'POST',
+                headers: { ...write, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ at }),
+            })) as EntryResponse;
+        },
+
+        async cancelSchedule() {
+            return (await request(config.endpoints.schedule, { method: 'DELETE', headers: write })) as EntryResponse;
+        },
+
         async saveSettings(changes) {
             const body = await request(config.endpoints.settings, {
                 method: 'PUT',
@@ -149,11 +174,11 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) 
             return settings as unknown as EntrySettings;
         },
 
-        async createPreviewUrl({ channel, locale }) {
+        async createPreviewUrl({ channel, locale, shownTo, date }) {
             const body = await request(config.endpoints.previewToken, {
                 method: 'POST',
                 headers: { ...write, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ entry: config.entryUuid, channel, locale }),
+                body: JSON.stringify({ entry: config.entryUuid, channel, locale, shownTo, date }),
             });
 
             const url = isObject(body) ? body.url : undefined;
@@ -177,6 +202,45 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) 
             }
 
             return html as Record<string, string>;
+        },
+    };
+}
+
+/** The endpoints of an entry's URLs, which the URL & SEO tab uses. They read and change nothing on the server. */
+export interface UrlsApi {
+    /** The slug Sylius's slug generator makes of a title. */
+    generateSlug(title: string): Promise<string>;
+    /** The warnings about the entry's URLs and the URLs of its old slugs, as the server has them. */
+    fetchUrls(): Promise<EntryUrlsResponse>;
+}
+
+/** The URLs endpoints the builder page gives, or null when it gives neither. */
+export function createUrlsApi(config: BuilderConfig, fetchFn: Fetch = defaultFetch): UrlsApi | null {
+    const { slug, urls } = config.endpoints;
+    if (slug === undefined || urls === undefined) {
+        return null;
+    }
+
+    return {
+        async generateSlug(title) {
+            const body = await send(fetchFn, `${slug}?title=${encodeURIComponent(title)}`);
+            const generated = isObject(body) ? body.slug : undefined;
+            if (typeof generated !== 'string') {
+                throw new ApiError('The answer has no slug.', 200);
+            }
+
+            return generated;
+        },
+
+        async fetchUrls() {
+            const body = await send(fetchFn, urls);
+            const warnings = isObject(body) ? validationErrors(body.warnings) : null;
+            const oldUrls = isObject(body) ? body.oldUrls : undefined;
+            if (warnings === null || !isObject(oldUrls) || Array.isArray(oldUrls) || !Object.values(oldUrls).every((list) => Array.isArray(list) && list.every((url) => typeof url === 'string'))) {
+                throw new ApiError('The answer has no URL warnings and old URLs.', 200);
+            }
+
+            return { warnings, oldUrls: oldUrls as Record<string, string[]> };
         },
     };
 }

@@ -16,6 +16,12 @@
             <argument type="service" id="doctrine"/>
         </service>
 
+        <!-- Records who saved an entry and when, for the admin's "Last edited" -->
+        <service id="Setono\SyliusCMSPlugin\Publishing\EditRecorder" class="Setono\SyliusCMSPlugin\Publishing\EditRecorder">
+            <argument type="service" id="security.token_storage"/>
+            <argument type="service" id="clock"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Publishing\Autosave" class="Setono\SyliusCMSPlugin\Publishing\Autosave">
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryLock"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface"/>
@@ -23,8 +29,19 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier"/>
             <argument type="service" id="clock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\ChannelLocales"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface" alias="Setono\SyliusCMSPlugin\Publishing\Autosave"/>
+
+        <!-- Validation, then BeforeEntryPublish: what a publish, scheduling one and running a scheduled one check first -->
+        <service id="Setono\SyliusCMSPlugin\Publishing\PublishCheck" class="Setono\SyliusCMSPlugin\Publishing\PublishCheck">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface"/>
+            <argument type="service" id="event_dispatcher"/>
+        </service>
 
         <service id="Setono\SyliusCMSPlugin\Publishing\EntryPublisher" class="Setono\SyliusCMSPlugin\Publishing\EntryPublisher">
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface"/>
@@ -32,9 +49,48 @@
             <argument type="service" id="clock"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\PublishCheck"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionRecorderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Routing\OldSlugRecorderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.manager.scheduled_publish"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntryPublisher"/>
+
+        <!--
+        Scheduled publishes: the delayed message goes on Sylius's event bus, routed to Sylius's main transport
+        (SetonoSyliusCMSExtension::prependMessenger()), the way Sylius schedules catalog promotions
+        -->
+        <service id="Setono\SyliusCMSPlugin\Publishing\PublishScheduler" class="Setono\SyliusCMSPlugin\Publishing\PublishScheduler">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryLock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\PublishCheck"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.factory.scheduled_publish"/>
+            <argument type="service" id="setono_sylius_cms.manager.scheduled_publish"/>
+            <argument type="service" id="sylius.event_bus"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="clock"/>
+            <argument type="service" id="security.token_storage"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface" alias="Setono\SyliusCMSPlugin\Publishing\PublishScheduler"/>
+
+        <service id="Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDueHandler" class="Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDueHandler">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="messenger.message_handler" handles="Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Publishing\EntryDeleter" class="Setono\SyliusCMSPlugin\Publishing\EntryDeleter">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryLock"/>
+            <argument type="service" id="doctrine"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Publishing\EntryDeleterInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntryDeleter"/>
 
         <service id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsNormalizer" class="Setono\SyliusCMSPlugin\Publishing\EntrySettingsNormalizer"/>
 
@@ -42,6 +98,10 @@
             <argument type="service" id="doctrine"/>
             <argument type="service" id="clock"/>
             <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Homepage\HomepageModifierInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaverInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver"/>
 

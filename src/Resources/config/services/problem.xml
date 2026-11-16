@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!--
+        Finds an entry's problems, of every kind, as they are now, which its overview page gets through
+        cms_admin_entry_problems() (Twig\EntryOverviewRuntime). RegisterProblemKindsPass hands it the kinds
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemFinder" class="Setono\SyliusCMSPlugin\Problem\ProblemFinder">
+            <argument type="collection"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemFinder"/>
+
+        <!--
+        The errors and warnings of each entry, counted when the entry is written and stored with it, which the lists'
+        marker, their Needs attention filter and the Content badge read. RegisterProblemKindsPass hands the updater
+        the kinds whose problems are stored, and the fingerprint their classes
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater" class="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater">
+            <argument type="collection"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprintInterface"/>
+            <argument type="service" id="logger"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater"/>
+
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprint" class="Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprint">
+            <argument type="collection"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprintInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprint"/>
+
+        <!-- RegisterProblemKindsPass hands it the time-dependent kinds -->
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountProvider" class="Setono\SyliusCMSPlugin\Problem\ProblemCountProvider">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface"/>
+            <argument type="collection"/>
+            <argument type="service" id="clock"/>
+
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemCountProvider"/>
+
+        <!--
+        Has the entries a flush writes counted again once it's done, and those that reference what it writes.
+        RegisterProblemKindsPass hands it the kinds about references and what they reference
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountListener" class="Setono\SyliusCMSPlugin\Problem\ProblemCountListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface"/>
+            <argument type="collection"/>
+            <argument type="collection"/>
+
+            <tag name="doctrine.event_listener" event="onFlush"/>
+            <tag name="doctrine.event_listener" event="postFlush"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
+        <!--
+        The problem kinds. A kind is a service tagged setono_sylius_cms.problem_kind, which autoconfiguration adds to a
+        ProblemKindInterface. setono:cms:lint reports the kinds whose tag has lint="true"
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType" class="Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+        </service>
+
+        <!-- A layout a project removed or turned off on purpose: a warning in the admin, so lint leaves it out -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\RemovedLayout" class="Setono\SyliusCMSPlugin\Problem\Kind\RemovedLayout">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue" class="Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+
+            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+        </service>
+
+        <!-- A broken reference, which setono:cms:lint reports -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\DeletedCustomerGroup" class="Setono\SyliusCMSPlugin\Problem\Kind\DeletedCustomerGroup">
+            <argument type="service" id="sylius.repository.customer_group"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\UrlTakenByRoute" class="Setono\SyliusCMSPlugin\Problem\Kind\UrlTakenByRoute">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
+        <!-- A scheduled publish that's overdue, or failed: errors of the admin's, not of the content, so lint leaves them out -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishOverdue" class="Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishOverdue">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+            <argument type="service" id="clock"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishFailed" class="Setono\SyliusCMSPlugin\Problem\Kind\ScheduledPublishFailed">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+    </services>
+</container>

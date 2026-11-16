@@ -1,5 +1,5 @@
 import { createBuilderStore, type BuilderStore } from '../src/store';
-import type { AllowedBlockType, BlockTypeDefinition, ContentTypeDefinition, Entry, EntrySettings, FieldSchema, FieldValues, Registry, StoredBlock } from '../src/types';
+import type { AllowedBlockType, BlockTypeDefinition, ConditionKindDefinition, ContentTypeDefinition, Entry, EntrySettings, FieldSchema, FieldValues, LayoutDefinition, Registry, StoredBlock } from '../src/types';
 
 /** What '*' resolves to everywhere but inside Columns: every block type except Column. */
 const anyBlock: AllowedBlockType[] = ['group', 'columns', 'spacer', 'heading'].map((type) => ({ type, min: null, max: null }));
@@ -159,9 +159,74 @@ export const accordionItem: BlockTypeDefinition = {
     ],
 };
 
-export const page: ContentTypeDefinition = { code: 'page', label: 'Page', blocks: anyBlock };
+/** Page's default layout, which prints the title unless Show title is off. */
+export const standard: LayoutDefinition = {
+    code: 'standard',
+    label: 'Standard',
+    version: 1,
+    thumbnail: '/thumbnail/layout/standard.svg',
+    default: true,
+    disabled: false,
+    shows: ['title'],
+    fields: [
+        {
+            name: 'showTitle',
+            schema: {
+                type: 'boolean',
+                default: true,
+                'x-cms-type': 'toggle',
+                'x-cms-label': 'Show title',
+                'x-cms-help': null,
+                'x-cms-required': false,
+                'x-cms-translatable': false,
+            },
+        },
+    ],
+};
+
+/** A project's layout for pages, which doesn't print the title: a hero with a tagline, and a header that can be transparent. */
+export const landing: LayoutDefinition = {
+    code: 'landing',
+    label: 'Landing',
+    version: 2,
+    thumbnail: null,
+    default: false,
+    disabled: false,
+    shows: [],
+    fields: [
+        {
+            name: 'tagline',
+            schema: {
+                type: 'string',
+                'x-cms-type': 'text',
+                'x-cms-label': 'Tagline',
+                'x-cms-help': null,
+                'x-cms-required': false,
+                'x-cms-translatable': true,
+                'x-cms-options': { maxLength: null },
+            },
+        },
+        {
+            name: 'transparentHeader',
+            schema: {
+                type: 'boolean',
+                default: false,
+                'x-cms-type': 'toggle',
+                'x-cms-label': 'Transparent header',
+                'x-cms-help': null,
+                'x-cms-required': false,
+                'x-cms-translatable': false,
+            },
+        },
+    ],
+};
+
+export const page: ContentTypeDefinition = { code: 'page', label: 'Page', blocks: anyBlock, homepage: true, layouts: [standard, landing] };
 
 export const strings: Record<string, string> = {
+    'setono_sylius_cms.builder.layout': 'Layout',
+    'setono_sylius_cms.builder.layout_removed': 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.',
+    'setono_sylius_cms.builder.not_shown_in_layout': 'Not shown in this layout',
     'setono_sylius_cms.builder.loading': 'Loading…',
     'setono_sylius_cms.builder.back': 'Back',
     'setono_sylius_cms.builder.saving': 'Saving…',
@@ -202,12 +267,23 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.no_blocks': 'No blocks yet',
     'setono_sylius_cms.builder.entry_settings': 'Entry settings',
     'setono_sylius_cms.builder.settings': 'Settings',
+    'setono_sylius_cms.builder.more': 'More',
+    'setono_sylius_cms.builder.url_and_seo': 'URL & SEO',
+    'setono_sylius_cms.builder.slug': 'Slug',
+    'setono_sylius_cms.builder.slug_help': 'Generated from the title until you change it. The URL: %url%',
+    'setono_sylius_cms.builder.slug_help_none': 'Generated from the title until you change it.',
+    'setono_sylius_cms.builder.old_urls': 'Redirects from',
+    'setono_sylius_cms.builder.old_urls_help': 'The URLs of the slugs this had before, which redirect here.',
+    'setono_sylius_cms.builder.more_help': "Publishing history, revisions, share links and placements are on the entry's overview page.",
+    'setono_sylius_cms.builder.open_overview': 'Open the overview page',
     'setono_sylius_cms.builder.takes_effect_on_save': 'Takes effect when saved, without publishing',
     'setono_sylius_cms.builder.enabled': 'Enabled',
     'setono_sylius_cms.builder.date_window': 'Date window',
     'setono_sylius_cms.builder.show_from': 'Show from',
     'setono_sylius_cms.builder.show_until': 'Show until',
     'setono_sylius_cms.builder.channels': 'Channels',
+    'setono_sylius_cms.builder.homepage_of': 'Homepage of',
+    'setono_sylius_cms.builder.homepage_of_help': "It shows at each of these channels' root URL in place of the store's own homepage.",
     'setono_sylius_cms.builder.audience': 'Audience',
     'setono_sylius_cms.builder.audience_everyone': 'Everyone',
     'setono_sylius_cms.builder.audience_only': 'Only these',
@@ -224,6 +300,11 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.preview_failed': "Couldn't load the preview",
     'setono_sylius_cms.builder.preview_channel': 'Preview channel',
     'setono_sylius_cms.builder.preview_width': 'Preview width',
+    'setono_sylius_cms.builder.shown_to': 'Shown to',
+    'setono_sylius_cms.builder.shown_to_guest': 'Guest',
+    'setono_sylius_cms.builder.preview_date': 'Date',
+    'setono_sylius_cms.builder.preview_now': 'Now',
+    'setono_sylius_cms.builder.preview_now_help': 'Shows the page as it is now. Pick a date and time to see it as it shows then.',
     'setono_sylius_cms.builder.desktop': 'Desktop',
     'setono_sylius_cms.builder.mobile': 'Mobile',
     'setono_sylius_cms.builder.rich_text.toolbar': 'Formatting',
@@ -237,9 +318,68 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.rich_text.ordered_list': 'Numbered list',
     'setono_sylius_cms.builder.rich_text.blockquote': 'Quote',
     'setono_sylius_cms.builder.rich_text.horizontal_rule': 'Horizontal line',
+    'setono_sylius_cms.builder.save_locked': "A scheduled publish locks the draft, so your changes weren't saved",
+    'setono_sylius_cms.builder.leave_unsaved': "Your changes aren't saved",
+    'setono_sylius_cms.builder.leave_unsaved_description': "%reason%. If you leave now, they're lost.",
+    'setono_sylius_cms.builder.leave_anyway': 'Leave anyway',
+    'setono_sylius_cms.builder.stay': 'Stay',
+    'setono_sylius_cms.builder.schedule_menu': 'Schedule…',
+    'setono_sylius_cms.builder.schedule_publish': 'Schedule the publish',
+    'setono_sylius_cms.builder.schedule_at': 'Publish at',
+    'setono_sylius_cms.builder.scheduling': 'Scheduling…',
+    'setono_sylius_cms.builder.schedule_failed': "Couldn't schedule",
+    'setono_sylius_cms.builder.cancel_schedule': 'Cancel the schedule',
+    'setono_sylius_cms.builder.cancelling_schedule': 'Cancelling…',
+    'setono_sylius_cms.builder.cancel_schedule_failed': "Couldn't cancel the schedule",
+    'setono_sylius_cms.builder.publishes_at': 'Publishes %at%',
+    'setono_sylius_cms.builder.scheduled_publish_overdue': 'Scheduled publish overdue',
+    'setono_sylius_cms.builder.scheduled_publish_failed': 'Scheduled publish failed',
+    'setono_sylius_cms.builder.locked': 'The draft is locked: it publishes %at%. Cancel the schedule to edit it.',
+    'setono_sylius_cms.builder.locked_overdue': "The draft is locked: its publish was scheduled for %at% and hasn't run. The Messenger worker may not be running.",
+    'setono_sylius_cms.builder.schedule_stopped': 'The publish scheduled for %at% was stopped when it ran: %reason%',
 };
 
-export const registry: Registry = { blockTypes, contentTypes: [page], strings };
+/** A Choice field of several values, as a condition kind's parameter. */
+function choices(label: string, options: Record<string, string>): FieldSchema {
+    return {
+        type: 'array',
+        items: { type: 'string', enum: Object.keys(options) },
+        uniqueItems: true,
+        default: [],
+        'x-cms-type': 'choice',
+        'x-cms-label': label,
+        'x-cms-help': null,
+        'x-cms-required': false,
+        'x-cms-translatable': false,
+        'x-cms-options': { choices: options, multiple: true },
+    };
+}
+
+function dateTime(label: string): FieldSchema {
+    return { type: 'string', format: 'date-time', 'x-cms-type': 'date_time', 'x-cms-label': label, 'x-cms-help': null, 'x-cms-required': false, 'x-cms-translatable': false };
+}
+
+const oneOf = { matches: 'is one of', matchesNot: 'is not one of' };
+
+/** The shipped condition kinds, as the registry endpoint exports them. */
+export const conditionKinds: ConditionKindDefinition[] = [
+    { code: 'channel', label: 'Channel', ...oneOf, fields: [{ name: 'channels', schema: choices('Channels', { WEB: 'Web store', B2B: 'Wholesale' }) }] },
+    { code: 'locale', label: 'Locale', ...oneOf, fields: [{ name: 'locales', schema: choices('Locales', { en_US: 'English (United States)', da_DK: 'Danish (Denmark)' }) }] },
+    {
+        code: 'date_window',
+        label: 'Date window',
+        // A date window is matched inside or outside it rather than by its values
+        matches: 'is inside',
+        matchesNot: 'is outside',
+        fields: [
+            { name: 'from', schema: dateTime('From') },
+            { name: 'until', schema: dateTime('Until') },
+        ],
+    },
+    { code: 'customer_group', label: 'Customer group', ...oneOf, fields: [{ name: 'groups', schema: choices('Customer groups', { '@guest': 'Guests', '@no_group': 'Signed in without a group', wholesale: 'Wholesale' }) }] },
+];
+
+export const registry: Registry = { blockTypes, contentTypes: [page], conditionKinds, strings };
 
 export function block(key: string, fields: FieldValues = {}): StoredBlock {
     return blockOf('heading', key, [], fields);
@@ -269,7 +409,7 @@ export function entry(blocks: StoredBlock[] = []): Entry {
 
 /** The settings of a new entry in the WEB channel, changed by the overrides. */
 export function settings(overrides: Partial<EntrySettings> = {}): EntrySettings {
-    return { enabled: true, showFrom: null, showUntil: null, channels: ['WEB'], audience: { mode: 'everyone', groups: [] }, ...overrides };
+    return { enabled: true, showFrom: null, showUntil: null, channels: ['WEB'], audience: { mode: 'everyone', groups: [] }, homepageOf: [], ...overrides };
 }
 
 /** A store on an entry with the given blocks, whose new block keys are new-1, new-2 and so on. */
@@ -280,6 +420,7 @@ export function storeWith(blocks: StoredBlock[] = [], types: BlockTypeDefinition
         locale: 'en_US',
         blockTypes: types,
         contentTypes: [contentType],
+        conditionKinds,
         entry: entry(blocks),
         status: 'never_published',
         generateKey: () => `new-${++count}`,

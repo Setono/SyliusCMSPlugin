@@ -1,7 +1,7 @@
 import { ApiError } from './api';
 import { mergeChanges, type Change } from './changeSet';
 import type { BuilderStore } from './store';
-import type { SaveResponse } from './types';
+import type { SaveResponse, ValidationError } from './types';
 
 export interface Autosave {
     /** Sends the unsaved changes now, after any save in flight. Resolves to whether everything got saved. */
@@ -47,7 +47,7 @@ export function createAutosave(
         }
 
         const { unsaved: changes, lockToken, saveState, entry: sent } = store.getState();
-        if (saveState === 'stale') {
+        if (saveState === 'stale' || saveState === 'locked') {
             return false;
         }
 
@@ -61,7 +61,7 @@ export function createAutosave(
         inFlight = send(changes, lockToken)
             .then(
                 (answer) => {
-                    store.setState({ status: answer.status, lockToken: answer.lockToken });
+                    store.setState((state) => ({ status: answer.status, lockToken: answer.lockToken, refusedSlugs: refusedSlugs(state.refusedSlugs, changes, answer.refused ?? []) }));
                     if (answer.entry !== undefined) {
                         // Edits made while the save was in flight were made on the working copy as it was sent
                         store.getState().pullIn(answer.entry, answer.clashes ?? [], sent);
@@ -72,9 +72,14 @@ export function createAutosave(
                     return true;
                 },
                 (error: unknown) => {
-                    // A 409: the server can't merge onto what colleagues saved, so no later save can go through either
+                    // A 409: the server can't merge onto what colleagues saved, so no later save can go through either.
+                    // A 423: a scheduled publish a colleague made locks the working copy, which the builder loads again
                     const stale = error instanceof ApiError && error.status === 409;
-                    store.setState((state) => ({ unsaved: mergeChanges(changes, state.unsaved), saveState: stale ? 'stale' : saving ? 'failed' : saveState }));
+                    const locked = error instanceof ApiError && error.status === 423;
+                    store.setState((state) => ({
+                        unsaved: mergeChanges(changes, state.unsaved),
+                        saveState: locked ? 'locked' : stale ? 'stale' : saving ? 'failed' : saveState,
+                    }));
 
                     return false;
                 },
@@ -91,7 +96,7 @@ export function createAutosave(
             return;
         }
 
-        if (state.saveState === 'stale') {
+        if (state.saveState === 'stale' || state.saveState === 'locked') {
             return;
         }
 
@@ -126,4 +131,24 @@ export function createAutosave(
             unsubscribe();
         },
     };
+}
+
+/**
+ * The slugs refused after a save: a slug the save sent in a locale replaces the refusal there, which stands when the
+ * server refused that one too. A refusal of a locale the save sent no slug in stands.
+ */
+function refusedSlugs(before: Record<string, string>, sent: readonly Change[], refused: readonly ValidationError[]): Record<string, string> {
+    const sentIn = new Set(sent.flatMap((change) => (change.op === 'set_entry_value' && change.field === 'slug' && change.locale !== null ? [change.locale] : [])));
+    if (sentIn.size === 0 && refused.length === 0) {
+        return before;
+    }
+
+    const after = Object.fromEntries(Object.entries(before).filter(([locale]) => !sentIn.has(locale)));
+    for (const { locale, message } of refused) {
+        if (locale !== null) {
+            after[locale] = message;
+        }
+    }
+
+    return after;
 }

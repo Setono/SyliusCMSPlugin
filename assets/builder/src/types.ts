@@ -23,11 +23,12 @@ export interface TranslationSource {
 /** Field name, then locale, then where that value was translated from. */
 export type TranslationState = Record<string, Record<string, TranslationSource>>;
 
-export interface VisibilityCondition {
+/** A visibility condition in the stored condition format. A type, not an interface, so it is a JsonValue too. */
+export type VisibilityCondition = {
     kind: string;
     negate: boolean;
     params: JsonObject;
-}
+};
 
 export interface StoredBlock {
     key: string;
@@ -55,7 +56,8 @@ export interface StoredBlockTree {
 export interface EntryTranslation {
     shown: boolean;
     fields: FieldValues;
-    translated: TranslationState;
+    /** Field name, then where the translation's value was translated from. */
+    translated: Record<string, TranslationSource>;
 }
 
 export interface Entry {
@@ -68,8 +70,25 @@ export interface Entry {
     tree: StoredBlockTree;
 }
 
-/** The entry states of docs/spec/publishing.md#entry-states that the builder shows so far. */
+/** The state of the entry's draft, of the entry states of docs/spec/publishing.md#entry-states. */
 export type EntryStatus = 'never_published' | 'published' | 'unpublished_changes';
+
+/**
+ * The state of the entry's scheduled publish, of the entry states of docs/spec/publishing.md#entry-states: it waits,
+ * which locks the working copy, it's overdue, which locks it too, or it was stopped when it ran.
+ */
+export type ScheduleStatus = 'publishes_at_a_time' | 'scheduled_publish_overdue' | 'scheduled_publish_failed';
+
+/** The entry's scheduled publish. */
+export interface Schedule {
+    /** When it publishes, in UTC, such as 2026-11-27T08:00:00Z. */
+    at: string;
+    /** Who scheduled it, or null when no one is known. */
+    by: string | null;
+    status: ScheduleStatus;
+    /** Why it was stopped when it ran, or null. */
+    reason: string | null;
+}
 
 export type AudienceMode = 'everyone' | 'only' | 'except';
 
@@ -86,6 +105,8 @@ export interface EntrySettings {
     /** Channel codes. */
     channels: string[];
     audience: { mode: AudienceMode; groups: string[] };
+    /** "Homepage of": the codes of the channels a page is the homepage of. Empty for every content type but Page. */
+    homepageOf: string[];
 }
 
 /** Someone else who has the entry open in the builder. */
@@ -114,8 +135,15 @@ export interface EntryResponse {
     lockToken: number;
     settings: EntrySettings;
     status: EntryStatus;
+    /** The entry's scheduled publish, or null when it has none. */
+    schedule?: Schedule | null;
     /** Who else has the entry open. */
     editors: Editor[];
+    /**
+     * The untranslated and outdated counts of each locale the entry has a translation in, as the admin shows them. The
+     * builder counts them itself as the working copy changes.
+     */
+    completeness?: Record<string, { untranslated: number; outdated: number }>;
 }
 
 /**
@@ -133,6 +161,15 @@ export type Clash =
           mine: JsonValue | null;
           theirs: JsonValue | null;
       }
+    | {
+          /** An entry field, such as a translation's title. */
+          kind: 'entry_value';
+          field: string;
+          /** null for a shared field. */
+          locale: string | null;
+          mine: JsonValue | null;
+          theirs: JsonValue | null;
+      }
     | { kind: 'deleted_block'; key: string }
     | { kind: 'changed_block'; key: string };
 
@@ -143,6 +180,19 @@ export interface SaveResponse {
     /** The working copy with colleagues' changes in it, when they saved since the last load. */
     entry?: Entry;
     clashes?: Clash[];
+    /**
+     * The slugs the server didn't save because another route takes their URL, with why, by locale. Each keeps its last
+     * saved value on the server.
+     */
+    refused?: ValidationError[];
+}
+
+/** What the URL & SEO tab shows beside the slug, as the server has it. */
+export interface EntryUrlsResponse {
+    /** URLs other entries have drafted, and published URLs another route takes now, pointing at the slug in a locale. */
+    warnings: ValidationError[];
+    /** The paths of the URLs of the old slugs that redirect, by locale, newest first. */
+    oldUrls: Record<string, string[]>;
 }
 
 export interface PresenceResponse {
@@ -200,16 +250,53 @@ export interface BlockTypeDefinition {
     fields: FieldDefinition[];
 }
 
+/** A frame around the entry's tree, with presentation fields of its own. See docs/spec/layouts-and-presets.md */
+export interface LayoutDefinition {
+    code: string;
+    label: string;
+    version: number;
+    /** A public path to its wireframe card, or null. */
+    thumbnail: string | null;
+    /** The content type's default layout, which an entry in a layout that was removed or disabled renders in. */
+    default: boolean;
+    /** Switched off in the config: the picker leaves it out, and an entry in it renders in the default layout. */
+    disabled: boolean;
+    /** The entry fields its template prints, by name. The others are "Not shown in this layout". */
+    shows: string[];
+    /** In display order. */
+    fields: FieldDefinition[];
+}
+
 export interface ContentTypeDefinition {
     code: string;
     label: string;
     /** What the top level of its tree may hold, or null when it has no block tree. */
     blocks: AllowedBlockType[] | null;
+    /** Its URL prefix, '' for URLs at the root, or null when it has no URL of its own, so no slug. */
+    prefix?: string | null;
+    /** Whether its entries can be a channel's homepage, which only pages can. Without it, they can't. */
+    homepage?: boolean;
+    /** Its layouts, the default first, or none for a content type without its own URL. */
+    layouts: LayoutDefinition[];
+}
+
+/** A kind of visibility condition, whose parameters are fields shared by all translations. */
+export interface ConditionKindDefinition {
+    code: string;
+    label: string;
+    /** How a condition of the kind that matches is worded, such as "is one of" or a date window's "is inside". */
+    matches: string;
+    /** How a negated one is worded, such as "is not one of" or "is outside". */
+    matchesNot: string;
+    /** In display order. */
+    fields: FieldDefinition[];
 }
 
 export interface Registry {
     blockTypes: BlockTypeDefinition[];
     contentTypes: ContentTypeDefinition[];
+    /** In the order the condition picker lists them. */
+    conditionKinds: ConditionKindDefinition[];
     /** The UI strings, already translated, keyed by translation key. */
     strings: Record<string, string>;
 }

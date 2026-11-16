@@ -6,17 +6,19 @@ namespace Setono\SyliusCMSPlugin\EntryFormat;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
-use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\EntryFields;
+use Setono\SyliusCMSPlugin\Translation\Fingerprint;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
- * Copies an entry in the entry format onto the entry: what's drafted, which is its translations with their fields,
- * and its block tree. Publishing uses it to copy a draft onto the rows. See "Entry format" in docs/spec/content-model.md.
+ * Copies an entry in the entry format onto the entry: what's drafted, which is its shared fields, its translations with
+ * their fields, shown switches and translation state, and its block tree. Publishing uses it to copy a draft onto the rows. See
+ * "Entry format" in docs/spec/content-model.md.
  *
  * The UUID, the content type and createdAt identify the entry and aren't drafted, so they're checked, not copied.
- * Holding back translations (shown), translation state and the content type's own fields come with their tickets
+ * The content type's own fields come with their ticket
  *
  * @internal
  */
@@ -40,6 +42,7 @@ final readonly class EntryDenormalizer
             throw new InvalidEntryFormatException(sprintf('The data is not the entry %s of the content type "%s"', $entry->getUuid(), $contentType->code));
         }
 
+        $noindex = self::noindex(self::map($data['fields'] ?? [], 'The fields'));
         $translations = self::map($data['translations'] ?? null, 'The translations');
         // Translations are indexed by locale
         foreach ($entry->getTranslations()->toArray() as $localeCode => $translation) {
@@ -49,13 +52,28 @@ final readonly class EntryDenormalizer
         }
 
         foreach ($translations as $localeCode => $translationData) {
-            $fields = self::map(self::map($translationData, sprintf('The translation %s', $localeCode))['fields'] ?? null, sprintf('The fields of the translation %s', $localeCode));
-
-            $translation = $entry->getTranslations()->containsKey($localeCode) ? $entry->getTranslation($localeCode) : self::addTranslation($entry, $localeCode, $contentType);
-            $translation->setTitle(self::nullableString($fields, 'title', $localeCode));
-            if ($contentType->hasOwnUrl()) {
-                $translation->setSlug(self::nullableString($fields, 'slug', $localeCode));
+            $translationData = self::map($translationData, sprintf('The translation %s', $localeCode));
+            $values = self::values($translationData, $localeCode, EntryFields::translatable($contentType));
+            $shown = $translationData['shown'] ?? null;
+            if (!is_bool($shown)) {
+                throw new InvalidEntryFormatException(sprintf('The shown switch of the translation %s must be true or false', $localeCode));
             }
+
+            $translation = $entry->getTranslations()->get($localeCode);
+            if (!$translation instanceof EntryTranslationInterface) {
+                $translation = $contentType->createTranslation($localeCode);
+                $entry->addTranslation($translation);
+            }
+
+            foreach ($values as $field => $value) {
+                EntryFields::write($translation, $field, $value);
+            }
+            $translation->setShown($shown);
+            $translation->setTranslated(self::translated($translationData['translated'] ?? [], $localeCode));
+        }
+
+        if ($contentType->hasOwnUrl()) {
+            $entry->setNoindex($noindex);
         }
 
         try {
@@ -65,18 +83,94 @@ final readonly class EntryDenormalizer
         }
     }
 
-    private static function addTranslation(EntryInterface $entry, string $localeCode, ContentTypeMetadata $contentType): EntryTranslationInterface
+    /**
+     * The values of these translatable entry fields in each translation of an entry in the entry format, by locale,
+     * without copying anything onto an entry: what the admin's lists read of a draft (ADR 0009). A translation that
+     * isn't in the format is left out, so the others are read
+     *
+     * @param list<string> $fields such as title and slug
+     *
+     * @return array<string, array<string, string|null>> locale => field => its value
+     *
+     * @throws InvalidEntryFormatException when the data isn't an entry with translations
+     */
+    public static function translationValues(mixed $data, array $fields): array
     {
-        $class = $contentType->translationModelClass;
-        $translation = null === $class ? null : new $class();
-        if (!$translation instanceof EntryTranslationInterface) {
-            throw new \LogicException(sprintf('The content type "%s" has no translation model to add the locale %s with', $contentType->code, $localeCode));
+        $translations = self::map(self::map($data, 'An entry')['translations'] ?? null, 'The translations');
+
+        $values = [];
+        foreach ($translations as $localeCode => $translationData) {
+            try {
+                $values[$localeCode] = self::values(self::map($translationData, sprintf('The translation %s', $localeCode)), $localeCode, $fields);
+            } catch (InvalidEntryFormatException) {
+                continue;
+            }
         }
 
-        $translation->setLocale($localeCode);
-        $entry->addTranslation($translation);
+        return $values;
+    }
 
-        return $translation;
+    /**
+     * @param array<string, mixed> $translationData
+     * @param list<string> $fields
+     *
+     * @return array<string, string|null>
+     *
+     * @throws InvalidEntryFormatException
+     */
+    private static function values(array $translationData, string $localeCode, array $fields): array
+    {
+        $data = self::map($translationData['fields'] ?? null, sprintf('The fields of the translation %s', $localeCode));
+
+        $values = [];
+        foreach ($fields as $field) {
+            $values[$field] = self::nullableString($data, $field, $localeCode);
+        }
+
+        return $values;
+    }
+
+    /**
+     * "Hide from search engines", from the shared fields. An entry without it, such as a draft saved before the SEO
+     * fields came, has it off
+     *
+     * @param array<string, mixed> $fields
+     *
+     * @throws InvalidEntryFormatException
+     */
+    private static function noindex(array $fields): bool
+    {
+        $noindex = $fields['noindex'] ?? false;
+        if (!is_bool($noindex)) {
+            throw new InvalidEntryFormatException('The field noindex must be true or false');
+        }
+
+        return $noindex;
+    }
+
+    /**
+     * A translation's translation state: field name => the locale its value was translated from and the fingerprint of
+     * that value
+     *
+     * @return array<string, array{from: string, fingerprint: string}>
+     *
+     * @throws InvalidEntryFormatException
+     */
+    private static function translated(mixed $data, string $localeCode): array
+    {
+        $translated = [];
+        foreach (self::map($data, sprintf('The translation state of the translation %s', $localeCode)) as $field => $source) {
+            $source = self::map($source, sprintf('The translation state of the %s of the translation %s', $field, $localeCode));
+            $from = $source['from'] ?? null;
+            $fingerprint = $source['fingerprint'] ?? null;
+            if (!is_string($from) || '' === $from || !is_string($fingerprint) || !Fingerprint::isValid($fingerprint)) {
+                throw new InvalidEntryFormatException(sprintf('The translation state of the %s of the translation %s must have the locale it was translated from and a fingerprint', $field, $localeCode));
+            }
+
+            $translated[$field] = ['from' => $from, 'fingerprint' => $fingerprint];
+        }
+
+        return $translated;
     }
 
     /**

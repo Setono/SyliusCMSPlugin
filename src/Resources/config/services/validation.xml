@@ -16,6 +16,17 @@
             <argument type="service" id="translator"/>
         </service>
 
+        <!-- The checks of an entry's URLs: on publish, on save and when its channels change -->
+        <service id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidator" class="Setono\SyliusCMSPlugin\Validation\EntryUrlValidator">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Routing\UrlClashFinderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface"/>
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="translator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface" alias="Setono\SyliusCMSPlugin\Validation\EntryUrlValidator"/>
+
         <!-- What publish validates, and entry_validate answers. Decorate it to add checks of your own -->
         <service id="Setono\SyliusCMSPlugin\Validation\EntryValidator" class="Setono\SyliusCMSPlugin\Validation\EntryValidator">
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\BlockTreeValidator"/>
@@ -23,6 +34,8 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\FieldReader"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="validator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface" alias="Setono\SyliusCMSPlugin\Validation\EntryValidator"/>
     </services>

@@ -34,6 +34,9 @@ final readonly class PreviewTokenSigner
             'entry' => $preview->entryUuid,
             'channel' => $preview->channelCode,
             'locale' => $preview->localeCode,
+            'revision' => $preview->revisionId,
+            'shownTo' => $preview->shownTo,
+            'date' => $preview->date?->getTimestamp(),
             'expires' => $this->clock->now()->getTimestamp() + self::LIFETIME,
         ], \JSON_THROW_ON_ERROR));
 
@@ -55,11 +58,18 @@ final readonly class PreviewTokenSigner
             return null;
         }
 
+        $revision = $data['revision'] ?? null;
+        $shownTo = $data['shownTo'] ?? null;
+        $date = $data['date'] ?? null;
+        if ((null !== $revision && !is_int($revision)) || (null !== $shownTo && !is_string($shownTo)) || (null !== $date && !is_int($date))) {
+            return null;
+        }
+
         if ($this->clock->now()->getTimestamp() >= $data['expires']) {
             return null;
         }
 
-        return new Preview($data['entry'], $data['channel'], $data['locale']);
+        return new Preview($data['entry'], $data['channel'], $data['locale'], $revision, $shownTo, null === $date ? null : new \DateTimeImmutable('@' . $date));
     }
 
     private function signature(string $payload): string

@@ -15,19 +15,40 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetConditions;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryTranslated;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayout;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayoutTranslated;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayoutValue;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetShown;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
+use Setono\SyliusCMSPlugin\Field\DateTimeHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
+use Setono\SyliusCMSPlugin\Json\ListedObject;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
+use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
+use Setono\SyliusCMSPlugin\Tests\Unit\Builder\ChangeSet\Fixture\Banner;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\ChangeSet\Fixture\SharedNote;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Standard;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\IdentityTranslator;
 
@@ -195,6 +216,54 @@ final class ChangeSetApplierTest extends TestCase
     /**
      * @test
      */
+    public function it_replaces_a_blocks_visibility_conditions_of_any_block_type(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'group', 1), new StoredBlock(self::B, 'removed', 1)]);
+        $conditions = [
+            ['kind' => 'locale_is', 'negate' => true, 'params' => ['locales' => ['da_DK']]],
+            ['kind' => 'signed_in', 'negate' => false, 'params' => []],
+        ];
+
+        $tree = $this->apply($tree, new SetConditions(self::A, $conditions), new SetConditions(self::B, $conditions));
+        self::assertSame($conditions, $tree->blocks[0]->conditions);
+        self::assertSame($conditions, $tree->blocks[1]->conditions, 'A block of a type the code no longer has keeps its conditions too');
+
+        $tree = $this->apply($tree, new SetConditions(self::A, []));
+        self::assertSame([], $tree->blocks[0]->conditions);
+    }
+
+    /**
+     * @test
+     */
+    public function it_sanitises_the_parameter_values_of_a_condition_by_their_field_types(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'group', 1)]);
+
+        $tree = $this->apply($tree, new SetConditions(self::A, [
+            ['kind' => 'date_window', 'negate' => false, 'params' => ['from' => '2026-11-27T01:00:00+01:00', 'until' => null, 'unknown' => '2026-11-27T01:00:00+01:00']],
+            ['kind' => 'removed_kind', 'negate' => false, 'params' => ['from' => '2026-11-27T01:00:00+01:00']],
+        ]));
+
+        self::assertSame([
+            ['kind' => 'date_window', 'negate' => false, 'params' => ['from' => '2026-11-27T00:00:00Z', 'until' => null, 'unknown' => '2026-11-27T01:00:00+01:00']],
+            ['kind' => 'removed_kind', 'negate' => false, 'params' => ['from' => '2026-11-27T01:00:00+01:00']],
+        ], $tree->blocks[0]->conditions, 'A kind the code no longer has, and a parameter its kind doesn\'t have, are kept as they are');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_conditions_for_a_block_the_tree_does_not_have(): void
+    {
+        $this->expectException(InvalidChangeSetException::class);
+        $this->expectExceptionMessage(sprintf('The tree has no block with the key %s', self::B));
+
+        $this->apply(new StoredTree(null, [new StoredBlock(self::A, 'group', 1)]), new SetConditions(self::B, []));
+    }
+
+    /**
+     * @test
+     */
     public function it_sets_a_block_style_from_the_block_type_or_the_config_and_takes_it_away_again(): void
     {
         $tree = new StoredTree(null, [new StoredBlock(self::A, 'group', 1), new StoredBlock(self::B, 'group', 1, style: 'muted')]);
@@ -239,18 +308,33 @@ final class ChangeSetApplierTest extends TestCase
 
     /**
      * @test
+     *
+     * @dataProvider provideChangeSetsWithAnInvalidChange
      */
-    public function it_applies_nothing_when_one_change_is_invalid(): void
+    public function it_applies_nothing_when_one_change_is_invalid(Change ...$changes): void
     {
-        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)]);
+        $page = self::page(new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)]));
 
         try {
-            $this->apply($tree, new SetValue(self::A, 'text', 'en_US', 'Hello'), new RemoveBlock(self::B));
+            self::applier()->apply(new ChangeSet(array_values($changes)), $page);
             self::fail('The change set must be refused');
         } catch (InvalidChangeSetException) {
         }
 
-        self::assertSame([], $tree->blocks[0]->fields);
+        self::assertSame([], $page->getBlockTree()->blocks[0]->fields);
+        self::assertSame('About us', $page->getTranslation('en_US')->getTitle());
+        self::assertSame(['en_US'], $page->getTranslations()->getKeys());
+        self::assertFalse($page->isNoindex());
+    }
+
+    /**
+     * @return iterable<string, list<Change>>
+     */
+    public function provideChangeSetsWithAnInvalidChange(): iterable
+    {
+        yield 'a block change after valid ones' => [new SetValue(self::A, 'text', 'en_US', 'Hello'), new SetEntryValue('title', 'en_US', 'About'), new RemoveBlock(self::B)];
+        yield 'an entry change after valid ones' => [new SetValue(self::A, 'text', 'en_US', 'Hello'), new SetEntryValue('title', 'da_DK', 'Om os'), new SetEntryValue('title', 'en_US', 1)];
+        yield 'a shared entry change before an invalid one' => [new SetEntryValue('noindex', null, true), new SetEntryValue('title', 'en_US', 1)];
     }
 
     /**
@@ -263,9 +347,371 @@ final class ChangeSetApplierTest extends TestCase
 
         self::applier()->apply(
             new ChangeSet([new class() implements Change {
+                public function toArray(StoredTreeSerializer $serializer): ListedObject
+                {
+                    return new ListedObject([]);
+                }
             }]),
-            new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)]),
+            self::page(new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)])),
         );
+    }
+
+    /**
+     * @test
+     */
+    public function it_sets_and_removes_a_translations_title_and_slug(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('title', 'en_US', 'About'), new SetEntryValue('slug', 'en_US', 'about')]), $page);
+
+        self::assertSame('About', $page->getTranslation('en_US')->getTitle());
+        self::assertSame('about', $page->getTranslation('en_US')->getSlug());
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('title', 'en_US', ''), new SetEntryValue('slug', 'en_US', null)]), $page);
+
+        self::assertNull($page->getTranslation('en_US')->getTitle());
+        self::assertNull($page->getTranslation('en_US')->getSlug());
+    }
+
+    /**
+     * See "SEO fields" in docs/spec/urls-and-seo.md
+     *
+     * @test
+     */
+    public function it_sets_and_removes_a_translations_meta_title_and_meta_description(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('metaTitle', 'en_US', 'About us | Shop'), new SetEntryValue('metaDescription', 'en_US', 'All about us')]), $page);
+
+        self::assertSame('About us | Shop', $page->getTranslation('en_US')->getMetaTitle());
+        self::assertSame('All about us', $page->getTranslation('en_US')->getMetaDescription());
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('metaTitle', 'en_US', ''), new SetEntryValue('metaDescription', 'en_US', null)]), $page);
+
+        self::assertNull($page->getTranslation('en_US')->getMetaTitle());
+        self::assertNull($page->getTranslation('en_US')->getMetaDescription());
+        self::assertSame('About us', $page->getTranslation('en_US')->getTitle());
+        self::assertSame('about-us', $page->getTranslation('en_US')->getSlug());
+    }
+
+    /**
+     * "Hide from search engines" is shared by all translations
+     *
+     * @test
+     */
+    public function it_switches_hide_from_search_engines_on_and_off(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('noindex', null, true)]), $page);
+        self::assertTrue($page->isNoindex());
+        self::assertSame(['en_US'], $page->getTranslations()->getKeys());
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('noindex', null, false)]), $page);
+        self::assertFalse($page->isNoindex());
+
+        $page->setNoindex(true);
+        self::applier()->apply(new ChangeSet([new SetEntryValue('noindex', null, null)]), $page);
+        self::assertFalse($page->isNoindex(), 'Removing the value switches it off');
+    }
+
+    /**
+     * Translations made before the first publish start shown. See "Held-back translations" in docs/spec/publishing.md
+     *
+     * @test
+     */
+    public function it_adds_a_translation_that_starts_shown_to_an_entry_that_was_never_published(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('title', 'da_DK', 'Om os'), new SetEntryValue('slug', 'da_DK', 'om-os')]), $page);
+
+        $danish = $page->getTranslations()->get('da_DK');
+        self::assertInstanceOf(PageTranslation::class, $danish);
+        self::assertSame('Om os', $danish->getTitle());
+        self::assertSame('om-os', $danish->getSlug());
+        self::assertTrue($danish->isShown());
+        self::assertSame($page, $danish->getTranslatable());
+        self::assertSame($danish, $page->getTranslation('da_DK'));
+    }
+
+    /**
+     * The admin offers a translation for each locale of the entry's channels, which the caller gives. See "Which locales
+     * an entry has" in docs/spec/localization.md
+     *
+     * @test
+     */
+    public function it_adds_a_translation_only_in_one_of_the_locales_it_is_given_and_changes_one_the_entry_has_in_any(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('title', 'da_DK', 'Om os'), new SetEntryValue('title', 'en_US', 'About')]), $page, ['da_DK']);
+
+        self::assertSame('Om os', $page->getTranslation('da_DK')->getTitle());
+        self::assertSame('About', $page->getTranslation('en_US')->getTitle());
+
+        try {
+            self::applier()->apply(new ChangeSet([new SetEntryValue('title', 'sv_SE', 'Om oss'), new SetEntryValue('title', 'da_DK', 'Om')]), $page, ['da_DK']);
+            self::fail('A translation was added in a locale the entry\'s channels don\'t have');
+        } catch (InvalidChangeSetException $exception) {
+            self::assertSame('The entry\'s channels have no locale "sv_SE" to add a translation in', $exception->getMessage());
+        }
+
+        self::assertSame(['en_US', 'da_DK'], array_keys([...$page->getTranslations()]));
+        self::assertSame('Om os', $page->getTranslation('da_DK')->getTitle());
+    }
+
+    /**
+     * A translation added after the first publish starts held back
+     *
+     * @test
+     */
+    public function it_adds_a_translation_that_starts_held_back_to_an_entry_that_has_been_published(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+        $page->publish(new \DateTimeImmutable());
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('title', 'da_DK', 'Om os')]), $page);
+
+        self::assertFalse($page->getTranslation('da_DK')->isShown());
+        self::assertTrue($page->getTranslation('en_US')->isShown());
+    }
+
+    /**
+     * @test
+     */
+    public function it_switches_a_translation_shown_and_held_back(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+
+        self::applier()->apply(new ChangeSet([new SetShown('en_US', false)]), $page);
+        self::assertFalse($page->getTranslation('en_US')->isShown());
+
+        self::applier()->apply(new ChangeSet([new SetShown('en_US', true)]), $page);
+        self::assertTrue($page->getTranslation('en_US')->isShown());
+    }
+
+    /**
+     * @test
+     */
+    public function it_adds_a_translation_switched_the_way_a_shown_change_says(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+        $page->publish(new \DateTimeImmutable());
+
+        self::applier()->apply(new ChangeSet([new SetShown('da_DK', true), new SetEntryValue('title', 'da_DK', 'Om os')]), $page);
+
+        self::assertTrue($page->getTranslation('da_DK')->isShown());
+        self::assertSame('Om os', $page->getTranslation('da_DK')->getTitle());
+    }
+
+    /**
+     * @test
+     */
+    public function it_sets_and_removes_where_a_translations_values_were_translated_from(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+        $page->getTranslation('en_US')->setTranslated(['slug' => ['from' => 'da_DK', 'fingerprint' => self::fingerprint('om-os')]]);
+
+        self::applier()->apply(new ChangeSet([new SetEntryTranslated('title', 'en_US', ['from' => 'da_DK', 'fingerprint' => self::fingerprint('Om os')])]), $page);
+
+        self::assertSame([
+            'slug' => ['from' => 'da_DK', 'fingerprint' => self::fingerprint('om-os')],
+            'title' => ['from' => 'da_DK', 'fingerprint' => self::fingerprint('Om os')],
+        ], $page->getTranslation('en_US')->getTranslated());
+
+        self::applier()->apply(new ChangeSet([new SetEntryTranslated('slug', 'en_US', null)]), $page);
+
+        self::assertSame(['title' => ['from' => 'da_DK', 'fingerprint' => self::fingerprint('Om os')]], $page->getTranslation('en_US')->getTranslated());
+    }
+
+    /**
+     * @test
+     */
+    public function it_adds_a_translation_with_where_its_value_was_translated_from(): void
+    {
+        $page = self::page(new StoredTree(null, []));
+
+        self::applier()->apply(new ChangeSet([
+            new SetEntryValue('title', 'da_DK', 'Om os'),
+            new SetEntryTranslated('title', 'da_DK', ['from' => 'en_US', 'fingerprint' => self::fingerprint('About us')]),
+        ]), $page);
+
+        self::assertSame('Om os', $page->getTranslation('da_DK')->getTitle());
+        self::assertSame(['title' => ['from' => 'en_US', 'fingerprint' => self::fingerprint('About us')]], $page->getTranslation('da_DK')->getTranslated());
+    }
+
+    /**
+     * @test
+     */
+    public function it_sets_and_removes_where_a_block_s_values_were_translated_from(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1, fields: ['text' => ['en_US' => 'Hello', 'da_DK' => 'Hej', 'de_DE' => 'Hallo']])]);
+
+        $tree = $this->apply(
+            $tree,
+            new SetTranslated(self::A, 'text', 'da_DK', ['from' => 'en_US', 'fingerprint' => self::fingerprint('Hello')]),
+            new SetTranslated(self::A, 'text', 'de_DE', ['from' => 'en_US', 'fingerprint' => self::fingerprint('Hello')]),
+        );
+
+        self::assertSame(['text' => [
+            'da_DK' => ['from' => 'en_US', 'fingerprint' => self::fingerprint('Hello')],
+            'de_DE' => ['from' => 'en_US', 'fingerprint' => self::fingerprint('Hello')],
+        ]], $tree->blocks[0]->translated);
+
+        $tree = $this->apply($tree, new SetTranslated(self::A, 'text', 'da_DK', null));
+
+        self::assertSame(['text' => ['de_DE' => ['from' => 'en_US', 'fingerprint' => self::fingerprint('Hello')]]], $tree->blocks[0]->translated);
+
+        $tree = $this->apply($tree, new SetTranslated(self::A, 'text', 'de_DE', null));
+
+        self::assertSame([], $tree->blocks[0]->translated);
+    }
+
+    /**
+     * @test
+     */
+    public function it_switches_the_layout_to_the_one_the_builder_made_and_leaves_the_blocks_as_they_are(): void
+    {
+        $block = new StoredBlock(self::A, 'heading', 1);
+        $layout = new StoredLayout('banner', 3, ['tagline' => ['en_US' => 'Big news'], 'dark' => true], ['tagline' => ['da_DK' => ['from' => 'en_US', 'fingerprint' => self::fingerprint('Big news')]]]);
+
+        $tree = $this->apply(new StoredTree(new StoredLayout('standard', 1, ['showTitle' => false]), [$block]), new SetLayout($layout));
+
+        self::assertEquals($layout, $tree->layout);
+        self::assertNotSame($layout, $tree->layout, 'The change keeps its own layout');
+        self::assertEquals([$block], $tree->blocks);
+    }
+
+    /**
+     * @test
+     */
+    public function it_sanitises_the_rich_text_values_of_a_layout_switched_to(): void
+    {
+        $tree = $this->apply(new StoredTree(new StoredLayout('standard', 1), []), new SetLayout(new StoredLayout('banner', 3, ['intro' => ['en_US' => self::DIRTY, 'da_DK' => self::DIRTY]])));
+
+        self::assertSame(['intro' => ['en_US' => self::CLEAN, 'da_DK' => self::CLEAN]], $tree->layout?->fields);
+    }
+
+    /**
+     * @test
+     */
+    public function it_keeps_a_layout_the_code_no_longer_has_as_it_is_which_undoing_a_switch_from_it_brings_back(): void
+    {
+        $removed = new StoredLayout('gone', 4, ['anything' => ['en_US' => self::DIRTY]]);
+
+        $tree = $this->apply(new StoredTree(new StoredLayout('standard', 1), []), new SetLayout($removed));
+
+        self::assertEquals($removed, $tree->layout);
+    }
+
+    /**
+     * @test
+     */
+    public function it_sets_and_removes_the_layouts_values_by_field_and_locale_sanitising_rich_text(): void
+    {
+        $tree = $this->apply(
+            new StoredTree(new StoredLayout('banner', 3, ['tagline' => ['en_US' => 'Big news']]), []),
+            new SetLayoutValue('banner', 'tagline', 'da_DK', 'Nyhed'),
+            new SetLayoutValue('banner', 'dark', null, true),
+            new SetLayoutValue('banner', 'intro', 'en_US', self::DIRTY),
+        );
+
+        self::assertSame(['tagline' => ['en_US' => 'Big news', 'da_DK' => 'Nyhed'], 'dark' => true, 'intro' => ['en_US' => self::CLEAN]], $tree->layout?->fields);
+
+        $tree = $this->apply($tree, new SetLayoutValue('banner', 'tagline', 'en_US', null), new SetLayoutValue('banner', 'dark', null, null), new SetLayoutValue('banner', 'intro', 'en_US', null));
+
+        self::assertSame(['tagline' => ['da_DK' => 'Nyhed']], $tree->layout?->fields);
+    }
+
+    /**
+     * @test
+     */
+    public function it_sets_and_removes_where_the_layouts_values_were_translated_from(): void
+    {
+        $source = ['from' => 'en_US', 'fingerprint' => self::fingerprint('Big news')];
+
+        $tree = $this->apply(new StoredTree(new StoredLayout('banner', 3, ['tagline' => ['en_US' => 'Big news', 'da_DK' => 'Nyhed']]), []), new SetLayoutTranslated('banner', 'tagline', 'da_DK', $source));
+
+        self::assertSame(['tagline' => ['da_DK' => $source]], $tree->layout?->translated);
+
+        $tree = $this->apply($tree, new SetLayoutTranslated('banner', 'tagline', 'da_DK', null));
+
+        self::assertSame([], $tree->layout?->translated);
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidLayoutChanges
+     */
+    public function it_refuses_a_layout_change_that_does_not_fit_the_entry(EntryInterface $entry, Change $change, string $message): void
+    {
+        $this->expectException(InvalidChangeSetException::class);
+        $this->expectExceptionMessage($message);
+
+        self::applier()->apply(new ChangeSet([$change]), $entry);
+    }
+
+    /**
+     * @return iterable<string, array{EntryInterface, Change, string}>
+     */
+    public function provideInvalidLayoutChanges(): iterable
+    {
+        $banner = self::page(new StoredTree(new StoredLayout('banner', 3), []));
+        $none = self::page(new StoredTree(null, []));
+        $removed = self::page(new StoredTree(new StoredLayout('gone', 1), []));
+        $recipe = new Recipe();
+
+        yield 'switching the layout of a content type without layouts' => [$recipe, new SetLayout(new StoredLayout('standard', 1)), 'The content type "recipe" has no layouts'];
+        yield 'switching to a layout with a field it does not have' => [$banner, new SetLayout(new StoredLayout('banner', 3, ['subtitle' => 'Hi'])), 'The layout "banner" has no field "subtitle"'];
+        yield 'setting a value in a tree without a layout' => [$none, new SetLayoutValue('banner', 'tagline', 'en_US', 'Hi'), 'The tree has no layout "banner", so it can\'t take the change to its field "tagline"'];
+        yield 'setting a value in a layout the tree is not in any more' => [$banner, new SetLayoutValue('standard', 'showTitle', null, false), 'The tree has no layout "standard", so it can\'t take the change to its field "showTitle"'];
+        yield 'setting a value in a layout the code no longer has' => [$removed, new SetLayoutValue('gone', 'tagline', 'en_US', 'Hi'), 'The content type "page" has no layout with the code "gone"'];
+        yield 'setting a field the layout does not have' => [$banner, new SetLayoutValue('banner', 'subtitle', 'en_US', 'Hi'), 'The layout "banner" has no field "subtitle"'];
+        yield 'setting a translatable field without a locale' => [$banner, new SetLayoutValue('banner', 'tagline', null, 'Hi'), 'The field "tagline" is translatable, so a value needs a locale'];
+        yield 'setting a shared field for one locale' => [$banner, new SetLayoutValue('banner', 'dark', 'en_US', true), 'The field "dark" is shared by all translations, so a value takes no locale'];
+        yield 'setting the translation state in a layout the tree is not in any more' => [$banner, new SetLayoutTranslated('standard', 'showTitle', 'en_US', null), 'The tree has no layout "standard"'];
+        yield 'setting the translation state of a field the layout does not have' => [$banner, new SetLayoutTranslated('banner', 'subtitle', 'en_US', null), 'The layout "banner" has no field "subtitle"'];
+        yield 'setting the translation state of a shared field' => [$banner, new SetLayoutTranslated('banner', 'dark', 'en_US', null), 'The field "dark" is shared by all translations, so it has no translation state'];
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidEntryChanges
+     */
+    public function it_refuses_an_entry_change_that_does_not_fit_the_content_type(EntryInterface $entry, Change $change, string $message): void
+    {
+        $this->expectException(InvalidChangeSetException::class);
+        $this->expectExceptionMessage($message);
+
+        self::applier()->apply(new ChangeSet([$change]), $entry);
+    }
+
+    /**
+     * @return iterable<string, array{EntryInterface, Change, string}>
+     */
+    public function provideInvalidEntryChanges(): iterable
+    {
+        $page = self::page(new StoredTree(null, []));
+        $recipe = new Recipe();
+
+        yield 'a field the entry does not have' => [$page, new SetEntryValue('subtitle', 'en_US', 'Hello'), 'The content type "page" has no entry field "subtitle"'];
+        yield 'a slug of a content type without its own URL' => [$recipe, new SetEntryValue('slug', 'en_US', 'pancakes'), 'The content type "recipe" has no entry field "slug"'];
+        yield 'a translatable field without a locale' => [$page, new SetEntryValue('title', null, 'About'), 'The entry field "title" is translatable, so a value needs a locale'];
+        yield 'a title that is not a string' => [$page, new SetEntryValue('title', 'en_US', ['About']), 'The entry field "title" must be a string or null'];
+        yield 'the translation state of a field the entry does not have' => [$page, new SetEntryTranslated('subtitle', 'en_US', null), 'The content type "page" has no entry field "subtitle"'];
+        yield 'the translation state of a slug of a content type without its own URL' => [$recipe, new SetEntryTranslated('slug', 'en_US', null), 'The content type "recipe" has no entry field "slug"'];
+        yield 'a meta title of a content type without its own URL' => [$recipe, new SetEntryValue('metaTitle', 'en_US', 'Pancakes'), 'The content type "recipe" has no entry field "metaTitle"'];
+        yield 'a meta description of a content type without its own URL' => [$recipe, new SetEntryValue('metaDescription', 'en_US', 'Pancakes'), 'The content type "recipe" has no entry field "metaDescription"'];
+        yield 'a meta description that is not a string' => [$page, new SetEntryValue('metaDescription', 'en_US', 7), 'The entry field "metaDescription" must be a string or null'];
+        yield 'hide from search engines of a content type without its own URL' => [$recipe, new SetEntryValue('noindex', null, true), 'The content type "recipe" has no entry field "noindex"'];
+        yield 'hide from search engines in a locale' => [$page, new SetEntryValue('noindex', 'en_US', true), 'The entry field "noindex" is shared by all translations, so a value takes no locale'];
+        yield 'hide from search engines that is not true or false' => [$page, new SetEntryValue('noindex', null, 'yes'), 'The entry field "noindex" must be true, false or null'];
+        yield 'the translation state of hide from search engines' => [$page, new SetEntryTranslated('noindex', 'en_US', null), 'The entry field "noindex" is shared by all translations, so it has no translation state'];
     }
 
     /**
@@ -310,11 +756,51 @@ final class ChangeSetApplierTest extends TestCase
         yield 'setting the style of a block the tree does not have' => [new SetStyle($other, 'dark'), $other];
         yield 'setting the style of a block of an unknown type' => [new SetStyle(self::B, 'dark'), '"removed"'];
         yield 'setting a style the block type does not offer' => [new SetStyle(self::A, 'dark'), 'The block type "heading" has no block style "dark"'];
+        yield 'setting the translation state of a block the tree does not have' => [new SetTranslated($other, 'text', 'en_US', null), 'The tree has no block with the key ' . $other];
+        yield 'setting the translation state of a block of an unknown type' => [new SetTranslated(self::B, 'text', 'en_US', null), 'There is no block type with the code "removed"'];
+        yield 'setting the translation state of a field the block type does not have' => [new SetTranslated(self::A, 'subtitle', 'en_US', null), 'The block type "heading" has no field "subtitle"'];
+        yield 'setting the translation state of a shared field' => [new SetTranslated(self::A, 'level', 'en_US', null), 'The field "level" is shared by all translations, so it has no translation state'];
+    }
+
+    private static function fingerprint(string $value): string
+    {
+        return hash('sha256', json_encode($value, \JSON_THROW_ON_ERROR));
     }
 
     private function apply(StoredTree $tree, Change ...$changes): StoredTree
     {
-        return self::applier()->apply(new ChangeSet(array_values($changes)), $tree);
+        $page = self::page($tree);
+        self::applier()->apply(new ChangeSet(array_values($changes)), $page);
+
+        return $page->getBlockTree();
+    }
+
+    /**
+     * A page in en_US with the tree, as a working copy. It holds the tree as it's given, rather than as JSON, so the
+     * values the applier writes are compared as it writes them
+     */
+    private static function page(StoredTree $tree): Page
+    {
+        $page = new class() extends Page {
+            private StoredTree $tree;
+
+            public function getBlockTree(): StoredTree
+            {
+                return $this->tree;
+            }
+
+            public function setBlockTree(StoredTree $tree): void
+            {
+                $this->tree = $tree;
+            }
+        };
+        $page->setCurrentLocale('en_US');
+        $page->setFallbackLocale('en_US');
+        $page->setTitle('About us');
+        $page->setSlug('about-us');
+        $page->setBlockTree($tree);
+
+        return $page;
     }
 
     private static function applier(): ChangeSetApplier
@@ -330,7 +816,14 @@ final class ChangeSetApplierTest extends TestCase
                 TextHandler::class => static fn (): TextHandler => new TextHandler(),
                 ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
                 RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
+                DateTimeHandler::class => static fn (): DateTimeHandler => new DateTimeHandler(),
             ])),
+            new ContentTypeRegistry([
+                'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+                'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
+            ]),
+            Conditions::registry(),
+            new LayoutRegistry(['page' => ['standard' => Standard::class, 'banner' => Banner::class]], new FieldReader()),
         );
     }
 

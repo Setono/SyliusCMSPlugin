@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Registry;
 
+use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\ContentType;
@@ -33,6 +34,18 @@ final class AttributeReader
     public static function upgrader(string $class): ?AsUpgrader
     {
         foreach ((new \ReflectionClass($class))->getAttributes(AsUpgrader::class) as $attribute) {
+            return $attribute->newInstance();
+        }
+
+        return null;
+    }
+
+    /**
+     * @param class-string $class
+     */
+    public static function conditionKind(string $class): ?AsConditionKind
+    {
+        foreach ((new \ReflectionClass($class))->getAttributes(AsConditionKind::class) as $attribute) {
             return $attribute->newInstance();
         }
 

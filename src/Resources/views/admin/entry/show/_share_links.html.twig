@@ -1,0 +1,103 @@
+{#
+ # The overview page's Share links section, a block of setono_sylius_cms.admin.entry.show.sections, for a content type
+ # with its own URL: each share link's channel, locale, Shown to, Date and who made it, newest first, with copy and a
+ # revoke form that comes back to the overview page, plus New, which opens the Share draft dialog it renders.
+ # admin/share-links.js runs the dialog and the copy buttons.
+ # See "Entry overview page" in docs/spec/admin.md and "Share links" in docs/spec/publishing.md
+ #}
+{% if row.contentType.hasOwnUrl() %}
+    {% set share_links = cms_admin_entry_share_links(entry) %}
+    <section class="ui segment" data-section="share_links" aria-labelledby="cms-section-share_links">
+        <h2 class="ui dividing header" id="cms-section-share_links">{{ 'setono_sylius_cms.ui.share_links'|trans }}</h2>
+
+        {% if share_links is empty %}
+            <p>{{ 'setono_sylius_cms.ui.no_share_links'|trans }}</p>
+        {% else %}
+            {% set group_names = cms_admin_customer_group_names() %}
+            <p>{{ 'setono_sylius_cms.ui.share_links_help'|trans }}</p>
+            <table class="ui very basic table">
+                <thead>
+                    <tr>
+                        <th>{{ 'setono_sylius_cms.ui.channel'|trans }}</th>
+                        <th>{{ 'setono_sylius_cms.ui.language'|trans }}</th>
+                        <th>{{ 'setono_sylius_cms.ui.shown_to'|trans }}</th>
+                        <th>{{ 'setono_sylius_cms.ui.date'|trans }}</th>
+                        <th>{{ 'setono_sylius_cms.ui.made_by'|trans }}</th>
+                        <th>{{ 'setono_sylius_cms.ui.link'|trans }}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for link in share_links %}
+                        {% set share_link = link.shareLink %}
+                        {% set shown_to = share_link.shownTo %}
+                        <tr data-share-link="{{ share_link.id }}">
+                            <td data-channel>{{ link.channelName }}</td>
+                            <td data-locale>{{ share_link.localeCode|sylius_locale_name }}</td>
+                            <td data-shown-to>
+                                {%- if shown_to == '@guest' -%}
+                                    {{ 'setono_sylius_cms.ui.shown_to_guest'|trans }}
+                                {%- elseif shown_to == '@no_group' -%}
+                                    {{ 'setono_sylius_cms.ui.shown_to_no_group'|trans }}
+                                {%- else -%}
+                                    {{ group_names[shown_to]|default(shown_to) }}
+                                {%- endif -%}
+                            </td>
+                            <td data-date>{{ share_link.date is null ? 'setono_sylius_cms.ui.now'|trans : share_link.date|date('Y-m-d H:i') }}</td>
+                            <td data-created-by>{{ share_link.createdBy|default('—') }}</td>
+                            <td>
+                                {% if link.url is not null %}
+                                    <div class="ui fluid action input">
+                                        <input type="text" id="cms-share-link-{{ share_link.id }}" value="{{ link.url }}" readonly data-url aria-label="{{ 'setono_sylius_cms.ui.link'|trans }}">
+                                        <button type="button" class="ui labeled icon button" data-cms-copy="cms-share-link-{{ share_link.id }}" data-copied="{{ 'setono_sylius_cms.ui.copied'|trans }}">
+                                            <i class="copy icon"></i> <span aria-live="polite" data-cms-copy-label>{{ 'setono_sylius_cms.ui.copy'|trans }}</span>
+                                        </button>
+                                    </div>
+                                {% else %}
+                                    <span data-no-url>{{ 'setono_sylius_cms.ui.share_link_without_url'|trans }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="right aligned">
+                                <form method="post" action="{{ path('setono_sylius_cms_admin_entry_share_link_revoke', {'uuid': entry.uuid, 'id': share_link.id}) }}">
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
+                                    <button type="submit" class="ui labeled icon button" data-requires-confirmation><i class="ban icon"></i> {{ 'setono_sylius_cms.ui.revoke'|trans }}</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+        <button type="button" class="ui labeled icon button" data-cms-dialog-open aria-haspopup="dialog" aria-controls="cms-share-draft">
+            <i class="plus icon"></i> {{ 'setono_sylius_cms.ui.new_share_link'|trans }}
+        </button>
+
+        {% set targets = cms_admin_share_link_targets(entry) %}
+        <dialog id="cms-share-draft" class="cms-dialog" aria-labelledby="cms-share-draft-heading">
+            <button type="button" class="cms-dialog__close" data-cms-dialog-close aria-label="{{ 'setono_sylius_cms.ui.close'|trans }}"><i class="close icon"></i></button>
+            <h2 class="ui header" id="cms-share-draft-heading">{{ 'setono_sylius_cms.ui.share_draft'|trans }}</h2>
+
+            {% if targets is empty %}
+                <p>{{ 'setono_sylius_cms.ui.share_draft_without_url'|trans }}</p>
+            {% else %}
+                {# Controller\Admin\CreateShareLinkAction reads the target as "<channel code>|<locale code>" #}
+                <form class="ui form" method="post" action="{{ path('setono_sylius_cms_admin_entry_share_link_create', {'uuid': entry.uuid}) }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
+                    <p>{{ 'setono_sylius_cms.ui.share_draft_help'|trans }}</p>
+                    <div class="field">
+                        <label for="cms-share-draft-target">{{ 'setono_sylius_cms.ui.share_draft_target'|trans }}</label>
+                        <select id="cms-share-draft-target" name="target">
+                            {% for target in targets %}
+                                <option value="{{ target.channelCode }}|{{ target.localeCode }}">{{ target.channelName }} · {{ target.localeCode|sylius_locale_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="ui primary labeled icon button"><i class="share alternate icon"></i> {{ 'setono_sylius_cms.ui.create_share_link'|trans }}</button>
+                </form>
+            {% endif %}
+        </dialog>
+
+        <script type="module" src="{{ asset('bundles/setonosyliuscmsplugin/admin/share-links.js') }}"></script>
+    </section>
+{% endif %}

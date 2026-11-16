@@ -65,6 +65,19 @@ final class TextHandlerTest extends TestCase
     /**
      * @test
      */
+    public function it_fits_a_string_of_any_length_and_nothing_else(): void
+    {
+        $handler = new TextHandler();
+        $field = new Text(label: 'Heading', maxLength: 3);
+
+        self::assertTrue($handler->fits($field, 'Hello'));
+        self::assertFalse($handler->fits($field, 42));
+        self::assertFalse($handler->fits($field, ['en_US' => 'Hello']));
+    }
+
+    /**
+     * @test
+     */
     public function it_holds_no_references(): void
     {
         self::assertSame([], [...(new TextHandler())->references(new Text(label: 'Heading'), 'Hello')]);

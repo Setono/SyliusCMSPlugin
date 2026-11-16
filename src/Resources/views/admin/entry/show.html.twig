@@ -1,0 +1,54 @@
+{#
+ # The entry overview page, between the entry's list and the builder, shown by the entry resource's controller, so
+ # `entry` is the entry. Its header shows the title, content type, URL and status labels of the working copy, with the
+ # buttons of the template event setono_sylius_cms.admin.entry.show.header_actions. Its sections are the blocks of the
+ # template event setono_sylius_cms.admin.entry.show.sections, which get `entry` and its `row`.
+ # See "Entry overview page" in docs/spec/admin.md
+ #}
+{% extends '@SetonoSyliusCMSPlugin/admin/layout.html.twig' %}
+
+{% import '@SyliusAdmin/Macro/breadcrumb.html.twig' as breadcrumb %}
+
+{% set row = cms_admin_entry_row(entry) %}
+{% set title = row.title|default('setono_sylius_cms.ui.untitled'|trans) %}
+{# The entry's list is named by its content type's plural, setono_sylius_cms.content_type_plural.<code>, or else by its label #}
+{% set plural = 'setono_sylius_cms.content_type_plural.' ~ row.contentType.code %}
+
+{% block title %}{{ title }} {{ parent() }}{% endblock %}
+
+{% block hub_content %}
+    <div class="ui stackable two column grid" data-overview-header>
+        <div class="column">
+            <h1 class="ui header">
+                <i class="circular file alternate outline icon"></i>
+                <div class="content">
+                    <span data-title>{{ title }}</span>
+                    <div class="sub header">
+                        <span data-content-type>{{ row.contentType.label|trans }}</span>
+                        {% if row.url is not null %}
+                            · <span data-url>{{ row.url }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </h1>
+
+            <div data-status>
+                {% include '@SetonoSyliusCMSPlugin/admin/entry/_status_labels.html.twig' with {'labels': row.statusLabels} %}
+            </div>
+
+            {{ breadcrumb.crumble([
+                { label: 'sylius.ui.administration'|trans, url: path('sylius_admin_dashboard') },
+                { label: 'setono_sylius_cms.ui.content'|trans, url: path('setono_sylius_cms_admin_overview') },
+                { label: plural|trans != plural ? plural|trans : row.contentType.label|trans, url: path('setono_sylius_cms_admin_entry_index', {'contentType': row.contentType.code}) },
+                { label: title },
+            ]) }}
+        </div>
+        <div class="middle aligned column">
+            <div class="ui right floated buttons">
+                {{ sylius_template_event('setono_sylius_cms.admin.entry.show.header_actions', {'entry': entry, 'row': row}) }}
+            </div>
+        </div>
+    </div>
+
+    {{ sylius_template_event('setono_sylius_cms.admin.entry.show.sections', {'entry': entry, 'row': row}) }}
+{% endblock %}

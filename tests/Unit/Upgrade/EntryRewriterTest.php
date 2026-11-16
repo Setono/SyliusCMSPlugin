@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Upgrade;
 
 use Doctrine\Persistence\ObjectManager;
 use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
@@ -15,12 +16,15 @@ use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Revision;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManager;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
+use Setono\SyliusCMSPlugin\Revision\RevisionReader;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Teaser;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\RenameField;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -41,9 +45,14 @@ final class EntryRewriterTest extends TestCase
     /** @var ObjectProphecy<DraftRepositoryInterface> */
     private ObjectProphecy $drafts;
 
+    /** @var ObjectProphecy<RevisionRepositoryInterface> */
+    private ObjectProphecy $revisions;
+
     protected function setUp(): void
     {
         $this->drafts = $this->prophesize(DraftRepositoryInterface::class);
+        $this->revisions = $this->prophesize(RevisionRepositoryInterface::class);
+        $this->revisions->findByEntry(Argument::any())->willReturn([]);
     }
 
     /**
@@ -158,6 +167,53 @@ final class EntryRewriterTest extends TestCase
         );
     }
 
+    /**
+     * @test
+     */
+    public function it_writes_revisions_that_need_upgrading_back_upgraded_and_counts_them(): void
+    {
+        $page = self::page(self::teaser(3, 'heading'), published: true);
+        $this->drafts->findOneByEntry($page)->willReturn(null);
+        $old = self::revision($page, self::teaser(1, 'title', 'Published then'));
+        $current = self::revision($page, self::teaser(3, 'heading', 'Published now'));
+        $currentContent = $current->getContent();
+        $this->revisions->findByEntry($page)->willReturn([$current, $old]);
+
+        $rewrite = $this->rewriter()->rewrite($page);
+
+        self::assertSame(1, $rewrite->revisions);
+        self::assertFalse($rewrite->blockTree);
+        self::assertFalse($rewrite->draft);
+        self::assertStringEndsWith(
+            '"tree":{"layout":null,"blocks":[{"key":"' . self::KEY . '","type":"teaser","version":3,"style":null,"fields":{"heading":{"en_US":"Published then"}},"translated":{},"conditions":[],"children":[]}]}}',
+            $old->getContent(),
+        );
+        self::assertSame($currentContent, $current->getContent());
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_a_revision_of_a_newer_content_type_version_as_it_is_and_still_upgrades_the_others(): void
+    {
+        $page = self::page(self::teaser(3, 'heading'), published: true);
+        $draft = self::draft($page, self::teaser(1, 'title', 'Drafted'));
+        $draft->setContent(str_replace('"contentType":"page","version":1', '"contentType":"page","version":2', $draft->getContent()));
+        $this->drafts->findOneByEntry($page)->willReturn($draft);
+        $newer = self::revision($page, self::teaser(1, 'title', 'Published later'));
+        $newer->setContent(str_replace('"contentType":"page","version":1', '"contentType":"page","version":2', $newer->getContent()));
+        $newerContent = $newer->getContent();
+        $old = self::revision($page, self::teaser(1, 'title', 'Published then'));
+        $this->revisions->findByEntry($page)->willReturn([$newer, $old]);
+
+        $rewrite = $this->rewriter()->rewrite($page);
+
+        self::assertSame(1, $rewrite->revisions);
+        self::assertSame($newerContent, $newer->getContent());
+        self::assertStringContainsString('"fields":{"heading":{"en_US":"Published then"}}', $old->getContent());
+        self::assertEquals([new NewerVersion(Kind::ContentType, 'page', 2, 1), new NewerVersion(Kind::ContentType, 'page', 2, 1)], $rewrite->newer);
+    }
+
     private function rewriter(): EntryRewriter
     {
         $upgrader = new StoredDataUpgrader(
@@ -184,7 +240,15 @@ final class EntryRewriterTest extends TestCase
             $upgrader,
         );
 
-        return new EntryRewriter($upgrader, self::contentTypes(), $this->drafts->reveal(), $workingCopies, new EntryNormalizer(self::contentTypes()));
+        return new EntryRewriter(
+            $upgrader,
+            self::contentTypes(),
+            $this->drafts->reveal(),
+            $workingCopies,
+            new EntryNormalizer(self::contentTypes()),
+            $this->revisions->reveal(),
+            new RevisionReader($upgrader, new EntryDenormalizer(self::contentTypes())),
+        );
     }
 
     /**
@@ -220,6 +284,18 @@ final class EntryRewriterTest extends TestCase
         $draft->setContent(CanonicalJson::encode((new EntryNormalizer(self::contentTypes()))->normalize($copy)));
 
         return $draft;
+    }
+
+    private static function revision(Page $page, StoredTree $tree): Revision
+    {
+        $copy = clone $page;
+        $copy->setBlockTree($tree);
+
+        $revision = new Revision();
+        $revision->setEntry($page);
+        $revision->setContent(CanonicalJson::encode((new EntryNormalizer(self::contentTypes()))->normalize($copy)));
+
+        return $revision;
     }
 
     private static function contentTypes(): ContentTypeRegistry

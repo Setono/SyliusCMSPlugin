@@ -1,0 +1,11 @@
+--TEST--
+cms_admin_channel_homepages() lists each of the store's channels with the page that's its homepage now
+--TEMPLATE--
+{% for homepage in cms_admin_channel_homepages(page) %}
+{{ homepage.channelCode }} {{ homepage.channelName }}: {{ homepage.homepage ? homepage.homepage.title : 'none' }}{{ homepage.ofThisPage ? ' (this page)' }}
+{% endfor %}
+--DATA--
+return $this->aHomepage('Welcome')
+--EXPECT--
+WEB Web store: Welcome (this page)
+B2B Wholesale: none

@@ -1,0 +1,8 @@
+--TEST--
+cms_preview_mode() tells templates they render on a share link
+--TEMPLATE--
+{{ cms_preview_mode() }}
+--DATA--
+return $this->onAShareLink()
+--EXPECT--
+share

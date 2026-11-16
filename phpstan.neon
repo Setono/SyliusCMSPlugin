@@ -22,3 +22,10 @@ parameters:
 
     reportUnmatchedIgnoredErrors: false
     treatPhpDocTypesAsCertain: false
+
+    ignoreErrors:
+        # The models are typed to their interfaces, as Sylius's are: an association holds whatever model the resource
+        # is configured with, which Sylius maps the interface to (resolve_target_entities), while phpstan-doctrine wants
+        # the property typed to the mapped class. The maintainer chose this (2026-11-16)
+        -
+            identifier: doctrine.associationType

@@ -1,0 +1,9 @@
+--TEST--
+cms_head_tags() prints the meta description of the locale the render context's locale falls back to when it has none
+--TEMPLATE--
+{{ cms_head_tags(entry) }}
+--DATA--
+return $this->rendering(['entry' => $this->pageWith(['de_DE' => ['title' => 'Über uns', 'slug' => 'ueber-uns', 'metaDescription' => 'Alles über uns'], 'de_CH' => ['title' => 'Über uns', 'slug' => 'ueber-uns']])], locale: 'de_CH')
+--EXPECT--
+<meta name="description" content="Alles über uns">
+<link rel="canonical" href="https://shop.example/de_CH/ueber-uns">

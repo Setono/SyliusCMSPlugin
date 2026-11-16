@@ -39,7 +39,7 @@ function replay(blocks: StoredBlock[], changes: readonly Change[]): StoredBlock[
             if (target !== undefined) {
                 target.style = change.style;
             }
-        } else {
+        } else if (change.op === 'set_value') {
             const target = find(tree, change.key);
             if (target !== undefined) {
                 writeFieldValue(target.fields, change.field, change.locale !== null, change.locale ?? '', change.value);
@@ -54,7 +54,7 @@ function replay(blocks: StoredBlock[], changes: readonly Change[]): StoredBlock[
 function changesOf(before: Entry, recipe: (working: Entry) => void): Change[] {
     const [after, patches] = produceWithPatches<Entry, Entry>(before, recipe);
 
-    return changesFromPatches(patches, before, after, isTranslatable);
+    return changesFromPatches(patches, before, after, isTranslatable, () => false);
 }
 
 describe('building the change set', () => {
@@ -86,7 +86,7 @@ describe('building the change set', () => {
 
         // Immer reports this as replacing index 1 and removing the last index.
         expect(patches.map((patch) => patch.op)).toEqual(['replace', 'remove']);
-        expect(changesFromPatches(patches, before, after, isTranslatable)).toEqual([{ op: 'remove_block', key: 'b' }]);
+        expect(changesFromPatches(patches, before, after, isTranslatable, () => false)).toEqual([{ op: 'remove_block', key: 'b' }]);
     });
 
     it('should send an added block with its parent and its index', () => {
@@ -189,9 +189,44 @@ describe('building the change set', () => {
         ]);
     });
 
-    it('should ignore changes outside the block tree', () => {
+    it("should turn an edit of a translation's field into a change of its value in its locale", () => {
         const changes = changesOf(entry(), (working) => {
             working.translations.en_US!.fields.title = 'About';
+        });
+
+        expect(changes).toEqual([{ op: 'set_entry_value', field: 'title', locale: 'en_US', value: 'About' }]);
+    });
+
+    it('should empty the fields of a translation taken away, so the entry has no translation there', () => {
+        const changes = changesOf(entry(), (working) => {
+            delete working.translations.en_US;
+        });
+
+        expect(changes).toEqual([
+            { op: 'set_entry_value', field: 'slug', locale: 'en_US', value: null },
+            { op: 'set_entry_value', field: 'title', locale: 'en_US', value: null },
+        ]);
+    });
+
+    it('should send a value of the entry that all translations share with no locale', () => {
+        const changes = changesOf({ ...entry(), fields: { noindex: false } }, (working) => {
+            working.fields.noindex = true;
+        });
+
+        expect(changes).toEqual([{ op: 'set_entry_value', field: 'noindex', locale: null, value: true }]);
+    });
+
+    it('should send every shared value of the entry that changed when its fields are replaced as a whole', () => {
+        const changes = changesOf({ ...entry(), fields: { noindex: true, featured: true } }, (working) => {
+            working.fields = { noindex: true, featured: false };
+        });
+
+        expect(changes).toEqual([{ op: 'set_entry_value', field: 'featured', locale: null, value: false }]);
+    });
+
+    it('should ignore changes outside the block tree, the translations and the entry\'s shared values', () => {
+        const changes = changesOf(entry(), (working) => {
+            working.createdAt = '2026-11-15T10:00:00Z';
         });
 
         expect(changes).toEqual([]);

@@ -67,6 +67,19 @@ final class ToggleHandlerTest extends TestCase
     /**
      * @test
      */
+    public function it_fits_true_and_false_and_nothing_else(): void
+    {
+        $handler = new ToggleHandler();
+
+        self::assertTrue($handler->fits(new Toggle(label: 'Full width'), true));
+        self::assertTrue($handler->fits(new Toggle(label: 'Full width'), false));
+        self::assertFalse($handler->fits(new Toggle(label: 'Full width'), 1));
+        self::assertFalse($handler->fits(new Toggle(label: 'Full width'), 'true'));
+    }
+
+    /**
+     * @test
+     */
     public function it_holds_no_references(): void
     {
         self::assertSame([], [...(new ToggleHandler())->references(new Toggle(label: 'Full width'), true)]);

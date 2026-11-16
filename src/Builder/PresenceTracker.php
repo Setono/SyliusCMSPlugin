@@ -7,7 +7,7 @@ namespace Setono\SyliusCMSPlugin\Builder;
 use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepositoryInterface;
-use Sylius\Component\Core\Model\AdminUserInterface;
+use Setono\SyliusCMSPlugin\Security\EditorName;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 final readonly class PresenceTracker implements PresenceTrackerInterface
@@ -29,7 +29,7 @@ final readonly class PresenceTracker implements PresenceTrackerInterface
         $now = $this->clock->now();
 
         $this->presences->removeSeenBefore($entry, $this->expiry($now));
-        $this->presences->see($entry, $editor->getUserIdentifier(), self::nameOf($editor), $now);
+        $this->presences->see($entry, $editor->getUserIdentifier(), EditorName::of($editor), $now);
     }
 
     public function others(EntryInterface $entry, UserInterface $editor): array
@@ -40,15 +40,5 @@ final readonly class PresenceTracker implements PresenceTrackerInterface
     private function expiry(\DateTimeImmutable $now): \DateTimeImmutable
     {
         return $now->modify('-' . self::TIMEOUT);
-    }
-
-    /**
-     * An admin user's full name, or else their identifier
-     */
-    private static function nameOf(UserInterface $editor): string
-    {
-        $name = $editor instanceof AdminUserInterface ? trim(sprintf('%s %s', $editor->getFirstName() ?? '', $editor->getLastName() ?? '')) : '';
-
-        return '' === $name ? $editor->getUserIdentifier() : $name;
     }
 }

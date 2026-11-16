@@ -13,10 +13,21 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\Clash;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\Merge;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetConditions;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryTranslated;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayout;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayoutTranslated;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayoutValue;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetShown;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
+use Setono\SyliusCMSPlugin\Json\ListedObject;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
  * Merging a save onto what colleagues saved since the builder's lock token. See "Saving" in docs/spec/publishing.md
@@ -413,9 +424,205 @@ final class ChangeSetMergerTest extends TestCase
     /**
      * @test
      */
+    public function it_applies_the_conditions_the_editor_set_last_when_both_set_them(): void
+    {
+        $mine = [new SetConditions(self::A, [['kind' => 'locale', 'negate' => true, 'params' => ['locales' => ['da_DK']]]])];
+
+        $merge = self::merge([new SetConditions(self::A, [])], $mine, self::tree(self::heading(self::A)));
+
+        self::assertEquals($mine, $merge->changeSet->changes);
+        self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_a_clash_instead_of_setting_conditions_on_a_block_a_colleague_deleted(): void
+    {
+        $merge = self::merge([new RemoveBlock(self::A)], [new SetConditions(self::A, [])], self::tree(self::heading(self::B)));
+
+        self::assertSame([], $merge->changeSet->changes);
+        self::assertSame([['kind' => 'deleted_block', 'key' => self::A]], self::clashes($merge));
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_a_clash_instead_of_deleting_a_block_a_colleague_set_conditions_on(): void
+    {
+        $merge = self::merge([new SetConditions(self::B, [])], [new RemoveBlock(self::A)], self::tree(self::heading(self::A, children: [self::heading(self::B)])));
+
+        self::assertSame([], $merge->changeSet->changes);
+        self::assertSame([['kind' => 'changed_block', 'key' => self::A]], self::clashes($merge));
+    }
+
+    /**
+     * @test
+     */
+    public function it_applies_entry_values_set_in_another_field_or_another_locale(): void
+    {
+        $mine = [new SetEntryValue('title', 'da_DK', 'Om os'), new SetEntryValue('slug', 'en_US', 'about')];
+
+        $merge = (new ChangeSetMerger())->merge(
+            new ChangeSet([new SetEntryValue('title', 'en_US', 'About us'), new SetEntryValue('slug', 'da_DK', 'om-os')]),
+            new ChangeSet($mine),
+            self::tree(),
+        );
+
+        self::assertEquals($mine, $merge->changeSet->changes);
+        self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_a_clash_instead_of_applying_an_entry_value_a_colleague_set_in_the_same_locale(): void
+    {
+        $same = new SetEntryValue('slug', 'da_DK', 'om-os');
+
+        $merge = (new ChangeSetMerger())->merge(
+            new ChangeSet([new SetEntryValue('title', 'da_DK', 'Om'), new SetEntryValue('title', 'da_DK', 'Om dem'), $same]),
+            new ChangeSet([new SetEntryValue('title', 'da_DK', 'Om os'), $same]),
+            self::tree(),
+        );
+
+        self::assertEquals([$same], $merge->changeSet->changes);
+        self::assertSame(
+            [['kind' => 'entry_value', 'field' => 'title', 'locale' => 'da_DK', 'mine' => 'Om os', 'theirs' => 'Om dem']],
+            array_map(static fn (Clash $clash): array => $clash->toArray(), $merge->clashes),
+        );
+    }
+
+    /**
+     * A switch is no text to lose: the editor's last wins, as for a block style
+     *
+     * @test
+     */
+    public function it_applies_the_shown_switch_the_editor_set_last_when_both_set_it(): void
+    {
+        $mine = new SetShown('da_DK', true);
+
+        $merge = (new ChangeSetMerger())->merge(new ChangeSet([new SetShown('da_DK', false)]), new ChangeSet([$mine]), self::tree());
+
+        self::assertEquals([$mine], $merge->changeSet->changes);
+        self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * Translation state isn't a value an editor types, so the editor's last wins, as for a style
+     *
+     * @test
+     */
+    public function it_applies_the_translation_state_the_editor_set_last_when_both_set_it(): void
+    {
+        $source = ['from' => 'en_US', 'fingerprint' => hash('sha256', '"Hello"')];
+        $mine = [new SetTranslated(self::A, 'text', 'da_DK', $source), new SetEntryTranslated('title', 'da_DK', $source)];
+
+        $merge = self::merge(
+            [new SetTranslated(self::A, 'text', 'da_DK', null), new SetEntryTranslated('title', 'da_DK', null)],
+            $mine,
+            self::tree(self::heading(self::A)),
+        );
+
+        self::assertEquals($mine, $merge->changeSet->changes);
+        self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_a_clash_instead_of_setting_the_translation_state_of_a_block_a_colleague_deleted(): void
+    {
+        $merge = self::merge([new RemoveBlock(self::A)], [new SetTranslated(self::A, 'text', 'da_DK', null)], self::tree(self::heading(self::B)));
+
+        self::assertSame([], $merge->changeSet->changes);
+        self::assertSame([['kind' => 'deleted_block', 'key' => self::A]], self::clashes($merge));
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_a_clash_instead_of_deleting_a_block_a_colleague_set_the_translation_state_in(): void
+    {
+        $merge = self::merge([new SetTranslated(self::B, 'text', 'da_DK', null)], [new RemoveBlock(self::A)], self::tree(self::heading(self::A, children: [self::heading(self::B)])));
+
+        self::assertSame([], $merge->changeSet->changes);
+        self::assertSame([['kind' => 'changed_block', 'key' => self::A]], self::clashes($merge));
+    }
+
+    /**
+     * A layout is a presentation choice, not text to lose: the editor's last wins, as for a block style, and so does a
+     * layout field's value, which presentation options are
+     *
+     * @test
+     */
+    public function it_applies_the_layout_and_the_layout_values_the_editor_set_last_when_both_set_them(): void
+    {
+        $mine = [
+            new SetLayout(new StoredLayout('landing', 1, ['tagline' => ['en_US' => 'Mine']])),
+            new SetLayoutValue('landing', 'tagline', 'da_DK', 'Min'),
+            new SetLayoutTranslated('landing', 'tagline', 'da_DK', null),
+        ];
+
+        $merge = self::merge(
+            [new SetLayout(new StoredLayout('landing', 1, ['tagline' => ['en_US' => 'Theirs']])), new SetLayoutValue('landing', 'tagline', 'da_DK', 'Deres')],
+            $mine,
+            new StoredTree(new StoredLayout('landing', 1, ['tagline' => ['en_US' => 'Theirs', 'da_DK' => 'Deres']]), []),
+        );
+
+        self::assertEquals($mine, $merge->changeSet->changes);
+        self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * A switch drops the values the new layout has no field for, so a value set in the layout before is dropped too
+     *
+     * @test
+     */
+    public function it_leaves_out_a_layout_value_set_in_a_layout_a_colleague_switched_away_from(): void
+    {
+        $merge = self::merge(
+            [new SetLayout(new StoredLayout('landing', 1))],
+            [new SetLayoutValue('standard', 'showTitle', null, false), new SetLayoutTranslated('standard', 'tagline', 'da_DK', null), new SetShown('da_DK', true)],
+            new StoredTree(new StoredLayout('landing', 1), []),
+        );
+
+        self::assertEquals([new SetShown('da_DK', true)], $merge->changeSet->changes, 'The changes after them are applied');
+        self::assertSame([], $merge->clashes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_applies_the_layout_values_the_editor_set_in_the_layout_they_switched_to(): void
+    {
+        $mine = [new SetLayout(new StoredLayout('standard', 1)), new SetLayoutValue('standard', 'showTitle', null, false)];
+
+        $merge = self::merge([new SetLayout(new StoredLayout('landing', 1))], $mine, new StoredTree(new StoredLayout('landing', 1), []));
+
+        self::assertEquals($mine, $merge->changeSet->changes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_out_a_layout_value_of_a_tree_without_a_layout(): void
+    {
+        $merge = self::merge([], [new SetLayoutValue('standard', 'showTitle', null, false)], self::tree());
+
+        self::assertSame([], $merge->changeSet->changes);
+    }
+
+    /**
+     * @test
+     */
     public function it_passes_a_change_it_does_not_know_on_for_the_applier_to_refuse(): void
     {
         $unknown = new class() implements Change {
+            public function toArray(StoredTreeSerializer $serializer): ListedObject
+            {
+                return new ListedObject([]);
+            }
         };
 
         $merge = self::merge([new SetValue(self::A, 'level', null, 'h2')], [$unknown], self::tree(self::heading(self::A)));

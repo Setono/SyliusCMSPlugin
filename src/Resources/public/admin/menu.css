@@ -1,0 +1,24 @@
+/*
+ * The Content badge in the Sylius admin menu, on every admin page: how many errors and warnings need attention.
+ * Admin\MainMenuListener puts the count and the worst severity on the item's link, because Sylius's menu template has
+ * no place for a badge, and this shows them as a Semantic UI label: red with an error, orange with only warnings.
+ * See "Navigation" in docs/spec/admin.md
+ */
+.sylius-admin-menu a[data-cms-problem-count]::after {
+    content: attr(data-cms-problem-count);
+    float: right;
+    min-width: 2em;
+    margin-left: 1em;
+    padding: 0.3em 0.6em;
+    border-radius: 0.28571429rem;
+    background-color: #f2711c;
+    color: #fff;
+    font-size: 0.85714286em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+}
+
+.sylius-admin-menu a[data-cms-problems="error"]::after {
+    background-color: #db2828;
+}

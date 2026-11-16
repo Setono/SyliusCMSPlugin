@@ -59,6 +59,17 @@
     color: var(--builder-color-warning);
 }
 
+.status[data-status="publishes_at_a_time"] {
+    background: var(--builder-color-selected);
+    color: var(--builder-color-accent);
+}
+
+.status[data-status="scheduled_publish_overdue"],
+.status[data-status="scheduled_publish_failed"] {
+    background: var(--builder-color-danger-subtle);
+    color: var(--builder-color-danger);
+}
+
 .channel {
     flex: 0 1 12rem;
     min-width: 0;
@@ -69,6 +80,46 @@
     background: var(--builder-color-surface);
     color: var(--builder-color-text);
     font: inherit;
+}
+
+.date {
+    display: flex;
+    flex: none;
+    align-items: center;
+    border: 1px solid var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-surface);
+}
+
+.dateInput {
+    min-height: calc(var(--builder-control-height) - 2px);
+    padding: 0 var(--builder-space-2);
+    border: 0;
+    border-radius: var(--builder-radius-sm) 0 0 var(--builder-radius-sm);
+    background: none;
+    color: var(--builder-color-text);
+    font: inherit;
+}
+
+.now {
+    min-height: calc(var(--builder-control-height) - 2px);
+    padding: 0 var(--builder-space-2);
+    border: 0;
+    border-left: 1px solid var(--builder-color-border-strong);
+    border-radius: 0 var(--builder-radius-sm) var(--builder-radius-sm) 0;
+    background: none;
+    color: var(--builder-color-text-muted);
+    font: inherit;
+    cursor: pointer;
+}
+
+.now:hover {
+    background: var(--builder-color-hover);
+}
+
+.now[aria-pressed="true"] {
+    background: var(--builder-color-selected);
+    color: var(--builder-color-accent);
 }
 
 .widths {
@@ -231,12 +282,95 @@
     opacity: 0.7;
 }
 
+/* Publish and its menu, as one split button */
+.split {
+    display: flex;
+    flex: none;
+}
+
+.split > .publishButton {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.publishMenuButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--builder-control-height);
+    min-height: var(--builder-control-height);
+    border: 0;
+    border-left: 1px solid var(--builder-color-accent-hover);
+    border-radius: 0 var(--builder-radius-sm) var(--builder-radius-sm) 0;
+    background: var(--builder-color-accent);
+    color: var(--builder-color-accent-text);
+    cursor: pointer;
+}
+
+.publishMenuButton:hover:not(:disabled) {
+    background: var(--builder-color-accent-hover);
+}
+
+.publishMenuButton:disabled {
+    cursor: progress;
+    opacity: 0.7;
+}
+
+/* Rendered in a portal at the end of the body, outside the shell, so it sets its own type and box model. */
+.schedule {
+    box-sizing: border-box;
+    width: var(--builder-popover-width);
+    max-width: calc(100vw - 2 * var(--builder-space-2));
+    padding: var(--builder-space-3);
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-surface);
+    box-shadow: var(--builder-shadow-popover);
+    color: var(--builder-color-text);
+    font-family: var(--builder-font-family);
+    font-size: var(--builder-font-size-md);
+    line-height: var(--builder-line-height);
+}
+
+.schedule *,
+.schedule *::before,
+.schedule *::after {
+    box-sizing: border-box;
+}
+
+.scheduleForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+    margin: 0;
+}
+
+.scheduleLabel {
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.scheduleInput {
+    min-height: var(--builder-control-height);
+    padding: 0 var(--builder-space-2);
+    border: 1px solid var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-surface);
+    color: var(--builder-color-text);
+    font: inherit;
+}
+
+.schedule .failed {
+    margin: 0;
+}
+
 .back:focus-visible,
 .discardButton:focus-visible,
 .channel:focus-visible,
 .width:focus-visible,
 .historyButton:focus-visible,
-.publishButton:focus-visible {
+.publishButton:focus-visible,
+.publishMenuButton:focus-visible,
+.scheduleInput:focus-visible {
     outline: 2px solid var(--builder-color-focus);
     outline-offset: 2px;
 }

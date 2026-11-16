@@ -4,6 +4,7 @@
     <services>
         <service id="Setono\SyliusCMSPlugin\Localization\FallbackChain" class="Setono\SyliusCMSPlugin\Localization\FallbackChain">
             <argument type="service" id="sylius.translation_locale_provider"/>
+            <argument>%setono_sylius_cms.fallback_locales%</argument>
         </service>
         <service id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface" alias="Setono\SyliusCMSPlugin\Localization\FallbackChain"/>
 
@@ -12,5 +13,15 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
         </service>
+
+        <!-- The locales of the store's channels, a channel's default first, which the admin offers translations in -->
+        <service id="Setono\SyliusCMSPlugin\Localization\ChannelLocales" class="Setono\SyliusCMSPlugin\Localization\ChannelLocales">
+            <argument type="service" id="sylius.repository.channel"/>
+
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
+        <!-- Whether an entry shows in a locale as far as its translations go, the rule the visible-entries query filters on in SQL -->
+        <service id="Setono\SyliusCMSPlugin\Localization\Availability" class="Setono\SyliusCMSPlugin\Localization\Availability"/>
     </services>
 </container>

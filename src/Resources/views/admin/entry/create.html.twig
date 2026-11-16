@@ -1,24 +1,28 @@
-{% extends '@SyliusAdmin/layout.html.twig' %}
+{#
+ # The create dialog's form as a page of its own, for a content type (`content_type`): where its URL leads without the
+ # dialog, and where a submit the server refuses lands. See "Create dialog" in docs/spec/admin.md
+ #}
+{% extends '@SetonoSyliusCMSPlugin/admin/layout.html.twig' %}
 
-{% form_theme form '@SyliusAdmin/Form/theme.html.twig' %}
+{% import '@SyliusUi/Macro/headers.html.twig' as headers %}
+{% import '@SyliusAdmin/Macro/breadcrumb.html.twig' as breadcrumb %}
 
 {% set heading = 'setono_sylius_cms.ui.new_entry'|trans({'%content_type%': content_type.label|trans}) %}
+{% set plural = 'setono_sylius_cms.content_type_plural.' ~ content_type.code %}
 
 {% block title %}{{ heading }} {{ parent() }}{% endblock %}
 
-{% block content %}
-    <h1 class="ui header">{{ heading }}</h1>
+{% block hub_content %}
+    {{ headers.default(heading, 'plus') }}
 
-    {{ form_start(form, {'attr': {'class': 'ui loadable form', 'novalidate': 'novalidate'}}) }}
-        <div class="ui segment">
-            {{ form_row(form.title) }}
-            {% if form.slug is defined %}
-                {{ form_row(form.slug) }}
-            {% endif %}
-        </div>
+    {{ breadcrumb.crumble([
+        { label: 'sylius.ui.administration'|trans, url: path('sylius_admin_dashboard') },
+        { label: 'setono_sylius_cms.ui.content'|trans, url: path('setono_sylius_cms_admin_overview') },
+        { label: plural|trans != plural ? plural|trans : content_type.label|trans, url: path('setono_sylius_cms_admin_entry_index', {'contentType': content_type.code}) },
+        { label: heading },
+    ]) }}
 
-        <button type="submit" class="ui labeled icon primary button">
-            <i class="plus icon"></i> {{ 'setono_sylius_cms.ui.create'|trans }}
-        </button>
-    {{ form_end(form) }}
+    <div class="ui segment">
+        {% include '@SetonoSyliusCMSPlugin/admin/entry/_create_form.html.twig' with {'with_heading': false} %}
+    </div>
 {% endblock %}

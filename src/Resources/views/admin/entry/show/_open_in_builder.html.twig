@@ -1,0 +1,7 @@
+{#
+ # The overview page's Open in builder, a block of setono_sylius_cms.admin.entry.show.header_actions. The builder's
+ # back button and Esc return here. See "Into and out of the builder" in docs/spec/admin.md
+ #}
+<a class="ui labeled icon primary button" href="{{ path('setono_sylius_cms_admin_builder', {'uuid': entry.uuid}) }}">
+    <i class="edit icon"></i> {{ 'setono_sylius_cms.ui.open_in_builder'|trans }}
+</a>

@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Model;
 
 use Doctrine\Common\Collections\Collection;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
+use Setono\SyliusCMSPlugin\Targeting\AudienceMode;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Resource\Model\ResourceInterface;
@@ -44,6 +45,18 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
     public function getLastPublishedAt(): ?\DateTimeImmutable;
 
     /**
+     * When it was last saved, in UTC: created, autosaved, discarded or its on-save settings saved. The admin shows it as "Last edited"
+     */
+    public function getLastEditedAt(): \DateTimeImmutable;
+
+    /**
+     * The name of the admin user who saved it last, or null when no one it knows did, such as for an entry made in code
+     */
+    public function getLastEditedBy(): ?string;
+
+    public function setLastEdited(\DateTimeImmutable $at, ?string $by): void;
+
+    /**
      * On for a new entry. Turning it off unpublishes the entry and keeps its published content. An on-save setting
      */
     public function isEnabled(): bool;
@@ -65,16 +78,48 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
     public function getChannelCodes(): array;
 
     /**
-     * @param iterable<string> $codes
+     * Its channel rows. Change them through ChannelsAndAudienceModifierInterface, which creates rows through the
+     * entry_channel resource's factory
+     *
+     * @return Collection<array-key, EntryChannelInterface>
      */
-    public function setChannelCodes(iterable $codes): void;
+    public function getChannels(): Collection;
+
+    public function hasChannel(EntryChannelInterface $channel): bool;
+
+    /**
+     * @throws \LogicException when the row belongs to another entry
+     */
+    public function addChannel(EntryChannelInterface $channel): void;
+
+    public function removeChannel(EntryChannelInterface $channel): void;
 
     /**
      * The customers it shows to. An on-save setting (ADR 0010)
      */
     public function getAudience(): Audience;
 
-    public function setAudience(Audience $audience): void;
+    /**
+     * Change the audience through ChannelsAndAudienceModifierInterface, which changes the mode and the groups together
+     */
+    public function setAudienceMode(AudienceMode $mode): void;
+
+    /**
+     * The rows of the groups its audience mode applies to. Change them through ChannelsAndAudienceModifierInterface,
+     * which creates rows through the entry_audience_group resource's factory
+     *
+     * @return Collection<array-key, EntryAudienceGroupInterface>
+     */
+    public function getAudienceGroups(): Collection;
+
+    public function hasAudienceGroup(EntryAudienceGroupInterface $group): bool;
+
+    /**
+     * @throws \LogicException when the row belongs to another entry
+     */
+    public function addAudienceGroup(EntryAudienceGroupInterface $group): void;
+
+    public function removeAudienceGroup(EntryAudienceGroupInterface $group): void;
 
     public function isPublished(): bool;
 
@@ -96,6 +141,14 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
      * The block tree as it's stored: canonical JSON
      */
     public function getBlockTreeJson(): string;
+
+    /**
+     * "Hide from search engines", for a content type with its own URL: the head tags then ask crawlers not to index its
+     * pages. Shared by all translations, and drafted. See "SEO fields" in docs/spec/urls-and-seo.md
+     */
+    public function isNoindex(): bool;
+
+    public function setNoindex(bool $noindex): void;
 
     /**
      * The title in the current locale

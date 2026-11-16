@@ -2,22 +2,32 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <imports>
+        <import resource="services/admin.xml"/>
         <import resource="services/block_type.xml"/>
         <import resource="services/builder.xml"/>
         <import resource="services/command.xml"/>
+        <import resource="services/condition.xml"/>
         <import resource="services/controller.xml"/>
         <import resource="services/doctrine.xml"/>
         <import resource="services/field.xml"/>
         <import resource="services/form.xml"/>
+        <import resource="services/homepage.xml"/>
+        <import resource="services/layout.xml"/>
         <import resource="services/localization.xml"/>
         <import resource="services/preview.xml"/>
+        <import resource="services/problem.xml"/>
         <import resource="services/publishing.xml"/>
         <import resource="services/query.xml"/>
         <import resource="services/registry.xml"/>
         <import resource="services/rendering.xml"/>
+        <import resource="services/revision.xml"/>
         <import resource="services/rich_text.xml"/>
         <import resource="services/routing.xml"/>
         <import resource="services/security.xml"/>
+        <import resource="services/seo.xml"/>
+        <import resource="services/share_link.xml"/>
+        <import resource="services/targeting.xml"/>
+        <import resource="services/translation.xml"/>
         <import resource="services/twig.xml"/>
         <import resource="services/upgrade.xml"/>
         <import resource="services/validation.xml"/>

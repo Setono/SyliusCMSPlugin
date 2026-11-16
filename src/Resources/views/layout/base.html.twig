@@ -1,11 +1,22 @@
 {#
  # Every layout template extends this one (docs/spec/extending.md#layout-templates). It gets:
  #   entry    the entry being shown
- #   layout   the hydrated layout object (null until the layout machinery arrives)
+ #   layout   the hydrated layout object, whose properties are its fields
  #   blocks   the visible top-level blocks, as BlockViews: render them with cms_blocks(blocks)
  #   context  the host-page context: {entry: entry}
+ #
+ # It fills the shop layout's title block with the entry's meta title, and its metatags block with the entry's head
+ # tags: the meta description, robots, the canonical URL and the hreflang links. No Open Graph tags
+ # (docs/spec/urls-and-seo.md#head-tags). A layout that overrides either block calls the same function
  #}
 {% extends '@SyliusShop/layout.html.twig' %}
+
+{% block title %}{{ cms_meta_title(entry) }}{% endblock %}
+
+{% block metatags %}
+    {{ parent() }}
+    {{ cms_head_tags(entry) }}
+{% endblock %}
 
 {% block content %}
     {% block cms_content %}{% endblock %}

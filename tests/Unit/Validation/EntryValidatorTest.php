@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Validation;
 
 use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
+use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
@@ -22,6 +25,7 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\LandingTranslation;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Validation\BlockTreeValidator;
+use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
 use Setono\SyliusCMSPlugin\Validation\EntryValidator;
 use Setono\SyliusCMSPlugin\Validation\FieldValidator;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
@@ -33,6 +37,15 @@ final class EntryValidatorTest extends TestCase
     use ProphecyTrait;
 
     private const KEY = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f';
+
+    /** @var ObjectProphecy<EntryUrlValidatorInterface> */
+    private ObjectProphecy $urlValidator;
+
+    protected function setUp(): void
+    {
+        $this->urlValidator = $this->prophesize(EntryUrlValidatorInterface::class);
+        $this->urlValidator->validate(Argument::any())->willReturn([]);
+    }
 
     /**
      * @test
@@ -86,6 +99,7 @@ final class EntryValidatorTest extends TestCase
         self::translation($entry, 'en_US')->headline = 'A headline far too long';
         // Danish falls back to the English headline, and has a tone of its own
         self::translation($entry, 'da_DK')->tone = 'shouty';
+        self::translation($entry, 'da_DK')->setTitle('Vintersalg');
 
         self::assertEquals(
             [
@@ -114,6 +128,41 @@ final class EntryValidatorTest extends TestCase
     public function it_finds_no_errors_in_a_valid_entry(): void
     {
         self::assertSame([], $this->validator()->validate(self::validEntry()));
+    }
+
+    /**
+     * @test
+     */
+    public function it_checks_the_entrys_urls_after_its_fields_and_before_its_tree(): void
+    {
+        $entry = self::validEntry();
+        $entry->setSubtitle('A subtitle far too long');
+        $entry->setBlockTree(new StoredTree(null, [new StoredBlock(self::KEY, 'heading', 1)]));
+        $slugError = new ValidationError(null, 'slug', 'en_US', 'The URL /en_US/landing/cart is taken by the route sylius_shop_cart_summary.');
+        $this->urlValidator->validate($entry)->willReturn([$slugError]);
+
+        self::assertEquals(
+            [
+                new ValidationError(null, 'subtitle', null, 'This value is too long. It should have 10 characters or less.'),
+                $slugError,
+                new ValidationError(self::KEY, 'text', 'en_US', 'This field is required.'),
+            ],
+            $this->validator()->validate($entry),
+        );
+    }
+
+    /**
+     * A translation without a title is no translation, such as one whose adding was undone in the builder
+     *
+     * @test
+     */
+    public function it_leaves_out_a_translation_without_a_title_when_another_has_one(): void
+    {
+        $entry = self::validEntry();
+        self::translation($entry, 'da_DK')->tone = 'shouty';
+        $entry->setBlockTree(new StoredTree(null, [new StoredBlock(self::KEY, 'heading', 1, fields: ['text' => ['en_US' => 'Hello', 'da_DK' => 42]])]));
+
+        self::assertSame([], $this->validator()->validate($entry));
     }
 
     private static function validEntry(): Landing
@@ -164,6 +213,8 @@ final class EntryValidatorTest extends TestCase
             new FieldReader(),
             $contentTypes,
             $validator,
+            $this->urlValidator->reveal(),
+            new Availability(),
         );
     }
 }

@@ -40,6 +40,15 @@ abstract class Entry implements EntryInterface
 
     protected ?\DateTimeImmutable $lastPublishedAt = null;
 
+    /** In UTC. Every save records it, for the admin's "Last edited" */
+    protected \DateTimeImmutable $lastEditedAt;
+
+    /** The name of the admin user who saved last, or null when no one it knows did */
+    protected ?string $lastEditedBy = null;
+
+    /** "Hide from search engines", for a content type with its own URL. Shared by all translations, and drafted */
+    protected bool $noindex = false;
+
     /*
      * The on-save settings, which take effect outside the draft (docs/spec/content-model.md#whats-drafted-and-what-takes-effect-on-save).
      * They're columns and rows beside the entry, so the visible-entries query filters on them in SQL
@@ -53,14 +62,26 @@ abstract class Entry implements EntryInterface
     /** In UTC */
     protected ?\DateTimeImmutable $showUntil = null;
 
-    /** @var Collection<array-key, EntryChannel> */
+    /** @var Collection<array-key, EntryChannelInterface> */
     protected Collection $channels;
 
     /** @see AudienceMode */
     protected string $audienceMode = 'everyone';
 
-    /** @var Collection<array-key, EntryAudienceGroup> */
+    /** @var Collection<array-key, EntryAudienceGroupInterface> */
     protected Collection $audienceGroups;
+
+    /*
+     * How many errors and warnings the working copy has, and the fingerprint of the code they were counted with, or
+     * null until they're counted. They're written and read in SQL (Problem\ProblemCountUpdater and
+     * Problem\ProblemCountProvider), never through the entry, so what an entry holds here can be out of date
+     */
+
+    protected int $problemErrors = 0;
+
+    protected int $problemWarnings = 0;
+
+    protected ?string $problemsCountedWith = null;
 
     public function __construct()
     {
@@ -69,7 +90,7 @@ abstract class Entry implements EntryInterface
         $this->audienceGroups = new ArrayCollection();
 
         $this->uuid = Uuid::v7()->toRfc4122();
-        $this->createdAt = $this->changedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $this->createdAt = $this->changedAt = $this->lastEditedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $this->setBlockTree(new StoredTree(null, []));
     }
 
@@ -88,13 +109,11 @@ abstract class Entry implements EntryInterface
             $this->addTranslation(clone $translation);
         }
 
-        // The rows belong to the original, so the copy gets rows of its own
-        $channelCodes = $this->getChannelCodes();
-        $audience = $this->getAudience();
-        $this->channels = new ArrayCollection();
-        $this->audienceGroups = new ArrayCollection();
-        $this->setChannelCodes($channelCodes);
-        $this->setAudience($audience);
+        // The copy reads the original's rows through collections of its own, so changing the copy's channels or audience
+        // leaves the original's alone. A row never changes, and a model can't reach the factories that create new ones.
+        // So the working copy keeps the original's rows, whose getEntry() is the original, not the copy
+        $this->channels = new ArrayCollection($this->channels->toArray());
+        $this->audienceGroups = new ArrayCollection($this->audienceGroups->toArray());
     }
 
     public function getId(): ?int
@@ -137,6 +156,22 @@ abstract class Entry implements EntryInterface
         $this->changedAt = $changedAt;
     }
 
+    public function getLastEditedAt(): \DateTimeImmutable
+    {
+        return UtcColumn::read($this->lastEditedAt);
+    }
+
+    public function getLastEditedBy(): ?string
+    {
+        return $this->lastEditedBy;
+    }
+
+    public function setLastEdited(\DateTimeImmutable $at, ?string $by): void
+    {
+        $this->lastEditedAt = $at->setTimezone(new \DateTimeZone('UTC'));
+        $this->lastEditedBy = $by;
+    }
+
     public function isEnabled(): bool
     {
         return $this->enabled;
@@ -149,7 +184,7 @@ abstract class Entry implements EntryInterface
 
     public function getDateWindow(): DateWindow
     {
-        return new DateWindow(self::readUtc($this->showFrom), self::readUtc($this->showUntil));
+        return new DateWindow(UtcColumn::read($this->showFrom), UtcColumn::read($this->showUntil));
     }
 
     public function setDateWindow(DateWindow $dateWindow): void
@@ -163,19 +198,30 @@ abstract class Entry implements EntryInterface
         return self::codes($this->channels);
     }
 
-    public function setChannelCodes(iterable $codes): void
+    public function getChannels(): Collection
     {
-        $codes = array_unique([...$codes]);
+        return $this->channels;
+    }
 
-        foreach ($this->channels as $channel) {
-            if (!in_array($channel->getCode(), $codes, true)) {
-                $this->channels->removeElement($channel);
-            }
+    public function hasChannel(EntryChannelInterface $channel): bool
+    {
+        return $this->channels->contains($channel);
+    }
+
+    public function addChannel(EntryChannelInterface $channel): void
+    {
+        if ($this !== $channel->getEntry()) {
+            throw new \LogicException(sprintf('The channel row %s belongs to another entry', $channel->getCode()));
         }
 
-        foreach (array_diff($codes, $this->getChannelCodes()) as $code) {
-            $this->channels->add(new EntryChannel($this, $code));
+        if (!$this->hasChannel($channel)) {
+            $this->channels->add($channel);
         }
+    }
+
+    public function removeChannel(EntryChannelInterface $channel): void
+    {
+        $this->channels->removeElement($channel);
     }
 
     public function getAudience(): Audience
@@ -183,19 +229,35 @@ abstract class Entry implements EntryInterface
         return new Audience(AudienceMode::from($this->audienceMode), self::codes($this->audienceGroups));
     }
 
-    public function setAudience(Audience $audience): void
+    public function setAudienceMode(AudienceMode $mode): void
     {
-        $this->audienceMode = $audience->mode->value;
+        $this->audienceMode = $mode->value;
+    }
 
-        foreach ($this->audienceGroups as $group) {
-            if (!in_array($group->getCode(), $audience->groups, true)) {
-                $this->audienceGroups->removeElement($group);
-            }
+    public function getAudienceGroups(): Collection
+    {
+        return $this->audienceGroups;
+    }
+
+    public function hasAudienceGroup(EntryAudienceGroupInterface $group): bool
+    {
+        return $this->audienceGroups->contains($group);
+    }
+
+    public function addAudienceGroup(EntryAudienceGroupInterface $group): void
+    {
+        if ($this !== $group->getEntry()) {
+            throw new \LogicException(sprintf('The audience group row %s belongs to another entry', $group->getCode()));
         }
 
-        foreach (array_diff($audience->groups, self::codes($this->audienceGroups)) as $code) {
-            $this->audienceGroups->add(new EntryAudienceGroup($this, $code));
+        if (!$this->hasAudienceGroup($group)) {
+            $this->audienceGroups->add($group);
         }
+    }
+
+    public function removeAudienceGroup(EntryAudienceGroupInterface $group): void
+    {
+        $this->audienceGroups->removeElement($group);
     }
 
     public function getBlockTree(): StoredTree
@@ -211,6 +273,16 @@ abstract class Entry implements EntryInterface
     public function getBlockTreeJson(): string
     {
         return $this->blockTree;
+    }
+
+    public function isNoindex(): bool
+    {
+        return $this->noindex;
+    }
+
+    public function setNoindex(bool $noindex): void
+    {
+        $this->noindex = $noindex;
     }
 
     public function getTitle(): ?string
@@ -259,13 +331,5 @@ abstract class Entry implements EntryInterface
         sort($codes, \SORT_STRING);
 
         return $codes;
-    }
-
-    /**
-     * The date window columns hold UTC, but Doctrine hydrates them in PHP's default time zone
-     */
-    private static function readUtc(?\DateTimeImmutable $column): ?\DateTimeImmutable
-    {
-        return null === $column ? null : new \DateTimeImmutable($column->format('Y-m-d H:i:s'), new \DateTimeZone('UTC'));
     }
 }

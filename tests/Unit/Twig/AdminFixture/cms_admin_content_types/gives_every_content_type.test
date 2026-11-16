@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_content_types() gives every content type, which the create dialog offers to pick from
+--TEMPLATE--
+{{ cms_admin_content_types()|map(contentType => contentType.code)|join(',') }}
+--DATA--
+return []
+--EXPECT--
+page,recipe

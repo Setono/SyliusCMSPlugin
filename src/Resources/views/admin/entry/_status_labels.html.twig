@@ -1,0 +1,6 @@
+{#
+ # An entry's status labels (StatusLabel), each rendered by @SetonoSyliusCMSPlugin/admin/status_label/<code>.html.twig
+ #}
+{% for label in labels %}
+    {% include '@SetonoSyliusCMSPlugin/admin/status_label/' ~ label.code ~ '.html.twig' with {'label': label} %}
+{% endfor %}

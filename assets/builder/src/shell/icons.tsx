@@ -84,6 +84,14 @@ export function ArrowUpIcon() {
     );
 }
 
+export function ChevronDownIcon() {
+    return (
+        <Icon>
+            <path d="m4 6 4 4 4-4" />
+        </Icon>
+    );
+}
+
 export function ArrowDownIcon() {
     return (
         <Icon>
@@ -109,6 +117,15 @@ export function GripIcon() {
 }
 
 /** Marks something that has errors. */
+export function EyeSlashIcon() {
+    return (
+        <Icon>
+            <path d="M2 2l12 12M6.6 3.7A6.6 6.6 0 0 1 8 3.5c3.5 0 5.8 3 6.5 4.5-.3.7-1 1.8-2 2.8M10.9 11.7A6.4 6.4 0 0 1 8 12.5C4.5 12.5 2.2 9.5 1.5 8c.4-.9 1.3-2.2 2.6-3.2" />
+            <path d="M6.6 6.6a2 2 0 0 0 2.8 2.8" />
+        </Icon>
+    );
+}
+
 export function AlertIcon() {
     return (
         <Icon>

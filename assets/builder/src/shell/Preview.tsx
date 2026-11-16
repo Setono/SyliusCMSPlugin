@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { envelope, openEnvelope, type FromBridge } from '../bridge/protocol';
-import { useBuilder, useBuilderState, usePreviewState } from '../context';
+import { useBuilder, useBuilderState, usePreviewState, useSettingsState } from '../context';
 import { useTranslator } from '../i18n';
+import { hasTranslation } from '../locales';
 import { createPreviewSync, type PreviewSync } from '../previewSync';
 import type { BlockSpot } from '../tree';
 import { BlockPickerAt, soleBlockType } from './BlockPicker';
 import styles from './Preview.module.css';
+import { ScheduleBanner } from './ScheduleBanner';
+import { TranslationBanner } from './TranslationBanner';
 
 type Frame = { state: 'waiting' } | { state: 'loaded'; url: string; version: number } | { state: 'failed' };
 
@@ -24,15 +27,22 @@ export interface PreviewProps {
 
 /**
  * The centre pane: the real shop page with the working copy, in an iframe from the admin's own host. It loads with a
- * new preview token when the channel or locale changes. Edits are patched into the page by the bridge in it, and the
- * page reloads only for what the bridge can't patch in.
+ * new preview token when the channel, the locale, Shown to or Date changes, or whether the page is the channel's
+ * homepage, which moves it to the channel's root. Edits are patched into the page by the bridge in it, and the
+ * page reloads only for what the bridge can't patch in. In a locale the entry has no translation in, a banner shows
+ * instead, because the entry has no page there.
  */
 export function Preview({ className, onOpenSettings }: PreviewProps) {
     const t = useTranslator();
-    const { store, createPreviewUrl, renderPreview } = useBuilder();
+    const { store, createPreviewUrl, renderPreview, leave } = useBuilder();
     const channel = usePreviewState((state) => state.channel);
     const width = usePreviewState((state) => state.width);
+    const shownTo = usePreviewState((state) => state.shownTo);
+    const date = usePreviewState((state) => state.date);
     const locale = useBuilderState((state) => state.locale);
+    const translated = useBuilderState((state) => hasTranslation(state.entry, state.locale));
+    // A page lives at its channel's root while it's the channel's homepage, so the preview moves when that changes
+    const homepage = useSettingsState((state) => channel !== null && state.settings.homepageOf.includes(channel));
     const [frame, setFrame] = useState<Frame>({ state: 'waiting' });
     const [reloads, setReloads] = useState(0);
     const [picker, setPicker] = useState<Picker | null>(null);
@@ -75,6 +85,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
                 setPicker({ spot, x: (box?.left ?? 0) + at.x, y: (box?.top ?? 0) + at.y });
             },
             openSettings: () => openSettings.current?.(),
+            leave,
         });
         sync.current = created;
 
@@ -82,17 +93,23 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
             created.dispose();
             sync.current = null;
         };
-    }, [store, renderPreview, t]);
+    }, [store, renderPreview, leave, t]);
 
     useEffect(() => {
         if (channel === null) {
             return undefined;
         }
 
-        let active = true;
         sync.current?.disconnect();
+        if (!translated) {
+            setFrame({ state: 'waiting' });
 
-        createPreviewUrl({ channel, locale }).then(
+            return undefined;
+        }
+
+        let active = true;
+
+        createPreviewUrl({ channel, locale, shownTo, date }).then(
             (url) => {
                 if (active) {
                     // A new version remounts the iframe, so it reloads even when the URL is the same.
@@ -109,7 +126,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
         return () => {
             active = false;
         };
-    }, [createPreviewUrl, channel, locale, reloads]);
+    }, [createPreviewUrl, channel, locale, shownTo, date, translated, homepage, reloads]);
 
     useEffect(() => {
         if (frame.state !== 'loaded') {
@@ -143,6 +160,8 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
 
     return (
         <main className={[className, styles.preview].filter(Boolean).join(' ')} data-width={width}>
+            <ScheduleBanner />
+            <TranslationBanner />
             {frame.state === 'loaded' && <iframe ref={iframe} key={frame.version} className={styles.frame} title={t('setono_sylius_cms.builder.preview')} src={frame.url} />}
             {frame.state === 'failed' && (
                 <p role="alert" className={styles.failed}>

@@ -1,0 +1,57 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Setono\SyliusCMSPlugin\Tests\UI;
+
+use Playwright\Assertions\Expect;
+use Playwright\Locator\LocatorInterface;
+use Playwright\Page\PageInterface as BrowserPage;
+
+/**
+ * The overview page's Where it shows grid, which says per channel and locale whether shoppers see the entry, and if
+ * they don't, why. See "Entry overview page" in docs/spec/admin.md
+ */
+final class WhereItShowsTest extends UITestCase
+{
+    /**
+     * @test
+     */
+    public function it_lets_an_admin_user_see_danish_held_back_switch_it_on_and_publish_and_then_see_both_live(): void
+    {
+        self::addLocales('WEB', 'da_DK');
+        $page = self::createPage('About us', 'about-us', 'Hello', published: true);
+        self::addTranslation($page, 'da_DK', 'Om os', 'om-os', false);
+        $this->signInAsAdmin();
+
+        $browser = $this->visit(sprintf('/admin/cms/entry/%s', $page->getUuid()));
+        Expect::locator($this->cell($browser, 'en_US'))->toContainText('Live');
+        Expect::locator($this->cell($browser, 'da_DK'))->toContainText('Held back');
+        Expect::locator($browser->getByRole('region', ['name' => 'Where it shows'])->locator('[data-audience]'))->toContainText('Everyone');
+        self::assertSame('held_back', $this->cell($browser, 'da_DK')->getAttribute('data-reason'));
+        Expect::locator($browser->locator('[data-overview-header] [data-status]'))->toContainText('Held back: Danish (Denmark)');
+
+        // Danish is switched on in the builder, which drafts it, so it shows once it's published
+        $browser->getByRole('link', ['name' => 'Open in builder'])->click();
+        $browser->getByRole('combobox', ['name' => 'Language'])->selectOption('da_DK');
+        $browser->getByRole('button', ['name' => 'Entry settings'])->click();
+        $browser->getByRole('checkbox', ['name' => 'Show in Danish (Denmark)'])->check();
+        Expect::locator($browser->getByRole('status'))->toHaveText('Saved');
+        $browser->getByRole('button', ['name' => 'Publish'])->click();
+        Expect::locator($browser->getByText('Published', ['exact' => true]))->toBeVisible();
+
+        $browser->getByRole('link', ['name' => 'Back'])->click();
+        Expect::locator($this->cell($browser, 'en_US'))->toContainText('Live');
+        Expect::locator($this->cell($browser, 'da_DK'))->toContainText('Live');
+        self::assertSame('live', $this->cell($browser, 'da_DK')->getAttribute('data-reason'));
+        Expect::locator($browser->locator('[data-overview-header] [data-status]'))->not()->toContainText('Held back');
+    }
+
+    /**
+     * The grid's cell of the channel WEB in a locale
+     */
+    private function cell(BrowserPage $browser, string $localeCode): LocatorInterface
+    {
+        return $browser->getByRole('region', ['name' => 'Where it shows'])->locator(sprintf('[data-channel="WEB"] td[data-locale="%s"]', $localeCode));
+    }
+}

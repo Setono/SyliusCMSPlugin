@@ -1,0 +1,37 @@
+{#
+ # Renders the hub's side menu (setono_sylius_cms.admin.hub) as a Semantic UI vertical menu. An item without a link is
+ # a section, shown with its items under its label when it has any. An item's "count" extra shows as a label
+ #}
+{% extends 'knp_menu.html.twig' %}
+
+{% block root %}
+    <nav class="ui vertical fluid menu" data-hub-menu aria-label="{{ 'setono_sylius_cms.ui.content'|trans }}">
+        {{ block('items') }}
+    </nav>
+{% endblock %}
+
+{% block items %}
+    {% for item in item.children|filter(child => child.displayed) %}
+        {{ block('item') }}
+    {% endfor %}
+{% endblock %}
+
+{% block item %}
+    {% if item.uri is empty %}
+        {% if item.hasChildren %}
+            <div class="item">
+                <div class="header">{{ item.label|trans }}</div>
+                <div class="menu">
+                    {{ block('items') }}
+                </div>
+            </div>
+        {% endif %}
+    {% else %}
+        {% set current = matcher.isCurrent(item) %}
+        <a class="item{% if current %} {{ options.currentClass }}{% endif %}" href="{{ item.uri }}"{% if current %} aria-current="page"{% endif %}>
+            {% if item.labelAttribute('icon') is not empty %}<i class="{{ item.labelAttribute('icon') }} icon"></i>{% endif %}
+            {{ item.label|trans }}
+            {% if item.extra('count') is not null %}<div class="ui small label">{{ item.extra('count') }}</div>{% endif %}
+        </a>
+    {% endif %}
+{% endblock %}

@@ -17,14 +17,29 @@
             <!-- Replaced by RegisterLayoutsPass with the layout classes by content type and code -->
             <argument type="collection"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\FieldReader"/>
+            <argument>%setono_sylius_cms.default_layouts%</argument>
+            <argument>%setono_sylius_cms.disabled.layouts%</argument>
         </service>
         <service id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\LayoutRegistry"/>
 
         <service id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry" class="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry">
-            <!-- Replaced by RegisterContentTypesPass with the content types' resources by code -->
+            <!-- Replaced by RegisterContentTypesPass with the content types' resources, and the URL prefixes set in config, by code -->
             <argument type="collection"/>
+            <argument type="collection"/>
+
+            <!-- The condition of the setono_sylius_cms_admin_entry_index route calls it as service('setono_sylius_cms_content_types') -->
+            <tag name="routing.condition_service" alias="setono_sylius_cms_content_types"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry"/>
+
+        <service id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistry" class="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistry">
+            <!-- Replaced by RegisterConditionKindsPass with the condition kind classes by code -->
+            <argument type="collection"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\FieldReader"/>
+            <!-- Replaced by RegisterConditionKindsPass with a locator of the condition kinds by code -->
+            <argument type="collection"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistry"/>
 
         <service id="Setono\SyliusCMSPlugin\Registry\NestingRules" class="Setono\SyliusCMSPlugin\Registry\NestingRules">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>

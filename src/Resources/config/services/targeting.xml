@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- Everything that changes an entry's channels or audience goes through it -->
+        <service id="Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifier" class="Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifier">
+            <argument type="service" id="setono_sylius_cms.factory.entry_channel"/>
+            <argument type="service" id="setono_sylius_cms.factory.entry_audience_group"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface" alias="Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifier"/>
+
+        <!-- What the channel, locale and customer group conditions pick from, as Choice fields' choices providers -->
+        <service id="Setono\SyliusCMSPlugin\Targeting\ChannelChoicesProvider" class="Setono\SyliusCMSPlugin\Targeting\ChannelChoicesProvider">
+            <argument type="service" id="sylius.repository.channel"/>
+
+            <tag name="setono_sylius_cms.choices_provider"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Targeting\LocaleChoicesProvider" class="Setono\SyliusCMSPlugin\Targeting\LocaleChoicesProvider">
+            <argument type="service" id="sylius.repository.locale"/>
+
+            <tag name="setono_sylius_cms.choices_provider"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Targeting\CustomerGroupChoicesProvider" class="Setono\SyliusCMSPlugin\Targeting\CustomerGroupChoicesProvider">
+            <argument type="service" id="sylius.repository.customer_group"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="setono_sylius_cms.choices_provider"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+    </services>
+</container>

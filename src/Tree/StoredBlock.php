@@ -9,6 +9,8 @@ namespace Setono\SyliusCMSPlugin\Tree;
  */
 final class StoredBlock
 {
+    use StoredValuesTrait;
+
     /**
      * @param array<string, mixed> $fields field name => value; a translatable field's value is a map of locale code => value
      * @param array<string, mixed> $translated field name => locale code => translation state
@@ -33,42 +35,6 @@ final class StoredBlock
     public function __clone()
     {
         $this->children = array_map(static fn (StoredBlock $child): StoredBlock => clone $child, $this->children);
-    }
-
-    /**
-     * Sets a field's value, for one locale when $localeCode is given. A null or empty string value removes it,
-     * because a field with no value is left out
-     */
-    public function setValue(string $field, ?string $localeCode, mixed $value): void
-    {
-        $isEmpty = null === $value || '' === $value;
-
-        if (null === $localeCode) {
-            if ($isEmpty) {
-                unset($this->fields[$field]);
-            } else {
-                $this->fields[$field] = $value;
-            }
-
-            return;
-        }
-
-        $values = $this->fields[$field] ?? [];
-        if (!is_array($values)) {
-            $values = [];
-        }
-
-        if ($isEmpty) {
-            unset($values[$localeCode]);
-        } else {
-            $values[$localeCode] = $value;
-        }
-
-        if ([] === $values) {
-            unset($this->fields[$field]);
-        } else {
-            $this->fields[$field] = $values;
-        }
     }
 
     /**

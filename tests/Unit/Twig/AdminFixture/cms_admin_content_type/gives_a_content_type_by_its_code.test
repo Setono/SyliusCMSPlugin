@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_content_type() gives a content type by its code
+--TEMPLATE--
+{{ cms_admin_content_type('page').label }}
+--DATA--
+return []
+--EXPECT--
+setono_sylius_cms.content_type.page

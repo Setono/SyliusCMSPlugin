@@ -6,7 +6,6 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Query;
 
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface;
 use Setono\SyliusCMSPlugin\Registry\UnknownContentTypeException;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
@@ -106,15 +105,50 @@ final class VisibleEntriesQueryTest extends KernelTestCase
     {
         self::createPage('English only', 'english-only', published: true);
         $both = self::createPage('English and Danish', 'english-and-danish', published: true);
-        self::save($both, static function (PageInterface $page): void {
-            $danish = new PageTranslation();
-            $danish->setLocale('da_DK');
-            $danish->setTitle('Engelsk og dansk');
-            $page->addTranslation($danish);
-        });
+        self::addTranslation($both, 'da_DK', 'Engelsk og dansk');
 
         self::assertSame(['English and Danish', 'English only'], self::visibleTitles(self::context()));
         self::assertSame(['English and Danish'], self::visibleTitles(self::context(localeCode: 'da_DK')));
+    }
+
+    /**
+     * An entry has a translation in a locale once that translation has a title. See "Which locales an entry has" in
+     * docs/spec/localization.md
+     *
+     * @test
+     *
+     * @dataProvider provideTitlesThatAreNone
+     */
+    public function it_leaves_out_an_entry_whose_translation_in_the_locale_has_no_title(?string $title): void
+    {
+        $page = self::createPage('English and Danish', 'english-and-danish', published: true);
+        self::addTranslation($page, 'da_DK', $title, 'engelsk-og-dansk');
+
+        self::assertSame([], self::visibleTitles(self::context(localeCode: 'da_DK')));
+    }
+
+    /**
+     * @return iterable<string, array{string|null}>
+     */
+    public static function provideTitlesThatAreNone(): iterable
+    {
+        yield 'no title' => [null];
+        yield 'an empty title' => [''];
+    }
+
+    /**
+     * A held-back translation counts as missing, and the entry never falls back to another locale.
+     * See "Held-back translations" in docs/spec/publishing.md
+     *
+     * @test
+     */
+    public function it_leaves_out_an_entry_whose_translation_in_the_locale_is_held_back(): void
+    {
+        $page = self::createPage('English and Danish', 'english-and-danish', published: true);
+        self::addTranslation($page, 'da_DK', 'Engelsk og dansk', shown: false);
+
+        self::assertSame([], self::visibleTitles(self::context(localeCode: 'da_DK')));
+        self::assertSame(['English and Danish'], self::visibleTitles(self::context()));
     }
 
     /**
@@ -123,11 +157,11 @@ final class VisibleEntriesQueryTest extends KernelTestCase
     public function it_keeps_only_the_entries_whose_audience_allows_the_shopper(): void
     {
         self::createPage('Everyone', 'everyone', published: true);
-        self::save(self::createPage('Only wholesale', 'only-wholesale', published: true), static fn (PageInterface $page) => $page->setAudience(Audience::only('wholesale')));
-        self::save(self::createPage('Only guests', 'only-guests', published: true), static fn (PageInterface $page) => $page->setAudience(Audience::only('@guest')));
-        self::save(self::createPage('Only without a group', 'only-without-a-group', published: true), static fn (PageInterface $page) => $page->setAudience(Audience::only('@no_group')));
-        self::save(self::createPage('Except wholesale and guests', 'except-wholesale-and-guests', published: true), static fn (PageInterface $page) => $page->setAudience(Audience::except('wholesale', '@guest')));
-        self::save(self::createPage('Only nobody', 'only-nobody', published: true), static fn (PageInterface $page) => $page->setAudience(Audience::only()));
+        self::save(self::createPage('Only wholesale', 'only-wholesale', published: true), static fn (PageInterface $page) => self::channelsAndAudience()->setAudience($page, Audience::only('wholesale')));
+        self::save(self::createPage('Only guests', 'only-guests', published: true), static fn (PageInterface $page) => self::channelsAndAudience()->setAudience($page, Audience::only('@guest')));
+        self::save(self::createPage('Only without a group', 'only-without-a-group', published: true), static fn (PageInterface $page) => self::channelsAndAudience()->setAudience($page, Audience::only('@no_group')));
+        self::save(self::createPage('Except wholesale and guests', 'except-wholesale-and-guests', published: true), static fn (PageInterface $page) => self::channelsAndAudience()->setAudience($page, Audience::except('wholesale', '@guest')));
+        self::save(self::createPage('Only nobody', 'only-nobody', published: true), static fn (PageInterface $page) => self::channelsAndAudience()->setAudience($page, Audience::only()));
 
         self::assertSame(['Everyone', 'Only guests'], self::visibleTitles(self::context(customerGroup: '@guest')));
         self::assertSame(['Everyone', 'Except wholesale and guests', 'Only without a group'], self::visibleTitles(self::context(customerGroup: '@no_group')));
@@ -142,8 +176,8 @@ final class VisibleEntriesQueryTest extends KernelTestCase
      */
     public function it_matches_nobody_with_a_deleted_customer_groups_code_in_an_audience(): void
     {
-        self::save(self::createPage('Only a deleted group', 'only-deleted', published: true), static fn (PageInterface $page) => $page->setAudience(Audience::only('deleted_group')));
-        self::save(self::createPage('Except a deleted group', 'except-deleted', published: true), static fn (PageInterface $page) => $page->setAudience(Audience::except('deleted_group')));
+        self::save(self::createPage('Only a deleted group', 'only-deleted', published: true), static fn (PageInterface $page) => self::channelsAndAudience()->setAudience($page, Audience::only('deleted_group')));
+        self::save(self::createPage('Except a deleted group', 'except-deleted', published: true), static fn (PageInterface $page) => self::channelsAndAudience()->setAudience($page, Audience::except('deleted_group')));
 
         foreach (['@guest', '@no_group', 'wholesale'] as $customerGroup) {
             self::assertSame(['Except a deleted group'], self::visibleTitles(self::context(customerGroup: $customerGroup)), $customerGroup);

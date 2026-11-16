@@ -12,8 +12,8 @@ use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
 /**
- * Turns a stored block into its block type object, whose properties hold hydrated values in the current locale.
- * See "Hydration" in docs/spec/rendering.md
+ * Turns a stored block into its block type object, and a tree's layout into its layout object, whose properties hold
+ * hydrated values in the current locale. See "Hydration" in docs/spec/rendering.md
  */
 final readonly class BlockHydrator
 {
@@ -25,12 +25,24 @@ final readonly class BlockHydrator
 
     public function hydrate(BlockTypeMetadata $blockType, StoredBlock $block, RenderContext $context): object
     {
-        $class = $blockType->class;
+        return $this->hydrateObject($blockType->class, $blockType->fields, $block->fields, $context);
+    }
+
+    /**
+     * Turns stored field values into an object of the class, whose properties hold them hydrated in the current locale:
+     * a block type's, or a layout's, whose values are stored the same way
+     *
+     * @param class-string $class
+     * @param array<string, FieldMetadata> $fields
+     * @param array<string, mixed> $values the stored values by field: a translatable field's by locale
+     */
+    public function hydrateObject(string $class, array $fields, array $values, RenderContext $context): object
+    {
         $object = new $class();
         $hydrationContext = new HydrationContext($context);
 
-        foreach ($blockType->fields as $name => $field) {
-            $hydrated = $this->hydrateField($field, $block->fields[$name] ?? null, $context->localeCode, $hydrationContext);
+        foreach ($fields as $name => $field) {
+            $hydrated = $this->hydrateField($field, $values[$name] ?? null, $context->localeCode, $hydrationContext);
             if (null === $hydrated) {
                 continue;
             }

@@ -1,4 +1,6 @@
 import { ChoiceControl } from './ChoiceControl';
+import { DateControl } from './DateControl';
+import { DateTimeControl } from './DateTimeControl';
 import { RichTextControl } from './RichTextControl';
 import { TextareaControl } from './TextareaControl';
 import { TextControl } from './TextControl';
@@ -12,6 +14,8 @@ export const fieldControls: Readonly<Record<string, FieldControl>> = {
     rich_text: RichTextControl,
     choice: ChoiceControl,
     toggle: ToggleControl,
+    date: DateControl,
+    date_time: DateTimeControl,
 };
 
 export function controlFor(fieldType: string): FieldControl | undefined {

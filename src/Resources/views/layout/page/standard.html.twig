@@ -1,7 +1,13 @@
+{#
+ # Page's Standard layout (Setono\SyliusCMSPlugin\Layout\Page\Standard): the title, unless Show title is off, then the
+ # tree edge to edge, with no container of its own. See "Shipped layouts" in docs/spec/layouts-and-presets.md
+ #}
 {% extends '@SetonoSyliusCMSPlugin/layout/base.html.twig' %}
 
 {% block cms_content %}
-    <h1>{{ entry.title }}</h1>
+    {% if layout.showTitle %}
+        <h1>{{ cms_field(entry, 'title') }}</h1>
+    {% endif %}
 
     <div class="cms-tree">
         {{ cms_blocks(blocks) }}

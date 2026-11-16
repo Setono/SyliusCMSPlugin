@@ -8,17 +8,26 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
+use Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer;
+use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Revision;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Rendering\EntryUrlMatch;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
+use Setono\SyliusCMSPlugin\Revision\RevisionReader;
+use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
+use Setono\SyliusCMSPlugin\Upgrade\Upgraded;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -34,6 +43,9 @@ final class PreviewedEntryProviderTest extends TestCase
 
     /** @var ObjectProphecy<WorkingCopyProviderInterface> */
     private ObjectProphecy $workingCopyProvider;
+
+    /** @var ObjectProphecy<RevisionRepositoryInterface> */
+    private ObjectProphecy $revisionRepository;
 
     private Page $entry;
 
@@ -53,6 +65,7 @@ final class PreviewedEntryProviderTest extends TestCase
         $this->entryRepository->findOneByUuid($this->entry->getUuid())->willReturn($this->entry);
         $this->workingCopyProvider = $this->prophesize(WorkingCopyProviderInterface::class);
         $this->workingCopyProvider->getWorkingCopy($this->entry)->willReturn($this->workingCopy);
+        $this->revisionRepository = $this->prophesize(RevisionRepositoryInterface::class);
     }
 
     /**
@@ -62,7 +75,7 @@ final class PreviewedEntryProviderTest extends TestCase
     {
         $this->previewing($this->entry->getUuid(), 'en_US');
 
-        self::assertSame($this->workingCopy, $this->provider()->getWorkingCopy('en_US'));
+        self::assertSame($this->workingCopy, $this->provider()->getPreviewedContent('en_US'));
     }
 
     /**
@@ -72,7 +85,7 @@ final class PreviewedEntryProviderTest extends TestCase
     {
         $this->previewing($this->entry->getUuid(), 'en_US');
 
-        self::assertNull($this->provider()->getWorkingCopy('da_DK'));
+        self::assertNull($this->provider()->getPreviewedContent('da_DK'));
     }
 
     /**
@@ -83,7 +96,7 @@ final class PreviewedEntryProviderTest extends TestCase
         $this->requestStack->push(new Request());
         $this->entryRepository->findOneByUuid(Argument::any())->shouldNotBeCalled();
 
-        self::assertNull($this->provider()->getWorkingCopy('en_US'));
+        self::assertNull($this->provider()->getPreviewedContent('en_US'));
         self::assertNull($this->provider()->match('en_US', 'about-us'));
     }
 
@@ -95,7 +108,7 @@ final class PreviewedEntryProviderTest extends TestCase
         $this->previewing('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', 'en_US');
         $this->entryRepository->findOneByUuid('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e')->willReturn(null);
 
-        self::assertNull($this->provider()->getWorkingCopy('en_US'));
+        self::assertNull($this->provider()->getPreviewedContent('en_US'));
         self::assertNull($this->provider()->match('en_US', 'about-us'));
     }
 
@@ -106,7 +119,8 @@ final class PreviewedEntryProviderTest extends TestCase
     {
         $this->previewing($this->entry->getUuid(), 'en_US');
 
-        self::assertEquals(new EntryUrlMatch($this->workingCopy->getUuid(), 'page'), $this->provider()->match('en_US', 'about-us'));
+        // It renders there, with no redirect to a current slug or to its channel's root as a homepage
+        self::assertEquals(new EntryUrlMatch($this->workingCopy->getUuid(), 'page', null, false), $this->provider()->match('en_US', 'about-us'));
         self::assertEquals(new EntryUrlMatch($this->workingCopy->getUuid(), 'page'), $this->provider('pg')->match('en_US', 'pg/about-us'));
     }
 
@@ -122,22 +136,78 @@ final class PreviewedEntryProviderTest extends TestCase
         self::assertNull($this->provider()->match('da_DK', 'about-us'));
     }
 
-    private function previewing(string $entryUuid, string $localeCode): void
+    /**
+     * @test
+     */
+    public function it_gives_the_content_of_the_revision_a_read_only_preview_shows_and_matches_it_at_the_revisions_url(): void
     {
-        $signer = new PreviewTokenSigner('secret', new MockClock());
-        $this->requestStack->push(new Request([PreviewContext::QUERY_PARAMETER => $signer->sign(new Preview($entryUuid, 'WEB', $localeCode))]));
+        $this->entry->setCurrentLocale('en_US');
+        $this->entry->setTitle('About our shop');
+        $this->entry->setSlug('about-our-shop');
+        $content = clone $this->entry;
+        $content->setTitle('About us');
+        $content->setSlug('about-us-then');
+        $revision = new Revision();
+        $revision->setEntry($this->entry);
+        $revision->setContent(CanonicalJson::encode((new EntryNormalizer(self::contentTypes()))->normalize($content)));
+        $this->revisionRepository->findOneById(42)->willReturn($revision);
+        $this->workingCopyProvider->getWorkingCopy(Argument::any())->shouldNotBeCalled();
+        $this->previewing($this->entry->getUuid(), 'en_US', 42);
+
+        $previewed = $this->provider(contentTypes: self::contentTypes())->getPreviewedContent('en_US');
+
+        self::assertNotNull($previewed);
+        self::assertNotSame($this->entry, $previewed);
+        self::assertSame($this->entry->getUuid(), $previewed->getUuid());
+        self::assertSame('About us', $previewed->getTranslation('en_US')->getTitle());
+        self::assertSame('About our shop', $this->entry->getTranslation('en_US')->getTitle());
+        self::assertNull($this->provider()->getPreviewedContent('da_DK'));
+
+        self::assertEquals(new EntryUrlMatch($this->entry->getUuid(), 'page'), $this->provider(contentTypes: self::contentTypes())->match('en_US', 'about-us-then'));
+        self::assertNull($this->provider(contentTypes: self::contentTypes())->match('en_US', 'about-our-shop'));
     }
 
-    private function provider(string $prefix = ''): PreviewedEntryProvider
+    /**
+     * @test
+     */
+    public function it_gives_nothing_when_the_previewed_revision_is_gone(): void
     {
-        $contentTypes = $this->prophesize(ContentTypeRegistryInterface::class);
-        $contentTypes->getByEntry($this->workingCopy)->willReturn(new ContentTypeMetadata('page', 'Page', 1, $prefix, null, Page::class, PageTranslation::class, 'setono_sylius_cms.page'));
+        $this->previewing($this->entry->getUuid(), 'en_US', 42);
+        $this->revisionRepository->findOneById(42)->willReturn(null);
+
+        self::assertNull($this->provider()->getPreviewedContent('en_US'));
+        self::assertNull($this->provider()->match('en_US', 'about-us'));
+    }
+
+    private function previewing(string $entryUuid, string $localeCode, ?int $revisionId = null): void
+    {
+        $signer = new PreviewTokenSigner('secret', new MockClock());
+        $this->requestStack->push(new Request([PreviewContext::QUERY_PARAMETER => $signer->sign(new Preview($entryUuid, 'WEB', $localeCode, $revisionId))]));
+    }
+
+    private static function contentTypes(): ContentTypeRegistry
+    {
+        return new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]);
+    }
+
+    private function provider(string $prefix = '', ?ContentTypeRegistryInterface $contentTypes = null): PreviewedEntryProvider
+    {
+        if (null === $contentTypes) {
+            $prophecy = $this->prophesize(ContentTypeRegistryInterface::class);
+            $prophecy->getByEntry($this->workingCopy)->willReturn(new ContentTypeMetadata('page', 'Page', 1, $prefix, null, Page::class, PageTranslation::class, 'setono_sylius_cms.page'));
+            $contentTypes = $prophecy->reveal();
+        }
+
+        $upgrader = $this->prophesize(StoredDataUpgraderInterface::class);
+        $upgrader->upgradeEntry(Argument::type('array'))->will(static fn (array $arguments): Upgraded => new Upgraded((array) $arguments[0]));
 
         return new PreviewedEntryProvider(
             new PreviewContext($this->requestStack, new PreviewTokenSigner('secret', new MockClock())),
             $this->entryRepository->reveal(),
             $this->workingCopyProvider->reveal(),
-            $contentTypes->reveal(),
+            $contentTypes,
+            $this->revisionRepository->reveal(),
+            new RevisionReader($upgrader->reveal(), new EntryDenormalizer(self::contentTypes())),
         );
     }
 }

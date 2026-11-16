@@ -4,19 +4,21 @@ import { ApiError, type BuilderApi } from '../src/api';
 import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
 import type { EntryResponse, EntrySettings, EntryStatus, PresenceResponse, SaveResponse, ValidationError } from '../src/types';
-import { block, entry, registry, settings } from './fixtures';
+import { block, entry, page, registry, settings } from './fixtures';
 
 const config: BuilderConfig = {
     entryUuid: '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e',
     locale: 'en_US',
     csrfToken: 'abc123',
     backUrl: '/admin/',
+    overviewUrl: '/admin/cms/entry/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e',
     endpoints: {
         registry: '/registry',
         entry: '/entry',
         validate: '/validate',
         publish: '/publish',
         discard: '/discard',
+        schedule: '/schedule',
         settings: '/settings',
         previewToken: '/preview/token',
         previewRender: '/preview/render',
@@ -50,6 +52,8 @@ function fakeApi(initial: EntrySettings = settings(), overrides: Partial<Builder
         }),
         createPreviewUrl: vi.fn(async ({ channel }: { channel: string }) => `http://admin.example/en_US/about-us?channel=${channel}`),
         renderPreview: vi.fn(async (): Promise<Record<string, string>> => ({})),
+        schedule: vi.fn(() => Promise.reject(new Error('Not scheduled in this test'))),
+        cancelSchedule: vi.fn(() => Promise.reject(new Error('Not scheduled in this test'))),
         presence: vi.fn(async (): Promise<PresenceResponse> => ({ editors: [], lockToken: 0 })),
         ...overrides,
     };
@@ -79,6 +83,51 @@ describe('the entry settings', () => {
         expect(panel.getByLabelText('Show until')).toHaveValue('');
         expect(panel.getByRole('group', { name: 'Channels' })).toBeInTheDocument();
         expect(panel.getByRole('combobox', { name: 'Audience' })).toHaveValue('everyone');
+    });
+
+    it("should link to the entry's overview page from a More tab, for publishing history, revisions, share links and placements", async () => {
+        await openBuilder();
+
+        fireEvent.click(pane().getByRole('tab', { name: 'More' }));
+
+        expect(pane().getByRole('tab', { name: 'More', selected: true })).toBeInTheDocument();
+        expect(pane().getByRole('tab', { name: 'Settings', selected: false })).toBeInTheDocument();
+        expect(pane().queryByRole('tabpanel', { name: 'Settings' })).not.toBeInTheDocument();
+        const panel = within(pane().getByRole('tabpanel', { name: 'More' }));
+        expect(panel.getByText("Publishing history, revisions, share links and placements are on the entry's overview page.")).toBeInTheDocument();
+        expect(panel.getByRole('link', { name: 'Open the overview page' })).toHaveAttribute('href', '/admin/cms/entry/0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e');
+
+        fireEvent.click(pane().getByRole('tab', { name: 'Settings' }));
+
+        expect(pane().getByRole('tabpanel', { name: 'Settings' })).toBeInTheDocument();
+        expect(pane().queryByRole('tabpanel', { name: 'More' })).not.toBeInTheDocument();
+    });
+
+    it('should move between the tabs with the arrow keys, which only the selected tab takes the focus for', async () => {
+        await openBuilder();
+        const settingsTab = pane().getByRole('tab', { name: 'Settings' });
+        const moreTab = pane().getByRole('tab', { name: 'More' });
+        expect(settingsTab).toHaveAttribute('tabindex', '0');
+        expect(moreTab).toHaveAttribute('tabindex', '-1');
+
+        fireEvent.keyDown(settingsTab, { key: 'ArrowRight' });
+
+        expect(moreTab).toHaveAttribute('aria-selected', 'true');
+        expect(moreTab).toHaveFocus();
+        expect(moreTab).toHaveAttribute('tabindex', '0');
+
+        // Past the last tab comes the first again
+        fireEvent.keyDown(moreTab, { key: 'ArrowRight' });
+        expect(settingsTab).toHaveAttribute('aria-selected', 'true');
+        expect(settingsTab).toHaveFocus();
+
+        fireEvent.keyDown(settingsTab, { key: 'ArrowLeft' });
+        expect(moreTab).toHaveAttribute('aria-selected', 'true');
+
+        fireEvent.keyDown(moreTab, { key: 'Home' });
+        expect(settingsTab).toHaveAttribute('aria-selected', 'true');
+        fireEvent.keyDown(settingsTab, { key: 'End' });
+        expect(moreTab).toHaveAttribute('aria-selected', 'true');
     });
 
     it('should say beside each setting that it takes effect on save', async () => {
@@ -251,6 +300,89 @@ describe('the entry settings', () => {
         await waitFor(() => expect(api.saveSettings).toHaveBeenLastCalledWith({ audience: { mode: 'everyone', groups: [] } }));
         expect(pane().queryByRole('group', { name: 'Customer groups' })).not.toBeInTheDocument();
         await saved();
+    });
+
+    it('should make a page the homepage of channels, even in a store with one channel', async () => {
+        const api = fakeApi();
+        await openBuilder(api, { ...config, channels: [{ code: 'WEB', name: 'Web store' }] });
+        const homepageOf = pane().getByRole('group', { name: 'Homepage of' });
+        const web = within(homepageOf).getByRole('checkbox', { name: 'Web store' });
+
+        expect(web).not.toBeChecked();
+        expect(homepageOf).toHaveAccessibleDescription(
+            "It shows at each of these channels' root URL in place of the store's own homepage. Takes effect when saved, without publishing",
+        );
+
+        fireEvent.click(web);
+
+        expect(api.saveSettings).toHaveBeenLastCalledWith({ homepageOf: ['WEB'] });
+        await saved();
+        expect(web).toBeChecked();
+
+        fireEvent.click(web);
+
+        expect(api.saveSettings).toHaveBeenLastCalledWith({ homepageOf: [] });
+        await saved();
+        expect(web).not.toBeChecked();
+    });
+
+    it('should pick the channels a page is the homepage of from all the store has', async () => {
+        const api = fakeApi(settings({ homepageOf: ['B2B'] }));
+        await openBuilder(api);
+        const homepageOf = within(pane().getByRole('group', { name: 'Homepage of' }));
+
+        expect(homepageOf.getByRole('checkbox', { name: 'Web store' })).not.toBeChecked();
+        expect(homepageOf.getByRole('checkbox', { name: 'Wholesale store' })).toBeChecked();
+
+        fireEvent.click(homepageOf.getByRole('checkbox', { name: 'Web store' }));
+
+        expect(api.saveSettings).toHaveBeenLastCalledWith({ homepageOf: ['B2B', 'WEB'] });
+    });
+
+    it('should offer Homepage of only for a content type whose entries can be homepages', async () => {
+        const api = fakeApi(settings(), { fetchRegistry: vi.fn(async () => ({ ...registry, contentTypes: [{ ...page, homepage: false }] })) });
+        await openBuilder(api);
+
+        expect(pane().queryByRole('group', { name: 'Homepage of' })).not.toBeInTheDocument();
+        expect(pane().getByRole('group', { name: 'Channels' })).toBeInTheDocument();
+    });
+
+    it("should preview a page at its channel's root once the save makes it that channel's homepage", async () => {
+        let homepageOf: string[] = [];
+        let release = (): void => {};
+        const api = fakeApi(settings(), {
+            saveSettings: vi.fn(
+                (changes: Partial<EntrySettings>) =>
+                    new Promise<EntrySettings>((resolve) => {
+                        release = () => {
+                            homepageOf = changes.homepageOf ?? homepageOf;
+                            resolve(settings({ homepageOf }));
+                        };
+                    }),
+            ),
+            createPreviewUrl: vi.fn(async ({ channel }: { channel: string }) =>
+                homepageOf.includes(channel) ? `http://admin.example/en_US/?channel=${channel}` : `http://admin.example/en_US/about-us?channel=${channel}`,
+            ),
+        });
+        await openBuilder(api);
+        await waitFor(() => expect(screen.getByTitle('Preview')).toHaveAttribute('src', 'http://admin.example/en_US/about-us?channel=WEB'));
+        const homepages = within(pane().getByRole('group', { name: 'Homepage of' }));
+
+        // Another channel's homepage leaves the preview where it is
+        fireEvent.click(homepages.getByRole('checkbox', { name: 'Wholesale store' }));
+        release();
+        await saved();
+        expect(api.createPreviewUrl).toHaveBeenCalledTimes(1);
+
+        fireEvent.click(homepages.getByRole('checkbox', { name: 'Web store' }));
+        // The preview asks where the page lives once the save is through
+        await new Promise((resolve) => setTimeout(resolve, 30));
+        expect(api.createPreviewUrl).toHaveBeenCalledTimes(1);
+
+        release();
+
+        await waitFor(() => expect(screen.getByTitle('Preview')).toHaveAttribute('src', 'http://admin.example/en_US/?channel=WEB'));
+        expect(api.createPreviewUrl).toHaveBeenCalledTimes(2);
     });
 
     it('should name a deleted customer group by its code, so it can be taken out', async () => {

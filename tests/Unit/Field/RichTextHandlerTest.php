@@ -98,6 +98,20 @@ final class RichTextHandlerTest extends TestCase
     /**
      * @test
      */
+    public function it_fits_a_document_even_an_empty_one_and_nothing_else(): void
+    {
+        $handler = self::handler();
+        $field = new RichText(label: 'Content');
+
+        self::assertTrue($handler->fits($field, self::DOCUMENT));
+        self::assertTrue($handler->fits($field, ['type' => 'doc', 'content' => [['type' => 'paragraph']]]));
+        self::assertFalse($handler->fits($field, '<p>Hello</p>'));
+        self::assertFalse($handler->fits($field, ['type' => 'paragraph']));
+    }
+
+    /**
+     * @test
+     */
     public function it_holds_no_references(): void
     {
         self::assertSame([], [...self::handler()->references(new RichText(label: 'Content'), self::DOCUMENT)]);

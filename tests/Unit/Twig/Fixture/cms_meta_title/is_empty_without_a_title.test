@@ -1,0 +1,8 @@
+--TEST--
+cms_meta_title() is empty for an entry with neither a meta title nor a title in the chain, such as an untitled draft in the builder's preview
+--TEMPLATE--
+[{{ cms_meta_title(entry) }}]
+--DATA--
+return $this->rendering(['entry' => $this->pageWith(['en_US' => ['title' => null, 'slug' => 'about-us']])])
+--EXPECT--
+[]

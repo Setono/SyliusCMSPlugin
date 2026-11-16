@@ -1,0 +1,47 @@
+{#
+ # The entry lists in the hub: the grids of the entry resource, rendered by its resource controller, so `resources` is
+ # the grid view. All entries' route has no content type, and a content type's list has its code in the route.
+ # See "Entry lists" in docs/spec/admin.md
+ #}
+{% extends '@SetonoSyliusCMSPlugin/admin/layout.html.twig' %}
+
+{% import '@SyliusUi/Macro/headers.html.twig' as headers %}
+{% import '@SyliusAdmin/Macro/breadcrumb.html.twig' as breadcrumb %}
+
+{% set definition = resources.definition %}
+{% set content_type_code = app.request.attributes.get('contentType') %}
+
+{% if content_type_code is null %}
+    {% set heading = 'setono_sylius_cms.ui.all_entries'|trans %}
+{% else %}
+    {# A content type's list is named by its plural, setono_sylius_cms.content_type_plural.<code>, or else by its label #}
+    {% set plural = 'setono_sylius_cms.content_type_plural.' ~ content_type_code %}
+    {% set heading = plural|trans != plural ? plural|trans : cms_admin_content_type(content_type_code).label|trans %}
+{% endif %}
+
+{% block title %}{{ heading }} {{ parent() }}{% endblock %}
+
+{% block hub_content %}
+    <div class="ui stackable two column grid">
+        <div class="column">
+            {{ headers.default(heading, content_type_code is null ? 'list' : 'file alternate outline') }}
+
+            {{ breadcrumb.crumble([
+                { label: 'sylius.ui.administration'|trans, url: path('sylius_admin_dashboard') },
+                { label: 'setono_sylius_cms.ui.content'|trans, url: path('setono_sylius_cms_admin_overview') },
+                { label: heading },
+            ]) }}
+        </div>
+        <div class="middle aligned column">
+            <div class="ui right floated buttons">
+                {% if definition.actionGroups.main is defined %}
+                    {% for action in definition.getEnabledActions('main') %}
+                        {{ sylius_grid_render_action(resources, action, null) }}
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {{ sylius_grid_render(resources, '@SyliusAdmin/Grid/_default.html.twig') }}
+{% endblock %}

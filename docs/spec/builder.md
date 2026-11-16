@@ -9,6 +9,7 @@ The full-screen [builder](../../GLOSSARY.md#editing) where every entry is edited
 
 - The builder opens from the entry's overview page, and straight after an entry is created ([Admin](admin.md#create-dialog)). Its route is `setono_sylius_cms_admin_builder` ([Extending](extending.md#routes)).
 - Its back button returns to where it was opened from, and Esc does the same.
+- Both send the unsaved changes first. When they can't be saved, the builder stays open and says why, and the editor stays or chooses **Leave anyway**, which leaves without them.
 - Every entry is edited here, including entries whose content type has no block tree. For those, the tree pane is hidden, and the preview shows the entry's page when it has its own URL.
 
 ## The shell

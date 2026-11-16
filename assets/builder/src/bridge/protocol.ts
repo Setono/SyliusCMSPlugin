@@ -31,7 +31,11 @@ export interface RenderedBlock {
 
 /** From the builder to the bridge. */
 export type ToBridge =
-    | { type: 'init'; strings: BridgeStrings }
+    /**
+     * Sent when the page is ready, and again when it changes whether the working copy is read-only, as while a scheduled
+     * publish locks it: then blocks are only selected, not typed in, moved, added or deleted in the page.
+     */
+    | { type: 'init'; strings: BridgeStrings; readOnly?: boolean }
     /** Outlines the block, or nothing when the key is null, and scrolls to it. */
     | { type: 'select'; key: string | null }
     /** Morphs blocks that are in the page into their new HTML. */
@@ -56,6 +60,8 @@ export type FromBridge =
     /** ⌘Z or ⇧⌘Z pressed in the page. */
     | { type: 'undo' }
     | { type: 'redo' }
+    /** Esc pressed in the page, outside a field: the editor leaves the builder. */
+    | { type: 'leave' }
     /** + next to a block: the editor wants to add a block at that spot. x and y are where the + is in the page's viewport. */
     | { type: 'add'; key: string; position: 'before' | 'after'; x: number; y: number }
     /** A block the builder patched or inserted has no place in the page, so only a reload shows it. */

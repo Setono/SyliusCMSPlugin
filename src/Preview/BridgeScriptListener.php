@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Preview;
 
-use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Twig\Environment;
 
 /**
- * Injects the bridge script at the end of a page in the builder's preview, which shoppers and share links never get.
- * It works on any shop page, whatever its theme. See "The bridge" in docs/spec/builder.md
+ * Injects the bridge script at the end of a page in the builder's preview, which shoppers, share links and the read-only
+ * preview of a revision never get. It works on any shop page, whatever its theme. See "The bridge" in docs/spec/builder.md
  */
 final readonly class BridgeScriptListener
 {
@@ -24,7 +23,8 @@ final readonly class BridgeScriptListener
 
     public function onResponse(ResponseEvent $event): void
     {
-        if (!$event->isMainRequest() || RenderContext::PREVIEW_MODE_BUILDER !== $this->previewContext->getMode()) {
+        $preview = $this->previewContext->getPreview();
+        if (!$event->isMainRequest() || null === $preview || $preview->isReadOnly()) {
             return;
         }
 

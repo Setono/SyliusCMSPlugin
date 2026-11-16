@@ -9,15 +9,18 @@ use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api\BuilderApiTestCase;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\UpgradesKernel;
+use Setono\SyliusCMSPlugin\Tests\Support\Revisions;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 /**
- * Stored data is upgraded whenever it's read: from the rows and from drafts. The test app's Callout block type is at
- * version 2, where its field "text" became "message". See "Schema changes" in docs/spec/content-model.md
+ * Stored data is upgraded whenever it's read: from the rows, drafts and revisions. The test app's Callout block type is
+ * at version 2, where its field "text" became "message". See "Schema changes" in docs/spec/content-model.md
  */
 final class UpgradeTest extends BuilderApiTestCase
 {
+    use Revisions;
+
     private const CALLOUT = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e60';
 
     private const HEADING = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f';
@@ -128,6 +131,35 @@ final class UpgradeTest extends BuilderApiTestCase
             $response['blocks'][self::CALLOUT],
             'The old value renders, and is marked for typing in place under the field\'s current name',
         );
+    }
+
+    /**
+     * @test
+     */
+    public function it_upgrades_a_revision_saved_with_an_older_version_when_it_is_previewed_and_restored(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('About us', 'about-us', 'Hello', published: true);
+        $revision = self::storeRevision($page, [self::calloutAtVersion1('Published with version 1')]);
+        $stored = $revision->getContent();
+        self::assertStringContainsString('"type":"callout","version":1,', $stored);
+        $csrfToken = self::openBuilder($client, $page);
+
+        // Its preview renders it through the upgrader
+        $response = self::json($client, 'POST', sprintf('/admin/cms/api/revisions/%d/preview', (int) $revision->getId()), null, $csrfToken);
+        self::assertIsArray($response);
+        self::assertIsString($response['url'] ?? null);
+        $client->request('GET', $response['url']);
+        self::assertSelectorTextSame('.cms-tree .app-callout', 'Published with version 1');
+
+        // Restoring it puts it in the draft upgraded, and leaves the revision as it was stored
+        self::json($client, 'POST', sprintf('/admin/cms/api/revisions/%d/restore', (int) $revision->getId()), null, $csrfToken);
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString(
+            sprintf('{"key":"%s","type":"callout","version":2,"style":null,"fields":{"message":{"en_US":"Published with version 1"}}', self::CALLOUT),
+            (string) self::draftOf($page)?->getContent(),
+        );
+        self::assertSame($stored, self::revisionsOf($page)[0]->getContent());
     }
 
     /**

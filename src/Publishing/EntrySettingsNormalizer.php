@@ -30,6 +30,7 @@ final class EntrySettingsNormalizer
                 'mode' => $settings->audience->mode->value,
                 'groups' => $settings->audience->groups,
             ]),
+            'homepageOf' => $settings->homepageOf,
         ]);
     }
 
@@ -50,8 +51,9 @@ final class EntrySettingsNormalizer
                 array_key_exists('showFrom', $data) ? self::dateTime('showFrom', $data['showFrom']) : $current->dateWindow->from,
                 array_key_exists('showUntil', $data) ? self::dateTime('showUntil', $data['showUntil']) : $current->dateWindow->until,
             ),
-            array_key_exists('channels', $data) ? self::channels($data['channels']) : $current->channels,
+            array_key_exists('channels', $data) ? self::channelCodes('channels', $data['channels']) : $current->channels,
             array_key_exists('audience', $data) ? self::audience($data['audience']) : $current->audience,
+            array_key_exists('homepageOf', $data) ? self::channelCodes('homepageOf', $data['homepageOf']) : $current->homepageOf,
         );
     }
 
@@ -90,16 +92,17 @@ final class EntrySettingsNormalizer
     /**
      * @return list<string>
      */
-    private static function channels(mixed $value): array
+    private static function channelCodes(string $key, mixed $value): array
     {
+        $error = sprintf('"%s" must be a list of channel codes', $key);
         if (!is_array($value) || !array_is_list($value)) {
-            throw new InvalidEntrySettingsException('"channels" must be a list of channel codes');
+            throw new InvalidEntrySettingsException($error);
         }
 
         $codes = [];
         foreach ($value as $code) {
             if (!is_string($code) || '' === $code) {
-                throw new InvalidEntrySettingsException('"channels" must be a list of channel codes');
+                throw new InvalidEntrySettingsException($error);
             }
 
             $codes[] = $code;

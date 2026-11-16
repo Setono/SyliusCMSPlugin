@@ -12,7 +12,7 @@ class SavedChangeSet implements SavedChangeSetInterface
      * @param string $changes the change set as canonical JSON
      */
     public function __construct(
-        protected Entry $entry,
+        protected EntryInterface $entry,
         protected int $lockToken,
         protected string $changes,
         protected \DateTimeImmutable $savedAt,
@@ -24,7 +24,7 @@ class SavedChangeSet implements SavedChangeSetInterface
         return $this->id;
     }
 
-    public function getEntry(): Entry
+    public function getEntry(): EntryInterface
     {
         return $this->entry;
     }

@@ -8,7 +8,11 @@
             "Repository",
             "Resources",
             "Rendering/EntryUrlLookup.php",
-            "Query/VisibleEntriesQuery.php"
+            "Query/VisibleEntriesQuery.php",
+            "Query/UrlClaimsQuery.php",
+            "Query/ProblemCountsQuery.php",
+            "Homepage/HomepageProvider.php",
+            "Admin/Grid"
         ]
     },
     "testFrameworkOptions": "--testsuite=unit",

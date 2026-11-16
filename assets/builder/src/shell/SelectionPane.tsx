@@ -3,7 +3,9 @@ import { useBuilder, useBuilderState, useValidationState } from '../context';
 import { FieldRow } from '../form/FieldRow';
 import formStyles from '../form/Form.module.css';
 import { useTranslator } from '../i18n';
+import { fieldFallback, outdatedValue } from '../locales';
 import { canDuplicate } from '../nesting';
+import { locks } from '../store';
 import { canShift, findBlock, pathTo, topmostBlocks } from '../tree';
 import type { BlockStyleDefinition, StoredBlock } from '../types';
 import { blockMessages, fieldMessages } from '../validation';
@@ -13,25 +15,30 @@ import { blockHint, blockLabel } from './BlockTreePane';
 import { ArrowDownIcon, ArrowUpIcon, CopyIcon, PlusIcon, TrashIcon } from './icons';
 import styles from './SelectionPane.module.css';
 import { SettingsPane } from './SettingsPane';
+import { VisibilityConditions } from './VisibilityConditions';
 
 /**
  * The right pane: the selected block's path, its actions, its block style when its block type offers any, its fields,
- * rendered from their schemas, and its children, or the entry's settings. With several blocks selected, the actions for all of them.
+ * rendered from their schemas, its children and its visibility conditions, or the entry's settings. With several blocks selected, the actions for all of them.
  */
 export function SelectionPane() {
     const t = useTranslator();
-    const { store } = useBuilder();
+    const { store, locales } = useBuilder();
     const block = useBuilderState((state) => (state.selectedKey === null ? undefined : findBlock(state.entry.tree.blocks, state.selectedKey)));
     const blockType = useBuilderState((state) => (block === undefined ? undefined : state.rules.blockTypes.get(block.type)));
     const locale = useBuilderState((state) => state.locale);
     const selection = useBuilderState((state) => state.selection);
     const errors = useValidationState((state) => state.errors);
+    // While a scheduled publish locks the working copy, the block is only looked at
+    const locked = useBuilderState((state) => locks(state.schedule));
 
     if (selection.length > 1) {
         return (
             <div className={styles.pane}>
                 <h2 className={styles.heading}>{t('setono_sylius_cms.builder.blocks_selected', { '%count%': String(selection.length) })}</h2>
-                <Actions keys={selection} />
+                <fieldset className={styles.locked} disabled={locked}>
+                    <Actions keys={selection} />
+                </fieldset>
             </div>
         );
     }
@@ -49,6 +56,7 @@ export function SelectionPane() {
             <h2 className={styles.heading}>{label}</h2>
             {blockType === undefined && <p className={styles.unknown}>{t('setono_sylius_cms.builder.unknown_block_type_help')}</p>}
             <BlockErrors blockKey={block.key} />
+            <fieldset className={styles.locked} disabled={locked}>
             <Actions keys={[block.key]} />
             {blockType !== undefined && blockType.styles.length > 0 && <StylePicker block={block} styles={blockType.styles} />}
             <div key={block.key} className={styles.fields}>
@@ -61,10 +69,18 @@ export function SelectionPane() {
                         value={readFieldValue(block.fields, name, schema['x-cms-translatable'], locale)}
                         onChange={(value) => store.getState().setFieldValue(block.key, name, value)}
                         errors={fieldMessages(errors, block.key, name, locale)}
+                        fallback={schema['x-cms-translatable'] ? fieldFallback(locales, block.fields[name], locale) : undefined}
+                        outdated={
+                            schema['x-cms-translatable']
+                                ? outdatedValue(locales, block.fields[name], block.translated[name], locale, () => store.getState().markValueUpToDate(block.key, name))
+                                : undefined
+                        }
                     />
                 ))}
             </div>
             {(blockType?.children.length ?? 0) > 0 && <Children block={block} label={label} />}
+            <VisibilityConditions key={`conditions-${block.key}`} block={block} />
+            </fieldset>
         </div>
     );
 }

@@ -1,0 +1,4 @@
+{# The Status column of the entry lists: the entry's status labels. `data` is the entry #}
+<div data-column="status">
+    {% include '@SetonoSyliusCMSPlugin/admin/entry/_status_labels.html.twig' with {'labels': cms_admin_entry_row(data).statusLabels} %}
+</div>

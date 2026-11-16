@@ -1,0 +1,104 @@
+{#
+ # The overview page's Publishing section, a block of setono_sylius_cms.admin.entry.show.sections: the draft's state,
+ # with Publish and Schedule while there's something to publish, and Discard changes while there's a draft. A scheduled
+ # publish that waits locks the draft, so it offers only Cancel the schedule, an overdue one warns that the Messenger
+ # worker may not be running and offers Publish now and Cancel the schedule, and a failed one shows its reason and
+ # offers Schedule again. Every action is a form that comes back to the overview page. Times are in the time zone the
+ # admin shows times in. See "Entry overview page" in docs/spec/admin.md
+ #}
+{% set scheduled_publish = row.scheduledPublish %}
+{% set scheduled_status = row.scheduledPublishStatus %}
+{% set status = 'Setono\\SyliusCMSPlugin\\Builder\\EntryStatus' %}
+
+{% macro cancel_form(entry, label) %}
+    <form method="post" action="{{ path('setono_sylius_cms_admin_entry_schedule_cancel', {'uuid': entry.uuid}) }}">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
+        <button type="submit" class="ui labeled icon button"><i class="times icon"></i> {{ label|trans }}</button>
+    </form>
+{% endmacro %}
+
+<section class="ui segment" data-section="publishing" aria-labelledby="cms-section-publishing">
+    <h2 class="ui dividing header" id="cms-section-publishing">{{ 'setono_sylius_cms.ui.publishing'|trans }}</h2>
+
+    <p data-publishing-state="{{ row.status.value }}">
+        <strong>{{ ('setono_sylius_cms.ui.status_label.' ~ row.status.value)|trans }}.</strong>
+        {{ ('setono_sylius_cms.ui.publishing_state.' ~ row.status.value)|trans }}
+    </p>
+
+    {% if entry.lastPublishedAt is not null %}
+        <p data-last-published>{{ 'setono_sylius_cms.ui.last_published'|trans({'%date%': entry.lastPublishedAt|date('Y-m-d H:i')}) }}</p>
+    {% endif %}
+
+    {% if scheduled_publish is not null %}
+        {% set at = scheduled_publish.publishAt|date('Y-m-d H:i') %}
+        {% if scheduled_status is same as(constant(status ~ '::PublishesAtATime')) %}
+            <div class="ui info message" data-scheduled-publish="{{ scheduled_status.value }}">
+                <div class="header">{{ 'setono_sylius_cms.ui.scheduled_publish.waiting'|trans({'%at%': at}) }}</div>
+                <p>
+                    {% if scheduled_publish.scheduledBy is not null %}{{ 'setono_sylius_cms.ui.scheduled_publish.by'|trans({'%name%': scheduled_publish.scheduledBy}) }}{% endif %}
+                    {{ 'setono_sylius_cms.ui.scheduled_publish.locked'|trans }}
+                </p>
+            </div>
+        {% elseif scheduled_status is same as(constant(status ~ '::ScheduledPublishOverdue')) %}
+            <div class="ui negative message" data-scheduled-publish="{{ scheduled_status.value }}">
+                <div class="header">{{ 'setono_sylius_cms.ui.scheduled_publish.overdue'|trans({'%at%': at}) }}</div>
+                <p>{{ 'setono_sylius_cms.ui.scheduled_publish.overdue_help'|trans }}</p>
+            </div>
+        {% else %}
+            <div class="ui negative message" data-scheduled-publish="{{ scheduled_status.value }}">
+                <div class="header">{{ 'setono_sylius_cms.ui.scheduled_publish.failed'|trans({'%at%': at}) }}</div>
+                <p data-reason>{{ scheduled_publish.failureReason }}</p>
+            </div>
+        {% endif %}
+    {% endif %}
+
+    {% if scheduled_status is same as(constant(status ~ '::PublishesAtATime')) %}
+        <div class="ui buttons">
+            {{ _self.cancel_form(entry, 'setono_sylius_cms.ui.cancel_schedule') }}
+        </div>
+    {% elseif scheduled_status is same as(constant(status ~ '::ScheduledPublishOverdue')) %}
+        <div class="ui buttons">
+            <form method="post" action="{{ path('setono_sylius_cms_admin_entry_publish', {'uuid': entry.uuid}) }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
+                <button type="submit" class="ui labeled icon primary button"><i class="upload icon"></i> {{ 'setono_sylius_cms.ui.publish_now'|trans }}</button>
+            </form>
+            {{ _self.cancel_form(entry, 'setono_sylius_cms.ui.cancel_schedule') }}
+        </div>
+    {% else %}
+        {% if row.status is not same as(constant(status ~ '::Published')) %}
+            <div class="ui buttons">
+                <form method="post" action="{{ path('setono_sylius_cms_admin_entry_publish', {'uuid': entry.uuid}) }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
+                    <button type="submit" class="ui labeled icon primary button"><i class="upload icon"></i> {{ 'setono_sylius_cms.ui.publish'|trans }}</button>
+                </form>
+                {% if row.status is same as(constant(status ~ '::UnpublishedChanges')) %}
+                    <form method="post" action="{{ path('setono_sylius_cms_admin_entry_discard', {'uuid': entry.uuid}) }}">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
+                        <button type="submit" class="ui labeled icon button" data-requires-confirmation><i class="undo icon"></i> {{ 'setono_sylius_cms.ui.discard_changes'|trans }}</button>
+                    </form>
+                {% endif %}
+            </div>
+
+            <form class="ui form" method="post" action="{{ path('setono_sylius_cms_admin_entry_schedule', {'uuid': entry.uuid}) }}" data-schedule-form>
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
+                <div class="inline fields">
+                    <div class="field">
+                        <label for="cms-schedule-at">{{ 'setono_sylius_cms.ui.schedule_at'|trans }}</label>
+                        <input type="datetime-local" id="cms-schedule-at" name="at" required>
+                    </div>
+                    <div class="field">
+                        <button type="submit" class="ui labeled icon button">
+                            <i class="clock outline icon"></i>
+                            {{ (scheduled_status is same as(constant(status ~ '::ScheduledPublishFailed')) ? 'setono_sylius_cms.ui.schedule_again' : 'setono_sylius_cms.ui.schedule')|trans }}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        {% endif %}
+        {% if scheduled_status is same as(constant(status ~ '::ScheduledPublishFailed')) %}
+            <div class="ui buttons">
+                {{ _self.cancel_form(entry, 'setono_sylius_cms.ui.dismiss') }}
+            </div>
+        {% endif %}
+    {% endif %}
+</section>
