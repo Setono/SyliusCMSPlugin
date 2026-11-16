@@ -282,7 +282,7 @@ use Setono\SyliusCMSPlugin\Attribute\FieldType;
 use Setono\SyliusCMSPlugin\Field\Field;
 
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-#[FieldType(code: 'app_opening_hours', translatable: false, bindable: [], widget: 'app-opening-hours')]
+#[FieldType(code: 'app_opening_hours', translatable: false, bindable: [], control: 'app-opening-hours')]
 final class OpeningHours extends Field
 {
 }
@@ -293,7 +293,7 @@ final class OpeningHours extends Field
 | `code` | `string` | required | The field type's code. Unique, and never changes once content uses it. |
 | `translatable` | `bool` | `false` | Its default translatability, used when a field leaves `translatable:` at `null`. It decides whether the plugin stores one value or a locale map of values. A field type can still keep locale maps inside its one value: Link declares `false` and keeps its label per locale, and its handler reads the field's own `translatable` to pick the [link's shape](content-model.md#links). |
 | `bindable` | `list<BindingType>` | `[]` | The binding types a field of this type accepts. Empty means it can't be bound. |
-| `widget` | `string\|null` | `null` | The custom element's tag name ([Widgets](#widgets)). Required for a project's own field type. The shipped field types have none. |
+| `control` | `string\|null` | `null` | The custom element's tag name ([Field controls](#field-controls)). Required for a project's own field type. The shipped field types have none. |
 
 The shipped field types carry it too, with the codes, defaults and binding types in the table above.
 
@@ -328,7 +328,7 @@ The schema's `x-cms-*` keywords. The plugin adds most of them around what the ha
 | Keyword | Value | Filled by |
 | --- | --- | --- |
 | `x-cms-type` | The field type's code. | the plugin, from `#[FieldType(code:)]` |
-| `x-cms-widget` | The custom element's tag name, for a project's own field type. | the plugin, from `#[FieldType(widget:)]` |
+| `x-cms-control` | The custom element's tag name, for a project's own field type. | the plugin, from `#[FieldType(control:)]` |
 | `x-cms-label`, `x-cms-help` | Translated strings. | the plugin, from the field's `label` and `help` |
 | `x-cms-required` | `true` or `false`. | the plugin, from the field's `required` |
 | `x-cms-translatable` | `true` or `false`. | the plugin, from the field's `translatable`, or the field type's default |
@@ -337,13 +337,13 @@ The schema's `x-cms-*` keywords. The plugin adds most of them around what the ha
 
 Everything else in the schema, the JSON Schema for one value, is the handler's.
 
-### Widgets
+### Field controls
 
-A project's own field type comes with a widget: a custom element, loaded from a script listed under `setono_sylius_cms.builder.scripts`. A block type built only from shipped field types needs no JS.
+A project's own field type comes with a [field control](../../GLOSSARY.md#content-structure): a custom element, loaded from a script listed under `setono_sylius_cms.builder.scripts`. A block type built only from shipped field types needs no JS.
 
 - The builder sets four properties on the element: `.value` (the stored value, for the current locale when the field is translatable), `.field` (its schema), `.locale` (the locale being edited) and `.builder`.
 - `.builder` has `search(kind, query)`, which resolves to `[{ref, name, thumbnail}]` for `product`, `taxon`, `entry`, `media` or a link target's code, `pickMedia({kinds, multiple})`, which resolves to UUIDs or `null`, and `trans(key, params)`.
-- The widget dispatches a bubbling `cms-change` `CustomEvent` with `detail.value` whenever its value changes.
+- The field control dispatches a bubbling `cms-change` `CustomEvent` with `detail.value` whenever its value changes.
 
 ## Sources
 
@@ -604,7 +604,7 @@ Events are classes in `Setono\SyliusCMSPlugin\Event`, dispatched synchronously o
 
 | Event | Properties | Dispatched |
 | --- | --- | --- |
-| `BeforeEntryPublish` | `entry`, `scheduled` (`bool`) | before a publish, when scheduling one, and again when a scheduled publish runs |
+| `BeforeEntryPublish` | `entry`, `scheduled` (`bool`) | before a publish, inside its transaction, when scheduling one, and again when a scheduled publish runs. Listeners must not change the entry ([Publishing](publishing.md#publishing-now)) |
 | `BeforeEntryDelete` | `entry` | before an entry is deleted |
 | `BeforeMediaItemDelete` | `mediaItem` | before a media item is deleted |
 
@@ -730,7 +730,7 @@ setono_sylius_cms:
         # de_CH: [de_DE]
 
     builder:
-        scripts: []          # widget scripts, as public paths or absolute URLs, loaded as ES modules
+        scripts: []          # field control scripts, as public paths or absolute URLs, loaded as ES modules
 
     presets:
         paths: []            # directories of code preset files; bundles prepend theirs

@@ -34,6 +34,10 @@ _Avoid_: property, attribute, setting
 A kind of field, such as text, rich text, an image, a link or a list of products, which sets what a field holds and how editors enter it. The plugin ships field types, and developers can add their own.
 _Avoid_: input type, widget, form type
 
+**Field control**:
+What the builder shows editors to enter a field of one field type. Each field type has one, and a developer's own field type brings its own.
+_Avoid_: widget, input, form field
+
 **Source**:
 A developer-defined way to fill a field with a list of items of one kind when the content is shown, such as the products in a taxon or the current product's associations.
 _Avoid_: provider, data source, feed
