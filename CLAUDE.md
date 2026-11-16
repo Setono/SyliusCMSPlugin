@@ -15,8 +15,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 The internals every slice follows, settled with the maintainer in #216. Prefer Sylius practice, then Symfony's, for anything they don't cover.
 
 - **Layout.** Bundle files live in `src/Resources/{config,views,translations,public}`. Route files are PHP, at `src/Resources/config/routes/{admin,shop,media}.php`, imported as `@SetonoSyliusCMSPlugin/Resources/config/routes/*.php`. Template names are `@SetonoSyliusCMSPlugin/<path>` (`block/…`, `layout/…`, `admin/…`), and public assets are served from `/bundles/setonosyliuscmsplugin/…`.
+- **Names.** `CMS` is written `CMS` or `cms`, never `Cms`: `CMSExtension`, `$cmsPage`, `cms_field()`, `setono_sylius_cms`. Other projects' names keep their own spelling, such as Sylius's `CmsPlugin`.
 - **Namespaces.** One per area, named as the spec names them (`Attribute`, `Field`, `Rendering`, `Value`, …). Entities and their interfaces go in `Model`.
 - **Services.** XML, one file per area in `src/Resources/config/services/`, each imported from `services.xml`. Arguments are explicit, with no autowiring. Service ids are FQCNs, and every service a project may decorate or inject also gets its interface as an alias. Extension points reach projects through autoconfiguration, registered in `SetonoSyliusCMSExtension`.
+- **Twig.** An extension is usually a runtime extension: the extension class only declares the functions and filters, pointing at a runtime class (`Twig\Extension\RuntimeExtensionInterface`, tagged `twig.runtime`) that holds the logic. Twig then only builds the runtime and its dependencies when a template calls one of them.
 - **Resources.** Shipped Sylius resources are declared in the plugin's own config, under `setono_sylius_cms.resources.<name>`, and registered by `SetonoSyliusCMSExtension` through `AbstractResourceExtension::registerResources()`, as in 1.x. Projects override a model there.
 - **Doctrine mapping.** XML, in `src/Resources/config/doctrine/model/`. Models are mapped superclasses that become entities as their Sylius resource's model, except the single-table-inheritance roots `Entry` and `EntryTranslation`. The plugin ships no migrations: projects generate their own, and the test app uses `doctrine:schema:update`.
 - **The builder app.** Its source is in `assets/builder/`, with `package.json` and `package-lock.json` at the repo root. Vite builds it to `src/Resources/public/builder/builder.{js,css}`, which is committed: run `npm run build` after every change to it, and CI fails when the build doesn't match the sources. The working copy lives in a Zustand store and every edit goes through Immer, whose patches build the autosave change set (their inverses are kept for undo). Fields render through the app's own form renderer, with one component per `x-cms-type`. Styling is CSS Modules with `--builder-*` design tokens, plus Radix UI primitives for menus, dialogs and popovers.
@@ -47,10 +49,11 @@ The testing rule is in [the spec's Testing section](docs/spec/README.md#testing)
 - The builder app's TypeScript is unit tested with Vitest (`npm test`), next to its source in `assets/builder/tests`.
 - Follow the BDD-style naming convention for test methods (e.g., `it_should_do_something_when_condition_is_met`)
 - **MUST use Prophecy for mocking** - Use the `ProphecyTrait` and `$this->prophesize()` for all mocks, NOT PHPUnit's `$this->createMock()`
-- **Form testing** - Use Symfony's best practices for form testing as documented at https://symfony.com/doc/current/form/unit_testing.html
-  - Extend `Symfony\Component\Form\Test\TypeTestCase` for form type tests
+- **Forms** are tested with `Symfony\Component\Form\Test\TypeTestCase`. See [How to Unit Test your Forms](https://symfony.com/doc/6.4/form/unit_testing.html)
   - Use `$this->factory->create()` to create form instances
   - Test form submission, validation, and data transformation
+- **Twig extensions** are tested with `Twig\Test\IntegrationTestCase`. Each case is a `.test` fixture file with the template, the data and the expected output or exception. Implement both `getFixturesDirectory()` and the older `getFixturesDir()`, because the lowest Twig the plugin allows (3.7) only calls the latter
+- **Console commands** are tested with `Symfony\Component\Console\Tester\CommandTester`. See [Testing Commands](https://symfony.com/doc/6.4/console.html#testing-commands)
 - Ensure tests are isolated and don't depend on external state
 - Test both happy path and edge cases
 
