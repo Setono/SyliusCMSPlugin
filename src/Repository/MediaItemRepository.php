@@ -24,6 +24,41 @@ class MediaItemRepository extends EntityRepository implements MediaItemRepositor
         return $mediaItem instanceof MediaItemInterface ? $mediaItem : null;
     }
 
+    public function findByUuids(array $uuids): array
+    {
+        if ([] === $uuids) {
+            return [];
+        }
+
+        /** @var list<MediaItemInterface> $mediaItems */
+        $mediaItems = $this->createQueryBuilder('o')
+            ->andWhere('o.uuid IN (:uuids)')
+            ->setParameter('uuids', $uuids)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $mediaItems;
+    }
+
+    public function findExistingUuids(array $uuids): array
+    {
+        if ([] === $uuids) {
+            return [];
+        }
+
+        /** @var list<string> $existing */
+        $existing = $this->createQueryBuilder('o')
+            ->select('o.uuid')
+            ->andWhere('o.uuid IN (:uuids)')
+            ->setParameter('uuids', $uuids)
+            ->getQuery()
+            ->getSingleColumnResult()
+        ;
+
+        return $existing;
+    }
+
     public function findOneByChecksum(string $checksum): ?MediaItemInterface
     {
         $mediaItem = $this->createQueryBuilder('o')

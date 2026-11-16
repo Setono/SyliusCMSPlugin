@@ -21,6 +21,24 @@ interface MediaItemRepositoryInterface
     public function findOneByUuid(string $uuid): ?MediaItemInterface;
 
     /**
+     * The media items with these UUIDs, in one query, in no particular order. A UUID with none is left out
+     *
+     * @param list<string> $uuids
+     *
+     * @return list<MediaItemInterface>
+     */
+    public function findByUuids(array $uuids): array;
+
+    /**
+     * The UUIDs of these that a media item has, in one query, in no particular order
+     *
+     * @param list<string> $uuids
+     *
+     * @return list<string>
+     */
+    public function findExistingUuids(array $uuids): array;
+
+    /**
      * The media item whose current file has this checksum, the one uploaded first when there are several
      */
     public function findOneByChecksum(string $checksum): ?MediaItemInterface;

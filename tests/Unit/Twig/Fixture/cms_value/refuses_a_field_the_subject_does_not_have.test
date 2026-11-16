@@ -1,0 +1,8 @@
+--TEST--
+cms_value() refuses to read a field the subject doesn't have
+--TEMPLATE--
+{{ cms_value(block, "caption") }}
+--DATA--
+return $this->rendering(['block' => $this->gallery(null)])
+--EXCEPTION--
+Twig\Error\RuntimeError: An exception has been thrown during the rendering of a template ("Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery has no field "caption"") in "index.twig" at line 2.

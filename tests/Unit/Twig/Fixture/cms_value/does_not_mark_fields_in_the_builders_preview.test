@@ -1,0 +1,8 @@
+--TEST--
+cms_value() reads a text field as it is in the builder's preview, without the marker cms_field() adds to type it in place
+--TEMPLATE--
+{{ cms_value(view.block, "text") }}
+--DATA--
+return $this->rendering(['view' => $this->heading('Hello')], 'builder')
+--EXPECT--
+Hello

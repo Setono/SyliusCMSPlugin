@@ -7,12 +7,14 @@ namespace Setono\SyliusCMSPlugin\Rendering;
 use Setono\SyliusCMSPlugin\Block\FirstMatch;
 use Setono\SyliusCMSPlugin\Condition\ConditionMatcher;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
 /**
- * The read pipeline's step from stored blocks to block views. Visibility conditions run here, before any template: a
- * block whose conditions don't match gets no view, and neither do its children, so a template gets only the children
- * that show. See "Rendering a block tree" in docs/spec/rendering.md
+ * The read pipeline's steps from stored blocks to block views. First one pass loads every reference the blocks hold,
+ * with one query per type. Then visibility conditions run, before any template: a block whose conditions don't match
+ * gets no view, and neither do its children, so a template gets only the children that show. See "Rendering a block
+ * tree" in docs/spec/rendering.md
  */
 final readonly class BlockViewBuilder
 {
@@ -20,17 +22,23 @@ final readonly class BlockViewBuilder
         private BlockTypeRegistryInterface $blockTypes,
         private BlockHydrator $hydrator,
         private ConditionMatcher $conditions,
+        private ReferenceFinder $referenceFinder,
+        private ReferenceLoaderInterface $referenceLoader,
     ) {
     }
 
     /**
      * @param list<StoredBlock> $blocks
+     * @param ReferenceMap|null $references the references already loaded for the blocks, such as together with the
+     *                                      layout's, or null to load the blocks' own
      *
      * @return list<BlockView>
      */
-    public function build(array $blocks, RenderContext $context): array
+    public function build(array $blocks, RenderContext $context, ?ReferenceMap $references = null): array
     {
-        return $this->views($blocks, $context, false);
+        $references ??= $this->referenceLoader->load(ReferenceFinder::references($this->referenceFinder->inBlocks($blocks)), $context);
+
+        return $this->views($blocks, $context, $references, false);
     }
 
     /**
@@ -39,7 +47,7 @@ final readonly class BlockViewBuilder
      *
      * @return list<BlockView>
      */
-    private function views(array $blocks, RenderContext $context, bool $firstOnly): array
+    private function views(array $blocks, RenderContext $context, ReferenceMap $references, bool $firstOnly): array
     {
         $views = [];
 
@@ -53,9 +61,9 @@ final readonly class BlockViewBuilder
             $views[] = new BlockView(
                 $block->key,
                 $block->type,
-                $this->hydrator->hydrate($blockType, $block, $context),
+                $this->hydrator->hydrate($blockType, $block, $context, $references),
                 $blockType->styleClass($block->style),
-                $this->views($block->children, $context, is_a($blockType->class, FirstMatch::class, true)),
+                $this->views($block->children, $context, $references, is_a($blockType->class, FirstMatch::class, true)),
             );
 
             if ($firstOnly) {

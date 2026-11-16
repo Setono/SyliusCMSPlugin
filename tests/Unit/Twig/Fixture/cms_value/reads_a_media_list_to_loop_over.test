@@ -1,0 +1,8 @@
+--TEST--
+cms_value() reads a media list field as its ItemList, to loop over and count
+--TEMPLATE--
+{% for item in cms_value(block, "images") %}{{ item.name }};{% endfor %}{{ cms_value(block, "images")|length }}
+--DATA--
+return $this->rendering(['block' => $this->gallery(null, ['Beach', 'Mountain'])])
+--EXPECT--
+Beach;Mountain;2

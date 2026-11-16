@@ -5,14 +5,20 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Rendering;
 
 use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\MediaHandler;
+use Setono\SyliusCMSPlugin\Field\MediaListHandler;
+use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Media\MediaKind;
+use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
@@ -23,11 +29,17 @@ use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
 use Setono\SyliusCMSPlugin\Rendering\LayoutRenderer;
+use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
+use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
+use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Standard;
+use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
+use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Hero;
+use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -44,6 +56,10 @@ final class LayoutRendererTest extends TestCase
 
     private const KEY = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f';
 
+    private const HERO = '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d01';
+
+    private const COVER = '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d02';
+
     /**
      * @test
      */
@@ -56,6 +72,30 @@ final class LayoutRendererTest extends TestCase
         $html = $this->renderer($page, $tree)->render($page, $context);
 
         self::assertSame(sprintf('landing|transparent|entry|context|%s:Hello|en_US', self::KEY), $html);
+    }
+
+    /**
+     * @test
+     */
+    public function it_loads_the_references_of_the_layout_and_the_blocks_together_before_it_renders(): void
+    {
+        $page = new Page();
+        $hero = new MediaItem();
+        $hero->setKind(MediaKind::Image);
+        $hero->setName('Summer');
+        $tree = new StoredTree(new StoredLayout('hero', 1, ['image' => self::HERO]), [new StoredBlock(self::KEY, 'gallery', 1, fields: ['cover' => self::COVER])]);
+        $context = $this->context();
+
+        $loader = $this->prophesize(ReferenceLoaderInterface::class);
+        $loader->load(Argument::that(static fn (iterable $references): bool => [
+            new Reference('media_item', self::HERO, true),
+            new Reference('media_item', self::COVER, true),
+        ] == [...$references]), $context)
+            ->willReturn(new ReferenceMap(['media_item' => [self::HERO => $hero]]))
+            ->shouldBeCalledOnce()
+        ;
+
+        self::assertSame('hero|Summer|empty', $this->renderer($page, $tree, referenceLoader: $loader->reveal())->render($page, $context));
     }
 
     /**
@@ -109,7 +149,7 @@ final class LayoutRendererTest extends TestCase
     /**
      * @param list<string> $disabled
      */
-    private function renderer(Page|Recipe $entry, StoredTree $tree, array $disabled = [], string $contentType = 'page'): LayoutRenderer
+    private function renderer(Page|Recipe $entry, StoredTree $tree, array $disabled = [], string $contentType = 'page', ?ReferenceLoaderInterface $referenceLoader = null): LayoutRenderer
     {
         $contentTypes = $this->prophesize(ContentTypeRegistryInterface::class);
         $contentTypes->getByEntry($entry)->willReturn(new ContentTypeMetadata($contentType, 'app.label', 1, '', [], $entry::class, PageTranslation::class, 'app.' . $contentType));
@@ -123,19 +163,28 @@ final class LayoutRendererTest extends TestCase
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             ChoiceHandler::class => fn (): ChoiceHandler => new ChoiceHandler($this->prophesize(TranslatorInterface::class)->reveal()),
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
+            MediaHandler::class => static fn (): MediaHandler => new MediaHandler(),
+            MediaListHandler::class => static fn (): MediaListHandler => new MediaListHandler(),
         ]));
         $hydrator = new BlockHydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal()));
+        $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'gallery' => Gallery::class], new FieldReader());
+        $layouts = new LayoutRegistry(['page' => ['standard' => Standard::class, 'landing' => Landing::class, 'hero' => Hero::class]], new FieldReader(), disabled: $disabled);
+        $referenceFinder = new ReferenceFinder($blockTypes, $layouts, $handlers);
+        $referenceLoader ??= new ReferenceLoader(new ServiceLocator([]));
 
         return new LayoutRenderer(
             $contentTypes->reveal(),
-            new LayoutRegistry(['page' => ['standard' => Standard::class, 'landing' => Landing::class]], new FieldReader(), disabled: $disabled),
+            $layouts,
             $upgrader->reveal(),
-            new BlockViewBuilder(new BlockTypeRegistry(['heading' => Heading::class], new FieldReader()), $hydrator, Conditions::matcher()),
+            new BlockViewBuilder($blockTypes, $hydrator, Conditions::matcher(), $referenceFinder, $referenceLoader),
             $hydrator,
             new Environment(new ArrayLoader([
                 'standard.html.twig' => 'standard|{{ layout.showTitle ? "title" : "no title" }}',
                 'landing.html.twig' => 'landing|{{ layout.transparentHeader ? "transparent" : "plain" }}|{{ entry is same as(context.entry) ? "entry" }}|{{ context.entry is defined ? "context" }}|{% for view in blocks %}{{ view.key }}:{{ view.block.text }}{% endfor %}|{{ _cms_render_context.localeCode }}',
+                'hero.html.twig' => 'hero|{{ layout.image.name }}|{% for view in blocks %}{{ view.block.cover is null ? "empty" }}{% endfor %}',
             ])),
+            $referenceFinder,
+            $referenceLoader,
         );
     }
 

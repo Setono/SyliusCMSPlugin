@@ -22,10 +22,19 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
         </service>
 
+        <!-- The references a stored tree holds, through the field type handlers: for rendering, the admin's broken references and the usage index -->
+        <service id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder" class="Setono\SyliusCMSPlugin\Tree\ReferenceFinder">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder" class="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockHydrator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Condition\ConditionMatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer" class="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer">
@@ -42,8 +51,19 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockHydrator"/>
             <argument type="service" id="twig"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Rendering\LayoutRendererInterface" alias="Setono\SyliusCMSPlugin\Rendering\LayoutRenderer"/>
+
+        <!--
+        Loads every reference a tree holds before it renders, with one query per type. A project can decorate it to cache
+        references. Each type loads through the service tagged setono_sylius_cms.reference_type_loader with its type
+        -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoader" class="Setono\SyliusCMSPlugin\Rendering\ReferenceLoader">
+            <argument type="tagged_locator" tag="setono_sylius_cms.reference_type_loader" index-by="type"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface" alias="Setono\SyliusCMSPlugin\Rendering\ReferenceLoader"/>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookup" class="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookup">
             <argument type="service" id="doctrine"/>

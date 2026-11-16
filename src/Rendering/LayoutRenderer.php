@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Rendering;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
+use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Twig\Environment;
@@ -20,6 +21,8 @@ final readonly class LayoutRenderer implements LayoutRendererInterface
         private BlockViewBuilder $blockViewBuilder,
         private BlockHydrator $hydrator,
         private Environment $twig,
+        private ReferenceFinder $referenceFinder,
+        private ReferenceLoaderInterface $referenceLoader,
     ) {
     }
 
@@ -35,10 +38,16 @@ final readonly class LayoutRenderer implements LayoutRendererInterface
         // The default layout of an entry whose layout was removed or disabled ignores the values stored for that one
         $values = null !== $stored && $stored->code === $layout->code ? $stored->fields : [];
 
+        // One pass loads the references of the layout and of the blocks together, with one query per type
+        $references = $this->referenceLoader->load(ReferenceFinder::references((function () use ($layout, $values, $tree): \Generator {
+            yield from $this->referenceFinder->inValues($layout->fields, $values);
+            yield from $this->referenceFinder->inBlocks($tree->blocks);
+        })()), $context);
+
         return $this->twig->render($layout->template, [
             'entry' => $entry,
-            'layout' => $this->hydrator->hydrateObject($layout->class, $layout->fields, $values, $context),
-            'blocks' => $this->blockViewBuilder->build($tree->blocks, $context),
+            'layout' => $this->hydrator->hydrateObject($layout->class, $layout->fields, $values, $context, $references),
+            'blocks' => $this->blockViewBuilder->build($tree->blocks, $context, $references),
             'context' => $context->getHostPageContext(),
             CMSRuntime::RENDER_CONTEXT => $context,
         ]);

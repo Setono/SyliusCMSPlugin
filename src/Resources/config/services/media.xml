@@ -64,6 +64,13 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface" alias="Setono\SyliusCMSPlugin\Media\MediaUrlGenerator"/>
 
+        <!-- The media items Media and Media list fields refer to, loaded before a tree renders -->
+        <service id="Setono\SyliusCMSPlugin\Media\MediaItemReferenceLoader" class="Setono\SyliusCMSPlugin\Media\MediaItemReferenceLoader">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+
+            <tag name="setono_sylius_cms.reference_type_loader" type="media_item"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Media\AltTextResolver" class="Setono\SyliusCMSPlugin\Media\AltTextResolver">
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
         </service>

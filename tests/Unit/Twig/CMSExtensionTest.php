@@ -12,6 +12,9 @@ use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Media\MediaKind;
+use Setono\SyliusCMSPlugin\Model\MediaItem;
+use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Preview\FieldMarker;
@@ -29,10 +32,12 @@ use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGenerator;
 use Setono\SyliusCMSPlugin\Seo\MetaValues;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\Faq;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\NotABlock;
+use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\Quote;
 use Setono\SyliusCMSPlugin\Twig\CMSExtension;
 use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Setono\SyliusCMSPlugin\Twig\HeadTagsRuntime;
+use Setono\SyliusCMSPlugin\Value\ItemList;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -304,6 +309,30 @@ final class CMSExtensionTest extends IntegrationTestCase
     public function notABlock(): NotABlock
     {
         return new NotABlock();
+    }
+
+    /**
+     * A gallery block, hydrated with a cover media item of this name, or none, and a list of images with these names, or
+     * none for no list
+     *
+     * @param list<string>|null $images
+     */
+    public function gallery(?string $cover, ?array $images = null): Gallery
+    {
+        $gallery = new Gallery();
+        $gallery->cover = null === $cover ? null : self::mediaItem($cover);
+        $gallery->images = null === $images ? null : ItemList::of(array_map(self::mediaItem(...), $images));
+
+        return $gallery;
+    }
+
+    private static function mediaItem(string $name): MediaItemInterface
+    {
+        $mediaItem = new MediaItem();
+        $mediaItem->setKind(MediaKind::Image);
+        $mediaItem->setName($name);
+
+        return $mediaItem;
     }
 
     private static function signer(): PreviewTokenSigner

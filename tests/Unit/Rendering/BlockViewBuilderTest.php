@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Rendering;
 
 use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Block\FirstMatch;
 use Setono\SyliusCMSPlugin\Block\Group;
@@ -12,19 +13,31 @@ use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\RichText;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\MediaHandler;
+use Setono\SyliusCMSPlugin\Field\MediaListHandler;
+use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Media\MediaKind;
+use Setono\SyliusCMSPlugin\Model\MediaItem;
+use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
+use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
+use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
+use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
+use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
+use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -42,6 +55,12 @@ final class BlockViewBuilderTest extends TestCase
     private const C = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4c';
 
     private const D = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d';
+
+    private const COVER = '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d01';
+
+    private const IMAGE = '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d02';
+
+    private const DELETED = '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d03';
 
     /**
      * @test
@@ -282,6 +301,65 @@ final class BlockViewBuilderTest extends TestCase
         self::assertSame([self::C, self::D], self::keys($views[0]->children[0]->children));
     }
 
+    /**
+     * @test
+     */
+    public function it_loads_every_reference_in_the_blocks_in_one_pass_before_it_hydrates_them(): void
+    {
+        $cover = self::image();
+        $image = self::image();
+        $context = $this->context('en_US');
+
+        $child = new StoredBlock(self::B, 'gallery', 1, fields: ['images' => [self::IMAGE, self::DELETED]]);
+        $parent = new StoredBlock(self::A, 'gallery', 1, fields: ['cover' => self::COVER], children: [$child]);
+
+        $loader = $this->prophesize(ReferenceLoaderInterface::class);
+        $loader->load(Argument::that(static fn (iterable $references): bool => [
+            new Reference('media_item', self::COVER, true),
+            new Reference('media_item', self::IMAGE, true),
+            new Reference('media_item', self::DELETED, true),
+        ] == [...$references]), $context)
+            ->willReturn(new ReferenceMap(['media_item' => [self::COVER => $cover, self::IMAGE => $image]]))
+            ->shouldBeCalledOnce()
+        ;
+
+        $views = $this->builder($loader->reveal())->build([$parent], $context);
+
+        self::assertInstanceOf(Gallery::class, $views[0]->block);
+        self::assertSame($cover, $views[0]->block->cover);
+        self::assertInstanceOf(Gallery::class, $views[0]->children[0]->block);
+        self::assertNotNull($views[0]->children[0]->block->images);
+        self::assertSame([$image], [...$views[0]->children[0]->block->images]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_hydrates_from_the_reference_map_it_is_given_without_loading_references(): void
+    {
+        $cover = self::image();
+
+        $loader = $this->prophesize(ReferenceLoaderInterface::class);
+        $loader->load(Argument::cetera())->shouldNotBeCalled();
+
+        $views = $this->builder($loader->reveal())->build(
+            [new StoredBlock(self::A, 'gallery', 1, fields: ['cover' => self::COVER])],
+            $this->context('en_US'),
+            new ReferenceMap(['media_item' => [self::COVER => $cover]]),
+        );
+
+        self::assertInstanceOf(Gallery::class, $views[0]->block);
+        self::assertSame($cover, $views[0]->block->cover);
+    }
+
+    private static function image(): MediaItemInterface
+    {
+        $mediaItem = new MediaItem();
+        $mediaItem->setKind(MediaKind::Image);
+
+        return $mediaItem;
+    }
+
     private static function onlyIn(StoredBlock $block, string $localeCode): StoredBlock
     {
         $block->conditions = [['kind' => 'locale_is', 'negate' => false, 'params' => ['locales' => [$localeCode]]]];
@@ -299,7 +377,7 @@ final class BlockViewBuilderTest extends TestCase
         return array_map(static fn (BlockView $view): string => $view->key, $views);
     }
 
-    private function builder(): BlockViewBuilder
+    private function builder(?ReferenceLoaderInterface $referenceLoader = null): BlockViewBuilder
     {
         $fallbackChain = $this->prophesize(FallbackChainInterface::class);
         $fallbackChain->localesFor('da_DK')->willReturn(['da_DK', 'en_US']);
@@ -312,16 +390,22 @@ final class BlockViewBuilderTest extends TestCase
             RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator->reveal()),
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
+            MediaHandler::class => static fn (): MediaHandler => new MediaHandler(),
+            MediaListHandler::class => static fn (): MediaListHandler => new MediaListHandler(),
         ]));
 
+        $blockTypes = new BlockTypeRegistry(
+            ['heading' => Heading::class, 'rich_text' => RichText::class, 'group' => Group::class, 'first_match' => FirstMatch::class, 'gallery' => Gallery::class],
+            new FieldReader(),
+            styles: ['group' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-group--brand']]],
+        );
+
         return new BlockViewBuilder(
-            new BlockTypeRegistry(
-                ['heading' => Heading::class, 'rich_text' => RichText::class, 'group' => Group::class, 'first_match' => FirstMatch::class],
-                new FieldReader(),
-                styles: ['group' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-group--brand']]],
-            ),
+            $blockTypes,
             new BlockHydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal())),
             Conditions::matcher(),
+            new ReferenceFinder($blockTypes, new LayoutRegistry([], new FieldReader()), $handlers),
+            $referenceLoader ?? new ReferenceLoader(new ServiceLocator([])),
         );
     }
 

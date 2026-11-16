@@ -1,0 +1,8 @@
+--TEST--
+cms_value() needs the render context to read an entry field, whose locale it falls back from
+--TEMPLATE--
+{{ cms_value(entry, "title") }}
+--DATA--
+return ['entry' => $this->page(['en_US' => 'About us'])]
+--EXCEPTION--
+Twig\Error\RuntimeError: An exception has been thrown during the rendering of a template ("An entry's fields can only be read from a template that has the render context in "_cms_render_context", such as a layout template") in "index.twig" at line 2.

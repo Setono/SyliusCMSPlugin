@@ -1,0 +1,8 @@
+--TEST--
+cms_value() reads an entry field that's empty in the locale from the first locale the fallback chain reaches that has it
+--TEMPLATE--
+{{ cms_value(entry, "title") }}
+--DATA--
+return $this->rendering(['entry' => $this->page(['en_US' => 'About us', 'de_DE' => 'Über uns', 'de_CH' => ''])], locale: 'de_CH')
+--EXPECT--
+Über uns
