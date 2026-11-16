@@ -1,0 +1,30 @@
+{#
+ # The create dialog's form for a content type (`content_type`): the title, the slug for a content type with its own
+ # URL, which admin/create-entry-dialog.js fills from the title until the editor changes it, and the channels in a store
+ # with more than one. The dialog loads it with its heading; the create page shows it under its own.
+ # See "Create dialog" in docs/spec/admin.md
+ #}
+{% form_theme form '@SyliusAdmin/Form/theme.html.twig' %}
+
+{% if with_heading|default(true) %}
+    <h2 class="ui header" data-cms-create-entry-heading>{{ 'setono_sylius_cms.ui.new_entry'|trans({'%content_type%': content_type.label|trans}) }}</h2>
+{% endif %}
+
+{{ form_start(form, {'attr': {'class': 'ui loadable form', 'data-cms-create-entry-form': ''}}) }}
+    {{ form_row(form.title, {'attr': form.title.vars.attr|merge({'data-cms-create-entry-title': ''})}) }}
+    {% if form.slug is defined %}
+        {{ form_row(form.slug, {'attr': form.slug.vars.attr|merge({'data-cms-create-entry-slug': path('setono_sylius_cms_admin_api_slug')})}) }}
+    {% endif %}
+    {% if form.channels is defined %}
+        {# Sylius's theme labels the checkboxes' container, which only a group can be named by #}
+        {{ form_row(form.channels, {
+            'attr': form.channels.vars.attr|merge({'role': 'group', 'aria-labelledby': form.channels.vars.id ~ '_label'}),
+            'label_attr': form.channels.vars.label_attr|merge({'id': form.channels.vars.id ~ '_label'}),
+        }) }}
+    {% endif %}
+    {{ form_rest(form) }}
+
+    <button type="submit" class="ui labeled icon primary button">
+        <i class="plus icon"></i> {{ 'setono_sylius_cms.ui.create'|trans }}
+    </button>
+{{ form_end(form) }}

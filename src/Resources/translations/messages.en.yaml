@@ -53,7 +53,10 @@ setono_sylius_cms:
                     header: Content
     form:
         entry:
+            channels: Channels
             slug: Slug
+            slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team.'
+            slug_rules: A slug can't start or end with a slash, or have two slashes in a row.
             title: Title
     publish:
         invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'
@@ -68,17 +71,22 @@ setono_sylius_cms:
             only: 'Only %groups%'
         by: 'by %name%'
         channel: Channel
+        close: Close
         content: Content
         content_description: Pages and everything else shoppers read that isn't a product
         create: Create
+        create_dialog_load_failed: Couldn't load the form. Try again.
         discard_changes: Discard changes
         language: Language
         last_edited: Last edited
         last_published: 'Last published %date%'
         new_entry: 'New %content_type%'
+        new_entry_heading: New entry
         no_urls: It has no URL yet, because it has no slug.
         open_in_builder: Open in builder
+        other_content_type: Another content type
         overview_placeholder: What needs attention, what's coming up, translations and drafts in progress will show here. Until then, find the entries in their lists.
+        pick_content_type: What do you want to create?
         problems: Problems
         publish: Publish
         publishing: Publishing

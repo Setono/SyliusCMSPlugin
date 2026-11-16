@@ -1,0 +1,8 @@
+{#
+ # The entry lists' Create, the grid action type setono_sylius_cms_create_entry: the create dialog, for the content type
+ # in options.contentType, or asking for the content type when there's none, as in All entries
+ #}
+{% include '@SetonoSyliusCMSPlugin/admin/entry/_create_dialog.html.twig' with {
+    'content_type': options.contentType|default(null),
+    'label': action.label|default('setono_sylius_cms.ui.create'),
+} only %}

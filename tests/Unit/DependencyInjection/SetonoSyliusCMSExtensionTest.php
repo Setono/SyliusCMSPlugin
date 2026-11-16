@@ -294,7 +294,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     {
         $this->load();
 
-        /** @var list<array{grids: array<string, array<string, mixed>>, templates: array{filter: array<string, string>}}> $configs */
+        /** @var list<array{grids: array<string, array<string, mixed>>, templates: array{action: array<string, string>, filter: array<string, string>}}> $configs */
         $configs = $this->container->getExtensionConfig('sylius_grid');
         self::assertCount(1, $configs);
         [$config] = $configs;
@@ -328,7 +328,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         ], $grid['filters']);
         self::assertSame([
             'main' => [
-                'create' => ['type' => 'create', 'options' => ['link' => ['route' => 'setono_sylius_cms_admin_entry_create', 'parameters' => ['contentType' => '$contentType']]]],
+                'create' => ['type' => 'setono_sylius_cms_create_entry', 'options' => ['contentType' => '$contentType']],
             ],
             'item' => [
                 'delete' => ['type' => 'delete', 'options' => ['link' => ['route' => 'setono_sylius_cms_admin_entry_delete', 'parameters' => ['uuid' => 'resource.uuid']]]],
@@ -340,8 +340,9 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
             'sorting' => ['lastEdited' => 'desc'],
             'limits' => [25, 50, 100],
             'fields' => ['type' => self::twigField('setono_sylius_cms.ui.type', 'type', 20)],
-            'actions' => ['main' => ['create' => ['type' => 'create', 'enabled' => false]]],
         ], $config['grids']['setono_sylius_cms_admin_entry_all']);
+
+        self::assertSame(['setono_sylius_cms_create_entry' => '@SetonoSyliusCMSPlugin/admin/entry/grid/action/create.html.twig'], $config['templates']['action']);
 
         self::assertSame([
             'setono_sylius_cms_entry_status' => '@SyliusUi/Grid/Filter/select.html.twig',

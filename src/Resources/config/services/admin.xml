@@ -59,6 +59,14 @@
             <tag name="twig.runtime"/>
         </service>
 
+        <!-- The locale a new entry's title and slug go into -->
+        <service id="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver" class="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver">
+            <!-- In the admin, the admin user's locale -->
+            <argument type="service" id="sylius.context.locale"/>
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="sylius.translation_locale_provider"/>
+        </service>
+
         <!-- The entry lists' grid filters -->
         <service id="Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter" class="Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter">
             <argument type="service" id="clock"/>

@@ -30,6 +30,9 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     private const GRID_LIMITS = [25, 50, 100];
 
+    /** The grid action type of the entry lists' Create, which opens the create dialog */
+    private const CREATE_ENTRY_ACTION = 'setono_sylius_cms_create_entry';
+
     public function load(array $configs, ContainerBuilder $container): void
     {
         /** @var array{disabled: array{block_types: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, fallback_locales: array<string, list<string>>, resources: array<string, array<string, mixed>>} $config */
@@ -167,9 +170,10 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                     ],
                     'actions' => [
                         'main' => [
+                            // The create dialog, for the route's content type, or asking for one in All entries
                             'create' => [
-                                'type' => 'create',
-                                'options' => ['link' => ['route' => 'setono_sylius_cms_admin_entry_create', 'parameters' => ['contentType' => '$contentType']]],
+                                'type' => self::CREATE_ENTRY_ACTION,
+                                'options' => ['contentType' => '$contentType'],
                             ],
                         ],
                         'item' => [
@@ -188,11 +192,12 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                     'fields' => [
                         'type' => $field('setono_sylius_cms.ui.type', 'type', 20),
                     ],
-                    // Creating an entry from All entries starts by picking its content type, which the create dialog does (#230)
-                    'actions' => ['main' => ['create' => ['type' => 'create', 'enabled' => false]]],
                 ],
             ],
             'templates' => [
+                'action' => [
+                    self::CREATE_ENTRY_ACTION => '@SetonoSyliusCMSPlugin/admin/entry/grid/action/create.html.twig',
+                ],
                 'filter' => [
                     StatusFilter::TYPE => '@SyliusUi/Grid/Filter/select.html.twig',
                     ChannelFilter::TYPE => '@SyliusUi/Grid/Filter/select.html.twig',

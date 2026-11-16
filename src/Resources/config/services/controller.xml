@@ -62,7 +62,8 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="setono_sylius_cms.entry_factories"/>
             <argument type="service" id="doctrine"/>
-            <argument type="service" id="sylius.translation_locale_provider"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver"/>
             <argument type="service" id="form.factory"/>
             <argument type="service" id="router"/>
             <argument type="service" id="twig"/>
@@ -90,6 +91,13 @@
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\RegistryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\RegistryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\RegistryExporter"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\SlugAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\SlugAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="sylius.generator.slug"/>
 
             <tag name="controller.service_arguments"/>
         </service>

@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\RegistryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SaveEntrySettingsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\SlugAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ValidateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;
@@ -107,6 +108,11 @@ return static function (RoutingConfigurator $routes): void {
     // The builder's JSON endpoints are internal: their paths, names and bodies can change in any release (docs/spec/builder.md#json-endpoints)
     $routes->add('setono_sylius_cms_admin_api_registry', '/cms/api/registry')
         ->controller(RegistryAction::class)
+        ->methods(['GET'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_slug', '/cms/api/slug')
+        ->controller(SlugAction::class)
         ->methods(['GET'])
     ;
 

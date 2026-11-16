@@ -2,7 +2,11 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
+        <!-- The create dialog's form, which generates an empty slug from the title with Sylius's slug generator -->
         <service id="Setono\SyliusCMSPlugin\Form\Type\CreateEntryType" class="Setono\SyliusCMSPlugin\Form\Type\CreateEntryType">
+            <argument type="service" id="sylius.generator.slug"/>
+            <argument type="service" id="sylius.repository.channel"/>
+
             <tag name="form.type"/>
         </service>
 

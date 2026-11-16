@@ -6,14 +6,15 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Container\ContainerInterface;
+use Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver;
 use Setono\SyliusCMSPlugin\Event\EntryCreated;
 use Setono\SyliusCMSPlugin\Form\Type\CreateEntryType;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Publishing\EditRecorder;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
+use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Sylius\Resource\Factory\FactoryInterface;
-use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,7 +25,11 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Twig\Environment;
 
 /**
- * Creates an entry of a content type from a title and a slug, then opens the builder
+ * The create dialog's end on the server, for a content type. GET answers the dialog's form: alone when the dialog
+ * loads it, and as a page otherwise. POST creates a never-published entry through the content type's resource factory,
+ * which starts it in every channel, puts it in the channels the editor picked, and opens the builder, whose back
+ * button goes to the entry's overview page. A submit the form refuses answers the form with its errors, as a page.
+ * See "Create dialog" in docs/spec/admin.md
  */
 final readonly class CreateEntryAction
 {
@@ -36,7 +41,8 @@ final readonly class CreateEntryAction
         private ContentTypeRegistryInterface $contentTypes,
         private ContainerInterface $entryFactories,
         private ManagerRegistry $managerRegistry,
-        private TranslationLocaleProviderInterface $translationLocaleProvider,
+        private ChannelsAndAudienceModifierInterface $channelsAndAudienceModifier,
+        private NewEntryLocaleResolver $localeResolver,
         private FormFactoryInterface $formFactory,
         private UrlGeneratorInterface $urlGenerator,
         private Environment $twig,
@@ -55,14 +61,26 @@ final readonly class CreateEntryAction
 
         $metadata = $this->contentTypes->get($contentType);
 
-        $form = $this->formFactory->create(CreateEntryType::class, null, ['slug' => $metadata->hasOwnUrl()]);
+        // The dialog shows the form on another page, so it posts here
+        $form = $this->formFactory->create(CreateEntryType::class, null, [
+            'slug' => $metadata->hasOwnUrl(),
+            'action' => $this->urlGenerator->generate('setono_sylius_cms_admin_entry_create', ['contentType' => $contentType]),
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            /** @var array{title: string, slug?: string} $data */
+            /** @var array{title: string, slug?: string, channels?: array<int, string>} $data */
             $data = $form->getData();
 
             $entry = $this->createEntry($contentType);
+            if (isset($data['channels'])) {
+                $this->channelsAndAudienceModifier->setChannels($entry, $data['channels']);
+            }
+
+            // The title and slug go into the admin user's locale, or else the channels' default
+            $localeCode = $this->localeResolver->resolve($entry);
+            $entry->setCurrentLocale($localeCode);
+            $entry->setFallbackLocale($localeCode);
             $entry->setTitle($data['title']);
             $entry->setSlug($data['slug'] ?? null);
             $this->editRecorder->record($entry);
@@ -77,12 +95,17 @@ final readonly class CreateEntryAction
             return new RedirectResponse($this->urlGenerator->generate('setono_sylius_cms_admin_builder', ['uuid' => $entry->getUuid()]));
         }
 
-        return new Response($this->twig->render('@SetonoSyliusCMSPlugin/admin/entry/create.html.twig', [
+        $template = !$form->isSubmitted() && $request->isXmlHttpRequest() ? '_create_form' : 'create';
+
+        return new Response($this->twig->render(sprintf('@SetonoSyliusCMSPlugin/admin/entry/%s.html.twig', $template), [
             'form' => $form->createView(),
             'content_type' => $metadata,
         ]), $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK);
     }
 
+    /**
+     * A new entry of the content type, from its resource factory, which starts it in every channel
+     */
     private function createEntry(string $contentType): EntryInterface
     {
         $factory = $this->entryFactories->get($contentType);
@@ -94,11 +117,6 @@ final readonly class CreateEntryAction
         if (!$entry instanceof EntryInterface) {
             throw new \LogicException(sprintf('The factory of the content type "%s" must create %s', $contentType, EntryInterface::class));
         }
-
-        // The entry starts with a translation in the store's default locale. Adding translations comes with #232
-        $localeCode = $this->translationLocaleProvider->getDefaultLocaleCode();
-        $entry->setCurrentLocale($localeCode);
-        $entry->setFallbackLocale($localeCode);
 
         return $entry;
     }

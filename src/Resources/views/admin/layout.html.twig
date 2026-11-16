@@ -1,8 +1,14 @@
 {#
- # The Content hub: the Sylius admin layout with the hub's own side menu beside each page.
- # Pages of the hub extend it and fill the hub_content block. See "Navigation" in docs/spec/admin.md
+ # The Content hub: the Sylius admin layout with the hub's own side menu beside each page, and the hub's own stylesheet
+ # and script, which runs the create dialog. Pages of the hub extend it and fill the hub_content block.
+ # See "Navigation" in docs/spec/admin.md
  #}
 {% extends '@SyliusAdmin/layout.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('bundles/setonosyliuscmsplugin/admin/admin.css') }}">
+{% endblock %}
 
 {% block content %}
     <div class="ui stackable grid">
@@ -13,4 +19,9 @@
             {% block hub_content %}{% endblock %}
         </div>
     </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="module" src="{{ asset('bundles/setonosyliuscmsplugin/admin/create-entry-dialog.js') }}"></script>
 {% endblock %}

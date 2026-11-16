@@ -1,0 +1,43 @@
+{#
+ # The create dialog and the button that opens it. With a content type (`content_type`, a code), as in a content type's
+ # list, the button is a link to the content type's create form, which the dialog loads. Without one, as in All entries,
+ # the dialog asks for the content type first. admin/create-entry-dialog.js runs it.
+ # See "Create dialog" in docs/spec/admin.md
+ #}
+{% set content_type = content_type|default(null) %}
+{% set label = label|default('setono_sylius_cms.ui.create') %}
+
+{% if content_type is not null %}
+    <a class="ui labeled icon primary button" href="{{ path('setono_sylius_cms_admin_entry_create', {'contentType': content_type}) }}" data-cms-create-entry aria-haspopup="dialog" aria-controls="cms-create-entry">
+        <i class="plus icon"></i> {{ label|trans }}
+    </a>
+{% else %}
+    <button type="button" class="ui labeled icon primary button" data-cms-create-entry aria-haspopup="dialog" aria-controls="cms-create-entry">
+        <i class="plus icon"></i> {{ label|trans }}
+    </button>
+{% endif %}
+
+<dialog id="cms-create-entry" class="cms-dialog" aria-labelledby="cms-create-entry-heading" data-load-failed="{{ 'setono_sylius_cms.ui.create_dialog_load_failed'|trans }}">
+    <button type="button" class="cms-dialog__close" data-cms-dialog-close aria-label="{{ 'setono_sylius_cms.ui.close'|trans }}"><i class="close icon"></i></button>
+
+    {% if content_type is null %}
+        <div data-cms-create-entry-step="content_type">
+            <h2 class="ui header" id="cms-create-entry-heading">
+                {{ 'setono_sylius_cms.ui.new_entry_heading'|trans }}
+                <div class="sub header">{{ 'setono_sylius_cms.ui.pick_content_type'|trans }}</div>
+            </h2>
+            <div class="cms-dialog__choices">
+                {% for type in cms_admin_content_types() %}
+                    <a class="ui fluid basic button" href="{{ path('setono_sylius_cms_admin_entry_create', {'contentType': type.code}) }}" data-cms-create-entry-type>{{ type.label|trans }}</a>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <div data-cms-create-entry-step="form" hidden>
+        {% if content_type is null %}
+            <button type="button" class="ui mini basic labeled icon button" data-cms-create-entry-back><i class="left arrow icon"></i> {{ 'setono_sylius_cms.ui.other_content_type'|trans }}</button>
+        {% endif %}
+        <div data-cms-create-entry-content aria-live="polite"></div>
+    </div>
+</dialog>

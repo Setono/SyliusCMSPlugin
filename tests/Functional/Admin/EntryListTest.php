@@ -56,8 +56,12 @@ final class EntryListTest extends BuilderApiTestCase
         self::assertSelectorTextContains('h1', 'All entries');
         self::assertSame(['Title', 'Type', 'Status', 'Last edited', 'Problems', 'Actions'], $crawler->filter('table thead th')->each(static fn (Crawler $th): string => trim($th->text())));
         self::assertSame([$announcement->getUuid(), $about->getUuid()], self::listedUuids($crawler));
-        // Creating from All entries starts by picking a content type, in the create dialog (#230)
-        self::assertCount(0, $crawler->selectLink('Create'));
+        // Creating from All entries opens the create dialog, which starts by picking a content type
+        self::assertSame('cms-create-entry', $crawler->selectButton('Create')->attr('aria-controls'));
+        self::assertSame(
+            [['Announcement', '/admin/cms/entries/announcement/new'], ['Page', '/admin/cms/entries/page/new']],
+            $crawler->filter('dialog#cms-create-entry [data-cms-create-entry-type]')->each(static fn (Crawler $type): array => [trim($type->text()), $type->attr('href')]),
+        );
 
         $row = self::row($crawler, $about);
         self::assertSame('About us', $row->filter('[data-column="title"] a')->text());
@@ -89,7 +93,11 @@ final class EntryListTest extends BuilderApiTestCase
         self::assertSelectorTextContains('h1', 'Pages');
         self::assertSame(['Title', 'Status', 'Last edited', 'Problems', 'Actions'], $crawler->filter('table thead th')->each(static fn (Crawler $th): string => trim($th->text())));
         self::assertSame([$about->getUuid()], self::listedUuids($crawler));
+        // Its Create opens the create dialog at the content type's form, which the link leads to without the dialog
         self::assertSame('/admin/cms/entries/page/new', $crawler->selectLink('Create')->attr('href'));
+        self::assertSame('cms-create-entry', $crawler->selectLink('Create')->attr('aria-controls'));
+        self::assertCount(1, $crawler->filter('dialog#cms-create-entry'));
+        self::assertCount(0, $crawler->filter('dialog#cms-create-entry [data-cms-create-entry-type]'));
     }
 
     /**
