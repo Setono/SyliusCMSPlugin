@@ -33,16 +33,9 @@ final readonly class RevisionRecorder implements RevisionRecorderInterface
         $revision->setEntry($entry);
         $revision->setContent(CanonicalJson::encode($this->entryNormalizer->normalize($entry)));
         $revision->setPublishedAt($publishedAt);
-        $revision->setPublishedBy($publishedBy ?? $this->signedInEditor());
+        $revision->setPublishedBy($publishedBy ?? EditorName::signedIn($this->tokenStorage));
         $revision->setScheduled($scheduled);
 
         $this->manager->persist($revision);
-    }
-
-    private function signedInEditor(): ?string
-    {
-        $editor = $this->tokenStorage->getToken()?->getUser();
-
-        return null === $editor ? null : EditorName::of($editor);
     }
 }

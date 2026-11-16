@@ -25,8 +25,6 @@ final readonly class EditRecorder
 
     public function record(EntryInterface $entry): void
     {
-        $editor = $this->tokenStorage->getToken()?->getUser();
-
-        $entry->setLastEdited($this->clock->now(), null === $editor ? null : EditorName::of($editor));
+        $entry->setLastEdited($this->clock->now(), EditorName::signedIn($this->tokenStorage));
     }
 }

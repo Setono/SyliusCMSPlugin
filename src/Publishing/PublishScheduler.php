@@ -62,7 +62,7 @@ final readonly class PublishScheduler implements PublishSchedulerInterface
                 $this->manager->persist($scheduledPublish);
             }
 
-            $scheduledPublish->schedule($at, $this->editor());
+            $scheduledPublish->schedule($at, EditorName::signedIn($this->tokenStorage));
 
             // Sent in the transaction, so a transport on the database sends it only if the scheduled publish is saved.
             // On any other, a message whose scheduled publish wasn't saved finds no scheduled publish with its token
@@ -111,15 +111,5 @@ final readonly class PublishScheduler implements PublishSchedulerInterface
         if ($failed) {
             $this->eventDispatcher->dispatch(new EntryPublishFailed($entry->getUuid(), $reason));
         }
-    }
-
-    /**
-     * The signed-in admin user's name, which the revision names as who published it when it runs in the worker
-     */
-    private function editor(): ?string
-    {
-        $editor = $this->tokenStorage->getToken()?->getUser();
-
-        return null === $editor ? null : EditorName::of($editor);
     }
 }

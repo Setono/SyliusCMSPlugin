@@ -66,17 +66,10 @@ final readonly class ShareLinkCreator implements ShareLinkCreatorInterface
         $shareLink->setShownTo($this->startingValues->shownTo($entry));
         $shareLink->setDate($this->startingValues->date($entry));
         $shareLink->setCreatedAt($this->clock->now());
-        $shareLink->setCreatedBy($this->signedInEditor());
+        $shareLink->setCreatedBy(EditorName::signedIn($this->tokenStorage));
 
         $this->shareLinks->add($shareLink);
 
         return $shareLink;
-    }
-
-    private function signedInEditor(): ?string
-    {
-        $editor = $this->tokenStorage->getToken()?->getUser();
-
-        return null === $editor ? null : EditorName::of($editor);
     }
 }

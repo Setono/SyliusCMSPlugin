@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Security;
 
 use Sylius\Component\Core\Model\AdminUserInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
@@ -14,6 +15,16 @@ final class EditorName
 {
     private function __construct()
     {
+    }
+
+    /**
+     * The signed-in admin user's name, or null when no one is signed in, such as in the Messenger worker
+     */
+    public static function signedIn(TokenStorageInterface $tokenStorage): ?string
+    {
+        $editor = $tokenStorage->getToken()?->getUser();
+
+        return null === $editor ? null : self::of($editor);
     }
 
     /**
