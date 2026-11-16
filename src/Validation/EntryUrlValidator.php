@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Validation;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Routing\Slug;
+use Setono\SyliusCMSPlugin\Routing\TakenUrl;
 use Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface;
 use Setono\SyliusCMSPlugin\Routing\UrlClash;
 use Setono\SyliusCMSPlugin\Routing\UrlClashFinderInterface;
@@ -55,7 +56,7 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
 
         return [
             ...$errors,
-            ...array_values($this->takenByRoutes($entry, $slugs, $channelCodes, 'setono_sylius_cms.slug.taken_by_route')),
+            ...array_values($this->takenByRoutes($this->takenUrls->find($entry, $slugs, $channelCodes), 'setono_sylius_cms.slug.taken_by_route')),
             ...$this->clashErrors($this->clashes->findPublished($entry, $slugs, $channelCodes), 'setono_sylius_cms.slug.taken'),
         ];
     }
@@ -71,11 +72,11 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
 
     public function warnTakenLiveUrls(EntryInterface $entry): array
     {
-        if (!$entry->isPublished() || !$this->contentTypes->getByEntry($entry)->hasOwnUrl()) {
+        if (!$this->contentTypes->getByEntry($entry)->hasOwnUrl()) {
             return [];
         }
 
-        return array_values($this->takenByRoutes($entry, self::validSlugsOf($entry), $entry->getChannelCodes(), 'setono_sylius_cms.slug.live_url_taken_by_route'));
+        return array_values($this->takenByRoutes($this->takenUrls->findLive($entry), 'setono_sylius_cms.slug.live_url_taken_by_route'));
     }
 
     public function refuse(EntryInterface $entry, array $slugs): array
@@ -85,7 +86,7 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
         }
 
         // A slug that breaks the rules has no URL to take, and publish refuses it anyway
-        return $this->takenByRoutes($entry, array_filter($slugs, Slug::isValid(...)), $entry->getChannelCodes(), 'setono_sylius_cms.slug.taken_by_route');
+        return $this->takenByRoutes($this->takenUrls->find($entry, array_filter($slugs, Slug::isValid(...)), $entry->getChannelCodes()), 'setono_sylius_cms.slug.taken_by_route');
     }
 
     public function validateChannels(EntryInterface $entry, array $channelCodes): array
@@ -99,15 +100,14 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
     }
 
     /**
-     * @param array<string, string> $slugs
-     * @param list<string> $channelCodes
+     * @param list<TakenUrl> $takenUrls
      *
      * @return array<string, ValidationError> by locale
      */
-    private function takenByRoutes(EntryInterface $entry, array $slugs, array $channelCodes, string $message): array
+    private function takenByRoutes(array $takenUrls, string $message): array
     {
         $errors = [];
-        foreach ($this->takenUrls->find($entry, $slugs, $channelCodes) as $taken) {
+        foreach ($takenUrls as $taken) {
             $errors[$taken->localeCode] ??= $this->error($taken->localeCode, $message, [
                 '%url%' => self::url($taken->localeCode, $taken->path),
                 '%route%' => $taken->route,

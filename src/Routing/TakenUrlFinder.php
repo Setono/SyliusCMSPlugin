@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Routing;
 
+use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
@@ -26,10 +27,41 @@ final class TakenUrlFinder implements TakenUrlFinderInterface, ResetInterface
         private readonly ContentTypeRegistryInterface $contentTypes,
         private readonly RouteCheckerInterface $routeChecker,
         private readonly ChannelRepositoryInterface $channelRepository,
+        private readonly Availability $availability,
     ) {
     }
 
-    public function find(EntryInterface $entry, array $slugs, array $channelCodes, bool $shownOnly = false): array
+    public function find(EntryInterface $entry, array $slugs, array $channelCodes): array
+    {
+        return $this->findIn($entry, $slugs, $channelCodes, false);
+    }
+
+    public function findLive(EntryInterface $entry): array
+    {
+        $channelCodes = $entry->getChannelCodes();
+        if (!$entry->isPublished() || [] === $channelCodes) {
+            return [];
+        }
+
+        $slugs = [];
+        foreach ($entry->getTranslations() as $localeCode => $translation) {
+            $slug = $translation->getSlug();
+            if (null !== $slug && Slug::isValid($slug) && $this->availability->showsIn($entry, (string) $localeCode)) {
+                $slugs[(string) $localeCode] = $slug;
+            }
+        }
+
+        return $this->findIn($entry, $slugs, $channelCodes, true);
+    }
+
+    /**
+     * @param array<string, string> $slugs
+     * @param list<string> $channelCodes
+     * @param bool $shownOnly whether to check a URL only in the channels that have its locale, where it shows
+     *
+     * @return list<TakenUrl>
+     */
+    private function findIn(EntryInterface $entry, array $slugs, array $channelCodes, bool $shownOnly): array
     {
         $contentType = $this->contentTypes->getByEntry($entry);
 

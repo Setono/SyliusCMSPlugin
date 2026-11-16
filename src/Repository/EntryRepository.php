@@ -23,6 +23,13 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         return $entry instanceof EntryInterface ? $entry : null;
     }
 
+    public function findOneById(int $id): ?EntryInterface
+    {
+        $entry = $this->find($id);
+
+        return $entry instanceof EntryInterface ? $entry : null;
+    }
+
     public function iterateAll(): iterable
     {
         /** @var iterable<EntryInterface> $entries */

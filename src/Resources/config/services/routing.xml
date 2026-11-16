@@ -22,6 +22,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Routing\RouteCheckerInterface"/>
             <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
 
             <tag name="kernel.reset" method="reset"/>
         </service>

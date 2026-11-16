@@ -8,12 +8,14 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Routing\RouteCheckerInterface;
 use Setono\SyliusCMSPlugin\Routing\TakenUrl;
 use Setono\SyliusCMSPlugin\Routing\TakenUrlFinder;
+use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\Article;
 use Sylius\Component\Channel\Model\Channel as PlainChannel;
@@ -89,16 +91,35 @@ final class TakenUrlFinderTest extends TestCase
     /**
      * @test
      */
-    public function it_checks_only_where_a_url_shows_when_asked(): void
+    public function it_finds_the_live_urls_another_route_takes_in_the_locales_the_entry_shows_in_where_its_channel_has_the_locale(): void
     {
-        $taken = $this->finder()->find(new Page(), ['da_DK' => 'login', 'en_US' => 'cart'], ['WEB', 'B2B'], true);
+        $page = self::page(['WEB', 'B2B'], [
+            'da_DK' => ['Log ind', 'login'],
+            'en_US' => ['Cart', 'cart'],
+            // Neither channel has German
+            'de_DE' => ['Anmelden', 'login'],
+            'fr_FR' => ['Panier', 'cart', false],
+            // No title, so no translation
+            'nl_NL' => [null, 'cart'],
+            'sv_SE' => ['Kundvagn', '/cart'],
+        ]);
 
         self::assertEquals([
             new TakenUrl('B2B', 'en_US', 'cart', 'sylius_shop_cart_summary'),
             new TakenUrl('WEB', 'da_DK', 'login', 'sylius_shop_login'),
             new TakenUrl('WEB', 'en_US', 'cart', 'sylius_shop_cart_summary'),
-        ], $taken);
+        ], $this->finder()->findLive($page));
         self::assertSame([['B2B', 'en_US', 'cart'], ['WEB', 'da_DK', 'login'], ['WEB', 'en_US', 'cart']], $this->checked);
+    }
+
+    /**
+     * @test
+     */
+    public function it_finds_no_live_url_of_a_never_published_entry_or_one_in_no_channel(): void
+    {
+        self::assertSame([], $this->finder()->findLive(self::page(['WEB'], ['en_US' => ['Cart', 'cart']], false)));
+        self::assertSame([], $this->finder()->findLive(self::page([], ['en_US' => ['Cart', 'cart']])));
+        self::assertSame([], $this->checked);
     }
 
     /**
@@ -106,7 +127,7 @@ final class TakenUrlFinderTest extends TestCase
      */
     public function it_checks_once_on_the_current_host_for_an_entry_in_no_channel(): void
     {
-        $taken = $this->finder()->find(new Page(), ['en_US' => 'cart', 'da_DK' => 'login'], [], true);
+        $taken = $this->finder()->find(new Page(), ['en_US' => 'cart', 'da_DK' => 'login'], []);
 
         self::assertEquals([
             new TakenUrl(null, 'en_US', 'cart', 'sylius_shop_cart_summary'),
@@ -157,7 +178,31 @@ final class TakenUrlFinderTest extends TestCase
             'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             'article' => ['model' => Article::class, 'translation' => null, 'resource' => 'app.article'],
             'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
-        ]), $this->routeChecker->reveal(), $this->channelRepository->reveal());
+        ]), $this->routeChecker->reveal(), $this->channelRepository->reveal(), new Availability());
+    }
+
+    /**
+     * @param list<string> $channelCodes
+     * @param array<string, array{0: string|null, 1: string, 2?: bool}> $translations locale => title, slug and whether it's shown
+     */
+    private static function page(array $channelCodes, array $translations, bool $published = true): Page
+    {
+        $page = new Page();
+        foreach ($translations as $localeCode => $translation) {
+            $pageTranslation = new PageTranslation();
+            $pageTranslation->setLocale($localeCode);
+            $pageTranslation->setTitle($translation[0]);
+            $pageTranslation->setSlug($translation[1]);
+            $pageTranslation->setShown($translation[2] ?? true);
+            $page->addTranslation($pageTranslation);
+        }
+        ChannelsAndAudience::modifier()->setChannels($page, $channelCodes);
+
+        if ($published) {
+            $page->publish(new \DateTimeImmutable());
+        }
+
+        return $page;
     }
 
     private static function channel(?string $code, string ...$localeCodes): Channel

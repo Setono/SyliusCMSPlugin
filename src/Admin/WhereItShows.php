@@ -40,7 +40,7 @@ final readonly class WhereItShows
         $entry = $row->entry;
         $channelCodes = $entry->getChannelCodes();
         $nowhere = $this->whyNowhere($row);
-        $takenUrls = null === $nowhere ? $this->takenUrls($entry, $channelCodes) : [];
+        $takenUrls = null === $nowhere ? $this->takenUrls($entry) : [];
 
         $localeCodes = $channels = [];
         foreach ($this->channelRepository->findBy([], ['id' => 'ASC']) as $channel) {
@@ -100,29 +100,14 @@ final readonly class WhereItShows
     }
 
     /**
-     * The entry's URLs that another route takes, by channel and locale. Only those it would show at are checked: in
-     * the locales it shows in, in its channels that have the locale
-     *
-     * @param list<string> $channelCodes
+     * The entry's live URLs that another route takes, by channel and locale
      *
      * @return array<string, array<string, TakenUrl>>
      */
-    private function takenUrls(EntryInterface $entry, array $channelCodes): array
+    private function takenUrls(EntryInterface $entry): array
     {
-        $slugs = [];
-        foreach ($entry->getTranslations() as $localeCode => $translation) {
-            $slug = $translation->getSlug();
-            if (null !== $slug && $this->availability->showsIn($entry, $localeCode)) {
-                $slugs[$localeCode] = $slug;
-            }
-        }
-
-        if ([] === $slugs || [] === $channelCodes) {
-            return [];
-        }
-
         $taken = [];
-        foreach ($this->takenUrls->find($entry, $slugs, $channelCodes, true) as $takenUrl) {
+        foreach ($this->takenUrls->findLive($entry) as $takenUrl) {
             $taken[$takenUrl->channelCode ?? ''][$takenUrl->localeCode] = $takenUrl;
         }
 

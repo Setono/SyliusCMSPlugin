@@ -149,24 +149,14 @@ final class EntryUrlValidatorTest extends TestCase
     /**
      * @test
      */
-    public function it_warns_of_a_published_url_another_route_takes_now(): void
+    public function it_warns_of_a_live_url_another_route_takes_now(): void
     {
-        $this->page->publish(new \DateTimeImmutable());
-        $this->takenUrls->find($this->page, ['da_DK' => 'om-os', 'en_US' => 'about-us'], ['B2B', 'WEB'])->willReturn([new TakenUrl('WEB', 'en_US', 'about-us', 'app_about')]);
+        $this->takenUrls->findLive($this->page)->willReturn([new TakenUrl('WEB', 'en_US', 'about-us', 'app_about')]);
 
         self::assertEquals(
             [new ValidationError(null, 'slug', 'en_US', 'Shoppers don\'t see this at /en_US/about-us: the route app_about takes the URL.')],
             $this->validator()->warnTakenLiveUrls($this->page),
         );
-    }
-
-    /**
-     * @test
-     */
-    public function a_never_published_entry_has_no_live_url_to_take(): void
-    {
-        self::assertSame([], $this->validator()->warnTakenLiveUrls($this->page));
-        $this->takenUrls->find(Argument::cetera())->shouldNotHaveBeenCalled();
     }
 
     /**

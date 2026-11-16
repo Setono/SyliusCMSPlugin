@@ -47,7 +47,7 @@ final class CheckRoutesCommandTest extends TestCase
     {
         $this->entries = $this->prophesize(EntryRepositoryInterface::class);
         $this->takenUrls = $this->prophesize(TakenUrlFinderInterface::class);
-        $this->takenUrls->find(Argument::cetera())->willReturn([]);
+        $this->takenUrls->findLive(Argument::any())->willReturn([]);
         $this->manager = $this->prophesize(ObjectManager::class);
         $this->problemCounts = $this->prophesize(ProblemCountUpdaterInterface::class);
 
@@ -77,22 +77,22 @@ final class CheckRoutesCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
         self::assertStringContainsString('[OK] No other route matches an entry URL.', $tester->getDisplay());
-        $this->takenUrls->find($page, ['da_DK' => 'om-os', 'en_US' => 'about-us'], ['WEB'], true)->shouldHaveBeenCalledOnce();
+        $this->takenUrls->findLive($page)->shouldHaveBeenCalledOnce();
     }
 
     /**
      * @test
      */
-    public function it_lists_each_published_url_another_route_matches_in_a_channel_and_locale_it_shows_in_and_fails(): void
+    public function it_lists_each_live_url_another_route_matches_and_fails(): void
     {
         $cart = self::page(['en_US' => 'cart', 'da_DK' => 'kurv', 'de_DE' => '/bad'], ['B2B', 'WEB'], true);
         $login = self::page(['en_US' => 'login'], ['WEB'], true);
         $this->entries->iterateAll()->willReturn([$cart, $login]);
-        $this->takenUrls->find($cart, ['da_DK' => 'kurv', 'en_US' => 'cart'], ['B2B', 'WEB'], true)->willReturn([
+        $this->takenUrls->findLive($cart)->willReturn([
             new TakenUrl('B2B', 'en_US', 'cart', 'sylius_shop_cart_summary'),
             new TakenUrl('WEB', 'en_US', 'cart', 'sylius_shop_cart_summary'),
         ]);
-        $this->takenUrls->find($login, ['en_US' => 'login'], ['WEB'], true)->willReturn([new TakenUrl('WEB', 'en_US', 'login', 'sylius_shop_login')]);
+        $this->takenUrls->findLive($login)->willReturn([new TakenUrl('WEB', 'en_US', 'login', 'sylius_shop_login')]);
 
         $tester = $this->check();
 
@@ -112,22 +112,9 @@ final class CheckRoutesCommandTest extends TestCase
     {
         $login = self::page(['en_US' => 'login'], ['WEB'], true);
         $this->entries->iterateAll()->willReturn([$login]);
-        $this->takenUrls->find($login, Argument::cetera())->willReturn([new TakenUrl('WEB', 'en_US', 'login', 'sylius_shop_login')]);
+        $this->takenUrls->findLive($login)->willReturn([new TakenUrl('WEB', 'en_US', 'login', 'sylius_shop_login')]);
 
         self::assertStringContainsString('Another route matches 1 entry URL, so shoppers', $this->check()->getDisplay());
-    }
-
-    /**
-     * @test
-     */
-    public function a_never_published_entry_or_one_in_no_channel_has_no_url_to_check(): void
-    {
-        $neverPublished = self::page(['en_US' => 'cart'], ['WEB'], false);
-        $nowhere = self::page(['en_US' => 'cart'], [], true);
-        $this->entries->iterateAll()->willReturn([$neverPublished, $nowhere]);
-        $this->takenUrls->find(Argument::any(), ['en_US' => 'cart'], Argument::cetera())->willReturn([new TakenUrl(null, 'en_US', 'cart', 'sylius_shop_cart_summary')]);
-
-        self::assertSame(Command::SUCCESS, $this->check()->getStatusCode());
     }
 
     /**

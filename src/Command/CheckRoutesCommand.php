@@ -8,7 +8,6 @@ use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
-use Setono\SyliusCMSPlugin\Routing\Slug;
 use Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -48,7 +47,7 @@ final class CheckRoutesCommand extends Command
         $batched = 0;
         $published = [];
         foreach ($this->entries->iterateAll() as $entry) {
-            foreach ($this->takenUrls->find($entry, self::publishedSlugs($entry), $entry->getChannelCodes(), true) as $taken) {
+            foreach ($this->takenUrls->findLive($entry) as $taken) {
                 $rows[] = [$taken->channelCode ?? '', $taken->localeCode, sprintf('/%s/%s', $taken->localeCode, $taken->path), $taken->route];
             }
 
@@ -89,25 +88,4 @@ final class CheckRoutesCommand extends Command
         }
     }
 
-    /**
-     * The slugs of a published entry, which its rows hold. A never-published entry and one in no channel show nowhere
-     *
-     * @return array<string, string> locale => slug
-     */
-    private static function publishedSlugs(EntryInterface $entry): array
-    {
-        if (!$entry->isPublished() || [] === $entry->getChannelCodes()) {
-            return [];
-        }
-
-        $slugs = [];
-        foreach ($entry->getTranslations() as $localeCode => $translation) {
-            $slug = $translation->getSlug();
-            if (null !== $slug && Slug::isValid($slug)) {
-                $slugs[$localeCode] = $slug;
-            }
-        }
-
-        return $slugs;
-    }
 }

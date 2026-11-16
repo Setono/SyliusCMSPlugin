@@ -13,12 +13,24 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 interface TakenUrlFinderInterface
 {
     /**
+     * The URLs of these slugs another route takes, in every channel, in every locale a slug is given in
+     *
      * @param array<string, string> $slugs locale => the slug whose URL is checked
      * @param list<string> $channelCodes the channels the URLs are checked in. With none, they're checked once, on the
      *                                   current host
-     * @param bool $shownOnly whether to check a URL only in the channels that have its locale, where it shows
      *
      * @return list<TakenUrl> by channel, then by locale as the slugs are given
      */
-    public function find(EntryInterface $entry, array $slugs, array $channelCodes, bool $shownOnly = false): array;
+    public function find(EntryInterface $entry, array $slugs, array $channelCodes): array;
+
+    /**
+     * The entry's live URLs another route takes: its published slugs, in its channels, in the locales it shows in that
+     * the channel has. A never-published entry, and one in no channel, has none. setono:cms:check-routes, the "URL taken
+     * by a Sylius route" problem and the overview page's Where it shows all read this
+     *
+     * @param EntryInterface $entry the entry's rows, which hold its published content
+     *
+     * @return list<TakenUrl> by channel, then by locale
+     */
+    public function findLive(EntryInterface $entry): array;
 }

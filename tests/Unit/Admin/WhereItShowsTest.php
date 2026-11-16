@@ -54,7 +54,7 @@ final class WhereItShowsTest extends TestCase
             self::channel('NORDIC', null, 'sv_SE', 'en_US', 'da_DK', 'sv_SE'),
         ]);
         $this->takenUrls = $this->prophesize(TakenUrlFinderInterface::class);
-        $this->takenUrls->find(Argument::cetera())->willReturn([]);
+        $this->takenUrls->findLive(Argument::any())->willReturn([]);
     }
 
     /**
@@ -244,7 +244,7 @@ final class WhereItShowsTest extends TestCase
     public function a_cell_says_hidden_by_a_sylius_route_where_another_route_takes_the_entry_s_url(): void
     {
         $page = self::page(['en_US' => 'About us', 'da_DK' => 'Om os']);
-        $this->takenUrls->find($page, ['en_US' => 'about-us', 'da_DK' => 'om-os'], ['NORDIC', 'WEB'], true)->willReturn([
+        $this->takenUrls->findLive($page)->willReturn([
             new TakenUrl('NORDIC', 'da_DK', 'om-os', 'app_about'),
             new TakenUrl('WEB', 'en_US', 'about-us', 'app_about_us'),
         ]);
@@ -258,34 +258,20 @@ final class WhereItShowsTest extends TestCase
     }
 
     /**
-     * Only the URLs the entry would show at are checked: in its channels, and in the locales it shows in
+     * Which URLs are live, in the channels and locales the entry shows in, is TakenUrlFinder::findLive()'s
      *
      * @test
      */
-    public function it_checks_the_routes_of_the_urls_of_the_locales_the_entry_shows_in_in_its_channels_that_have_the_locale(): void
+    public function it_checks_no_route_when_the_entry_is_disabled_or_not_published_or_outside_its_date_window(): void
     {
-        $page = self::page(['en_US' => 'About us', 'da_DK' => 'Om os', 'sv_SE' => null], heldBack: ['da_DK']);
-        ChannelsAndAudience::modifier()->setChannels($page, ['NORDIC']);
-        $this->takenUrls = $this->prophesize(TakenUrlFinderInterface::class);
-        $this->takenUrls->find($page, ['en_US' => 'about-us'], ['NORDIC'], true)->willReturn([])->shouldBeCalledOnce();
-
-        $this->whereItShows()->of(self::row($page));
-    }
-
-    /**
-     * @test
-     */
-    public function it_checks_no_route_when_the_entry_shows_nowhere_whatever_its_urls(): void
-    {
-        $this->takenUrls->find(Argument::cetera())->shouldNotBeCalled();
+        $this->takenUrls->findLive(Argument::any())->shouldNotBeCalled();
 
         $disabled = self::page();
         $disabled->setEnabled(false);
-        $nowhere = self::page();
-        ChannelsAndAudience::modifier()->setChannels($nowhere, []);
-        $heldBack = self::page(heldBack: ['en_US']);
+        $ended = self::page();
+        $ended->setDateWindow(new DateWindow(null, self::utc(self::NOW)));
 
-        foreach ([$disabled, self::page(published: false), $nowhere, $heldBack] as $page) {
+        foreach ([$disabled, self::page(published: false), $ended] as $page) {
             $this->whereItShows()->of(self::row($page));
         }
     }
@@ -320,7 +306,7 @@ final class WhereItShowsTest extends TestCase
 
         $page = self::page();
         $page->setDateWindow(new DateWindow(null, self::utc(self::NOW)));
-        $this->takenUrls->find(Argument::cetera())->willReturn([new TakenUrl('WEB', 'en_US', 'about-us', 'app_about')]);
+        $this->takenUrls->findLive(Argument::any())->willReturn([new TakenUrl('WEB', 'en_US', 'about-us', 'app_about')]);
         self::assertSame(WhereItShowsCell::ENDED, $this->cell($page, 'WEB', 'en_US')->code);
     }
 
