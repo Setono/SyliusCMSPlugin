@@ -53,6 +53,7 @@ export function App({ config, api, autosaveDelay, navigate = goTo }: AppProps) {
 
                 const store = createBuilderStore({
                     locale: config.locale,
+                    locales: config.locales ?? [],
                     blockTypes: registry.blockTypes,
                     contentTypes: registry.contentTypes,
                     entry,

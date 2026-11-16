@@ -9,8 +9,11 @@ import { emptyHistory, rebaseHistory, recordEdit, redoEdit, undoEdit, type Histo
 import { canDuplicate, canMoveBlocks, createNestingRules, initialChildren, insertableIn, type NestingRules } from './nesting';
 import { holdClashes, reconcile, splitValueClashes, withoutKeysIn, type HeldClash } from './pullIn';
 import { copyWithNewKeys, findBlock, generateBlockKey, insertBlock, listOf, locateBlock, moveBlocksTo, removeBlockFrom, shiftWithin, topmostBlocks } from './tree';
-import type { BlockTypeDefinition, Clash, ContentTypeDefinition, Entry, EntryStatus, FieldValues, JsonValue, StoredBlock } from './types';
-import { normalizeValue, writeEntryValue, writeFieldValue } from './values';
+import type { Locale } from './config';
+import { localeOf } from './locales';
+import { entryValues, sourceOfTyped, upToDate } from './translationState';
+import type { BlockTypeDefinition, Clash, ContentTypeDefinition, Entry, EntryStatus, FieldValues, JsonValue, StoredBlock, TranslationSource } from './types';
+import { normalizeValue, writeEntryTranslated, writeEntryValue, writeFieldValue, writeTranslated } from './values';
 
 enablePatches();
 
@@ -93,9 +96,13 @@ export interface BuilderActions {
     toggleSelection(key: string): void;
     /**
      * Sets a field's value in the edited locale, or its one value when it's shared. null or '' removes it. Values set
-     * one after another in the same field, such as while typing, are undone in one step.
+     * one after another in the same field, such as while typing, are undone in one step. A translatable value typed
+     * over its fallback value, or copied from it, records that it's translated from the fallback value's locale, and
+     * updating a value that has a source brings it up to date. See "Translation state" in docs/spec/content-model.md
      */
     setFieldValue(key: string, field: string, value: JsonValue | null): void;
+    /** Records that a block's outdated value in the edited locale is up to date with the value it was translated from. */
+    markValueUpToDate(key: string, field: string): void;
     /** Picks one of the block type's styles for a block, by its code, or none when the style is null. */
     setBlockStyle(key: string, style: string | null): void;
     /** Edits another locale. It isn't an edit to the working copy: nothing is saved or undone. */
@@ -103,14 +110,18 @@ export interface BuilderActions {
     /**
      * Sets an entry field's value in the edited locale, such as the title. null or '' empties it. Setting a value in a
      * locale the entry has no translation in adds one, which starts shown before the first publish, and held back after
-     * it. Values set one after another in the same field are undone in one step.
+     * it. Values set one after another in the same field are undone in one step. Where the value is translated from is
+     * recorded as for a block's value, except for a slug, which never falls back.
      */
     setEntryValue(field: string, value: JsonValue | null): void;
+    /** Records that an entry field's outdated value in the edited locale is up to date with the value it was translated from. */
+    markEntryValueUpToDate(field: string): void;
     /**
      * Adds a translation in the edited locale with these fields, such as the title and slug of the translation it falls
-     * back to, or gives the translation it has them. A new one starts shown before the first publish, and held back after it.
+     * back to, and where they're translated from, or gives the translation it has them. A new one starts shown before
+     * the first publish, and held back after it.
      */
-    addTranslation(fields: FieldValues): void;
+    addTranslation(fields: FieldValues, translated?: Record<string, TranslationSource>): void;
     /** Switches the edited locale's translation shown, or holds it back. It does nothing when there's no translation. */
     setShown(shown: boolean): void;
     /** Undoes the last edit, which is then saved like any other change. Returns whether there was one. */
@@ -143,6 +154,8 @@ export type BuilderStore = StoreApi<BuilderState>;
 
 export interface BuilderStoreOptions {
     locale: string;
+    /** The store's locales, with their fallback chains, which say where a value typed over a fallback value is translated from. */
+    locales?: readonly Locale[];
     blockTypes: BlockTypeDefinition[];
     contentTypes: ContentTypeDefinition[];
     entry: Entry;
@@ -151,7 +164,8 @@ export interface BuilderStoreOptions {
     generateKey?: () => string;
 }
 
-export function createBuilderStore({ locale, blockTypes, contentTypes, entry, status, lockToken = 0, generateKey = generateBlockKey }: BuilderStoreOptions): BuilderStore {
+export function createBuilderStore({ locale, locales = [], blockTypes, contentTypes, entry, status, lockToken = 0, generateKey = generateBlockKey }: BuilderStoreOptions): BuilderStore {
+    const chainOf = (code: string): string[] => localeOf(locales, code).fallbackChain;
     const blockTypesByCode = new Map(blockTypes.map((blockType) => [blockType.code, blockType]));
     const rules = createNestingRules(blockTypes, contentTypes.find((contentType) => contentType.code === entry.contentType)?.blocks ?? null);
     const createBlock = (type: string): StoredBlock => ({
@@ -285,25 +299,41 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
             },
 
             setEntryValue(field, value) {
-                const { locale: edited, status: current } = get();
+                const { locale: edited, status: current, entry: before } = get();
+                // Slugs never fall back, so a slug typed has no fallback value it's translated from
+                const chain = field === 'slug' ? [edited] : chainOf(edited);
+                const source = sourceOfTyped(entryValues(before, field), before.translations[edited]?.translated[field], normalizeValue(value), chain);
 
                 edit(
-                    (working) => writeEntryValue(working, edited, field, value, current === 'never_published'),
+                    (working) => {
+                        writeEntryValue(working, edited, field, value, current === 'never_published');
+                        writeEntryTranslated(working, edited, field, source, current === 'never_published');
+                    },
                     {},
                     JSON.stringify(['set_entry_value', field, edited]),
                 );
             },
 
-            addTranslation(fields) {
+            markEntryValueUpToDate(field) {
+                const { locale: edited, entry: before } = get();
+                const current = before.translations[edited]?.translated[field];
+                const source = current === undefined ? undefined : upToDate(entryValues(before, field), current);
+                if (source !== undefined) {
+                    edit((working) => writeEntryTranslated(working, edited, field, source, false));
+                }
+            },
+
+            addTranslation(fields, translated = {}) {
                 const { locale: edited, status: current } = get();
                 const values = Object.fromEntries(Object.entries(fields).map(([field, value]) => [field, normalizeValue(value)]));
 
                 edit((working) => {
                     const translation = working.translations[edited];
                     if (translation === undefined) {
-                        working.translations[edited] = { shown: current === 'never_published', fields: values, translated: {} };
+                        working.translations[edited] = { shown: current === 'never_published', fields: values, translated: { ...translated } };
                     } else {
                         Object.assign(translation.fields, values);
+                        Object.assign(translation.translated, translated);
                     }
                 });
             },
@@ -454,17 +484,39 @@ export function createBuilderStore({ locale, blockTypes, contentTypes, entry, st
                     return;
                 }
 
+                const edited = get().locale;
                 const translatable = isTranslatable(block.type, field);
+                const source = translatable ? sourceOfTyped(block.fields[field], block.translated[field]?.[edited], normalizeValue(value), chainOf(edited)) : null;
                 edit(
                     (working) => {
                         const target = findBlock(working.tree.blocks, key);
                         if (target !== undefined) {
-                            writeFieldValue(target.fields, field, translatable, get().locale, value);
+                            writeFieldValue(target.fields, field, translatable, edited, value);
+                            if (translatable) {
+                                writeTranslated(target.translated, field, edited, source);
+                            }
                         }
                     },
                     {},
                     JSON.stringify(['set_value', key, field]),
                 );
+            },
+
+            markValueUpToDate(key, field) {
+                const edited = get().locale;
+                const block = findBlock(get().entry.tree.blocks, key);
+                const current = block?.translated[field]?.[edited];
+                const source = current === undefined ? undefined : upToDate(block?.fields[field], current);
+                if (source === undefined) {
+                    return;
+                }
+
+                edit((working) => {
+                    const target = findBlock(working.tree.blocks, key);
+                    if (target !== undefined) {
+                        writeTranslated(target.translated, field, edited, source);
+                    }
+                });
             },
 
             setBlockStyle(key, style) {

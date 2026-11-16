@@ -55,7 +55,8 @@ export interface StoredBlockTree {
 export interface EntryTranslation {
     shown: boolean;
     fields: FieldValues;
-    translated: TranslationState;
+    /** Field name, then where the translation's value was translated from. */
+    translated: Record<string, TranslationSource>;
 }
 
 export interface Entry {
