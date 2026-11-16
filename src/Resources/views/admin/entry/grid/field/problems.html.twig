@@ -1,2 +1,17 @@
-{# The Problems column of the entry lists: a marker when the entry has an error or warning, which comes with #231. `data` is the entry #}
-<div data-column="problems"></div>
+{#
+ # The Problems column of the entry lists: a marker when the entry has an error or warning, red with an error and
+ # orange with only warnings, with how many. It leads to the Problems section of the entry's overview page. `data` is
+ # the entry. See "Entry lists" and "Problems" in docs/spec/admin.md
+ #}
+{% set count = cms_admin_problem_summary().of(data) %}
+<div data-column="problems">
+    {% if count.total > 0 %}
+        {% set error = count.errors > 0 %}
+        <a class="ui {{ error ? 'red' : 'orange' }} label" data-problems="{{ error ? 'error' : 'warning' }}"
+           href="{{ path('setono_sylius_cms_admin_entry_show', {'uuid': data.uuid, '_fragment': 'cms-section-problems'}) }}"
+           title="{{ 'setono_sylius_cms.ui.error_count'|trans({'%count%': count.errors}) }}, {{ 'setono_sylius_cms.ui.warning_count'|trans({'%count%': count.warnings}) }}">
+            <i class="{{ error ? 'times circle' : 'exclamation triangle' }} icon" aria-hidden="true"></i>
+            {{ count.total }}
+        </a>
+    {% endif %}
+</div>

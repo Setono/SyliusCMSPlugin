@@ -58,6 +58,11 @@ setono_sylius_cms:
             slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team.'
             slug_rules: A slug can't start or end with a slash, or have two slashes in a row.
             title: Title
+    # What each kind of problem says. See "Problems" in docs/spec/admin.md
+    problem:
+        misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
+        misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
+        unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
     publish:
         invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'
     ui:
@@ -77,6 +82,8 @@ setono_sylius_cms:
         create: Create
         create_dialog_load_failed: Couldn't load the form. Try again.
         discard_changes: Discard changes
+        error_count: '{0} No errors|{1} 1 error|]1,Inf[ %count% errors'
+        fix_in_builder: Fix in builder
         language: Language
         last_edited: Last edited
         last_published: 'Last published %date%'
@@ -89,6 +96,9 @@ setono_sylius_cms:
         overview_placeholder: What needs attention, what's coming up, translations and drafts in progress will show here. Until then, find the entries in their lists.
         pick_content_type: What do you want to create?
         preview: Preview
+        problem_severity:
+            error: Error
+            warning: Warning
         problems: Problems
         publish: Publish
         published_at: Published
@@ -105,6 +115,7 @@ setono_sylius_cms:
         search: Search
         status: Status
         status_filter:
+            needs_attention: Needs attention
             disabled_or_outside_date_window: Disabled or outside its date window
             never_published: Never published
             unpublished_changes: Unpublished changes
@@ -130,6 +141,7 @@ setono_sylius_cms:
         untitled: Untitled
         url: URL
         url_after_publishing: 'After publishing: %url%'
+        warning_count: '{0} no warnings|{1} 1 warning|]1,Inf[ %count% warnings'
         urls: URLs
 
     # The builder app's UI strings. Every key under setono_sylius_cms.builder reaches the app through the registry endpoint

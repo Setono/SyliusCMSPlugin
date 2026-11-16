@@ -11,6 +11,7 @@ import { createDiscard, createPublish, createReload } from './publishing';
 import { createSettingsStore } from './settings';
 import { Shell } from './shell/Shell';
 import { createBuilderStore } from './store';
+import { findBlock } from './tree';
 import { createValidation, createValidationStore, type Validation } from './validation';
 
 export interface AppProps {
@@ -60,6 +61,12 @@ export function App({ config, api, autosaveDelay, navigate = goTo }: AppProps) {
                     status,
                     lockToken,
                 });
+                // Opened at a block, such as where a problem is fixed, it starts with that block selected
+                const opened = config.block ?? null;
+                if (opened !== null && findBlock(entry.tree.blocks, opened) !== undefined) {
+                    store.getState().selectBlock(opened);
+                }
+
                 autosave = createAutosave(store, (changes, token) => api.saveChanges(changes, token), { delay: autosaveDelay });
                 // Who else has the entry open. It also pulls in what they saved, once the working copy has moved on
                 presence = createPresence(store, autosave, () => api.presence(), editors);

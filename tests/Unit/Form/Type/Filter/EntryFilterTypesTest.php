@@ -38,6 +38,7 @@ final class EntryFilterTypesTest extends TypeTestCase
         self::assertContains('setono_sylius_cms_entry_status_filter', $vars['block_prefixes']);
         self::assertSame(
             [
+                'needs_attention' => 'setono_sylius_cms.ui.status_filter.needs_attention',
                 'unpublished_changes' => 'setono_sylius_cms.ui.status_filter.unpublished_changes',
                 'never_published' => 'setono_sylius_cms.ui.status_filter.never_published',
                 'disabled_or_outside_date_window' => 'setono_sylius_cms.ui.status_filter.disabled_or_outside_date_window',

@@ -6,17 +6,25 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Admin;
 
 use Knp\Menu\ItemInterface;
 use PHPUnit\Framework\TestCase;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Admin\MainMenuListener;
+use Setono\SyliusCMSPlugin\Problem\ProblemCount;
+use Setono\SyliusCMSPlugin\Problem\ProblemSummary;
+use Setono\SyliusCMSPlugin\Problem\ProblemSummaryProviderInterface;
 use Sylius\Bundle\UiBundle\Menu\Event\MenuBuilderEvent;
+use Symfony\Component\Translation\Loader\YamlFileLoader;
+use Symfony\Component\Translation\Translator;
 
 final class MainMenuListenerTest extends TestCase
 {
+    use ProphecyTrait;
+
     /**
      * @test
      */
     public function it_adds_one_content_item_that_opens_the_hub_before_the_configuration(): void
     {
-        $menu = self::syliusMenu(['catalog', 'marketing', 'configuration', 'official_support']);
+        $menu = $this->syliusMenu(['catalog', 'marketing', 'configuration', 'official_support']);
 
         self::assertSame(['catalog', 'marketing', 'setono_sylius_cms', 'configuration', 'official_support'], array_keys($menu->getChildren()));
 
@@ -30,6 +38,7 @@ final class MainMenuListenerTest extends TestCase
         self::assertSame('setono_sylius_cms.menu.admin.main.content.content', $content->getLabel());
         self::assertSame('/setono_sylius_cms_admin_overview', $content->getUri());
         self::assertSame('pencil alternate', $content->getLabelAttribute('icon'));
+        self::assertSame([], $content->getLinkAttributes(), 'Nothing needs attention, so it has no badge');
     }
 
     /**
@@ -37,7 +46,7 @@ final class MainMenuListenerTest extends TestCase
      */
     public function it_adds_the_item_last_in_a_menu_without_the_configuration(): void
     {
-        $menu = self::syliusMenu(['catalog', 'marketing']);
+        $menu = $this->syliusMenu(['catalog', 'marketing']);
 
         self::assertSame(['catalog', 'marketing', 'setono_sylius_cms'], array_keys($menu->getChildren()));
     }
@@ -47,7 +56,7 @@ final class MainMenuListenerTest extends TestCase
      */
     public function it_marks_the_item_current_on_every_page_of_the_hub_and_on_no_other(): void
     {
-        $content = self::syliusMenu(['configuration'])->getChild('setono_sylius_cms')?->getChild('content');
+        $content = $this->syliusMenu(['configuration'])->getChild('setono_sylius_cms')?->getChild('content');
         self::assertNotNull($content);
 
         self::assertTrue(MenuFactory::matcherOn('setono_sylius_cms_admin_overview')->isCurrent($content));
@@ -58,9 +67,39 @@ final class MainMenuListenerTest extends TestCase
     }
 
     /**
+     * @test
+     */
+    public function its_badge_counts_the_errors_and_warnings_that_need_attention_marked_as_an_error_when_there_is_one(): void
+    {
+        $content = $this->syliusMenu(['configuration'], new ProblemSummary(['0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a' => new ProblemCount(1, 1), '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4b' => new ProblemCount(0, 1)]))->getChild('setono_sylius_cms')?->getChild('content');
+        self::assertNotNull($content);
+
+        self::assertSame([
+            'data-cms-problems' => 'error',
+            'data-cms-problem-count' => '3',
+            'title' => '1 error, 2 warnings',
+        ], $content->getLinkAttributes());
+    }
+
+    /**
+     * @test
+     */
+    public function its_badge_is_a_warning_when_only_warnings_need_attention(): void
+    {
+        $content = $this->syliusMenu(['configuration'], new ProblemSummary(['0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4b' => new ProblemCount(0, 1)]))->getChild('setono_sylius_cms')?->getChild('content');
+        self::assertNotNull($content);
+
+        self::assertSame([
+            'data-cms-problems' => 'warning',
+            'data-cms-problem-count' => '1',
+            'title' => 'No errors, 1 warning',
+        ], $content->getLinkAttributes());
+    }
+
+    /**
      * @param list<string> $sections
      */
-    private static function syliusMenu(array $sections): ItemInterface
+    private function syliusMenu(array $sections, ProblemSummary $summary = new ProblemSummary()): ItemInterface
     {
         $factory = MenuFactory::create();
         $menu = $factory->createItem('root');
@@ -68,7 +107,14 @@ final class MainMenuListenerTest extends TestCase
             $menu->addChild($section);
         }
 
-        (new MainMenuListener())(new MenuBuilderEvent($factory, $menu));
+        $summaries = $this->prophesize(ProblemSummaryProviderInterface::class);
+        $summaries->getSummary()->willReturn($summary);
+
+        $translator = new Translator('en');
+        $translator->addLoader('yaml', new YamlFileLoader());
+        $translator->addResource('yaml', dirname(__DIR__, 3) . '/src/Resources/translations/messages.en.yaml', 'en');
+
+        (new MainMenuListener($summaries->reveal(), $translator))(new MenuBuilderEvent($factory, $menu));
 
         return $menu;
     }

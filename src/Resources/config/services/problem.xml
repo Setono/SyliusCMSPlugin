@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!--
+        Finds an entry's problems, of every kind, which its overview page gets through cms_admin_entry_problems().
+        RegisterProblemKindsPass hands it the kinds
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemFinder" class="Setono\SyliusCMSPlugin\Problem\ProblemFinder">
+            <argument type="collection"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemFinder"/>
+
+        <!--
+        The problems across the store, counted per entry, which the lists' marker (through cms_admin_problem_summary()),
+        their Needs attention filter and the Content badge read. The count is kept in the cache pool
+        setono_sylius_cms.cache.problems, and dropped when a flush writes an entry or its draft
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProvider" class="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProvider">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface"/>
+            <argument type="service" id="setono_sylius_cms.cache.problems"/>
+
+            <tag name="twig.runtime"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProviderInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProvider"/>
+
+        <service id="Setono\SyliusCMSPlugin\Problem\ProblemSummaryListener" class="Setono\SyliusCMSPlugin\Problem\ProblemSummaryListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemSummaryProviderInterface"/>
+
+            <tag name="doctrine.event_listener" event="onFlush"/>
+            <tag name="doctrine.event_listener" event="postFlush"/>
+        </service>
+
+        <!--
+        The problem kinds. A kind is a service tagged setono_sylius_cms.problem_kind, which autoconfiguration adds to a
+        ProblemKindInterface. setono:cms:lint reports the kinds whose tag has lint="true"
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType" class="Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue" class="Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+
+            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+        </service>
+    </services>
+</container>

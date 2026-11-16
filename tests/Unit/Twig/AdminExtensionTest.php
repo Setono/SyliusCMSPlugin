@@ -19,16 +19,22 @@ use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Revision;
+use Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType;
+use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
+use Setono\SyliusCMSPlugin\Problem\ProblemSummaryProvider;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Translation\TranslatableValues;
+use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Twig\AdminExtension;
 use Setono\SyliusCMSPlugin\Twig\AdminRuntime;
 use Sylius\Component\Channel\Model\ChannelInterface;
@@ -40,6 +46,7 @@ use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Component\Locale\Model\Locale;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -54,11 +61,14 @@ final class AdminExtensionTest extends IntegrationTestCase
 {
     use ProphecyTrait;
 
+    private Page $storesEntry;
+
     /** @var ObjectProphecy<RepositoryInterface<CustomerGroupInterface>> */
     private ObjectProphecy $customerGroups;
 
     protected function setUp(): void
     {
+        $this->storesEntry = new Page();
         /** @var ObjectProphecy<RepositoryInterface<CustomerGroupInterface>> $customerGroups */
         $customerGroups = $this->prophesize(RepositoryInterface::class);
         $this->customerGroups = $customerGroups;
@@ -104,6 +114,19 @@ final class AdminExtensionTest extends IntegrationTestCase
     {
         $page = $this->aPage($title)['page'];
         ChannelsAndAudience::modifier()->setChannels($page, ['WEB']);
+
+        return ['page' => $page];
+    }
+
+    /**
+     * The store's one entry
+     *
+     * @return array{page: Page}
+     */
+    public function aPageWithABlockOfATypeTheCodeNoLongerHas(string $key): array
+    {
+        $page = $this->storesEntry;
+        $page->setBlockTree(new StoredTree(null, [new StoredBlock($key, 'promo', 1)]));
 
         return ['page' => $page];
     }
@@ -157,6 +180,12 @@ final class AdminExtensionTest extends IntegrationTestCase
         $entryRevisions = new EntryRevisions($revisions->reveal());
         $runtime = $this->runtime();
         $translationChips = $this->translationChips();
+        $workingCopies = $this->prophesize(WorkingCopyProviderInterface::class);
+        $workingCopies->getWorkingCopy(Argument::any())->willReturnArgument(0);
+        $problemFinder = new ProblemFinder([new UnknownBlockType(new BlockTypeRegistry([], new FieldReader()))], $workingCopies->reveal());
+        $entries = $this->prophesize(EntryRepositoryInterface::class);
+        $entries->iterateAll()->willReturn([$this->aPageWithABlockOfATypeTheCodeNoLongerHas('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a')['page']]);
+        $problemSummaries = new ProblemSummaryProvider($entries->reveal(), $problemFinder, new ArrayAdapter());
 
         return [new FactoryRuntimeLoader([
             EntryRows::class => static fn (): EntryRows => $entryRows,
@@ -164,6 +193,8 @@ final class AdminExtensionTest extends IntegrationTestCase
             TranslationChips::class => static fn (): TranslationChips => $translationChips,
             EntryRevisions::class => static fn (): EntryRevisions => $entryRevisions,
             AdminRuntime::class => static fn (): AdminRuntime => $runtime,
+            ProblemFinder::class => static fn (): ProblemFinder => $problemFinder,
+            ProblemSummaryProvider::class => static fn (): ProblemSummaryProvider => $problemSummaries,
         ])];
     }
 

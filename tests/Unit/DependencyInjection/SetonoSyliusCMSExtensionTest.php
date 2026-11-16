@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
@@ -90,6 +91,18 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $instanceof = $this->container->getAutoconfiguredInstanceof();
         self::assertArrayHasKey(FieldHandlerInterface::class, $instanceof);
         self::assertTrue($instanceof[FieldHandlerInterface::class]->hasTag('setono_sylius_cms.field_handler'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_autoconfigures_problem_kinds(): void
+    {
+        $this->load();
+
+        $instanceof = $this->container->getAutoconfiguredInstanceof();
+        self::assertArrayHasKey(ProblemKindInterface::class, $instanceof);
+        self::assertSame(['setono_sylius_cms.problem_kind' => [[]]], $instanceof[ProblemKindInterface::class]->getTags());
     }
 
     /**
@@ -213,11 +226,39 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         self::assertSame([
             'blocks' => [
                 'publishing' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_publishing.html.twig', 'priority' => 100],
+                'problems' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_problems.html.twig', 'priority' => 90],
                 'revisions' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_revisions.html.twig', 'priority' => 60],
                 'urls' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_urls.html.twig', 'priority' => 40],
                 'translations' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_translations.html.twig', 'priority' => 20],
             ],
         ], $events['setono_sylius_cms.admin.entry.show.sections'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function it_keeps_the_problem_summary_in_a_cache_pool_on_the_apps_adapter_for_five_minutes(): void
+    {
+        $this->load();
+
+        self::assertSame(
+            [['cache' => ['pools' => ['setono_sylius_cms.cache.problems' => ['adapter' => 'cache.app', 'default_lifetime' => 300]]]]],
+            $this->container->getExtensionConfig('framework'),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_loads_the_stylesheet_of_the_content_badge_on_every_admin_page_after_sylius_own_styles(): void
+    {
+        $this->load();
+
+        self::assertSame([
+            'blocks' => [
+                'setono_sylius_cms_menu' => ['template' => '@SetonoSyliusCMSPlugin/admin/menu/stylesheet.html.twig', 'priority' => 5],
+            ],
+        ], $this->templateEvents()['sylius.admin.layout.stylesheets'] ?? null);
     }
 
     /**

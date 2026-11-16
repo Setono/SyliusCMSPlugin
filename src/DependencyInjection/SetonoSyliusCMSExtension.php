@@ -11,8 +11,10 @@ use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBlockTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLayoutsPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterProblemKindsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterUpgradersPass;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
+use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Symfony\Component\Config\FileLocator;
@@ -50,6 +52,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $this->registerResources('setono_sylius_cms', SyliusResourceBundle::DRIVER_DOCTRINE_ORM, $config['resources'], $container);
 
         $container->registerForAutoconfiguration(FieldHandlerInterface::class)->addTag(self::FIELD_HANDLER_TAG);
+        $container->registerForAutoconfiguration(ProblemKindInterface::class)->addTag(RegisterProblemKindsPass::TAG);
         $container->registerAttributeForAutoconfiguration(BlockType::class, static function (ChildDefinition $definition): void {
             $definition->addTag(RegisterBlockTypesPass::TAG);
         });
@@ -69,6 +72,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     {
         $this->prependGrids($container);
         $this->prependEntryOverviewEvents($container);
+        $this->prependProblems($container);
 
         /** @var array{assets: bool} $config */
         $config = $this->processConfiguration(new Configuration(), $container->getExtensionConfig($this->getAlias()));
@@ -82,6 +86,34 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 'sylius.shop.layout.stylesheets' => [
                     'blocks' => [
                         'setono_sylius_cms_stylesheet' => ['template' => '@SetonoSyliusCMSPlugin/shop/stylesheet.html.twig', 'priority' => 20],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * The problem summary's cache pool, setono_sylius_cms.cache.problems, which keeps the count of every entry's problems
+     * for five minutes on the app's cache adapter (see Problem\ProblemSummaryProvider), and the stylesheet of the Content
+     * badge on every admin page, after Sylius's own styles (10). Admin\MainMenuListener puts the count on the Content
+     * item's link, because Sylius's menu template has no place for a badge of its own, and the stylesheet shows it.
+     * Projects change either in their own framework or sylius_ui config. See "Navigation" and "Problems" in docs/spec/admin.md
+     */
+    private function prependProblems(ContainerBuilder $container): void
+    {
+        $container->prependExtensionConfig('framework', [
+            'cache' => [
+                'pools' => [
+                    'setono_sylius_cms.cache.problems' => ['adapter' => 'cache.app', 'default_lifetime' => 300],
+                ],
+            ],
+        ]);
+
+        $container->prependExtensionConfig('sylius_ui', [
+            'events' => [
+                'sylius.admin.layout.stylesheets' => [
+                    'blocks' => [
+                        'setono_sylius_cms_menu' => ['template' => '@SetonoSyliusCMSPlugin/admin/menu/stylesheet.html.twig', 'priority' => 5],
                     ],
                 ],
             ],
@@ -117,6 +149,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 'setono_sylius_cms.admin.entry.show.sections' => [
                     'blocks' => [
                         'publishing' => $block('_publishing', 100),
+                        'problems' => $block('_problems', 90),
                         'revisions' => $block('_revisions', 60),
                         'urls' => $block('_urls', 40),
                         'translations' => $block('_translations', 20),

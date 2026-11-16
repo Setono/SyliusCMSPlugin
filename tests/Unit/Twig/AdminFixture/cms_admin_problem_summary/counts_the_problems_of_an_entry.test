@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_problem_summary() counts the problems of each entry, and of the store
+--TEMPLATE--
+{% set count = cms_admin_problem_summary().of(page) %}{{ count.errors }} {{ count.warnings }} {{ cms_admin_problem_summary().total.total }}
+--DATA--
+return $this->aPageWithABlockOfATypeTheCodeNoLongerHas('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a')
+--EXPECT--
+0 1 1

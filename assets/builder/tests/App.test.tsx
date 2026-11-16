@@ -93,6 +93,20 @@ describe('the builder', () => {
         expect(await screen.findByRole('heading', { level: 1, name: 'About us' })).toBeInTheDocument();
     });
 
+    it('should open with the block the config names selected, such as where a problem is fixed', async () => {
+        render(<App config={{ ...config, block: 'b' }} api={fakeApi(withBlocks(block('a', { text: { en_US: 'Welcome' } }), block('b', { text: { en_US: 'Goodbye' } })))} />);
+
+        expect(await screen.findByRole('button', { name: 'Heading Goodbye', pressed: true })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Heading Welcome', pressed: false })).toBeInTheDocument();
+    });
+
+    it('should open with nothing selected when the tree has no block the config names', async () => {
+        render(<App config={{ ...config, block: 'gone' }} api={fakeApi()} />);
+
+        expect(await screen.findByRole('button', { name: 'Heading Welcome', pressed: false })).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: 'Settings', selected: true })).toBeInTheDocument();
+    });
+
     it('should show the top bar and the block tree of the entry', async () => {
         await openBuilder();
 

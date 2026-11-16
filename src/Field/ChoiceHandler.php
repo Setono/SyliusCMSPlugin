@@ -7,7 +7,7 @@ namespace Setono\SyliusCMSPlugin\Field;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-final readonly class ChoiceHandler implements FieldHandlerInterface
+final readonly class ChoiceHandler implements FitCheckingFieldHandlerInterface
 {
     public function __construct(private TranslatorInterface $translator)
     {
@@ -54,15 +54,19 @@ final readonly class ChoiceHandler implements FieldHandlerInterface
     {
         $field = self::choice($field);
 
-        if (null === $value || self::fits($field, $value)) {
+        if (null === $value || $this->fits($field, $value)) {
             return;
         }
 
         $context->buildViolation('setono_sylius_cms.field.invalid_choice')->addViolation();
     }
 
-    private static function fits(Choice $field, mixed $value): bool
+    /**
+     * One of the choices the field still offers, or for a multiple choice a list of them
+     */
+    public function fits(Field $field, mixed $value): bool
     {
+        $field = self::choice($field);
         $values = $field->values();
 
         if (!$field->multiple) {
