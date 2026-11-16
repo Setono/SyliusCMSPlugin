@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Command;
 
 use Doctrine\Persistence\ObjectManager;
+use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -20,7 +22,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * Reports the problems of the kinds tagged for it in the stored content: stored values that don't fit their field type
  * and blocks of unknown types, and broken references once #245 adds them. It checks every entry's published content and
- * its draft apart, each upgraded as it's read, and exits non-zero on any problem, for CI and deploys. Revisions are
+ * its draft apart, each upgraded as it's read, and exits non-zero on any problem, for CI and deploys. Content that can't
+ * be read at all is reported as a problem of its own, and the rest is checked. Revisions are
  * history that nobody edits, so they're left out: one restored brings its content into the draft, which is checked.
  * Editor presets (#270) join with their ticket. See "Console commands" in docs/spec/extending.md
  */
@@ -52,7 +55,16 @@ final class LintCommand extends Command
         $entries = $batched = 0;
         foreach ($this->entries->iterateAll() as $entry) {
             $found = count($rows);
-            foreach ($this->contents($entry) as $content => $checked) {
+            foreach ($this->contents($entry) as $content => $read) {
+                try {
+                    $checked = $read();
+                } catch (InvalidStoredTreeException|InvalidEntryFormatException $exception) {
+                    // Content that can't be read at all is a problem in itself, and the next content is checked
+                    $rows[] = [$entry->getUuid(), $content, null, null, null, $this->translator->trans('setono_sylius_cms.problem.unreadable', ['%reason%' => $exception->getMessage()])];
+
+                    continue;
+                }
+
                 foreach ($this->kinds as $kind) {
                     foreach ($kind->findIn($checked) as $problem) {
                         $rows[] = [$entry->getUuid(), $content, $problem->block, $problem->field, $problem->locale, $problem->message->trans($this->translator)];
@@ -84,26 +96,28 @@ final class LintCommand extends Command
     }
 
     /**
-     * What's stored of the entry, upgraded: a published entry's published content, and its draft when it has one, or a
-     * never-published entry's draft, which is its rows
+     * What's stored of the entry, each read and upgraded when it's called: a published entry's published content, and
+     * its draft when it has one, or a never-published entry's draft, which is its rows
      *
-     * @return \Generator<string, EntryInterface>
+     * @return \Generator<string, \Closure(): EntryInterface>
      */
     private function contents(EntryInterface $entry): \Generator
     {
         if (!$entry->isPublished()) {
-            yield 'draft' => $this->workingCopies->getWorkingCopy($entry);
+            yield 'draft' => fn (): EntryInterface => $this->workingCopies->getWorkingCopy($entry);
 
             return;
         }
 
-        $published = clone $entry;
-        $published->setBlockTree($this->upgrader->readBlockTree($entry));
+        yield 'published' => function () use ($entry): EntryInterface {
+            $published = clone $entry;
+            $published->setBlockTree($this->upgrader->readBlockTree($entry));
 
-        yield 'published' => $published;
+            return $published;
+        };
 
         if ($this->workingCopies->hasDraft($entry)) {
-            yield 'draft' => $this->workingCopies->getWorkingCopy($entry);
+            yield 'draft' => fn (): EntryInterface => $this->workingCopies->getWorkingCopy($entry);
         }
     }
 

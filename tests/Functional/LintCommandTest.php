@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\DisabledLayoutKernel;
@@ -109,6 +110,28 @@ final class LintCommandTest extends KernelTestCase
         $tester = self::lint();
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), self::display($tester));
+    }
+
+    /**
+     * @test
+     */
+    public function it_reports_content_it_cant_read_and_lints_the_entries_after_it(): void
+    {
+        self::bootKernel();
+        $broken = self::createPage('Broken', 'broken', 'Hello');
+        $after = self::createPageWithBlocks('After', 'after', [new StoredBlock(self::PROMO, 'promo', 1)]);
+        /** @var EntityManagerInterface $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
+        $manager->getConnection()->executeStatement('UPDATE setono_sylius_cms__entry SET block_tree = :tree WHERE id = :id', ['tree' => '{"blocks":42}', 'id' => $broken->getId()]);
+        $manager->clear();
+
+        $tester = self::lint();
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        $display = self::display($tester);
+        self::assertStringContainsString(sprintf('%s draft This content can\'t be read:', $broken->getUuid()), $display);
+        self::assertStringContainsString(sprintf('%s draft %s A block of the type "promo"', $after->getUuid(), self::PROMO), $display);
+        self::assertStringContainsString('[ERROR] Found 2 problems in 2 entries.', $display);
     }
 
     protected function tearDown(): void

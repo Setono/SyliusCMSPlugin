@@ -10,6 +10,7 @@ use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Command\LintCommand;
+use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Problem\Problem;
@@ -17,6 +18,7 @@ use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
@@ -116,6 +118,36 @@ final class LintCommandTest extends TestCase
             sprintf('%s published fullWidth Full width in the layout holds a value that doesn\'t fit its field type, so it counts as empty.', $published->getUuid()),
             sprintf('%s draft %s text da_DK Text in the Heading block holds a value that doesn\'t fit its field type, so it counts as empty.', $published->getUuid(), self::KEY),
             '[ERROR] Found 3 problems in 2 entries.',
+        ], self::lines($tester));
+    }
+
+    /**
+     * One entry's content that can't be read at all is reported, and the entries after it are checked
+     *
+     * @test
+     */
+    public function it_reports_content_it_cant_read_as_a_problem_and_goes_on(): void
+    {
+        $brokenTree = self::published();
+        $brokenDraft = self::published();
+        $after = new Page();
+        $this->entries->iterateAll()->willReturn([$brokenTree, $brokenDraft, $after]);
+        $this->upgrader->readBlockTree($brokenTree)->willThrow(new InvalidStoredTreeException('Not a block tree'));
+        $this->workingCopies->hasDraft($brokenTree)->willReturn(false);
+        $this->upgrader->readBlockTree($brokenDraft)->willReturn(new StoredTree(null, []));
+        $this->workingCopies->hasDraft($brokenDraft)->willReturn(true);
+        $this->workingCopies->getWorkingCopy($brokenDraft)->willThrow(new InvalidEntryFormatException('Not an entry'));
+        $this->workingCopies->getWorkingCopy($after)->willReturn($after);
+
+        $tester = $this->lint([self::kind([[static fn (EntryInterface $entry): bool => $entry === $after, new Problem('first', Severity::Error, $after, self::unknownBlockType('promo'))]])]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        self::assertSame([
+            'Entry Content Block Field Locale Problem',
+            sprintf('%s published This content can\'t be read: Not a block tree', $brokenTree->getUuid()),
+            sprintf('%s draft This content can\'t be read: Not an entry', $brokenDraft->getUuid()),
+            sprintf('%s draft A block of the type "promo", which the code no longer has, isn\'t shown.', $after->getUuid()),
+            '[ERROR] Found 3 problems in 3 entries.',
         ], self::lines($tester));
     }
 
