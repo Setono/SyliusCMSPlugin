@@ -17,7 +17,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  */
 final class CustomerGroupChoicesProvider implements ChoicesProviderInterface, ResetInterface
 {
-    /** @var array<string, string>|null */
+    /** @var array<array-key, string>|null */
     private ?array $groups = null;
 
     /**

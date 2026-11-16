@@ -95,7 +95,7 @@ final class DeletedCustomerGroupTest extends TestCase
         $repository->findAll()->shouldBeCalledTimes(2);
         $kind = new DeletedCustomerGroup($repository->reveal(), self::blockTypes());
 
-        $kind->findIn(self::page())->current();
+        [...$kind->findIn(self::page())];
         [...$kind->findIn(self::page(self::block(self::A, 'heading', [self::groups(['gone'])])))];
         [...$kind->findIn(self::page(self::block(self::A, 'heading', [self::groups(['gone'])])))];
         $kind->reset();

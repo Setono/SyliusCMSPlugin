@@ -15,7 +15,6 @@ enum Reads: string
     case HostPage = 'host_page';
 
     case Channel = 'channel';
-
     case Locale = 'locale';
 
     /** The customer, and with them their customer group */

@@ -258,8 +258,10 @@ final readonly class ChangeSet
                 throw new InvalidChangeSetException('The params of a condition must be an object');
             }
 
-            /** @var array<string, mixed> $params */
-            return ['kind' => $kind, 'negate' => $negate, 'params' => $params];
+            /** @var array<string, mixed> $map */
+            $map = $params;
+
+            return ['kind' => $kind, 'negate' => $negate, 'params' => $map];
         }, $conditions);
     }
 

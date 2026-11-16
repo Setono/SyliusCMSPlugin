@@ -101,10 +101,11 @@ final class DeletedCustomerGroupTest extends WebTestCase
      */
     public function setono_cms_lint_reports_it_as_a_broken_reference(): void
     {
+        $kernel = self::bootKernel();
         $page = self::pageForWholesalers();
         self::deleteCustomerGroup('wholesale');
 
-        $application = new Application(self::$kernel ?? self::bootKernel());
+        $application = new Application($kernel);
         $tester = new CommandTester($application->find('setono:cms:lint'));
         $tester->execute([]);
 

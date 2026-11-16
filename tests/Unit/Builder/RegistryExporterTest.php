@@ -187,6 +187,7 @@ final class RegistryExporterTest extends TestCase
      */
     public function it_exports_the_condition_kinds_with_their_parameters_as_fields_shared_by_all_translations(): void
     {
+        /** @var array<string, array{code: string, label: string, fields: list<array{name: string, schema: array<string, mixed>}>}> $conditionKinds */
         $conditionKinds = array_column($this->exporter()->export()['conditionKinds'], null, 'code');
 
         self::assertSame(['locale_is', 'signed_in', 'date_window'], array_keys($conditionKinds));
@@ -230,6 +231,7 @@ final class RegistryExporterTest extends TestCase
     {
         $exporter = $this->exporter(conditionKinds: ['titled' => new Titled()]);
 
+        /** @var array<string, array{code: string, label: string, fields: list<array{name: string, schema: array<string, mixed>}>}> $conditionKinds */
         $conditionKinds = array_column($exporter->export()['conditionKinds'], null, 'code');
 
         self::assertFalse($conditionKinds['titled']['fields'][0]['schema']['x-cms-translatable']);

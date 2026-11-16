@@ -15,7 +15,7 @@ use Symfony\Contracts\Service\ResetInterface;
  */
 final class ChannelChoicesProvider implements ChoicesProviderInterface, ResetInterface
 {
-    /** @var array<string, string>|null */
+    /** @var array<array-key, string>|null */
     private ?array $choices = null;
 
     /**

@@ -32,9 +32,11 @@ final class VisibilityConditionsTest extends BuilderApiTestCase
         self::assertResponseIsSuccessful();
         self::assertIsArray($registry);
         self::assertIsArray($registry['conditionKinds'] ?? null);
-        $kinds = array_column($registry['conditionKinds'], null, 'code');
+        /** @var list<array{code: string, label: string, fields: list<array{name: string, schema: array<string, mixed>}>}> $exported */
+        $exported = $registry['conditionKinds'];
+        $kinds = array_column($exported, null, 'code');
         self::assertSame(['channel', 'locale', 'date_window', 'customer_group'], array_keys($kinds));
-        self::assertSame(['Channel', 'Language', 'Date window', 'Customer group'], array_column($registry['conditionKinds'], 'label'));
+        self::assertSame(['Channel', 'Language', 'Date window', 'Customer group'], array_column($exported, 'label'));
 
         self::assertSame([
             'name' => 'channels',
@@ -51,8 +53,8 @@ final class VisibilityConditionsTest extends BuilderApiTestCase
                 'x-cms-translatable' => false,
             ],
         ], $kinds['channel']['fields'][0]);
-        self::assertSame(['en_US' => 'English (United States)'], $kinds['locale']['fields'][0]['schema']['x-cms-options']['choices']);
-        self::assertSame(['@guest' => 'Guests', '@no_group' => 'Signed in without a group', 'wholesale' => 'Wholesale'], $kinds['customer_group']['fields'][0]['schema']['x-cms-options']['choices']);
+        self::assertSame(['choices' => ['en_US' => 'English (United States)'], 'multiple' => true], $kinds['locale']['fields'][0]['schema']['x-cms-options']);
+        self::assertSame(['choices' => ['@guest' => 'Guests', '@no_group' => 'Signed in without a group', 'wholesale' => 'Wholesale'], 'multiple' => true], $kinds['customer_group']['fields'][0]['schema']['x-cms-options']);
         self::assertSame(['from', 'until'], array_column($kinds['date_window']['fields'], 'name'));
         self::assertSame('date_time', $kinds['date_window']['fields'][0]['schema']['x-cms-type']);
     }
@@ -124,7 +126,8 @@ final class VisibilityConditionsTest extends BuilderApiTestCase
         $response = self::json($client, 'POST', '/admin/cms/api/preview/render?_cms_preview=' . self::previewToken($page), ['blocks' => [$block(false)]], $csrfToken);
         self::assertIsArray($response);
         self::assertIsArray($response['blocks'] ?? null);
-        self::assertStringContainsString('Hello', (string) $response['blocks'][self::KEY]);
+        self::assertIsString($response['blocks'][self::KEY] ?? null);
+        self::assertStringContainsString('Hello', $response['blocks'][self::KEY]);
     }
 
     /**

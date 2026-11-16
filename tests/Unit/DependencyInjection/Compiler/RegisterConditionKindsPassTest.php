@@ -174,7 +174,7 @@ final class RegisterConditionKindsPassTest extends AbstractCompilerPassTestCase
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<mixed>
      */
     private function locatorArgument(): array
     {

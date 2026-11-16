@@ -12,7 +12,7 @@ namespace Setono\SyliusCMSPlugin\Field;
 interface ChoicesProviderInterface
 {
     /**
-     * @return array<string, string> value => label, in the locale
+     * @return array<array-key, string> value => label, in the locale. PHP turns numeric values into int keys
      */
     public function getChoices(string $localeCode): array;
 }
