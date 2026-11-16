@@ -17,14 +17,28 @@ jobs:
                 with:
                     fetch-depth: 0
 
+            # v2 compares against its last release, not against unreleased code on 2.x.
+            # Until the first 2.* tag exists, there's nothing released to break, so the check is skipped.
+            -   name: "Find the latest 2.* release"
+                id: "baseline"
+                run: |
+                    tag="$(git tag --list '2.*' --sort=-v:refname | head -n 1)"
+                    echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+                    if [ -z "${tag}" ]; then
+                        echo "::notice::No 2.* tag yet, so there's no release to check against. Skipping the check."
+                    fi
+
             -   name: "Setup PHP, with composer and extensions"
+                if: "steps.baseline.outputs.tag != ''"
                 uses: "shivammathur/setup-php@v2"
                 with:
                     php-version: "8.2"
                     coverage: "none"
 
             -   name: "Install tool"
+                if: "steps.baseline.outputs.tag != ''"
                 run: "composer global require roave/backward-compatibility-check"
 
             -   name: "Check for BC breaks"
-                run: "~/.composer/vendor/bin/roave-backward-compatibility-check --from=origin/${{ github.event.pull_request.base.ref }} --format=github-actions"
+                if: "steps.baseline.outputs.tag != ''"
+                run: "~/.composer/vendor/bin/roave-backward-compatibility-check --from=${{ steps.baseline.outputs.tag }} --format=github-actions"

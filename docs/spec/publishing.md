@@ -62,6 +62,7 @@ An entry shows when it has been published, is enabled, is inside its date window
 
 - Changes that don't touch the same values are both applied. The response carries the colleague's changes, and the builder pulls them in.
 - A real clash reaches the editor: the same field in the same locale, or an edit to a block a colleague deleted. The editor keeps theirs or takes the other, one clash at a time.
+- A colleague's discard counts as a save that changes nothing. A pending edit to a value the discard reverted merges without a clash, and an edit to a block the discard removed is a clash.
 
 **Presence.** The builder shows who else has the entry open.
 
@@ -84,10 +85,10 @@ Slug checks also run whenever a slug or the channels change, so the builder show
 
 ## Publishing now
 
-A publish:
+A publish runs in one database transaction, under the draft's autosave lock, so it validates, asks about and applies the same working copy. A publish:
 
 1. validates the draft, or a never-published entry's rows, and refuses on errors
-2. dispatches `BeforeEntryPublish`, which a listener can veto with a message the builder shows
+2. dispatches `BeforeEntryPublish`, which a listener can veto with a message the builder shows. A listener must not change the entry, because what it changes is published.
 3. copies the draft onto the rows and deletes the draft
 4. records the old slug of every translation whose slug changed, so it redirects ([URLs and SEO](urls-and-seo.md#routing))
 5. writes indexed `Entries` fields to the reference table ([Collections](collections.md#categories))

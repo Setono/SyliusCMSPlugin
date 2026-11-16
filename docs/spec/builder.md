@@ -52,7 +52,7 @@ With a block selected, the right pane shows:
 - its **path** in the tree, each step selectable
 - its **actions**: move, duplicate, save as preset (★) and delete
 - its **block style**, when its block type offers any
-- its **fields**, each rendered from its field schema by the field type's widget ([Extending](extending.md#widgets))
+- its **fields**, each rendered from its field schema by the field type's field control ([Extending](extending.md#field-controls))
 - its **children**, with + to add one
 - its **visibility conditions** ([Targeting](targeting.md#condition-kinds))
 
@@ -137,7 +137,7 @@ The builder holds the entry's working copy as JSON in the browser and saves it a
 - **Stack.** React and TypeScript, built with Vite. Rich text uses Tiptap 3, with only its MIT core and MIT extensions: no Pro extensions and no Tiptap Cloud. The rich text schema is in [Content model](content-model.md#rich-text).
 - **Look.** Its own full-screen layout and CSS, with no Semantic UI or jQuery.
 - **Assets.** The plugin ships the builder prebuilt. The compiled assets are committed to the repository, CI checks they match the sources, and `assets:install` installs them. Host projects need no Node, Encore or Stimulus, and v2 adds nothing to the admin's Encore build.
-- **Widgets for projects' own field types** are custom elements, loaded from `setono_sylius_cms.builder.scripts` ([Extending](extending.md#widgets)).
+- **Field controls for projects' own field types** are custom elements, loaded from `setono_sylius_cms.builder.scripts` ([Extending](extending.md#field-controls)).
 - **UI strings** live in the plugin's Symfony translation files and reach the builder as JSON in the admin user's locale. There's no separate JS i18n library.
 - **Tests.** Vitest covers the app's TypeScript, such as tree operations, undo and forms rendered from field schemas ([README](README.md#testing)).
 
@@ -174,7 +174,7 @@ Preview mode injects a bridge script into the page, which shoppers never get.
 
 The builder talks to plain JSON controllers under the admin firewall, not to API Platform. Every endpoint below is prefixed with `/{admin}/cms/api`, where `{admin}` is Sylius's admin path ([Routes](extending.md#routes)). Each requires an admin user and checks a CSRF token on every request that changes something.
 
-**These endpoints are internal.** Only the builder app that ships with the plugin calls them, so their paths, route names and bodies aren't part of the BC promise and can change in any release, together with the app. They're listed here to guide the build. Two things they carry are contracts anyway: entries travel in the [entry format](content-model.md#entry-format), and what widgets reach through `.builder` ([Extending](extending.md#widgets)) keeps its shape.
+**These endpoints are internal.** Only the builder app that ships with the plugin calls them, so their paths, route names and bodies aren't part of the BC promise and can change in any release, together with the app. They're listed here to guide the build. Two things they carry are contracts anyway: entries travel in the [entry format](content-model.md#entry-format), and what field controls reach through `.builder` ([Extending](extending.md#field-controls)) keeps its shape.
 
 | Name (`setono_sylius_cms_admin_api_…`) | Method | Path | Purpose |
 | --- | --- | --- | --- |
