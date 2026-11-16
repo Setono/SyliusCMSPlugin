@@ -37,7 +37,7 @@ final class DeleteEntryTest extends WebTestCase
         self::assertNull(self::pages()->findOneBy(['uuid' => $uuid]));
         /** @var Connection $connection */
         $connection = self::getContainer()->get('doctrine.dbal.default_connection');
-        self::assertSame(0, (int) $connection->fetchOne('SELECT COUNT(*) FROM setono_sylius_cms__draft'));
+        self::assertEquals(0, $connection->fetchOne('SELECT COUNT(*) FROM setono_sylius_cms__draft'));
 
         $client->followRedirect();
         self::assertSelectorTextContains('.sylius-flash-message', 'The entry has been deleted');
@@ -74,7 +74,7 @@ final class DeleteEntryTest extends WebTestCase
         self::assertSame($uuid, $event->uuid);
         self::assertSame('page', $event->contentType);
         self::assertSame($outside, $level);
-        self::assertSame(0, (int) $count);
+        self::assertEquals(0, $count);
     }
 
     /**

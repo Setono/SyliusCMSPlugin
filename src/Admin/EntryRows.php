@@ -36,7 +36,7 @@ final readonly class EntryRows
      */
     public function build(iterable $entries, string $localeCode): array
     {
-        $entries = [...$entries];
+        $entries = iterator_to_array($entries, false);
         if ([] === $entries) {
             return [];
         }

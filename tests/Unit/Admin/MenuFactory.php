@@ -25,6 +25,9 @@ final class MenuFactory
     {
         $factory = new KnpMenuFactory();
         $factory->addExtension(new RoutingExtension(new class() implements UrlGeneratorInterface {
+            /**
+             * @param array<mixed> $parameters
+             */
             public function generate(string $name, array $parameters = [], int $referenceType = self::ABSOLUTE_PATH): string
             {
                 return rtrim('/' . $name . '?' . http_build_query($parameters), '?');

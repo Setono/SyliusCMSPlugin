@@ -109,7 +109,7 @@ final class HubMenuBuilderTest extends TestCase
     private static function child(ItemInterface $item, string $name): ItemInterface
     {
         $child = $item->getChild($name);
-        self::assertNotNull($child, sprintf('The item "%s" has no child "%s"', (string) $item->getName(), $name));
+        self::assertNotNull($child, sprintf('The item "%s" has no child "%s"', $item->getName(), $name));
 
         return $child;
     }

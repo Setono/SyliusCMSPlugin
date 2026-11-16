@@ -17,6 +17,8 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
+ * @extends AbstractType<EntryListCriteria>
+ *
  * The filters of an entry list: search, status and channel. It's sent with GET, so a filtered list has a URL of its
  * own, and its data is the list's EntryListCriteria. See "Entry lists" in docs/spec/admin.md
  */
@@ -53,8 +55,7 @@ final class EntryListFilterType extends AbstractType
 
         $builder->addModelTransformer(new CallbackTransformer(
             static fn (?EntryListCriteria $criteria): array => ['search' => $criteria?->search, 'status' => $criteria?->status, 'channel' => $criteria?->channel],
-            /** @param array{search: ?string, status: ?EntryStatusFilter, channel: ?string} $data */
-            static fn (array $data): EntryListCriteria => new EntryListCriteria($data['search'], $data['status'], $data['channel']),
+            self::criteria(...),
         ));
     }
 
@@ -65,6 +66,14 @@ final class EntryListFilterType extends AbstractType
             'method' => 'GET',
             'csrf_protection' => false,
         ]);
+    }
+
+    /**
+     * @param array{search: ?string, status: ?EntryStatusFilter, channel: ?string} $data what the fields submitted
+     */
+    private static function criteria(array $data): EntryListCriteria
+    {
+        return new EntryListCriteria($data['search'], $data['status'], $data['channel']);
     }
 
     /**

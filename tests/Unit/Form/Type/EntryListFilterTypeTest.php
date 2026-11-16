@@ -126,7 +126,9 @@ final class EntryListFilterTypeTest extends TypeTestCase
     {
         $labels = [];
         foreach ($choices as $choice) {
-            $labels[$choice->value] = (string) $choice->label;
+            self::assertIsString($choice->value);
+            self::assertIsString($choice->label);
+            $labels[$choice->value] = $choice->label;
         }
 
         return $labels;

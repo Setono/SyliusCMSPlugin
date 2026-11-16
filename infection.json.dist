@@ -8,7 +8,8 @@
             "Repository",
             "Resources",
             "Rendering/EntryUrlLookup.php",
-            "Query/VisibleEntriesQuery.php"
+            "Query/VisibleEntriesQuery.php",
+            "Admin/EntryListQuery.php"
         ]
     },
     "testFrameworkOptions": "--testsuite=unit",

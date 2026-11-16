@@ -42,9 +42,12 @@ final class EntryRowsTest extends TestCase
         $this->drafts->findByEntries(Argument::any())->willReturn([]);
 
         $this->urlGenerator = $this->prophesize(UrlGeneratorInterface::class);
-        $this->urlGenerator->generate('setono_sylius_cms_shop_entry', Argument::type('array'))->will(
-            static fn (array $arguments): string => sprintf('/%s/%s', (string) $arguments[1]['_locale'], (string) $arguments[1]['path']),
-        );
+        $this->urlGenerator->generate('setono_sylius_cms_shop_entry', Argument::type('array'))->will(static function (array $arguments): string {
+            /** @var array{_locale: string, path: string} $parameters */
+            $parameters = $arguments[1];
+
+            return sprintf('/%s/%s', $parameters['_locale'], $parameters['path']);
+        });
     }
 
     /**
@@ -210,7 +213,14 @@ final class EntryRowsTest extends TestCase
             $translationLocaleProvider->reveal(),
         );
 
-        return $rows->build(new \ArrayIterator($entries), $localeCode);
+        // The entries come as Pagerfanta gives a page of them: an iterable, whose keys don't matter
+        $page = (static function () use ($entries): \Generator {
+            foreach ($entries as $entry) {
+                yield $entry->getUuid() => $entry;
+            }
+        })();
+
+        return $rows->build($page, $localeCode);
     }
 
     /**
