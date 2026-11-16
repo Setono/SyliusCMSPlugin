@@ -1,10 +1,11 @@
 import * as Popover from '@radix-ui/react-popover';
-import { useEffect, useId, useState, type FormEvent } from 'react';
+import { useId, useState, type FormEvent } from 'react';
 import { useBuilder, useBuilderState, usePresenceState, usePreviewState, useSettingsState } from '../context';
-import { formatDateTime, fromLocalInput, toLocalInput } from '../dates';
+import { formatDateTime, fromLocalInput } from '../dates';
 import { useTranslator, type MessageKey, type Translate } from '../i18n';
 import { hasTranslation, localeOf, offeredLocales } from '../locales';
 import { isRemovedLayout, layoutOf } from '../layouts';
+import { LocalDateTimeInput } from '../form/LocalDateTimeInput';
 import { locks } from '../store';
 import { localeCounts } from '../translationState';
 import type { EntryStatus, Schedule } from '../types';
@@ -196,34 +197,11 @@ function PreviewDate() {
     const t = useTranslator();
     const date = usePreviewState((state) => state.date);
     const setDate = usePreviewState((state) => state.setDate);
-    const [local, setLocal] = useState(toLocalInput(date));
     const now = t('setono_sylius_cms.builder.preview_now');
-
-    // Shows the date picked, such as after Now
-    useEffect(() => setLocal(toLocalInput(date)), [date]);
-
-    const commit = (): void => {
-        const picked = fromLocalInput(local);
-        if (picked !== date) {
-            setDate(picked);
-        }
-    };
 
     return (
         <div className={styles.date}>
-            <input
-                type="datetime-local"
-                className={styles.dateInput}
-                aria-label={t('setono_sylius_cms.builder.preview_date')}
-                value={local}
-                onChange={(event) => setLocal(event.currentTarget.value)}
-                onBlur={commit}
-                onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                        commit();
-                    }
-                }}
-            />
+            <LocalDateTimeInput className={styles.dateInput} aria-label={t('setono_sylius_cms.builder.preview_date')} value={date} commitOn="blur" onCommit={setDate} />
             <button type="button" className={styles.now} aria-pressed={date === null} title={t('setono_sylius_cms.builder.preview_now_help')} onClick={() => setDate(null)}>
                 {now}
             </button>

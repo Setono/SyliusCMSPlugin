@@ -23,24 +23,14 @@ export function createPublish(
         store.setState({ publishState: 'publishing' });
 
         try {
-            if (!(await autosave.flush())) {
-                throw new Error('The unsaved changes could not be saved.');
-            }
+            await saveFirst(autosave);
 
             // A publish ends the entry's scheduled publish, a failed one too
             store.setState({ status: await send(), publishState: 'idle', publishRefusal: null, schedule: null });
             // What was published passed validation
             validation.getState().setErrors([]);
         } catch (error) {
-            // The server answers 422 with the reason when it refuses: with the errors when validation refuses, and
-            // with a BeforeEntryPublish listener's veto
-            const refused = error instanceof ApiError && error.status === 422;
-            store.setState({ publishState: 'failed', publishRefusal: refused ? error.message : null });
-
-            if (refused && error.errors.length > 0) {
-                validation.getState().setErrors(error.errors);
-                store.getState().selectBlock(firstBlockWithError(store.getState().entry.tree.blocks, error.errors));
-            }
+            store.setState({ publishState: 'failed', publishRefusal: refusal(error, store, validation) });
         }
     };
 }
@@ -62,8 +52,7 @@ export function createDiscard(store: BuilderStore, autosave: Autosave, send: () 
             // Waits for a save in flight. Nothing is left to send.
             await autosave.flush();
 
-            const { entry, status, lockToken, schedule } = await send();
-            store.getState().load(entry, status, lockToken, schedule ?? null);
+            load(store, await send());
             store.setState({ discardState: 'idle', saveState: 'idle' });
         } catch {
             // The working copy stays as it is, so its unsaved changes get saved after all.
@@ -79,8 +68,7 @@ export function createDiscard(store: BuilderStore, autosave: Autosave, send: () 
  */
 export function createReload(store: BuilderStore, fetchEntry: () => Promise<EntryResponse>): () => Promise<void> {
     return async () => {
-        const { entry, status, lockToken, schedule } = await fetchEntry();
-        store.getState().load(entry, status, lockToken, schedule ?? null);
+        load(store, await fetchEntry());
         store.setState({ saveState: 'idle' });
     };
 }
@@ -104,24 +92,15 @@ export function createSchedule(
         store.setState({ scheduleState: 'scheduling', scheduleRefusal: null });
 
         try {
-            if (!(await autosave.flush())) {
-                throw new Error('The unsaved changes could not be saved.');
-            }
+            await saveFirst(autosave);
 
-            const { entry, status, lockToken, schedule } = await send(at);
-            store.getState().load(entry, status, lockToken, schedule ?? null);
+            load(store, await send(at));
             store.setState({ scheduleState: 'idle' });
             validation.getState().setErrors([]);
 
             return true;
         } catch (error) {
-            const refused = error instanceof ApiError && error.status === 422;
-            store.setState({ scheduleState: 'failed', scheduleRefusal: refused ? error.message : null });
-
-            if (refused && error.errors.length > 0) {
-                validation.getState().setErrors(error.errors);
-                store.getState().selectBlock(firstBlockWithError(store.getState().entry.tree.blocks, error.errors));
-            }
+            store.setState({ scheduleState: 'failed', scheduleRefusal: refusal(error, store, validation) });
 
             return false;
         }
@@ -138,11 +117,39 @@ export function createCancelSchedule(store: BuilderStore, send: () => Promise<En
         store.setState({ cancelScheduleState: 'cancelling' });
 
         try {
-            const { entry, status, lockToken, schedule } = await send();
-            store.getState().load(entry, status, lockToken, schedule ?? null);
+            load(store, await send());
             store.setState({ cancelScheduleState: 'idle', saveState: 'idle' });
         } catch {
             store.setState({ cancelScheduleState: 'failed' });
         }
     };
+}
+
+/** Saves what's unsaved first, which a publish or a schedule needs, or throws. */
+async function saveFirst(autosave: Autosave): Promise<void> {
+    if (!(await autosave.flush())) {
+        throw new Error('The unsaved changes could not be saved.');
+    }
+}
+
+/**
+ * Why the server refused, which it answers with 422: validation's errors, which are shown with the first block that has
+ * one selected, or a BeforeEntryPublish listener's veto. Null for any other failure.
+ */
+function refusal(error: unknown, store: BuilderStore, validation: ValidationStore): string | null {
+    if (!(error instanceof ApiError) || error.status !== 422) {
+        return null;
+    }
+
+    if (error.errors.length > 0) {
+        validation.getState().setErrors(error.errors);
+        store.getState().selectBlock(firstBlockWithError(store.getState().entry.tree.blocks, error.errors));
+    }
+
+    return error.message;
+}
+
+/** Puts the working copy an answer gives in place of the one being edited. */
+function load(store: BuilderStore, { entry, status, lockToken, schedule }: EntryResponse): void {
+    store.getState().load(entry, status, lockToken, schedule ?? null);
 }

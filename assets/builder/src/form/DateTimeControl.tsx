@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
-import { fromLocalInput, toLocalInput } from '../dates';
 import styles from './Form.module.css';
+import { LocalDateTimeInput } from './LocalDateTimeInput';
 import type { FieldControlProps } from './types';
 
 /**
@@ -8,29 +7,15 @@ import type { FieldControlProps } from './types';
  * a whole date and time, or nothing.
  */
 export function DateTimeControl({ id, value, onChange, schema, describedBy }: FieldControlProps) {
-    const stored = isUtc(value) ? value : null;
-    const [local, setLocal] = useState(toLocalInput(stored));
-
-    // Shows what's stored, such as after an undo
-    useEffect(() => setLocal(toLocalInput(stored)), [stored]);
-
     return (
-        <input
-            type="datetime-local"
+        <LocalDateTimeInput
             id={id}
             className={styles.input}
-            value={local}
+            value={isUtc(value) ? value : null}
+            commitOn="change"
+            onCommit={onChange}
             aria-required={schema['x-cms-required'] || undefined}
             aria-describedby={describedBy}
-            onChange={(event) => {
-                const next = event.currentTarget.value;
-                setLocal(next);
-
-                const utc = fromLocalInput(next);
-                if (next === '' || utc !== null) {
-                    onChange(utc);
-                }
-            }}
         />
     );
 }

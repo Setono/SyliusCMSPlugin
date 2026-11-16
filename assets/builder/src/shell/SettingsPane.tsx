@@ -1,8 +1,8 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 import { useBuilder, useBuilderState, useSettingsState, useUrlsState, useValidationState, type BuilderSession } from '../context';
-import { fromLocalInput, toLocalInput } from '../dates';
 import { FieldRow } from '../form/FieldRow';
 import formStyles from '../form/Form.module.css';
+import { LocalDateTimeInput } from '../form/LocalDateTimeInput';
 import { useTranslator, type MessageKey } from '../i18n';
 import { isRemovedLayout, layoutOf, pickableLayouts, renderedLayout } from '../layouts';
 import { fieldFallback, localeOf, outdatedValue } from '../locales';
@@ -535,29 +535,13 @@ function DateWindow() {
 /** A date and time in the editor's time zone, saved in UTC when the editor leaves the input. */
 function DateTimeInput({ label, value, onCommit }: { label: string; value: string | null; onCommit: (value: string | null) => void }) {
     const id = useId();
-    const [local, setLocal] = useState(toLocalInput(value));
-
-    // Shows what's saved, such as after the server refused a change
-    useEffect(() => setLocal(toLocalInput(value)), [value]);
 
     return (
         <div className={styles.field}>
             <label htmlFor={id} className={styles.fieldLabel}>
                 {label}
             </label>
-            <input
-                type="datetime-local"
-                id={id}
-                className={formStyles.input}
-                value={local}
-                onChange={(event) => setLocal(event.currentTarget.value)}
-                onBlur={() => {
-                    const utc = fromLocalInput(local);
-                    if (utc !== value) {
-                        onCommit(utc);
-                    }
-                }}
-            />
+            <LocalDateTimeInput id={id} className={formStyles.input} value={value} commitOn="blur" onCommit={onCommit} />
         </div>
     );
 }
