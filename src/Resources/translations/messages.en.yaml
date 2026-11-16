@@ -344,7 +344,6 @@ setono_sylius_cms:
             file: File
             focal_point: Focal point
             focal_point_help: Click or drag to set the point that stays in view wherever the image is cropped.
-            folder: Folder
             folder_name: Folder name
             folders: Folders
             kind: Kind
@@ -362,6 +361,7 @@ setono_sylius_cms:
             new_folder: New folder
             no_matches: No media items match.
             no_media: Nothing here yet. Drop files here, or upload them, to add them.
+            not_allowed: '%filename% is a type of file the media library doesn''t take. It takes %types%, up to %limit% each.'
             open_file: Open the file
             rename_folder: Rename folder
             save: Save
@@ -371,11 +371,11 @@ setono_sylius_cms:
             search: Search
             search_placeholder: Name, filename or alt text
             takes_effect: Changes take effect wherever it's used as soon as they're saved.
+            too_big: '%filename% is %size%, over the upload limit of %limit%.'
             top_level: At the top
             unsorted: Unsorted
             upload: Upload
             upload_copy: Upload a copy
-            upload_failed: Couldn't upload
             uploading: Uploading…
             use_existing: Use the existing one
         meta_description: Meta description

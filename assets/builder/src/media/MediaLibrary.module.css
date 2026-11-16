@@ -1,0 +1,421 @@
+/* The media library sits in the Sylius admin's page on its screen, and in a dialog in the builder, so it sets its own type and box model. */
+.library {
+    display: grid;
+    grid-template-columns: minmax(11rem, 14rem) minmax(0, 1fr);
+    gap: var(--builder-space-4);
+    align-items: start;
+    color: var(--builder-color-text);
+    font-family: var(--builder-font-family);
+    font-size: var(--builder-font-size-md);
+    line-height: var(--builder-line-height);
+}
+
+.library:has(> .details) {
+    grid-template-columns: minmax(11rem, 14rem) minmax(0, 1fr) minmax(16rem, 20rem);
+}
+
+.library *,
+.library *::before,
+.library *::after {
+    box-sizing: border-box;
+}
+
+/* Folders */
+
+.folders {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-3);
+    padding: var(--builder-space-2);
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-surface);
+}
+
+.folderList {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.folder {
+    width: 100%;
+    padding: var(--builder-space-1) var(--builder-space-2);
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--builder-radius-sm);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.folder:hover {
+    background: var(--builder-color-hover);
+}
+
+.folder[aria-current="true"] {
+    background: var(--builder-color-selected);
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.folder:focus-visible,
+.item:focus-visible,
+.primary:focus-visible,
+.secondary:focus-visible,
+.focalPointMarker:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 1px;
+}
+
+.folderActions,
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--builder-space-2);
+    align-items: center;
+}
+
+.folderForm,
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-3);
+}
+
+/* The library */
+
+.main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-3);
+    min-width: 0;
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--builder-space-3);
+    align-items: end;
+}
+
+.searchField {
+    display: flex;
+    flex: 1 1 14rem;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    min-width: 0;
+}
+
+.checkboxField {
+    display: flex;
+    gap: var(--builder-space-2);
+    align-items: center;
+    min-height: var(--builder-control-height);
+    cursor: pointer;
+}
+
+.label {
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.locale {
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}
+
+.help {
+    margin: 0;
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}
+
+.input,
+.textarea,
+.select {
+    width: 100%;
+    min-height: var(--builder-control-height);
+    padding: var(--builder-space-1) var(--builder-space-2);
+    border: 1px solid var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-surface);
+    color: inherit;
+    font: inherit;
+}
+
+.input:focus-visible,
+.textarea:focus-visible,
+.select:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: -1px;
+}
+
+.textarea {
+    resize: vertical;
+}
+
+.fieldset {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.primary,
+.secondary {
+    min-height: var(--builder-control-height);
+    padding: var(--builder-space-1) var(--builder-space-3);
+    border: 1px solid transparent;
+    border-radius: var(--builder-radius-sm);
+    font: inherit;
+    font-weight: var(--builder-font-weight-medium);
+    cursor: pointer;
+}
+
+.primary {
+    background: var(--builder-color-accent);
+    color: var(--builder-color-accent-text);
+}
+
+.primary:hover:not(:disabled) {
+    background: var(--builder-color-accent-hover);
+}
+
+.secondary {
+    border-color: var(--builder-color-border-strong);
+    background: var(--builder-color-surface);
+    color: inherit;
+}
+
+.secondary:hover:not(:disabled) {
+    background: var(--builder-color-hover);
+}
+
+.primary:disabled,
+.secondary:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+/* What became of an upload */
+
+.messages {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+}
+
+.refused {
+    margin: 0;
+    padding: var(--builder-space-2) var(--builder-space-3);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-danger-subtle);
+    color: var(--builder-color-danger);
+    list-style: none;
+}
+
+.duplicate {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--builder-space-2);
+    align-items: center;
+    padding: var(--builder-space-2) var(--builder-space-3);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-warning-subtle);
+    color: var(--builder-color-warning);
+}
+
+.duplicate > span {
+    flex: 1 1 16rem;
+}
+
+/* The grid, which files are dropped on */
+
+.dropZone {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-3);
+    min-height: 16rem;
+    padding: var(--builder-space-3);
+    border: 2px dashed var(--builder-color-border);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-canvas);
+}
+
+.dropZone[data-dragging] {
+    border-color: var(--builder-color-accent);
+    background: var(--builder-color-selected);
+}
+
+.dropHint,
+.empty {
+    margin: 0;
+    color: var(--builder-color-text-muted);
+    text-align: center;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: var(--builder-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    width: 100%;
+    padding: var(--builder-space-2);
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-surface);
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+
+.item:hover {
+    border-color: var(--builder-color-border-strong);
+}
+
+.item[aria-pressed="true"] {
+    border-color: var(--builder-color-selected-border);
+    background: var(--builder-color-selected);
+}
+
+.thumbnail,
+.documentThumbnail {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-neutral-subtle);
+    object-fit: contain;
+}
+
+.documentThumbnail {
+    display: grid;
+    place-items: center;
+    color: var(--builder-color-text-muted);
+    font-weight: var(--builder-font-weight-bold);
+}
+
+.itemName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.flag {
+    align-self: flex-start;
+    padding: 0 var(--builder-space-2);
+    border-radius: var(--builder-radius-pill);
+    background: var(--builder-color-warning-subtle);
+    color: var(--builder-color-warning);
+    font-size: var(--builder-font-size-sm);
+}
+
+/* The selected media item */
+
+.details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-4);
+    padding: var(--builder-space-4);
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-surface);
+}
+
+.detailsHeading {
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-size: var(--builder-font-size-lg);
+    font-weight: var(--builder-font-weight-bold);
+}
+
+.focalPoint {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+}
+
+.focalPointArea {
+    position: relative;
+    align-self: center;
+    touch-action: none;
+    cursor: crosshair;
+    user-select: none;
+}
+
+.focalPointImage {
+    display: block;
+    max-width: 100%;
+    max-height: 16rem;
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-neutral-subtle);
+}
+
+.focalPointMarker {
+    position: absolute;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid var(--builder-color-surface);
+    border-radius: 50%;
+    background: var(--builder-color-accent);
+    box-shadow: 0 0 0 1px var(--builder-color-text);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.move {
+    display: flex;
+    gap: var(--builder-space-2);
+    align-items: end;
+}
+
+.move > .field {
+    flex: 1;
+}
+
+.saveState {
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}
+
+.file {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    margin: 0;
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}
+
+.file dt {
+    color: var(--builder-color-text);
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.file dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
