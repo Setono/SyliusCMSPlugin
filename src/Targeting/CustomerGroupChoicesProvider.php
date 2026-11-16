@@ -42,8 +42,8 @@ final class CustomerGroupChoicesProvider implements ChoicesProviderInterface, Re
         }
 
         return [
-            CustomerGroupValue::GUEST => $this->translator->trans('setono_sylius_cms.ui.audience.guests', locale: $localeCode),
-            CustomerGroupValue::NO_GROUP => $this->translator->trans('setono_sylius_cms.ui.audience.no_group', locale: $localeCode),
+            CustomerGroupValue::GUEST => $this->translator->trans('setono_sylius_cms.ui.audience.guests', [], null, $localeCode),
+            CustomerGroupValue::NO_GROUP => $this->translator->trans('setono_sylius_cms.ui.audience.no_group', [], null, $localeCode),
         ] + $this->groups;
     }
 
