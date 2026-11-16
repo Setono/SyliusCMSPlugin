@@ -54,7 +54,18 @@ function keysIn(blocks: readonly StoredBlock[]): string[] {
     return blocks.map((block) => block.key);
 }
 
-/** Adds the blocks of a list that changed to the patch list: the block itself, or the blocks in it that changed. */
+/** Whether a block in the list has other visibility conditions than it had. */
+function conditionsChanged(before: readonly StoredBlock[], after: readonly StoredBlock[]): boolean {
+    const previous = new Map(before.map((block) => [block.key, block.conditions]));
+
+    return after.some((block) => previous.has(block.key) && previous.get(block.key) !== block.conditions);
+}
+
+/**
+ * Adds the blocks of a list that changed to the patch list: the block itself, or the blocks in it that changed. A block's
+ * template gets only the children that show, and a First match block shows only one of them, so a child whose visibility
+ * conditions changed re-renders its parent.
+ */
 function planChanges(before: readonly StoredBlock[], after: readonly StoredBlock[], patch: string[]): void {
     const previous = new Map(before.map((block) => [block.key, block]));
 
@@ -68,8 +79,8 @@ function planChanges(before: readonly StoredBlock[], after: readonly StoredBlock
         const { children, ...own } = block;
         const ownChanged = (Object.keys(own) as Array<keyof typeof own>).some((key) => own[key] !== oldOwn[key]);
 
-        // A block renders its children, so a child added, removed or moved re-renders it
-        if (ownChanged || keysIn(oldChildren).join() !== keysIn(children).join()) {
+        // A block renders its children, so a child added, removed or moved re-renders it, and so does one that shows or hides
+        if (ownChanged || keysIn(oldChildren).join() !== keysIn(children).join() || conditionsChanged(oldChildren, children)) {
             patch.push(block.key);
         } else {
             planChanges(oldChildren, children, patch);

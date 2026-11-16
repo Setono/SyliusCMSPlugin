@@ -168,6 +168,7 @@ setono_sylius_cms:
         add_block_above: Add block above
         add_block_below: Add block below
         add_block_inside: 'Add a block inside %block%'
+        add_condition: Add condition
         add_translation: 'Add %locale% translation'
         all_languages: All languages
         all_languages_help: A change here changes every language
@@ -183,6 +184,9 @@ setono_sylius_cms:
         blocks_selected: '%count% blocks selected'
         channels: Channels
         children: Blocks inside
+        condition: 'Condition %number%'
+        condition_kind: Kind
+        condition_match: Matches when it
         copy_it_here: Copy it here
         clash: A colleague changed this too
         clash_changed_block: 'You deleted %block%, which a colleague changed.'
@@ -209,6 +213,11 @@ setono_sylius_cms:
         falls_back_to: 'Empty here, so it shows the %locale% text'
         guests: Guests
         has_errors: Has errors
+        hidden_in_preview: Hidden in this channel and language
+        is_inside: is inside
+        is_not_one_of: is not one of
+        is_one_of: is one of
+        is_outside: is outside
         keep_mine: Keep mine
         load_failed: Couldn't load the entry
         loading: Loading…
@@ -241,6 +250,7 @@ setono_sylius_cms:
         publishing: Publishing…
         redo: Redo
         reload: Reload
+        remove_condition: Remove condition
         rich_text:
             blockquote: Quote
             bold: Bold
@@ -271,5 +281,9 @@ setono_sylius_cms:
         undo: Undo
         unknown_block_type: 'Unknown block type: %type%'
         unknown_block_type_help: The code no longer has this block type. The block is kept as it is, but the shop doesn't show it.
+        unknown_condition_kind: 'Unknown condition: %kind%'
+        unknown_condition_kind_help: 'The code no longer has this kind of condition, so the block doesn''t show. Remove the condition to show it again.'
         unpublished_changes: Unpublished changes
         unsupported_field_type: This field type isn't supported yet
+        visibility: Visibility
+        visibility_help: Shows to everyone. Add conditions to show it only to some shoppers, on some pages or at some times.
