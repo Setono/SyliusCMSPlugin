@@ -19,7 +19,7 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 final class TitlesAndSlugs
 {
     /**
-     * @return array<string, array{title: ?string, slug: ?string}> locale => the title and slug
+     * @return array<string, array<string, string|null>> locale => the title and slug, by field
      */
     public static function ofRows(EntryInterface $entry): array
     {
@@ -35,16 +35,14 @@ final class TitlesAndSlugs
      * A draft is the entry in the entry format, read through EntryFormat. One that can't be read gives none, and fails
      * where it's opened
      *
-     * @return array<string, array{title: ?string, slug: ?string}> locale => the title and slug
+     * @return array<string, array<string, string|null>> locale => the title and slug, by field
      */
     public static function ofDraft(DraftInterface $draft): array
     {
         try {
-            $values = EntryDenormalizer::translationValues(CanonicalJson::decode($draft->getContent()), ['title', 'slug']);
+            return EntryDenormalizer::translationValues(CanonicalJson::decode($draft->getContent()), ['title', 'slug']);
         } catch (InvalidEntryFormatException|\JsonException) {
             return [];
         }
-
-        return array_map(static fn (array $fields): array => ['title' => $fields['title'], 'slug' => $fields['slug']], $values);
     }
 }

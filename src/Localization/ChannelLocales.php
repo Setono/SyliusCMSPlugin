@@ -49,7 +49,7 @@ final class ChannelLocales implements ResetInterface
         $default = $channel->getDefaultLocale()?->getCode();
         usort($codes, static fn (string $a, string $b): int => [$a !== $default, $a] <=> [$b !== $default, $b]);
 
-        return array_values(array_unique($codes));
+        return $codes;
     }
 
     /**

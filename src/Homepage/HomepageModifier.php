@@ -29,7 +29,7 @@ final readonly class HomepageModifier implements HomepageModifierInterface
 
         CodedRows::sync(
             $page->getHomepages()->toArray(),
-            array_values([...$channelCodes]),
+            [...$channelCodes],
             static fn (Homepage $homepage): string => $homepage->getChannelCode(),
             $page->removeHomepage(...),
             fn (string $code) => $page->addHomepage($this->factory->createForPage($page, $code)),

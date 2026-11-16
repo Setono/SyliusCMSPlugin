@@ -21,7 +21,7 @@ final class CodedRows
      * @template T of object
      *
      * @param iterable<T> $rows
-     * @param list<string> $codes
+     * @param array<string> $codes
      * @param callable(T): string $codeOf
      * @param callable(T): void $remove
      * @param callable(string): void $add

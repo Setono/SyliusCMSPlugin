@@ -64,7 +64,7 @@ final readonly class EntryValidator implements EntryValidatorInterface
     {
         $translations = [];
         foreach ($entry->getTranslations() as $localeCode => $translation) {
-            $translations[(string) $localeCode] = $translation;
+            $translations[$localeCode] = $translation;
         }
         ksort($translations);
 

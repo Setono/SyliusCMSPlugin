@@ -55,6 +55,18 @@ final class DeletedCustomerGroupTest extends TestCase
     }
 
     /**
+     * A stored condition without its negate switch is "is one of"
+     *
+     * @test
+     */
+    public function it_words_a_condition_without_its_negate_switch_as_one_that_matches(): void
+    {
+        $page = self::page(self::block(self::A, 'heading', [['kind' => 'customer_group', 'params' => ['groups' => ['gone']]]]));
+
+        self::assertEquals([self::inBlock($page, self::A, 'gone', new TranslatableMessage('setono_sylius_cms.block_type.heading'))], [...$this->kind()->findIn($page)]);
+    }
+
+    /**
      * @test
      */
     public function it_finds_a_deleted_group_in_the_audience_fixed_in_the_builders_settings(): void

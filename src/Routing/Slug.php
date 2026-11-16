@@ -35,7 +35,6 @@ final class Slug
     {
         $slugs = [];
         foreach ($entry->getTranslations() as $localeCode => $translation) {
-            $localeCode = (string) $localeCode;
             $slug = $translation->getSlug();
             if (null !== $slug && self::isValid($slug) && (null === $in || $in($localeCode))) {
                 $slugs[$localeCode] = $slug;

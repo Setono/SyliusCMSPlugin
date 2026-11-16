@@ -111,7 +111,10 @@ final class ProblemCountUpdaterTest extends TestCase
         $this->updater([$kind->reveal()], $logger->reveal())->update([$failing, $clean]);
 
         self::assertEquals([[[4 => new ProblemCount()], 'f1']], $this->stored);
-        $logger->error(Argument::containingString('failed on the entry'), Argument::withEntry('message', 'The API is down'))->shouldHaveBeenCalledOnce();
+        $logger->error(Argument::containingString('failed on the entry'), Argument::that(static fn (array $context): bool => $kind->reveal()::class === ($context['kind'] ?? null) &&
+            'entry-3' === ($context['uuid'] ?? null) &&
+            'The API is down' === ($context['message'] ?? null) &&
+            ($context['exception'] ?? null) instanceof \RuntimeException))->shouldHaveBeenCalledOnce();
     }
 
     /**

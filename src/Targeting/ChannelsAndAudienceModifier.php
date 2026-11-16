@@ -30,7 +30,7 @@ final readonly class ChannelsAndAudienceModifier implements ChannelsAndAudienceM
 
         CodedRows::sync(
             $entry->getChannels()->toArray(),
-            array_values([...$codes]),
+            [...$codes],
             static fn (EntryChannel $channel): string => $channel->getCode(),
             $entry->removeChannel(...),
             fn (string $code) => $entry->addChannel($this->channelFactory->createForEntry($entry, $code)),
@@ -47,7 +47,7 @@ final readonly class ChannelsAndAudienceModifier implements ChannelsAndAudienceM
 
         CodedRows::sync(
             $entry->getAudienceGroups()->toArray(),
-            array_values($audience->groups),
+            $audience->groups,
             static fn (EntryAudienceGroup $group): string => $group->getCode(),
             $entry->removeAudienceGroup(...),
             fn (string $code) => $entry->addAudienceGroup($this->audienceGroupFactory->createForEntry($entry, $code)),

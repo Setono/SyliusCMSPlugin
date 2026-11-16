@@ -69,7 +69,6 @@ final readonly class StatusLabeler implements StatusLabelerInterface
     {
         $localeCodes = [];
         foreach ($entry->getTranslations()->getKeys() as $localeCode) {
-            $localeCode = (string) $localeCode;
             if ($this->availability->hasTranslation($entry, $localeCode) && !$this->availability->showsIn($entry, $localeCode)) {
                 $localeCodes[] = $localeCode;
             }

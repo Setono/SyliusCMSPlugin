@@ -35,11 +35,11 @@ final class ChannelLocalesTest extends TestCase
         /** @var \Prophecy\Prophecy\ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $repository */
         $repository = $this->prophesize(ChannelRepositoryInterface::class);
         $nameless = new Channel();
-        $repository->findBy([], ['id' => 'ASC'])->willReturn([self::channel('WEB', 'en_US', 'en_US', 'da_DK'), self::channel('NORDIC', 'sv_SE', 'sv_SE', 'da_DK'), $nameless])->shouldBeCalledTimes(2);
+        $repository->findBy([], ['id' => 'ASC'])->willReturn([self::channel('WEB', 'en_US', 'en_US', 'da_DK'), self::channel('NORDIC', 'da_DK', 'sv_SE', 'da_DK'), $nameless])->shouldBeCalledTimes(2);
         $channelLocales = new ChannelLocales($repository->reveal());
 
         self::assertSame(['en_US', 'da_DK', 'sv_SE'], $channelLocales->ofChannels(['NORDIC', 'WEB', 'GONE']));
-        self::assertSame(['sv_SE', 'da_DK'], $channelLocales->ofChannels(['NORDIC']));
+        self::assertSame(['da_DK', 'sv_SE'], $channelLocales->ofChannels(['NORDIC']));
         self::assertSame([], $channelLocales->ofChannels([]));
 
         $channelLocales->reset();

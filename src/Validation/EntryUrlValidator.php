@@ -174,8 +174,8 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
     {
         $slugs = [];
         foreach ($entry->getTranslations() as $localeCode => $translation) {
-            if ($this->availability->hasTranslation($entry, (string) $localeCode)) {
-                $slugs[(string) $localeCode] = $translation->getSlug();
+            if ($this->availability->hasTranslation($entry, $localeCode)) {
+                $slugs[$localeCode] = $translation->getSlug();
             }
         }
         ksort($slugs);

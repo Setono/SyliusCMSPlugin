@@ -162,7 +162,7 @@ final class StatusLabelerTest extends TestCase
     public function it_labels_the_translations_held_back_with_their_locales_after_the_date_window_and_before_the_audience(): void
     {
         $page = self::published();
-        foreach (['da_DK' => ['Om os', false], 'de_DE' => ['Über uns', false], 'en_US' => ['About us', true], 'sv_SE' => [null, false]] as $localeCode => [$title, $shown]) {
+        foreach (['de_DE' => ['Über uns', false], 'en_US' => ['About us', true], 'da_DK' => ['Om os', false], 'sv_SE' => [null, false]] as $localeCode => [$title, $shown]) {
             $translation = new PageTranslation();
             $translation->setLocale($localeCode);
             $translation->setTitle($title);
