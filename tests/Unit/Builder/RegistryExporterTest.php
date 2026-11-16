@@ -20,6 +20,8 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
+use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\OpeningHoursHandler;
+use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Store;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\MessageCatalogue;
@@ -85,6 +87,29 @@ final class RegistryExporterTest extends TestCase
                 ],
             ],
         ], array_values(array_filter($registry['blockTypes'], static fn (array $blockType): bool => 'heading' === $blockType['code'])));
+    }
+
+    /**
+     * @test
+     */
+    public function it_exports_the_field_control_of_a_field_type_that_declares_one_and_leaves_it_out_for_one_that_does_not(): void
+    {
+        $blockTypes = array_column($this->exporter(blockTypes: ['store' => Store::class])->export()['blockTypes'], null, 'code');
+        self::assertIsArray($blockTypes['store']['fields']);
+        $fields = array_column($blockTypes['store']['fields'], 'schema', 'name');
+
+        self::assertSame([
+            'type' => 'object',
+            'x-cms-type' => 'app_opening_hours',
+            'x-cms-control' => 'app-opening-hours',
+            'x-cms-label' => '[app.opening_hours]',
+            'x-cms-help' => null,
+            'x-cms-required' => false,
+            'x-cms-translatable' => false,
+        ], $fields['openingHours']);
+        self::assertIsArray($fields['name']);
+        self::assertSame('text', $fields['name']['x-cms-type']);
+        self::assertArrayNotHasKey('x-cms-control', $fields['name']);
     }
 
     /**
@@ -169,8 +194,9 @@ final class RegistryExporterTest extends TestCase
     /**
      * @param list<string> $disabled
      * @param array<string, array<string, array{label: string, class: string}>> $styles
+     * @param array<string, class-string> $blockTypes block types besides the shipped Columns, Column and Heading
      */
-    private function exporter(array $disabled = [], array $styles = []): RegistryExporter
+    private function exporter(array $disabled = [], array $styles = [], array $blockTypes = []): RegistryExporter
     {
         $translator = $this->prophesize(TranslatorInterface::class);
         $translator->trans(Argument::type('string'))->will(static fn (array $arguments): string => sprintf('[%s]', is_string($arguments[0] ?? null) ? $arguments[0] : ''));
@@ -192,9 +218,10 @@ final class RegistryExporterTest extends TestCase
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator->reveal()),
+            OpeningHoursHandler::class => static fn (): OpeningHoursHandler => new OpeningHoursHandler(),
         ]));
 
-        $blockTypes = new BlockTypeRegistry(['columns' => Columns::class, 'column' => Column::class, 'heading' => Heading::class], new FieldReader(), $disabled, $styles);
+        $blockTypes = new BlockTypeRegistry(['columns' => Columns::class, 'column' => Column::class, 'heading' => Heading::class] + $blockTypes, new FieldReader(), $disabled, $styles);
         $contentTypes = new ContentTypeRegistry([
             'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
