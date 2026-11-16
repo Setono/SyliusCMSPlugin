@@ -74,6 +74,8 @@ final readonly class BuilderAction
                     'previewToken' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_token'),
                     'previewRender' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_render'),
                     'presence' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_presence', ['uuid' => $entry->getUuid()]),
+                    'slug' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_slug'),
+                    'urls' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_urls', ['uuid' => $entry->getUuid()]),
                 ],
                 'channels' => array_map(static fn (array $channel): array => [
                     'code' => $channel['channel']->getCode(),

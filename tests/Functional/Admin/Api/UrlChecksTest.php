@@ -116,7 +116,7 @@ final class UrlChecksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function validation_warns_of_a_url_another_entry_has_drafted_and_refuses_one_it_has_published(): void
+    public function the_builder_is_warned_of_a_url_another_entry_has_drafted_and_validation_refuses_one_it_has_published(): void
     {
         $client = self::createClient();
         self::createPage('Our team', 'team', 'Meet us');
@@ -132,6 +132,8 @@ final class UrlChecksTest extends BuilderApiTestCase
         self::assertResponseIsSuccessful();
         self::assertIsArray($response);
         self::assertSame([], $response['errors'] ?? null);
+        $response = self::json($client, 'GET', self::uri($page, '/urls'));
+        self::assertIsArray($response);
         self::assertSame([
             ['block' => null, 'field' => 'slug', 'locale' => 'en_US', 'message' => '"Our team" has the URL /en_US/team in its draft too, in Setono CMS Test Store. Only one of them can be published there.'],
         ], $response['warnings'] ?? null);
@@ -145,13 +147,15 @@ final class UrlChecksTest extends BuilderApiTestCase
         self::assertSame([
             ['block' => null, 'field' => 'slug', 'locale' => 'en_US', 'message' => 'The URL /en_US/about is already the URL of "About" in Setono CMS Test Store.'],
         ], $response['errors'] ?? null);
+        $response = self::json($client, 'GET', self::uri($page, '/urls'));
+        self::assertIsArray($response);
         self::assertSame([], $response['warnings'] ?? null);
     }
 
     /**
      * @test
      */
-    public function validation_warns_of_a_url_in_a_published_entrys_draft(): void
+    public function the_builder_is_warned_of_a_url_in_a_published_entrys_draft(): void
     {
         $client = self::createClient();
         $other = self::createPage('Sale', 'sale', 'Cheap', published: true);
@@ -167,6 +171,8 @@ final class UrlChecksTest extends BuilderApiTestCase
 
         self::assertIsArray($response);
         self::assertSame([], $response['errors'] ?? null, 'The published URL of the other entry is another');
+        $response = self::json($client, 'GET', self::uri($page, '/urls'));
+        self::assertIsArray($response);
         self::assertSame([
             ['block' => null, 'field' => 'slug', 'locale' => 'en_US', 'message' => '"Half price" has the URL /en_US/sale_50% in its draft too, in Setono CMS Test Store. Only one of them can be published there.'],
         ], $response['warnings'] ?? null);
@@ -175,19 +181,35 @@ final class UrlChecksTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function validation_warns_of_a_published_url_a_route_takes_now(): void
+    public function the_builder_is_warned_of_a_published_url_a_route_takes_now(): void
     {
         $client = self::createClient();
         $page = self::createPage('Log in', 'login', 'Hello', published: true);
         self::openBuilder($client, $page);
 
-        $response = self::json($client, 'POST', self::uri($page, '/validate'));
+        $response = self::json($client, 'GET', self::uri($page, '/urls'));
 
-        self::assertIsArray($response);
-        self::assertContains(
+        self::assertResponseIsSuccessful();
+        self::assertSame(['warnings' => [
             ['block' => null, 'field' => 'slug', 'locale' => 'en_US', 'message' => 'Shoppers don\'t see this at /en_US/login: the route sylius_shop_login takes the URL.'],
-            $response['warnings'] ?? null,
-        );
+        ], 'oldUrls' => []], $response);
+    }
+
+    /**
+     * @test
+     */
+    public function the_builder_gets_the_urls_of_the_old_slugs_that_redirect(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('About us', 'about', 'Hello', published: true);
+        self::saveChanges($page, [['op' => 'set_entry_value', 'field' => 'slug', 'locale' => 'en_US', 'value' => 'about-us']]);
+        self::publishEntry($page);
+        self::openBuilder($client, $page);
+
+        $response = self::json($client, 'GET', self::uri($page, '/urls'));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['warnings' => [], 'oldUrls' => ['en_US' => ['/en_US/about']]], $response);
     }
 
     /**

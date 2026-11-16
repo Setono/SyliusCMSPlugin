@@ -76,6 +76,8 @@ final readonly class RegistryExporter
             'code' => $contentType->code,
             'label' => $this->translator->trans($contentType->label),
             'blocks' => null === $contentType->blocks ? null : self::allowed($this->nestingRules->topLevel($contentType->code)),
+            // null when it has no URL of its own, so no slug
+            'prefix' => $contentType->prefix,
         ];
     }
 

@@ -163,7 +163,7 @@ final class RegistryExporterTest extends TestCase
     /**
      * @test
      */
-    public function it_exports_what_the_top_level_of_each_content_type_may_hold(): void
+    public function it_exports_what_the_top_level_of_each_content_type_may_hold_and_its_url_prefix(): void
     {
         self::assertSame([
             [
@@ -173,8 +173,9 @@ final class RegistryExporterTest extends TestCase
                     ['type' => 'columns', 'min' => null, 'max' => null],
                     ['type' => 'heading', 'min' => null, 'max' => null],
                 ],
+                'prefix' => '',
             ],
-            ['code' => 'recipe', 'label' => '[app.recipe]', 'blocks' => null],
+            ['code' => 'recipe', 'label' => '[app.recipe]', 'blocks' => null, 'prefix' => null],
         ], $this->exporter()->export()['contentTypes']);
     }
 

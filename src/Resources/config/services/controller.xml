@@ -158,7 +158,15 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryUrls"/>
 
             <tag name="controller.service_arguments"/>
         </service>
