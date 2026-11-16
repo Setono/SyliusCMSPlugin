@@ -82,6 +82,19 @@ final class ChoiceHandlerTest extends TestCase
     }
 
     /**
+     * PHP turns a numeric choice value into an int key, while the value is stored as a string
+     *
+     * @test
+     */
+    public function it_fits_and_hydrates_a_numeric_choice_value_as_a_string(): void
+    {
+        $field = new Choice(label: 'Columns', choices: ['2' => 'Two', '3' => 'Three']);
+
+        self::assertTrue($this->handler()->fits($field, '2'));
+        self::assertSame('3', $this->handler()->hydrate($field, '3', $this->hydrationContext()));
+    }
+
+    /**
      * @test
      */
     public function it_hydrates_a_chosen_value(): void

@@ -42,7 +42,7 @@ final class DeletedCustomerGroupTest extends TestCase
         $page = self::page(
             self::block(self::A, 'heading', [self::groups(['wholesale', 'gone'], negate: true)]),
             self::block(self::B, 'group', [], [
-                self::block(self::C, 'removed', [self::groups(['retail']), self::groups(['@guest', 'old', 'gone'])]),
+                self::block(self::C, 'removed', [self::groups(['retail'], kind: 'channel'), self::groups(['retail']), self::groups(['@guest', 'old', 42, 'gone'])]),
             ]),
         );
 

@@ -50,13 +50,15 @@ final class ParamsHydratorTest extends TestCase
     /**
      * @test
      */
-    public function a_later_field_is_hydrated_after_one_that_is_missing(): void
+    public function a_later_field_is_hydrated_after_one_that_is_missing_or_does_not_fit(): void
     {
-        $params = $this->hydrate(DateWindowParams::class, ['until' => '2026-12-01T00:00:00Z']);
+        foreach ([['until' => '2026-12-01T00:00:00Z'], ['from' => 'next friday', 'until' => '2026-12-01T00:00:00Z']] as $values) {
+            $params = $this->hydrate(DateWindowParams::class, $values);
 
-        self::assertInstanceOf(DateWindowParams::class, $params);
-        self::assertNull($params->from);
-        self::assertEquals(new \DateTimeImmutable('2026-12-01T00:00:00Z'), $params->until);
+            self::assertInstanceOf(DateWindowParams::class, $params);
+            self::assertNull($params->from);
+            self::assertEquals(new \DateTimeImmutable('2026-12-01T00:00:00Z'), $params->until);
+        }
     }
 
     /**

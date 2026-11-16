@@ -15,7 +15,7 @@ use Symfony\Contracts\Service\ResetInterface;
  */
 final class LocaleChoicesProvider implements ChoicesProviderInterface, ResetInterface
 {
-    /** @var list<LocaleInterface>|null */
+    /** @var array<LocaleInterface>|null */
     private ?array $locales = null;
 
     /**
@@ -27,12 +27,14 @@ final class LocaleChoicesProvider implements ChoicesProviderInterface, ResetInte
 
     public function getChoices(string $localeCode): array
     {
-        $this->locales ??= array_values($this->localeRepository->findBy([], ['code' => 'ASC']));
+        $this->locales ??= $this->localeRepository->findBy([], ['code' => 'ASC']);
 
         $choices = [];
         foreach ($this->locales as $locale) {
-            $code = (string) $locale->getCode();
-            $choices[$code] = $locale->getName($localeCode) ?? $code;
+            $code = $locale->getCode();
+            if (null !== $code) {
+                $choices[$code] = $locale->getName($localeCode) ?? $code;
+            }
         }
 
         return $choices;

@@ -180,6 +180,17 @@ final class ChangeSetTest extends TestCase
     /**
      * @test
      */
+    public function it_says_why_it_rejects_a_condition_that_is_not_an_object(): void
+    {
+        $this->expectException(InvalidChangeSetException::class);
+        $this->expectExceptionMessage('A condition must be an object');
+
+        ChangeSet::fromArray(['changes' => [['op' => 'set_conditions', 'key' => self::KEY, 'conditions' => ['locale']]]]);
+    }
+
+    /**
+     * @test
+     */
     public function it_writes_a_blocks_visibility_conditions_the_way_it_reads_them(): void
     {
         $changeSet = new ChangeSet([new SetConditions(self::KEY, [

@@ -29,7 +29,7 @@ final class DeletedCustomerGroup implements ProblemKindInterface, ResetInterface
 {
     public const CODE = 'deleted_customer_group';
 
-    /** @var array<string, true>|null the codes of the store's customer groups */
+    /** @var array<string|null>|null the codes of the store's customer groups */
     private ?array $codes = null;
 
     /**
@@ -98,37 +98,32 @@ final class DeletedCustomerGroup implements ProblemKindInterface, ResetInterface
      *
      * @param array<string, mixed> $condition
      *
-     * @return list<string>
+     * @return array<string>
      */
     private static function groups(array $condition): array
     {
         $params = $condition['params'] ?? null;
         $groups = is_array($params) ? ($params['groups'] ?? null) : null;
 
-        return is_array($groups) ? array_values(array_filter($groups, is_string(...))) : [];
+        return is_array($groups) ? array_filter($groups, is_string(...)) : [];
     }
 
     /**
      * The codes of customer groups the store no longer has, each once. "@guest" and "@no_group" are no groups
      *
-     * @param list<string> $groups
+     * @param array<string> $groups
      *
-     * @return list<string>
+     * @return array<string>
      */
     private function deleted(array $groups): array
     {
-        $groups = array_values(array_unique(array_filter($groups, static fn (string $group): bool => !CustomerGroupValue::isReserved($group))));
+        $groups = array_unique(array_filter($groups, static fn (string $group): bool => !CustomerGroupValue::isReserved($group)));
         if ([] === $groups) {
             return [];
         }
 
-        if (null === $this->codes) {
-            $this->codes = [];
-            foreach ($this->customerGroupRepository->findAll() as $customerGroup) {
-                $this->codes[(string) $customerGroup->getCode()] = true;
-            }
-        }
+        $this->codes ??= array_map(static fn (CustomerGroupInterface $customerGroup): ?string => $customerGroup->getCode(), $this->customerGroupRepository->findAll());
 
-        return array_values(array_filter($groups, fn (string $group): bool => !isset($this->codes[$group])));
+        return array_filter($groups, fn (string $group): bool => !in_array($group, $this->codes, true));
     }
 }

@@ -34,8 +34,10 @@ final class CustomerGroupChoicesProvider implements ChoicesProviderInterface, Re
         if (null === $this->groups) {
             $this->groups = [];
             foreach ($this->customerGroupRepository->findBy([], ['name' => 'ASC']) as $group) {
-                $code = (string) $group->getCode();
-                $this->groups[$code] = $group->getName() ?? $code;
+                $code = $group->getCode();
+                if (null !== $code) {
+                    $this->groups[$code] = $group->getName() ?? $code;
+                }
             }
         }
 

@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit;
 use Doctrine\Bundle\DoctrineBundle\DependencyInjection\Compiler\DoctrineOrmMappingsPass;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBlockTypesPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterConditionKindsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLayoutsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterProblemKindsPass;
@@ -40,6 +41,7 @@ final class SetonoSyliusCMSPluginTest extends TestCase
         self::assertContains(RegisterLayoutsPass::class, $passes);
         self::assertContains(RegisterUpgradersPass::class, $passes);
         self::assertContains(RegisterProblemKindsPass::class, $passes);
+        self::assertContains(RegisterConditionKindsPass::class, $passes);
         self::assertContains(DoctrineOrmMappingsPass::class, $passes, 'The resource bundle registers the Doctrine mapping of the Model namespace');
     }
 }

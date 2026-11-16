@@ -36,8 +36,10 @@ final class ChannelChoicesProvider implements ChoicesProviderInterface, ResetInt
 
         $choices = [];
         foreach ($this->channelRepository->findBy([], ['name' => 'ASC']) as $channel) {
-            $code = (string) $channel->getCode();
-            $choices[$code] = $channel->getName() ?? $code;
+            $code = $channel->getCode();
+            if (null !== $code) {
+                $choices[$code] = $channel->getName() ?? $code;
+            }
         }
 
         return $this->choices = $choices;

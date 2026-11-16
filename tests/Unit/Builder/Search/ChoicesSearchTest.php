@@ -21,6 +21,7 @@ final class ChoicesSearchTest extends TestCase
         self::assertEquals([new SearchResult('@guest', 'Gæster'), new SearchResult('GÆST_VIP', 'VIP')], $search->search(' gÆst ', 'da_DK'));
         self::assertEquals([new SearchResult('wholesale', 'Engros')], $search->search('WHOLE', 'da_DK'));
         self::assertSame([], $search->search('retail', 'da_DK'));
+        self::assertEquals([new SearchResult('apples', 'ÆBLER')], (new ChoicesSearch(self::provider(['apples' => 'ÆBLER'])))->search('æbler', 'da_DK'));
     }
 
     /**

@@ -26,7 +26,7 @@ final class ChoicesProvidersTest extends TestCase
     /**
      * @test
      */
-    public function the_channels_are_the_stores_channels_by_name_read_once_until_reset(): void
+    public function the_channels_are_the_stores_channels_with_a_code_by_name_read_once_until_reset(): void
     {
         $web = $this->prophesize(ChannelInterface::class);
         $web->getCode()->willReturn('WEB');
@@ -34,10 +34,13 @@ final class ChoicesProvidersTest extends TestCase
         $unnamed = $this->prophesize(ChannelInterface::class);
         $unnamed->getCode()->willReturn('B2B');
         $unnamed->getName()->willReturn(null);
+        $uncoded = $this->prophesize(ChannelInterface::class);
+        $uncoded->getCode()->willReturn(null);
+        $uncoded->getName()->willReturn('Without a code');
 
         /** @var \Prophecy\Prophecy\ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $repository */
         $repository = $this->prophesize(ChannelRepositoryInterface::class);
-        $repository->findBy([], ['name' => 'ASC'])->willReturn([$web->reveal(), $unnamed->reveal()])->shouldBeCalledTimes(2);
+        $repository->findBy([], ['name' => 'ASC'])->willReturn([$web->reveal(), $uncoded->reveal(), $unnamed->reveal()])->shouldBeCalledTimes(2);
 
         $provider = new ChannelChoicesProvider($repository->reveal());
 
@@ -61,10 +64,14 @@ final class ChoicesProvidersTest extends TestCase
         $unnamed->getCode()->willReturn('xx_XX');
         $unnamed->getName('en_US')->willReturn(null);
         $unnamed->getName('da_DK')->willReturn(null);
+        $uncoded = $this->prophesize(LocaleInterface::class);
+        $uncoded->getCode()->willReturn(null);
+        $uncoded->getName('en_US')->willReturn('Without a code');
+        $uncoded->getName('da_DK')->willReturn('Uden kode');
 
         /** @var \Prophecy\Prophecy\ObjectProphecy<RepositoryInterface<LocaleInterface>> $repository */
         $repository = $this->prophesize(RepositoryInterface::class);
-        $repository->findBy([], ['code' => 'ASC'])->willReturn(['first' => $danish->reveal(), 'second' => $unnamed->reveal()])->shouldBeCalledTimes(2);
+        $repository->findBy([], ['code' => 'ASC'])->willReturn([$uncoded->reveal(), $danish->reveal(), $unnamed->reveal()])->shouldBeCalledTimes(2);
 
         $provider = new LocaleChoicesProvider($repository->reveal());
 
@@ -86,10 +93,13 @@ final class ChoicesProvidersTest extends TestCase
         $unnamed = $this->prophesize(CustomerGroupInterface::class);
         $unnamed->getCode()->willReturn('vip');
         $unnamed->getName()->willReturn(null);
+        $uncoded = $this->prophesize(CustomerGroupInterface::class);
+        $uncoded->getCode()->willReturn(null);
+        $uncoded->getName()->willReturn('Without a code');
 
         /** @var \Prophecy\Prophecy\ObjectProphecy<RepositoryInterface<CustomerGroupInterface>> $repository */
         $repository = $this->prophesize(RepositoryInterface::class);
-        $repository->findBy([], ['name' => 'ASC'])->willReturn([$wholesale->reveal(), $unnamed->reveal()])->shouldBeCalledTimes(2);
+        $repository->findBy([], ['name' => 'ASC'])->willReturn([$wholesale->reveal(), $uncoded->reveal(), $unnamed->reveal()])->shouldBeCalledTimes(2);
 
         $translator = $this->prophesize(TranslatorInterface::class);
         $translator->trans('setono_sylius_cms.ui.audience.guests', [], null, 'da_DK')->willReturn('Gæster');

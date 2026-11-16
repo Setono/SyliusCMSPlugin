@@ -49,11 +49,8 @@ final readonly class ConditionMatcher
         }
 
         $kind = $this->kinds->get($code);
-        $values = $condition['params'] ?? [];
-        if ($values instanceof \stdClass) {
-            $values = get_object_vars($values);
-        }
-
+        // Parameter values that aren't a map, such as an empty JSON object as CanonicalJson::decode() reads it, are none
+        $values = $condition['params'] ?? null;
         $params = $this->paramsHydrator->hydrate($kind->params, $kind->fields, is_array($values) ? $values : [], new HydrationContext($context));
 
         return $kind->kind->matches($params, $context) !== (true === ($condition['negate'] ?? false));

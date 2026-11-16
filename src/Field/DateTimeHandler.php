@@ -71,7 +71,7 @@ final class DateTimeHandler implements FitCheckingFieldHandlerInterface, Sanitiz
             return null;
         }
 
-        $at = \DateTimeImmutable::createFromFormat('!' . self::FORMAT, $value, new \DateTimeZone('UTC'));
+        $at = \DateTimeImmutable::createFromFormat(self::FORMAT, $value, new \DateTimeZone('UTC'));
 
         return false !== $at && $at->format(self::FORMAT) === $value ? $at : null;
     }
