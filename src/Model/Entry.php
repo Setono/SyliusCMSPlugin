@@ -46,6 +46,9 @@ abstract class Entry implements EntryInterface
     /** The name of the admin user who saved last, or null when no one it knows did */
     protected ?string $lastEditedBy = null;
 
+    /** "Hide from search engines", for a content type with its own URL. Shared by all translations, and drafted */
+    protected bool $noindex = false;
+
     /*
      * The on-save settings, which take effect outside the draft (docs/spec/content-model.md#whats-drafted-and-what-takes-effect-on-save).
      * They're columns and rows beside the entry, so the visible-entries query filters on them in SQL
@@ -257,6 +260,16 @@ abstract class Entry implements EntryInterface
     public function getBlockTreeJson(): string
     {
         return $this->blockTree;
+    }
+
+    public function isNoindex(): bool
+    {
+        return $this->noindex;
+    }
+
+    public function setNoindex(bool $noindex): void
+    {
+        $this->noindex = $noindex;
     }
 
     public function getTitle(): ?string

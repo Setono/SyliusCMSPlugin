@@ -145,6 +145,14 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
     public function getBlockTreeJson(): string;
 
     /**
+     * "Hide from search engines", for a content type with its own URL: the head tags then ask crawlers not to index its
+     * pages. Shared by all translations, and drafted. See "SEO fields" in docs/spec/urls-and-seo.md
+     */
+    public function isNoindex(): bool;
+
+    public function setNoindex(bool $noindex): void;
+
+    /**
      * The title in the current locale
      */
     public function getTitle(): ?string;
