@@ -192,6 +192,42 @@ final class EntryTest extends TestCase
     /**
      * @test
      */
+    public function a_new_entry_was_last_edited_when_it_was_created_by_no_one_it_knows(): void
+    {
+        $page = new Page();
+
+        // To the second, as the column holds it
+        self::assertSame($page->getCreatedAt()->format('Y-m-d\TH:i:sP'), $page->getLastEditedAt()->format('Y-m-d\TH:i:sP'));
+        self::assertNull($page->getLastEditedBy());
+    }
+
+    /**
+     * Doctrine hydrates a datetime column in PHP's default time zone, while the column holds UTC
+     *
+     * @test
+     */
+    public function it_records_who_edited_it_last_and_when_in_utc(): void
+    {
+        $page = new Page();
+
+        $page->setLastEdited(new \DateTimeImmutable('2026-11-16 13:00:00', new \DateTimeZone('Europe/Copenhagen')), 'John Doe');
+
+        self::assertSame('John Doe', $page->getLastEditedBy());
+        $column = (new \ReflectionProperty(Entry::class, 'lastEditedAt'))->getValue($page);
+        self::assertInstanceOf(\DateTimeImmutable::class, $column);
+        self::assertSame('2026-11-16 12:00:00 UTC', $column->format('Y-m-d H:i:s T'));
+
+        (new \ReflectionProperty(Entry::class, 'lastEditedAt'))->setValue($page, new \DateTimeImmutable('2026-11-16 12:00:00', new \DateTimeZone('Europe/Copenhagen')));
+        self::assertEquals(new \DateTimeImmutable('2026-11-16T12:00:00Z'), $page->getLastEditedAt());
+        self::assertSame('UTC', $page->getLastEditedAt()->getTimezone()->getName());
+
+        $page->setLastEdited(new \DateTimeImmutable('2026-11-16T14:00:00Z'), null);
+        self::assertNull($page->getLastEditedBy());
+    }
+
+    /**
+     * @test
+     */
     public function it_clones_the_settings_and_leaves_the_originals_alone_when_the_clones_change(): void
     {
         $page = new Page();

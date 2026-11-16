@@ -12,12 +12,16 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Event\EntrySettingsChanged;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Publishing\EditRecorder;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettings;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
+use Symfony\Component\Security\Core\User\InMemoryUser;
 
 final class EntrySettingsSaverTest extends TestCase
 {
@@ -71,6 +75,7 @@ final class EntrySettingsSaverTest extends TestCase
             $calls[] = 'begin';
             $transaction();
             $calls[] = sprintf('enabled: %s, changed at %s', var_export($page->isEnabled(), true), $page->getChangedAt()->format('Y-m-d\TH:i:sP'));
+            $calls[] = sprintf('edited by %s at %s', (string) $page->getLastEditedBy(), $page->getLastEditedAt()->format('Y-m-d\TH:i:sP'));
             $calls[] = 'commit';
 
             return null;
@@ -81,6 +86,7 @@ final class EntrySettingsSaverTest extends TestCase
         self::assertSame([
             'begin',
             'enabled: false, changed at 2026-11-14T11:00:00+00:00',
+            'edited by jane at 2026-11-14T11:00:00+00:00',
             'commit',
             $page->getUuid() . ': enabled, audience',
         ], $this->calls);
@@ -101,6 +107,7 @@ final class EntrySettingsSaverTest extends TestCase
 
         self::assertSame([], $this->calls);
         self::assertSame($changedAt, $page->getChangedAt());
+        self::assertNull($page->getLastEditedBy());
     }
 
     /**
@@ -118,10 +125,15 @@ final class EntrySettingsSaverTest extends TestCase
 
     private function saver(): EntrySettingsSaver
     {
+        $clock = new MockClock(new \DateTimeImmutable('2026-11-14 12:00:00', new \DateTimeZone('Europe/Copenhagen')));
+        $tokenStorage = new TokenStorage();
+        $tokenStorage->setToken(new UsernamePasswordToken(new InMemoryUser('jane', null), 'admin', []));
+
         return new EntrySettingsSaver(
             $this->managerRegistry->reveal(),
-            new MockClock(new \DateTimeImmutable('2026-11-14 12:00:00', new \DateTimeZone('Europe/Copenhagen'))),
+            $clock,
             $this->eventDispatcher,
+            new EditRecorder($tokenStorage, $clock),
         );
     }
 }

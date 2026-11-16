@@ -14,7 +14,8 @@ use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
 
 /**
  * Saves are kept for a day for merging onto. Each one runs with the entry's row locked (EntryLock), so saves of one entry
- * wait for each other, and loading waits for a save in flight, so a lock token always matches the working copy it came with
+ * wait for each other, and loading waits for a save in flight, so a lock token always matches the working copy it came with.
+ * A save that changes something, and a discard, record on the entry who made it and when
  */
 final readonly class Autosave implements AutosaveInterface
 {
@@ -31,6 +32,7 @@ final readonly class Autosave implements AutosaveInterface
         private ChangeSetMerger $merger,
         private ChangeSetApplier $applier,
         private ClockInterface $clock,
+        private EditRecorder $editRecorder,
     ) {
     }
 
@@ -62,6 +64,7 @@ final readonly class Autosave implements AutosaveInterface
                 $workingCopy->setBlockTree($this->applier->apply($merge->changeSet, $workingCopy->getBlockTree()));
 
                 $this->number($entry, ++$latest, $merge->changeSet);
+                $this->editRecorder->record($entry);
                 $this->workingCopies->save($entry, $workingCopy);
             }
 
@@ -76,6 +79,7 @@ final readonly class Autosave implements AutosaveInterface
 
             if ($this->workingCopies->hasDraft($entry)) {
                 $this->number($entry, ++$latest, new ChangeSet([]));
+                $this->editRecorder->record($entry);
                 $this->workingCopies->discard($entry);
             }
 

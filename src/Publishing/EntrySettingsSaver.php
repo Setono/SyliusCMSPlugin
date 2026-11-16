@@ -21,6 +21,7 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
         private ManagerRegistry $managerRegistry,
         private ClockInterface $clock,
         private EventDispatcherInterface $eventDispatcher,
+        private EditRecorder $editRecorder,
     ) {
     }
 
@@ -36,6 +37,7 @@ final readonly class EntrySettingsSaver implements EntrySettingsSaverInterface
         $manager->wrapInTransaction(function () use ($entry, $settings): void {
             $settings->applyTo($entry);
             $entry->setChangedAt($this->clock->now()->setTimezone(new \DateTimeZone('UTC')));
+            $this->editRecorder->record($entry);
         });
 
         // After the transaction commits

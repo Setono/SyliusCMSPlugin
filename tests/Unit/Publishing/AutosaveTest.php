@@ -25,6 +25,7 @@ use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Publishing\Autosave;
+use Setono\SyliusCMSPlugin\Publishing\EditRecorder;
 use Setono\SyliusCMSPlugin\Publishing\EntryLock;
 use Setono\SyliusCMSPlugin\Publishing\StaleLockTokenException;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
@@ -35,6 +36,9 @@ use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\DependencyInjection\ServiceLocator;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Translation\IdentityTranslator;
 
 final class AutosaveTest extends TestCase
@@ -56,6 +60,8 @@ final class AutosaveTest extends TestCase
 
     /** @var ObjectProphecy<SavedChangeSetRepositoryInterface> */
     private ObjectProphecy $savedChangeSets;
+
+    private TokenStorage $tokenStorage;
 
     private Page $entry;
 
@@ -97,6 +103,17 @@ final class AutosaveTest extends TestCase
         $this->savedChangeSets = $this->prophesize(SavedChangeSetRepositoryInterface::class);
         $this->savedChangeSets->removeSavedBefore(Argument::cetera())->will($this->record('forget old saves'));
         $this->savedChangeSets->record(Argument::cetera())->will($this->record('number the save'));
+
+        // Whoever saves is recorded on the entry. The name is read when the edit is recorded
+        $calls = &$this->calls;
+        $admin = $this->prophesize(UserInterface::class);
+        $admin->getUserIdentifier()->will(static function () use (&$calls): string {
+            $calls[] = 'record the edit';
+
+            return 'Jane Roe';
+        });
+        $this->tokenStorage = new TokenStorage();
+        $this->tokenStorage->setToken(new UsernamePasswordToken($admin->reveal(), 'admin', []));
     }
 
     /**
@@ -129,9 +146,11 @@ final class AutosaveTest extends TestCase
         self::assertFalse($result->merged);
         self::assertSame([], $result->clashes);
         self::assertSame(['Hello there', 'World'], self::texts($this->workingCopy));
-        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'forget old saves', 'number the save', 'save working copy', 'flush', 'commit'], $this->calls);
+        self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'forget old saves', 'number the save', 'record the edit', 'save working copy', 'flush', 'commit'], $this->calls);
         $this->savedChangeSets->removeSavedBefore($this->entry, new \DateTimeImmutable('2026-11-13 10:00:00'))->shouldHaveBeenCalledOnce();
         $this->savedChangeSets->record($this->entry, 4, $changeSet, new \DateTimeImmutable('2026-11-14 10:00:00'))->shouldHaveBeenCalledOnce();
+        self::assertSame('Jane Roe', $this->entry->getLastEditedBy());
+        self::assertEquals(new \DateTimeImmutable('2026-11-14 10:00:00'), $this->entry->getLastEditedAt());
     }
 
     /**
@@ -173,6 +192,7 @@ final class AutosaveTest extends TestCase
         self::assertTrue($result->merged);
         self::assertCount(1, $result->clashes);
         self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'flush', 'commit'], $this->calls);
+        self::assertNull($this->entry->getLastEditedBy());
     }
 
     /**
@@ -188,6 +208,7 @@ final class AutosaveTest extends TestCase
         self::assertSame(3, $result->saved->lockToken);
         self::assertFalse($result->merged);
         self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'flush', 'commit'], $this->calls);
+        self::assertNull($this->entry->getLastEditedBy());
     }
 
     /**
@@ -248,9 +269,11 @@ final class AutosaveTest extends TestCase
 
         self::assertSame(4, $loaded->lockToken);
         self::assertSame($this->workingCopy, $loaded->workingCopy);
-        self::assertSame(['begin', 'lock to write', 'read again', 'forget old saves', 'number the save', 'discard the draft', 'get working copy', 'flush', 'commit'], $this->calls);
+        self::assertSame(['begin', 'lock to write', 'read again', 'forget old saves', 'number the save', 'record the edit', 'discard the draft', 'get working copy', 'flush', 'commit'], $this->calls);
         $this->savedChangeSets->removeSavedBefore($this->entry, new \DateTimeImmutable('2026-11-13 10:00:00'))->shouldHaveBeenCalledOnce();
         $this->savedChangeSets->record($this->entry, 4, new ChangeSet([]), new \DateTimeImmutable('2026-11-14 10:00:00'))->shouldHaveBeenCalledOnce();
+        self::assertSame('Jane Roe', $this->entry->getLastEditedBy());
+        self::assertEquals(new \DateTimeImmutable('2026-11-14 10:00:00'), $this->entry->getLastEditedAt());
     }
 
     /**
@@ -266,10 +289,13 @@ final class AutosaveTest extends TestCase
 
         self::assertSame(3, $loaded->lockToken);
         self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'flush', 'commit'], $this->calls);
+        self::assertNull($this->entry->getLastEditedBy());
     }
 
     private function autosave(): Autosave
     {
+        $clock = new MockClock('2026-11-14 10:00:00');
+
         return new Autosave(
             new EntryLock($this->managerRegistry->reveal()),
             $this->workingCopies->reveal(),
@@ -282,7 +308,8 @@ final class AutosaveTest extends TestCase
                     ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
                 ])),
             ),
-            new MockClock('2026-11-14 10:00:00'),
+            $clock,
+            new EditRecorder($this->tokenStorage, $clock),
         );
     }
 

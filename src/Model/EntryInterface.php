@@ -44,6 +44,18 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
     public function getLastPublishedAt(): ?\DateTimeImmutable;
 
     /**
+     * When it was last saved, in UTC: created, autosaved, discarded or its on-save settings saved. The admin shows it as "Last edited"
+     */
+    public function getLastEditedAt(): \DateTimeImmutable;
+
+    /**
+     * The name of the admin user who saved it last, or null when no one it knows did, such as for an entry made in code
+     */
+    public function getLastEditedBy(): ?string;
+
+    public function setLastEdited(\DateTimeImmutable $at, ?string $by): void;
+
+    /**
      * On for a new entry. Turning it off unpublishes the entry and keeps its published content. An on-save setting
      */
     public function isEnabled(): bool;

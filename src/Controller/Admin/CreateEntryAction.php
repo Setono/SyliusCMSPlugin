@@ -9,6 +9,7 @@ use Psr\Container\ContainerInterface;
 use Setono\SyliusCMSPlugin\Event\EntryCreated;
 use Setono\SyliusCMSPlugin\Form\Type\CreateEntryType;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Publishing\EditRecorder;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Sylius\Resource\Factory\FactoryInterface;
@@ -40,6 +41,7 @@ final readonly class CreateEntryAction
         private UrlGeneratorInterface $urlGenerator,
         private Environment $twig,
         private EventDispatcherInterface $eventDispatcher,
+        private EditRecorder $editRecorder,
     ) {
     }
 
@@ -63,6 +65,7 @@ final readonly class CreateEntryAction
             $entry = $this->createEntry($contentType);
             $entry->setTitle($data['title']);
             $entry->setSlug($data['slug'] ?? null);
+            $this->editRecorder->record($entry);
 
             $manager = $this->managerRegistry->getManagerForClass($entry::class) ?? throw new \LogicException(sprintf('No Doctrine manager manages %s', $entry::class));
             $manager->persist($entry);

@@ -40,6 +40,12 @@ abstract class Entry implements EntryInterface
 
     protected ?\DateTimeImmutable $lastPublishedAt = null;
 
+    /** In UTC. Every save records it, for the admin's "Last edited" */
+    protected \DateTimeImmutable $lastEditedAt;
+
+    /** The name of the admin user who saved last, or null when no one it knows did */
+    protected ?string $lastEditedBy = null;
+
     /*
      * The on-save settings, which take effect outside the draft (docs/spec/content-model.md#whats-drafted-and-what-takes-effect-on-save).
      * They're columns and rows beside the entry, so the visible-entries query filters on them in SQL
@@ -69,7 +75,7 @@ abstract class Entry implements EntryInterface
         $this->audienceGroups = new ArrayCollection();
 
         $this->uuid = Uuid::v7()->toRfc4122();
-        $this->createdAt = $this->changedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $this->createdAt = $this->changedAt = $this->lastEditedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $this->setBlockTree(new StoredTree(null, []));
     }
 
@@ -135,6 +141,22 @@ abstract class Entry implements EntryInterface
     public function setChangedAt(\DateTimeImmutable $changedAt): void
     {
         $this->changedAt = $changedAt;
+    }
+
+    public function getLastEditedAt(): \DateTimeImmutable
+    {
+        return self::readUtc($this->lastEditedAt);
+    }
+
+    public function getLastEditedBy(): ?string
+    {
+        return $this->lastEditedBy;
+    }
+
+    public function setLastEdited(\DateTimeImmutable $at, ?string $by): void
+    {
+        $this->lastEditedAt = $at->setTimezone(new \DateTimeZone('UTC'));
+        $this->lastEditedBy = $by;
     }
 
     public function isEnabled(): bool
@@ -262,7 +284,9 @@ abstract class Entry implements EntryInterface
     }
 
     /**
-     * The date window columns hold UTC, but Doctrine hydrates them in PHP's default time zone
+     * The date window and last edited columns hold UTC, but Doctrine hydrates them in PHP's default time zone
+     *
+     * @return ($column is null ? null : \DateTimeImmutable)
      */
     private static function readUtc(?\DateTimeImmutable $column): ?\DateTimeImmutable
     {

@@ -28,6 +28,9 @@
         <field name="createdAt" column="created_at" type="datetime_immutable"/>
         <field name="changedAt" column="changed_at" type="datetime_immutable"/>
         <field name="lastPublishedAt" column="last_published_at" type="datetime_immutable" nullable="true"/>
+        <!-- Who saved last and when (in UTC), for the admin's lists. The name, not a reference, so it outlives the admin user -->
+        <field name="lastEditedAt" column="last_edited_at" type="datetime_immutable"/>
+        <field name="lastEditedBy" column="last_edited_by" type="string" nullable="true"/>
 
         <!-- The on-save settings, as columns and rows the visible-entries query filters on. The date window is in UTC -->
         <field name="enabled" type="boolean"/>

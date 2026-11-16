@@ -56,6 +56,7 @@ final class CreateEntryTest extends WebTestCase
         self::assertSame('About us', $page->getTranslation('en_US')->getTitle());
         self::assertSame('about-us', $page->getTranslation('en_US')->getSlug());
         self::assertFalse($page->isPublished());
+        self::assertSame('John Doe', $page->getLastEditedBy());
         self::assertResponseRedirects(sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));
     }
 
