@@ -5,5 +5,11 @@
         <service id="Setono\SyliusCMSPlugin\Form\Type\CreateEntryType" class="Setono\SyliusCMSPlugin\Form\Type\CreateEntryType">
             <tag name="form.type"/>
         </service>
+
+        <service id="Setono\SyliusCMSPlugin\Form\Type\EntryListFilterType" class="Setono\SyliusCMSPlugin\Form\Type\EntryListFilterType">
+            <argument type="service" id="sylius.repository.channel"/>
+
+            <tag name="form.type"/>
+        </service>
     </services>
 </container>

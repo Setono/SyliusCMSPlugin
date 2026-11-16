@@ -1,0 +1,13 @@
+{# A date window that hasn't ended: label.parameters.from and label.parameters.until, either of which can be null #}
+{% set from = label.parameters.from %}
+{% set until = label.parameters.until %}
+<span class="ui blue basic label">
+    <i class="calendar outline icon"></i>
+    {%- if from is not null and until is not null -%}
+        {{ 'setono_sylius_cms.ui.status_label.date_window'|trans({'%from%': from|date('Y-m-d H:i'), '%until%': until|date('Y-m-d H:i')}) }}
+    {%- elseif from is not null -%}
+        {{ 'setono_sylius_cms.ui.status_label.shows_from'|trans({'%from%': from|date('Y-m-d H:i')}) }}
+    {%- else -%}
+        {{ 'setono_sylius_cms.ui.status_label.shows_until'|trans({'%until%': until|date('Y-m-d H:i')}) }}
+    {%- endif -%}
+</span>

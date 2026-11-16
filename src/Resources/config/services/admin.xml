@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- The Content item in the Sylius admin menu -->
+        <service id="Setono\SyliusCMSPlugin\Admin\MainMenuListener" class="Setono\SyliusCMSPlugin\Admin\MainMenuListener">
+            <tag name="kernel.event_listener" event="sylius.menu.admin.main"/>
+        </service>
+
+        <!-- The hub's side menu. Listeners of setono_sylius_cms.menu.admin.hub add items to it -->
+        <service id="Setono\SyliusCMSPlugin\Admin\HubMenuBuilder" class="Setono\SyliusCMSPlugin\Admin\HubMenuBuilder">
+            <argument type="service" id="knp_menu.factory"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryListQueryInterface"/>
+
+            <tag name="knp_menu.menu_builder" method="createMenu" alias="setono_sylius_cms.admin.hub"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryListQuery" class="Setono\SyliusCMSPlugin\Admin\EntryListQuery">
+            <argument type="service" id="doctrine"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="clock"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryListQueryInterface" alias="Setono\SyliusCMSPlugin\Admin\EntryListQuery"/>
+
+        <service id="Setono\SyliusCMSPlugin\Admin\StatusLabeler" class="Setono\SyliusCMSPlugin\Admin\StatusLabeler">
+            <argument type="service" id="clock"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Admin\StatusLabelerInterface" alias="Setono\SyliusCMSPlugin\Admin\StatusLabeler"/>
+
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryRows" class="Setono\SyliusCMSPlugin\Admin\EntryRows">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\StatusLabelerInterface"/>
+            <argument type="service" id="router"/>
+            <argument type="service" id="sylius.translation_locale_provider"/>
+        </service>
+    </services>
+</container>

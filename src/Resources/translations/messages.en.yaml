@@ -23,6 +23,9 @@ setono_sylius_cms:
             small: Small
     content_type:
         page: Page
+    # A content type's list is named by its plural. One without a plural here is named by its label
+    content_type_plural:
+        page: Pages
     field:
         accordion_item:
             content: Content
@@ -36,6 +39,18 @@ setono_sylius_cms:
             content: Content
         spacer:
             size: Size
+    menu:
+        admin:
+            hub:
+                all_entries: All entries
+                entries: Entries
+                library: Library
+                overview: Overview
+                pages: Pages
+            main:
+                content:
+                    content: Content
+                    header: Content
     form:
         entry:
             slug: Slug
@@ -43,8 +58,42 @@ setono_sylius_cms:
     publish:
         invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'
     ui:
+        all_entries: All entries
+        any_channel: Any channel
+        any_status: Any status
+        audience:
+            except: 'Everyone except %groups%'
+            guests: Guests
+            no_group: Signed in without a group
+            only: 'Only %groups%'
+        by: 'by %name%'
+        channel: Channel
+        content: Content
+        content_description: Pages and everything else shoppers read that isn't a product
         create: Create
+        last_edited: Last edited
         new_entry: 'New %content_type%'
+        no_entries: There are no entries to show.
+        overview_placeholder: What needs attention, what's coming up, translations and drafts in progress will show here. Until then, find the entries in their lists.
+        problems: Problems
+        search: Search
+        status: Status
+        status_filter:
+            disabled_or_outside_date_window: Disabled or outside its date window
+            never_published: Never published
+            unpublished_changes: Unpublished changes
+        status_label:
+            date_window: 'Shows %from%–%until%'
+            disabled: Disabled
+            ended: 'Ended %until%'
+            never_published: Never published
+            published: Published
+            shows_from: 'Shows from %from%'
+            shows_until: 'Shows until %until%'
+            unpublished_changes: Unpublished changes
+        title: Title
+        type: Type
+        untitled: Untitled
 
     # The builder app's UI strings. Every key under setono_sylius_cms.builder reaches the app through the registry endpoint
     builder:

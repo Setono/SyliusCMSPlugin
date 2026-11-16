@@ -1,0 +1,7 @@
+{#
+ # An entry's status labels (StatusLabel), each rendered by @SetonoSyliusCMSPlugin/admin/status_label/<code>.html.twig.
+ # The audience label names customer groups from customer_group_names (code => name) when the page passes it
+ #}
+{% for label in labels %}
+    {% include '@SetonoSyliusCMSPlugin/admin/status_label/' ~ label.code ~ '.html.twig' with {'label': label} %}
+{% endfor %}

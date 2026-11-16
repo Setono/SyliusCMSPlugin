@@ -1,0 +1,25 @@
+{#
+ # The hub's home. Needs attention, Coming up, Translations and Drafts in progress come with #275
+ #}
+{% extends '@SetonoSyliusCMSPlugin/admin/layout.html.twig' %}
+
+{% import '@SyliusUi/Macro/headers.html.twig' as headers %}
+{% import '@SyliusAdmin/Macro/breadcrumb.html.twig' as breadcrumb %}
+
+{% block title %}{{ 'setono_sylius_cms.ui.content'|trans }} {{ parent() }}{% endblock %}
+
+{% block hub_content %}
+    {{ headers.default('setono_sylius_cms.ui.content'|trans, 'pencil alternate', 'setono_sylius_cms.ui.content_description'|trans) }}
+
+    {{ breadcrumb.crumble([
+        { label: 'sylius.ui.administration'|trans, url: path('sylius_admin_dashboard') },
+        { label: 'setono_sylius_cms.ui.content'|trans },
+    ]) }}
+
+    <div class="ui segment">
+        <p>{{ 'setono_sylius_cms.ui.overview_placeholder'|trans }}</p>
+        <a class="ui labeled icon button" href="{{ path('setono_sylius_cms_admin_entry_index_all') }}">
+            <i class="list icon"></i> {{ 'setono_sylius_cms.ui.all_entries'|trans }}
+        </a>
+    </div>
+{% endblock %}

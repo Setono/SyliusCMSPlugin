@@ -1,0 +1,5 @@
+{# A date window that has ended: label.parameters.until #}
+<span class="ui basic label">
+    <i class="calendar times outline icon"></i>
+    {{- 'setono_sylius_cms.ui.status_label.ended'|trans({'%until%': label.parameters.until|date('Y-m-d H:i')}) -}}
+</span>

@@ -1,0 +1,29 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Setono\SyliusCMSPlugin\Admin;
+
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
+
+/**
+ * An entry as a row of the admin's lists shows it. The title and URL are its working copy's: its draft's, when it has
+ * one (ADR 0009). Last edited is read from the entry. See "Entry lists" in docs/spec/admin.md
+ */
+final readonly class EntryRow
+{
+    /**
+     * @param string|null $title the title in the locale shown: the admin user's, or else the store's default, or else the first
+     * @param string|null $url the path of its URL in that locale, or null when it has no URL of its own or no slug
+     * @param list<StatusLabel> $statusLabels
+     */
+    public function __construct(
+        public EntryInterface $entry,
+        public ContentTypeMetadata $contentType,
+        public ?string $title,
+        public ?string $url,
+        public array $statusLabels,
+    ) {
+    }
+}

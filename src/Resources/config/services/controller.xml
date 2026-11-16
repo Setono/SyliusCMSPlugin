@@ -17,6 +17,38 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction" class="Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="twig"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\EntryIndexAction" class="Setono\SyliusCMSPlugin\Controller\Admin\EntryIndexAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryListQueryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryRows"/>
+            <argument type="service" id="form.factory"/>
+            <!-- In the admin, the admin user's locale -->
+            <argument type="service" id="sylius.context.locale"/>
+            <argument type="service" id="sylius.repository.customer_group"/>
+            <argument type="service" id="twig"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryDeleterInterface"/>
+            <argument type="service" id="security.csrf.token_manager"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="router"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>

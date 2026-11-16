@@ -14,6 +14,9 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ValidateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\EntryIndexAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Routing\Requirement\Requirement;
 
@@ -25,10 +28,32 @@ use Symfony\Component\Routing\Requirement\Requirement;
  *         prefix: '/%sylius_admin.path_name%'
  */
 return static function (RoutingConfigurator $routes): void {
+    $routes->add('setono_sylius_cms_admin_overview', '/cms')
+        ->controller(OverviewAction::class)
+        ->methods(['GET'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_entry_index_all', '/cms/entries')
+        ->controller(EntryIndexAction::class)
+        ->methods(['GET'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_entry_index', '/cms/entries/{contentType}')
+        ->controller(EntryIndexAction::class)
+        ->methods(['GET'])
+        ->requirements(['contentType' => '[a-z][a-z0-9_]*'])
+    ;
+
     $routes->add('setono_sylius_cms_admin_entry_create', '/cms/entries/{contentType}/new')
         ->controller(CreateEntryAction::class)
         ->methods(['GET', 'POST'])
         ->requirements(['contentType' => '[a-z][a-z0-9_]*'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_entry_delete', '/cms/entry/{uuid}')
+        ->controller(DeleteEntryAction::class)
+        ->methods(['DELETE'])
+        ->requirements(['uuid' => Requirement::UUID])
     ;
 
     $routes->add('setono_sylius_cms_admin_builder', '/cms/entry/{uuid}/builder')

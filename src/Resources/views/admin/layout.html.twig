@@ -1,0 +1,16 @@
+{#
+ # The Content hub: the Sylius admin layout with the hub's own side menu beside each page.
+ # Pages of the hub extend it and fill the hub_content block. See "Navigation" in docs/spec/admin.md
+ #}
+{% extends '@SyliusAdmin/layout.html.twig' %}
+
+{% block content %}
+    <div class="ui stackable grid">
+        <div class="three wide column">
+            {{ knp_menu_render('setono_sylius_cms.admin.hub', {'template': '@SetonoSyliusCMSPlugin/admin/menu/hub.html.twig', 'currentClass': 'active'}) }}
+        </div>
+        <div class="thirteen wide column">
+            {% block hub_content %}{% endblock %}
+        </div>
+    </div>
+{% endblock %}
