@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Rendering;
 
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Setono\SyliusCMSPlugin\Block\FirstMatch;
 use Setono\SyliusCMSPlugin\Block\Group;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\RichText;
@@ -19,9 +20,11 @@ use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
+use Setono\SyliusCMSPlugin\Rendering\BlockView;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
+use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -35,6 +38,10 @@ final class BlockViewBuilderTest extends TestCase
     private const A = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a';
 
     private const B = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4b';
+
+    private const C = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4c';
+
+    private const D = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d';
 
     /**
      * @test
@@ -184,6 +191,114 @@ final class BlockViewBuilderTest extends TestCase
         self::assertNull($views[1]->styleClass, 'Another block type\'s style is no style');
     }
 
+    /**
+     * @test
+     */
+    public function it_leaves_out_a_block_whose_visibility_conditions_do_not_match_with_its_children(): void
+    {
+        $hidden = self::onlyIn(new StoredBlock(self::A, 'group', 1), 'da_DK');
+        $hidden->children = [new StoredBlock(self::B, 'heading', 1)];
+        $shown = self::onlyIn(new StoredBlock(self::C, 'group', 1), 'en_US');
+        $shown->children = [new StoredBlock(self::D, 'heading', 1)];
+
+        $views = $this->builder()->build([$hidden, $shown], $this->context('en_US'));
+
+        self::assertCount(1, $views);
+        self::assertSame(self::C, $views[0]->key);
+        self::assertCount(1, $views[0]->children);
+        self::assertSame(self::D, $views[0]->children[0]->key);
+    }
+
+    /**
+     * A template gets only the children that show
+     *
+     * @test
+     */
+    public function it_leaves_out_the_children_whose_visibility_conditions_do_not_match(): void
+    {
+        $parent = new StoredBlock(self::A, 'group', 1);
+        $parent->children = [
+            self::onlyIn(new StoredBlock(self::B, 'heading', 1), 'da_DK'),
+            new StoredBlock(self::C, 'heading', 1),
+            self::onlyIn(new StoredBlock(self::D, 'heading', 1), 'en_US'),
+        ];
+
+        $views = $this->builder()->build([$parent], $this->context('en_US'));
+
+        self::assertSame([self::C, self::D], self::keys($views[0]->children));
+    }
+
+    /**
+     * @test
+     */
+    public function a_first_match_block_shows_only_its_first_child_whose_conditions_match(): void
+    {
+        $firstMatch = new StoredBlock(self::A, 'first_match', 1);
+        $firstMatch->children = [
+            self::onlyIn(new StoredBlock(self::B, 'heading', 1), 'da_DK'),
+            new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4e', 'removed', 1),
+            self::onlyIn(new StoredBlock(self::C, 'heading', 1), 'en_US'),
+            new StoredBlock(self::D, 'heading', 1),
+        ];
+
+        $english = $this->builder()->build([$firstMatch], $this->context('en_US'));
+        $danish = $this->builder()->build([$firstMatch], $this->context('da_DK'));
+        $german = $this->builder()->build([$firstMatch], $this->context('de_DE'));
+
+        self::assertSame([self::C], self::keys($english[0]->children), 'A block of a type the code no longer has is skipped');
+        self::assertSame([self::B], self::keys($danish[0]->children));
+        self::assertSame([self::D], self::keys($german[0]->children), 'A child without conditions is the fallback');
+    }
+
+    /**
+     * @test
+     */
+    public function a_first_match_block_whose_children_all_hide_shows_nothing_inside(): void
+    {
+        $firstMatch = new StoredBlock(self::A, 'first_match', 1);
+        $firstMatch->children = [self::onlyIn(new StoredBlock(self::B, 'heading', 1), 'da_DK')];
+
+        $views = $this->builder()->build([$firstMatch], $this->context('en_US'));
+
+        self::assertCount(1, $views);
+        self::assertSame([], $views[0]->children);
+    }
+
+    /**
+     * Only a First match block's own children are limited, not the list it's in nor the children of the one that shows
+     *
+     * @test
+     */
+    public function the_child_a_first_match_block_shows_keeps_all_its_children(): void
+    {
+        $group = new StoredBlock(self::B, 'group', 1);
+        $group->children = [new StoredBlock(self::C, 'heading', 1), new StoredBlock(self::D, 'heading', 1)];
+        $firstMatch = new StoredBlock(self::A, 'first_match', 1);
+        $firstMatch->children = [$group];
+
+        $views = $this->builder()->build([$firstMatch, new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4e', 'heading', 1)], $this->context('en_US'));
+
+        self::assertCount(2, $views);
+        self::assertSame([self::C, self::D], self::keys($views[0]->children[0]->children));
+    }
+
+    private static function onlyIn(StoredBlock $block, string $localeCode): StoredBlock
+    {
+        $block->conditions = [['kind' => 'locale_is', 'negate' => false, 'params' => ['locales' => [$localeCode]]]];
+
+        return $block;
+    }
+
+    /**
+     * @param list<BlockView> $views
+     *
+     * @return list<string>
+     */
+    private static function keys(array $views): array
+    {
+        return array_map(static fn (BlockView $view): string => $view->key, $views);
+    }
+
     private function builder(): BlockViewBuilder
     {
         $fallbackChain = $this->prophesize(FallbackChainInterface::class);
@@ -201,11 +316,12 @@ final class BlockViewBuilderTest extends TestCase
 
         return new BlockViewBuilder(
             new BlockTypeRegistry(
-                ['heading' => Heading::class, 'rich_text' => RichText::class, 'group' => Group::class],
+                ['heading' => Heading::class, 'rich_text' => RichText::class, 'group' => Group::class, 'first_match' => FirstMatch::class],
                 new FieldReader(),
                 styles: ['group' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-group--brand']]],
             ),
             new BlockHydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal())),
+            Conditions::matcher(),
         );
     }
 

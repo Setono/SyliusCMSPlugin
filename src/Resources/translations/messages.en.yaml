@@ -7,6 +7,7 @@ setono_sylius_cms:
         accordion_item: Accordion item
         column: Column
         columns: Columns
+        first_match: First match
         group: Group
         heading: Heading
         rich_text: Rich text
@@ -21,6 +22,12 @@ setono_sylius_cms:
             large: Large
             medium: Medium
             small: Small
+    # The condition kinds' labels. See "Condition kinds" in docs/spec/targeting.md
+    condition_kind:
+        channel: Channel
+        customer_group: Customer group
+        date_window: Date window
+        locale: Language
     content_type:
         page: Page
     # A content type's list is named by its plural. One without a plural here is named by its label
@@ -30,11 +37,20 @@ setono_sylius_cms:
         accordion_item:
             content: Content
             title: Title
+        channel_condition:
+            channels: Channels
+        customer_group_condition:
+            groups: Customer groups
+        date_window_condition:
+            from: From
+            until: Until
         group:
             full_width: Full width
         heading:
             level: Level
             text: Text
+        locale_condition:
+            locales: Languages
         rich_text:
             content: Content
         spacer:

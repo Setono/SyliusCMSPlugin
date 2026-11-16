@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- Decides whether a block's visibility conditions match the shopper and the page -->
+        <service id="Setono\SyliusCMSPlugin\Condition\ConditionMatcher" class="Setono\SyliusCMSPlugin\Condition\ConditionMatcher">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ParamsHydrator"/>
+        </service>
+
+        <!--
+        The shipped condition kinds. A kind is a service carrying #[AsConditionKind], which autoconfiguration tags
+        setono_sylius_cms.condition_kind, and RegisterConditionKindsPass hands to the registry by code
+        -->
+        <service id="Setono\SyliusCMSPlugin\Condition\Kind\ChannelKind" class="Setono\SyliusCMSPlugin\Condition\Kind\ChannelKind">
+            <tag name="setono_sylius_cms.condition_kind"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Condition\Kind\LocaleKind" class="Setono\SyliusCMSPlugin\Condition\Kind\LocaleKind">
+            <tag name="setono_sylius_cms.condition_kind"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Condition\Kind\DateWindowKind" class="Setono\SyliusCMSPlugin\Condition\Kind\DateWindowKind">
+            <tag name="setono_sylius_cms.condition_kind"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Condition\Kind\CustomerGroupKind" class="Setono\SyliusCMSPlugin\Condition\Kind\CustomerGroupKind">
+            <tag name="setono_sylius_cms.condition_kind"/>
+        </service>
+    </services>
+</container>
