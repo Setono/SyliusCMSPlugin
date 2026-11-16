@@ -35,13 +35,17 @@ final class OldSlugTest extends TestCase
     }
 
     /**
+     * A project's own content type implements EntryInterface, as a Sylius model implements its interface
+     *
      * @test
      */
-    public function it_belongs_to_an_entry_of_a_content_type(): void
+    public function it_belongs_to_any_entry(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('An old slug belongs to an entry, which extends Setono\SyliusCMSPlugin\Model\Entry');
+        $entry = $this->prophesize(EntryInterface::class)->reveal();
+        $oldSlug = new OldSlug();
 
-        (new OldSlug())->setEntry($this->prophesize(EntryInterface::class)->reveal());
+        $oldSlug->setEntry($entry);
+
+        self::assertSame($entry, $oldSlug->getEntry());
     }
 }

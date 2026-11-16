@@ -7,9 +7,8 @@ namespace Setono\SyliusCMSPlugin\Targeting;
 use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactoryInterface;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactoryInterface;
 use Setono\SyliusCMSPlugin\Model\CodedRows;
-use Setono\SyliusCMSPlugin\Model\Entry;
-use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
-use Setono\SyliusCMSPlugin\Model\EntryChannel;
+use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
+use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 
 /**
@@ -26,12 +25,10 @@ final readonly class ChannelsAndAudienceModifier implements ChannelsAndAudienceM
 
     public function setChannels(EntryInterface $entry, iterable $codes): void
     {
-        $entry = self::entry($entry);
-
         CodedRows::sync(
             $entry->getChannels()->toArray(),
             [...$codes],
-            static fn (EntryChannel $channel): string => $channel->getCode(),
+            static fn (EntryChannelInterface $channel): string => $channel->getCode(),
             $entry->removeChannel(...),
             fn (string $code) => $entry->addChannel($this->channelFactory->createForEntry($entry, $code)),
         );
@@ -43,28 +40,14 @@ final readonly class ChannelsAndAudienceModifier implements ChannelsAndAudienceM
      */
     public function setAudience(EntryInterface $entry, Audience $audience): void
     {
-        $entry = self::entry($entry);
-
         CodedRows::sync(
             $entry->getAudienceGroups()->toArray(),
             $audience->groups,
-            static fn (EntryAudienceGroup $group): string => $group->getCode(),
+            static fn (EntryAudienceGroupInterface $group): string => $group->getCode(),
             $entry->removeAudienceGroup(...),
             fn (string $code) => $entry->addAudienceGroup($this->audienceGroupFactory->createForEntry($entry, $code)),
         );
 
         $entry->setAudienceMode($audience->mode);
-    }
-
-    /**
-     * The rows refer to the shipped Entry, which every content type extends
-     */
-    private static function entry(EntryInterface $entry): Entry
-    {
-        if (!$entry instanceof Entry) {
-            throw new \LogicException(sprintf('The entry %s must extend %s, which its channel and audience group rows refer to', get_debug_type($entry), Entry::class));
-        }
-
-        return $entry;
     }
 }

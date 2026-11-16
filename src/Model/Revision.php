@@ -9,10 +9,9 @@ class Revision implements RevisionInterface
     protected ?int $id = null;
 
     /**
-     * Every content type extends Entry, the root of the entries' single table inheritance (ADR 0001). Set as soon as
-     * the revision is created
+     * Set as soon as the revision is created
      */
-    protected Entry $entry;
+    protected EntryInterface $entry;
 
     /**
      * Canonical JSON, kept as text, not as a database JSON type, because MySQL's JSON type reorders keys
@@ -40,10 +39,6 @@ class Revision implements RevisionInterface
 
     public function setEntry(EntryInterface $entry): void
     {
-        if (!$entry instanceof Entry) {
-            throw new \InvalidArgumentException(sprintf('A revision belongs to an entry, which extends %s', Entry::class));
-        }
-
         $this->entry = $entry;
     }
 

@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Model;
 
 use PHPUnit\Framework\TestCase;
-use Setono\SyliusCMSPlugin\Model\Homepage;
+use Prophecy\PhpUnit\ProphecyTrait;
+use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
@@ -16,6 +17,8 @@ use Symfony\Component\Uid\UuidV7;
 
 final class PageTest extends TestCase
 {
+    use ProphecyTrait;
+
     /**
      * @test
      */
@@ -181,6 +184,23 @@ final class PageTest extends TestCase
     }
 
     /**
+     * A project's own homepage model implements HomepageInterface, as a Sylius model implements its interface
+     *
+     * @test
+     */
+    public function it_takes_homepage_rows_of_any_model_that_implements_their_interface(): void
+    {
+        $page = new Page();
+        $homepage = $this->prophesize(HomepageInterface::class);
+        $homepage->getPage()->willReturn($page);
+        $homepage->getChannelCode()->willReturn('WEB');
+
+        $page->addHomepage($homepage->reveal());
+
+        self::assertSame(['WEB'], $page->getHomepageChannelCodes());
+    }
+
+    /**
      * A working copy is a clone, which reads the original's homepage rows through a collection of its own
      *
      * @test
@@ -205,7 +225,7 @@ final class PageTest extends TestCase
         self::assertSame([$web], $page->getHomepages()->getValues());
     }
 
-    private static function homepage(Page $page, string $channelCode): Homepage
+    private static function homepage(Page $page, string $channelCode): HomepageInterface
     {
         return Homepages::factory()->createForPage($page, $channelCode);
     }

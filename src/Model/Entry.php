@@ -62,13 +62,13 @@ abstract class Entry implements EntryInterface
     /** In UTC */
     protected ?\DateTimeImmutable $showUntil = null;
 
-    /** @var Collection<array-key, EntryChannel> */
+    /** @var Collection<array-key, EntryChannelInterface> */
     protected Collection $channels;
 
     /** @see AudienceMode */
     protected string $audienceMode = 'everyone';
 
-    /** @var Collection<array-key, EntryAudienceGroup> */
+    /** @var Collection<array-key, EntryAudienceGroupInterface> */
     protected Collection $audienceGroups;
 
     /*
@@ -110,7 +110,8 @@ abstract class Entry implements EntryInterface
         }
 
         // The copy reads the original's rows through collections of its own, so changing the copy's channels or audience
-        // leaves the original's alone. A row never changes, and a model can't reach the factories that create new ones
+        // leaves the original's alone. A row never changes, and a model can't reach the factories that create new ones.
+        // So the working copy keeps the original's rows, whose getEntry() is the original, not the copy
         $this->channels = new ArrayCollection($this->channels->toArray());
         $this->audienceGroups = new ArrayCollection($this->audienceGroups->toArray());
     }
@@ -202,12 +203,12 @@ abstract class Entry implements EntryInterface
         return $this->channels;
     }
 
-    public function hasChannel(EntryChannel $channel): bool
+    public function hasChannel(EntryChannelInterface $channel): bool
     {
         return $this->channels->contains($channel);
     }
 
-    public function addChannel(EntryChannel $channel): void
+    public function addChannel(EntryChannelInterface $channel): void
     {
         if ($this !== $channel->getEntry()) {
             throw new \LogicException(sprintf('The channel row %s belongs to another entry', $channel->getCode()));
@@ -218,7 +219,7 @@ abstract class Entry implements EntryInterface
         }
     }
 
-    public function removeChannel(EntryChannel $channel): void
+    public function removeChannel(EntryChannelInterface $channel): void
     {
         $this->channels->removeElement($channel);
     }
@@ -238,12 +239,12 @@ abstract class Entry implements EntryInterface
         return $this->audienceGroups;
     }
 
-    public function hasAudienceGroup(EntryAudienceGroup $group): bool
+    public function hasAudienceGroup(EntryAudienceGroupInterface $group): bool
     {
         return $this->audienceGroups->contains($group);
     }
 
-    public function addAudienceGroup(EntryAudienceGroup $group): void
+    public function addAudienceGroup(EntryAudienceGroupInterface $group): void
     {
         if ($this !== $group->getEntry()) {
             throw new \LogicException(sprintf('The audience group row %s belongs to another entry', $group->getCode()));
@@ -254,7 +255,7 @@ abstract class Entry implements EntryInterface
         }
     }
 
-    public function removeAudienceGroup(EntryAudienceGroup $group): void
+    public function removeAudienceGroup(EntryAudienceGroupInterface $group): void
     {
         $this->audienceGroups->removeElement($group);
     }

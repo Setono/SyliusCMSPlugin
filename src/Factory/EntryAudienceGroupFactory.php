@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Factory;
 
-use Setono\SyliusCMSPlugin\Model\Entry;
-use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
+use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Sylius\Resource\Exception\UnsupportedMethodException;
 
 final readonly class EntryAudienceGroupFactory implements EntryAudienceGroupFactoryInterface
 {
     /**
-     * @param class-string<EntryAudienceGroup> $className the entry_audience_group resource's model
+     * @param class-string<EntryAudienceGroupInterface> $className the entry_audience_group resource's model
      */
     public function __construct(private string $className)
     {
@@ -22,12 +22,12 @@ final readonly class EntryAudienceGroupFactory implements EntryAudienceGroupFact
      *
      * @throws UnsupportedMethodException
      */
-    public function createNew(): EntryAudienceGroup
+    public function createNew(): EntryAudienceGroupInterface
     {
         throw new UnsupportedMethodException('createNew');
     }
 
-    public function createForEntry(Entry $entry, string $code): EntryAudienceGroup
+    public function createForEntry(EntryInterface $entry, string $code): EntryAudienceGroupInterface
     {
         return new $this->className($entry, $code);
     }

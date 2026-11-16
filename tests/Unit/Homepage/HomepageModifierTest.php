@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Homepage;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Factory\HomepageFactoryInterface;
 use Setono\SyliusCMSPlugin\Homepage\HomepageModifier;
-use Setono\SyliusCMSPlugin\Model\Homepage;
+use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
@@ -29,9 +30,9 @@ final class HomepageModifierTest extends TestCase
     protected function setUp(): void
     {
         $this->factory = $this->prophesize(HomepageFactoryInterface::class);
-        $this->factory->createForPage(Argument::cetera())->will(static function (array $arguments): Homepage {
+        $this->factory->createForPage(Argument::cetera())->will(static function (array $arguments): HomepageInterface {
             [$page, $channelCode] = $arguments;
-            self::assertInstanceOf(Page::class, $page);
+            self::assertInstanceOf(PageInterface::class, $page);
             self::assertIsString($channelCode);
 
             return Homepages::factory()->createForPage($page, $channelCode);
@@ -91,18 +92,21 @@ final class HomepageModifierTest extends TestCase
     }
 
     /**
-     * The rows refer to the shipped Page, which the page resource's model is or extends
+     * A project's own page model implements PageInterface, as a Sylius model implements its interface
      *
      * @test
      */
-    public function it_needs_a_page_that_extends_the_shipped_page(): void
+    public function it_changes_the_homepage_rows_of_any_page_through_its_interface(): void
     {
-        $page = $this->prophesize(PageInterface::class)->reveal();
+        $page = $this->prophesize(PageInterface::class);
+        $page->getHomepages()->willReturn(new ArrayCollection());
+        $revealed = $page->reveal();
 
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage(sprintf('The page %s must extend %s, which its homepage rows refer to', get_debug_type($page), Page::class));
+        $this->modifier()->setHomepageOf($revealed, ['WEB']);
 
-        $this->modifier()->setHomepageOf($page, ['WEB']);
+        $page->addHomepage(Argument::that(
+            static fn (HomepageInterface $homepage): bool => $revealed === $homepage->getPage() && 'WEB' === $homepage->getChannelCode(),
+        ))->shouldHaveBeenCalledOnce();
     }
 
     /**
@@ -190,7 +194,7 @@ final class HomepageModifierTest extends TestCase
         return new HomepageModifier($this->factory->reveal(), $this->repository->reveal());
     }
 
-    private static function homepage(Page $page, string $channelCode): Homepage
+    private static function homepage(Page $page, string $channelCode): HomepageInterface
     {
         return Homepages::factory()->createForPage($page, $channelCode);
     }

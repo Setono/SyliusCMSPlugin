@@ -6,7 +6,6 @@ namespace Setono\SyliusCMSPlugin\Repository;
 
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
-use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSetInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
@@ -47,10 +46,6 @@ class SavedChangeSetRepository extends EntityRepository implements SavedChangeSe
 
     public function record(EntryInterface $entry, int $lockToken, ChangeSet $changeSet, \DateTimeImmutable $savedAt): void
     {
-        if (!$entry instanceof Entry) {
-            throw new \InvalidArgumentException(sprintf('A save belongs to an entry, which extends %s', Entry::class));
-        }
-
         // The resource's model, which a project can override
         $class = $this->getClassName();
         $this->getEntityManager()->persist(new $class($entry, $lockToken, CanonicalJson::encode($changeSet->toArray()), $savedAt));

@@ -25,7 +25,7 @@ class Page extends Entry implements PageInterface
     /**
      * "Homepage of", an on-save setting: the rows of the channels it's the homepage of
      *
-     * @var Collection<array-key, Homepage>
+     * @var Collection<array-key, HomepageInterface>
      */
     protected Collection $homepages;
 
@@ -55,12 +55,12 @@ class Page extends Entry implements PageInterface
         return $this->homepages;
     }
 
-    public function hasHomepage(Homepage $homepage): bool
+    public function hasHomepage(HomepageInterface $homepage): bool
     {
         return $this->homepages->contains($homepage);
     }
 
-    public function addHomepage(Homepage $homepage): void
+    public function addHomepage(HomepageInterface $homepage): void
     {
         if ($this !== $homepage->getPage()) {
             throw new \LogicException(sprintf('The homepage row of the channel %s belongs to another page', $homepage->getChannelCode()));
@@ -71,14 +71,14 @@ class Page extends Entry implements PageInterface
         }
     }
 
-    public function removeHomepage(Homepage $homepage): void
+    public function removeHomepage(HomepageInterface $homepage): void
     {
         $this->homepages->removeElement($homepage);
     }
 
     public function getHomepageChannelCodes(): array
     {
-        $codes = $this->homepages->map(static fn (Homepage $homepage): string => $homepage->getChannelCode())->getValues();
+        $codes = $this->homepages->map(static fn (HomepageInterface $homepage): string => $homepage->getChannelCode())->getValues();
         sort($codes, \SORT_STRING);
 
         return $codes;

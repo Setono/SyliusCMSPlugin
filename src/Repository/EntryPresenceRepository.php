@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Repository;
 
-use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
@@ -16,10 +15,6 @@ class EntryPresenceRepository extends EntityRepository implements EntryPresenceR
 {
     public function see(EntryInterface $entry, string $editor, string $name, \DateTimeImmutable $seenAt): void
     {
-        if (!$entry instanceof Entry) {
-            throw new \InvalidArgumentException(sprintf('Presence belongs to an entry, which extends %s', Entry::class));
-        }
-
         $presence = $this->findOneBy(['entry' => $entry, 'editor' => $editor]);
         if ($presence instanceof EntryPresenceInterface) {
             $presence->see($name, $seenAt);

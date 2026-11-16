@@ -9,10 +9,9 @@ class OldSlug implements OldSlugInterface
     protected ?int $id = null;
 
     /**
-     * Every content type extends Entry, the root of the entries' single table inheritance (ADR 0001). Set as soon as
-     * the old slug is created
+     * Set as soon as the old slug is created
      */
-    protected Entry $entry;
+    protected EntryInterface $entry;
 
     protected string $localeCode = '';
 
@@ -30,10 +29,6 @@ class OldSlug implements OldSlugInterface
 
     public function setEntry(EntryInterface $entry): void
     {
-        if (!$entry instanceof Entry) {
-            throw new \InvalidArgumentException(sprintf('An old slug belongs to an entry, which extends %s', Entry::class));
-        }
-
         $this->entry = $entry;
     }
 

@@ -9,7 +9,7 @@ class EntryAudienceGroup implements EntryAudienceGroupInterface
     protected ?int $id = null;
 
     public function __construct(
-        protected Entry $entry,
+        protected EntryInterface $entry,
         protected string $code,
     ) {
     }
@@ -19,7 +19,7 @@ class EntryAudienceGroup implements EntryAudienceGroupInterface
         return $this->id;
     }
 
-    public function getEntry(): Entry
+    public function getEntry(): EntryInterface
     {
         return $this->entry;
     }

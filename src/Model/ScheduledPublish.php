@@ -11,10 +11,9 @@ class ScheduledPublish implements ScheduledPublishInterface
     protected ?int $id = null;
 
     /**
-     * Every content type extends Entry, the root of the entries' single table inheritance (ADR 0001). Set as soon as
-     * the scheduled publish is created
+     * Set as soon as the scheduled publish is created
      */
-    protected Entry $entry;
+    protected EntryInterface $entry;
 
     protected string $token;
 
@@ -44,10 +43,6 @@ class ScheduledPublish implements ScheduledPublishInterface
 
     public function setEntry(EntryInterface $entry): void
     {
-        if (!$entry instanceof Entry) {
-            throw new \InvalidArgumentException(sprintf('A scheduled publish belongs to an entry, which extends %s', Entry::class));
-        }
-
         $this->entry = $entry;
     }
 

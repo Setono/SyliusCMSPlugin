@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Model;
 
 use PHPUnit\Framework\TestCase;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Model\Entry;
-use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
-use Setono\SyliusCMSPlugin\Model\EntryChannel;
+use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
+use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
@@ -22,6 +23,8 @@ use Sylius\Resource\Model\TranslationInterface;
 
 final class EntryTest extends TestCase
 {
+    use ProphecyTrait;
+
     /**
      * @test
      */
@@ -208,6 +211,29 @@ final class EntryTest extends TestCase
     }
 
     /**
+     * A project's own row models implement the rows' interfaces, as a Sylius model implements its interface
+     *
+     * @test
+     */
+    public function it_takes_rows_of_any_model_that_implements_their_interfaces(): void
+    {
+        $page = new Page();
+        $channel = $this->prophesize(EntryChannelInterface::class);
+        $channel->getEntry()->willReturn($page);
+        $channel->getCode()->willReturn('WEB');
+        $group = $this->prophesize(EntryAudienceGroupInterface::class);
+        $group->getEntry()->willReturn($page);
+        $group->getCode()->willReturn('@guest');
+
+        $page->addChannel($channel->reveal());
+        $page->addAudienceGroup($group->reveal());
+        $page->setAudienceMode(AudienceMode::Only);
+
+        self::assertSame(['WEB'], $page->getChannelCodes());
+        self::assertTrue($page->getAudience()->equals(Audience::only('@guest')));
+    }
+
+    /**
      * Doctrine hydrates a datetime column in PHP's default time zone, while the column holds UTC
      *
      * @test
@@ -332,12 +358,12 @@ final class EntryTest extends TestCase
         $entry->getTranslation();
     }
 
-    private static function channel(Page $page, string $code): EntryChannel
+    private static function channel(Page $page, string $code): EntryChannelInterface
     {
         return ChannelsAndAudience::channelFactory()->createForEntry($page, $code);
     }
 
-    private static function audienceGroup(Page $page, string $code): EntryAudienceGroup
+    private static function audienceGroup(Page $page, string $code): EntryAudienceGroupInterface
     {
         return ChannelsAndAudience::audienceGroupFactory()->createForEntry($page, $code);
     }

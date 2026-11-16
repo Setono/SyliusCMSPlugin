@@ -28,7 +28,7 @@
         <field name="createdAt" column="created_at" type="datetime_immutable"/>
         <field name="createdBy" column="created_by" type="string" nullable="true"/>
 
-        <many-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\Entry">
+        <many-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\EntryInterface">
             <join-column name="entry_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
         </many-to-one>
     </mapped-superclass>

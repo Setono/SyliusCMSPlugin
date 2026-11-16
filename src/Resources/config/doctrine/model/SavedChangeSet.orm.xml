@@ -21,7 +21,7 @@
         <field name="changes" type="text"/>
         <field name="savedAt" column="saved_at" type="datetime_immutable"/>
 
-        <many-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\Entry">
+        <many-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\EntryInterface">
             <join-column name="entry_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
         </many-to-one>
     </mapped-superclass>

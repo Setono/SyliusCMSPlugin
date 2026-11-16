@@ -9,10 +9,9 @@ class Draft implements DraftInterface
     protected ?int $id = null;
 
     /**
-     * Every content type extends Entry, the root of the entries' single table inheritance (ADR 0001). Set as soon as
-     * the draft is created
+     * Set as soon as the draft is created
      */
-    protected Entry $entry;
+    protected EntryInterface $entry;
 
     /**
      * Canonical JSON, kept as text, not as a database JSON type, because MySQL's JSON type reorders keys
@@ -31,10 +30,6 @@ class Draft implements DraftInterface
 
     public function setEntry(EntryInterface $entry): void
     {
-        if (!$entry instanceof Entry) {
-            throw new \InvalidArgumentException(sprintf('A draft belongs to an entry, which extends %s', Entry::class));
-        }
-
         $this->entry = $entry;
     }
 

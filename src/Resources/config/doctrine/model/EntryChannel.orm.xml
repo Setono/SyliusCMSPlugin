@@ -22,7 +22,7 @@
 
         <field name="code" type="string"/>
 
-        <many-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\Entry" inversed-by="channels">
+        <many-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\EntryInterface" inversed-by="channels">
             <join-column name="entry_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
         </many-to-one>
     </mapped-superclass>

@@ -8,11 +8,8 @@ class Homepage implements HomepageInterface
 {
     protected ?int $id = null;
 
-    /**
-     * @param Page $page the shipped model, which the page resource's model is or extends
-     */
     public function __construct(
-        protected Page $page,
+        protected PageInterface $page,
         protected string $channelCode,
     ) {
     }
@@ -22,7 +19,7 @@ class Homepage implements HomepageInterface
         return $this->id;
     }
 
-    public function getPage(): Page
+    public function getPage(): PageInterface
     {
         return $this->page;
     }

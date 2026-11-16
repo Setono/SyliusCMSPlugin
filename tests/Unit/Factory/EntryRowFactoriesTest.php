@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Factory;
 
 use PHPUnit\Framework\TestCase;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Factory\HomepageFactory;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Factory\Fixture\ProjectEntryAudienceGroup;
 use Setono\SyliusCMSPlugin\Tests\Unit\Factory\Fixture\ProjectEntryChannel;
 use Setono\SyliusCMSPlugin\Tests\Unit\Factory\Fixture\ProjectHomepage;
@@ -20,6 +23,24 @@ use Sylius\Resource\Exception\UnsupportedMethodException;
  */
 final class EntryRowFactoriesTest extends TestCase
 {
+    use ProphecyTrait;
+
+    /**
+     * A project's own content type implements EntryInterface, and its own page model PageInterface, as a Sylius model
+     * implements its interface
+     *
+     * @test
+     */
+    public function it_creates_rows_for_any_entry_or_page(): void
+    {
+        $entry = $this->prophesize(EntryInterface::class)->reveal();
+        $page = $this->prophesize(PageInterface::class)->reveal();
+
+        self::assertSame($entry, (new EntryChannelFactory(ProjectEntryChannel::class))->createForEntry($entry, 'WEB')->getEntry());
+        self::assertSame($entry, (new EntryAudienceGroupFactory(ProjectEntryAudienceGroup::class))->createForEntry($entry, '@guest')->getEntry());
+        self::assertSame($page, (new HomepageFactory(ProjectHomepage::class))->createForPage($page, 'WEB')->getPage());
+    }
+
     /**
      * @test
      */

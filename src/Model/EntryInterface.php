@@ -79,21 +79,20 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
 
     /**
      * Its channel rows. Change them through ChannelsAndAudienceModifierInterface, which creates rows through the
-     * entry_channel resource's factory. They're typed by the shipped model, which a project's own model extends to
-     * inherit its Doctrine mapping
+     * entry_channel resource's factory
      *
-     * @return Collection<array-key, EntryChannel>
+     * @return Collection<array-key, EntryChannelInterface>
      */
     public function getChannels(): Collection;
 
-    public function hasChannel(EntryChannel $channel): bool;
+    public function hasChannel(EntryChannelInterface $channel): bool;
 
     /**
      * @throws \LogicException when the row belongs to another entry
      */
-    public function addChannel(EntryChannel $channel): void;
+    public function addChannel(EntryChannelInterface $channel): void;
 
-    public function removeChannel(EntryChannel $channel): void;
+    public function removeChannel(EntryChannelInterface $channel): void;
 
     /**
      * The customers it shows to. An on-save setting (ADR 0010)
@@ -107,21 +106,20 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
 
     /**
      * The rows of the groups its audience mode applies to. Change them through ChannelsAndAudienceModifierInterface,
-     * which creates rows through the entry_audience_group resource's factory. They're typed by the shipped model,
-     * which a project's own model extends to inherit its Doctrine mapping
+     * which creates rows through the entry_audience_group resource's factory
      *
-     * @return Collection<array-key, EntryAudienceGroup>
+     * @return Collection<array-key, EntryAudienceGroupInterface>
      */
     public function getAudienceGroups(): Collection;
 
-    public function hasAudienceGroup(EntryAudienceGroup $group): bool;
+    public function hasAudienceGroup(EntryAudienceGroupInterface $group): bool;
 
     /**
      * @throws \LogicException when the row belongs to another entry
      */
-    public function addAudienceGroup(EntryAudienceGroup $group): void;
+    public function addAudienceGroup(EntryAudienceGroupInterface $group): void;
 
-    public function removeAudienceGroup(EntryAudienceGroup $group): void;
+    public function removeAudienceGroup(EntryAudienceGroupInterface $group): void;
 
     public function isPublished(): bool;
 

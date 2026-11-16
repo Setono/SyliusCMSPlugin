@@ -32,12 +32,17 @@ final class DraftTest extends TestCase
     }
 
     /**
+     * A project's own content type implements EntryInterface, as a Sylius model implements its interface
+     *
      * @test
      */
-    public function it_belongs_to_an_entry_of_a_content_type(): void
+    public function it_belongs_to_any_entry(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $entry = $this->prophesize(EntryInterface::class)->reveal();
+        $draft = new Draft();
 
-        (new Draft())->setEntry($this->prophesize(EntryInterface::class)->reveal());
+        $draft->setEntry($entry);
+
+        self::assertSame($entry, $draft->getEntry());
     }
 }

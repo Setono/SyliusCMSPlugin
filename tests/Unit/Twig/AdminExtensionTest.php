@@ -20,7 +20,7 @@ use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
-use Setono\SyliusCMSPlugin\Model\Homepage;
+use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Revision;
@@ -78,7 +78,7 @@ final class AdminExtensionTest extends IntegrationTestCase
 {
     use ProphecyTrait;
 
-    /** @var list<Homepage> the store's homepage rows */
+    /** @var list<HomepageInterface> the store's homepage rows */
     private array $homepages = [];
 
     /** @var ObjectProphecy<RepositoryInterface<CustomerGroupInterface>> */

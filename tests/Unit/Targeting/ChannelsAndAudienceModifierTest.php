@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Targeting;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactoryInterface;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactoryInterface;
-use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
+use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
 use Setono\SyliusCMSPlugin\Model\EntryChannel;
+use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
+use Setono\SyliusCMSPlugin\Targeting\AudienceMode;
 use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifier;
 
 final class ChannelsAndAudienceModifierTest extends TestCase
@@ -192,27 +195,27 @@ final class ChannelsAndAudienceModifierTest extends TestCase
     }
 
     /**
-     * The rows refer to the shipped Entry, which every content type extends
+     * A project's own content type implements EntryInterface, as a Sylius model implements its interface
      *
      * @test
      */
-    public function it_needs_an_entry_that_extends_the_shipped_entry_to_change_its_channels(): void
+    public function it_changes_the_channels_and_audience_of_any_entry_through_its_interface(): void
     {
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage(sprintf('must extend %s', Entry::class));
+        $entry = $this->prophesize(EntryInterface::class);
+        $entry->getChannels()->willReturn(new ArrayCollection());
+        $entry->getAudienceGroups()->willReturn(new ArrayCollection());
+        $revealed = $entry->reveal();
+        $channel = $this->prophesize(EntryChannelInterface::class)->reveal();
+        $group = $this->prophesize(EntryAudienceGroupInterface::class)->reveal();
+        $this->channelFactory->createForEntry($revealed, 'WEB')->willReturn($channel);
+        $this->audienceGroupFactory->createForEntry($revealed, 'wholesale')->willReturn($group);
 
-        $this->modifier()->setChannels($this->prophesize(EntryInterface::class)->reveal(), ['WEB']);
-    }
+        $this->modifier()->setChannels($revealed, ['WEB']);
+        $this->modifier()->setAudience($revealed, Audience::only('wholesale'));
 
-    /**
-     * @test
-     */
-    public function it_needs_an_entry_that_extends_the_shipped_entry_to_change_its_audience(): void
-    {
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage(sprintf('must extend %s', Entry::class));
-
-        $this->modifier()->setAudience($this->prophesize(EntryInterface::class)->reveal(), Audience::only('wholesale'));
+        $entry->addChannel($channel)->shouldHaveBeenCalledOnce();
+        $entry->addAudienceGroup($group)->shouldHaveBeenCalledOnce();
+        $entry->setAudienceMode(AudienceMode::Only)->shouldHaveBeenCalledOnce();
     }
 
     private function modifier(): ChannelsAndAudienceModifier

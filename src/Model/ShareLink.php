@@ -9,10 +9,9 @@ class ShareLink implements ShareLinkInterface
     protected ?int $id = null;
 
     /**
-     * Every content type extends Entry, the root of the entries' single table inheritance (ADR 0001). Set as soon as
-     * the share link is created
+     * Set as soon as the share link is created
      */
-    protected Entry $entry;
+    protected EntryInterface $entry;
 
     protected string $token = '';
 
@@ -46,10 +45,6 @@ class ShareLink implements ShareLinkInterface
 
     public function setEntry(EntryInterface $entry): void
     {
-        if (!$entry instanceof Entry) {
-            throw new \InvalidArgumentException(sprintf('A share link belongs to an entry, which extends %s', Entry::class));
-        }
-
         $this->entry = $entry;
     }
 

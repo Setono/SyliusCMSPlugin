@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Repository;
 
-use Setono\SyliusCMSPlugin\Model\Homepage;
+use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
 /**
@@ -18,7 +18,7 @@ class HomepageRepository extends EntityRepository implements HomepageRepositoryI
             return [];
         }
 
-        /** @var list<Homepage> $homepages */
+        /** @var list<HomepageInterface> $homepages */
         $homepages = $this->createQueryBuilder('o')
             ->addSelect('page')
             ->innerJoin('o.page', 'page')

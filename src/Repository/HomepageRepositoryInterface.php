@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Repository;
 
-use Setono\SyliusCMSPlugin\Model\Homepage;
+use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 
 /**
  * The channels pages are the homepages of. See "Homepage" in docs/spec/urls-and-seo.md
@@ -16,7 +16,7 @@ interface HomepageRepositoryInterface
      *
      * @param list<string> $channelCodes
      *
-     * @return list<Homepage>
+     * @return list<HomepageInterface>
      */
     public function findByChannelCodes(array $channelCodes): array;
 }
