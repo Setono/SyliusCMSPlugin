@@ -59,6 +59,26 @@ final class ProblemsTest extends WebTestCase
     }
 
     /**
+     * See "Routes added later" in docs/spec/urls-and-seo.md
+     *
+     * @test
+     */
+    public function the_overview_page_warns_of_a_published_url_a_sylius_route_takes(): void
+    {
+        $client = self::signedInClient();
+        // Published without the checks, as if the route was added after the page was published
+        $page = self::createPage('Log in', 'login', 'Hello', published: true);
+
+        $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s', $page->getUuid()));
+
+        $problem = $crawler->filter('[data-section="problems"] [data-problem]');
+        self::assertCount(1, $problem);
+        self::assertSame(['url_taken_by_route', 'warning'], [$problem->attr('data-problem'), $problem->attr('data-severity')]);
+        self::assertSame('URL taken by a Sylius route: shoppers get the page of the route sylius_shop_login at /en_US/login.', $problem->filter('.description')->text());
+        self::assertSame(sprintf('/admin/cms/entry/%s/builder?locale=en_US', $page->getUuid()), $problem->selectLink('Fix in builder')->attr('href'));
+    }
+
+    /**
      * @test
      */
     public function an_entry_without_problems_has_no_problems_section_and_a_missing_translation_is_no_problem(): void

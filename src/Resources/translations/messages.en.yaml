@@ -63,6 +63,7 @@ setono_sylius_cms:
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
+        url_taken_by_route: 'URL taken by a Sylius route: shoppers get the page of the route %route% at %url%.'
     publish:
         invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'
     ui:
