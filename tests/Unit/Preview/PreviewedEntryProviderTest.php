@@ -75,7 +75,7 @@ final class PreviewedEntryProviderTest extends TestCase
     {
         $this->previewing($this->entry->getUuid(), 'en_US');
 
-        self::assertSame($this->workingCopy, $this->provider()->getWorkingCopy('en_US'));
+        self::assertSame($this->workingCopy, $this->provider()->getPreviewedContent('en_US'));
     }
 
     /**
@@ -85,7 +85,7 @@ final class PreviewedEntryProviderTest extends TestCase
     {
         $this->previewing($this->entry->getUuid(), 'en_US');
 
-        self::assertNull($this->provider()->getWorkingCopy('da_DK'));
+        self::assertNull($this->provider()->getPreviewedContent('da_DK'));
     }
 
     /**
@@ -96,7 +96,7 @@ final class PreviewedEntryProviderTest extends TestCase
         $this->requestStack->push(new Request());
         $this->entryRepository->findOneByUuid(Argument::any())->shouldNotBeCalled();
 
-        self::assertNull($this->provider()->getWorkingCopy('en_US'));
+        self::assertNull($this->provider()->getPreviewedContent('en_US'));
         self::assertNull($this->provider()->match('en_US', 'about-us'));
     }
 
@@ -108,7 +108,7 @@ final class PreviewedEntryProviderTest extends TestCase
         $this->previewing('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', 'en_US');
         $this->entryRepository->findOneByUuid('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e')->willReturn(null);
 
-        self::assertNull($this->provider()->getWorkingCopy('en_US'));
+        self::assertNull($this->provider()->getPreviewedContent('en_US'));
         self::assertNull($this->provider()->match('en_US', 'about-us'));
     }
 
@@ -154,14 +154,14 @@ final class PreviewedEntryProviderTest extends TestCase
         $this->workingCopyProvider->getWorkingCopy(Argument::any())->shouldNotBeCalled();
         $this->previewing($this->entry->getUuid(), 'en_US', 42);
 
-        $previewed = $this->provider(contentTypes: self::contentTypes())->getWorkingCopy('en_US');
+        $previewed = $this->provider(contentTypes: self::contentTypes())->getPreviewedContent('en_US');
 
         self::assertNotNull($previewed);
         self::assertNotSame($this->entry, $previewed);
         self::assertSame($this->entry->getUuid(), $previewed->getUuid());
         self::assertSame('About us', $previewed->getTranslation('en_US')->getTitle());
         self::assertSame('About our shop', $this->entry->getTranslation('en_US')->getTitle());
-        self::assertNull($this->provider()->getWorkingCopy('da_DK'));
+        self::assertNull($this->provider()->getPreviewedContent('da_DK'));
 
         self::assertEquals(new EntryUrlMatch($this->entry->getUuid(), 'page'), $this->provider(contentTypes: self::contentTypes())->match('en_US', 'about-us-then'));
         self::assertNull($this->provider(contentTypes: self::contentTypes())->match('en_US', 'about-our-shop'));
@@ -175,7 +175,7 @@ final class PreviewedEntryProviderTest extends TestCase
         $this->previewing($this->entry->getUuid(), 'en_US', 42);
         $this->revisionRepository->findOneById(42)->willReturn(null);
 
-        self::assertNull($this->provider()->getWorkingCopy('en_US'));
+        self::assertNull($this->provider()->getPreviewedContent('en_US'));
         self::assertNull($this->provider()->match('en_US', 'about-us'));
     }
 
