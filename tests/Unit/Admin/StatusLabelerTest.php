@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Admin;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Admin\StatusLabel;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
+use Setono\SyliusCMSPlugin\Builder\EntryStatus;
 use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
@@ -26,7 +27,7 @@ final class StatusLabelerTest extends TestCase
      */
     public function it_labels_an_entry_that_was_never_published(): void
     {
-        self::assertEquals([new StatusLabel(StatusLabel::NEVER_PUBLISHED)], $this->labelsOf(new Page(), false));
+        self::assertEquals([new StatusLabel(EntryStatus::NeverPublished->value)], $this->labelsOf(new Page(), false));
     }
 
     /**
@@ -34,7 +35,7 @@ final class StatusLabelerTest extends TestCase
      */
     public function it_labels_a_published_entry_without_a_draft(): void
     {
-        self::assertEquals([new StatusLabel(StatusLabel::PUBLISHED)], $this->labelsOf(self::published(), false));
+        self::assertEquals([new StatusLabel(EntryStatus::Published->value)], $this->labelsOf(self::published(), false));
     }
 
     /**
@@ -43,7 +44,7 @@ final class StatusLabelerTest extends TestCase
     public function it_labels_a_published_entry_with_a_draft_as_published_with_unpublished_changes(): void
     {
         self::assertEquals(
-            [new StatusLabel(StatusLabel::PUBLISHED), new StatusLabel(StatusLabel::UNPUBLISHED_CHANGES)],
+            [new StatusLabel(EntryStatus::Published->value), new StatusLabel(EntryStatus::UnpublishedChanges->value)],
             $this->labelsOf(self::published(), true),
         );
     }
@@ -57,7 +58,7 @@ final class StatusLabelerTest extends TestCase
         $page->setEnabled(false);
 
         self::assertEquals(
-            [new StatusLabel(StatusLabel::PUBLISHED), new StatusLabel(StatusLabel::DISABLED)],
+            [new StatusLabel(EntryStatus::Published->value), new StatusLabel(StatusLabel::DISABLED)],
             $this->labelsOf($page, false),
         );
     }
@@ -73,7 +74,7 @@ final class StatusLabelerTest extends TestCase
         $page->setDateWindow(new DateWindow(self::utc($from), self::utc($until)));
 
         self::assertEquals(
-            [new StatusLabel(StatusLabel::NEVER_PUBLISHED), new StatusLabel(StatusLabel::DATE_WINDOW, ['from' => self::utc($from), 'until' => self::utc($until)])],
+            [new StatusLabel(EntryStatus::NeverPublished->value), new StatusLabel(StatusLabel::DATE_WINDOW, ['from' => self::utc($from), 'until' => self::utc($until)])],
             $this->labelsOf($page, false),
         );
     }
@@ -100,7 +101,7 @@ final class StatusLabelerTest extends TestCase
         $page->setDateWindow(new DateWindow(self::utc($from), self::utc($until)));
 
         self::assertEquals(
-            [new StatusLabel(StatusLabel::PUBLISHED), new StatusLabel(StatusLabel::ENDED, ['until' => self::utc($until)])],
+            [new StatusLabel(EntryStatus::Published->value), new StatusLabel(StatusLabel::ENDED, ['until' => self::utc($until)])],
             $this->labelsOf($page, false),
         );
     }
@@ -128,11 +129,11 @@ final class StatusLabelerTest extends TestCase
         ChannelsAndAudience::modifier()->setAudience($except, Audience::except('retail'));
 
         self::assertEquals(
-            [new StatusLabel(StatusLabel::NEVER_PUBLISHED), new StatusLabel(StatusLabel::AUDIENCE, ['mode' => 'only', 'groups' => [CustomerGroupValue::GUEST, 'wholesale']])],
+            [new StatusLabel(EntryStatus::NeverPublished->value), new StatusLabel(StatusLabel::AUDIENCE, ['mode' => 'only', 'groups' => [CustomerGroupValue::GUEST, 'wholesale']])],
             $this->labelsOf($only, false),
         );
         self::assertEquals(
-            [new StatusLabel(StatusLabel::NEVER_PUBLISHED), new StatusLabel(StatusLabel::AUDIENCE, ['mode' => 'except', 'groups' => ['retail']])],
+            [new StatusLabel(EntryStatus::NeverPublished->value), new StatusLabel(StatusLabel::AUDIENCE, ['mode' => 'except', 'groups' => ['retail']])],
             $this->labelsOf($except, false),
         );
     }
@@ -148,7 +149,7 @@ final class StatusLabelerTest extends TestCase
         ChannelsAndAudience::modifier()->setAudience($page, Audience::only('wholesale'));
 
         self::assertSame(
-            [StatusLabel::PUBLISHED, StatusLabel::UNPUBLISHED_CHANGES, StatusLabel::DISABLED, StatusLabel::ENDED, StatusLabel::AUDIENCE],
+            [EntryStatus::Published->value, EntryStatus::UnpublishedChanges->value, StatusLabel::DISABLED, StatusLabel::ENDED, StatusLabel::AUDIENCE],
             array_map(static fn (StatusLabel $label): string => $label->code, $this->labelsOf($page, true)),
         );
     }
@@ -174,11 +175,11 @@ final class StatusLabelerTest extends TestCase
         $labels = $this->labelsOf($page, false);
 
         self::assertSame(
-            [StatusLabel::PUBLISHED, StatusLabel::DATE_WINDOW, StatusLabel::HELD_BACK, StatusLabel::AUDIENCE],
+            [EntryStatus::Published->value, StatusLabel::DATE_WINDOW, StatusLabel::HELD_BACK, StatusLabel::AUDIENCE],
             array_map(static fn (StatusLabel $label): string => $label->code, $labels),
         );
         self::assertEquals(new StatusLabel(StatusLabel::HELD_BACK, ['locales' => ['da_DK', 'de_DE']]), $labels[2]);
-        self::assertSame([StatusLabel::PUBLISHED], array_map(static fn (StatusLabel $label): string => $label->code, $this->labelsOf(self::published(), false)));
+        self::assertSame([EntryStatus::Published->value], array_map(static fn (StatusLabel $label): string => $label->code, $this->labelsOf(self::published(), false)));
     }
 
     /**
@@ -189,7 +190,7 @@ final class StatusLabelerTest extends TestCase
         $scheduledPublish = self::scheduledPublish('2026-11-16 11:56:00');
 
         self::assertEquals(
-            [new StatusLabel(StatusLabel::PUBLISHED), new StatusLabel(StatusLabel::UNPUBLISHED_CHANGES), new StatusLabel(StatusLabel::PUBLISHES_AT_A_TIME, ['at' => self::utc('2026-11-16 11:56:00')])],
+            [new StatusLabel(EntryStatus::Published->value), new StatusLabel(EntryStatus::UnpublishedChanges->value), new StatusLabel(EntryStatus::PublishesAtATime->value, ['at' => self::utc('2026-11-16 11:56:00')])],
             $this->labelsOf(self::published(), true, $scheduledPublish),
         );
     }
@@ -200,7 +201,7 @@ final class StatusLabelerTest extends TestCase
     public function it_labels_a_scheduled_publish_that_has_not_run_five_minutes_after_its_time_as_overdue(): void
     {
         self::assertEquals(
-            [new StatusLabel(StatusLabel::NEVER_PUBLISHED), new StatusLabel(StatusLabel::SCHEDULED_PUBLISH_OVERDUE, ['at' => self::utc('2026-11-16 11:55:00')])],
+            [new StatusLabel(EntryStatus::NeverPublished->value), new StatusLabel(EntryStatus::ScheduledPublishOverdue->value, ['at' => self::utc('2026-11-16 11:55:00')])],
             $this->labelsOf(new Page(), false, self::scheduledPublish('2026-11-16 11:55:00')),
         );
     }
@@ -214,7 +215,7 @@ final class StatusLabelerTest extends TestCase
         $scheduledPublish->fail('Not on a Sunday');
 
         self::assertEquals(
-            [new StatusLabel(StatusLabel::NEVER_PUBLISHED), new StatusLabel(StatusLabel::SCHEDULED_PUBLISH_FAILED, ['at' => self::utc('2026-11-16 11:00:00'), 'reason' => 'Not on a Sunday'])],
+            [new StatusLabel(EntryStatus::NeverPublished->value), new StatusLabel(EntryStatus::ScheduledPublishFailed->value, ['at' => self::utc('2026-11-16 11:00:00'), 'reason' => 'Not on a Sunday'])],
             $this->labelsOf(new Page(), false, $scheduledPublish),
         );
     }
@@ -228,7 +229,7 @@ final class StatusLabelerTest extends TestCase
         $page->setEnabled(false);
 
         self::assertSame(
-            [StatusLabel::NEVER_PUBLISHED, StatusLabel::PUBLISHES_AT_A_TIME, StatusLabel::DISABLED],
+            [EntryStatus::NeverPublished->value, EntryStatus::PublishesAtATime->value, StatusLabel::DISABLED],
             array_map(static fn (StatusLabel $label): string => $label->code, $this->labelsOf($page, false, self::scheduledPublish('2026-11-17 08:00:00'))),
         );
     }

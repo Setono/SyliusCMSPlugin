@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Admin\EntryRow;
 use Setono\SyliusCMSPlugin\Admin\TranslationChip;
 use Setono\SyliusCMSPlugin\Admin\TranslationChips;
 use Setono\SyliusCMSPlugin\Block\Heading;
+use Setono\SyliusCMSPlugin\Builder\EntryStatus;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
@@ -199,7 +200,7 @@ final class TranslationChipsTest extends TestCase
 
     private static function row(Page $page, ?Draft $draft = null): EntryRow
     {
-        return new EntryRow($page, (new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]))->get('page'), null, null, [], 'never_published', $draft);
+        return new EntryRow($page, (new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]))->get('page'), null, null, [], EntryStatus::NeverPublished, $draft);
     }
 
     private static function page(): Page

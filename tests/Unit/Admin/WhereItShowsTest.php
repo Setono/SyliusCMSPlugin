@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Admin\EntryRow;
 use Setono\SyliusCMSPlugin\Admin\WhereItShows;
 use Setono\SyliusCMSPlugin\Admin\WhereItShowsCell;
 use Setono\SyliusCMSPlugin\Admin\WhereItShowsChannel;
+use Setono\SyliusCMSPlugin\Builder\EntryStatus;
 use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
@@ -330,7 +331,7 @@ final class WhereItShowsTest extends TestCase
     {
         $contentType = (new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]))->get('page');
 
-        return new EntryRow($page, $contentType, null, null, [], 'published', null, $scheduledPublish);
+        return new EntryRow($page, $contentType, null, null, [], EntryStatus::Published, null, $scheduledPublish);
     }
 
     /**

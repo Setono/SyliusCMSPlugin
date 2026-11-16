@@ -6,27 +6,14 @@ namespace Setono\SyliusCMSPlugin\Admin;
 
 /**
  * One of the labels the admin shows an entry's state and on-save settings with. See "Status labels" in
- * docs/spec/admin.md. The admin renders each code with its own template,
+ * docs/spec/admin.md. A label of the entry's state, or of its scheduled publish's, has the EntryStatus's value as its
+ * code: a published entry with a draft gets Published and UnpublishedChanges, and a scheduled publish that waits,
+ * is overdue or failed has `at`, a \DateTimeImmutable in UTC, and a failed one a `reason`. The admin renders each code
+ * with its own template,
  * `@SetonoSyliusCMSPlugin/admin/status_label/<code>.html.twig`, which gets the label as `label`
  */
 final readonly class StatusLabel
 {
-    /** Published. A published entry with a draft also gets UNPUBLISHED_CHANGES */
-    public const PUBLISHED = 'published';
-
-    public const UNPUBLISHED_CHANGES = 'unpublished_changes';
-
-    public const NEVER_PUBLISHED = 'never_published';
-
-    /** A scheduled publish that waits. Parameters: `at`, a \DateTimeImmutable in UTC */
-    public const PUBLISHES_AT_A_TIME = 'publishes_at_a_time';
-
-    /** A scheduled publish whose time passed without it running. Parameters: `at`, a \DateTimeImmutable in UTC */
-    public const SCHEDULED_PUBLISH_OVERDUE = 'scheduled_publish_overdue';
-
-    /** A scheduled publish that was stopped when it ran. Parameters: `at`, a \DateTimeImmutable in UTC, and `reason` */
-    public const SCHEDULED_PUBLISH_FAILED = 'scheduled_publish_failed';
-
     public const DISABLED = 'disabled';
 
     /** A date window that hasn't ended. Parameters: `from` and `until`, each a \DateTimeImmutable in UTC or null */

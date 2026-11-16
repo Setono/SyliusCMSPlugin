@@ -85,8 +85,8 @@ final class EntryRowsTest extends TestCase
         self::assertSame('page', $row->contentType->code);
         self::assertSame('About us', $row->title);
         self::assertSame('/en_US/about-us', $row->url);
-        self::assertEquals([new StatusLabel(StatusLabel::NEVER_PUBLISHED)], $row->statusLabels);
-        self::assertSame(EntryStatus::NEVER_PUBLISHED, $row->status);
+        self::assertEquals([new StatusLabel(EntryStatus::NeverPublished->value)], $row->statusLabels);
+        self::assertSame(EntryStatus::NeverPublished, $row->status);
         self::assertNull($row->scheduledPublish);
         self::assertNull($row->scheduledPublishStatus);
     }
@@ -109,12 +109,12 @@ final class EntryRowsTest extends TestCase
         self::assertNull($aboutRow->scheduledPublishStatus);
         self::assertSame($scheduledPublish, $contactRow->scheduledPublish);
         // Five minutes after its time, by the clock
-        self::assertSame(EntryStatus::SCHEDULED_PUBLISH_OVERDUE, $contactRow->scheduledPublishStatus);
+        self::assertSame(EntryStatus::ScheduledPublishOverdue, $contactRow->scheduledPublishStatus);
         self::assertEquals(
-            [new StatusLabel(StatusLabel::NEVER_PUBLISHED), new StatusLabel(StatusLabel::SCHEDULED_PUBLISH_OVERDUE, ['at' => new \DateTimeImmutable('2026-11-16 11:55:00', new \DateTimeZone('UTC'))])],
+            [new StatusLabel(EntryStatus::NeverPublished->value), new StatusLabel(EntryStatus::ScheduledPublishOverdue->value, ['at' => new \DateTimeImmutable('2026-11-16 11:55:00', new \DateTimeZone('UTC'))])],
             $contactRow->statusLabels,
         );
-        self::assertSame(EntryStatus::NEVER_PUBLISHED, $contactRow->status);
+        self::assertSame(EntryStatus::NeverPublished, $contactRow->status);
     }
 
     /**
@@ -136,12 +136,12 @@ final class EntryRowsTest extends TestCase
         self::assertNull($otherRow->draft);
         self::assertSame('About our shop', $row->title);
         self::assertSame('/en_US/about-our-shop', $row->url);
-        self::assertEquals([new StatusLabel(StatusLabel::PUBLISHED), new StatusLabel(StatusLabel::UNPUBLISHED_CHANGES)], $row->statusLabels);
-        self::assertSame(EntryStatus::UNPUBLISHED_CHANGES, $row->status);
+        self::assertEquals([new StatusLabel(EntryStatus::Published->value), new StatusLabel(EntryStatus::UnpublishedChanges->value)], $row->statusLabels);
+        self::assertSame(EntryStatus::UnpublishedChanges, $row->status);
 
         self::assertSame('Contact', $otherRow->title);
-        self::assertEquals([new StatusLabel(StatusLabel::PUBLISHED)], $otherRow->statusLabels);
-        self::assertSame(EntryStatus::PUBLISHED, $otherRow->status);
+        self::assertEquals([new StatusLabel(EntryStatus::Published->value)], $otherRow->statusLabels);
+        self::assertSame(EntryStatus::Published, $otherRow->status);
     }
 
     /**

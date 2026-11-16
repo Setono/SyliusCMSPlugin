@@ -84,7 +84,7 @@ final readonly class WhereItShows
         if (!$entry->isPublished()) {
             $scheduledPublish = $row->scheduledPublish;
 
-            return null !== $scheduledPublish && EntryStatus::PUBLISHES_AT_A_TIME === EntryStatus::ofScheduledPublish($scheduledPublish, $now)
+            return null !== $scheduledPublish && EntryStatus::PublishesAtATime === EntryStatus::ofScheduledPublish($scheduledPublish, $now)
                 ? new WhereItShowsCell(WhereItShowsCell::PUBLISHES_AT_A_TIME, ['at' => $scheduledPublish->getPublishAt()])
                 : new WhereItShowsCell(WhereItShowsCell::NOT_PUBLISHED_YET);
         }

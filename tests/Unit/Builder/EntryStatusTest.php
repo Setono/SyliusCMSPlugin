@@ -17,10 +17,10 @@ final class EntryStatusTest extends TestCase
     public function an_entry_is_never_published_until_it_is_published(): void
     {
         $page = new Page();
-        self::assertSame('never_published', EntryStatus::of($page, false));
+        self::assertSame(EntryStatus::NeverPublished, EntryStatus::of($page, false));
 
         $page->publish(new \DateTimeImmutable());
-        self::assertSame('published', EntryStatus::of($page, false));
+        self::assertSame(EntryStatus::Published, EntryStatus::of($page, false));
     }
 
     /**
@@ -31,7 +31,7 @@ final class EntryStatusTest extends TestCase
         $page = new Page();
         $page->publish(new \DateTimeImmutable());
 
-        self::assertSame('unpublished_changes', EntryStatus::of($page, true));
+        self::assertSame(EntryStatus::UnpublishedChanges, EntryStatus::of($page, true));
     }
 
     /**
@@ -42,8 +42,8 @@ final class EntryStatusTest extends TestCase
         $scheduledPublish = new ScheduledPublish();
         $scheduledPublish->schedule(new \DateTimeImmutable('2026-11-20 08:00:00', new \DateTimeZone('UTC')), 'Jane Roe');
 
-        self::assertSame('publishes_at_a_time', EntryStatus::ofScheduledPublish($scheduledPublish, new \DateTimeImmutable('2026-11-20 08:04:59', new \DateTimeZone('UTC'))));
-        self::assertSame('scheduled_publish_overdue', EntryStatus::ofScheduledPublish($scheduledPublish, new \DateTimeImmutable('2026-11-20 08:05:00', new \DateTimeZone('UTC'))));
+        self::assertSame(EntryStatus::PublishesAtATime, EntryStatus::ofScheduledPublish($scheduledPublish, new \DateTimeImmutable('2026-11-20 08:04:59', new \DateTimeZone('UTC'))));
+        self::assertSame(EntryStatus::ScheduledPublishOverdue, EntryStatus::ofScheduledPublish($scheduledPublish, new \DateTimeImmutable('2026-11-20 08:05:00', new \DateTimeZone('UTC'))));
     }
 
     /**
@@ -55,6 +55,6 @@ final class EntryStatusTest extends TestCase
         $scheduledPublish->schedule(new \DateTimeImmutable('2026-11-20 08:00:00', new \DateTimeZone('UTC')), 'Jane Roe');
         $scheduledPublish->fail('Not on a Sunday');
 
-        self::assertSame('scheduled_publish_failed', EntryStatus::ofScheduledPublish($scheduledPublish, new \DateTimeImmutable('2026-11-20 08:00:00', new \DateTimeZone('UTC'))));
+        self::assertSame(EntryStatus::ScheduledPublishFailed, EntryStatus::ofScheduledPublish($scheduledPublish, new \DateTimeImmutable('2026-11-20 08:00:00', new \DateTimeZone('UTC'))));
     }
 }

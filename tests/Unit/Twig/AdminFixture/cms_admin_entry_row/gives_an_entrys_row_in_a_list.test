@@ -1,7 +1,7 @@
 --TEST--
 cms_admin_entry_row() gives an entry's row in a list: its title, URL, content type, status labels and state
 --TEMPLATE--
-{% set row = cms_admin_entry_row(page) %}{{ row.title }} {{ row.url }} {{ row.contentType.code }} {{ row.statusLabels|map(label => label.code)|join(',') }} {{ row.status }}
+{% set row = cms_admin_entry_row(page) %}{{ row.title }} {{ row.url }} {{ row.contentType.code }} {{ row.statusLabels|map(label => label.code)|join(',') }} {{ row.status.value }}
 --DATA--
 return $this->aPage('About us')
 --EXPECT--

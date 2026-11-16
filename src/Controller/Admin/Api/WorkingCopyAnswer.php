@@ -50,7 +50,7 @@ final readonly class WorkingCopyAnswer
             'entry' => $this->entryNormalizer->normalize($loaded->workingCopy),
             'lockToken' => $loaded->lockToken,
             'settings' => $this->settingsNormalizer->normalize(EntrySettings::of($entry)),
-            'status' => EntryStatus::of($entry, $this->workingCopies->hasDraft($entry)),
+            'status' => EntryStatus::of($entry, $this->workingCopies->hasDraft($entry))->value,
             'schedule' => $this->schedule($entry),
             'editors' => self::editors($this->presence->others($entry, $this->builderRequest->admin())),
             'completeness' => $this->completeness($loaded->workingCopy),
@@ -71,7 +71,7 @@ final readonly class WorkingCopyAnswer
         return new ListedObject([
             'at' => $scheduledPublish->getPublishAt()->format('Y-m-d\TH:i:s\Z'),
             'by' => $scheduledPublish->getScheduledBy(),
-            'status' => EntryStatus::ofScheduledPublish($scheduledPublish, $this->clock->now()),
+            'status' => EntryStatus::ofScheduledPublish($scheduledPublish, $this->clock->now())->value,
             'reason' => $scheduledPublish->getFailureReason(),
         ]);
     }

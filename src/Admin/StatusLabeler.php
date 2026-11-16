@@ -22,15 +22,15 @@ final readonly class StatusLabeler implements StatusLabelerInterface
     public function labelsOf(EntryInterface $entry, bool $hasDraft, ?ScheduledPublishInterface $scheduledPublish = null): array
     {
         $labels = match (EntryStatus::of($entry, $hasDraft)) {
-            EntryStatus::NEVER_PUBLISHED => [new StatusLabel(StatusLabel::NEVER_PUBLISHED)],
-            EntryStatus::UNPUBLISHED_CHANGES => [new StatusLabel(StatusLabel::PUBLISHED), new StatusLabel(StatusLabel::UNPUBLISHED_CHANGES)],
-            default => [new StatusLabel(StatusLabel::PUBLISHED)],
+            EntryStatus::NeverPublished => [new StatusLabel(EntryStatus::NeverPublished->value)],
+            EntryStatus::UnpublishedChanges => [new StatusLabel(EntryStatus::Published->value), new StatusLabel(EntryStatus::UnpublishedChanges->value)],
+            default => [new StatusLabel(EntryStatus::Published->value)],
         };
 
         // The scheduled publish's state is a label of the same code
         if (null !== $scheduledPublish) {
             $labels[] = new StatusLabel(
-                EntryStatus::ofScheduledPublish($scheduledPublish, $this->clock->now()),
+                EntryStatus::ofScheduledPublish($scheduledPublish, $this->clock->now())->value,
                 ['at' => $scheduledPublish->getPublishAt()] + ($scheduledPublish->isFailed() ? ['reason' => $scheduledPublish->getFailureReason()] : []),
             );
         }

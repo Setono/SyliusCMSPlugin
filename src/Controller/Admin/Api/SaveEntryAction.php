@@ -58,7 +58,7 @@ final readonly class SaveEntryAction
         }
 
         $answer = [
-            'status' => EntryStatus::of($entry, $this->workingCopies->hasDraft($entry)),
+            'status' => EntryStatus::of($entry, $this->workingCopies->hasDraft($entry))->value,
             'lockToken' => $result->saved->lockToken,
         ];
 
