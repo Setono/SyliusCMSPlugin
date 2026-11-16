@@ -1,9 +1,20 @@
+import { ApiError } from './api';
 import type { Autosave } from './autosave';
+import { mergeChanges } from './changeSet';
 import type { BuilderStore } from './store';
-import type { EntryStatus } from './types';
+import type { EntryResponse, EntryStatus } from './types';
+import { createValidationStore, firstBlockWithError, type ValidationStore } from './validation';
 
-/** Publishing first saves what's unsaved, then publishes. */
-export function createPublish(store: BuilderStore, autosave: Autosave, send: () => Promise<EntryStatus>): () => Promise<void> {
+/**
+ * Publishing first saves what's unsaved, then publishes. When validation refuses the publish, its errors are shown and
+ * the first block with one is selected, or the entry's settings when only the entry has errors.
+ */
+export function createPublish(
+    store: BuilderStore,
+    autosave: Autosave,
+    send: () => Promise<EntryStatus>,
+    validation: ValidationStore = createValidationStore(),
+): () => Promise<void> {
     return async () => {
         if (store.getState().publishState === 'publishing') {
             return;
@@ -16,9 +27,59 @@ export function createPublish(store: BuilderStore, autosave: Autosave, send: () 
                 throw new Error('The unsaved changes could not be saved.');
             }
 
-            store.setState({ status: await send(), publishState: 'idle' });
-        } catch {
-            store.setState({ publishState: 'failed' });
+            store.setState({ status: await send(), publishState: 'idle', publishRefusal: null });
+            // What was published passed validation
+            validation.getState().setErrors([]);
+        } catch (error) {
+            // The server answers 422 with the reason when it refuses: with the errors when validation refuses, and
+            // with a BeforeEntryPublish listener's veto
+            const refused = error instanceof ApiError && error.status === 422;
+            store.setState({ publishState: 'failed', publishRefusal: refused ? error.message : null });
+
+            if (refused && error.errors.length > 0) {
+                validation.getState().setErrors(error.errors);
+                store.getState().selectBlock(firstBlockWithError(store.getState().entry.tree.blocks, error.errors));
+            }
         }
+    };
+}
+
+/**
+ * Discarding changes deletes the draft, so the entry goes back to its published content, which the builder then
+ * loads. The unsaved changes go with the draft, and a save in flight lands first, so it can't bring the draft back.
+ */
+export function createDiscard(store: BuilderStore, autosave: Autosave, send: () => Promise<EntryResponse>): () => Promise<void> {
+    return async () => {
+        if (store.getState().discardState === 'discarding') {
+            return;
+        }
+
+        const unsaved = store.getState().unsaved;
+        store.setState({ discardState: 'discarding', unsaved: [] });
+
+        try {
+            // Waits for a save in flight. Nothing is left to send.
+            await autosave.flush();
+
+            const { entry, status, lockToken } = await send();
+            store.getState().load(entry, status, lockToken);
+            store.setState({ discardState: 'idle', saveState: 'idle' });
+        } catch {
+            // The working copy stays as it is, so its unsaved changes get saved after all.
+            store.setState((state) => ({ discardState: 'failed', unsaved: mergeChanges(unsaved, state.unsaved) }));
+            void autosave.flush();
+        }
+    };
+}
+
+/**
+ * Loads the working copy again in place of the one being edited, when the server can't merge a save onto what
+ * colleagues saved. What couldn't be saved goes with it.
+ */
+export function createReload(store: BuilderStore, fetchEntry: () => Promise<EntryResponse>): () => Promise<void> {
+    return async () => {
+        const { entry, status, lockToken } = await fetchEntry();
+        store.getState().load(entry, status, lockToken);
+        store.setState({ saveState: 'idle' });
     };
 }

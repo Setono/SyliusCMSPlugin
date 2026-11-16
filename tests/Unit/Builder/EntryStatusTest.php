@@ -16,9 +16,20 @@ final class EntryStatusTest extends TestCase
     public function an_entry_is_never_published_until_it_is_published(): void
     {
         $page = new Page();
-        self::assertSame('never_published', EntryStatus::of($page));
+        self::assertSame('never_published', EntryStatus::of($page, false));
 
         $page->publish(new \DateTimeImmutable());
-        self::assertSame('published', EntryStatus::of($page));
+        self::assertSame('published', EntryStatus::of($page, false));
+    }
+
+    /**
+     * @test
+     */
+    public function it_says_a_published_entry_with_a_draft_has_unpublished_changes(): void
+    {
+        $page = new Page();
+        $page->publish(new \DateTimeImmutable());
+
+        self::assertSame('unpublished_changes', EntryStatus::of($page, true));
     }
 }

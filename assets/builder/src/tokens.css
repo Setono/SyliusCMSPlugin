@@ -25,7 +25,10 @@
     --builder-color-danger-subtle: #fdecea;
     --builder-color-success: #11703f;
     --builder-color-success-subtle: #e3f4ea;
+    --builder-color-warning: #8a4b00;
+    --builder-color-warning-subtle: #fdf1dc;
     --builder-color-neutral-subtle: #eceef1;
+    --builder-color-overlay: rgb(16 24 40 / 40%);
 
     --builder-space-1: 0.25rem;
     --builder-space-2: 0.5rem;
@@ -42,4 +45,5 @@
     --builder-top-bar-height: 3.5rem;
     --builder-tree-width: 17rem;
     --builder-selection-width: 21rem;
+    --builder-preview-mobile-width: 375px;
 }

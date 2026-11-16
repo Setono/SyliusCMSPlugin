@@ -11,6 +11,16 @@
             <tag name="setono_sylius_cms.field_handler"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Field\ToggleHandler" class="Setono\SyliusCMSPlugin\Field\ToggleHandler">
+            <tag name="setono_sylius_cms.field_handler"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Field\RichTextHandler" class="Setono\SyliusCMSPlugin\Field\RichTextHandler">
+            <argument type="service" id="Setono\SyliusCMSPlugin\RichText\RichTextSchema"/>
+
+            <tag name="setono_sylius_cms.field_handler"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Field\ChoiceHandler" class="Setono\SyliusCMSPlugin\Field\ChoiceHandler">
             <argument type="service" id="translator"/>
 

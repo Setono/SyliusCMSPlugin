@@ -20,7 +20,12 @@ function scopedClassName(localName: string, filename: string): string {
     return `${basename(file).replace(/\.module\.css$/, '')}_${localName}_${hash}`;
 }
 
-export default defineConfig({
+/**
+ * Two builds into one directory: the builder app (the default mode), then the bridge script that preview mode injects
+ * into the shop page (--mode bridge). The bridge is a separate script with no React, which runs alone. It carries
+ * Tiptap, with the shared rich text schema, for typing rich text in place.
+ */
+export default defineConfig(({ mode }) => ({
     root: builderRoot,
     cacheDir: resolve(repositoryRoot, 'node_modules/.vite'),
     publicDir: false,
@@ -34,16 +39,18 @@ export default defineConfig({
         // Committed to the repository and installed by assets:install. CI rebuilds it and fails on any diff,
         // so the output has fixed names, one module and one stylesheet, and no source maps.
         outDir: resolve(repositoryRoot, 'src/Resources/public/builder'),
-        emptyOutDir: true,
+        emptyOutDir: mode !== 'bridge',
         target: 'es2022',
         sourcemap: false,
         cssCodeSplit: false,
         modulePreload: false,
         reportCompressedSize: false,
+        // One module by design, and Tiptap with ProseMirror makes up about half of it
+        chunkSizeWarningLimit: 1024,
         rollupOptions: {
-            input: resolve(builderRoot, 'src/main.tsx'),
+            input: resolve(builderRoot, mode === 'bridge' ? 'src/bridge/main.ts' : 'src/main.tsx'),
             output: {
-                entryFileNames: 'builder.js',
+                entryFileNames: mode === 'bridge' ? 'bridge.js' : 'builder.js',
                 inlineDynamicImports: true,
                 assetFileNames: (asset) => (asset.names.some((name) => name.endsWith('.css')) ? 'builder.css' : '[name][extname]'),
             },
@@ -54,4 +61,4 @@ export default defineConfig({
         include: ['tests/**/*.test.{ts,tsx}'],
         setupFiles: ['tests/setup.ts'],
     },
-});
+}));

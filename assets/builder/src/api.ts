@@ -1,19 +1,50 @@
 import type { Change } from './changeSet';
 import type { BuilderConfig } from './config';
-import type { EntryResponse, EntryStatus, Registry } from './types';
+import type { EntryResponse, EntrySettings, EntryStatus, PresenceResponse, Registry, SaveResponse, StoredBlock, ValidationError } from './types';
 
 /** The builder's JSON endpoints. They're internal, and change together with the app. */
 export interface BuilderApi {
     fetchRegistry(): Promise<Registry>;
     fetchEntry(): Promise<EntryResponse>;
-    saveChanges(changes: readonly Change[]): Promise<EntryStatus>;
+    /**
+     * Saves the changes made since the last load or save, carrying the lock token from it. When colleagues saved since,
+     * the answer carries the working copy with their changes, and the clashes.
+     */
+    saveChanges(changes: readonly Change[], lockToken: number): Promise<SaveResponse>;
+    /** Says the editor still has the entry open, and answers with who else does and the working copy's lock token. */
+    presence(): Promise<PresenceResponse>;
+    /** Validates the working copy as the server holds it, as publish would, and answers with its errors. */
+    validate(): Promise<ValidationError[]>;
+    /**
+     * Fails with an ApiError of status 422 and the reason when the server refuses: with the errors when validation
+     * refuses, and with none when a listener vetoes.
+     */
     publish(): Promise<EntryStatus>;
+    /** Deletes the draft, and answers with the working copy that's left: the published content. */
+    discard(): Promise<EntryResponse>;
+    /**
+     * Saves the on-save settings that changed, outside the draft, and answers with all of them. Fails with an ApiError
+     * of status 400 and the reason when the server refuses, such as a date window that ends before it starts.
+     */
+    saveSettings(changes: Partial<EntrySettings>): Promise<EntrySettings>;
+    /** Asks for a preview token, and answers with the URL of the preview it turns on. */
+    createPreviewUrl(preview: PreviewRequest): Promise<string>;
+    /** Renders blocks of the working copy as the builder holds them, under a preview token, and answers their HTML by key. */
+    renderPreview(token: string, blocks: readonly StoredBlock[]): Promise<Record<string, string>>;
+}
+
+/** What the preview shows the working copy in. Shown to, Date, the sample object and the placement come later. */
+export interface PreviewRequest {
+    channel: string;
+    locale: string;
 }
 
 export class ApiError extends Error {
     constructor(
         message: string,
         readonly status: number,
+        /** The validation errors the server refused for, such as a publish's. */
+        readonly errors: ValidationError[] = [],
     ) {
         super(message);
         this.name = 'ApiError';
@@ -23,7 +54,7 @@ export class ApiError extends Error {
 type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
 interface Request {
-    method?: 'GET' | 'PATCH' | 'POST';
+    method?: 'GET' | 'PATCH' | 'POST' | 'PUT';
     headers?: Record<string, string>;
     body?: string;
 }
@@ -39,7 +70,7 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) 
 
         const body: unknown = await response.json().catch(() => undefined);
         if (response.status !== 200) {
-            throw new ApiError(errorMessage(body) ?? `${url} answered ${response.status}.`, response.status);
+            throw new ApiError(errorMessage(body) ?? `${url} answered ${response.status}.`, response.status, (isObject(body) ? validationErrors(body.errors) : null) ?? []);
         }
 
         if (body === undefined) {
@@ -60,29 +91,114 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) 
             return (await request(config.endpoints.entry)) as EntryResponse;
         },
 
-        async saveChanges(changes) {
+        async saveChanges(changes, lockToken) {
             const body = await request(config.endpoints.entry, {
                 method: 'PATCH',
                 headers: { ...write, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ changes }),
+                body: JSON.stringify({ lockToken, changes }),
             });
 
-            return entryStatus(body);
+            entryStatus(body);
+            if (!isObject(body) || typeof body.lockToken !== 'number') {
+                throw new ApiError('The answer has no lock token.', 200);
+            }
+
+            return body as unknown as SaveResponse;
+        },
+
+        async presence() {
+            const body = await request(config.endpoints.presence, { method: 'POST', headers: write });
+            if (!isObject(body) || !Array.isArray(body.editors) || typeof body.lockToken !== 'number') {
+                throw new ApiError('The answer has no editors.', 200);
+            }
+
+            return body as unknown as PresenceResponse;
+        },
+
+        async validate() {
+            // It changes nothing, so it needs no CSRF token
+            const body = await request(config.endpoints.validate, { method: 'POST' });
+            const errors = isObject(body) ? validationErrors(body.errors) : null;
+            if (errors === null) {
+                throw new ApiError('The answer has no list of errors.', 200);
+            }
+
+            return errors;
         },
 
         async publish() {
             return entryStatus(await request(config.endpoints.publish, { method: 'POST', headers: write }));
         },
+
+        async discard() {
+            return (await request(config.endpoints.discard, { method: 'POST', headers: write })) as EntryResponse;
+        },
+
+        async saveSettings(changes) {
+            const body = await request(config.endpoints.settings, {
+                method: 'PUT',
+                headers: { ...write, 'Content-Type': 'application/json' },
+                body: JSON.stringify(changes),
+            });
+
+            const settings = isObject(body) ? body.settings : undefined;
+            if (!isObject(settings)) {
+                throw new ApiError('The answer has no settings.', 200);
+            }
+
+            return settings as unknown as EntrySettings;
+        },
+
+        async createPreviewUrl({ channel, locale }) {
+            const body = await request(config.endpoints.previewToken, {
+                method: 'POST',
+                headers: { ...write, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ entry: config.entryUuid, channel, locale }),
+            });
+
+            const url = isObject(body) ? body.url : undefined;
+            if (typeof url !== 'string') {
+                throw new ApiError('The answer has no preview URL.', 200);
+            }
+
+            return url;
+        },
+
+        async renderPreview(token, blocks) {
+            const body = await request(`${config.endpoints.previewRender}?_cms_preview=${encodeURIComponent(token)}`, {
+                method: 'POST',
+                headers: { ...write, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ blocks }),
+            });
+
+            const html = isObject(body) ? body.blocks : undefined;
+            if (!isObject(html) || !Object.values(html).every((value) => typeof value === 'string')) {
+                throw new ApiError('The answer has no rendered blocks.', 200);
+            }
+
+            return html as Record<string, string>;
+        },
     };
 }
 
+const statuses: readonly unknown[] = ['never_published', 'published', 'unpublished_changes'] satisfies EntryStatus[];
+
 function entryStatus(body: unknown): EntryStatus {
     const status = isObject(body) ? body.status : undefined;
-    if (status !== 'published' && status !== 'never_published') {
+    if (!statuses.includes(status)) {
         throw new ApiError('The answer has no entry status.', 200);
     }
 
-    return status;
+    return status as EntryStatus;
+}
+
+/** The validation errors in a list from the server, or null when it isn't one. */
+function validationErrors(list: unknown): ValidationError[] | null {
+    const isNullableString = (value: unknown): boolean => value === null || typeof value === 'string';
+    const isError = (error: unknown): boolean =>
+        isObject(error) && isNullableString(error.block) && isNullableString(error.field) && isNullableString(error.locale) && typeof error.message === 'string';
+
+    return Array.isArray(list) && list.every(isError) ? (list as ValidationError[]) : null;
 }
 
 function errorMessage(body: unknown): string | undefined {

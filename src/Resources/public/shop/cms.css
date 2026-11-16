@@ -1,0 +1,117 @@
+/*
+ * setono/sylius-cms-plugin: layout and mechanics for the shipped blocks.
+ *
+ * Everything sits in the cascade layer "cms", so any theme CSS outside a layer wins without specificity fights.
+ * Fonts and colours are inherited from the shop, and html and body are never styled. The class names and the
+ * custom properties are a contract that themes style against (docs/spec/blocks.md#styling).
+ */
+@layer cms {
+    /* The defaults. Themes set them on :root or on any ancestor */
+    :root {
+        --cms-content-width: 100%;
+        --cms-block-spacing: 2rem;
+        --cms-gap: 1rem;
+        --cms-column-min-width: 240px;
+        --cms-grid-item-min-width: 220px;
+        --cms-spacer-small: 1rem;
+        --cms-spacer-medium: 2rem;
+        --cms-spacer-large: 4rem;
+        --cms-muted-background: #f4f4f4;
+        --cms-dark-background: #1b1c1d;
+        --cms-dark-color: #ffffff;
+        --cms-banner-min-height: 360px;
+        --cms-banner-overlay: rgba(0, 0, 0, 0.35);
+        --cms-button-primary-background: #1b1c1d;
+        --cms-button-primary-color: #ffffff;
+        --cms-button-secondary-background: transparent;
+        --cms-button-secondary-color: inherit;
+        --cms-radius: 0.25rem;
+        --cms-placeholder-background: #e0e0e0;
+    }
+
+    /* Set on each carousel, not on :root. A theme overrides it on the element itself */
+    .cms-carousel {
+        --cms-carousel-per-view: 1;
+    }
+
+    /* The element a layout wraps around the top-level blocks: contained to --cms-content-width, centred and spaced */
+    .cms-tree {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--cms-block-spacing);
+        justify-items: center;
+    }
+
+    .cms-tree > * {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: var(--cms-content-width);
+    }
+
+    /* Directly inside the tree, a full-width block breaks out of the shop's container to the edges of the viewport.
+       Anywhere else, such as in a slot or a column, it fills its surroundings */
+    .cms-tree > .cms-full-width {
+        justify-self: start;
+        width: 100vw;
+        max-width: none;
+        margin-inline: calc(50% - 50vw);
+    }
+
+    /* Group: its content stays contained, also when its background is full width */
+    .cms-group__inner {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--cms-gap);
+        box-sizing: border-box;
+        max-width: var(--cms-content-width);
+        margin-inline: auto;
+    }
+
+    /* Group's block styles. A Group with no style has no background. One with a background keeps its content off its edges */
+    .cms-group--muted,
+    .cms-group--dark {
+        padding: var(--cms-block-spacing) var(--cms-gap);
+    }
+
+    .cms-group--muted {
+        background: var(--cms-muted-background);
+    }
+
+    .cms-group--dark {
+        background: var(--cms-dark-background);
+        color: var(--cms-dark-color);
+    }
+
+    /* Columns side by side at equal widths, wrapping onto new lines below --cms-column-min-width */
+    .cms-columns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--cms-gap);
+    }
+
+    .cms-column {
+        display: grid;
+        flex: 1 1 var(--cms-column-min-width);
+        grid-template-columns: minmax(0, 1fr);
+        align-content: start;
+        row-gap: var(--cms-gap);
+        min-width: 0;
+    }
+
+    /* Spacer */
+    .cms-spacer {
+        height: var(--cms-spacer-medium);
+    }
+
+    .cms-spacer--small {
+        height: var(--cms-spacer-small);
+    }
+
+    .cms-spacer--medium {
+        height: var(--cms-spacer-medium);
+    }
+
+    .cms-spacer--large {
+        height: var(--cms-spacer-large);
+    }
+}

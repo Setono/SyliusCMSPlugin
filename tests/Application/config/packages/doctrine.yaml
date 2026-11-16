@@ -13,3 +13,12 @@ doctrine:
 
         # The legacy schema manager tries to create PostgreSQL's "public" schema, which always exists
         schema_manager_factory: doctrine.dbal.default_schema_manager_factory
+
+    orm:
+        mappings:
+            # The test application's own content type, as a project maps its entities
+            TestApplication:
+                is_bundle: false
+                type: attribute
+                dir: '%kernel.project_dir%/Entity'
+                prefix: 'Setono\SyliusCMSPlugin\Tests\Application\Entity'

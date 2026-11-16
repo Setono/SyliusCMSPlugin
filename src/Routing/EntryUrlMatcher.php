@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Routing;
 
+use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
 use Setono\SyliusCMSPlugin\Rendering\EntryUrlLookupInterface;
 use Setono\SyliusCMSPlugin\Rendering\EntryUrlMatch;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
@@ -14,7 +15,8 @@ use Symfony\Contracts\Service\ResetInterface;
 /**
  * The condition of the setono_sylius_cms_shop_entry route, and what its controller asks for the match.
  * It looks the URL up by the channel from Sylius's channel context, the locale from the URL and the path,
- * memoised within the request so the condition and the controller share one lookup. See "Routing" in docs/spec/urls-and-seo.md
+ * memoised within the request so the condition and the controller share one lookup. In the builder's preview, the edited
+ * entry's working copy claims its own URL first. See "Routing" in docs/spec/urls-and-seo.md
  */
 final class EntryUrlMatcher implements ResetInterface
 {
@@ -24,6 +26,7 @@ final class EntryUrlMatcher implements ResetInterface
     public function __construct(
         private readonly ChannelContextInterface $channelContext,
         private readonly EntryUrlLookupInterface $entryUrlLookup,
+        private readonly PreviewedEntryProvider $previewedEntryProvider,
     ) {
     }
 
@@ -55,7 +58,7 @@ final class EntryUrlMatcher implements ResetInterface
 
         $key = implode("\0", [$channel->getCode(), $localeCode, $path]);
         if (!array_key_exists($key, $this->matches)) {
-            $this->matches[$key] = $this->entryUrlLookup->lookup($channel, $localeCode, $path);
+            $this->matches[$key] = $this->previewedEntryProvider->match($localeCode, $path) ?? $this->entryUrlLookup->lookup($channel, $localeCode, $path);
         }
 
         return $this->matches[$key];

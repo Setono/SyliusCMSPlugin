@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    The channels an entry is in, by channel code (ADR 0002), so a deleted channel leaves a code that matches nothing
+    -->
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\EntryChannel" table="setono_sylius_cms__entry_channel">
+        <unique-constraints>
+            <unique-constraint name="setono_sylius_cms__entry_channel_uniq" columns="entry_id,code"/>
+        </unique-constraints>
+
+        <indexes>
+            <index name="setono_sylius_cms__entry_channel_code_idx" columns="code"/>
+        </indexes>
+
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="code" type="string"/>
+
+        <many-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\Entry" inversed-by="channels">
+            <join-column name="entry_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
+        </many-to-one>
+    </mapped-superclass>
+</doctrine-mapping>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="Setono\SyliusCMSPlugin\Command\UpgradeCommand" class="Setono\SyliusCMSPlugin\Command\UpgradeCommand">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\EntryRewriterInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <!-- The manager of drafts, which is also the manager of entries -->
+            <argument type="service" id="setono_sylius_cms.manager.draft"/>
+
+            <tag name="console.command"/>
+        </service>
+    </services>
+</container>

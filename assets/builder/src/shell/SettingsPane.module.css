@@ -1,0 +1,113 @@
+.pane {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-4);
+    padding: var(--builder-space-4);
+}
+
+/* What publish would refuse in the entry itself */
+.errors {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    margin: 0;
+    padding: var(--builder-space-2) var(--builder-space-3);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-danger-subtle);
+    color: var(--builder-color-danger);
+    font-size: var(--builder-font-size-sm);
+    list-style: none;
+}
+
+.tabs {
+    display: flex;
+    gap: var(--builder-space-1);
+    border-bottom: 1px solid var(--builder-color-border);
+}
+
+.tab {
+    margin-bottom: -1px;
+    padding: var(--builder-space-2) var(--builder-space-3);
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: var(--builder-color-text-muted);
+    font: inherit;
+    font-weight: var(--builder-font-weight-medium);
+    cursor: pointer;
+}
+
+.tab[aria-selected="true"] {
+    border-bottom-color: var(--builder-color-accent);
+    color: var(--builder-color-text);
+}
+
+.tab:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: -2px;
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-5);
+}
+
+.setting {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.setting > legend {
+    margin-bottom: var(--builder-space-2);
+    padding: 0;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+}
+
+.fieldLabel {
+    padding: 0;
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}
+
+.check {
+    display: flex;
+    gap: var(--builder-space-2);
+    align-items: center;
+    cursor: pointer;
+}
+
+.check input {
+    margin: 0;
+}
+
+.groups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+    margin: 0;
+    padding: var(--builder-space-3);
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-sm);
+}
+
+.saveState {
+    min-height: 1lh;
+    margin: 0;
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}
+
+.saveState[data-state="failed"] {
+    color: var(--builder-color-danger);
+}

@@ -1,0 +1,111 @@
+/* Rendered in a portal at the end of the body, outside the shell, so it sets its own type and box model. */
+.picker {
+    box-sizing: border-box;
+    width: 22rem;
+    max-width: calc(100vw - 2 * var(--builder-space-2));
+    max-height: min(32rem, var(--radix-popover-content-available-height));
+    overflow-y: auto;
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-surface);
+    box-shadow: var(--builder-shadow-popover);
+    color: var(--builder-color-text);
+    font-family: var(--builder-font-family);
+    font-size: var(--builder-font-size-md);
+    line-height: var(--builder-line-height);
+}
+
+.picker *,
+.picker *::before,
+.picker *::after {
+    box-sizing: border-box;
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-3);
+    padding: var(--builder-space-3);
+}
+
+.search {
+    width: 100%;
+    min-height: var(--builder-control-height);
+    padding: var(--builder-space-1) var(--builder-space-2);
+    border: 1px solid var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-surface);
+    color: var(--builder-color-text);
+    font: inherit;
+}
+
+.search:focus-visible {
+    border-color: var(--builder-color-focus);
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: -1px;
+}
+
+.list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--builder-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.option {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    align-items: stretch;
+    width: 100%;
+    padding: var(--builder-space-2);
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-surface);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.option:hover {
+    border-color: var(--builder-color-selected-border);
+    background: var(--builder-color-selected);
+}
+
+.option:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}
+
+.thumbnail {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 2;
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-neutral-subtle);
+}
+
+.label {
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.empty {
+    margin: 0;
+    color: var(--builder-color-text-muted);
+}
+
+.visuallyHidden {
+    position: absolute;
+    overflow: hidden;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}

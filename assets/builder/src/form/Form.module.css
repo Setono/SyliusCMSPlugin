@@ -24,7 +24,17 @@
     font-size: var(--builder-font-size-sm);
 }
 
+/* What publish would refuse in the field */
+.errors {
+    margin: 0;
+    padding: 0;
+    color: var(--builder-color-danger);
+    font-size: var(--builder-font-size-sm);
+    list-style: none;
+}
+
 .input,
+.textarea,
 .select {
     width: 100%;
     min-height: var(--builder-control-height);
@@ -37,10 +47,29 @@
 }
 
 .input:focus-visible,
+.textarea:focus-visible,
 .select:focus-visible {
     outline: 2px solid var(--builder-color-focus);
     outline-offset: -1px;
     border-color: var(--builder-color-focus);
+}
+
+.checkbox {
+    width: 1.125rem;
+    height: 1.125rem;
+    margin: 0;
+    accent-color: var(--builder-color-accent);
+}
+
+.checkbox:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}
+
+.textarea {
+    min-height: calc(var(--builder-control-height) * 3);
+    resize: vertical;
+    line-height: var(--builder-line-height);
 }
 
 .select[multiple] {
@@ -54,4 +83,97 @@
     border-radius: var(--builder-radius-sm);
     color: var(--builder-color-text-muted);
     font-size: var(--builder-font-size-sm);
+}
+
+/* Rich text: a toolbar above a Tiptap editor */
+.richText {
+    border: 1px solid var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-surface);
+}
+
+.richText:focus-within {
+    border-color: var(--builder-color-focus);
+    outline: 1px solid var(--builder-color-focus);
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    align-items: center;
+    padding: var(--builder-space-1);
+    border-bottom: 1px solid var(--builder-color-border);
+}
+
+.toolbarButton {
+    min-width: 1.75rem;
+    height: 1.75rem;
+    padding: 0 var(--builder-space-1);
+    border: 0;
+    border-radius: var(--builder-radius-sm);
+    background: transparent;
+    color: var(--builder-color-text);
+    font: inherit;
+    font-size: var(--builder-font-size-sm);
+    cursor: pointer;
+}
+
+.toolbarButton:hover {
+    background: var(--builder-color-hover);
+}
+
+.toolbarButton[aria-pressed='true'] {
+    background: var(--builder-color-selected);
+    color: var(--builder-color-accent);
+}
+
+.toolbarButton:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: -2px;
+}
+
+.toolbarSeparator {
+    width: 1px;
+    height: 1.25rem;
+    margin: 0 var(--builder-space-1);
+    background: var(--builder-color-border);
+}
+
+.richTextEditor {
+    min-height: calc(var(--builder-control-height) * 3);
+    padding: var(--builder-space-2);
+    line-height: var(--builder-line-height);
+    outline: none;
+}
+
+.richTextEditor > :first-child {
+    margin-top: 0;
+}
+
+.richTextEditor > :last-child {
+    margin-bottom: 0;
+}
+
+.richTextEditor p,
+.richTextEditor ul,
+.richTextEditor ol,
+.richTextEditor blockquote {
+    margin: 0 0 var(--builder-space-2);
+}
+
+.richTextEditor ul,
+.richTextEditor ol {
+    padding-left: var(--builder-space-5);
+}
+
+.richTextEditor blockquote {
+    padding-left: var(--builder-space-3);
+    border-left: 3px solid var(--builder-color-border-strong);
+    color: var(--builder-color-text-muted);
+}
+
+.richTextEditor hr {
+    border: 0;
+    border-top: 1px solid var(--builder-color-border-strong);
 }

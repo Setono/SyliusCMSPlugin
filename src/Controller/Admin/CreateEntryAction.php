@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Container\ContainerInterface;
+use Setono\SyliusCMSPlugin\Event\EntryCreated;
 use Setono\SyliusCMSPlugin\Form\Type\CreateEntryType;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
@@ -18,6 +19,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Twig\Environment;
 
 /**
@@ -37,6 +39,7 @@ final readonly class CreateEntryAction
         private FormFactoryInterface $formFactory,
         private UrlGeneratorInterface $urlGenerator,
         private Environment $twig,
+        private EventDispatcherInterface $eventDispatcher,
     ) {
     }
 
@@ -64,6 +67,9 @@ final readonly class CreateEntryAction
             $manager = $this->managerRegistry->getManagerForClass($entry::class) ?? throw new \LogicException(sprintf('No Doctrine manager manages %s', $entry::class));
             $manager->persist($entry);
             $manager->flush();
+
+            // After the flush's transaction commits
+            $this->eventDispatcher->dispatch(new EntryCreated($entry->getUuid(), $contentType));
 
             return new RedirectResponse($this->urlGenerator->generate('setono_sylius_cms_admin_builder', ['uuid' => $entry->getUuid()]));
         }

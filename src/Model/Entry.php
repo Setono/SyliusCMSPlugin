@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Setono\SyliusCMSPlugin\Targeting\Audience;
+use Setono\SyliusCMSPlugin\Targeting\AudienceMode;
+use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 use Sylius\Resource\Model\TranslatableTrait;
@@ -35,13 +40,61 @@ abstract class Entry implements EntryInterface
 
     protected ?\DateTimeImmutable $lastPublishedAt = null;
 
+    /*
+     * The on-save settings, which take effect outside the draft (docs/spec/content-model.md#whats-drafted-and-what-takes-effect-on-save).
+     * They're columns and rows beside the entry, so the visible-entries query filters on them in SQL
+     */
+
+    protected bool $enabled = true;
+
+    /** In UTC */
+    protected ?\DateTimeImmutable $showFrom = null;
+
+    /** In UTC */
+    protected ?\DateTimeImmutable $showUntil = null;
+
+    /** @var Collection<array-key, EntryChannel> */
+    protected Collection $channels;
+
+    /** @see AudienceMode */
+    protected string $audienceMode = 'everyone';
+
+    /** @var Collection<array-key, EntryAudienceGroup> */
+    protected Collection $audienceGroups;
+
     public function __construct()
     {
         $this->initializeTranslationsCollection();
+        $this->channels = new ArrayCollection();
+        $this->audienceGroups = new ArrayCollection();
 
         $this->uuid = Uuid::v7()->toRfc4122();
         $this->createdAt = $this->changedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $this->setBlockTree(new StoredTree(null, []));
+    }
+
+    /**
+     * A clone is a copy of the entry with copies of its translations, which Doctrine doesn't manage,
+     * so changing it never changes the rows. A published entry's working copy is one (ADR 0009)
+     */
+    public function __clone()
+    {
+        $translations = $this->translations;
+
+        $this->initializeTranslationsCollection();
+        $this->translationsCache = [];
+
+        foreach ($translations as $translation) {
+            $this->addTranslation(clone $translation);
+        }
+
+        // The rows belong to the original, so the copy gets rows of its own
+        $channelCodes = $this->getChannelCodes();
+        $audience = $this->getAudience();
+        $this->channels = new ArrayCollection();
+        $this->audienceGroups = new ArrayCollection();
+        $this->setChannelCodes($channelCodes);
+        $this->setAudience($audience);
     }
 
     public function getId(): ?int
@@ -77,6 +130,72 @@ abstract class Entry implements EntryInterface
     public function publish(\DateTimeImmutable $at): void
     {
         $this->lastPublishedAt = $this->changedAt = $at;
+    }
+
+    public function setChangedAt(\DateTimeImmutable $changedAt): void
+    {
+        $this->changedAt = $changedAt;
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    public function setEnabled(bool $enabled): void
+    {
+        $this->enabled = $enabled;
+    }
+
+    public function getDateWindow(): DateWindow
+    {
+        return new DateWindow(self::readUtc($this->showFrom), self::readUtc($this->showUntil));
+    }
+
+    public function setDateWindow(DateWindow $dateWindow): void
+    {
+        $this->showFrom = $dateWindow->from;
+        $this->showUntil = $dateWindow->until;
+    }
+
+    public function getChannelCodes(): array
+    {
+        return self::codes($this->channels);
+    }
+
+    public function setChannelCodes(iterable $codes): void
+    {
+        $codes = array_unique([...$codes]);
+
+        foreach ($this->channels as $channel) {
+            if (!in_array($channel->getCode(), $codes, true)) {
+                $this->channels->removeElement($channel);
+            }
+        }
+
+        foreach (array_diff($codes, $this->getChannelCodes()) as $code) {
+            $this->channels->add(new EntryChannel($this, $code));
+        }
+    }
+
+    public function getAudience(): Audience
+    {
+        return new Audience(AudienceMode::from($this->audienceMode), self::codes($this->audienceGroups));
+    }
+
+    public function setAudience(Audience $audience): void
+    {
+        $this->audienceMode = $audience->mode->value;
+
+        foreach ($this->audienceGroups as $group) {
+            if (!in_array($group->getCode(), $audience->groups, true)) {
+                $this->audienceGroups->removeElement($group);
+            }
+        }
+
+        foreach (array_diff($audience->groups, self::codes($this->audienceGroups)) as $code) {
+            $this->audienceGroups->add(new EntryAudienceGroup($this, $code));
+        }
     }
 
     public function getBlockTree(): StoredTree
@@ -125,5 +244,28 @@ abstract class Entry implements EntryInterface
         }
 
         return $translation;
+    }
+
+    /**
+     * @template T of EntryChannelInterface|EntryAudienceGroupInterface
+     *
+     * @param Collection<array-key, T> $rows
+     *
+     * @return list<string> sorted
+     */
+    private static function codes(Collection $rows): array
+    {
+        $codes = $rows->map(static fn (EntryChannelInterface|EntryAudienceGroupInterface $row): string => $row->getCode())->toArray();
+        sort($codes, \SORT_STRING);
+
+        return $codes;
+    }
+
+    /**
+     * The date window columns hold UTC, but Doctrine hydrates them in PHP's default time zone
+     */
+    private static function readUtc(?\DateTimeImmutable $column): ?\DateTimeImmutable
+    {
+        return null === $column ? null : new \DateTimeImmutable($column->format('Y-m-d H:i:s'), new \DateTimeZone('UTC'));
     }
 }

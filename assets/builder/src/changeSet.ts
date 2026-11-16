@@ -2,10 +2,11 @@
  * The autosave change set: what the builder sends to the entry_save endpoint, built from the Immer
  * patches of each edit. Pure functions, with no React and no I/O.
  */
-import type { Patch } from 'immer';
-import { blockList, findBlock } from './tree';
+import { produce, type Patch } from 'immer';
+import { longestIncreasing } from './sequence';
+import { blockList, findBlock, insertBlock, removeBlockFrom } from './tree';
 import type { Entry, FieldValues, JsonValue, StoredBlock } from './types';
-import { isJsonObject, jsonEqual, normalizeValue } from './values';
+import { isJsonObject, jsonEqual, normalizeValue, writeFieldValue } from './values';
 
 export interface AddBlockChange {
     op: 'add_block';
@@ -13,7 +14,23 @@ export interface AddBlockChange {
     parent: string | null;
     /** Its position in that list once the changes before it are applied. */
     index: number;
+    /**
+     * The block it goes right after, when it doesn't go first. The server puts it there wherever that block is by
+     * then, so that a save merged onto a colleague's keeps it where the editor put it, and falls back to the index.
+     */
+    after?: string;
     block: StoredBlock;
+}
+
+export interface MoveBlockChange {
+    op: 'move_block';
+    key: string;
+    /** The key of the block whose children it joins, or null for the top level. */
+    parent: string | null;
+    /** Its position in that list once the changes before it are applied and it's taken out of where it was. */
+    index: number;
+    /** The block it goes right after, when it doesn't go first, as for an addition. */
+    after?: string;
 }
 
 export interface RemoveBlockChange {
@@ -31,23 +48,33 @@ export interface SetValueChange {
     value: JsonValue | null;
 }
 
-export type Change = AddBlockChange | RemoveBlockChange | SetValueChange;
+export interface SetStyleChange {
+    op: 'set_style';
+    key: string;
+    /** The code of one of the block type's styles, or null for none. */
+    style: string | null;
+}
+
+export type Change = AddBlockChange | MoveBlockChange | RemoveBlockChange | SetValueChange | SetStyleChange;
 
 /** Whether a field of a block type is translatable. */
 export type TranslatableLookup = (blockType: string, field: string) => boolean;
 
-type Target = { kind: 'list'; parent: string | null; depth: number } | { kind: 'fields'; key: string; field: string | undefined };
+type Target = { kind: 'list'; parent: string | null; depth: number } | { kind: 'fields'; key: string; field: string | undefined } | { kind: 'style'; key: string };
 
 /**
  * Turns the patches of one edit into key-based changes.
  *
- * Patches into a block's fields become set_value changes. Patches that touch a list of blocks aren't
+ * Patches into a block's fields become set_value changes, and into its style set_style. Patches that touch a list of blocks aren't
  * read index by index, because Immer reports a removal from the middle of a list as replacements plus a
- * trailing removal. Instead the list's keys are compared before and after the edit.
+ * trailing removal, and a move as a removal from one list and an addition to another. Instead each list's
+ * keys are compared before and after the edit, against the tree as the server has it once the changes
+ * before are applied, so every index is right when the server applies the changes in order.
  */
 export function changesFromPatches(patches: readonly Patch[], before: Entry, after: Entry, isTranslatable: TranslatableLookup): Change[] {
     const lists = new Map<string | null, number>();
     const fieldTargets: Array<{ key: string; field: string | undefined }> = [];
+    const styleTargets = new Set<string>();
 
     for (const patch of patches) {
         const target = locate(patch.path, before, after);
@@ -55,19 +82,28 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
             lists.set(target.parent, target.depth);
         } else if (target?.kind === 'fields') {
             fieldTargets.push(target);
+        } else if (target?.kind === 'style') {
+            styleTargets.add(target.key);
         }
     }
 
+    const diff: ListDiff = {
+        before,
+        server: new ServerTree(before.tree.blocks),
+        parents: parentsOf(after.tree.blocks),
+        isTranslatable,
+        addedOrRemoved: new Set(),
+        done: new Set(),
+    };
+    const { addedOrRemoved } = diff;
     const changes: Change[] = [];
-    // Blocks added or removed by this edit, with everything in them. An added block carries its values.
-    const addedOrRemoved = new Set<string>();
 
     for (const [parent] of [...lists].sort(([, a], [, b]) => a - b)) {
         if (parent !== null && addedOrRemoved.has(parent)) {
             continue;
         }
 
-        changes.push(...diffBlockList(parent, blockList(before, parent), blockList(after, parent), isTranslatable, addedOrRemoved));
+        changes.push(...diffBlockList(parent, blockList(after, parent), diff));
     }
 
     for (const { key, field } of fieldTargets) {
@@ -81,12 +117,121 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
         changes.push(...diffFields(block, previousFields, isTranslatable, fields));
     }
 
+    for (const key of styleTargets) {
+        const block = findBlock(after.tree.blocks, key);
+        if (block !== undefined && !addedOrRemoved.has(key)) {
+            changes.push(...diffStyle(block, findBlock(before.tree.blocks, key)?.style ?? null));
+        }
+    }
+
     return mergeChanges([], changes);
 }
 
+/** What applying changes to a working copy gave. */
+export interface AppliedChanges {
+    entry: Entry;
+    /** The changes that applied, in order. */
+    applied: Change[];
+    /** The keys of the blocks that changes which didn't apply needed, such as a block a colleague deleted. */
+    missing: string[];
+}
+
+/**
+ * Applies changes to a working copy by key, the way the server does: an added or moved block goes right after the
+ * block it names when its list has that block, and otherwise at its index. A change the server would refuse, such as
+ * one to a block that isn't there any more, is left out.
+ */
+export function applyChanges(entry: Entry, changes: readonly Change[]): AppliedChanges {
+    const applied: Change[] = [];
+    const missing: string[] = [];
+
+    const next = produce<Entry, Entry>(entry, (working) => {
+        const blocks = working.tree.blocks;
+        for (const change of changes) {
+            const needed = neededKeys(change).find((key) => findBlock(blocks, key) === undefined);
+            if (needed !== undefined) {
+                if (change.op !== 'remove_block') {
+                    missing.push(needed);
+                }
+
+                continue;
+            }
+
+            if (applyChange(blocks, change)) {
+                applied.push(change);
+            }
+        }
+    });
+
+    return { entry: next, applied, missing };
+}
+
+/** The blocks a change finds by key. */
+function neededKeys(change: Change): string[] {
+    switch (change.op) {
+        case 'add_block':
+            return change.parent === null ? [] : [change.parent];
+        case 'move_block':
+            return change.parent === null ? [change.key] : [change.key, change.parent];
+        default:
+            return [change.key];
+    }
+}
+
+/** Applies one change whose blocks are all there. Answers false for one the server would refuse. */
+function applyChange(blocks: StoredBlock[], change: Change): boolean {
+    switch (change.op) {
+        case 'add_block': {
+            const taken = new Set<string>();
+            collectKeys(change.block, taken);
+            if ([...taken].some((key) => findBlock(blocks, key) !== undefined)) {
+                return false;
+            }
+
+            insertBlock(blocks, change.block, change.parent, change.index, change.after);
+
+            return true;
+        }
+        case 'move_block': {
+            const moved = findBlock(blocks, change.key);
+            if (moved === undefined || (change.parent !== null && findBlock([moved], change.parent) !== undefined)) {
+                return false;
+            }
+
+            removeBlockFrom(blocks, change.key);
+            insertBlock(blocks, moved, change.parent, change.index, change.after);
+
+            return true;
+        }
+        case 'remove_block':
+            return removeBlockFrom(blocks, change.key);
+        case 'set_value': {
+            const target = findBlock(blocks, change.key);
+            if (target === undefined) {
+                return false;
+            }
+
+            writeFieldValue(target.fields, change.field, change.locale !== null, change.locale ?? '', change.value);
+
+            return true;
+        }
+        case 'set_style': {
+            const target = findBlock(blocks, change.key);
+            if (target === undefined) {
+                return false;
+            }
+
+            target.style = change.style;
+
+            return true;
+        }
+    }
+}
+
+
 /**
  * Appends later changes to earlier ones, keeping only what the server still needs: the last value per
- * block, field and locale, and nothing for a block that was added and removed again in between.
+ * block, field and locale, the last style per block, and nothing for a block that was added and removed again in between.
  */
 export function mergeChanges(earlier: readonly Change[], later: readonly Change[]): Change[] {
     return later.reduce<Change[]>((changes, change) => mergeChange(changes, change), [...earlier]);
@@ -96,7 +241,10 @@ function mergeChange(changes: Change[], change: Change): Change[] {
     switch (change.op) {
         case 'set_value':
             return [...changes.filter((earlier) => !isSameValue(earlier, change)), change];
+        case 'set_style':
+            return [...changes.filter((earlier) => !(earlier.op === 'set_style' && earlier.key === change.key)), change];
         case 'add_block':
+        case 'move_block':
             return [...changes, change];
         case 'remove_block':
             return mergeRemoval(changes, change);
@@ -108,22 +256,25 @@ function isSameValue(change: Change, other: SetValueChange): boolean {
 }
 
 function mergeRemoval(changes: Change[], removal: RemoveBlockChange): Change[] {
-    const additionIndex = changes.findIndex((change) => change.op === 'add_block' && change.block.key === removal.key);
+    const additionIndex = changes.map((change) => change.op === 'add_block' && change.block.key === removal.key).lastIndexOf(true);
     const addition = changes[additionIndex];
 
     // A block added since the last save never reaches the server, unless a later add_block into the same
-    // list counted its index with the block in place: dropping the block would then shift that one.
+    // list counted its index with the block in place: dropping the block would then shift that one. What
+    // came before the addition stays, such as the removal of the block that undo put back.
     if (addition?.op === 'add_block' && !hasLaterAdditionTo(changes, additionIndex, addition.parent)) {
-        const gone = keysAddedWithin(changes, addition);
+        const later = changes.slice(additionIndex);
+        const gone = keysAddedWithin(later, addition);
 
-        return changes.filter((change) => !gone.has(change.op === 'add_block' ? change.block.key : change.key));
+        return [...changes.slice(0, additionIndex), ...later.filter((change) => !gone.has(change.op === 'add_block' ? change.block.key : change.key))];
     }
 
-    return [...changes.filter((change) => !(change.op === 'set_value' && change.key === removal.key)), removal];
+    return [...changes.filter((change) => !((change.op === 'set_value' || change.op === 'set_style') && change.key === removal.key)), removal];
 }
 
+/** A later addition into the same list counted its index with the block in place, and so may any later move. */
 function hasLaterAdditionTo(changes: readonly Change[], index: number, parent: string | null): boolean {
-    return changes.slice(index + 1).some((change) => change.op === 'add_block' && change.parent === parent);
+    return changes.slice(index + 1).some((change) => (change.op === 'add_block' && change.parent === parent) || change.op === 'move_block');
 }
 
 /** The added block's key, the keys of the blocks in it, and those of the blocks added into it since. */
@@ -146,8 +297,8 @@ function collectKeys(block: StoredBlock, keys: Set<string>): void {
 }
 
 /**
- * What a patch path points at: a list of blocks (the top level, or a block's children), or a block's
- * fields. Everything else, such as entry fields or a block's style, has no change of its own yet.
+ * What a patch path points at: a list of blocks (the top level, or a block's children), a block's
+ * fields, or its style. Everything else, such as entry fields, has no change of its own yet.
  */
 function locate(path: Patch['path'], before: Entry, after: Entry): Target | null {
     if (path.length === 0 || (path.length === 1 && path[0] === 'tree')) {
@@ -177,6 +328,10 @@ function locate(path: Patch['path'], before: Entry, after: Entry): Target | null
             return { kind: 'fields', key: block.key, field: field === undefined ? undefined : String(field) };
         }
 
+        if (property === 'style') {
+            return { kind: 'style', key: block.key };
+        }
+
         if (property !== 'children') {
             return null;
         }
@@ -189,40 +344,162 @@ function blockAt(entry: Entry, parent: string | null, index: string | number | u
     return blockList(entry, parent)[Number(index)];
 }
 
-function diffBlockList(
-    parent: string | null,
-    before: readonly StoredBlock[],
-    after: readonly StoredBlock[],
-    isTranslatable: TranslatableLookup,
-    addedOrRemoved: Set<string>,
-): Change[] {
-    const changes: Change[] = [];
-    const remaining = new Set(after.map((block) => block.key));
-    const previous = new Map(before.map((block) => [block.key, block]));
+interface ListDiff {
+    before: Entry;
+    /** The tree as the server has it once the changes made so far are applied. */
+    server: ServerTree;
+    /** Every block of the tree after the edit, with the key of its parent, or null at the top level. */
+    parents: ReadonlyMap<string, string | null>;
+    isTranslatable: TranslatableLookup;
+    /** Blocks added or removed by this edit, with everything in them. An added block carries its values. */
+    addedOrRemoved: Set<string>;
+    /** The lists already diffed, by the key of their parent. */
+    done: Set<string | null>;
+}
 
-    for (const block of before) {
-        if (!remaining.has(block.key)) {
-            changes.push({ op: 'remove_block', key: block.key });
-            collectKeys(block, addedOrRemoved);
+/**
+ * The changes that make the server's list match the list after the edit. Blocks still in the server's list
+ * that belong to another list after the edit are left where they are: they move when that list is diffed.
+ */
+function diffBlockList(parent: string | null, after: readonly StoredBlock[], diff: ListDiff): Change[] {
+    if (diff.done.has(parent)) {
+        return [];
+    }
+
+    diff.done.add(parent);
+    const changes: Change[] = [];
+
+    for (const key of diff.server.list(parent)) {
+        if (!diff.parents.has(key)) {
+            changes.push({ op: 'remove_block', key });
+            diff.server.remove(key);
+
+            const removed = findBlock(diff.before.tree.blocks, key);
+            if (removed !== undefined) {
+                collectKeys(removed, diff.addedOrRemoved);
+            }
         }
     }
 
-    // In order, so that each index is right once the blocks before it are in place. Blocks that stay
-    // keep their order: changing places needs a move, which comes with drag and drop.
-    after.forEach((block, index) => {
-        const old = previous.get(block.key);
-        if (old === undefined) {
-            changes.push({ op: 'add_block', parent, index, block });
-            collectKeys(block, addedOrRemoved);
-        } else if (old !== block) {
-            changes.push(...diffFields(block, old.fields, isTranslatable));
+    // The blocks that keep their place: the most of those the server has here already that are in the right order.
+    const positions = new Map(after.map((block, position) => [block.key, position]));
+    const here = diff.server.list(parent).filter((key) => positions.has(key));
+    const kept = new Set([...longestIncreasing(here.map((key) => positions.get(key) ?? 0))].map((i) => here[i]));
+
+    // In order, so that each block can go right after the one before it, which is in place by then.
+    after.forEach((block, position) => {
+        if (!kept.has(block.key)) {
+            // Blocks still to move away to other lists are counted, because the server still has them here.
+            const list = diff.server.list(parent).filter((key) => key !== block.key);
+            const previous = position === 0 ? undefined : after[position - 1]?.key;
+            const index = previous === undefined ? 0 : list.indexOf(previous) + 1;
+            const anchor = previous === undefined ? {} : { after: previous };
+
+            if (!diff.server.has(block.key)) {
+                changes.push({ op: 'add_block', parent, index, ...anchor, block });
+                diff.server.add(block, parent, index);
+                collectKeys(block, diff.addedOrRemoved);
+
+                return;
+            }
+
+            changes.push({ op: 'move_block', key: block.key, parent, index, ...anchor });
+            diff.server.move(block.key, parent, index);
+        }
+
+        const old = findBlock(diff.before.tree.blocks, block.key);
+        if (old !== undefined && old !== block) {
+            changes.push(...diffFields(block, old.fields, diff.isTranslatable));
+            changes.push(...diffStyle(block, old.style));
             if (old.children !== block.children) {
-                changes.push(...diffBlockList(block.key, old.children, block.children, isTranslatable, addedOrRemoved));
+                changes.push(...diffBlockList(block.key, block.children, diff));
             }
         }
     });
 
     return changes;
+}
+
+/** The server's lists of block keys by the key of their parent, kept in step with the changes as they're made. */
+class ServerTree {
+    private readonly lists = new Map<string | null, string[]>();
+    private readonly parents = new Map<string, string | null>();
+
+    constructor(blocks: readonly StoredBlock[]) {
+        this.addList(null, blocks);
+    }
+
+    has(key: string): boolean {
+        return this.parents.has(key);
+    }
+
+    /** A copy of one list of keys. */
+    list(parent: string | null): string[] {
+        return [...(this.lists.get(parent) ?? [])];
+    }
+
+    add(block: StoredBlock, parent: string | null, index: number): void {
+        this.insert(block.key, parent, index);
+        this.addList(block.key, block.children);
+    }
+
+    move(key: string, parent: string | null, index: number): void {
+        this.takeOut(key);
+        this.insert(key, parent, index);
+    }
+
+    remove(key: string): void {
+        this.takeOut(key);
+        this.forget(key);
+    }
+
+    private addList(parent: string | null, blocks: readonly StoredBlock[]): void {
+        this.lists.set(
+            parent,
+            blocks.map((block) => block.key),
+        );
+
+        for (const block of blocks) {
+            this.parents.set(block.key, parent);
+            this.addList(block.key, block.children);
+        }
+    }
+
+    private insert(key: string, parent: string | null, index: number): void {
+        const list = this.lists.get(parent) ?? [];
+        list.splice(index, 0, key);
+        this.lists.set(parent, list);
+        this.parents.set(key, parent);
+    }
+
+    private takeOut(key: string): void {
+        const list = this.lists.get(this.parents.get(key) ?? null) ?? [];
+        list.splice(list.indexOf(key), 1);
+    }
+
+    private forget(key: string): void {
+        this.parents.delete(key);
+        for (const child of this.lists.get(key) ?? []) {
+            this.forget(child);
+        }
+
+        this.lists.delete(key);
+    }
+}
+
+
+function parentsOf(blocks: readonly StoredBlock[], parent: string | null = null, parents = new Map<string, string | null>()): Map<string, string | null> {
+    for (const block of blocks) {
+        parents.set(block.key, parent);
+        parentsOf(block.children, block.key, parents);
+    }
+
+    return parents;
+}
+
+/** A set_style change when the block's style differs from before. */
+function diffStyle(block: StoredBlock, before: string | null): SetStyleChange[] {
+    return block.style === before ? [] : [{ op: 'set_style', key: block.key, style: block.style }];
 }
 
 /** set_value changes for the given fields of a block, or for all of them, that differ from before. */

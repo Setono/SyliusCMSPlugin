@@ -1,0 +1,5 @@
+<div class="cms-columns{{ view.styleClass ? ' ' ~ view.styleClass }}">
+    {%- for column in children -%}
+        {{ cms_block(column) }}
+    {%- endfor -%}
+</div>

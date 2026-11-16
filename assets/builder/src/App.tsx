@@ -5,9 +5,13 @@ import { createAutosave, type Autosave } from './autosave';
 import type { BuilderConfig } from './config';
 import { BuilderProvider, type BuilderSession } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
-import { createPublish } from './publishing';
+import { createPresence, type Presence } from './presence';
+import { createPreviewStore } from './preview';
+import { createDiscard, createPublish, createReload } from './publishing';
+import { createSettingsStore } from './settings';
 import { Shell } from './shell/Shell';
 import { createBuilderStore } from './store';
+import { createValidation, createValidationStore, type Validation } from './validation';
 
 export interface AppProps {
     config: BuilderConfig;
@@ -26,23 +30,65 @@ export function App({ config, api, autosaveDelay }: AppProps) {
     useEffect(() => {
         let active = true;
         let autosave: Autosave | undefined;
+        let presence: Presence | undefined;
+        let validation: Validation | undefined;
+        let unsubscribeSettings: (() => void) | undefined;
 
         Promise.all([api.fetchRegistry(), api.fetchEntry()]).then(
-            ([registry, { entry, status }]) => {
+            ([registry, { entry, settings: entrySettings, status, lockToken, editors }]) => {
                 if (!active) {
                     return;
                 }
 
-                const store = createBuilderStore({ locale: config.locale, blockTypes: registry.blockTypes, entry, status });
-                autosave = createAutosave(store, (changes) => api.saveChanges(changes), { delay: autosaveDelay });
+                const store = createBuilderStore({
+                    locale: config.locale,
+                    blockTypes: registry.blockTypes,
+                    contentTypes: registry.contentTypes,
+                    entry,
+                    status,
+                    lockToken,
+                });
+                autosave = createAutosave(store, (changes, token) => api.saveChanges(changes, token), { delay: autosaveDelay });
+                // Who else has the entry open. It also pulls in what they saved, once the working copy has moved on
+                presence = createPresence(store, autosave, () => api.presence(), editors);
+
+                // Invalid blocks are flagged from the start, and again after each save
+                const validationStore = createValidationStore();
+                validation = createValidation(store, validationStore, () => api.validate());
+                void validation.validate();
+
+                // The preview shows the entry in one of its own channels, which follow the settings as they change.
+                const settings = createSettingsStore(entrySettings, (changes) => api.saveSettings(changes));
+                const entryChannels = (codes: string[]) => config.channels.filter(({ code }) => codes.includes(code));
+                const preview = createPreviewStore(entryChannels(entrySettings.channels));
+                unsubscribeSettings = settings.subscribe((state, previous) => {
+                    if (state.settings.channels !== previous.settings.channels) {
+                        preview.getState().setChannels(entryChannels(state.settings.channels));
+                    }
+                });
 
                 setPhase({
                     name: 'ready',
                     translate: createTranslator({ ...config.strings, ...registry.strings }),
                     session: {
                         store,
+                        validation: validationStore,
                         backUrl: config.backUrl,
-                        publish: createPublish(store, autosave, () => api.publish()),
+                        publish: createPublish(store, autosave, () => api.publish(), validationStore),
+                        discard: createDiscard(store, autosave, () => api.discard()),
+                        reload: createReload(store, () => api.fetchEntry()),
+                        preview,
+                        // The page renders what the server holds, so a new page waits for the unsaved changes
+                        createPreviewUrl: async (request) => {
+                            await autosave?.flush();
+
+                            return api.createPreviewUrl(request);
+                        },
+                        renderPreview: (token, blocks) => api.renderPreview(token, blocks),
+                        settings,
+                        presence: presence.store,
+                        channels: config.channels,
+                        customerGroups: config.customerGroups,
                     },
                 });
             },
@@ -56,6 +102,9 @@ export function App({ config, api, autosaveDelay }: AppProps) {
         return () => {
             active = false;
             autosave?.dispose();
+            presence?.dispose();
+            validation?.dispose();
+            unsubscribeSettings?.();
         };
     }, [api, config, autosaveDelay]);
 

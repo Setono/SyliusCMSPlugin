@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner" class="Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner">
+            <argument>%kernel.secret%</argument>
+            <argument type="service" id="clock"/>
+        </service>
+
+        <!-- Also the runtime of cms_preview_mode() -->
+        <service id="Setono\SyliusCMSPlugin\Preview\PreviewContext" class="Setono\SyliusCMSPlugin\Preview\PreviewContext">
+            <argument type="service" id="request_stack"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider" class="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+        </service>
+
+        <!-- Ahead of Sylius's hostname-based channel context, which has the default priority 0 -->
+        <service id="Setono\SyliusCMSPlugin\Preview\PreviewChannelContext" class="Setono\SyliusCMSPlugin\Preview\PreviewChannelContext">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
+            <argument type="service" id="sylius.repository.channel"/>
+
+            <tag name="sylius.context.channel" priority="128"/>
+        </service>
+
+        <!-- Ahead of Sylius's admin-based locale context (128) and its request-based one (64) -->
+        <service id="Setono\SyliusCMSPlugin\Preview\PreviewLocaleContext" class="Setono\SyliusCMSPlugin\Preview\PreviewLocaleContext">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
+
+            <tag name="sylius.context.locale" priority="256"/>
+        </service>
+
+        <!-- Adds the markers, and shows a block's error in place of its output, in the builder's preview -->
+        <service id="Setono\SyliusCMSPlugin\Preview\PreviewBlockRenderer" class="Setono\SyliusCMSPlugin\Preview\PreviewBlockRenderer"
+                 decorates="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface">
+            <argument type="service" id=".inner"/>
+            <argument type="service" id="logger"/>
+        </service>
+
+        <!-- Marks the fields cms_field() prints that editors can type in place, in the builder's preview -->
+        <service id="Setono\SyliusCMSPlugin\Preview\FieldMarker" class="Setono\SyliusCMSPlugin\Preview\FieldMarker">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+        </service>
+
+        <!-- Sets _cms_preview_mode before the router listener (32), and the headers after the session listener (-1000) -->
+        <service id="Setono\SyliusCMSPlugin\Preview\PreviewModeListener" class="Setono\SyliusCMSPlugin\Preview\PreviewModeListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
+
+            <tag name="kernel.event_listener" event="kernel.request" method="onRequest" priority="64"/>
+            <tag name="kernel.event_listener" event="kernel.response" method="onResponse" priority="-1010"/>
+        </service>
+
+        <!-- After the profiler's toolbar (-128) and the preview headers (-1010) -->
+        <service id="Setono\SyliusCMSPlugin\Preview\BridgeScriptListener" class="Setono\SyliusCMSPlugin\Preview\BridgeScriptListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
+            <argument type="service" id="twig"/>
+
+            <tag name="kernel.event_listener" event="kernel.response" method="onResponse" priority="-1020"/>
+        </service>
+    </services>
+</container>

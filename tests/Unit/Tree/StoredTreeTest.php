@@ -47,6 +47,33 @@ final class StoredTreeTest extends TestCase
     /**
      * @test
      */
+    public function it_inserts_a_block_into_the_children_of_a_block_at_any_depth(): void
+    {
+        $inner = new StoredBlock(self::B, 'column', 1, children: [new StoredBlock(self::C, 'heading', 1)]);
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'columns', 1, children: [$inner])]);
+        $first = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e41';
+        $last = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e42';
+
+        self::assertTrue($tree->insertBlock(new StoredBlock($first, 'heading', 1), 0, self::B));
+        self::assertTrue($tree->insertBlock(new StoredBlock($last, 'heading', 1), 10, self::B));
+
+        self::assertSame([$first, self::C, $last], self::keys($inner->children));
+    }
+
+    /**
+     * @test
+     */
+    public function it_inserts_nothing_into_a_block_it_does_not_have(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)]);
+
+        self::assertFalse($tree->insertBlock(new StoredBlock(self::B, 'heading', 1), 0, self::C));
+        self::assertSame([self::A], $tree->keys());
+    }
+
+    /**
+     * @test
+     */
     public function it_clamps_the_insert_index_to_the_list(): void
     {
         $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)]);

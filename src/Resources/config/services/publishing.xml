@@ -2,10 +2,50 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="Setono\SyliusCMSPlugin\Publishing\EntryPublisher" class="Setono\SyliusCMSPlugin\Publishing\EntryPublisher">
+        <service id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManager" class="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManager">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.factory.draft"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer"/>
+            <argument type="service" id="setono_sylius_cms.manager.draft"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface" alias="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManager"/>
+
+        <service id="Setono\SyliusCMSPlugin\Publishing\EntryLock" class="Setono\SyliusCMSPlugin\Publishing\EntryLock">
             <argument type="service" id="doctrine"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Publishing\Autosave" class="Setono\SyliusCMSPlugin\Publishing\Autosave">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryLock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier"/>
             <argument type="service" id="clock"/>
         </service>
+        <service id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface" alias="Setono\SyliusCMSPlugin\Publishing\Autosave"/>
+
+        <service id="Setono\SyliusCMSPlugin\Publishing\EntryPublisher" class="Setono\SyliusCMSPlugin\Publishing\EntryPublisher">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryLock"/>
+            <argument type="service" id="clock"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface"/>
+        </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntryPublisher"/>
+
+        <service id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsNormalizer" class="Setono\SyliusCMSPlugin\Publishing\EntrySettingsNormalizer"/>
+
+        <service id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver" class="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver">
+            <argument type="service" id="doctrine"/>
+            <argument type="service" id="clock"/>
+            <argument type="service" id="event_dispatcher"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaverInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver"/>
+
+        <!-- Everything that reads an entry's working copy goes through it, such as the builder's preview -->
+        <service id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface" alias="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManager"/>
     </services>
 </container>

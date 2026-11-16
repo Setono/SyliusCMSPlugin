@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig;
 
+use Setono\SyliusCMSPlugin\Preview\FieldMarker;
 use Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Value\RichText;
 use Twig\Extension\RuntimeExtensionInterface;
 
 final readonly class CmsRuntime implements RuntimeExtensionInterface
@@ -17,14 +19,33 @@ final readonly class CmsRuntime implements RuntimeExtensionInterface
      */
     public const RENDER_CONTEXT = '_cms_render_context';
 
-    public function __construct(private BlockRendererInterface $blockRenderer)
-    {
+    public function __construct(
+        private BlockRendererInterface $blockRenderer,
+        private FieldMarker $fieldMarker,
+    ) {
     }
 
     /**
-     * Prints a field of a block or a layout. Its value is already hydrated, with fallback resolved
+     * Prints a field of a block or a layout. Its value is already hydrated, with fallback resolved, and rich text is
+     * printed as its HTML. In the builder's preview, a field of a block being rendered is marked, so editors can type
+     * it in place
+     *
+     * @param array<string, mixed> $context
      */
-    public function field(object $subject, string $name): string
+    public function field(array $context, object $subject, string $name): string
+    {
+        $html = self::print($subject, $name);
+
+        $renderContext = $context[self::RENDER_CONTEXT] ?? null;
+        $view = self::viewOf($context['view'] ?? null, $subject);
+        if (!$renderContext instanceof RenderContext || null === $view) {
+            return $html;
+        }
+
+        return $this->fieldMarker->mark($html, $view, $name, $renderContext);
+    }
+
+    private static function print(object $subject, string $name): string
     {
         if (!property_exists($subject, $name)) {
             throw new \InvalidArgumentException(sprintf('%s has no field "%s"', $subject::class, $name));
@@ -39,6 +60,11 @@ final readonly class CmsRuntime implements RuntimeExtensionInterface
 
         if (null === $value) {
             return '';
+        }
+
+        // Rendered from the sanitised document by tiptap-php, which escapes the text
+        if ($value instanceof RichText) {
+            return $value->html;
         }
 
         if (!is_scalar($value) && !$value instanceof \Stringable) {
@@ -70,6 +96,30 @@ final readonly class CmsRuntime implements RuntimeExtensionInterface
         }
 
         return $html;
+    }
+
+    /**
+     * The view of the block the subject is: the view of the template's block, or of one of the blocks in it, whose
+     * fields a template may print too
+     */
+    private static function viewOf(mixed $view, object $subject): ?BlockView
+    {
+        if (!$view instanceof BlockView) {
+            return null;
+        }
+
+        if ($view->block === $subject) {
+            return $view;
+        }
+
+        foreach ($view->children as $child) {
+            $found = self::viewOf($child, $subject);
+            if (null !== $found) {
+                return $found;
+            }
+        }
+
+        return null;
     }
 
     /**

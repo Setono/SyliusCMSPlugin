@@ -4,18 +4,26 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Builder\ChangeSet;
 
+use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\SanitizingFieldHandlerInterface;
+use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 /**
  * Applies a change set to a block tree, all or nothing. The values themselves aren't validated,
- * because invalid content saves: publish validates
+ * because invalid content saves: publish validates. They're sanitised by field types that sanitise, such as rich text
+ *
+ * @internal
  */
 final readonly class ChangeSetApplier
 {
-    public function __construct(private BlockTypeRegistryInterface $blockTypes)
-    {
+    public function __construct(
+        private BlockTypeRegistryInterface $blockTypes,
+        private FieldHandlerLocator $fieldHandlers,
+    ) {
     }
 
     /**
@@ -30,30 +38,77 @@ final readonly class ChangeSetApplier
         foreach ($changeSet->changes as $change) {
             match (true) {
                 $change instanceof AddBlock => $this->addBlock($change, $tree),
+                $change instanceof MoveBlock => $this->moveBlock($change, $tree),
                 $change instanceof RemoveBlock => $this->removeBlock($change, $tree),
                 $change instanceof SetValue => $this->setValue($change, $tree),
+                $change instanceof SetStyle => $this->setStyle($change, $tree),
                 default => throw new InvalidChangeSetException(sprintf('Unknown change %s', $change::class)),
             };
         }
 
+        self::assertUniqueKeys($tree);
+
         return $tree;
     }
 
+    /**
+     * Every change finds its block by key, so no two blocks in a tree may share one: a duplicated block gets new keys,
+     * for itself and every block inside it
+     */
+    private static function assertUniqueKeys(StoredTree $tree): void
+    {
+        $shared = array_keys(array_filter(array_count_values($tree->keys()), static fn (int $count): bool => $count > 1));
+        if ([] !== $shared) {
+            throw new InvalidChangeSetException(sprintf('The tree has more than one block with the key %s', implode(', ', $shared)));
+        }
+    }
+
+    /**
+     * The nesting rules aren't checked here: the builder refuses a drop or an insert that breaks them,
+     * and data that breaks them anyway saves and is flagged. The builder only adds block types the code has, but a copy
+     * of a block can hold blocks of a type the code no longer has, which are kept as they are
+     */
     private function addBlock(AddBlock $change, StoredTree $tree): void
     {
-        // Nesting, and the rules on what a spot may hold, come with #218
-        if (null !== $change->parent) {
-            throw new InvalidChangeSetException('Blocks can only be added at the top level');
-        }
-
-        $this->assertKnownTypes($change->block);
+        $this->blockType($change->block);
 
         $taken = array_intersect($change->block->keys(), $tree->keys());
         if ([] !== $taken) {
             throw new InvalidChangeSetException(sprintf('The tree already has a block with the key %s', implode(', ', $taken)));
         }
 
-        $tree->insertBlock($change->block, $change->index);
+        $this->sanitizeBlock($change->block);
+        self::insert($tree, $change->block, $change->index, $change->parent, $change->after);
+    }
+
+    private function moveBlock(MoveBlock $change, StoredTree $tree): void
+    {
+        $block = $tree->findBlock($change->key) ?? throw new InvalidChangeSetException(sprintf('The tree has no block with the key %s', $change->key));
+
+        if (null !== $change->parent && in_array($change->parent, $block->keys(), true)) {
+            throw new InvalidChangeSetException(sprintf('The block %s can\'t move inside itself', $change->key));
+        }
+
+        $tree->removeBlock($change->key);
+        self::insert($tree, $block, $change->index, $change->parent, $change->after);
+    }
+
+    /**
+     * Inserts the block right after the block $after when the list has it, and otherwise at the index
+     */
+    private static function insert(StoredTree $tree, StoredBlock $block, int $index, ?string $parent, ?string $after): void
+    {
+        $list = null === $parent ? $tree->blocks : ($tree->findBlock($parent)->children ?? []);
+        foreach ($list as $i => $sibling) {
+            if ($sibling->key === $after) {
+                $index = $i + 1;
+            }
+        }
+
+        if (!$tree->insertBlock($block, $index, $parent)) {
+            // Only a parent the tree doesn't have refuses an insert
+            throw new InvalidChangeSetException(sprintf('The tree has no block with the key %s', $parent));
+        }
     }
 
     private function removeBlock(RemoveBlock $change, StoredTree $tree): void
@@ -66,9 +121,7 @@ final readonly class ChangeSetApplier
     private function setValue(SetValue $change, StoredTree $tree): void
     {
         $block = $tree->findBlock($change->key) ?? throw new InvalidChangeSetException(sprintf('The tree has no block with the key %s', $change->key));
-        $this->assertKnownTypes($block);
-
-        $field = $this->blockTypes->get($block->type)->fields[$change->field] ?? throw new InvalidChangeSetException(sprintf('The block type "%s" has no field "%s"', $block->type, $change->field));
+        $field = $this->blockType($block)->fields[$change->field] ?? throw new InvalidChangeSetException(sprintf('The block type "%s" has no field "%s"', $block->type, $change->field));
 
         if ($field->translatable && null === $change->locale) {
             throw new InvalidChangeSetException(sprintf('The field "%s" is translatable, so a value needs a locale', $change->field));
@@ -78,17 +131,68 @@ final readonly class ChangeSetApplier
             throw new InvalidChangeSetException(sprintf('The field "%s" is shared by all translations, so a value takes no locale', $change->field));
         }
 
-        $block->setValue($change->field, $change->locale, $change->value);
+        $block->setValue($change->field, $change->locale, null === $change->value ? null : $this->sanitize($field, $change->value));
     }
 
-    private function assertKnownTypes(StoredBlock $block): void
+    private function setStyle(SetStyle $change, StoredTree $tree): void
+    {
+        $block = $tree->findBlock($change->key) ?? throw new InvalidChangeSetException(sprintf('The tree has no block with the key %s', $change->key));
+        $blockType = $this->blockType($block);
+
+        if (null !== $change->style && !isset($blockType->styles[$change->style])) {
+            throw new InvalidChangeSetException(sprintf('The block type "%s" has no block style "%s"', $block->type, $change->style));
+        }
+
+        $block->style = $change->style;
+    }
+
+    /**
+     * Sanitises the values of a block and the blocks inside it. A block of a type the code no longer has is kept as it
+     * is, with what's inside it
+     */
+    private function sanitizeBlock(StoredBlock $block): void
+    {
+        if (!$this->blockTypes->has($block->type)) {
+            return;
+        }
+
+        $fields = $this->blockTypes->get($block->type)->fields;
+
+        foreach ($block->fields as $name => $value) {
+            $field = $fields[$name] ?? null;
+            if (null === $field) {
+                // A value the block type no longer has is ignored, and dropped on a later save
+                continue;
+            }
+
+            if (!$field->translatable) {
+                $block->fields[$name] = $this->sanitize($field, $value);
+            } elseif (is_array($value)) {
+                $block->fields[$name] = array_map(fn (mixed $localized): mixed => $this->sanitize($field, $localized), $value);
+            }
+        }
+
+        foreach ($block->children as $child) {
+            $this->sanitizeBlock($child);
+        }
+    }
+
+    private function sanitize(FieldMetadata $field, mixed $value): mixed
+    {
+        $handler = $this->fieldHandlers->get($field->field);
+
+        return $handler instanceof SanitizingFieldHandlerInterface ? $handler->sanitize($field->field, $value) : $value;
+    }
+
+    /**
+     * The block's own type, which a change to the block needs. The blocks inside it can be of any type
+     */
+    private function blockType(StoredBlock $block): BlockTypeMetadata
     {
         if (!$this->blockTypes->has($block->type)) {
             throw new InvalidChangeSetException(sprintf('There is no block type with the code "%s"', $block->type));
         }
 
-        foreach ($block->children as $child) {
-            $this->assertKnownTypes($child);
-        }
+        return $this->blockTypes->get($block->type);
     }
 }

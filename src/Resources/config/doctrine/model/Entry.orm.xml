@@ -29,8 +29,28 @@
         <field name="changedAt" column="changed_at" type="datetime_immutable"/>
         <field name="lastPublishedAt" column="last_published_at" type="datetime_immutable" nullable="true"/>
 
+        <!-- The on-save settings, as columns and rows the visible-entries query filters on. The date window is in UTC -->
+        <field name="enabled" type="boolean"/>
+        <field name="showFrom" column="show_from" type="datetime_immutable" nullable="true"/>
+        <field name="showUntil" column="show_until" type="datetime_immutable" nullable="true"/>
+        <field name="audienceMode" column="audience_mode" type="string" length="16"/>
+
         <one-to-many field="translations" target-entity="Setono\SyliusCMSPlugin\Model\EntryTranslation"
                      mapped-by="translatable" index-by="locale" fetch="EXTRA_LAZY" orphan-removal="true">
+            <cascade>
+                <cascade-persist/>
+                <cascade-remove/>
+            </cascade>
+        </one-to-many>
+
+        <one-to-many field="channels" target-entity="Setono\SyliusCMSPlugin\Model\EntryChannelInterface" mapped-by="entry" orphan-removal="true">
+            <cascade>
+                <cascade-persist/>
+                <cascade-remove/>
+            </cascade>
+        </one-to-many>
+
+        <one-to-many field="audienceGroups" target-entity="Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface" mapped-by="entry" orphan-removal="true">
             <cascade>
                 <cascade-persist/>
                 <cascade-remove/>

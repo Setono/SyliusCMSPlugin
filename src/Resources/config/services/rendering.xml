@@ -8,12 +8,13 @@
             <argument type="service" id="sylius.context.currency"/>
             <argument type="service" id="sylius.context.customer"/>
             <argument type="service" id="clock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface" alias="Setono\SyliusCMSPlugin\Rendering\ShopRenderContextFactory"/>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\BlockHydrator" class="Setono\SyliusCMSPlugin\Rendering\BlockHydrator">
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder" class="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder">

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    A published entry's draft: the whole entry in the entry format, in a table of its own beside the rows that hold the
+    published content (ADR 0009). An entry has at most one, and deleting the entry deletes it
+    -->
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\Draft" table="setono_sylius_cms__draft">
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <!-- Text, not a database JSON type: MySQL's JSON type reorders keys, and the column holds canonical JSON -->
+        <field name="content" type="text"/>
+
+        <one-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\Entry">
+            <join-column name="entry_id" referenced-column-name="id" nullable="false" unique="true" on-delete="CASCADE"/>
+        </one-to-one>
+    </mapped-superclass>
+</doctrine-mapping>

@@ -43,3 +43,77 @@ export function TrashIcon() {
         </Icon>
     );
 }
+
+export function DesktopIcon() {
+    return (
+        <Icon>
+            <path d="M2 3h12v8H2zM6 14h4M8 11v3" />
+        </Icon>
+    );
+}
+
+export function MobileIcon() {
+    return (
+        <Icon>
+            <path d="M4.5 1.5h7v13h-7zM7 12.5h2" />
+        </Icon>
+    );
+}
+
+export function UndoIcon() {
+    return (
+        <Icon>
+            <path d="M5.5 3 2.5 6l3 3M2.5 6h7a4 4 0 0 1 0 8H7" />
+        </Icon>
+    );
+}
+
+export function RedoIcon() {
+    return (
+        <Icon>
+            <path d="M10.5 3l3 3-3 3M13.5 6h-7a4 4 0 0 0 0 8H9" />
+        </Icon>
+    );
+}
+
+export function ArrowUpIcon() {
+    return (
+        <Icon>
+            <path d="M8 13V3M4 7l4-4 4 4" />
+        </Icon>
+    );
+}
+
+export function ArrowDownIcon() {
+    return (
+        <Icon>
+            <path d="M8 3v10M4 9l4 4 4-4" />
+        </Icon>
+    );
+}
+
+export function CopyIcon() {
+    return (
+        <Icon>
+            <path d="M5.5 5.5h8v8h-8zM10.5 5.5v-3h-8v8h3" />
+        </Icon>
+    );
+}
+
+export function GripIcon() {
+    return (
+        <Icon>
+            <path d="M6 3.5h.01M10 3.5h.01M6 8h.01M10 8h.01M6 12.5h.01M10 12.5h.01" strokeWidth="2.5" />
+        </Icon>
+    );
+}
+
+/** Marks something that has errors. */
+export function AlertIcon() {
+    return (
+        <Icon>
+            <circle cx="8" cy="8" r="6.25" />
+            <path d="M8 4.75v3.75M8 11.25h.01" strokeWidth="1.75" />
+        </Icon>
+    );
+}

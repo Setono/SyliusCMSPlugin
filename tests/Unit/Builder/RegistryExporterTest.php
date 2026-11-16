@@ -7,13 +7,20 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Builder;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Setono\SyliusCMSPlugin\Block\Column;
+use Setono\SyliusCMSPlugin\Block\Columns;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Builder\RegistryExporter;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
+use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Registry\NestingRules;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Component\Translation\TranslatorBagInterface;
@@ -35,6 +42,11 @@ final class RegistryExporterTest extends TestCase
                 'code' => 'heading',
                 'label' => 'Overskrift',
                 'version' => 1,
+                'thumbnail' => '/bundles/setonosyliuscmsplugin/thumbnail/block/heading.svg',
+                'disabled' => false,
+                'parents' => null,
+                'children' => [],
+                'styles' => [],
                 'fields' => [
                     [
                         'name' => 'text',
@@ -72,7 +84,73 @@ final class RegistryExporterTest extends TestCase
                     ],
                 ],
             ],
-        ], $registry['blockTypes']);
+        ], array_values(array_filter($registry['blockTypes'], static fn (array $blockType): bool => 'heading' === $blockType['code'])));
+    }
+
+    /**
+     * @test
+     */
+    public function it_exports_what_each_block_type_may_hold_and_where_it_may_sit_by_code(): void
+    {
+        $blockTypes = array_column($this->exporter()->export()['blockTypes'], null, 'code');
+
+        self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
+        self::assertNull($blockTypes['columns']['parents']);
+        self::assertSame(['columns'], $blockTypes['column']['parents']);
+        self::assertSame([
+            ['type' => 'columns', 'min' => null, 'max' => null],
+            ['type' => 'heading', 'min' => null, 'max' => null],
+        ], $blockTypes['column']['children']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_marks_a_disabled_block_type_so_the_picker_leaves_it_out_and_keeps_it_where_it_is_allowed(): void
+    {
+        $blockTypes = array_column($this->exporter(disabled: ['heading'])->export()['blockTypes'], null, 'code');
+
+        self::assertTrue($blockTypes['heading']['disabled']);
+        self::assertFalse($blockTypes['columns']['disabled']);
+        self::assertIsArray($blockTypes['column']['children']);
+        self::assertContains(['type' => 'heading', 'min' => null, 'max' => null], $blockTypes['column']['children']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_exports_the_block_styles_of_each_block_type_with_their_labels_in_the_current_locale(): void
+    {
+        $exporter = $this->exporter(styles: ['heading' => [
+            'outlined' => ['label' => 'app.cms.block_style.outlined', 'class' => 'app-heading--outlined'],
+            'shouting' => ['label' => 'app.cms.block_style.shouting', 'class' => 'app-heading--shouting'],
+        ]]);
+
+        $blockTypes = array_column($exporter->export()['blockTypes'], null, 'code');
+
+        self::assertSame([
+            ['code' => 'outlined', 'label' => '[app.cms.block_style.outlined]'],
+            ['code' => 'shouting', 'label' => '[app.cms.block_style.shouting]'],
+        ], $blockTypes['heading']['styles']);
+        self::assertSame([], $blockTypes['columns']['styles']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_exports_what_the_top_level_of_each_content_type_may_hold(): void
+    {
+        self::assertSame([
+            [
+                'code' => 'page',
+                'label' => '[setono_sylius_cms.content_type.page]',
+                'blocks' => [
+                    ['type' => 'columns', 'min' => null, 'max' => null],
+                    ['type' => 'heading', 'min' => null, 'max' => null],
+                ],
+            ],
+            ['code' => 'recipe', 'label' => '[app.recipe]', 'blocks' => null],
+        ], $this->exporter()->export()['contentTypes']);
     }
 
     /**
@@ -88,7 +166,11 @@ final class RegistryExporterTest extends TestCase
         ], $registry['strings']);
     }
 
-    private function exporter(): RegistryExporter
+    /**
+     * @param list<string> $disabled
+     * @param array<string, array<string, array{label: string, class: string}>> $styles
+     */
+    private function exporter(array $disabled = [], array $styles = []): RegistryExporter
     {
         $translator = $this->prophesize(TranslatorInterface::class);
         $translator->trans(Argument::type('string'))->will(static fn (array $arguments): string => sprintf('[%s]', is_string($arguments[0] ?? null) ? $arguments[0] : ''));
@@ -112,8 +194,16 @@ final class RegistryExporterTest extends TestCase
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator->reveal()),
         ]));
 
+        $blockTypes = new BlockTypeRegistry(['columns' => Columns::class, 'column' => Column::class, 'heading' => Heading::class], new FieldReader(), $disabled, $styles);
+        $contentTypes = new ContentTypeRegistry([
+            'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+            'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
+        ]);
+
         return new RegistryExporter(
-            new BlockTypeRegistry(['heading' => Heading::class], new FieldReader()),
+            $blockTypes,
+            $contentTypes,
+            new NestingRules($blockTypes, $contentTypes),
             $handlers,
             $translator->reveal(),
             $catalogues->reveal(),

@@ -14,5 +14,10 @@
             <argument>Setono\SyliusCMSPlugin\Model\Entry</argument>
         </service>
         <service id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface" alias="Setono\SyliusCMSPlugin\Repository\EntryRepository"/>
+
+        <!-- The repositories of the shipped resources are registered with them -->
+        <service id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface" alias="setono_sylius_cms.repository.draft"/>
+        <service id="Setono\SyliusCMSPlugin\Repository\EntryPresenceRepositoryInterface" alias="setono_sylius_cms.repository.entry_presence"/>
+        <service id="Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface" alias="setono_sylius_cms.repository.saved_change_set"/>
     </services>
 </container>

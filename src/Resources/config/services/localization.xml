@@ -6,5 +6,11 @@
             <argument type="service" id="sylius.translation_locale_provider"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface" alias="Setono\SyliusCMSPlugin\Localization\FallbackChain"/>
+
+        <!-- Which values are missing, and what a translatable value falls back through: rendering and validation both read values through it -->
+        <service id="Setono\SyliusCMSPlugin\Localization\FallbackValues" class="Setono\SyliusCMSPlugin\Localization\FallbackValues">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+        </service>
     </services>
 </container>

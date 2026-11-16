@@ -16,6 +16,7 @@ use Setono\SyliusCMSPlugin\Field\Text;
     label: 'setono_sylius_cms.block_type.heading',
     template: '@SetonoSyliusCMSPlugin/block/heading.html.twig',
     version: 1,
+    thumbnail: '/bundles/setonosyliuscmsplugin/thumbnail/block/heading.svg',
 )]
 final class Heading
 {

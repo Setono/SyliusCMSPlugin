@@ -9,6 +9,9 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Preview\Preview;
+use Setono\SyliusCMSPlugin\Preview\PreviewContext;
+use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Rendering\ShopRenderContextFactory;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Channel\Model\ChannelInterface as BaseChannelInterface;
@@ -19,6 +22,9 @@ use Sylius\Component\Customer\Context\CustomerContextInterface;
 use Sylius\Component\Customer\Model\CustomerGroupInterface;
 use Sylius\Component\Customer\Model\CustomerInterface as BaseCustomerInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
+use Symfony\Component\Clock\MockClock;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 final class ShopRenderContextFactoryTest extends TestCase
 {
@@ -34,6 +40,8 @@ final class ShopRenderContextFactoryTest extends TestCase
 
     private \DateTimeImmutable $now;
 
+    private RequestStack $requestStack;
+
     protected function setUp(): void
     {
         $this->channel = $this->prophesize(ChannelInterface::class)->reveal();
@@ -42,6 +50,7 @@ final class ShopRenderContextFactoryTest extends TestCase
         $this->customerContext = $this->prophesize(CustomerContextInterface::class);
         $this->customerContext->getCustomer()->willReturn(null);
         $this->now = new \DateTimeImmutable('2026-11-14 10:00:00');
+        $this->requestStack = new RequestStack();
     }
 
     /**
@@ -116,6 +125,28 @@ final class ShopRenderContextFactoryTest extends TestCase
     /**
      * @test
      */
+    public function it_carries_the_preview_mode_in_the_builders_preview(): void
+    {
+        $signer = new PreviewTokenSigner('secret', new MockClock());
+        $this->requestStack->push(new Request([PreviewContext::QUERY_PARAMETER => $signer->sign(new Preview('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', 'WEB', 'da_DK'))]));
+
+        self::assertSame('builder', $this->factory()->create()->previewMode);
+    }
+
+    /**
+     * @test
+     */
+    public function it_takes_the_previews_locale_in_the_builders_preview_whatever_the_request(): void
+    {
+        $signer = new PreviewTokenSigner('secret', new MockClock());
+        $this->requestStack->push(new Request([PreviewContext::QUERY_PARAMETER => $signer->sign(new Preview('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', 'WEB', 'en_US'))]));
+
+        self::assertSame('en_US', $this->factory()->create()->localeCode);
+    }
+
+    /**
+     * @test
+     */
     public function it_needs_a_shop_channel(): void
     {
         $this->channelContext->getChannel()->willReturn($this->prophesize(BaseChannelInterface::class)->reveal());
@@ -142,6 +173,7 @@ final class ShopRenderContextFactoryTest extends TestCase
             $currencyContext->reveal(),
             $this->customerContext->reveal(),
             $clock->reveal(),
+            new PreviewContext($this->requestStack, new PreviewTokenSigner('secret', new MockClock())),
         );
     }
 }

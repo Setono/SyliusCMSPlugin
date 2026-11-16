@@ -5,10 +5,17 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Support;
 
 use Doctrine\Persistence\ObjectManager;
+use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Preview\Preview;
+use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
+use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Sylius\Bundle\CoreBundle\Fixture\Factory\ExampleFactoryInterface;
 use Sylius\Component\Core\Model\AdminUserInterface;
+use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -23,9 +30,24 @@ trait Entries
     abstract protected static function getContainer(): ContainerInterface;
 
     /**
-     * Creates a page in en_US through the page resource's own factory, with a heading block when $heading is given
+     * Creates a page in en_US through the page resource's own factory, with a heading block when $heading is given.
+     * Like any new entry, it's in every channel unless $channels says otherwise
+     *
+     * @param list<string>|null $channels channel codes
      */
-    protected static function createPage(string $title, string $slug, ?string $heading = null, bool $published = false): PageInterface
+    protected static function createPage(string $title, string $slug, ?string $heading = null, bool $published = false, ?array $channels = null): PageInterface
+    {
+        return self::createPageWithBlocks($title, $slug, null === $heading ? [] : [self::heading('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', $heading)], $published, $channels);
+    }
+
+    /**
+     * Creates a page in en_US through the page resource's own factory, with these top-level blocks.
+     * Like any new entry, it's in every channel unless $channels says otherwise
+     *
+     * @param list<StoredBlock> $blocks
+     * @param list<string>|null $channels channel codes
+     */
+    protected static function createPageWithBlocks(string $title, string $slug, array $blocks, bool $published = false, ?array $channels = null): PageInterface
     {
         /** @var FactoryInterface<PageInterface> $factory */
         $factory = self::getContainer()->get('setono_sylius_cms.factory.page');
@@ -35,11 +57,10 @@ trait Entries
         $page->setFallbackLocale('en_US');
         $page->setTitle($title);
         $page->setSlug($slug);
+        $page->setBlockTree(new StoredTree($page->getBlockTree()->layout, $blocks));
 
-        if (null !== $heading) {
-            $block = new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 'heading', 1);
-            $block->setValue('text', 'en_US', $heading);
-            $page->setBlockTree(new StoredTree($page->getBlockTree()->layout, [$block]));
+        if (null !== $channels) {
+            $page->setChannelCodes($channels);
         }
 
         if ($published) {
@@ -54,6 +75,17 @@ trait Entries
         return $page;
     }
 
+    /**
+     * A heading block with its text in en_US
+     */
+    protected static function heading(string $key, string $text): StoredBlock
+    {
+        $block = new StoredBlock($key, 'heading', 1);
+        $block->setValue('text', 'en_US', $text);
+
+        return $block;
+    }
+
     protected static function reloadPage(PageInterface $page): PageInterface
     {
         /** @var ObjectManager $manager */
@@ -66,6 +98,55 @@ trait Entries
         self::assertInstanceOf(PageInterface::class, $reloaded);
 
         return $reloaded;
+    }
+
+    /**
+     * The page's draft as the database holds it, or null when it has none
+     */
+    protected static function draftOf(PageInterface $page): ?DraftInterface
+    {
+        /** @var DraftRepositoryInterface $drafts */
+        $drafts = self::getContainer()->get('setono_sylius_cms.repository.draft');
+
+        return $drafts->findOneByEntry(self::reloadPage($page));
+    }
+
+    /**
+     * A preview token of the entry in a channel and a locale, as the builder gets one for its preview
+     */
+    protected static function previewToken(EntryInterface|string $entry, string $channel = 'WEB', string $locale = 'en_US'): string
+    {
+        /** @var PreviewTokenSigner $signer */
+        $signer = self::getContainer()->get(PreviewTokenSigner::class);
+
+        return $signer->sign(new Preview(is_string($entry) ? $entry : $entry->getUuid(), $channel, $locale));
+    }
+
+    /**
+     * Creates an enabled channel in en_US and USD with Sylius's example factory, named by its code unless a name is given
+     */
+    protected static function createChannel(string $code, ?string $name = null, ?string $hostname = null): void
+    {
+        /** @var ExampleFactoryInterface $factory */
+        $factory = self::getContainer()->get('sylius.fixture.example_factory.channel');
+        $channel = $factory->create([
+            'code' => $code,
+            'name' => $name ?? $code,
+            'hostname' => $hostname ?? strtolower($code) . '.localhost',
+            'enabled' => true,
+            'locales' => ['en_US'],
+            'default_locale' => 'en_US',
+            'currencies' => ['USD'],
+            'base_currency' => 'USD',
+            'menu_taxon' => null,
+            'default_tax_zone' => null,
+        ]);
+        self::assertInstanceOf(ChannelInterface::class, $channel);
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('sylius.manager.channel');
+        $manager->persist($channel);
+        $manager->flush();
     }
 
     /**

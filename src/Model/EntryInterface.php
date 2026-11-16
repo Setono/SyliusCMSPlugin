@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
+use Doctrine\Common\Collections\Collection;
+use Setono\SyliusCMSPlugin\Targeting\Audience;
+use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Resource\Model\ResourceInterface;
 use Sylius\Resource\Model\TranslatableInterface;
@@ -12,6 +15,7 @@ use Sylius\Resource\Model\TranslatableInterface;
  * A single piece of content of one content type. See "Entries" in docs/spec/content-model.md
  *
  * @method EntryTranslationInterface getTranslation(?string $locale = null)
+ * @method Collection<string, EntryTranslationInterface> getTranslations() indexed by locale
  */
 interface EntryInterface extends ResourceInterface, TranslatableInterface
 {
@@ -32,7 +36,45 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
      */
     public function getChangedAt(): \DateTimeImmutable;
 
+    /**
+     * Saving an on-save setting bumps it, as publishing does
+     */
+    public function setChangedAt(\DateTimeImmutable $changedAt): void;
+
     public function getLastPublishedAt(): ?\DateTimeImmutable;
+
+    /**
+     * On for a new entry. Turning it off unpublishes the entry and keeps its published content. An on-save setting
+     */
+    public function isEnabled(): bool;
+
+    public function setEnabled(bool $enabled): void;
+
+    /**
+     * "Show from" (inclusive) and "Show until" (exclusive). An on-save setting
+     */
+    public function getDateWindow(): DateWindow;
+
+    public function setDateWindow(DateWindow $dateWindow): void;
+
+    /**
+     * The codes of the channels it's in, sorted. A new entry starts in every channel. An on-save setting
+     *
+     * @return list<string>
+     */
+    public function getChannelCodes(): array;
+
+    /**
+     * @param iterable<string> $codes
+     */
+    public function setChannelCodes(iterable $codes): void;
+
+    /**
+     * The customers it shows to. An on-save setting (ADR 0010)
+     */
+    public function getAudience(): Audience;
+
+    public function setAudience(Audience $audience): void;
 
     public function isPublished(): bool;
 
@@ -43,7 +85,8 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
     public function publish(\DateTimeImmutable $at): void;
 
     /**
-     * One block tree for all translations
+     * One block tree for all translations, as it's stored, without upgrading it. Read the rows' tree through
+     * StoredDataUpgraderInterface::readBlockTree(), or the working copy's through WorkingCopyProviderInterface
      */
     public function getBlockTree(): StoredTree;
 

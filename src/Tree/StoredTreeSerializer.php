@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tree;
 
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Json\ListedObject;
+use Setono\SyliusCMSPlugin\Registry\Code;
 
 /**
  * Reads and writes the stored block tree format (docs/spec/content-model.md), which is a contract:
@@ -14,8 +15,6 @@ use Setono\SyliusCMSPlugin\Json\ListedObject;
 final class StoredTreeSerializer
 {
     private const UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/';
-
-    private const CODE_PATTERN = '/^[a-z][a-z0-9_]*$/';
 
     public function toJson(StoredTree $tree): string
     {
@@ -49,7 +48,7 @@ final class StoredTreeSerializer
         ]);
     }
 
-    private function normalizeBlock(StoredBlock $block): ListedObject
+    public function normalizeBlock(StoredBlock $block): ListedObject
     {
         return new ListedObject([
             'key' => $block->key,
@@ -68,9 +67,11 @@ final class StoredTreeSerializer
     }
 
     /**
+     * Reads a tree decoded with CanonicalJson::decode(), such as the tree of an entry in the entry format
+     *
      * @throws InvalidStoredTreeException
      */
-    private function denormalize(mixed $data): StoredTree
+    public function denormalize(mixed $data): StoredTree
     {
         $data = self::map($data, 'The block tree');
 
@@ -99,7 +100,7 @@ final class StoredTreeSerializer
         }
 
         $type = $data['type'] ?? null;
-        if (!is_string($type) || 1 !== preg_match(self::CODE_PATTERN, $type)) {
+        if (!is_string($type) || !Code::isValid($type)) {
             throw new InvalidStoredTreeException(sprintf('The block "%s" must have a block type code as its type', $key));
         }
 

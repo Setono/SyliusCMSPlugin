@@ -16,12 +16,20 @@ final readonly class BlockType
      * @param string $label a translation key, shown in the picker and the tree
      * @param string $template the Twig template the default renderer renders
      * @param int $version bumped with an upgrader when stored data can't be read as it is
+     * @param list<Allow> $children which block types the block may hold; empty means none
+     * @param list<class-string>|null $parents the only block types this one may sit inside; null means anywhere a parent allows it
+     * @param list<Style> $styles the block styles it offers; projects add more in config
+     * @param string|null $thumbnail a public path to the picker's preview image
      */
     public function __construct(
         public string $code,
         public string $label,
         public string $template,
         public int $version = 1,
+        public array $children = [],
+        public ?array $parents = null,
+        public array $styles = [],
+        public ?string $thumbnail = null,
     ) {
     }
 }

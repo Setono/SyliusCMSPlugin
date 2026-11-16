@@ -1,0 +1,129 @@
+/* Rendered in a portal at the end of the body, outside the shell, so it sets its own type and box model. */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--builder-color-overlay);
+}
+
+.dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-3);
+    width: 30rem;
+    max-width: calc(100vw - 2 * var(--builder-space-4));
+    max-height: calc(100vh - 2 * var(--builder-space-4));
+    overflow-y: auto;
+    padding: var(--builder-space-5);
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-surface);
+    box-shadow: var(--builder-shadow-popover);
+    color: var(--builder-color-text);
+    font-family: var(--builder-font-family);
+    font-size: var(--builder-font-size-md);
+    line-height: var(--builder-line-height);
+    transform: translate(-50%, -50%);
+}
+
+.dialog *,
+.dialog *::before,
+.dialog *::after {
+    box-sizing: border-box;
+}
+
+.header {
+    display: flex;
+    gap: var(--builder-space-3);
+    align-items: baseline;
+    justify-content: space-between;
+}
+
+.title {
+    margin: 0;
+    font-size: var(--builder-font-size-lg);
+    font-weight: var(--builder-font-weight-bold);
+}
+
+.count {
+    flex: none;
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}
+
+.description {
+    margin: 0;
+}
+
+.values {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--builder-space-3);
+    margin: 0;
+}
+
+.side {
+    min-width: 0;
+    padding: var(--builder-space-3);
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-canvas);
+}
+
+.term {
+    margin: 0 0 var(--builder-space-1);
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.value {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.actions {
+    display: flex;
+    gap: var(--builder-space-2);
+    justify-content: flex-end;
+}
+
+.primary,
+.secondary {
+    min-height: var(--builder-control-height);
+    padding: 0 var(--builder-space-4);
+    border-radius: var(--builder-radius-sm);
+    font: inherit;
+    font-weight: var(--builder-font-weight-medium);
+    cursor: pointer;
+}
+
+.primary {
+    border: 0;
+    background: var(--builder-color-accent);
+    color: var(--builder-color-accent-text);
+}
+
+.primary:hover {
+    background: var(--builder-color-accent-hover);
+}
+
+.secondary {
+    border: 1px solid var(--builder-color-border-strong);
+    background: var(--builder-color-surface);
+    color: var(--builder-color-text);
+}
+
+.secondary:hover {
+    background: var(--builder-color-hover);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}
