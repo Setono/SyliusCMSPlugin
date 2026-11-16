@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Model;
 
 use Doctrine\Common\Collections\Collection;
+use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactoryInterface;
+use Setono\SyliusCMSPlugin\Factory\EntryChannelFactoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -77,16 +79,23 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
     public function getChannelCodes(): array;
 
     /**
+     * Keeps the rows of the codes that stay and creates the rows of new ones through $factory. Change an entry's
+     * channels through ChannelsAndAudienceModifierInterface, which passes the entry_channel resource's factory
+     *
      * @param iterable<string> $codes
      */
-    public function setChannelCodes(iterable $codes): void;
+    public function setChannelCodes(iterable $codes, EntryChannelFactoryInterface $factory): void;
 
     /**
      * The customers it shows to. An on-save setting (ADR 0010)
      */
     public function getAudience(): Audience;
 
-    public function setAudience(Audience $audience): void;
+    /**
+     * Keeps the rows of the groups that stay and creates the rows of new ones through $factory. Change an entry's
+     * audience through ChannelsAndAudienceModifierInterface, which passes the entry_audience_group resource's factory
+     */
+    public function setAudience(Audience $audience, EntryAudienceGroupFactoryInterface $factory): void;
 
     public function isPublished(): bool;
 

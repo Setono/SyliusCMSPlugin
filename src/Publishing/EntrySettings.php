@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Publishing;
 use Setono\SyliusCMSPlugin\Event\EntrySettingsChanged;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
+use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 
 /**
@@ -41,12 +42,16 @@ final readonly class EntrySettings
         return new self($entry->isEnabled(), $entry->getDateWindow(), $entry->getChannelCodes(), $entry->getAudience());
     }
 
-    public function applyTo(EntryInterface $entry): void
+    /**
+     * The channels and the audience are rows beside the entry, so they change through $channelsAndAudience, which
+     * creates the rows
+     */
+    public function applyTo(EntryInterface $entry, ChannelsAndAudienceModifierInterface $channelsAndAudience): void
     {
         $entry->setEnabled($this->enabled);
         $entry->setDateWindow($this->dateWindow);
-        $entry->setChannelCodes($this->channels);
-        $entry->setAudience($this->audience);
+        $channelsAndAudience->setChannels($entry, $this->channels);
+        $channelsAndAudience->setAudience($entry, $this->audience);
     }
 
     /**

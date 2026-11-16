@@ -57,6 +57,7 @@
             <argument type="service" id="doctrine"/>
             <argument type="service" id="clock"/>
             <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaverInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver"/>

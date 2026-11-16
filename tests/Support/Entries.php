@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Bundle\CoreBundle\Fixture\Factory\ExampleFactoryInterface;
@@ -60,7 +61,7 @@ trait Entries
         $page->setBlockTree(new StoredTree($page->getBlockTree()->layout, $blocks));
 
         if (null !== $channels) {
-            $page->setChannelCodes($channels);
+            self::channelsAndAudience()->setChannels($page, $channels);
         }
 
         if ($published) {
@@ -73,6 +74,17 @@ trait Entries
         $manager->flush();
 
         return $page;
+    }
+
+    /**
+     * Changes an entry's channels and audience as the plugin does, creating their rows through the resources' factories
+     */
+    protected static function channelsAndAudience(): ChannelsAndAudienceModifierInterface
+    {
+        $modifier = self::getContainer()->get(ChannelsAndAudienceModifierInterface::class);
+        self::assertInstanceOf(ChannelsAndAudienceModifierInterface::class, $modifier);
+
+        return $modifier;
     }
 
     /**

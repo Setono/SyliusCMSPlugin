@@ -17,6 +17,7 @@ use Setono\SyliusCMSPlugin\Publishing\EntrySettings;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
+use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
@@ -67,7 +68,7 @@ final class EntrySettingsSaverTest extends TestCase
     public function it_applies_the_settings_and_bumps_changed_at_in_a_transaction_then_dispatches_what_changed(): void
     {
         $page = new Page();
-        $page->setChannelCodes(['WEB']);
+        ChannelsAndAudience::modifier()->setChannels($page, ['WEB']);
         $calls = &$this->calls;
         $this->manager->wrapInTransaction(Argument::type('callable'))->will(static function (array $arguments) use (&$calls, $page): mixed {
             $transaction = $arguments[0] ?? null;
@@ -100,7 +101,7 @@ final class EntrySettingsSaverTest extends TestCase
     public function it_changes_nothing_when_saving_the_settings_an_entry_already_has(): void
     {
         $page = new Page();
-        $page->setChannelCodes(['WEB']);
+        ChannelsAndAudience::modifier()->setChannels($page, ['WEB']);
         $changedAt = $page->getChangedAt();
 
         $this->saver()->save($page, EntrySettings::of($page));
@@ -133,6 +134,7 @@ final class EntrySettingsSaverTest extends TestCase
             $this->managerRegistry->reveal(),
             $clock,
             $this->eventDispatcher,
+            ChannelsAndAudience::modifier(),
             new EditRecorder($tokenStorage, $clock),
         );
     }

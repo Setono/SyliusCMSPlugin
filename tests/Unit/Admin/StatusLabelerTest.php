@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\CustomerGroupValue;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
+use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Symfony\Component\Clock\MockClock;
 
 final class StatusLabelerTest extends TestCase
@@ -118,10 +119,10 @@ final class StatusLabelerTest extends TestCase
     public function it_labels_an_audience_that_is_not_everyone_with_its_groups(): void
     {
         $only = new Page();
-        $only->setAudience(Audience::only('wholesale', CustomerGroupValue::GUEST));
+        ChannelsAndAudience::modifier()->setAudience($only, Audience::only('wholesale', CustomerGroupValue::GUEST));
 
         $except = new Page();
-        $except->setAudience(Audience::except('retail'));
+        ChannelsAndAudience::modifier()->setAudience($except, Audience::except('retail'));
 
         self::assertEquals(
             [new StatusLabel(StatusLabel::NEVER_PUBLISHED), new StatusLabel(StatusLabel::AUDIENCE, ['mode' => 'only', 'groups' => [CustomerGroupValue::GUEST, 'wholesale']])],
@@ -141,7 +142,7 @@ final class StatusLabelerTest extends TestCase
         $page = self::published();
         $page->setEnabled(false);
         $page->setDateWindow(new DateWindow(null, self::utc('2026-11-01 00:00:00')));
-        $page->setAudience(Audience::only('wholesale'));
+        ChannelsAndAudience::modifier()->setAudience($page, Audience::only('wholesale'));
 
         self::assertSame(
             [StatusLabel::PUBLISHED, StatusLabel::UNPUBLISHED_CHANGES, StatusLabel::DISABLED, StatusLabel::ENDED, StatusLabel::AUDIENCE],

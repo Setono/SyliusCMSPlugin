@@ -6,6 +6,8 @@ namespace Setono\SyliusCMSPlugin\Model;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactoryInterface;
+use Setono\SyliusCMSPlugin\Factory\EntryChannelFactoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\AudienceMode;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
@@ -94,13 +96,10 @@ abstract class Entry implements EntryInterface
             $this->addTranslation(clone $translation);
         }
 
-        // The rows belong to the original, so the copy gets rows of its own
-        $channelCodes = $this->getChannelCodes();
-        $audience = $this->getAudience();
-        $this->channels = new ArrayCollection();
-        $this->audienceGroups = new ArrayCollection();
-        $this->setChannelCodes($channelCodes);
-        $this->setAudience($audience);
+        // The copy reads the original's rows through collections of its own, so changing the copy's channels or audience
+        // leaves the original's alone. A row never changes, and a model can't reach the factories that create new ones
+        $this->channels = new ArrayCollection($this->channels->toArray());
+        $this->audienceGroups = new ArrayCollection($this->audienceGroups->toArray());
     }
 
     public function getId(): ?int
@@ -185,7 +184,7 @@ abstract class Entry implements EntryInterface
         return self::codes($this->channels);
     }
 
-    public function setChannelCodes(iterable $codes): void
+    public function setChannelCodes(iterable $codes, EntryChannelFactoryInterface $factory): void
     {
         $codes = array_unique([...$codes]);
 
@@ -196,7 +195,7 @@ abstract class Entry implements EntryInterface
         }
 
         foreach (array_diff($codes, $this->getChannelCodes()) as $code) {
-            $this->channels->add(new EntryChannel($this, $code));
+            $this->channels->add($factory->createForEntry($this, $code));
         }
     }
 
@@ -205,7 +204,7 @@ abstract class Entry implements EntryInterface
         return new Audience(AudienceMode::from($this->audienceMode), self::codes($this->audienceGroups));
     }
 
-    public function setAudience(Audience $audience): void
+    public function setAudience(Audience $audience, EntryAudienceGroupFactoryInterface $factory): void
     {
         $this->audienceMode = $audience->mode->value;
 
@@ -216,7 +215,7 @@ abstract class Entry implements EntryInterface
         }
 
         foreach (array_diff($audience->groups, self::codes($this->audienceGroups)) as $code) {
-            $this->audienceGroups->add(new EntryAudienceGroup($this, $code));
+            $this->audienceGroups->add($factory->createForEntry($this, $code));
         }
     }
 

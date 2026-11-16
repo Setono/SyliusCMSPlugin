@@ -111,10 +111,10 @@ final class EntryListTest extends BuilderApiTestCase
         $page = self::createPage('About us', 'about-us', published: true);
         $page->setEnabled(false);
         $page->setDateWindow(new DateWindow(new \DateTimeImmutable('2026-01-01 08:00:00', new \DateTimeZone('UTC')), new \DateTimeImmutable('2099-01-01 00:00:00', new \DateTimeZone('UTC'))));
-        $page->setAudience(Audience::only('wholesale', CustomerGroupValue::GUEST));
+        self::channelsAndAudience()->setAudience($page, Audience::only('wholesale', CustomerGroupValue::GUEST));
         $ended = self::createPage('Summer sale', 'summer-sale', published: true);
         $ended->setDateWindow(new DateWindow(null, new \DateTimeImmutable('2026-09-01 00:00:00', new \DateTimeZone('UTC'))));
-        $ended->setAudience(Audience::except(CustomerGroupValue::NO_GROUP));
+        self::channelsAndAudience()->setAudience($ended, Audience::except(CustomerGroupValue::NO_GROUP));
         self::flush();
 
         $crawler = $client->request('GET', '/admin/cms/entries/page');
