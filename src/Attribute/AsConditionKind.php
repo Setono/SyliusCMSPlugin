@@ -22,6 +22,10 @@ final readonly class AsConditionKind
      *                               implements TimeDependentConditionKindInterface
      * @param class-string|null $params its parameters class, whose typed properties with field attributes are the
      *                                  parameters editors fill in, or null for none, when it gets a NoParams
+     * @param string $matches a translation key: how the builder words a condition that matches, "is one of" unless the
+     *                        kind matches otherwise, such as a date window's "is inside"
+     * @param string $matchesNot a translation key: how the builder words a negated one, "is not one of" unless the
+     *                           kind matches otherwise, such as "is outside"
      */
     public function __construct(
         public string $code,
@@ -29,6 +33,8 @@ final readonly class AsConditionKind
         public array $needs = [],
         public ?array $reads = null,
         public ?string $params = null,
+        public string $matches = 'setono_sylius_cms.builder.is_one_of',
+        public string $matchesNot = 'setono_sylius_cms.builder.is_not_one_of',
     ) {
     }
 }

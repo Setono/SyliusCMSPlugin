@@ -66,6 +66,8 @@ final class ConditionKindRegistry implements ConditionKindRegistryInterface
             $attribute->params,
             null === $attribute->params ? [] : $this->fieldReader->read($attribute->params),
             $kind,
+            $attribute->matches,
+            $attribute->matchesNot,
         );
     }
 }

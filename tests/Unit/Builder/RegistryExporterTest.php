@@ -252,11 +252,14 @@ final class RegistryExporterTest extends TestCase
      */
     public function it_exports_the_condition_kinds_with_their_parameters_as_fields_shared_by_all_translations(): void
     {
-        /** @var array<string, array{code: string, label: string, fields: list<array{name: string, schema: array<string, mixed>}>}> $conditionKinds */
+        /** @var array<string, array{code: string, label: string, matches: string, matchesNot: string, fields: list<array{name: string, schema: array<string, mixed>}>}> $conditionKinds */
         $conditionKinds = array_column($this->exporter()->export()['conditionKinds'], null, 'code');
 
         self::assertSame(['locale_is', 'signed_in', 'date_window'], array_keys($conditionKinds));
         self::assertSame('[Locale is]', $conditionKinds['locale_is']['label']);
+        // How the builder words a condition: "is one of", unless the kind words it otherwise, as a date window does
+        self::assertSame(['[setono_sylius_cms.builder.is_one_of]', '[setono_sylius_cms.builder.is_not_one_of]'], [$conditionKinds['locale_is']['matches'] ?? null, $conditionKinds['locale_is']['matchesNot'] ?? null]);
+        self::assertSame(['[setono_sylius_cms.builder.is_inside]', '[setono_sylius_cms.builder.is_outside]'], [$conditionKinds['date_window']['matches'] ?? null, $conditionKinds['date_window']['matchesNot'] ?? null]);
         self::assertSame([], $conditionKinds['signed_in']['fields']);
         self::assertSame([
             [

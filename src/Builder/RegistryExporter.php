@@ -137,6 +137,8 @@ final readonly class RegistryExporter
         return [
             'code' => $conditionKind->code,
             'label' => $this->translator->trans($conditionKind->label),
+            'matches' => $this->translator->trans($conditionKind->matches),
+            'matchesNot' => $this->translator->trans($conditionKind->matchesNot),
             'fields' => array_values(array_map(
                 fn (FieldMetadata $field): array => ['name' => $field->name, 'schema' => array_replace($this->schema($field), ['x-cms-translatable' => false])],
                 $conditionKind->fields,

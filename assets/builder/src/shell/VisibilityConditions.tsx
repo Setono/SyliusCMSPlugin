@@ -67,11 +67,9 @@ function Condition({ id, number, condition, onChange, onRemove }: ConditionProps
     const kinds = useBuilderState((state) => state.conditionKinds);
     const locale = useBuilderState((state) => state.locale);
     const kind = kinds.find(({ code }) => code === condition.kind);
-    // A date window is matched inside or outside it rather than by its values
-    const [is, isNot] =
-        condition.kind === 'date_window'
-            ? (['setono_sylius_cms.builder.is_inside', 'setono_sylius_cms.builder.is_outside'] as const)
-            : (['setono_sylius_cms.builder.is_one_of', 'setono_sylius_cms.builder.is_not_one_of'] as const);
+    // As the kind words it, such as a date window's "is inside", or else "is one of"
+    const is = kind?.matches ?? t('setono_sylius_cms.builder.is_one_of');
+    const isNot = kind?.matchesNot ?? t('setono_sylius_cms.builder.is_not_one_of');
     const remove = t('setono_sylius_cms.builder.remove_condition');
 
     return (
@@ -105,8 +103,8 @@ function Condition({ id, number, condition, onChange, onRemove }: ConditionProps
                         value={condition.negate ? 'not' : 'is'}
                         onChange={(event) => onChange({ ...condition, negate: event.currentTarget.value === 'not' })}
                     >
-                        <option value="is">{t(is)}</option>
-                        <option value="not">{t(isNot)}</option>
+                        <option value="is">{is}</option>
+                        <option value="not">{isNot}</option>
                     </select>
                     {kind.fields.map(({ name, schema }) => (
                         <FieldRow

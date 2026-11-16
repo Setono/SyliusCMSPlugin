@@ -355,19 +355,24 @@ function dateTime(label: string): FieldSchema {
     return { type: 'string', format: 'date-time', 'x-cms-type': 'date_time', 'x-cms-label': label, 'x-cms-help': null, 'x-cms-required': false, 'x-cms-translatable': false };
 }
 
+const oneOf = { matches: 'is one of', matchesNot: 'is not one of' };
+
 /** The shipped condition kinds, as the registry endpoint exports them. */
 export const conditionKinds: ConditionKindDefinition[] = [
-    { code: 'channel', label: 'Channel', fields: [{ name: 'channels', schema: choices('Channels', { WEB: 'Web store', B2B: 'Wholesale' }) }] },
-    { code: 'locale', label: 'Locale', fields: [{ name: 'locales', schema: choices('Locales', { en_US: 'English (United States)', da_DK: 'Danish (Denmark)' }) }] },
+    { code: 'channel', label: 'Channel', ...oneOf, fields: [{ name: 'channels', schema: choices('Channels', { WEB: 'Web store', B2B: 'Wholesale' }) }] },
+    { code: 'locale', label: 'Locale', ...oneOf, fields: [{ name: 'locales', schema: choices('Locales', { en_US: 'English (United States)', da_DK: 'Danish (Denmark)' }) }] },
     {
         code: 'date_window',
         label: 'Date window',
+        // A date window is matched inside or outside it rather than by its values
+        matches: 'is inside',
+        matchesNot: 'is outside',
         fields: [
             { name: 'from', schema: dateTime('From') },
             { name: 'until', schema: dateTime('Until') },
         ],
     },
-    { code: 'customer_group', label: 'Customer group', fields: [{ name: 'groups', schema: choices('Customer groups', { '@guest': 'Guests', '@no_group': 'Signed in without a group', wholesale: 'Wholesale' }) }] },
+    { code: 'customer_group', label: 'Customer group', ...oneOf, fields: [{ name: 'groups', schema: choices('Customer groups', { '@guest': 'Guests', '@no_group': 'Signed in without a group', wholesale: 'Wholesale' }) }] },
 ];
 
 export const registry: Registry = { blockTypes, contentTypes: [page], conditionKinds, strings };

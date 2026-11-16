@@ -248,7 +248,7 @@ describe('the visibility conditions in the right pane', () => {
         await waitFor(() => expect(api.saveChanges).toHaveBeenLastCalledWith([{ op: 'set_conditions', key: 'a', conditions: [notDanish] }], expect.any(Number)));
     });
 
-    it('should say "is inside" and "is outside" for a date window, and take dates and times in the editor\'s time zone', async () => {
+    it('should word a condition as the registry exports its kind, such as "is inside" and "is outside" for a date window, and take dates and times in the editor\'s time zone', async () => {
         await openBuilder(withConditions(block('a', { text: { en_US: 'Hello' } }), { kind: 'date_window', negate: true, params: { from: '2026-11-27T00:00:00Z' } }));
         fireEvent.click(within(tree()).getByRole('button', { name: 'Heading Hello' }));
 

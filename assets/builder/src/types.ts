@@ -284,6 +284,10 @@ export interface ContentTypeDefinition {
 export interface ConditionKindDefinition {
     code: string;
     label: string;
+    /** How a condition of the kind that matches is worded, such as "is one of" or a date window's "is inside". */
+    matches: string;
+    /** How a negated one is worded, such as "is not one of" or "is outside". */
+    matchesNot: string;
     /** In display order. */
     fields: FieldDefinition[];
 }

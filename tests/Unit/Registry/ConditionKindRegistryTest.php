@@ -36,6 +36,9 @@ final class ConditionKindRegistryTest extends TestCase
         self::assertSame(['from', 'until'], array_keys($metadata->fields));
         self::assertInstanceOf(DateTime::class, $metadata->fields['from']->field);
         self::assertSame($kind, $metadata->kind);
+        // A date window is matched inside or outside it
+        self::assertSame('setono_sylius_cms.builder.is_inside', $metadata->matches);
+        self::assertSame('setono_sylius_cms.builder.is_outside', $metadata->matchesNot);
     }
 
     /**
