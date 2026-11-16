@@ -36,22 +36,31 @@ final class Conditions
      */
     public static function matcher(array $kinds = [], array $choicesProviders = []): ConditionMatcher
     {
-        $kinds += ['locale_is' => new LocaleIs(), 'signed_in' => new SignedIn(), 'date_window' => new DateWindowKind()];
-
         $handlers = self::fieldHandlers($choicesProviders);
 
         return new ConditionMatcher(
-            new ConditionKindRegistry(
-                array_map(static fn (ConditionKindInterface $kind): string => $kind::class, $kinds),
-                new FieldReader(),
-                new ServiceLocator(array_map(static fn (ConditionKindInterface $kind): \Closure => static fn (): ConditionKindInterface => $kind, $kinds)),
-            ),
+            self::registry($kinds),
             new ParamsHydrator($handlers, new FallbackValues($handlers, new class() implements FallbackChainInterface {
                 public function localesFor(string $localeCode): array
                 {
                     return [$localeCode];
                 }
             })),
+        );
+    }
+
+    /**
+     * @param array<string, ConditionKindInterface> $kinds code => kind, besides the fixture kinds locale_is and
+     *                                                     signed_in and the shipped date_window
+     */
+    public static function registry(array $kinds = []): ConditionKindRegistry
+    {
+        $kinds += ['locale_is' => new LocaleIs(), 'signed_in' => new SignedIn(), 'date_window' => new DateWindowKind()];
+
+        return new ConditionKindRegistry(
+            array_map(static fn (ConditionKindInterface $kind): string => $kind::class, $kinds),
+            new FieldReader(),
+            new ServiceLocator(array_map(static fn (ConditionKindInterface $kind): \Closure => static fn (): ConditionKindInterface => $kind, $kinds)),
         );
     }
 

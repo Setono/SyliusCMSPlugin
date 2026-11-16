@@ -38,6 +38,7 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Component\Clock\MockClock;
@@ -356,6 +357,7 @@ final class AutosaveTest extends TestCase
                     ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
                 ])),
                 self::contentTypes(),
+                Conditions::registry(),
             ),
             $clock,
             new EditRecorder($this->tokenStorage, $clock),

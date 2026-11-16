@@ -11,7 +11,9 @@ use Setono\SyliusCMSPlugin\Block\Column;
 use Setono\SyliusCMSPlugin\Block\Columns;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Builder\RegistryExporter;
+use Setono\SyliusCMSPlugin\Condition\ConditionKindInterface;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
+use Setono\SyliusCMSPlugin\Field\DateTimeHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -20,8 +22,10 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
+use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\OpeningHoursHandler;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Store;
+use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Titled;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\MessageCatalogue;
@@ -181,6 +185,59 @@ final class RegistryExporterTest extends TestCase
     /**
      * @test
      */
+    public function it_exports_the_condition_kinds_with_their_parameters_as_fields_shared_by_all_translations(): void
+    {
+        $conditionKinds = array_column($this->exporter()->export()['conditionKinds'], null, 'code');
+
+        self::assertSame(['locale_is', 'signed_in', 'date_window'], array_keys($conditionKinds));
+        self::assertSame('[Locale is]', $conditionKinds['locale_is']['label']);
+        self::assertSame([], $conditionKinds['signed_in']['fields']);
+        self::assertSame([
+            [
+                'name' => 'from',
+                'schema' => [
+                    'type' => 'string',
+                    'format' => 'date-time',
+                    'x-cms-type' => 'date_time',
+                    'x-cms-label' => '[setono_sylius_cms.field.date_window_condition.from]',
+                    'x-cms-help' => null,
+                    'x-cms-required' => false,
+                    'x-cms-translatable' => false,
+                ],
+            ],
+            [
+                'name' => 'until',
+                'schema' => [
+                    'type' => 'string',
+                    'format' => 'date-time',
+                    'x-cms-type' => 'date_time',
+                    'x-cms-label' => '[setono_sylius_cms.field.date_window_condition.until]',
+                    'x-cms-help' => null,
+                    'x-cms-required' => false,
+                    'x-cms-translatable' => false,
+                ],
+            ],
+        ], $conditionKinds['date_window']['fields']);
+        self::assertSame('choice', $conditionKinds['locale_is']['fields'][0]['schema']['x-cms-type']);
+    }
+
+    /**
+     * A parameter is shared by all translations, even with a field type that's translatable by default
+     *
+     * @test
+     */
+    public function it_exports_a_translatable_parameter_as_shared(): void
+    {
+        $exporter = $this->exporter(conditionKinds: ['titled' => new Titled()]);
+
+        $conditionKinds = array_column($exporter->export()['conditionKinds'], null, 'code');
+
+        self::assertFalse($conditionKinds['titled']['fields'][0]['schema']['x-cms-translatable']);
+    }
+
+    /**
+     * @test
+     */
     public function it_exports_the_builder_ui_strings_of_the_locale_and_its_fallbacks(): void
     {
         $registry = $this->exporter()->export();
@@ -195,8 +252,9 @@ final class RegistryExporterTest extends TestCase
      * @param list<string> $disabled
      * @param array<string, array<string, array{label: string, class: string}>> $styles
      * @param array<string, class-string> $blockTypes block types besides the shipped Columns, Column and Heading
+     * @param array<string, ConditionKindInterface> $conditionKinds condition kinds besides those of Conditions::registry()
      */
-    private function exporter(array $disabled = [], array $styles = [], array $blockTypes = []): RegistryExporter
+    private function exporter(array $disabled = [], array $styles = [], array $blockTypes = [], array $conditionKinds = []): RegistryExporter
     {
         $translator = $this->prophesize(TranslatorInterface::class);
         $translator->trans(Argument::type('string'))->will(static fn (array $arguments): string => sprintf('[%s]', is_string($arguments[0] ?? null) ? $arguments[0] : ''));
@@ -219,6 +277,7 @@ final class RegistryExporterTest extends TestCase
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator->reveal()),
             OpeningHoursHandler::class => static fn (): OpeningHoursHandler => new OpeningHoursHandler(),
+            DateTimeHandler::class => static fn (): DateTimeHandler => new DateTimeHandler(),
         ]));
 
         $blockTypes = new BlockTypeRegistry(['columns' => Columns::class, 'column' => Column::class, 'heading' => Heading::class] + $blockTypes, new FieldReader(), $disabled, $styles);
@@ -234,6 +293,7 @@ final class RegistryExporterTest extends TestCase
             $handlers,
             $translator->reveal(),
             $catalogues->reveal(),
+            Conditions::registry($conditionKinds),
         );
     }
 }

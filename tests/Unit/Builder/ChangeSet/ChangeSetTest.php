@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\MoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetConditions;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetShown;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
@@ -156,6 +157,50 @@ final class ChangeSetTest extends TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_reads_a_blocks_visibility_conditions(): void
+    {
+        $changeSet = ChangeSet::fromArray(CanonicalJson::decode('{"changes":[{"op":"set_conditions","key":"' . self::KEY . '","conditions":['
+            . '{"kind":"locale","negate":true,"params":{"locales":["da_DK"]}},'
+            . '{"kind":"removed_kind","negate":false,"params":{}}'
+            . ']},{"op":"set_conditions","key":"' . self::KEY . '","conditions":[]}]}'));
+
+        self::assertEquals([
+            new SetConditions(self::KEY, [
+                ['kind' => 'locale', 'negate' => true, 'params' => ['locales' => ['da_DK']]],
+                ['kind' => 'removed_kind', 'negate' => false, 'params' => []],
+            ]),
+            new SetConditions(self::KEY, []),
+        ], $changeSet->changes);
+    }
+
+    /**
+     * @test
+     */
+    public function it_writes_a_blocks_visibility_conditions_the_way_it_reads_them(): void
+    {
+        $changeSet = new ChangeSet([new SetConditions(self::KEY, [
+            ['kind' => 'date_window', 'negate' => false, 'params' => ['until' => '2026-12-01T00:00:00Z', 'from' => '2026-11-27T00:00:00Z']],
+            ['kind' => 'signed_in', 'negate' => true, 'params' => []],
+        ])]);
+
+        $json = CanonicalJson::encode($changeSet->toArray());
+
+        self::assertSame('{"changes":[{"op":"set_conditions","key":"' . self::KEY . '","conditions":['
+            . '{"kind":"date_window","negate":false,"params":{"from":"2026-11-27T00:00:00Z","until":"2026-12-01T00:00:00Z"}},'
+            . '{"kind":"signed_in","negate":true,"params":{}}'
+            . ']}]}', $json);
+        self::assertEquals(
+            new ChangeSet([new SetConditions(self::KEY, [
+                ['kind' => 'date_window', 'negate' => false, 'params' => ['from' => '2026-11-27T00:00:00Z', 'until' => '2026-12-01T00:00:00Z']],
+                ['kind' => 'signed_in', 'negate' => true, 'params' => []],
+            ])]),
+            ChangeSet::fromArray(CanonicalJson::decode($json)),
+        );
+    }
+
+    /**
      * A translation's fields and its shown switch, which add the translation when the entry has none in the locale
      *
      * @test
@@ -251,5 +296,20 @@ final class ChangeSetTest extends TestCase
         yield 'set_shown without a locale' => [['changes' => [['op' => 'set_shown', 'shown' => true]]]];
         yield 'set_shown without a switch' => [['changes' => [['op' => 'set_shown', 'locale' => 'da_DK']]]];
         yield 'set_shown with a switch that is not a boolean' => [['changes' => [['op' => 'set_shown', 'locale' => 'da_DK', 'shown' => 1]]]];
+
+        $condition = ['kind' => 'locale', 'negate' => false, 'params' => ['locales' => ['da_DK']]];
+        $setConditions = static fn (mixed $conditions): array => ['changes' => [['op' => 'set_conditions', 'key' => self::KEY, 'conditions' => $conditions]]];
+        yield 'set_conditions without a key' => [['changes' => [['op' => 'set_conditions', 'conditions' => []]]]];
+        yield 'set_conditions without conditions' => [['changes' => [['op' => 'set_conditions', 'key' => self::KEY]]]];
+        yield 'set_conditions with conditions as a map' => [$setConditions(['a' => $condition])];
+        yield 'a condition that is not an object' => [$setConditions(['locale'])];
+        yield 'a condition without a kind' => [$setConditions([array_diff_key($condition, ['kind' => true])])];
+        yield 'a condition whose kind is not a code' => [$setConditions([['kind' => 'Locale'] + $condition])];
+        yield 'a condition whose kind is not a string' => [$setConditions([['kind' => 1] + $condition])];
+        yield 'a condition without negate' => [$setConditions([array_diff_key($condition, ['negate' => true])])];
+        yield 'a condition whose negate is not a boolean' => [$setConditions([['negate' => 0] + $condition])];
+        yield 'a condition without params' => [$setConditions([array_diff_key($condition, ['params' => true])])];
+        yield 'a condition whose params are a list' => [$setConditions([['params' => ['da_DK']] + $condition])];
+        yield 'a condition whose params are a string' => [$setConditions([['params' => 'da_DK'] + $condition])];
     }
 }

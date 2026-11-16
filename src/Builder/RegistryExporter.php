@@ -9,6 +9,8 @@ use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Registry\AllowedBlockType;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\ConditionKindMetadata;
+use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
@@ -18,7 +20,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * What the builder's registry endpoint answers: the block types with their field schemas, nesting rules and block styles,
- * what the top level of each content type may hold, and the UI strings, translated in the current locale,
+ * what the top level of each content type may hold, the condition kinds with their parameters' field schemas, and the
+ * UI strings, translated in the current locale,
  * which in the admin is the admin user's locale. The shape is internal to the builder
  */
 final readonly class RegistryExporter
@@ -32,17 +35,19 @@ final readonly class RegistryExporter
         private FieldHandlerLocator $fieldHandlers,
         private TranslatorInterface $translator,
         private TranslatorBagInterface $catalogues,
+        private ConditionKindRegistryInterface $conditionKinds,
     ) {
     }
 
     /**
-     * @return array{blockTypes: list<array<string, mixed>>, contentTypes: list<array<string, mixed>>, strings: array<string, string>}
+     * @return array{blockTypes: list<array<string, mixed>>, contentTypes: list<array<string, mixed>>, conditionKinds: list<array<string, mixed>>, strings: array<string, string>}
      */
     public function export(): array
     {
         return [
             'blockTypes' => array_map($this->blockType(...), $this->blockTypes->all()),
             'contentTypes' => array_map($this->contentType(...), $this->contentTypes->all()),
+            'conditionKinds' => array_map($this->conditionKind(...), $this->conditionKinds->all()),
             'strings' => $this->strings(),
         ];
     }
@@ -76,6 +81,23 @@ final readonly class RegistryExporter
             'code' => $contentType->code,
             'label' => $this->translator->trans($contentType->label),
             'blocks' => null === $contentType->blocks ? null : self::allowed($this->nestingRules->topLevel($contentType->code)),
+        ];
+    }
+
+    /**
+     * A condition kind, whose parameters the builder renders as fields: parameter values are shared by all translations
+     *
+     * @return array<string, mixed>
+     */
+    private function conditionKind(ConditionKindMetadata $conditionKind): array
+    {
+        return [
+            'code' => $conditionKind->code,
+            'label' => $this->translator->trans($conditionKind->label),
+            'fields' => array_values(array_map(
+                fn (FieldMetadata $field): array => ['name' => $field->name, 'schema' => array_replace($this->schema($field), ['x-cms-translatable' => false])],
+                $conditionKind->fields,
+            )),
         ];
     }
 
