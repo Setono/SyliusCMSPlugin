@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
+use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
+use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
@@ -117,7 +119,8 @@ final class Configuration implements ConfigurationInterface
      * The shipped Sylius resources. The draft and the rows beside an entry (its channels, its audience groups, who has
      * it open and its saves) have no admin screens of their own, so they have no controller.
      * A project extends a shipped content type the way it extends any Sylius model:
-     * by overriding classes.model, and translation.classes.model, with its own subclasses
+     * by overriding classes.model, and translation.classes.model, with its own subclasses.
+     * The channel and audience group rows always belong to an entry, so their factories create them for one
      */
     private function addResourcesSection(ArrayNodeDefinition $node): void
     {
@@ -126,8 +129,8 @@ final class Configuration implements ConfigurationInterface
                 ->arrayNode('resources')
                     ->addDefaultsIfNotSet()
                     ->append(self::resourceWithoutController('draft', Draft::class, DraftInterface::class, DraftRepository::class))
-                    ->append(self::resourceWithoutController('entry_channel', EntryChannel::class, EntryChannelInterface::class))
-                    ->append(self::resourceWithoutController('entry_audience_group', EntryAudienceGroup::class, EntryAudienceGroupInterface::class))
+                    ->append(self::resourceWithoutController('entry_channel', EntryChannel::class, EntryChannelInterface::class, factory: EntryChannelFactory::class))
+                    ->append(self::resourceWithoutController('entry_audience_group', EntryAudienceGroup::class, EntryAudienceGroupInterface::class, factory: EntryAudienceGroupFactory::class))
                     ->append(self::resourceWithoutController('entry_presence', EntryPresence::class, EntryPresenceInterface::class, EntryPresenceRepository::class))
                     ->append(self::resourceWithoutController('saved_change_set', SavedChangeSet::class, SavedChangeSetInterface::class, SavedChangeSetRepository::class))
                     ->children()
@@ -173,8 +176,9 @@ final class Configuration implements ConfigurationInterface
      * @param class-string $model
      * @param class-string $interface
      * @param class-string $repository
+     * @param class-string $factory
      */
-    private static function resourceWithoutController(string $name, string $model, string $interface, string $repository = EntityRepository::class): ArrayNodeDefinition
+    private static function resourceWithoutController(string $name, string $model, string $interface, string $repository = EntityRepository::class, string $factory = Factory::class): ArrayNodeDefinition
     {
         $node = new ArrayNodeDefinition($name);
         $node
@@ -187,7 +191,7 @@ final class Configuration implements ConfigurationInterface
                         ->scalarNode('model')->defaultValue($model)->cannotBeEmpty()->end()
                         ->scalarNode('interface')->defaultValue($interface)->cannotBeEmpty()->end()
                         ->scalarNode('repository')->defaultValue($repository)->cannotBeEmpty()->end()
-                        ->scalarNode('factory')->defaultValue(Factory::class)->cannotBeEmpty()->end()
+                        ->scalarNode('factory')->defaultValue($factory)->cannotBeEmpty()->end()
                     ->end()
                 ->end()
             ->end()
