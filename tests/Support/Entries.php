@@ -130,14 +130,15 @@ trait Entries
     }
 
     /**
-     * A preview token of the entry in a channel and a locale, as the builder gets one for its preview
+     * A preview token of the entry in a channel and a locale, as the builder gets one for its preview, shown to a
+     * customer group value at a date, or to the shopper now
      */
-    protected static function previewToken(EntryInterface|string $entry, string $channel = 'WEB', string $locale = 'en_US'): string
+    protected static function previewToken(EntryInterface|string $entry, string $channel = 'WEB', string $locale = 'en_US', ?string $shownTo = null, ?\DateTimeImmutable $date = null): string
     {
         /** @var PreviewTokenSigner $signer */
         $signer = self::getContainer()->get(PreviewTokenSigner::class);
 
-        return $signer->sign(new Preview(is_string($entry) ? $entry : $entry->getUuid(), $channel, $locale));
+        return $signer->sign(new Preview(is_string($entry) ? $entry : $entry->getUuid(), $channel, $locale, null, $shownTo, $date));
     }
 
     /**
