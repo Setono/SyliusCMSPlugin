@@ -44,7 +44,7 @@ final class ProblemSummaryListener
 
     private static function isOfAnEntry(object $entity): bool
     {
-        return $entity instanceof EntryInterface || $entity instanceof EntryTranslationInterface || $entity instanceof DraftInterface
-            || $entity instanceof EntryChannelInterface || $entity instanceof EntryAudienceGroupInterface;
+        return $entity instanceof EntryInterface || $entity instanceof EntryTranslationInterface || $entity instanceof DraftInterface ||
+            $entity instanceof EntryChannelInterface || $entity instanceof EntryAudienceGroupInterface;
     }
 }

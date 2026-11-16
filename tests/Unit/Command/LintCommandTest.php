@@ -91,7 +91,7 @@ final class LintCommandTest extends TestCase
         $this->workingCopies->getWorkingCopy($published)->willReturn($draft);
 
         // The published content is a copy of the entry with its upgraded tree, so the entry itself is left as it is
-        $isPublishedContent = static fn (EntryInterface $entry): bool => $entry !== $published && $entry->getBlockTree() == $publishedTree;
+        $isPublishedContent = static fn (EntryInterface $entry): bool => $entry !== $published && 'promo' === ($entry->getBlockTree()->blocks[0]->type ?? null);
         $tester = $this->lint([
             self::kind([
                 [static fn (EntryInterface $entry): bool => $entry === $neverPublished, new Problem('first', Severity::Warning, $neverPublished, new TranslatableMessage('In the never-published one'), block: self::KEY)],

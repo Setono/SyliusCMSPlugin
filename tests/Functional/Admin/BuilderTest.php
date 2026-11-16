@@ -184,14 +184,13 @@ final class BuilderTest extends WebTestCase
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<array-key, mixed>
      */
     private static function config(Crawler $crawler): array
     {
         $config = json_decode((string) $crawler->filter('#cms-builder')->attr('data-config'), true, 512, \JSON_THROW_ON_ERROR);
         self::assertIsArray($config);
 
-        /** @var array<string, mixed> $config */
         return $config;
     }
 }

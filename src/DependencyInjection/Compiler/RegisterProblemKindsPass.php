@@ -44,7 +44,7 @@ final class RegisterProblemKindsPass implements CompilerPassInterface
     private static function isLinted(ContainerBuilder $container, string $id): bool
     {
         foreach ($container->getDefinition($id)->getTag(self::TAG) as $attributes) {
-            if (true === ($attributes['lint'] ?? false)) {
+            if (is_array($attributes) && true === ($attributes['lint'] ?? false)) {
                 return true;
             }
         }

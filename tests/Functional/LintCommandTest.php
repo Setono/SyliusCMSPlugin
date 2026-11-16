@@ -114,6 +114,6 @@ final class LintCommandTest extends KernelTestCase
         return array_values(array_filter(array_map(
             static fn (string $line): string => trim((string) preg_replace('/\s+/', ' ', $line)),
             explode("\n", $tester->getDisplay()),
-        )));
+        ), static fn (string $line): bool => '' !== $line));
     }
 }
