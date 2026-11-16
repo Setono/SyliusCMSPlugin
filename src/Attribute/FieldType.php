@@ -14,12 +14,13 @@ final readonly class FieldType
     /**
      * @param string $code the field type's code; unique, and never changes once content uses it
      * @param bool $translatable its default translatability, used when a field leaves "translatable" at null
-     * @param string|null $widget the custom element's tag name, for a project's own field type
+     * @param string|null $control the tag name of its field control, the custom element editors enter a value with,
+     *                            for a project's own field type. See "Field controls" in docs/spec/extending.md
      */
     public function __construct(
         public string $code,
         public bool $translatable = false,
-        public ?string $widget = null,
+        public ?string $control = null,
     ) {
     }
 }

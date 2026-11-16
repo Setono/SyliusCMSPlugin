@@ -104,8 +104,8 @@ final readonly class RegistryExporter
         }
 
         $schema['x-cms-type'] = $field->type->code;
-        if (null !== $field->type->widget) {
-            $schema['x-cms-widget'] = $field->type->widget;
+        if (null !== $field->type->control) {
+            $schema['x-cms-control'] = $field->type->control;
         }
 
         $schema['x-cms-label'] = $this->translator->trans($field->field->label);
