@@ -14,14 +14,16 @@ use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
+use Setono\SyliusCMSPlugin\Registry\LayoutMetadata;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\NestingRulesInterface;
 use Symfony\Component\Translation\TranslatorBagInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * What the builder's registry endpoint answers: the block types with their field schemas, nesting rules and block styles,
- * what the top level of each content type may hold, the condition kinds with their parameters' field schemas, and the
- * UI strings, translated in the current locale,
+ * what the top level of each content type may hold, the layouts editors can pick for it with their field schemas, the
+ * condition kinds with their parameters' field schemas, and the UI strings, translated in the current locale,
  * which in the admin is the admin user's locale. The shape is internal to the builder
  */
 final readonly class RegistryExporter
@@ -36,6 +38,7 @@ final readonly class RegistryExporter
         private TranslatorInterface $translator,
         private TranslatorBagInterface $catalogues,
         private ConditionKindRegistryInterface $conditionKinds,
+        private LayoutRegistryInterface $layouts,
     ) {
     }
 
@@ -68,8 +71,18 @@ final readonly class RegistryExporter
             'children' => self::allowed($this->nestingRules->children($blockType->code)),
             // The style picker stores a style's code in the block's style; its class only matters to rendering
             'styles' => array_values(array_map(fn (Style $style): array => ['code' => $style->code, 'label' => $this->translator->trans($style->label)], $blockType->styles)),
-            'fields' => array_values(array_map(fn (FieldMetadata $field): array => ['name' => $field->name, 'schema' => $this->schema($field)], $blockType->fields)),
+            'fields' => $this->fields($blockType->fields),
         ];
+    }
+
+    /**
+     * @param array<string, FieldMetadata> $fields
+     *
+     * @return list<array{name: string, schema: array<string, mixed>}>
+     */
+    private function fields(array $fields): array
+    {
+        return array_values(array_map(fn (FieldMetadata $field): array => ['name' => $field->name, 'schema' => $this->schema($field)], $fields));
     }
 
     /**
@@ -83,7 +96,32 @@ final readonly class RegistryExporter
             'blocks' => null === $contentType->blocks ? null : self::allowed($this->nestingRules->topLevel($contentType->code)),
             // null when it has no URL of its own, so no slug
             'prefix' => $contentType->prefix,
+            'layouts' => $this->layouts($contentType->code),
         ];
+    }
+
+    /**
+     * The content type's layouts, the default first and marked. A disabled one is marked too: the picker leaves it out,
+     * and an entry in it is flagged as one in a layout the code no longer has, but its fields are known, so values carry
+     * over from it when an editor picks another
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function layouts(string $contentType): array
+    {
+        $layouts = $this->layouts->all($contentType);
+        $default = [] === $layouts ? null : $this->layouts->getDefault($contentType)->code;
+
+        return array_map(fn (LayoutMetadata $layout): array => [
+            'code' => $layout->code,
+            'label' => $this->translator->trans($layout->label),
+            'version' => $layout->version,
+            'thumbnail' => $layout->thumbnail,
+            'default' => $layout->code === $default,
+            'disabled' => $layout->disabled,
+            'shows' => $layout->shows,
+            'fields' => $this->fields($layout->fields),
+        ], $layouts);
     }
 
     /**

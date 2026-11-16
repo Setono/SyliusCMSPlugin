@@ -18,6 +18,9 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\RemoveBlock;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetConditions;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayout;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayoutTranslated;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayoutValue;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetShown;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetStyle;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetTranslated;
@@ -34,11 +37,15 @@ use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
+use Setono\SyliusCMSPlugin\Tests\Unit\Builder\ChangeSet\Fixture\Banner;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\ChangeSet\Fixture\SharedNote;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Standard;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\IdentityTranslator;
@@ -488,6 +495,114 @@ final class ChangeSetApplierTest extends TestCase
 
     /**
      * @test
+     */
+    public function it_switches_the_layout_to_the_one_the_builder_made_and_leaves_the_blocks_as_they_are(): void
+    {
+        $block = new StoredBlock(self::A, 'heading', 1);
+        $layout = new StoredLayout('banner', 3, ['tagline' => ['en_US' => 'Big news'], 'dark' => true], ['tagline' => ['da_DK' => ['from' => 'en_US', 'fingerprint' => self::fingerprint('Big news')]]]);
+
+        $tree = $this->apply(new StoredTree(new StoredLayout('standard', 1, ['showTitle' => false]), [$block]), new SetLayout($layout));
+
+        self::assertEquals($layout, $tree->layout);
+        self::assertNotSame($layout, $tree->layout, 'The change keeps its own layout');
+        self::assertEquals([$block], $tree->blocks);
+    }
+
+    /**
+     * @test
+     */
+    public function it_sanitises_the_rich_text_values_of_a_layout_switched_to(): void
+    {
+        $tree = $this->apply(new StoredTree(new StoredLayout('standard', 1), []), new SetLayout(new StoredLayout('banner', 3, ['intro' => ['en_US' => self::DIRTY, 'da_DK' => self::DIRTY]])));
+
+        self::assertSame(['intro' => ['en_US' => self::CLEAN, 'da_DK' => self::CLEAN]], $tree->layout?->fields);
+    }
+
+    /**
+     * @test
+     */
+    public function it_keeps_a_layout_the_code_no_longer_has_as_it_is_which_undoing_a_switch_from_it_brings_back(): void
+    {
+        $removed = new StoredLayout('gone', 4, ['anything' => ['en_US' => self::DIRTY]]);
+
+        $tree = $this->apply(new StoredTree(new StoredLayout('standard', 1), []), new SetLayout($removed));
+
+        self::assertEquals($removed, $tree->layout);
+    }
+
+    /**
+     * @test
+     */
+    public function it_sets_and_removes_the_layouts_values_by_field_and_locale_sanitising_rich_text(): void
+    {
+        $tree = $this->apply(
+            new StoredTree(new StoredLayout('banner', 3, ['tagline' => ['en_US' => 'Big news']]), []),
+            new SetLayoutValue('banner', 'tagline', 'da_DK', 'Nyhed'),
+            new SetLayoutValue('banner', 'dark', null, true),
+            new SetLayoutValue('banner', 'intro', 'en_US', self::DIRTY),
+        );
+
+        self::assertSame(['tagline' => ['en_US' => 'Big news', 'da_DK' => 'Nyhed'], 'dark' => true, 'intro' => ['en_US' => self::CLEAN]], $tree->layout?->fields);
+
+        $tree = $this->apply($tree, new SetLayoutValue('banner', 'tagline', 'en_US', null), new SetLayoutValue('banner', 'dark', null, null), new SetLayoutValue('banner', 'intro', 'en_US', null));
+
+        self::assertSame(['tagline' => ['da_DK' => 'Nyhed']], $tree->layout?->fields);
+    }
+
+    /**
+     * @test
+     */
+    public function it_sets_and_removes_where_the_layouts_values_were_translated_from(): void
+    {
+        $source = ['from' => 'en_US', 'fingerprint' => self::fingerprint('Big news')];
+
+        $tree = $this->apply(new StoredTree(new StoredLayout('banner', 3, ['tagline' => ['en_US' => 'Big news', 'da_DK' => 'Nyhed']]), []), new SetLayoutTranslated('banner', 'tagline', 'da_DK', $source));
+
+        self::assertSame(['tagline' => ['da_DK' => $source]], $tree->layout?->translated);
+
+        $tree = $this->apply($tree, new SetLayoutTranslated('banner', 'tagline', 'da_DK', null));
+
+        self::assertSame([], $tree->layout?->translated);
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidLayoutChanges
+     */
+    public function it_refuses_a_layout_change_that_does_not_fit_the_entry(EntryInterface $entry, Change $change, string $message): void
+    {
+        $this->expectException(InvalidChangeSetException::class);
+        $this->expectExceptionMessage($message);
+
+        self::applier()->apply(new ChangeSet([$change]), $entry);
+    }
+
+    /**
+     * @return iterable<string, array{EntryInterface, Change, string}>
+     */
+    public function provideInvalidLayoutChanges(): iterable
+    {
+        $banner = self::page(new StoredTree(new StoredLayout('banner', 3), []));
+        $none = self::page(new StoredTree(null, []));
+        $removed = self::page(new StoredTree(new StoredLayout('gone', 1), []));
+        $recipe = new Recipe();
+
+        yield 'switching the layout of a content type without layouts' => [$recipe, new SetLayout(new StoredLayout('standard', 1)), 'The content type "recipe" has no layouts'];
+        yield 'switching to a layout with a field it does not have' => [$banner, new SetLayout(new StoredLayout('banner', 3, ['subtitle' => 'Hi'])), 'The layout "banner" has no field "subtitle"'];
+        yield 'setting a value in a tree without a layout' => [$none, new SetLayoutValue('banner', 'tagline', 'en_US', 'Hi'), 'The tree has no layout "banner", so it can\'t take the change to its field "tagline"'];
+        yield 'setting a value in a layout the tree is not in any more' => [$banner, new SetLayoutValue('standard', 'showTitle', null, false), 'The tree has no layout "standard", so it can\'t take the change to its field "showTitle"'];
+        yield 'setting a value in a layout the code no longer has' => [$removed, new SetLayoutValue('gone', 'tagline', 'en_US', 'Hi'), 'The content type "page" has no layout with the code "gone"'];
+        yield 'setting a field the layout does not have' => [$banner, new SetLayoutValue('banner', 'subtitle', 'en_US', 'Hi'), 'The layout "banner" has no field "subtitle"'];
+        yield 'setting a translatable field without a locale' => [$banner, new SetLayoutValue('banner', 'tagline', null, 'Hi'), 'The field "tagline" is translatable, so a value needs a locale'];
+        yield 'setting a shared field for one locale' => [$banner, new SetLayoutValue('banner', 'dark', 'en_US', true), 'The field "dark" is shared by all translations, so a value takes no locale'];
+        yield 'setting the translation state in a layout the tree is not in any more' => [$banner, new SetLayoutTranslated('standard', 'showTitle', 'en_US', null), 'The tree has no layout "standard"'];
+        yield 'setting the translation state of a field the layout does not have' => [$banner, new SetLayoutTranslated('banner', 'subtitle', 'en_US', null), 'The layout "banner" has no field "subtitle"'];
+        yield 'setting the translation state of a shared field' => [$banner, new SetLayoutTranslated('banner', 'dark', 'en_US', null), 'The field "dark" is shared by all translations, so it has no translation state'];
+    }
+
+    /**
+     * @test
      *
      * @dataProvider provideInvalidEntryChanges
      */
@@ -624,6 +739,7 @@ final class ChangeSetApplierTest extends TestCase
                 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
             ]),
             Conditions::registry(),
+            new LayoutRegistry(['page' => ['standard' => Standard::class, 'banner' => Banner::class]], new FieldReader()),
         );
     }
 

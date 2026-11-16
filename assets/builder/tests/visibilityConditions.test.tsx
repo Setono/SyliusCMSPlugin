@@ -141,11 +141,11 @@ describe('the preview after a change to conditions', () => {
         const before = store.getState().entry;
 
         store.getState().setConditions('a', [notDanish]);
-        expect(planPreviewUpdate(before, store.getState().entry)).toEqual({ reload: false, patch: ['g'], insert: [], remove: [] });
+        expect(planPreviewUpdate(before, store.getState().entry, ['title'])).toEqual({ reload: false, patch: ['g'], insert: [], remove: [] });
 
         const next = store.getState().entry;
         store.getState().setConditions('c', [notDanish]);
-        expect(planPreviewUpdate(next, store.getState().entry)).toEqual({ reload: false, patch: ['c'], insert: [], remove: [] });
+        expect(planPreviewUpdate(next, store.getState().entry, ['title'])).toEqual({ reload: false, patch: ['c'], insert: [], remove: [] });
     });
 });
 

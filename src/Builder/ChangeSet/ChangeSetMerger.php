@@ -9,7 +9,9 @@ use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 /**
  * Merges a save onto what colleagues saved since the builder last loaded. Changes that don't touch the same values are
- * both applied, and so are moves, block styles, visibility conditions, translation state and translations' shown switches, the editor's last. A real clash goes
+ * both applied, and so are moves, block styles, visibility conditions, translation state, translations' shown switches,
+ * the layout and its values, the editor's last. A value set in a layout a colleague switched away from is left out, as
+ * the switch dropped the values the new layout has no field for. A real clash goes
  * to the editor instead of being applied: the same field in the same locale, of a block or of the entry, an edit to a
  * block a colleague deleted, or deleting a block a colleague changed something in.
  * See "Saving" in docs/spec/publishing.md
@@ -30,10 +32,20 @@ final readonly class ChangeSetMerger
         $outline = new Outline($tree);
         // Blocks that came with an addition that isn't applied, so the changes to them aren't either
         $withheld = [];
+        // The layout once the changes applied so far are
+        $layout = $tree->layout?->code;
 
         $changes = [];
         $clashes = [];
         foreach ($mine->changes as $change) {
+            if (($change instanceof SetLayoutValue || $change instanceof SetLayoutTranslated) && $change->layout !== $layout) {
+                continue;
+            }
+
+            if ($change instanceof SetLayout) {
+                $layout = $change->layout->code;
+            }
+
             $missing = self::missingBlock($change, $outline);
             if (null !== $missing) {
                 // Removing a block a colleague deleted too leaves nothing to clash over

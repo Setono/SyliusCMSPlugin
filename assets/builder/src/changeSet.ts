@@ -5,7 +5,7 @@
 import { produce, type Patch } from 'immer';
 import { longestIncreasing } from './sequence';
 import { blockList, findBlock, insertBlock, removeBlockFrom } from './tree';
-import type { Entry, EntryTranslation, FieldValues, JsonValue, StoredBlock, VisibilityCondition, TranslationSource, TranslationState } from './types';
+import type { Entry, EntryTranslation, FieldValues, JsonValue, StoredBlock, StoredLayout, TranslationSource, TranslationState, VisibilityCondition } from './types';
 import { isJsonObject, jsonEqual, normalizeValue, writeEntryTranslated, writeEntryValue, writeFieldValue, writeTranslated } from './values';
 
 export interface AddBlockChange {
@@ -98,6 +98,36 @@ export interface SetEntryTranslatedChange {
     translated: TranslationSource | null;
 }
 
+/**
+ * Switches the layout: the layout as the switch made it, with the values that carried over and their translation state.
+ * Undo switches back with the values the switch dropped.
+ */
+export interface SetLayoutChange {
+    op: 'set_layout';
+    layout: StoredLayout;
+}
+
+/** A value of one of the layout's fields. It names the layout it was set in, which a colleague may have switched away from since. */
+export interface SetLayoutValueChange {
+    op: 'set_layout_value';
+    layout: string;
+    field: string;
+    /** The edited locale for a translatable field, and null for a shared one. */
+    locale: string | null;
+    /** null removes the value. */
+    value: JsonValue | null;
+}
+
+/** Where a layout field's value in a locale was translated from. */
+export interface SetLayoutTranslatedChange {
+    op: 'set_layout_translated';
+    layout: string;
+    field: string;
+    locale: string;
+    /** null when the value has no source. */
+    translated: TranslationSource | null;
+}
+
 export type Change =
     | AddBlockChange
     | MoveBlockChange
@@ -108,10 +138,16 @@ export type Change =
     | SetEntryValueChange
     | SetShownChange
     | SetTranslatedChange
-    | SetEntryTranslatedChange;
+    | SetEntryTranslatedChange
+    | SetLayoutChange
+    | SetLayoutValueChange
+    | SetLayoutTranslatedChange;
 
 /** Whether a field of a block type is translatable. */
 export type TranslatableLookup = (blockType: string, field: string) => boolean;
+
+/** Whether a field of a layout is translatable. */
+export type LayoutTranslatableLookup = (layout: string, field: string) => boolean;
 
 type Target =
     | { kind: 'list'; parent: string | null; depth: number }
@@ -125,22 +161,25 @@ type Target =
  *
  * Patches into a translation become set_entry_value changes for its fields, set_entry_translated for its translation
  * state and set_shown for its switch. Patches into a block's fields become set_value changes, into its translation
- * state set_translated, and into its style set_style. Patches that touch a list of blocks aren't
+ * state set_translated, and into its style set_style. A layout of another code or version becomes set_layout, and the
+ * same layout's values and translation state set_layout_value and set_layout_translated. Patches that touch a list of blocks aren't
  * read index by index, because Immer reports a removal from the middle of a list as replacements plus a
  * trailing removal, and a move as a removal from one list and an addition to another. Instead each list's
  * keys are compared before and after the edit, against the tree as the server has it once the changes
  * before are applied, so every index is right when the server applies the changes in order.
  */
-export function changesFromPatches(patches: readonly Patch[], before: Entry, after: Entry, isTranslatable: TranslatableLookup): Change[] {
+export function changesFromPatches(patches: readonly Patch[], before: Entry, after: Entry, isTranslatable: TranslatableLookup, isLayoutTranslatable: LayoutTranslatableLookup): Change[] {
     const lists = new Map<string | null, number>();
     const fieldTargets: Array<{ key: string; field: string | undefined }> = [];
     const styleTargets = new Set<string>();
     const conditionTargets = new Set<string>();
     const translatedTargets = new Set<string>();
     const locales = new Set<string>();
+    let layoutTouched = false;
 
     for (const patch of patches) {
         translationLocales(patch.path, before, after).forEach((locale) => locales.add(locale));
+        layoutTouched ||= touchesLayout(patch.path);
         const target = locate(patch.path, before, after);
         if (target?.kind === 'list') {
             lists.set(target.parent, target.depth);
@@ -165,6 +204,9 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
     };
     const { addedOrRemoved } = diff;
     const changes: Change[] = [...locales].flatMap((locale) => diffTranslation(locale, before.translations[locale], after.translations[locale]));
+    if (layoutTouched) {
+        changes.push(...diffLayout(before.tree.layout, after.tree.layout, isLayoutTranslatable));
+    }
 
     for (const [parent] of [...lists].sort(([, a], [, b]) => a - b)) {
         if (parent !== null && addedOrRemoved.has(parent)) {
@@ -258,6 +300,9 @@ function neededKeys(change: Change): string[] {
         case 'set_entry_value':
         case 'set_shown':
         case 'set_entry_translated':
+        case 'set_layout':
+        case 'set_layout_value':
+        case 'set_layout_translated':
             return [];
         default:
             return [change.key];
@@ -356,6 +401,31 @@ function applyChange(working: Entry, change: Change): boolean {
             writeEntryTranslated(working, change.locale, change.field, change.translated, false);
 
             return true;
+        case 'set_layout':
+            working.tree.layout = change.layout;
+
+            return true;
+        case 'set_layout_value': {
+            // A value set in a layout the working copy isn't in any more, such as after a colleague's switch, is left out
+            const layout = working.tree.layout;
+            if (layout?.code !== change.layout) {
+                return false;
+            }
+
+            writeFieldValue(layout.fields, change.field, change.locale !== null, change.locale ?? '', change.value);
+
+            return true;
+        }
+        case 'set_layout_translated': {
+            const layout = working.tree.layout;
+            if (layout?.code !== change.layout) {
+                return false;
+            }
+
+            writeTranslated(layout.translated, change.field, change.locale, change.translated);
+
+            return true;
+        }
     }
 }
 
@@ -363,7 +433,8 @@ function applyChange(working: Entry, change: Change): boolean {
 /**
  * Appends later changes to earlier ones, keeping only what the server still needs: the last value per
  * block, field and locale, the last style per block, the last value per entry field and locale, the last switch per
- * translation, and nothing for a block that was added and removed again in between.
+ * translation, the last layout switch, which carries the layout's values, and after it the last value per layout field
+ * and locale, and nothing for a block that was added and removed again in between.
  */
 export function mergeChanges(earlier: readonly Change[], later: readonly Change[]): Change[] {
     return later.reduce<Change[]>((changes, change) => mergeChange(changes, change), [...earlier]);
@@ -388,6 +459,11 @@ function mergeChange(changes: Change[], change: Change): Change[] {
             ];
         case 'set_entry_translated':
             return [...changes.filter((earlier) => !(earlier.op === 'set_entry_translated' && earlier.field === change.field && earlier.locale === change.locale)), change];
+        case 'set_layout':
+            return [...changes.filter((earlier) => earlier.op !== 'set_layout' && earlier.op !== 'set_layout_value' && earlier.op !== 'set_layout_translated'), change];
+        case 'set_layout_value':
+        case 'set_layout_translated':
+            return [...changes.filter((earlier) => !(earlier.op === change.op && earlier.layout === change.layout && earlier.field === change.field && earlier.locale === change.locale)), change];
         case 'add_block':
         case 'move_block':
             return [...changes, change];
@@ -425,6 +501,9 @@ function blockKeyOf(change: Change): string | undefined {
         case 'set_entry_value':
         case 'set_shown':
         case 'set_entry_translated':
+        case 'set_layout':
+        case 'set_layout_value':
+        case 'set_layout_translated':
             return undefined;
         default:
             return change.key;
@@ -499,25 +578,62 @@ function diffTranslation(locale: string, before: EntryTranslation | undefined, a
     return changes;
 }
 
+/** Whether a patch path is the tree's layout, or inside it, or a whole the layout is in. */
+function touchesLayout(path: Patch['path']): boolean {
+    return path.length === 0 || (path[0] === 'tree' && (path.length === 1 || path[1] === 'layout'));
+}
+
+/**
+ * The changes that make the layout as it was before the edit what it is after it: a switch to another layout, or another
+ * version of it, or the values and translation state that differ in the same one. A tree without a layout has none to send.
+ */
+function diffLayout(before: StoredLayout | null, after: StoredLayout | null, isLayoutTranslatable: LayoutTranslatableLookup): Change[] {
+    if (after === null || before === after) {
+        return [];
+    }
+
+    if (before === null || before.code !== after.code || before.version !== after.version) {
+        return [{ op: 'set_layout', layout: after }];
+    }
+
+    const changes: Change[] = [];
+    for (const field of new Set([...Object.keys(before.fields), ...Object.keys(after.fields)])) {
+        for (const { locale, value } of valueDiffs(isLayoutTranslatable(after.code, field), before.fields[field], after.fields[field])) {
+            changes.push({ op: 'set_layout_value', layout: after.code, field, locale, value });
+        }
+    }
+
+    for (const { field, locale, translated } of translatedDiffs(before.translated, after.translated)) {
+        changes.push({ op: 'set_layout_translated', layout: after.code, field, locale, translated });
+    }
+
+    return changes;
+}
+
 function sameSource(a: TranslationSource | null, b: TranslationSource | null): boolean {
     return a?.from === b?.from && a?.fingerprint === b?.fingerprint;
 }
 
 /** set_translated changes for where a block's values were translated from, by field and locale, that differ from before. */
 function diffBlockTranslated(block: StoredBlock, before: TranslationState): SetTranslatedChange[] {
-    const changes: SetTranslatedChange[] = [];
-    for (const field of new Set([...Object.keys(before), ...Object.keys(block.translated)])) {
+    return translatedDiffs(before, block.translated).map(({ field, locale, translated }) => ({ op: 'set_translated', key: block.key, field, locale, translated }));
+}
+
+/** Where values were translated from, by field and locale, that differs from before. */
+function translatedDiffs(before: TranslationState, after: TranslationState): Array<{ field: string; locale: string; translated: TranslationSource | null }> {
+    const diffs: Array<{ field: string; locale: string; translated: TranslationSource | null }> = [];
+    for (const field of new Set([...Object.keys(before), ...Object.keys(after)])) {
         const localesBefore = before[field] ?? {};
-        const localesAfter = block.translated[field] ?? {};
+        const localesAfter = after[field] ?? {};
         for (const locale of new Set([...Object.keys(localesBefore), ...Object.keys(localesAfter)])) {
             const source = localesAfter[locale] ?? null;
             if (!sameSource(localesBefore[locale] ?? null, source)) {
-                changes.push({ op: 'set_translated', key: block.key, field, locale, translated: source });
+                diffs.push({ field, locale, translated: source });
             }
         }
     }
 
-    return changes;
+    return diffs;
 }
 
 /**
@@ -749,15 +865,18 @@ function diffFields(block: StoredBlock, previousFields: FieldValues, isTranslata
 }
 
 function diffField(key: string, field: string, translatable: boolean, before: JsonValue | undefined, after: JsonValue | undefined): SetValueChange[] {
+    return valueDiffs(translatable, before, after).map(({ locale, value }) => ({ op: 'set_value', key, field, locale, value }));
+}
+
+/** A field's values that differ from before: its one value when it's shared, and otherwise by locale. */
+function valueDiffs(translatable: boolean, before: JsonValue | undefined, after: JsonValue | undefined): Array<{ locale: string | null; value: JsonValue | null }> {
     if (!translatable) {
-        return jsonEqual(before, after) ? [] : [{ op: 'set_value', key, field, locale: null, value: normalizeValue(after) }];
+        return jsonEqual(before, after) ? [] : [{ locale: null, value: normalizeValue(after) }];
     }
 
     const beforeValues = isJsonObject(before) ? before : {};
     const afterValues = isJsonObject(after) ? after : {};
     const locales = new Set([...Object.keys(beforeValues), ...Object.keys(afterValues)]);
 
-    return [...locales]
-        .filter((locale) => !jsonEqual(beforeValues[locale], afterValues[locale]))
-        .map((locale) => ({ op: 'set_value', key, field, locale, value: normalizeValue(afterValues[locale]) }));
+    return [...locales].filter((locale) => !jsonEqual(beforeValues[locale], afterValues[locale])).map((locale) => ({ locale, value: normalizeValue(afterValues[locale]) }));
 }

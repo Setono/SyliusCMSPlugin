@@ -5,6 +5,7 @@
  * "The bridge", "Working in the preview" and "Updating the preview" in docs/spec/builder.md
  */
 import type { BridgeStrings, FromBridge, RenderedBlock, ToBridge } from './bridge/protocol';
+import { renderedLayout } from './layouts';
 import { planPreviewUpdate, type PreviewPlan } from './previewPlan';
 import { actedOn, type BuilderStore } from './store';
 import { blockList, findBlock, locateBlock, type BlockSpot } from './tree';
@@ -139,7 +140,8 @@ export function createPreviewSync({ store, strings, render, reload, openBlockPic
         if (state.entry !== previous.entry) {
             // An entry loaded from the server rather than edited, such as the published content after discarding
             // changes, is what the server renders, so the page reloads
-            const plan: PreviewPlan = state.changeCount === previous.changeCount ? { reload: true, patch: [], insert: [], remove: [] } : planPreviewUpdate(previous.entry, state.entry);
+            const shows = renderedLayout(state.layouts, previous.entry.tree.layout)?.shows ?? [];
+            const plan: PreviewPlan = state.changeCount === previous.changeCount ? { reload: true, patch: [], insert: [], remove: [] } : planPreviewUpdate(previous.entry, state.entry, shows);
             if (plan.reload) {
                 startOver();
             } else {

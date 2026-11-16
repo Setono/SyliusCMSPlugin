@@ -59,6 +59,12 @@ final class Configuration implements ConfigurationInterface
                             ->info('Block type codes')
                             ->scalarPrototype()->end()
                         ->end()
+                        ->arrayNode('layouts')
+                            ->info('"<content type code>.<layout code>", such as page.standard. Their entries render in the default layout, which can\'t be disabled')
+                            ->scalarPrototype()
+                                ->validate()->always(self::assertDisabledLayout(...))->end()
+                            ->end()
+                        ->end()
                     ->end()
                 ->end()
                 ->booleanNode('assets')
@@ -106,14 +112,15 @@ final class Configuration implements ConfigurationInterface
 
     /**
      * What a project changes about a content type, shipped or not, by its code: the URL prefix, which moves every URL of
-     * the content type without redirecting the old ones. See "URL shape" in docs/spec/urls-and-seo.md
+     * the content type without redirecting the old ones (see "URL shape" in docs/spec/urls-and-seo.md), and the default
+     * layout, which overrides #[Layout(default: true)] (see "Configuration" in docs/spec/extending.md)
      */
     private function addContentTypesSection(ArrayNodeDefinition $node): void
     {
         $node
             ->children()
                 ->arrayNode('content_types')
-                    ->info('What a project changes about a content type: content type code => {prefix}')
+                    ->info('What a project changes about a content type: content type code => {prefix, default_layout}')
                     ->useAttributeAsKey('code')
                     ->normalizeKeys(false)
                     ->arrayPrototype()
@@ -127,6 +134,11 @@ final class Configuration implements ConfigurationInterface
                                         is_string($prefix) ? sprintf('"%s"', $prefix) : get_debug_type($prefix),
                                     )))
                                 ->end()
+                            ->end()
+                            ->scalarNode('default_layout')
+                                ->info('A layout code, which overrides #[Layout(default: true)]')
+                                ->cannotBeEmpty()
+                                ->validate()->always(static fn (mixed $code): string => self::assertCode('layout', is_scalar($code) ? (string) $code : ''))->end()
                             ->end()
                         ->end()
                     ->end()
@@ -195,9 +207,9 @@ final class Configuration implements ConfigurationInterface
     }
 
     /**
-     * @param array<array-key, array{prefix?: string}> $contentTypes
+     * @param array<array-key, array{prefix?: string, default_layout?: string}> $contentTypes
      *
-     * @return array<array-key, array{prefix?: string}>
+     * @return array<array-key, array{prefix?: string, default_layout?: string}>
      */
     private static function assertContentTypeCodes(array $contentTypes): array
     {
@@ -208,11 +220,24 @@ final class Configuration implements ConfigurationInterface
         return $contentTypes;
     }
 
-    private static function assertCode(string $kind, string $code): void
+    private static function assertDisabledLayout(mixed $layout): string
+    {
+        $layout = is_scalar($layout) ? (string) $layout : '';
+        $parts = explode('.', $layout);
+        if (2 !== count($parts) || !Code::isValid($parts[0]) || !Code::isValid($parts[1])) {
+            throw new \InvalidArgumentException(sprintf('A disabled layout must be "<content type code>.<layout code>", such as page.standard, not "%s"', $layout));
+        }
+
+        return $layout;
+    }
+
+    private static function assertCode(string $kind, string $code): string
     {
         if (!Code::isValid($code)) {
             throw new \InvalidArgumentException(sprintf('The %s code "%s" must match %s', $kind, $code, trim(Code::PATTERN, '/')));
         }
+
+        return $code;
     }
 
     /**

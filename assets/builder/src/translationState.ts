@@ -8,7 +8,7 @@ import type { TranslatableLookup } from './changeSet';
 import { hiddenInPreview } from './conditions';
 import { fallbackValue, isMissing } from './fallback';
 import { fingerprint } from './fingerprint';
-import type { Entry, JsonObject, JsonValue, StoredBlock, TranslationSource } from './types';
+import type { Entry, JsonObject, JsonValue, LayoutDefinition, StoredBlock, TranslationSource } from './types';
 import { isJsonObject } from './values';
 
 /**
@@ -121,10 +121,12 @@ export function entryTranslated(entry: Pick<Entry, 'translations'>, field: strin
 
 /**
  * How many of the entry's translatable values are untranslated and outdated in the locale: its own fields, such as the
- * title, and its blocks' fields. The layout's come with the layouts. A block a locale condition hides in the locale is
- * left out, with everything inside it, because nobody reads it there.
+ * title, its layout's fields and its blocks' fields. A block a locale condition hides in the locale is left out, with
+ * everything inside it, because nobody reads it there.
+ *
+ * @param layout the definition of the layout the tree is in, or undefined when it was removed or disabled, so its values aren't shown
  */
-export function localeCounts(entry: Entry, locale: string, isTranslatable: TranslatableLookup): LocaleCounts {
+export function localeCounts(entry: Entry, locale: string, isTranslatable: TranslatableLookup, layout: LayoutDefinition | undefined): LocaleCounts {
     const counts: LocaleCounts = { untranslated: 0, outdated: 0 };
     const count = (state: ValueState | null): void => {
         if (state === 'untranslated') {
@@ -137,6 +139,15 @@ export function localeCounts(entry: Entry, locale: string, isTranslatable: Trans
     const entryFields = new Set(Object.values(entry.translations).flatMap((translation) => Object.keys(translation.fields)));
     for (const field of entryFields) {
         count(valueState(entryValues(entry, field), entryTranslated(entry, field), locale));
+    }
+
+    const stored = entry.tree.layout;
+    if (stored !== null && layout !== undefined) {
+        for (const { name, schema } of layout.fields) {
+            if (schema['x-cms-translatable']) {
+                count(valueState(stored.fields[name], stored.translated[name], locale));
+            }
+        }
     }
 
     const countBlocks = (blocks: readonly StoredBlock[]): void => {

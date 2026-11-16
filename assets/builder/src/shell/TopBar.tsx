@@ -3,6 +3,7 @@ import { useBuilder, useBuilderState, usePresenceState, usePreviewState, useSett
 import { fromLocalInput, toLocalInput } from '../dates';
 import { useTranslator, type MessageKey } from '../i18n';
 import { hasTranslation, localeOf, offeredLocales } from '../locales';
+import { isRemovedLayout, layoutOf } from '../layouts';
 import { localeCounts } from '../translationState';
 import type { EntryStatus } from '../types';
 import { ArrowLeftIcon, DesktopIcon, MobileIcon, RedoIcon, UndoIcon } from './icons';
@@ -77,6 +78,7 @@ function LocaleSwitcher() {
     const locale = useBuilderState((state) => state.locale);
     const entry = useBuilderState((state) => state.entry);
     const blockTypes = useBuilderState((state) => state.rules.blockTypes);
+    const layouts = useBuilderState((state) => state.layouts);
     const entryChannels = useSettingsState((state) => state.settings.channels);
     const offered = offeredLocales(locales, channels, entryChannels, locale);
 
@@ -91,7 +93,7 @@ function LocaleSwitcher() {
             return `${name} · ${t('setono_sylius_cms.builder.locale_no_translation')}`;
         }
 
-        const { untranslated, outdated } = localeCounts(entry, code, isTranslatable);
+        const { untranslated, outdated } = localeCounts(entry, code, isTranslatable, isRemovedLayout(layouts, entry.tree.layout) ? undefined : layoutOf(layouts, entry.tree.layout));
         const counts = [
             ...(untranslated > 0 ? [t('setono_sylius_cms.builder.locale_untranslated', { '%count%': String(untranslated) })] : []),
             ...(outdated > 0 ? [t('setono_sylius_cms.builder.locale_outdated', { '%count%': String(outdated) })] : []),

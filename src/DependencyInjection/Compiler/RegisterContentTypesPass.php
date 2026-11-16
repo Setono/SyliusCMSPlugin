@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
@@ -75,11 +76,17 @@ final class RegisterContentTypesPass implements CompilerPassInterface
             $factory = sprintf('%s.factory.%s', $applicationName, $resourceName);
             $factories[$code] = new Reference($factory);
 
-            // However an entry is created, it starts in every channel
+            // However an entry is created, it starts in every channel and in its content type's default layout
             $decorator = sprintf('setono_sylius_cms.entry_factory.%s', $code);
             $container->register($decorator, EntryFactory::class)
                 ->setDecoratedService($factory)
-                ->setArguments([new Reference($decorator . '.inner'), new Reference('sylius.repository.channel'), new Reference(ChannelsAndAudienceModifierInterface::class)])
+                ->setArguments([
+                    new Reference($decorator . '.inner'),
+                    new Reference('sylius.repository.channel'),
+                    new Reference(ChannelsAndAudienceModifierInterface::class),
+                    new Reference(LayoutRegistryInterface::class),
+                    $code,
+                ])
             ;
         }
 

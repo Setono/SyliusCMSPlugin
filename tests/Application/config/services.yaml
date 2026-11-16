@@ -2,3 +2,10 @@
 # https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
 parameters:
     locale: en_US
+
+services:
+    _defaults:
+        autoconfigure: true
+
+    # The test application's own layout for pages, which #[Layout] registers through autoconfiguration
+    Setono\SyliusCMSPlugin\Tests\Application\Layout\Landing: ~

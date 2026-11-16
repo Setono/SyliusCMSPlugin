@@ -17,6 +17,8 @@
             <!-- Replaced by RegisterLayoutsPass with the layout classes by content type and code -->
             <argument type="collection"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\FieldReader"/>
+            <argument>%setono_sylius_cms.default_layouts%</argument>
+            <argument>%setono_sylius_cms.disabled.layouts%</argument>
         </service>
         <service id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\LayoutRegistry"/>
 

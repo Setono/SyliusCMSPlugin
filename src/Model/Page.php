@@ -24,7 +24,8 @@ class Page extends Entry implements PageInterface
     {
         parent::__construct();
 
-        // Page's default layout. The layout machinery (#236) will pick the content type's default layout instead
+        // Page's shipped default layout. Created through its resource factory, a page starts in the default layout the
+        // config resolves, which a project can change (see Factory\EntryFactory)
         $this->setBlockTree(new StoredTree(new StoredLayout('standard', 1), []));
     }
 

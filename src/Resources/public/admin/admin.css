@@ -43,3 +43,63 @@
 .cms-dialog [data-cms-create-entry-back] {
     margin-bottom: 1rem;
 }
+
+/* The create dialog's layout step: a wireframe card per layout, the picked one outlined */
+.cms-layout-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: 0.75rem;
+    margin: 0 0 1em;
+    padding: 0;
+    border: 0;
+}
+
+.cms-layout-cards__legend {
+    grid-column: 1 / -1;
+    margin: 0 0 0.28571429rem;
+    padding: 0;
+    color: rgba(0, 0, 0, 0.87);
+    font-size: 0.92857143em;
+    font-weight: 700;
+}
+
+.cms-layout-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border: 2px solid rgba(34, 36, 38, 0.15);
+    border-radius: 0.28571429rem;
+    cursor: pointer;
+}
+
+.cms-layout-card:has(.cms-layout-card__radio:checked) {
+    border-color: #2185d0;
+}
+
+.cms-layout-card:has(.cms-layout-card__radio:focus-visible) {
+    outline: 2px solid #2185d0;
+    outline-offset: 2px;
+}
+
+/* Kept in the page for the keyboard and screen readers; the card shows which is picked */
+.cms-layout-card__radio {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.cms-layout-card__thumbnail {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    border-radius: 0.28571429rem;
+    background: #f3f4f6;
+    object-fit: cover;
+}
+
+.cms-layout-card__label {
+    font-weight: 700;
+    text-align: center;
+}

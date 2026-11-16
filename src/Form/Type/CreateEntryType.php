@@ -20,11 +20,12 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Regex;
 
 /**
- * The create dialog's form: the title, the slug for a content type with its own URL, and the channels, all of the
- * store's picked to start with, in a store with more than one. A slug left empty is generated from the title with
- * Sylius's slug generator, as the dialog does while the editor types the title. See "Create dialog" in docs/spec/admin.md
+ * The create dialog's form: the title, the slug for a content type with its own URL, the layout, from wireframe cards,
+ * for a content type with more than one, and the channels, all of the store's picked to start with, in a store with more
+ * than one. A slug left empty is generated from the title with Sylius's slug generator, as the dialog does while the
+ * editor types the title. See "Create dialog" in docs/spec/admin.md
  *
- * @extends AbstractType<array{title: string, slug?: string, channels?: array<int, string>}>
+ * @extends AbstractType<array{title: string, slug?: string, layout?: string, channels?: array<int, string>}>
  */
 final class CreateEntryType extends AbstractType
 {
@@ -65,6 +66,21 @@ final class CreateEntryType extends AbstractType
             $builder->addEventListener(FormEvents::PRE_SUBMIT, $this->fillSlug(...));
         }
 
+        /** @var array<string, array{label: string, thumbnail: string|null}> $layouts */
+        $layouts = $options['layouts'];
+        if (count($layouts) > 1) {
+            $builder->add('layout', ChoiceType::class, [
+                'label' => 'setono_sylius_cms.form.entry.layout',
+                'choices' => array_keys($layouts),
+                'choice_label' => static fn (string $code): string => $layouts[$code]['label'],
+                // The card's wireframe
+                'choice_attr' => static fn (string $code): array => null === $layouts[$code]['thumbnail'] ? [] : ['data-thumbnail' => $layouts[$code]['thumbnail']],
+                'expanded' => true,
+                'multiple' => false,
+                'data' => array_key_first($layouts),
+            ]);
+        }
+
         $channels = $this->channels();
         if (count($channels) > 1) {
             $builder->add('channels', ChoiceType::class, [
@@ -84,6 +100,9 @@ final class CreateEntryType extends AbstractType
             ->setDefault('slug', true)
             ->setAllowedTypes('slug', 'bool')
             ->setInfo('slug', 'Whether the content type has its own URL, and so a slug')
+            ->setDefault('layouts', [])
+            ->setAllowedTypes('layouts', 'array')
+            ->setInfo('layouts', 'The layouts editors can pick, by code, each with its label and thumbnail: the default first, which is picked to start with')
         ;
     }
 

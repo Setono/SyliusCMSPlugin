@@ -55,6 +55,11 @@ setono_sylius_cms:
             content: Content
         spacer:
             size: Size
+        standard:
+            show_title: Show title
+    layout:
+        page:
+            standard: Standard
     menu:
         admin:
             hub:
@@ -70,6 +75,7 @@ setono_sylius_cms:
     form:
         entry:
             channels: Channels
+            layout: Layout
             slug: Slug
             slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team.'
             slug_rules: A slug can't start or end with a slash, or have two slashes in a row.
@@ -80,6 +86,7 @@ setono_sylius_cms:
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
+        removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
         url_taken_by_route: 'URL taken by a Sylius route: shoppers get the page of the route %route% at %url%.'
     publish:
@@ -221,6 +228,8 @@ setono_sylius_cms:
         is_one_of: is one of
         is_outside: is outside
         keep_mine: Keep mine
+        layout: Layout
+        layout_removed: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
         load_failed: Couldn't load the entry
         loading: Loading…
         locale: Language
@@ -235,6 +244,7 @@ setono_sylius_cms:
         move_up: Move up
         never_published: Never published
         no_blocks: No blocks yet
+        not_shown_in_layout: Not shown in this layout
         no_group: Signed in without a group
         no_matching_block_types: No block types match
         no_style: None

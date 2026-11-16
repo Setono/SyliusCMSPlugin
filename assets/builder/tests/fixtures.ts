@@ -1,5 +1,5 @@
 import { createBuilderStore, type BuilderStore } from '../src/store';
-import type { AllowedBlockType, BlockTypeDefinition, ConditionKindDefinition, ContentTypeDefinition, Entry, EntrySettings, FieldSchema, FieldValues, Registry, StoredBlock } from '../src/types';
+import type { AllowedBlockType, BlockTypeDefinition, ConditionKindDefinition, ContentTypeDefinition, Entry, EntrySettings, FieldSchema, FieldValues, LayoutDefinition, Registry, StoredBlock } from '../src/types';
 
 /** What '*' resolves to everywhere but inside Columns: every block type except Column. */
 const anyBlock: AllowedBlockType[] = ['group', 'columns', 'spacer', 'heading'].map((type) => ({ type, min: null, max: null }));
@@ -159,9 +159,74 @@ export const accordionItem: BlockTypeDefinition = {
     ],
 };
 
-export const page: ContentTypeDefinition = { code: 'page', label: 'Page', blocks: anyBlock };
+/** Page's default layout, which prints the title unless Show title is off. */
+export const standard: LayoutDefinition = {
+    code: 'standard',
+    label: 'Standard',
+    version: 1,
+    thumbnail: '/thumbnail/layout/standard.svg',
+    default: true,
+    disabled: false,
+    shows: ['title'],
+    fields: [
+        {
+            name: 'showTitle',
+            schema: {
+                type: 'boolean',
+                default: true,
+                'x-cms-type': 'toggle',
+                'x-cms-label': 'Show title',
+                'x-cms-help': null,
+                'x-cms-required': false,
+                'x-cms-translatable': false,
+            },
+        },
+    ],
+};
+
+/** A project's layout for pages, which doesn't print the title: a hero with a tagline, and a header that can be transparent. */
+export const landing: LayoutDefinition = {
+    code: 'landing',
+    label: 'Landing',
+    version: 2,
+    thumbnail: null,
+    default: false,
+    disabled: false,
+    shows: [],
+    fields: [
+        {
+            name: 'tagline',
+            schema: {
+                type: 'string',
+                'x-cms-type': 'text',
+                'x-cms-label': 'Tagline',
+                'x-cms-help': null,
+                'x-cms-required': false,
+                'x-cms-translatable': true,
+                'x-cms-options': { maxLength: null },
+            },
+        },
+        {
+            name: 'transparentHeader',
+            schema: {
+                type: 'boolean',
+                default: false,
+                'x-cms-type': 'toggle',
+                'x-cms-label': 'Transparent header',
+                'x-cms-help': null,
+                'x-cms-required': false,
+                'x-cms-translatable': false,
+            },
+        },
+    ],
+};
+
+export const page: ContentTypeDefinition = { code: 'page', label: 'Page', blocks: anyBlock, layouts: [standard, landing] };
 
 export const strings: Record<string, string> = {
+    'setono_sylius_cms.builder.layout': 'Layout',
+    'setono_sylius_cms.builder.layout_removed': 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.',
+    'setono_sylius_cms.builder.not_shown_in_layout': 'Not shown in this layout',
     'setono_sylius_cms.builder.loading': 'Loading…',
     'setono_sylius_cms.builder.back': 'Back',
     'setono_sylius_cms.builder.saving': 'Saving…',
