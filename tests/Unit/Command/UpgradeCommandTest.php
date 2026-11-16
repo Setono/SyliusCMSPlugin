@@ -86,6 +86,42 @@ final class UpgradeCommandTest extends TestCase
     /**
      * @test
      */
+    public function it_upgrades_revisions_and_counts_them_with_the_rest(): void
+    {
+        $first = new Page();
+        $second = new Page();
+        $third = new Page();
+        $this->entries->iterateAll()->willReturn([$first, $second, $third]);
+        $this->rewriter->rewrite($first)->willReturn(new EntryRewrite(true, true, [], 1));
+        $this->rewriter->rewrite($second)->willReturn(new EntryRewrite(false, false, [], 2));
+        $this->rewriter->rewrite($third)->willReturn(new EntryRewrite(false, false, []));
+
+        $display = self::display($this->upgrade([]));
+
+        self::assertStringContainsString(sprintf('Upgraded 1 revision of the page %s', $first->getUuid()), $display);
+        self::assertStringContainsString(sprintf('Upgraded 2 revisions of the page %s', $second->getUuid()), $display);
+        self::assertStringNotContainsString($third->getUuid(), $display);
+        self::assertStringContainsString('[OK] Upgraded 1 block tree, 1 draft and 3 revisions.', $display);
+    }
+
+    /**
+     * @test
+     */
+    public function it_counts_only_what_it_upgraded(): void
+    {
+        $entry = new Page();
+        $this->entries->iterateAll()->willReturn([$entry]);
+        $this->rewriter->rewrite($entry)->willReturn(new EntryRewrite(false, false, [], 1));
+
+        $display = self::display($this->upgrade(['--dry-run' => true]));
+
+        self::assertStringContainsString(sprintf('Would upgrade 1 revision of the page %s', $entry->getUuid()), $display);
+        self::assertStringContainsString('[OK] Dry run: 1 revision would be upgraded. Nothing was written.', $display);
+    }
+
+    /**
+     * @test
+     */
     public function it_reports_what_a_dry_run_would_upgrade_and_writes_nothing(): void
     {
         $entry = new Page();
