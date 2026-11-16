@@ -137,7 +137,7 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.url_and_seo'
     | 'setono_sylius_cms.builder.clash_entry_value'
     | 'setono_sylius_cms.builder.save_locked'
-    | 'setono_sylius_cms.builder.publish_options'
+    | 'setono_sylius_cms.builder.schedule_menu'
     | 'setono_sylius_cms.builder.schedule_publish'
     | 'setono_sylius_cms.builder.schedule_at'
     | 'setono_sylius_cms.builder.scheduling'

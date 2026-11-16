@@ -379,7 +379,7 @@ function SchedulePublish({ disabled }: { disabled: boolean }) {
     const [open, setOpen] = useState(false);
     const [at, setAt] = useState('');
     const inputId = useId();
-    const options = t('setono_sylius_cms.builder.publish_options');
+    const menu = t('setono_sylius_cms.builder.schedule_menu');
     const scheduling = scheduleState === 'scheduling';
     const utc = fromLocalInput(at);
 
@@ -400,7 +400,7 @@ function SchedulePublish({ disabled }: { disabled: boolean }) {
     return (
         <Popover.Root open={open} onOpenChange={setOpen}>
             <Popover.Trigger asChild>
-                <button type="button" className={styles.publishMenuButton} aria-label={options} title={options} disabled={disabled}>
+                <button type="button" className={styles.publishMenuButton} aria-label={menu} title={menu} disabled={disabled}>
                     <ChevronDownIcon />
                 </button>
             </Popover.Trigger>

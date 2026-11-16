@@ -113,7 +113,7 @@ final class ScheduledPublishTest extends UITestCase
      */
     private function schedule(BrowserPage $browser, string $at): void
     {
-        $browser->getByRole('button', ['name' => 'More ways to publish'])->click();
+        $browser->getByRole('button', ['name' => 'Schedule…'])->click();
         $dialog = $browser->getByRole('dialog', ['name' => 'Schedule the publish']);
         $dialog->getByLabel('Publish at')->fill($at);
         $dialog->getByRole('button', ['name' => 'Schedule the publish'])->click();

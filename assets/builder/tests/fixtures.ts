@@ -317,7 +317,7 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.rich_text.blockquote': 'Quote',
     'setono_sylius_cms.builder.rich_text.horizontal_rule': 'Horizontal line',
     'setono_sylius_cms.builder.save_locked': "A scheduled publish locks the draft, so your changes weren't saved",
-    'setono_sylius_cms.builder.publish_options': 'More ways to publish',
+    'setono_sylius_cms.builder.schedule_menu': 'Schedule…',
     'setono_sylius_cms.builder.schedule_publish': 'Schedule the publish',
     'setono_sylius_cms.builder.schedule_at': 'Publish at',
     'setono_sylius_cms.builder.scheduling': 'Scheduling…',

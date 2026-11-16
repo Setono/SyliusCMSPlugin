@@ -121,7 +121,7 @@ describe('scheduled publishes in the builder', () => {
         const api = fakeApi();
         await openBuilder(api);
 
-        fireEvent.click(within(topBar()).getByRole('button', { name: 'More ways to publish' }));
+        fireEvent.click(within(topBar()).getByRole('button', { name: 'Schedule…' }));
         const dialog = await screen.findByRole('dialog', { name: 'Schedule the publish' });
         const submit = within(dialog).getByRole('button', { name: 'Schedule the publish' });
         expect(submit).toBeDisabled();
@@ -139,7 +139,7 @@ describe('scheduled publishes in the builder', () => {
         const api = fakeApi({ schedule: vi.fn(() => Promise.reject(new ApiError('Pick a time in the future.', 422))) });
         await openBuilder(api);
 
-        fireEvent.click(within(topBar()).getByRole('button', { name: 'More ways to publish' }));
+        fireEvent.click(within(topBar()).getByRole('button', { name: 'Schedule…' }));
         const dialog = await screen.findByRole('dialog', { name: 'Schedule the publish' });
         fireEvent.change(within(dialog).getByLabelText('Publish at'), { target: { value: '2020-01-01T09:00' } });
         fireEvent.click(within(dialog).getByRole('button', { name: 'Schedule the publish' }));
@@ -188,7 +188,7 @@ describe('scheduled publishes in the builder', () => {
         expect(within(topBar()).getByText('Scheduled publish failed')).toBeInTheDocument();
         expect(screen.getByText(`The publish scheduled for ${formatDateTime(AT)} was stopped when it ran: The campaign was postponed`)).toBeInTheDocument();
         expect(within(topBar()).getByRole('button', { name: 'Publish' })).toBeInTheDocument();
-        expect(within(topBar()).getByRole('button', { name: 'More ways to publish' })).toBeInTheDocument();
+        expect(within(topBar()).getByRole('button', { name: 'Schedule…' })).toBeInTheDocument();
         expect(within(tree()).getByRole('button', { name: 'Add block' })).toBeInTheDocument();
     });
 });

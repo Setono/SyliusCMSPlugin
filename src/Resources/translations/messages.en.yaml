@@ -292,7 +292,6 @@ setono_sylius_cms:
         preview_width: Preview width
         publish: Publish
         publish_failed: Couldn't publish
-        publish_options: More ways to publish
         published: Published
         publishes_at: 'Publishes %at%'
         publishing: Publishing…
@@ -319,6 +318,7 @@ setono_sylius_cms:
         schedule_at: Publish at
         schedule_failed: Couldn't schedule
         schedule_in_the_past: Pick a time in the future.
+        schedule_menu: Schedule…
         schedule_publish: Schedule the publish
         schedule_stopped: 'The publish scheduled for %at% was stopped when it ran: %reason%'
         scheduled_publish_failed: Scheduled publish failed
