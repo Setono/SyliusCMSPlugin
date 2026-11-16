@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 
+use Doctrine\Persistence\ObjectManager;
+use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Targeting\Audience;
+use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Support\Customers;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -123,6 +127,32 @@ final class BuilderTest extends WebTestCase
         $config = json_decode((string) $crawler->filter('#cms-builder')->attr('data-config'), true, 512, \JSON_THROW_ON_ERROR);
         self::assertIsArray($config);
         self::assertSame([['code' => 'retail', 'name' => 'Retail'], ['code' => 'wholesale', 'name' => 'Wholesale']], $config['customerGroups']);
+    }
+
+    /**
+     * Shown to starts as Guest when the audience allows guests, and otherwise as the first group it allows. Date starts
+     * as now, or as the start of the entry's date window when that's in the future. See "Shown to and Date"
+     * in docs/spec/targeting.md
+     *
+     * @test
+     */
+    public function it_gives_the_builder_where_the_previews_shown_to_and_date_start(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        self::createCustomerGroup('wholesale', 'Wholesale');
+        $everyone = self::createPage('About us', 'about-us');
+        $wholesale = self::createPage('Wholesale', 'wholesale');
+        self::channelsAndAudience()->setAudience($wholesale, Audience::only('wholesale'));
+        $nextWeek = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->modify('+7 days');
+        $wholesale->setDateWindow(new DateWindow($nextWeek));
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
+        $manager->flush();
+
+        $builder = static fn (PageInterface $page): Crawler => $client->request('GET', sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));
+        self::assertSame(['shownTo' => '@guest', 'date' => null], self::config($builder($everyone))['preview'] ?? null);
+        self::assertSame(['shownTo' => 'wholesale', 'date' => $nextWeek->format('Y-m-d\TH:i:s\Z')], self::config($builder($wholesale))['preview'] ?? null);
     }
 
     /**
