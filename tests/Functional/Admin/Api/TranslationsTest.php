@@ -45,14 +45,14 @@ final class TranslationsTest extends BuilderApiTestCase
         self::save($client, $page, [self::setTitle('da_DK', 'Om os'), ['op' => 'set_entry_value', 'field' => 'slug', 'locale' => 'da_DK', 'value' => 'om-os']], $csrfToken);
 
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('"da_DK":{"shown":false,"fields":{"slug":"om-os","title":"Om os"},"translated":{}}', (string) self::draftOf($page)?->getContent());
+        self::assertStringContainsString('"da_DK":{"shown":false,"fields":{"metaDescription":null,"metaTitle":null,"slug":"om-os","title":"Om os"},"translated":{}}', (string) self::draftOf($page)?->getContent());
         self::assertSame(['en_US'], self::reloadPage($page)->getTranslations()->getKeys(), 'The rows hold the published content');
 
         $response = self::json($client, 'GET', '/admin/cms/api/entries/' . $page->getUuid());
         self::assertIsArray($response);
         self::assertIsArray($response['entry'] ?? null);
         self::assertIsArray($response['entry']['translations'] ?? null);
-        self::assertSame(['shown' => false, 'fields' => ['slug' => 'om-os', 'title' => 'Om os'], 'translated' => []], $response['entry']['translations']['da_DK'] ?? null);
+        self::assertSame(['shown' => false, 'fields' => ['metaDescription' => null, 'metaTitle' => null, 'slug' => 'om-os', 'title' => 'Om os'], 'translated' => []], $response['entry']['translations']['da_DK'] ?? null);
     }
 
     /**

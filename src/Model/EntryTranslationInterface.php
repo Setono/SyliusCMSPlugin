@@ -26,6 +26,22 @@ interface EntryTranslationInterface extends ResourceInterface, TranslationInterf
     public function setSlug(?string $slug): void;
 
     /**
+     * Set only for content types with their own URL. Falls back through the fallback chain, and then to the title.
+     * See "SEO fields" in docs/spec/urls-and-seo.md
+     */
+    public function getMetaTitle(): ?string;
+
+    public function setMetaTitle(?string $metaTitle): void;
+
+    /**
+     * Set only for content types with their own URL. Falls back through the fallback chain, and then to the field the
+     * content type names in descriptionField. See "SEO fields" in docs/spec/urls-and-seo.md
+     */
+    public function getMetaDescription(): ?string;
+
+    public function setMetaDescription(?string $metaDescription): void;
+
+    /**
      * The translation's "Show in <language>" switch, which holds it back when it's off: the entry then doesn't show in
      * its locale. See "Held-back translations" in docs/spec/publishing.md
      */

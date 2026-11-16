@@ -4,8 +4,31 @@
  #   layout   the hydrated layout object, whose properties are its fields
  #   blocks   the visible top-level blocks, as BlockViews: render them with cms_blocks(blocks)
  #   context  the host-page context: {entry: entry}
+ #
+ # It fills the shop layout's title and metatags blocks with the entry's head tags: the meta title, the meta description,
+ # robots, the canonical URL and the hreflang links. No Open Graph tags (docs/spec/urls-and-seo.md#head-tags)
  #}
 {% extends '@SyliusShop/layout.html.twig' %}
+
+{% set cms_head_tags = cms_head_tags(entry) %}
+
+{% block title %}{% if cms_head_tags.title is not null %}{{ cms_head_tags.title }}{% else %}{{ parent() }}{% endif %}{% endblock %}
+
+{% block metatags %}
+    {{ parent() }}
+    {% if cms_head_tags.description is not null %}
+        <meta name="description" content="{{ cms_head_tags.description }}">
+    {% endif %}
+    {% if cms_head_tags.noindex %}
+        <meta name="robots" content="noindex">
+    {% endif %}
+    {% if cms_head_tags.canonicalUrl is not null %}
+        <link rel="canonical" href="{{ cms_head_tags.canonicalUrl }}">
+    {% endif %}
+    {% for alternate in cms_head_tags.alternates %}
+        <link rel="alternate" hreflang="{{ alternate.hreflang }}" href="{{ alternate.url }}">
+    {% endfor %}
+{% endblock %}
 
 {% block content %}
     {% block cms_content %}{% endblock %}

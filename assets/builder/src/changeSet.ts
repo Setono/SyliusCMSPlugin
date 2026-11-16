@@ -62,7 +62,10 @@ export interface SetConditionsChange {
     conditions: VisibilityCondition[];
 }
 
-/** A value of one of the entry's own fields, such as a translation's title. It adds a translation the entry hasn't got. */
+/**
+ * A value of one of the entry's own fields: a translation's, such as its title, which adds a translation the entry hasn't
+ * got, or one all translations share, such as "Hide from search engines".
+ */
 export interface SetEntryValueChange {
     op: 'set_entry_value';
     field: string;
@@ -160,7 +163,7 @@ type Target =
  * Turns the patches of one edit into key-based changes.
  *
  * Patches into a translation become set_entry_value changes for its fields, set_entry_translated for its translation
- * state and set_shown for its switch. Patches into a block's fields become set_value changes, into its translation
+ * state and set_shown for its switch, and patches into the entry's shared fields set_entry_value changes with no locale. Patches into a block's fields become set_value changes, into its translation
  * state set_translated, and into its style set_style. A layout of another code or version becomes set_layout, and the
  * same layout's values and translation state set_layout_value and set_layout_translated. Patches that touch a list of blocks aren't
  * read index by index, because Immer reports a removal from the middle of a list as replacements plus a
@@ -176,10 +179,12 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
     const translatedTargets = new Set<string>();
     const locales = new Set<string>();
     let layoutTouched = false;
+    let entryFieldsTouched = false;
 
     for (const patch of patches) {
         translationLocales(patch.path, before, after).forEach((locale) => locales.add(locale));
         layoutTouched ||= touchesLayout(patch.path);
+        entryFieldsTouched ||= patch.path.length === 0 || patch.path[0] === 'fields';
         const target = locate(patch.path, before, after);
         if (target?.kind === 'list') {
             lists.set(target.parent, target.depth);
@@ -203,7 +208,8 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
         done: new Set(),
     };
     const { addedOrRemoved } = diff;
-    const changes: Change[] = [...locales].flatMap((locale) => diffTranslation(locale, before.translations[locale], after.translations[locale]));
+    const changes: Change[] = entryFieldsTouched ? diffEntryFields(before.fields, after.fields) : [];
+    changes.push(...[...locales].flatMap((locale) => diffTranslation(locale, before.translations[locale], after.translations[locale])));
     if (layoutTouched) {
         changes.push(...diffLayout(before.tree.layout, after.tree.layout, isLayoutTranslatable));
     }
@@ -372,11 +378,13 @@ function applyChange(working: Entry, change: Change): boolean {
             return true;
         }
         case 'set_entry_value':
-            if (change.locale !== null) {
+            if (change.locale === null) {
+                writeFieldValue(working.fields, change.field, false, '', change.value);
+            } else {
                 writeEntryValue(working, change.locale, change.field, change.value, false);
             }
 
-            return change.locale !== null;
+            return true;
         case 'set_shown': {
             const translation = working.translations[change.locale];
             if (translation === undefined) {
@@ -572,6 +580,19 @@ function diffTranslation(locale: string, before: EntryTranslation | undefined, a
         const source = translatedAfter[field] ?? null;
         if (!sameSource(translatedBefore[field] ?? null, source)) {
             changes.push({ op: 'set_entry_translated', field, locale, translated: source });
+        }
+    }
+
+    return changes;
+}
+
+/** set_entry_value changes, with no locale, for the values all translations share that differ from before. */
+function diffEntryFields(before: FieldValues, after: FieldValues): SetEntryValueChange[] {
+    const changes: SetEntryValueChange[] = [];
+    for (const field of new Set([...Object.keys(before), ...Object.keys(after)])) {
+        const value = normalizeValue(after[field]);
+        if (!jsonEqual(normalizeValue(before[field]), value)) {
+            changes.push({ op: 'set_entry_value', field, locale: null, value });
         }
     }
 

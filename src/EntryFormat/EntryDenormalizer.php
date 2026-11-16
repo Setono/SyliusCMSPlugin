@@ -7,13 +7,14 @@ namespace Setono\SyliusCMSPlugin\EntryFormat;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\EntryFields;
 use Setono\SyliusCMSPlugin\Translation\Fingerprint;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
- * Copies an entry in the entry format onto the entry: what's drafted, which is its translations with their fields,
- * shown switches and translation state, and its block tree. Publishing uses it to copy a draft onto the rows. See
+ * Copies an entry in the entry format onto the entry: what's drafted, which is its shared fields, its translations with
+ * their fields, shown switches and translation state, and its block tree. Publishing uses it to copy a draft onto the rows. See
  * "Entry format" in docs/spec/content-model.md.
  *
  * The UUID, the content type and createdAt identify the entry and aren't drafted, so they're checked, not copied.
@@ -41,6 +42,7 @@ final readonly class EntryDenormalizer
             throw new InvalidEntryFormatException(sprintf('The data is not the entry %s of the content type "%s"', $entry->getUuid(), $contentType->code));
         }
 
+        $noindex = self::noindex(self::map($data['fields'] ?? [], 'The fields'));
         $translations = self::map($data['translations'] ?? null, 'The translations');
         // Translations are indexed by locale
         foreach ($entry->getTranslations()->toArray() as $localeCode => $translation) {
@@ -52,8 +54,10 @@ final readonly class EntryDenormalizer
         foreach ($translations as $localeCode => $translationData) {
             $translationData = self::map($translationData, sprintf('The translation %s', $localeCode));
             $fields = self::map($translationData['fields'] ?? null, sprintf('The fields of the translation %s', $localeCode));
-            $title = self::nullableString($fields, 'title', $localeCode);
-            $slug = self::nullableString($fields, 'slug', $localeCode);
+            $values = [];
+            foreach (EntryFields::translatable($contentType) as $field) {
+                $values[$field] = self::nullableString($fields, $field, $localeCode);
+            }
             $shown = $translationData['shown'] ?? null;
             if (!is_bool($shown)) {
                 throw new InvalidEntryFormatException(sprintf('The shown switch of the translation %s must be true or false', $localeCode));
@@ -65,12 +69,15 @@ final readonly class EntryDenormalizer
                 $entry->addTranslation($translation);
             }
 
-            $translation->setTitle($title);
-            if ($contentType->hasOwnUrl()) {
-                $translation->setSlug($slug);
+            foreach ($values as $field => $value) {
+                EntryFields::write($translation, $field, $value);
             }
             $translation->setShown($shown);
             $translation->setTranslated(self::translated($translationData['translated'] ?? [], $localeCode));
+        }
+
+        if ($contentType->hasOwnUrl()) {
+            $entry->setNoindex($noindex);
         }
 
         try {
@@ -78,6 +85,24 @@ final readonly class EntryDenormalizer
         } catch (InvalidStoredTreeException $e) {
             throw new InvalidEntryFormatException(sprintf('The tree is invalid: %s', $e->getMessage()), previous: $e);
         }
+    }
+
+    /**
+     * "Hide from search engines", from the shared fields. An entry without it, such as a draft saved before the SEO
+     * fields came, has it off
+     *
+     * @param array<string, mixed> $fields
+     *
+     * @throws InvalidEntryFormatException
+     */
+    private static function noindex(array $fields): bool
+    {
+        $noindex = $fields['noindex'] ?? false;
+        if (!is_bool($noindex)) {
+            throw new InvalidEntryFormatException('The field noindex must be true or false');
+        }
+
+        return $noindex;
     }
 
     /**

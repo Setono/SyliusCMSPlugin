@@ -65,10 +65,16 @@ final class RegisterContentTypesPass implements CompilerPassInterface
 
             $prefixes[$code] = $attribute->prefix;
             $translation = $resource['translation']['classes']['model'] ?? null;
+            $translation = is_string($translation) && class_exists($translation) ? $translation : null;
+
+            // The meta description falls back to it through the fallback chain, so it's translatable
+            if (null !== $attribute->descriptionField && (null === $translation || !property_exists($translation, $attribute->descriptionField))) {
+                throw new \LogicException(sprintf('The content type "%s" names "%s" in descriptionField, which must be a property of its translations', $code, $attribute->descriptionField));
+            }
 
             $contentTypes[$code] = [
                 'model' => $model,
-                'translation' => is_string($translation) && class_exists($translation) ? $translation : null,
+                'translation' => $translation,
                 'resource' => $alias,
             ];
 

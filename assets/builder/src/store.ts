@@ -180,6 +180,11 @@ export interface BuilderActions {
     /** Records that an entry field's outdated value in the edited locale is up to date with the value it was translated from. */
     markEntryValueUpToDate(field: string): void;
     /**
+     * Sets the value of an entry field all translations share, such as "Hide from search engines". null removes it.
+     * Values set one after another in the same field are undone in one step.
+     */
+    setSharedEntryValue(field: string, value: JsonValue | null): void;
+    /**
      * Adds a translation in the edited locale with these fields, such as the title and slug of the translation it falls
      * back to, and where they're translated from, or gives the translation it has them. A new one starts shown before
      * the first publish, and held back after it.
@@ -426,6 +431,10 @@ export function createBuilderStore({
                 }
             },
 
+            setSharedEntryValue(field, value) {
+                edit((working) => writeFieldValue(working.fields, field, false, '', value), {}, JSON.stringify(['set_entry_value', field, null]));
+            },
+
             addTranslation(fields, translated = {}) {
                 const { locale: edited, status: current } = get();
                 const values = Object.fromEntries(Object.entries(fields).map(([field, value]) => [field, normalizeValue(value)]));
@@ -567,7 +576,9 @@ export function createBuilderStore({
                             break;
                         }
                         case 'entry_value':
-                            if (clash.locale !== null) {
+                            if (clash.locale === null) {
+                                writeFieldValue(working.fields, clash.field, false, '', clash.mine);
+                            } else {
                                 writeEntryValue(working, clash.locale, clash.field, clash.mine, get().status === 'never_published');
                             }
                             break;

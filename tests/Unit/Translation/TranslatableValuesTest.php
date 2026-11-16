@@ -260,6 +260,32 @@ final class TranslatableValuesTest extends TestCase
     }
 
     /**
+     * The meta title and meta description are translated like the title. See "SEO fields" in docs/spec/urls-and-seo.md
+     *
+     * @test
+     */
+    public function it_gives_the_meta_title_and_the_meta_description_after_the_slug(): void
+    {
+        $page = self::page([]);
+        $page->getTranslation('en_US')->setMetaTitle('About us | Shop');
+        $page->getTranslation('en_US')->setMetaDescription('All about us');
+        $danish = new PageTranslation();
+        $danish->setLocale('da_DK');
+        $danish->setTitle('Om os');
+        $danish->setSlug('om-os');
+        $danish->setMetaTitle('Om os | Butik');
+        $danish->setTranslated(['metaTitle' => ['from' => 'en_US', 'fingerprint' => Fingerprint::of('About us')]]);
+        $page->addTranslation($danish);
+
+        self::assertEquals([
+            new TranslatableValue('entry.title', ValueState::UpToDate, null, null, null, 'Om os'),
+            new TranslatableValue('entry.slug', ValueState::UpToDate, null, null, null, 'om-os'),
+            new TranslatableValue('entry.metaTitle', ValueState::Outdated, 'en_US', 'About us | Shop', Fingerprint::of('About us | Shop'), 'Om os | Butik'),
+            new TranslatableValue('entry.metaDescription', ValueState::Untranslated, 'en_US', 'All about us', Fingerprint::of('All about us'), null),
+        ], $this->values()->of($page, 'da_DK'));
+    }
+
+    /**
      * @test
      */
     public function it_gives_only_the_title_of_a_content_type_without_its_own_url_and_nothing_of_a_layout_it_does_not_know(): void
@@ -268,6 +294,8 @@ final class TranslatableValuesTest extends TestCase
         $recipe->setCurrentLocale('en_US');
         $recipe->setTitle('Pancakes');
         $recipe->setSlug('pancakes');
+        $recipe->getTranslation('en_US')->setMetaTitle('Pancakes | Recipes');
+        $recipe->getTranslation('en_US')->setMetaDescription('Thin ones');
         $recipe->setBlockTree(new StoredTree(new StoredLayout('promo', 1, ['tagline' => ['en_US' => 'Yum']]), []));
 
         self::assertEquals(

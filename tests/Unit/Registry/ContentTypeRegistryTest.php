@@ -12,6 +12,8 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\UnknownContentTypeException;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Untagged;
+use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\Post;
+use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\PostTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\Article;
 
 final class ContentTypeRegistryTest extends TestCase
@@ -34,6 +36,17 @@ final class ContentTypeRegistryTest extends TestCase
         self::assertSame(PageTranslation::class, $page->translationModelClass);
         self::assertSame('setono_sylius_cms.page', $page->resourceAlias);
         self::assertTrue($page->hasOwnUrl());
+        self::assertNull($page->descriptionField, 'A page\'s meta description falls back to nothing');
+    }
+
+    /**
+     * @test
+     */
+    public function it_reads_the_field_the_meta_description_falls_back_to(): void
+    {
+        $registry = new ContentTypeRegistry(['post' => ['model' => Post::class, 'translation' => PostTranslation::class, 'resource' => 'app.post']]);
+
+        self::assertSame('excerpt', $registry->get('post')->descriptionField);
     }
 
     /**

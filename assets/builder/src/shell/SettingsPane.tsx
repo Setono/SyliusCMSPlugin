@@ -29,8 +29,8 @@ interface Tab {
 /**
  * The tabs of the entry's settings. The Settings tab holds the edited locale's title and its shown switch, and the
  * layout with its fields, which are drafted, and the on-save settings, which take effect as soon as they're saved,
- * outside the draft. The URL & SEO tab, for a content type with its own URL, holds the edited locale's slug, which is
- * drafted, and its old URLs. The SEO fields join it with their ticket. The More tab links to the overview page.
+ * outside the draft. The URL & SEO tab, for a content type with its own URL, holds the edited locale's slug, its old
+ * URLs and the SEO fields, which are drafted. The More tab links to the overview page.
  */
 const tabs: Tab[] = [
     { code: 'settings', label: 'setono_sylius_cms.builder.settings', panel: () => <SettingsTab /> },
@@ -39,7 +39,7 @@ const tabs: Tab[] = [
         label: 'setono_sylius_cms.builder.url_and_seo',
         panel: () => <UrlAndSeoTab />,
         shown: ({ urlPrefix }) => urlPrefix !== null,
-        fields: ['slug'],
+        fields: ['slug', 'metaTitle', 'metaDescription', 'noindex'],
     },
     { code: 'more', label: 'setono_sylius_cms.builder.more', panel: () => <MoreTab /> },
 ];
@@ -140,7 +140,70 @@ function UrlAndSeoTab() {
                 <Slug />
             </fieldset>
             <OldUrls />
+            <fieldset className={styles.locked} disabled={locked}>
+                <MetaField field="metaTitle" type="text" label="setono_sylius_cms.builder.meta_title" help="setono_sylius_cms.builder.meta_title_help" />
+                <MetaField field="metaDescription" type="textarea" label="setono_sylius_cms.builder.meta_description" help="setono_sylius_cms.builder.meta_description_help" />
+                <Noindex />
+            </fieldset>
         </>
+    );
+}
+
+/**
+ * The edited locale's meta title or meta description. While it's empty, it shows the value the fallback chain gives it,
+ * which the head tags print; past the chain, the meta title falls back to the title and the meta description to the
+ * field its content type names. The head prints it whatever the layout. See "SEO fields" in docs/spec/urls-and-seo.md
+ */
+function MetaField({ field, type, label, help }: { field: 'metaTitle' | 'metaDescription'; type: 'text' | 'textarea'; label: MessageKey; help: MessageKey }) {
+    const t = useTranslator();
+    const { store, locales } = useBuilder();
+    const locale = useBuilderState((state) => state.locale);
+    const translations = useBuilderState((state) => state.entry.translations);
+    const values = entryValues({ translations }, field);
+    const schema: FieldSchema = {
+        'x-cms-type': type,
+        'x-cms-label': t(label),
+        'x-cms-help': t(help),
+        'x-cms-required': false,
+        'x-cms-translatable': true,
+    };
+
+    return (
+        <FieldRow
+            id={`cms-entry-${field}`}
+            schema={schema}
+            locale={locale}
+            value={values[locale] ?? undefined}
+            onChange={(value) => store.getState().setEntryValue(field, value)}
+            fallback={fieldFallback(locales, values, locale)}
+            outdated={outdatedValue(locales, values, entryTranslated({ translations }, field), locale, () => store.getState().markEntryValueUpToDate(field))}
+        />
+    );
+}
+
+/** "Hide from search engines", which all translations share. It's drafted. */
+function Noindex() {
+    const t = useTranslator();
+    const { store } = useBuilder();
+    const locale = useBuilderState((state) => state.locale);
+    const noindex = useBuilderState((state) => state.entry.fields.noindex);
+    const schema: FieldSchema = {
+        'x-cms-type': 'toggle',
+        'x-cms-label': t('setono_sylius_cms.builder.noindex'),
+        'x-cms-help': t('setono_sylius_cms.builder.noindex_help'),
+        'x-cms-required': false,
+        'x-cms-translatable': false,
+        default: false,
+    };
+
+    return (
+        <FieldRow
+            id="cms-entry-noindex"
+            schema={schema}
+            locale={locale}
+            value={noindex}
+            onChange={(value) => store.getState().setSharedEntryValue('noindex', value)}
+        />
     );
 }
 

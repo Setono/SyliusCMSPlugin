@@ -18,6 +18,10 @@ class EntryTranslation extends AbstractTranslation implements EntryTranslationIn
 
     protected ?string $slug = null;
 
+    protected ?string $metaTitle = null;
+
+    protected ?string $metaDescription = null;
+
     /**
      * Off when the translation is held back. A translation made before the entry's first publish starts shown, and one
      * added after it is held back where it's added. It's drafted, so a translation goes live together with its finished text
@@ -54,6 +58,26 @@ class EntryTranslation extends AbstractTranslation implements EntryTranslationIn
     public function setSlug(?string $slug): void
     {
         $this->slug = $slug;
+    }
+
+    public function getMetaTitle(): ?string
+    {
+        return $this->metaTitle;
+    }
+
+    public function setMetaTitle(?string $metaTitle): void
+    {
+        $this->metaTitle = $metaTitle;
+    }
+
+    public function getMetaDescription(): ?string
+    {
+        return $this->metaDescription;
+    }
+
+    public function setMetaDescription(?string $metaDescription): void
+    {
+        $this->metaDescription = $metaDescription;
     }
 
     public function isShown(): bool
