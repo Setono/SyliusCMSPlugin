@@ -25,6 +25,7 @@ use Setono\SyliusCMSPlugin\Publishing\PublishVetoedException;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Revision\RevisionRecorderInterface;
+use Setono\SyliusCMSPlugin\Routing\OldSlugRecorderInterface;
 use Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -44,6 +45,9 @@ final class EntryPublisherTest extends TestCase
 
     /** @var ObjectProphecy<RevisionRecorderInterface> */
     private ObjectProphecy $revisions;
+
+    /** @var ObjectProphecy<OldSlugRecorderInterface> */
+    private ObjectProphecy $oldSlugs;
 
     private EventDispatcher $eventDispatcher;
 
@@ -93,6 +97,9 @@ final class EntryPublisherTest extends TestCase
         $this->revisions = $this->prophesize(RevisionRecorderInterface::class);
         $this->revisions->record(Argument::cetera())->will($this->record('store a revision'));
 
+        $this->oldSlugs = $this->prophesize(OldSlugRecorderInterface::class);
+        $this->oldSlugs->record(Argument::cetera())->will($this->record('record old slugs'));
+
         $this->eventDispatcher = new EventDispatcher();
         foreach ([BeforeEntryPublish::class, EntryPublished::class] as $event) {
             $this->eventDispatcher->addListener($event, function (object $event): void {
@@ -117,12 +124,14 @@ final class EntryPublisherTest extends TestCase
         $this->publisher()->publish($page);
 
         self::assertSame(
-            ['begin', 'lock to write', 'read again', 'get working copy', 'validate', BeforeEntryPublish::class, 'apply to rows', 'store a revision', 'flush', 'commit', EntryPublished::class],
+            ['begin', 'lock to write', 'read again', 'get working copy', 'validate', BeforeEntryPublish::class, 'apply to rows', 'record old slugs', 'store a revision', 'flush', 'commit', EntryPublished::class],
             $this->calls,
         );
 
         // The revision holds what the rows hold now, published by whoever is signed in
         $this->revisions->record($page, new \DateTimeImmutable('2026-11-14 11:30:00', new \DateTimeZone('UTC')))->shouldHaveBeenCalledOnce();
+        // A first publish changes no slug shoppers saw
+        $this->oldSlugs->record($page, [], ['en_US' => 'about-us'])->shouldHaveBeenCalledOnce();
 
         $before = $this->events[0];
         self::assertInstanceOf(BeforeEntryPublish::class, $before);
@@ -162,6 +171,7 @@ final class EntryPublisherTest extends TestCase
         self::assertInstanceOf(EntryPublished::class, $published);
         self::assertSame(['en_US' => 'about-us', 'da_DK' => 'om'], $published->oldSlugs);
         self::assertSame(['en_US' => 'about', 'da_DK' => 'om-os'], $published->newSlugs);
+        $this->oldSlugs->record($page, ['en_US' => 'about-us', 'da_DK' => 'om'], ['en_US' => 'about', 'da_DK' => 'om-os'])->shouldHaveBeenCalledOnce();
         self::assertSame('2026-11-14T11:30:00+00:00', $page->getChangedAt()->format(\DATE_ATOM));
     }
 
@@ -222,6 +232,7 @@ final class EntryPublisherTest extends TestCase
             ]),
             $this->entryValidator->reveal(),
             $this->revisions->reveal(),
+            $this->oldSlugs->reveal(),
         );
     }
 

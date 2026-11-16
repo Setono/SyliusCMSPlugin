@@ -183,6 +183,32 @@
     color: var(--builder-color-danger);
 }
 
+/* What the server warns of in a field, such as another entry with the same URL in its draft */
+.warnings {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    margin: 0;
+    padding: var(--builder-space-2) var(--builder-space-3);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-warning-subtle);
+    color: var(--builder-color-warning);
+    font-size: var(--builder-font-size-sm);
+    list-style: none;
+}
+
+/* The URLs of the old slugs, which redirect */
+.oldUrls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    margin: 0;
+    padding: 0;
+    font-size: var(--builder-font-size-sm);
+    list-style: none;
+    overflow-wrap: anywhere;
+}
+
 /* The More tab's link to the overview page */
 .link {
     align-self: flex-start;

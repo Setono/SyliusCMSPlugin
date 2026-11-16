@@ -125,6 +125,11 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.show_in_locale_help'
     | 'setono_sylius_cms.builder.entry_title'
     | 'setono_sylius_cms.builder.slug'
+    | 'setono_sylius_cms.builder.slug_help'
+    | 'setono_sylius_cms.builder.slug_help_none'
+    | 'setono_sylius_cms.builder.old_urls'
+    | 'setono_sylius_cms.builder.old_urls_help'
+    | 'setono_sylius_cms.builder.url_and_seo'
     | 'setono_sylius_cms.builder.clash_entry_value';
 
 /** Values for the placeholders in a string, such as { '%block%': 'Columns' }. */

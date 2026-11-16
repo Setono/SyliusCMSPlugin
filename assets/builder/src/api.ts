@@ -1,6 +1,6 @@
 import type { Change } from './changeSet';
 import type { BuilderConfig } from './config';
-import type { EntryResponse, EntrySettings, EntryStatus, PresenceResponse, Registry, SaveResponse, StoredBlock, ValidationError } from './types';
+import type { EntryResponse, EntrySettings, EntryStatus, EntryUrlsResponse, PresenceResponse, Registry, SaveResponse, StoredBlock, ValidationError } from './types';
 
 /** The builder's JSON endpoints. They're internal, and change together with the app. */
 export interface BuilderApi {
@@ -59,26 +59,31 @@ interface Request {
     body?: string;
 }
 
-export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) => fetch(input, init)): BuilderApi {
-    const request = async (url: string, { method = 'GET', headers = {}, body: requestBody }: Request = {}): Promise<unknown> => {
-        const response = await fetchFn(url, {
-            method,
-            credentials: 'same-origin',
-            headers: { Accept: 'application/json', ...headers },
-            ...(requestBody === undefined ? {} : { body: requestBody }),
-        });
+const defaultFetch: Fetch = (input, init) => fetch(input, init);
 
-        const body: unknown = await response.json().catch(() => undefined);
-        if (response.status !== 200) {
-            throw new ApiError(errorMessage(body) ?? `${url} answered ${response.status}.`, response.status, (isObject(body) ? validationErrors(body.errors) : null) ?? []);
-        }
+/** Sends a request to one of the builder's endpoints, and answers with the JSON it answers 200 with. */
+async function send(fetchFn: Fetch, url: string, { method = 'GET', headers = {}, body: requestBody }: Request = {}): Promise<unknown> {
+    const response = await fetchFn(url, {
+        method,
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json', ...headers },
+        ...(requestBody === undefined ? {} : { body: requestBody }),
+    });
 
-        if (body === undefined) {
-            throw new ApiError(`${url} didn't answer with JSON.`, response.status);
-        }
+    const body: unknown = await response.json().catch(() => undefined);
+    if (response.status !== 200) {
+        throw new ApiError(errorMessage(body) ?? `${url} answered ${response.status}.`, response.status, (isObject(body) ? validationErrors(body.errors) : null) ?? []);
+    }
 
-        return body;
-    };
+    if (body === undefined) {
+        throw new ApiError(`${url} didn't answer with JSON.`, response.status);
+    }
+
+    return body;
+}
+
+export function createApi(config: BuilderConfig, fetchFn: Fetch = defaultFetch): BuilderApi {
+    const request = async (url: string, init: Request = {}): Promise<unknown> => send(fetchFn, url, init);
 
     const write = { 'X-CSRF-Token': config.csrfToken };
 
@@ -177,6 +182,45 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = (input, init) 
             }
 
             return html as Record<string, string>;
+        },
+    };
+}
+
+/** The endpoints of an entry's URLs, which the URL & SEO tab uses. They read and change nothing on the server. */
+export interface UrlsApi {
+    /** The slug Sylius's slug generator makes of a title. */
+    generateSlug(title: string): Promise<string>;
+    /** The warnings about the entry's URLs and the URLs of its old slugs, as the server has them. */
+    fetchUrls(): Promise<EntryUrlsResponse>;
+}
+
+/** The URLs endpoints the builder page gives, or null when it gives neither. */
+export function createUrlsApi(config: BuilderConfig, fetchFn: Fetch = defaultFetch): UrlsApi | null {
+    const { slug, urls } = config.endpoints;
+    if (slug === undefined || urls === undefined) {
+        return null;
+    }
+
+    return {
+        async generateSlug(title) {
+            const body = await send(fetchFn, `${slug}?title=${encodeURIComponent(title)}`);
+            const generated = isObject(body) ? body.slug : undefined;
+            if (typeof generated !== 'string') {
+                throw new ApiError('The answer has no slug.', 200);
+            }
+
+            return generated;
+        },
+
+        async fetchUrls() {
+            const body = await send(fetchFn, urls);
+            const warnings = isObject(body) ? validationErrors(body.warnings) : null;
+            const oldUrls = isObject(body) ? body.oldUrls : undefined;
+            if (warnings === null || !isObject(oldUrls) || Array.isArray(oldUrls) || !Object.values(oldUrls).every((list) => Array.isArray(list) && list.every((url) => typeof url === 'string'))) {
+                throw new ApiError('The answer has no URL warnings and old URLs.', 200);
+            }
+
+            return { warnings, oldUrls: oldUrls as Record<string, string[]> };
         },
     };
 }

@@ -1,7 +1,7 @@
 import { ApiError } from './api';
 import { mergeChanges, type Change } from './changeSet';
 import type { BuilderStore } from './store';
-import type { SaveResponse } from './types';
+import type { SaveResponse, ValidationError } from './types';
 
 export interface Autosave {
     /** Sends the unsaved changes now, after any save in flight. Resolves to whether everything got saved. */
@@ -61,7 +61,7 @@ export function createAutosave(
         inFlight = send(changes, lockToken)
             .then(
                 (answer) => {
-                    store.setState({ status: answer.status, lockToken: answer.lockToken });
+                    store.setState((state) => ({ status: answer.status, lockToken: answer.lockToken, refusedSlugs: refusedSlugs(state.refusedSlugs, changes, answer.refused ?? []) }));
                     if (answer.entry !== undefined) {
                         // Edits made while the save was in flight were made on the working copy as it was sent
                         store.getState().pullIn(answer.entry, answer.clashes ?? [], sent);
@@ -126,4 +126,24 @@ export function createAutosave(
             unsubscribe();
         },
     };
+}
+
+/**
+ * The slugs refused after a save: a slug the save sent in a locale replaces the refusal there, which stands when the
+ * server refused that one too. A refusal of a locale the save sent no slug in stands.
+ */
+function refusedSlugs(before: Record<string, string>, sent: readonly Change[], refused: readonly ValidationError[]): Record<string, string> {
+    const sentIn = new Set(sent.flatMap((change) => (change.op === 'set_entry_value' && change.field === 'slug' && change.locale !== null ? [change.locale] : [])));
+    if (sentIn.size === 0 && refused.length === 0) {
+        return before;
+    }
+
+    const after = Object.fromEntries(Object.entries(before).filter(([locale]) => !sentIn.has(locale)));
+    for (const { locale, message } of refused) {
+        if (locale !== null) {
+            after[locale] = message;
+        }
+    }
+
+    return after;
 }

@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBlockTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterConditionKindsPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLayoutsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterProblemKindsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterUpgradersPass;
@@ -42,7 +43,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>}, content_types: array<string, array{default_layout?: string}>, block_styles: array<string, array<string, array{label: string, class: string}>>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, resources: array<string, array<string, mixed>>} $config */
+        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, resources: array<string, array<string, mixed>>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         $container->setParameter('setono_sylius_cms.disabled.block_types', $config['disabled']['block_types']);
@@ -53,6 +54,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
             $config['content_types'],
         ), static fn (?string $layout): bool => null !== $layout));
         $container->setParameter('setono_sylius_cms.block_styles', $config['block_styles']);
+        $container->setParameter(RegisterContentTypesPass::CONFIG_PARAMETER, $config['content_types']);
         $container->setParameter('setono_sylius_cms.fallback_locales', $config['fallback_locales']);
         $container->setParameter('setono_sylius_cms.revisions.keep', $config['revisions']['keep']);
 

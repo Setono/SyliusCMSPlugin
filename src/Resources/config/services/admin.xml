@@ -58,6 +58,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="router"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface"/>
 
             <tag name="twig.runtime"/>
         </service>

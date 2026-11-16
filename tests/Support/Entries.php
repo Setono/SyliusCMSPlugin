@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Support;
 
 use Doctrine\Persistence\ObjectManager;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
+use Setono\SyliusCMSPlugin\Publishing\AutosaveInterface;
+use Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface;
+use Setono\SyliusCMSPlugin\Publishing\SaveResult;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -190,6 +195,32 @@ trait Entries
         }
 
         $manager->flush();
+    }
+
+    /**
+     * Autosaves changes onto the entry's working copy as the builder does, such as
+     * ['op' => 'set_entry_value', 'field' => 'slug', 'locale' => 'en_US', 'value' => 'about-us']
+     *
+     * @param list<array<string, mixed>> $changes
+     */
+    protected static function saveChanges(EntryInterface $entry, array $changes): SaveResult
+    {
+        /** @var AutosaveInterface $autosave */
+        $autosave = self::getContainer()->get(AutosaveInterface::class);
+        /** @var SavedChangeSetRepositoryInterface $savedChangeSets */
+        $savedChangeSets = self::getContainer()->get(SavedChangeSetRepositoryInterface::class);
+
+        return $autosave->save($entry, ChangeSet::fromArray(['changes' => $changes]), $savedChangeSets->findLatestLockToken($entry));
+    }
+
+    /**
+     * Publishes the entry's working copy as the builder's Publish does
+     */
+    protected static function publishEntry(EntryInterface $entry): void
+    {
+        /** @var EntryPublisherInterface $publisher */
+        $publisher = self::getContainer()->get(EntryPublisherInterface::class);
+        $publisher->publish($entry);
     }
 
     /**

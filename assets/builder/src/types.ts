@@ -159,6 +159,19 @@ export interface SaveResponse {
     /** The working copy with colleagues' changes in it, when they saved since the last load. */
     entry?: Entry;
     clashes?: Clash[];
+    /**
+     * The slugs the server didn't save because another route takes their URL, with why, by locale. Each keeps its last
+     * saved value on the server.
+     */
+    refused?: ValidationError[];
+}
+
+/** What the URL & SEO tab shows beside the slug, as the server has it. */
+export interface EntryUrlsResponse {
+    /** URLs other entries have drafted, and published URLs another route takes now, pointing at the slug in a locale. */
+    warnings: ValidationError[];
+    /** The paths of the URLs of the old slugs that redirect, by locale, newest first. */
+    oldUrls: Record<string, string[]>;
 }
 
 export interface PresenceResponse {
@@ -238,6 +251,8 @@ export interface ContentTypeDefinition {
     label: string;
     /** What the top level of its tree may hold, or null when it has no block tree. */
     blocks: AllowedBlockType[] | null;
+    /** Its URL prefix, '' for URLs at the root, or null when it has no URL of its own, so no slug. */
+    prefix?: string | null;
     /** Its layouts, the default first, or none for a content type without its own URL. */
     layouts: LayoutDefinition[];
 }

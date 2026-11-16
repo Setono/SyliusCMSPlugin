@@ -172,16 +172,16 @@ final class RegistryExporterTest extends TestCase
     /**
      * @test
      */
-    public function it_exports_what_the_top_level_of_each_content_type_may_hold(): void
+    public function it_exports_what_the_top_level_of_each_content_type_may_hold_and_its_url_prefix(): void
     {
         $contentTypes = $this->exporter()->export()['contentTypes'];
 
-        self::assertSame(['code', 'label', 'blocks', 'layouts'], array_keys($contentTypes[0]));
+        self::assertSame(['code', 'label', 'blocks', 'prefix', 'layouts'], array_keys($contentTypes[0]));
         self::assertSame(['page', '[setono_sylius_cms.content_type.page]', [
             ['type' => 'columns', 'min' => null, 'max' => null],
             ['type' => 'heading', 'min' => null, 'max' => null],
-        ]], [$contentTypes[0]['code'], $contentTypes[0]['label'], $contentTypes[0]['blocks']]);
-        self::assertSame(['code' => 'recipe', 'label' => '[app.recipe]', 'blocks' => null, 'layouts' => []], $contentTypes[1]);
+        ], ''], [$contentTypes[0]['code'], $contentTypes[0]['label'], $contentTypes[0]['blocks'], $contentTypes[0]['prefix']]);
+        self::assertSame(['code' => 'recipe', 'label' => '[app.recipe]', 'blocks' => null, 'prefix' => null, 'layouts' => []], $contentTypes[1]);
     }
 
     /**

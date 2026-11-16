@@ -11,9 +11,11 @@ use Setono\SyliusCMSPlugin\Rendering\EntryUrlMatch;
 use Setono\SyliusCMSPlugin\Rendering\LayoutRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Renders an entry at its own URL. See "Rendering an entry at its own URL" in docs/spec/rendering.md
@@ -26,6 +28,7 @@ final readonly class ShowEntryAction
         private RenderContextFactoryInterface $renderContextFactory,
         private LayoutRendererInterface $layoutRenderer,
         private PreviewedEntryProvider $previewedEntryProvider,
+        private UrlGeneratorInterface $urlGenerator,
     ) {
     }
 
@@ -39,8 +42,25 @@ final readonly class ShowEntryAction
         $entry = $this->previewedEntry($match, $localeCode) ?? $this->visibleEntry($match)
             ?? throw new NotFoundHttpException(sprintf('No visible entry at "%s"', $path));
 
+        // An old slug redirects to the entry's current URL, once the entry is known to be visible
+        if (null !== $match?->redirectTo) {
+            return $this->redirect($request, $localeCode, $match->redirectTo);
+        }
+
         // 3. and 4. The tree in the entry's layout, with the entry as host-page context
         return new Response($this->layoutRenderer->render($entry, $this->renderContextFactory->create(['entry' => $entry])));
+    }
+
+    /**
+     * A permanent redirect to the entry's current URL in the locale, keeping the query string.
+     * See "Old slugs" in docs/spec/urls-and-seo.md
+     */
+    private function redirect(Request $request, string $localeCode, string $path): RedirectResponse
+    {
+        $url = $this->urlGenerator->generate('setono_sylius_cms_shop_entry', ['_locale' => $localeCode, 'path' => $path]);
+        $query = $request->getQueryString();
+
+        return new RedirectResponse(null === $query ? $url : $url . '?' . $query, Response::HTTP_MOVED_PERMANENTLY);
     }
 
     /**
@@ -49,6 +69,11 @@ final readonly class ShowEntryAction
     private function previewedEntry(?EntryUrlMatch $match, string $localeCode): ?EntryInterface
     {
         if (null === $match) {
+            return null;
+        }
+
+        // An old slug of the previewed entry redirects to its URL, where the preview shows it
+        if (null !== $match->redirectTo) {
             return null;
         }
 

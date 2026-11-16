@@ -25,6 +25,15 @@
             <tag name="console.command"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Command\CheckRoutesCommand" class="Setono\SyliusCMSPlugin\Command\CheckRoutesCommand">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface"/>
+            <!-- The manager of drafts, which is also the manager of entries -->
+            <argument type="service" id="setono_sylius_cms.manager.draft"/>
+
+            <tag name="console.command"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Command\PruneRevisionsCommand" class="Setono\SyliusCMSPlugin\Command\PruneRevisionsCommand">
             <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionPruner"/>
 

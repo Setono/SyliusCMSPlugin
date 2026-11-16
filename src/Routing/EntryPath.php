@@ -36,4 +36,36 @@ final class EntryPath
 
         return '' === $contentType->prefix ? $slug : $contentType->prefix . '/' . $slug;
     }
+
+    /**
+     * The other way round: the slug a path holds for each content type with its own URL whose prefix fits it. A path
+     * can fit several, such as blog/hello, which is a page's slug and, under the prefix blog, a blog post's
+     *
+     * @param iterable<ContentTypeMetadata> $contentTypes
+     *
+     * @return array<string, string> content type code => the slug the path holds for it
+     */
+    public static function slugs(iterable $contentTypes, string $path): array
+    {
+        $slugs = [];
+
+        foreach ($contentTypes as $contentType) {
+            if (null === $contentType->prefix) {
+                continue;
+            }
+
+            if ('' === $contentType->prefix) {
+                $slugs[$contentType->code] = $path;
+
+                continue;
+            }
+
+            $slug = str_starts_with($path, $contentType->prefix . '/') ? substr($path, strlen($contentType->prefix) + 1) : '';
+            if ('' !== $slug) {
+                $slugs[$contentType->code] = $slug;
+            }
+        }
+
+        return $slugs;
+    }
 }

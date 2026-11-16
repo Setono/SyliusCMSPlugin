@@ -63,6 +63,11 @@ export interface BuilderData {
     publishState: PublishState;
     /** Why the server refused the last publish, such as a listener's veto, or null. */
     publishRefusal: string | null;
+    /**
+     * Why the server didn't save a slug, by locale: another route takes its URL. The slug keeps its last saved value on
+     * the server, and the refusal stands until a save of another slug in the locale goes through.
+     */
+    refusedSlugs: Record<string, string>;
     discardState: DiscardState;
 }
 
@@ -135,9 +140,10 @@ export interface BuilderActions {
      * Sets an entry field's value in the edited locale, such as the title. null or '' empties it. Setting a value in a
      * locale the entry has no translation in adds one, which starts shown before the first publish, and held back after
      * it. Values set one after another in the same field are undone in one step. Where the value is translated from is
-     * recorded as for a block's value, except for a slug, which never falls back.
+     * recorded as for a block's value, except for a slug, which never falls back. Given a locale, it sets the value
+     * there instead, such as a slug that follows its title.
      */
-    setEntryValue(field: string, value: JsonValue | null): void;
+    setEntryValue(field: string, value: JsonValue | null, locale?: string): void;
     /** Records that an entry field's outdated value in the edited locale is up to date with the value it was translated from. */
     markEntryValueUpToDate(field: string): void;
     /**
@@ -281,6 +287,7 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
             saveState: 'idle',
             publishState: 'idle',
             publishRefusal: null,
+            refusedSlugs: {},
             discardState: 'idle',
 
             addBlock(code, parent = null, index) {
@@ -335,8 +342,9 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
                 set({ locale: next });
             },
 
-            setEntryValue(field, value) {
-                const { locale: edited, status: current, entry: before } = get();
+            setEntryValue(field, value, locale) {
+                const { locale: shown, status: current, entry: before } = get();
+                const edited = locale ?? shown;
                 // Slugs never fall back, so a slug typed has no fallback value it's translated from
                 const chain = field === 'slug' ? [edited] : chainOf(edited);
                 const source = sourceOfTyped(entryValues(before, field), before.translations[edited]?.translated[field], normalizeValue(value), chain);
@@ -450,6 +458,8 @@ export function createBuilderStore({ locale, locales = [], blockTypes, contentTy
                     unsaved: [],
                     clashes: [],
                     resolvedClashes: 0,
+                    // The slugs shown are the server's now
+                    refusedSlugs: {},
                 });
             },
 

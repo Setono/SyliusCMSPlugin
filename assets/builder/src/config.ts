@@ -43,6 +43,10 @@ export interface BuilderConfig {
         previewToken: string;
         previewRender: string;
         presence: string;
+        /** Makes a slug of a title with Sylius's slug generator. Without it, a slug doesn't follow its title. */
+        slug?: string;
+        /** The entry's URL warnings and old URLs, which the URL & SEO tab shows. */
+        urls?: string;
     };
     /** The store's channels. The settings pick the entry's channels from them, and the preview picks from the entry's. */
     channels: Channel[];

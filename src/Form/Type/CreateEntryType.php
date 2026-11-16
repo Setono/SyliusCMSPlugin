@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Form\Type;
 
+use Setono\SyliusCMSPlugin\Routing\Slug;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Product\Generator\SlugGeneratorInterface;
@@ -28,16 +29,6 @@ use Symfony\Component\Validator\Constraints\Regex;
  */
 final class CreateEntryType extends AbstractType
 {
-    /**
-     * A slug can't be empty, start or end with a slash, or contain two slashes in a row
-     */
-    public const SLUG_PATTERN = '#^(?!/)(?!.*//)(?!.*/$).+$#';
-
-    /**
-     * SLUG_PATTERN as an HTML pattern attribute, which the browser anchors itself
-     */
-    private const SLUG_HTML_PATTERN = '(?!/)(?!.*//)(?!.*/$).+';
-
     private const MAX_LENGTH = 255;
 
     /**
@@ -64,11 +55,11 @@ final class CreateEntryType extends AbstractType
                 // An empty slug is generated from the title
                 'required' => false,
                 'empty_data' => '',
-                'attr' => ['maxlength' => self::MAX_LENGTH, 'pattern' => self::SLUG_HTML_PATTERN, 'title' => 'setono_sylius_cms.form.entry.slug_rules'],
+                'attr' => ['maxlength' => self::MAX_LENGTH, 'pattern' => Slug::HTML_PATTERN, 'title' => 'setono_sylius_cms.form.entry.slug_rules'],
                 'constraints' => [
                     new NotBlank(),
                     new Length(max: self::MAX_LENGTH),
-                    new Regex(pattern: self::SLUG_PATTERN, message: 'setono_sylius_cms.slug.invalid'),
+                    new Regex(pattern: Slug::PATTERN, message: 'setono_sylius_cms.slug.invalid'),
                 ],
             ]);
 

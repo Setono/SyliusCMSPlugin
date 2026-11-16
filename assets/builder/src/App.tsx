@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { BuilderApi } from './api';
+import { createUrlsApi, type BuilderApi, type UrlsApi } from './api';
 import styles from './App.module.css';
 import { createAutosave, type Autosave } from './autosave';
 import type { BuilderConfig } from './config';
@@ -9,14 +9,18 @@ import { createPresence, type Presence } from './presence';
 import { createPreviewStore } from './preview';
 import { createDiscard, createPublish, createReload } from './publishing';
 import { createSettingsStore } from './settings';
+import { createSlugFollower, type SlugFollower } from './slugs';
 import { Shell } from './shell/Shell';
 import { createBuilderStore } from './store';
 import { findBlock } from './tree';
+import { createUrlsStore, createUrlsSync, type UrlsSync } from './urls';
 import { createValidation, createValidationStore, type Validation } from './validation';
 
 export interface AppProps {
     config: BuilderConfig;
     api: BuilderApi;
+    /** The endpoints of the entry's URLs, made from the config's when left out. null leaves the slug unfollowed. */
+    urlsApi?: UrlsApi | null;
     /** How long after the last edit autosave sends the changes, in milliseconds. */
     autosaveDelay?: number;
     /** Goes to another page, which leaving the builder does. */
@@ -35,15 +39,18 @@ function leaving(autosave: Autosave, go: () => void): () => void {
 type Phase = { name: 'loading' } | { name: 'failed' } | { name: 'ready'; session: BuilderSession; translate: Translate };
 
 /** Loads the registry and the entry, then opens the entry in the builder. */
-export function App({ config, api, autosaveDelay, navigate = goTo }: AppProps) {
+export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: AppProps) {
     const [phase, setPhase] = useState<Phase>({ name: 'loading' });
     const initialTranslate = useMemo(() => createTranslator(config.strings ?? {}), [config]);
+    const urlsEndpoints = useMemo(() => (urlsApi === undefined ? createUrlsApi(config) : urlsApi), [config, urlsApi]);
 
     useEffect(() => {
         let active = true;
         let autosave: Autosave | undefined;
         let presence: Presence | undefined;
         let validation: Validation | undefined;
+        let urlsSync: UrlsSync | undefined;
+        let slugFollower: SlugFollower | undefined;
         let unsubscribeSettings: (() => void) | undefined;
 
         Promise.all([api.fetchRegistry(), api.fetchEntry()]).then(
@@ -76,6 +83,16 @@ export function App({ config, api, autosaveDelay, navigate = goTo }: AppProps) {
                 const validationStore = createValidationStore();
                 validation = createValidation(store, validationStore, () => api.validate());
                 void validation.validate();
+
+                // A content type with its own URL has a slug, which follows the title, and the URL & SEO tab
+                const urlPrefix = registry.contentTypes.find(({ code }) => code === entry.contentType)?.prefix ?? null;
+                const urlsStore = createUrlsStore();
+                if (urlPrefix !== null && urlsEndpoints !== null) {
+                    urlsSync = createUrlsSync(store, urlsStore, () => urlsEndpoints.fetchUrls());
+                    void urlsSync.refresh();
+                    slugFollower = createSlugFollower(store, (title) => urlsEndpoints.generateSlug(title));
+                }
+                const follower = slugFollower;
 
                 // The preview shows the entry in one of its own channels, which follow the settings as they change.
                 const settings = createSettingsStore(entrySettings, (changes) => api.saveSettings(changes));
@@ -112,6 +129,9 @@ export function App({ config, api, autosaveDelay, navigate = goTo }: AppProps) {
                         channels: config.channels,
                         locales: config.locales ?? [],
                         customerGroups: config.customerGroups,
+                        urlPrefix,
+                        urls: urlsStore,
+                        titleChanged: (locale, before) => follower?.titleChanged(locale, before),
                     },
                 });
             },
@@ -127,9 +147,11 @@ export function App({ config, api, autosaveDelay, navigate = goTo }: AppProps) {
             autosave?.dispose();
             presence?.dispose();
             validation?.dispose();
+            urlsSync?.dispose();
+            slugFollower?.dispose();
             unsubscribeSettings?.();
         };
-    }, [api, config, autosaveDelay, navigate]);
+    }, [api, urlsEndpoints, config, autosaveDelay, navigate]);
 
     if (phase.name !== 'ready') {
         return (

@@ -31,6 +31,7 @@
             <argument type="service" id="clock"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface" alias="Setono\SyliusCMSPlugin\Publishing\Autosave"/>
 
@@ -42,6 +43,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Revision\RevisionRecorderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Routing\OldSlugRecorderInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntryPublisher"/>
 
@@ -61,6 +63,7 @@
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaverInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver"/>
 

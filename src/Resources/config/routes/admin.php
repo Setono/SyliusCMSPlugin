@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DiscardEntryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PresenceAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRenderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRevisionAction;
@@ -163,6 +164,12 @@ return static function (RoutingConfigurator $routes): void {
     $routes->add('setono_sylius_cms_admin_api_entry_validate', '/cms/api/entries/{uuid}/validate')
         ->controller(ValidateEntryAction::class)
         ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_entry_urls', '/cms/api/entries/{uuid}/urls')
+        ->controller(EntryUrlsAction::class)
+        ->methods(['GET'])
         ->requirements(['uuid' => Requirement::UUID])
     ;
 

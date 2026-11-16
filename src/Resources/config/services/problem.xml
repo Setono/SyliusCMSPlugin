@@ -71,5 +71,12 @@
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
             <tag name="kernel.reset" method="reset"/>
         </service>
+
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\UrlTakenByRoute" class="Setono\SyliusCMSPlugin\Problem\Kind\UrlTakenByRoute">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
     </services>
 </container>
