@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
@@ -227,6 +228,11 @@ final class TranslationStateTest extends TestCase
     {
         return new class() implements WorkingCopyProviderInterface {
             public function getWorkingCopy(EntryInterface $entry): EntryInterface
+            {
+                return $entry;
+            }
+
+            public function getWorkingCopyWithDraft(EntryInterface $entry, ?DraftInterface $draft): EntryInterface
             {
                 return $entry;
             }

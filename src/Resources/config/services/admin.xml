@@ -59,6 +59,16 @@
             <tag name="twig.runtime"/>
         </service>
 
+        <!-- The translation chips of an entry's row, for the Translations column and section -->
+        <service id="Setono\SyliusCMSPlugin\Admin\TranslationChips" class="Setono\SyliusCMSPlugin\Admin\TranslationChips">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Translation\TranslatableValues"/>
+            <argument type="service" id="sylius.repository.channel"/>
+
+            <tag name="twig.runtime"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
         <!-- The locale a new entry's title and slug go into -->
         <service id="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver" class="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver">
             <!-- In the admin, the admin user's locale -->

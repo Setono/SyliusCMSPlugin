@@ -36,6 +36,12 @@ final readonly class WorkingCopyManager implements WorkingCopyManagerInterface
      */
     public function getWorkingCopy(EntryInterface $entry): EntryInterface
     {
+        // Only a published entry has a draft
+        return $this->getWorkingCopyWithDraft($entry, $entry->isPublished() ? $this->draftRepository->findOneByEntry($entry) : null);
+    }
+
+    public function getWorkingCopyWithDraft(EntryInterface $entry, ?DraftInterface $draft): EntryInterface
+    {
         if (!$entry->isPublished()) {
             $entry->setBlockTree($this->upgrader->readBlockTree($entry));
 
@@ -44,7 +50,6 @@ final readonly class WorkingCopyManager implements WorkingCopyManagerInterface
 
         $workingCopy = clone $entry;
 
-        $draft = $this->draftRepository->findOneByEntry($entry);
         if (null === $draft) {
             $workingCopy->setBlockTree($this->upgrader->readBlockTree($entry));
         } else {

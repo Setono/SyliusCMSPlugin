@@ -202,6 +202,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
             'blocks' => [
                 'publishing' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_publishing.html.twig', 'priority' => 100],
                 'urls' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_urls.html.twig', 'priority' => 40],
+                'translations' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_translations.html.twig', 'priority' => 20],
             ],
         ], $events['setono_sylius_cms.admin.entry.show.sections'] ?? null);
     }
@@ -313,6 +314,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         self::assertSame([
             'title' => self::twigField('setono_sylius_cms.ui.title', 'title', 10),
             'status' => self::twigField('setono_sylius_cms.ui.status', 'status', 30),
+            'translations' => self::twigField('setono_sylius_cms.ui.translations', 'translations', 40),
             'lastEdited' => ['sortable' => 'lastEditedAt'] + self::twigField('setono_sylius_cms.ui.last_edited', 'last_edited', 50),
             'problems' => self::twigField('setono_sylius_cms.ui.problems', 'problems', 60),
         ], $grid['fields']);

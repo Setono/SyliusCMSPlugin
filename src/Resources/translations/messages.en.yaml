@@ -110,6 +110,14 @@ setono_sylius_cms:
             shows_until: 'Shows until %until%'
             unpublished_changes: Unpublished changes
         title: Title
+        translation_chip:
+            complete: complete
+            held_back: held back
+            no_translation: no translation
+            outdated: '%count% outdated'
+            untranslated: '%count% untranslated'
+        translations: Translations
+        translations_help: Translating happens in the builder, one language at a time.
         type: Type
         untitled: Untitled
         url: URL

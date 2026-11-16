@@ -1,0 +1,29 @@
+{#
+ # An entry's translation chips (Admin\TranslationChip), one per locale of its channels: complete, its untranslated and
+ # outdated counts, held back, or no translation, struck through. See "Translation chips" in docs/spec/admin.md
+ #}
+<div class="ui labels" data-translation-chips>
+    {% for chip in chips %}
+        {% set details = [] %}
+        {% if not chip.translated %}
+            {% set details = ['setono_sylius_cms.ui.translation_chip.no_translation'|trans] %}
+        {% else %}
+            {% if chip.heldBack %}
+                {% set details = details|merge(['setono_sylius_cms.ui.translation_chip.held_back'|trans]) %}
+            {% endif %}
+            {% if chip.untranslated > 0 %}
+                {% set details = details|merge(['setono_sylius_cms.ui.translation_chip.untranslated'|trans({'%count%': chip.untranslated})]) %}
+            {% endif %}
+            {% if chip.outdated > 0 %}
+                {% set details = details|merge(['setono_sylius_cms.ui.translation_chip.outdated'|trans({'%count%': chip.outdated})]) %}
+            {% endif %}
+            {% if chip.complete and not chip.heldBack %}
+                {% set details = ['setono_sylius_cms.ui.translation_chip.complete'|trans] %}
+            {% endif %}
+        {% endif %}
+        <span class="ui {{ not chip.translated ? 'basic' : (chip.complete ? 'green' : 'yellow') }} label" title="{{ chip.localeCode|sylius_locale_name }}" data-translation-chip="{{ chip.localeCode }}">
+            {% if chip.translated %}{{ chip.localeCode }}{% else %}<del>{{ chip.localeCode }}</del>{% endif %}
+            <span class="detail">{{ details|join(', ') }}</span>
+        </span>
+    {% endfor %}
+</div>

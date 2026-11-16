@@ -16,6 +16,8 @@ use Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement;
 use Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api\BuilderApiTestCase;
 use Setono\SyliusCMSPlugin\Tests\Support\Admins;
 use Setono\SyliusCMSPlugin\Tests\Support\Customers;
+use Setono\SyliusCMSPlugin\Translation\Fingerprint;
+use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
@@ -54,7 +56,7 @@ final class EntryListTest extends BuilderApiTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'All entries');
-        self::assertSame(['Title', 'Type', 'Status', 'Last edited', 'Problems', 'Actions'], $crawler->filter('table thead th')->each(static fn (Crawler $th): string => trim($th->text())));
+        self::assertSame(['Title', 'Type', 'Status', 'Translations', 'Last edited', 'Problems', 'Actions'], $crawler->filter('table thead th')->each(static fn (Crawler $th): string => trim($th->text())));
         self::assertSame([$announcement->getUuid(), $about->getUuid()], self::listedUuids($crawler));
         // Creating from All entries opens the create dialog, which starts by picking a content type
         self::assertSame('cms-create-entry', $crawler->selectButton('Create')->attr('aria-controls'));
@@ -91,7 +93,7 @@ final class EntryListTest extends BuilderApiTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Pages');
-        self::assertSame(['Title', 'Status', 'Last edited', 'Problems', 'Actions'], $crawler->filter('table thead th')->each(static fn (Crawler $th): string => trim($th->text())));
+        self::assertSame(['Title', 'Status', 'Translations', 'Last edited', 'Problems', 'Actions'], $crawler->filter('table thead th')->each(static fn (Crawler $th): string => trim($th->text())));
         self::assertSame([$about->getUuid()], self::listedUuids($crawler));
         // Its Create opens the create dialog at the content type's form, which the link leads to without the dialog
         self::assertSame('/admin/cms/entries/page/new', $crawler->selectLink('Create')->attr('href'));
@@ -172,6 +174,52 @@ final class EntryListTest extends BuilderApiTestCase
         $row = self::row($crawler, $page);
         self::assertSame('Om os', $row->filter('[data-column="title"] a')->text());
         self::assertSame('/da_DK/om-os', $row->filter('[data-column="title"] .description')->text());
+    }
+
+    /**
+     * One chip per locale of the entry's channels, read from its working copy. See "Translation chips" in docs/spec/admin.md
+     *
+     * @test
+     */
+    public function it_shows_a_translation_chip_per_locale_of_the_entrys_channels(): void
+    {
+        $client = self::signedInClient();
+        self::addLocales('WEB', 'da_DK', 'de_DE');
+        $heading = self::heading(self::HEADING, 'Hello there');
+        $heading->setValue('text', 'da_DK', 'Hej');
+        $heading->setTranslated('text', 'da_DK', ['from' => 'en_US', 'fingerprint' => Fingerprint::of('Hello')]);
+        $other = new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a', 'heading', 1);
+        $other->setValue('text', 'en_US', 'Welcome');
+        $page = self::createPageWithBlocks('About us', 'about-us', [$heading, $other]);
+        self::translate($page, 'da_DK', 'Om os', 'om-os');
+        $page->getTranslation('da_DK')->setShown(false);
+        self::flush();
+        // Its draft has a German translation the rows don't have yet
+        $published = self::createPage('Contact', 'contact', published: true);
+        /** @var WorkingCopyManagerInterface $workingCopies */
+        $workingCopies = self::getContainer()->get(WorkingCopyManagerInterface::class);
+        $workingCopy = $workingCopies->getWorkingCopy($published);
+        $workingCopy->setCurrentLocale('de_DE');
+        $german = new PageTranslation();
+        $german->setLocale('de_DE');
+        $german->setTitle('Kontakt');
+        $german->setSlug('kontakt');
+        $workingCopy->addTranslation($german);
+        $workingCopies->save($published, $workingCopy);
+
+        $crawler = $client->request('GET', '/admin/cms/entries/page');
+
+        self::assertSame([
+            'en_US' => 'en_US complete',
+            'da_DK' => 'da_DK held back, 1 untranslated, 1 outdated',
+            'de_DE' => 'de_DE no translation',
+        ], self::chips(self::row($crawler, $page)));
+        self::assertCount(1, self::row($crawler, $page)->filter('[data-translation-chip="de_DE"] del'));
+        self::assertSame([
+            'en_US' => 'en_US complete',
+            'da_DK' => 'da_DK no translation',
+            'de_DE' => 'de_DE complete',
+        ], self::chips(self::row($crawler, $published)));
     }
 
     /**
@@ -346,6 +394,22 @@ final class EntryListTest extends BuilderApiTestCase
         }
 
         return $labels;
+    }
+
+    /**
+     * The row's translation chips by locale, as their text reads
+     *
+     * @return array<string, string>
+     */
+    private static function chips(Crawler $row): array
+    {
+        $chips = [];
+        foreach ($row->filter('[data-column="translations"] [data-translation-chip]') as $chip) {
+            self::assertInstanceOf(\DOMElement::class, $chip);
+            $chips[$chip->getAttribute('data-translation-chip')] = (string) preg_replace('/\s+/', ' ', trim($chip->textContent));
+        }
+
+        return $chips;
     }
 
     private static function createAnnouncement(string $title): Announcement
