@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * Where an entry shows, and how its fields fall back per field. The test app configures de_CH to fall back to de_DE.
@@ -109,7 +110,7 @@ final class TranslationsTest extends WebTestCase
         $crawler = $client->request('GET', '/de_CH/ueber-uns');
 
         self::assertResponseStatusCodeSame(200);
-        self::assertSame(['Hallo', 'Only in English'], $crawler->filter('.cms-tree .cms-heading')->each(static fn ($heading): string => $heading->text()));
+        self::assertSame(['Hallo', 'Only in English'], $crawler->filter('.cms-tree .cms-heading')->each(static fn (Crawler $heading): string => $heading->text()));
         self::assertSelectorTextSame('.cms-rich-text', 'Auf Deutsch');
     }
 
