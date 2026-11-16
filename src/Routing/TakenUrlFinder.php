@@ -43,13 +43,7 @@ final class TakenUrlFinder implements TakenUrlFinderInterface, ResetInterface
             return [];
         }
 
-        $slugs = [];
-        foreach ($entry->getTranslations() as $localeCode => $translation) {
-            $slug = $translation->getSlug();
-            if (null !== $slug && Slug::isValid($slug) && $this->availability->showsIn($entry, (string) $localeCode)) {
-                $slugs[(string) $localeCode] = $slug;
-            }
-        }
+        $slugs = Slug::of($entry, fn (string $localeCode): bool => $this->availability->showsIn($entry, $localeCode));
 
         return $this->findIn($entry, $slugs, $channelCodes, true);
     }

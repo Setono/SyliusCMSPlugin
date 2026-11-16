@@ -184,20 +184,14 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
     }
 
     /**
-     * The slugs that follow the slug rules, by locale code, which have a URL to check
+     * The slugs that follow the slug rules, by locale code, which have a URL to check: those of the translations with a
+     * title
      *
      * @return array<string, string>
      */
     private function validSlugsOf(EntryInterface $entry): array
     {
-        $slugs = [];
-        foreach ($this->slugsOf($entry) as $localeCode => $slug) {
-            if (null !== $slug && Slug::isValid($slug)) {
-                $slugs[$localeCode] = $slug;
-            }
-        }
-
-        return $slugs;
+        return Slug::of($entry, fn (string $localeCode): bool => $this->availability->hasTranslation($entry, $localeCode));
     }
 
     private static function url(string $localeCode, string $path): string

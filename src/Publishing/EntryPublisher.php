@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Setono\SyliusCMSPlugin\Revision\RevisionRecorderInterface;
 use Setono\SyliusCMSPlugin\Routing\OldSlugRecorderInterface;
+use Setono\SyliusCMSPlugin\Routing\Slug;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -101,13 +102,13 @@ final readonly class EntryPublisher implements EntryPublisherInterface
      */
     private function apply(EntryInterface $entry, EntryInterface $workingCopy, ?ScheduledPublishInterface $scheduledPublish): array
     {
-        $oldSlugs = $entry->isPublished() ? self::slugs($entry) : [];
+        $oldSlugs = $entry->isPublished() ? Slug::of($entry) : [];
 
         // 3. Copy the working copy onto the rows and delete the draft
         $this->workingCopies->applyToRows($entry, $workingCopy);
 
         // 4. Record the old slug of every translation whose slug changed, so it redirects
-        $this->oldSlugs->record($entry, $oldSlugs, self::slugs($entry));
+        $this->oldSlugs->record($entry, $oldSlugs, Slug::of($entry));
 
         // 7. Store what the rows hold now as a revision. A scheduled one names who scheduled it, since no one is signed in to the worker
         $now = $this->clock->now()->setTimezone(new \DateTimeZone('UTC'));
@@ -130,24 +131,8 @@ final readonly class EntryPublisher implements EntryPublisherInterface
             $entry->getUuid(),
             $this->contentTypes->getByEntry($entry)->code,
             $oldSlugs,
-            self::slugs($entry),
+            Slug::of($entry),
             $scheduled,
         ));
-    }
-
-    /**
-     * @return array<string, string> locale => slug, for the translations that have one
-     */
-    private static function slugs(EntryInterface $entry): array
-    {
-        $slugs = [];
-        foreach ($entry->getTranslations() as $localeCode => $translation) {
-            $slug = $translation->getSlug();
-            if (null !== $slug) {
-                $slugs[$localeCode] = $slug;
-            }
-        }
-
-        return $slugs;
     }
 }

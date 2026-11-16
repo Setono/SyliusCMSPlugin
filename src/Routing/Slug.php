@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Routing;
 
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
+
 /**
  * The rules a slug follows. Editors may type slashes, such as about/team, but a slug can't be empty, start or end with
  * a slash, or contain two slashes in a row. See "Slugs" in docs/spec/urls-and-seo.md
@@ -20,5 +22,26 @@ final class Slug
     public static function isValid(string $slug): bool
     {
         return 1 === preg_match(self::PATTERN, $slug);
+    }
+
+    /**
+     * The slugs of the entry's translations that follow the rules, which have a URL, by locale code
+     *
+     * @param (callable(string): bool)|null $in which locales to take, or null for every one
+     *
+     * @return array<string, string>
+     */
+    public static function of(EntryInterface $entry, ?callable $in = null): array
+    {
+        $slugs = [];
+        foreach ($entry->getTranslations() as $localeCode => $translation) {
+            $localeCode = (string) $localeCode;
+            $slug = $translation->getSlug();
+            if (null !== $slug && self::isValid($slug) && (null === $in || $in($localeCode))) {
+                $slugs[$localeCode] = $slug;
+            }
+        }
+
+        return $slugs;
     }
 }
