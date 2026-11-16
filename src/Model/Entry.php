@@ -6,8 +6,6 @@ namespace Setono\SyliusCMSPlugin\Model;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactoryInterface;
-use Setono\SyliusCMSPlugin\Factory\EntryChannelFactoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\AudienceMode;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
@@ -162,19 +160,30 @@ abstract class Entry implements EntryInterface
         return self::codes($this->channels);
     }
 
-    public function setChannelCodes(iterable $codes, EntryChannelFactoryInterface $factory): void
+    public function getChannels(): Collection
     {
-        $codes = array_unique([...$codes]);
+        return $this->channels;
+    }
 
-        foreach ($this->channels as $channel) {
-            if (!in_array($channel->getCode(), $codes, true)) {
-                $this->channels->removeElement($channel);
-            }
+    public function hasChannel(EntryChannel $channel): bool
+    {
+        return $this->channels->contains($channel);
+    }
+
+    public function addChannel(EntryChannel $channel): void
+    {
+        if ($this !== $channel->getEntry()) {
+            throw new \LogicException(sprintf('The channel row %s belongs to another entry', $channel->getCode()));
         }
 
-        foreach (array_diff($codes, $this->getChannelCodes()) as $code) {
-            $this->channels->add($factory->createForEntry($this, $code));
+        if (!$this->hasChannel($channel)) {
+            $this->channels->add($channel);
         }
+    }
+
+    public function removeChannel(EntryChannel $channel): void
+    {
+        $this->channels->removeElement($channel);
     }
 
     public function getAudience(): Audience
@@ -182,19 +191,35 @@ abstract class Entry implements EntryInterface
         return new Audience(AudienceMode::from($this->audienceMode), self::codes($this->audienceGroups));
     }
 
-    public function setAudience(Audience $audience, EntryAudienceGroupFactoryInterface $factory): void
+    public function setAudienceMode(AudienceMode $mode): void
     {
-        $this->audienceMode = $audience->mode->value;
+        $this->audienceMode = $mode->value;
+    }
 
-        foreach ($this->audienceGroups as $group) {
-            if (!in_array($group->getCode(), $audience->groups, true)) {
-                $this->audienceGroups->removeElement($group);
-            }
+    public function getAudienceGroups(): Collection
+    {
+        return $this->audienceGroups;
+    }
+
+    public function hasAudienceGroup(EntryAudienceGroup $group): bool
+    {
+        return $this->audienceGroups->contains($group);
+    }
+
+    public function addAudienceGroup(EntryAudienceGroup $group): void
+    {
+        if ($this !== $group->getEntry()) {
+            throw new \LogicException(sprintf('The audience group row %s belongs to another entry', $group->getCode()));
         }
 
-        foreach (array_diff($audience->groups, self::codes($this->audienceGroups)) as $code) {
-            $this->audienceGroups->add($factory->createForEntry($this, $code));
+        if (!$this->hasAudienceGroup($group)) {
+            $this->audienceGroups->add($group);
         }
+    }
+
+    public function removeAudienceGroup(EntryAudienceGroup $group): void
+    {
+        $this->audienceGroups->removeElement($group);
     }
 
     public function getBlockTree(): StoredTree

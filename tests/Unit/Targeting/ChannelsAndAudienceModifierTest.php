@@ -10,8 +10,10 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactoryInterface;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactoryInterface;
+use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
 use Setono\SyliusCMSPlugin\Model\EntryChannel;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifier;
@@ -109,6 +111,108 @@ final class ChannelsAndAudienceModifierTest extends TestCase
         $this->modifier()->setAudience($page, Audience::everyone());
 
         self::assertTrue($page->getAudience()->equals(Audience::everyone()));
+    }
+
+    /**
+     * Doctrine removes rows after it inserts them, so a code that stays must keep its row, or the insert would clash
+     * with the row's unique key
+     *
+     * @test
+     */
+    public function it_keeps_the_rows_of_the_channels_that_stay_and_removes_the_others(): void
+    {
+        $page = new Page();
+        $web = new EntryChannel($page, 'WEB');
+        $b2b = new EntryChannel($page, 'B2B');
+        $mobile = new EntryChannel($page, 'MOBILE');
+        $this->channelFactory->createForEntry($page, 'WEB')->willReturn($web);
+        $this->channelFactory->createForEntry($page, 'B2B')->willReturn($b2b);
+        $this->channelFactory->createForEntry($page, 'MOBILE')->willReturn($mobile);
+        $this->modifier()->setChannels($page, ['WEB', 'B2B']);
+
+        $this->modifier()->setChannels($page, (static function (): \Generator {
+            yield 'MOBILE';
+            yield 'WEB';
+            yield 'MOBILE';
+        })());
+
+        self::assertSame([$web, $mobile], $page->getChannels()->getValues());
+
+        $this->modifier()->setChannels($page, []);
+
+        self::assertSame([], $page->getChannels()->getValues());
+    }
+
+    /**
+     * @test
+     */
+    public function it_keeps_the_rows_of_the_audience_groups_that_stay_and_removes_the_others(): void
+    {
+        $page = new Page();
+        $retail = new EntryAudienceGroup($page, 'retail');
+        $wholesale = new EntryAudienceGroup($page, 'wholesale');
+        $guest = new EntryAudienceGroup($page, '@guest');
+        $this->audienceGroupFactory->createForEntry($page, 'retail')->willReturn($retail);
+        $this->audienceGroupFactory->createForEntry($page, 'wholesale')->willReturn($wholesale);
+        $this->audienceGroupFactory->createForEntry($page, '@guest')->willReturn($guest);
+        $this->modifier()->setAudience($page, Audience::only('retail', 'wholesale'));
+
+        $this->modifier()->setAudience($page, Audience::except('wholesale', '@guest'));
+
+        self::assertSame([$wholesale, $guest], $page->getAudienceGroups()->getValues());
+        self::assertTrue($page->getAudience()->equals(Audience::except('@guest', 'wholesale')));
+    }
+
+    /**
+     * The mode and the groups change together, so the entry never shows to everyone with groups left over
+     *
+     * @test
+     */
+    public function it_changes_the_audience_mode_with_its_groups(): void
+    {
+        $page = new Page();
+        $this->audienceGroupFactory->createForEntry($page, 'wholesale')->willReturn(new EntryAudienceGroup($page, 'wholesale'));
+
+        $this->modifier()->setAudience($page, Audience::only('wholesale'));
+
+        self::assertTrue($page->getAudience()->equals(Audience::only('wholesale')));
+
+        $this->modifier()->setAudience($page, Audience::except('wholesale'));
+
+        self::assertTrue($page->getAudience()->equals(Audience::except('wholesale')));
+
+        $this->modifier()->setAudience($page, Audience::everyone());
+
+        self::assertSame([], $page->getAudienceGroups()->getValues());
+        self::assertTrue($page->getAudience()->equals(Audience::everyone()));
+
+        $this->modifier()->setAudience($page, Audience::only());
+
+        self::assertTrue($page->getAudience()->equals(Audience::only()));
+    }
+
+    /**
+     * The rows refer to the shipped Entry, which every content type extends
+     *
+     * @test
+     */
+    public function it_needs_an_entry_that_extends_the_shipped_entry_to_change_its_channels(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf('must extend %s', Entry::class));
+
+        $this->modifier()->setChannels($this->prophesize(EntryInterface::class)->reveal(), ['WEB']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_needs_an_entry_that_extends_the_shipped_entry_to_change_its_audience(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf('must extend %s', Entry::class));
+
+        $this->modifier()->setAudience($this->prophesize(EntryInterface::class)->reveal(), Audience::only('wholesale'));
     }
 
     private function modifier(): ChannelsAndAudienceModifier
