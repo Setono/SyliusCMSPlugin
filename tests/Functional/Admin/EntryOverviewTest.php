@@ -319,6 +319,26 @@ final class EntryOverviewTest extends WebTestCase
     /**
      * @test
      */
+    public function its_urls_section_lists_the_old_slugs_that_redirect_to_a_url(): void
+    {
+        $client = self::signedInClient();
+        $page = self::createPage('About us', 'about', published: true);
+        foreach (['about-us', 'about-our-shop'] as $slug) {
+            self::saveChanges($page, [['op' => 'set_entry_value', 'field' => 'slug', 'locale' => 'en_US', 'value' => $slug]]);
+            self::publishEntry($page);
+        }
+
+        $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s', $page->getUuid()));
+
+        $row = $crawler->filter('[data-section="urls"] [data-locale="en_US"]');
+        self::assertSame('/en_US/about-our-shop', $row->filter('[data-url]')->text());
+        self::assertSame(['/en_US/about-us', '/en_US/about'], $row->filter('[data-old-url]')->each(static fn (Crawler $url): string => $url->text()));
+        self::assertStringStartsWith('Redirects from:', $row->filter('[data-old-urls]')->text());
+    }
+
+    /**
+     * @test
+     */
     public function its_translations_section_shows_a_chip_per_locale_of_the_entrys_channels_from_its_draft(): void
     {
         $client = self::signedInClient();

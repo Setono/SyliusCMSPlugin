@@ -92,6 +92,7 @@ setono_sylius_cms:
         new_entry_heading: New entry
         no_revisions: Every publish stores a revision, which you can preview and restore. There are none yet.
         no_urls: It has no URL yet, because it has no slug.
+        old_urls: 'Redirects from:'
         open_in_builder: Open in builder
         other_content_type: Another content type
         overview_placeholder: What needs attention, what's coming up, translations and drafts in progress will show here. Until then, find the entries in their lists.
