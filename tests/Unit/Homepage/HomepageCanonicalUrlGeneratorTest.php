@@ -10,6 +10,7 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Homepage\HomepageCanonicalUrlGenerator;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface;
 use Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement;
 use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
@@ -42,7 +43,7 @@ final class HomepageCanonicalUrlGeneratorTest extends TestCase
     public function a_channels_homepage_lives_at_the_channels_root_in_each_locale(): void
     {
         $page = new Page();
-        Homepages::modifier()->setHomepageOf($page, ['B2B', 'WEB']);
+        Homepages::modifier($this->prophesize(HomepageRepositoryInterface::class)->reveal())->setHomepageOf($page, ['B2B', 'WEB']);
 
         self::assertSame('https://shop.example/en_US/', $this->generator()->generate($page, self::channel('WEB'), 'en_US'));
         self::assertSame('https://shop.example/da_DK/', $this->generator()->generate($page, self::channel('B2B'), 'da_DK'));
@@ -55,7 +56,7 @@ final class HomepageCanonicalUrlGeneratorTest extends TestCase
     public function a_page_lives_at_its_own_url_in_a_channel_it_is_not_the_homepage_of(): void
     {
         $page = new Page();
-        Homepages::modifier()->setHomepageOf($page, ['B2B']);
+        Homepages::modifier($this->prophesize(HomepageRepositoryInterface::class)->reveal())->setHomepageOf($page, ['B2B']);
         $web = self::channel('WEB');
 
         self::assertSame('https://shop.example/en_US/welcome', $this->generator()->generate($page, $web, 'en_US'));

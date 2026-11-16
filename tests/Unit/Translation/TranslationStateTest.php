@@ -20,9 +20,8 @@ use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
-use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
+use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
-use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
@@ -44,6 +43,7 @@ use Setono\SyliusCMSPlugin\Translation\ValueState;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Sylius\Resource\Translation\Provider\ImmutableTranslationLocaleProvider;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\IdentityTranslator;
 
@@ -132,7 +132,7 @@ final class TranslationStateTest extends TestCase
     public function it_writes_a_layout_value_a_translator_read_so_it_is_up_to_date(): void
     {
         $entry = self::page('Hello', new StoredLayout('promo', 1, ['tagline' => ['en_US' => 'Big news']]));
-        $state = new TranslationState(self::ownWorkingCopy(), self::applyingAutosave(), self::translatableValues());
+        $state = new TranslationState($this->ownWorkingCopy(), $this->applyingAutosave(), self::translatableValues());
         $read = self::valueAt($state->values($entry, 'da_DK'), 'layout.tagline');
         self::assertSame(ValueState::Untranslated, $read->state);
 
@@ -169,7 +169,7 @@ final class TranslationStateTest extends TestCase
     public function it_leaves_a_value_written_with_an_old_fingerprint_outdated(): void
     {
         $entry = self::page('Hello');
-        $state = new TranslationState(self::ownWorkingCopy(), self::applyingAutosave(), self::translatableValues());
+        $state = new TranslationState($this->ownWorkingCopy(), $this->applyingAutosave(), self::translatableValues());
         $read = self::blockValue($state->values($entry, 'da_DK'));
         self::assertSame(ValueState::Untranslated, $read->state);
         self::assertNotNull($read->sourceLocaleCode);
@@ -302,67 +302,43 @@ final class TranslationStateTest extends TestCase
     /**
      * A never-published entry is its own working copy
      */
-    private static function ownWorkingCopy(): WorkingCopyProviderInterface
+    private function ownWorkingCopy(): WorkingCopyProviderInterface
     {
-        return new class() implements WorkingCopyProviderInterface {
-            public function getWorkingCopy(EntryInterface $entry): EntryInterface
-            {
-                return $entry;
-            }
+        $workingCopies = $this->prophesize(WorkingCopyProviderInterface::class);
+        $workingCopies->getWorkingCopy(Argument::type(EntryInterface::class))->willReturnArgument(0);
 
-            public function getWorkingCopyWithDraft(EntryInterface $entry, ?DraftInterface $draft): EntryInterface
-            {
-                return $entry;
-            }
-        };
+        return $workingCopies->reveal();
     }
 
     /**
      * Applies each save to the entry, as autosave applies it to a never-published entry's rows
      */
-    private static function applyingAutosave(): AutosaveInterface
+    private function applyingAutosave(): AutosaveInterface
     {
         $applier = new ChangeSetApplier(self::blockTypes(), self::fieldHandlers(), self::contentTypes(), Conditions::registry(), self::layouts());
+        $lockToken = 0;
 
-        return new class($applier) implements AutosaveInterface {
-            private int $lockToken = 0;
+        $autosave = $this->prophesize(AutosaveInterface::class);
+        $autosave->load(Argument::type(EntryInterface::class))->will(static function (array $arguments) use (&$lockToken): LoadedWorkingCopy {
+            self::assertInstanceOf(EntryInterface::class, $arguments[0]);
 
-            public function __construct(private readonly ChangeSetApplier $applier)
-            {
-            }
+            return new LoadedWorkingCopy($arguments[0], $lockToken);
+        });
+        $autosave->save(Argument::type(EntryInterface::class), Argument::type(ChangeSet::class), Argument::type('int'))->will(static function (array $arguments) use ($applier, &$lockToken): SaveResult {
+            [$entry, $changeSet] = $arguments;
+            self::assertInstanceOf(EntryInterface::class, $entry);
+            self::assertInstanceOf(ChangeSet::class, $changeSet);
+            $applier->apply($changeSet, $entry);
 
-            public function load(EntryInterface $entry): LoadedWorkingCopy
-            {
-                return new LoadedWorkingCopy($entry, $this->lockToken);
-            }
+            return new SaveResult(new LoadedWorkingCopy($entry, ++$lockToken), false);
+        });
 
-            public function save(EntryInterface $entry, ChangeSet $changeSet, int $lockToken): SaveResult
-            {
-                $this->applier->apply($changeSet, $entry);
-
-                return new SaveResult(new LoadedWorkingCopy($entry, ++$this->lockToken), false);
-            }
-
-            public function discard(EntryInterface $entry): LoadedWorkingCopy
-            {
-                return $this->load($entry);
-            }
-
-            public function replace(EntryInterface $entry, array $content): LoadedWorkingCopy
-            {
-                return $this->load($entry);
-            }
-        };
+        return $autosave->reveal();
     }
 
     private static function translatableValues(): TranslatableValues
     {
-        $fallbackChain = new class() implements FallbackChainInterface {
-            public function localesFor(string $localeCode): array
-            {
-                return 'en_US' === $localeCode ? ['en_US'] : [$localeCode, 'en_US'];
-            }
-        };
+        $fallbackChain = new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'));
 
         return new TranslatableValues(
             self::contentTypes(),

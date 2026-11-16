@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Problem;
 
 use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -35,9 +36,9 @@ final class ProblemFinderTest extends TestCase
         $secondError = self::problem($workingCopy, 'broken', Severity::Error);
 
         $finder = new ProblemFinder([
-            self::kind($workingCopy, [$firstWarning, $firstError]),
-            self::kind($workingCopy, []),
-            self::kind($workingCopy, (static fn (): \Generator => yield from [$secondWarning, $secondError])()),
+            $this->kind($workingCopy, [$firstWarning, $firstError]),
+            $this->kind($workingCopy, []),
+            $this->kind($workingCopy, (static fn (): \Generator => yield from [$secondWarning, $secondError])()),
         ], $workingCopies->reveal());
 
         self::assertSame([$firstError, $secondError, $firstWarning, $secondWarning], $finder->findByEntry($page));
@@ -58,21 +59,12 @@ final class ProblemFinderTest extends TestCase
     /**
      * @param iterable<Problem> $problems
      */
-    private static function kind(EntryInterface $expected, iterable $problems): ProblemKindInterface
+    private function kind(EntryInterface $expected, iterable $problems): ProblemKindInterface
     {
-        return new class($expected, $problems) implements ProblemKindInterface {
-            /**
-             * @param iterable<Problem> $problems
-             */
-            public function __construct(private readonly EntryInterface $expected, private readonly iterable $problems)
-            {
-            }
+        $kind = $this->prophesize(ProblemKindInterface::class);
+        $kind->findIn(Argument::is($expected))->willReturn($problems);
 
-            public function findIn(EntryInterface $entry): iterable
-            {
-                return $entry === $this->expected ? $this->problems : [];
-            }
-        };
+        return $kind->reveal();
     }
 
     private static function problem(EntryInterface $entry, string $kind, Severity $severity): Problem

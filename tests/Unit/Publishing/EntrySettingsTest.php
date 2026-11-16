@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Publishing;
 
 use PHPUnit\Framework\TestCase;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Homepage\HomepageModifier;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettings;
+use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement;
@@ -16,6 +18,8 @@ use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
 
 final class EntrySettingsTest extends TestCase
 {
+    use ProphecyTrait;
+
     /**
      * @test
      */
@@ -26,7 +30,7 @@ final class EntrySettingsTest extends TestCase
         $page->setDateWindow(self::window());
         ChannelsAndAudience::modifier()->setChannels($page, ['WEB', 'B2B']);
         ChannelsAndAudience::modifier()->setAudience($page, Audience::only('wholesale'));
-        self::homepages()->setHomepageOf($page, ['WEB', 'MOBILE']);
+        $this->homepages()->setHomepageOf($page, ['WEB', 'MOBILE']);
 
         $settings = EntrySettings::of($page);
 
@@ -55,7 +59,7 @@ final class EntrySettingsTest extends TestCase
         $page = new Page();
 
         (new EntrySettings(false, self::window(), ['WEB', 'B2B', 'WEB'], Audience::except('retail'), ['MOBILE']))
-            ->applyTo($page, ChannelsAndAudience::modifier(), self::homepages());
+            ->applyTo($page, ChannelsAndAudience::modifier(), $this->homepages());
 
         self::assertFalse($page->isEnabled());
         self::assertTrue($page->getDateWindow()->equals(self::window()));
@@ -71,7 +75,7 @@ final class EntrySettingsTest extends TestCase
     {
         $announcement = new Announcement();
 
-        (new EntrySettings(false, new DateWindow(), ['WEB'], Audience::everyone()))->applyTo($announcement, ChannelsAndAudience::modifier(), self::homepages());
+        (new EntrySettings(false, new DateWindow(), ['WEB'], Audience::everyone()))->applyTo($announcement, ChannelsAndAudience::modifier(), $this->homepages());
 
         self::assertFalse($announcement->isEnabled());
         self::assertSame(['WEB'], $announcement->getChannelCodes());
@@ -129,8 +133,8 @@ final class EntrySettingsTest extends TestCase
         return new DateWindow(new \DateTimeImmutable('2026-11-27T00:00:00Z'), new \DateTimeImmutable('2026-12-01T00:00:00Z'));
     }
 
-    private static function homepages(): HomepageModifier
+    private function homepages(): HomepageModifier
     {
-        return Homepages::modifier();
+        return Homepages::modifier($this->prophesize(HomepageRepositoryInterface::class)->reveal());
     }
 }

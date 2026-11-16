@@ -8,12 +8,16 @@ use Knp\Menu\Integration\Symfony\RoutingExtension;
 use Knp\Menu\Matcher\Matcher;
 use Knp\Menu\Matcher\Voter\RouteVoter;
 use Knp\Menu\MenuFactory as KnpMenuFactory;
+use Symfony\Component\Config\FileLocator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\Generator\UrlGenerator;
+use Symfony\Component\Routing\Loader\PhpFileLoader;
+use Symfony\Component\Routing\RequestContext;
 
 /**
- * KnpMenu as the admin builds menus: items with a route get its path, written here as "/<route>?<parameters>"
+ * KnpMenu as the admin builds menus: items with a route get its path from the plugin's admin routes, imported under
+ * /admin as the test application imports them, so an item can only point at a route the plugin has
  */
 final class MenuFactory
 {
@@ -23,25 +27,11 @@ final class MenuFactory
 
     public static function create(): KnpMenuFactory
     {
+        $routes = (new PhpFileLoader(new FileLocator()))->load(dirname(__DIR__, 3) . '/src/Resources/config/routes/admin.php');
+        $routes->addPrefix('/admin');
+
         $factory = new KnpMenuFactory();
-        $factory->addExtension(new RoutingExtension(new class() implements UrlGeneratorInterface {
-            /**
-             * @param array<mixed> $parameters
-             */
-            public function generate(string $name, array $parameters = [], int $referenceType = self::ABSOLUTE_PATH): string
-            {
-                return rtrim('/' . $name . '?' . http_build_query($parameters), '?');
-            }
-
-            public function setContext(\Symfony\Component\Routing\RequestContext $context): void
-            {
-            }
-
-            public function getContext(): \Symfony\Component\Routing\RequestContext
-            {
-                return new \Symfony\Component\Routing\RequestContext();
-            }
-        }));
+        $factory->addExtension(new RoutingExtension(new UrlGenerator($routes, new RequestContext())));
 
         return $factory;
     }

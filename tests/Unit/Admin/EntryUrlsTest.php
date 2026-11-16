@@ -18,6 +18,7 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
@@ -96,7 +97,7 @@ final class EntryUrlsTest extends TestCase
     public function it_gives_a_homepage_the_channels_root_beside_its_own_url(): void
     {
         $page = self::page(['en_US' => ['Welcome', 'welcome'], 'da_DK' => ['Velkommen', 'velkommen']]);
-        Homepages::modifier()->setHomepageOf($page, ['WEB']);
+        Homepages::modifier($this->prophesize(HomepageRepositoryInterface::class)->reveal())->setHomepageOf($page, ['WEB']);
 
         self::assertEquals([
             new EntryUrl('da_DK', '/da_DK/velkommen', null, [], '/da_DK/'),

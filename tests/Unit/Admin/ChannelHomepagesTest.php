@@ -47,9 +47,9 @@ final class ChannelHomepagesTest extends TestCase
     public function it_lists_each_channel_with_its_homepage_now_in_the_order_the_store_lists_them(): void
     {
         $page = new Page();
-        Homepages::modifier()->setHomepageOf($page, ['WEB']);
+        Homepages::modifier($this->homepages->reveal())->setHomepageOf($page, ['WEB']);
         $sale = new Page();
-        Homepages::modifier()->setHomepageOf($sale, ['B2B']);
+        Homepages::modifier($this->homepages->reveal())->setHomepageOf($sale, ['B2B']);
         $this->homepages->findByChannelCodes(['WEB', 'B2B', 'MOBILE'])->willReturn([...$sale->getHomepages(), ...$page->getHomepages()]);
 
         self::assertEquals([
@@ -67,7 +67,7 @@ final class ChannelHomepagesTest extends TestCase
     public function it_lists_a_deleted_channel_the_page_is_still_the_homepage_of(): void
     {
         $page = new Page();
-        Homepages::modifier()->setHomepageOf($page, ['OLD', 'B2B', 'GONE']);
+        Homepages::modifier($this->homepages->reveal())->setHomepageOf($page, ['OLD', 'B2B', 'GONE']);
         $this->homepages->findByChannelCodes(['WEB', 'B2B', 'MOBILE', 'GONE', 'OLD'])->willReturn([...$page->getHomepages()]);
 
         self::assertEquals([

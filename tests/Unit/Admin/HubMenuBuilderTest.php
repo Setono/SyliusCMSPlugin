@@ -42,7 +42,7 @@ final class HubMenuBuilderTest extends TestCase
 
         $overview = self::child($menu, 'overview');
         self::assertSame('setono_sylius_cms.menu.admin.hub.overview', $overview->getLabel());
-        self::assertSame('/setono_sylius_cms_admin_overview', $overview->getUri());
+        self::assertSame('/admin/cms', $overview->getUri());
         self::assertSame('home', $overview->getLabelAttribute('icon'));
 
         self::assertSame('setono_sylius_cms.menu.admin.hub.entries', self::child($menu, 'entries')->getLabel());
@@ -63,13 +63,13 @@ final class HubMenuBuilderTest extends TestCase
 
         $all = self::child($entries, 'all');
         self::assertSame('setono_sylius_cms.menu.admin.hub.all_entries', $all->getLabel());
-        self::assertSame('/setono_sylius_cms_admin_entry_index_all', $all->getUri());
+        self::assertSame('/admin/cms/entries', $all->getUri());
         self::assertSame('list', $all->getLabelAttribute('icon'));
         self::assertSame(7, $all->getExtra('count'));
 
         $pages = self::child($entries, 'page');
         self::assertSame('setono_sylius_cms.menu.admin.hub.pages', $pages->getLabel());
-        self::assertSame('/setono_sylius_cms_admin_entry_index?contentType=page', $pages->getUri());
+        self::assertSame('/admin/cms/entries/page', $pages->getUri());
         self::assertSame('file alternate outline', $pages->getLabelAttribute('icon'));
         self::assertSame(3, $pages->getExtra('count'));
     }

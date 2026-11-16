@@ -16,16 +16,12 @@ use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 final class Homepages
 {
     /**
-     * @param HomepageRepositoryInterface|null $repository where other pages' homepages are found, or null for none
+     * @param HomepageRepositoryInterface $repository where other pages' homepages are found, which only
+     *                                                HomepageModifier::takeOffOtherPages() reads
      */
-    public static function modifier(?HomepageRepositoryInterface $repository = null): HomepageModifier
+    public static function modifier(HomepageRepositoryInterface $repository): HomepageModifier
     {
-        return new HomepageModifier(self::factory(), $repository ?? new class() implements HomepageRepositoryInterface {
-            public function findByChannelCodes(array $channelCodes): array
-            {
-                return [];
-            }
-        });
+        return new HomepageModifier(self::factory(), $repository);
     }
 
     public static function factory(): HomepageFactory

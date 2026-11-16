@@ -35,7 +35,7 @@ final class MainMenuListenerTest extends TestCase
         $content = $section->getChild('content');
         self::assertNotNull($content);
         self::assertSame('setono_sylius_cms.menu.admin.main.content.content', $content->getLabel());
-        self::assertSame('/setono_sylius_cms_admin_overview', $content->getUri());
+        self::assertSame('/admin/cms', $content->getUri());
         self::assertSame('pencil alternate', $content->getLabelAttribute('icon'));
         self::assertSame([], $content->getLinkAttributes(), 'Nothing needs attention, so it has no badge');
     }

@@ -21,6 +21,7 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
 use Setono\SyliusCMSPlugin\Revision\RevisionReader;
 use Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement;
@@ -92,7 +93,7 @@ final class HomepageResolverTest extends TestCase
      */
     public function the_builders_preview_of_the_channels_homepage_shows_its_working_copy(): void
     {
-        $page = self::page('WEB');
+        $page = $this->page('WEB');
         $workingCopy = clone $page;
         $this->workingCopies->getWorkingCopy($page)->willReturn($workingCopy);
         $this->previewing($page, 'WEB', 'en_US');
@@ -109,7 +110,7 @@ final class HomepageResolverTest extends TestCase
         $context = self::context('WEB');
         $home = new Page();
         $this->homepages->getHomepage($context)->willReturn($home);
-        $this->previewing(self::page('B2B'), 'WEB', 'en_US');
+        $this->previewing($this->page('B2B'), 'WEB', 'en_US');
 
         self::assertSame($home, $this->resolver()->resolve($context));
     }
@@ -137,7 +138,7 @@ final class HomepageResolverTest extends TestCase
     public function a_preview_in_another_locale_shows_the_channels_homepage(): void
     {
         $context = self::context('WEB');
-        $this->previewing(self::page('WEB'), 'WEB', 'da_DK');
+        $this->previewing($this->page('WEB'), 'WEB', 'da_DK');
 
         self::assertNull($this->resolver()->resolve($context));
     }
@@ -162,10 +163,10 @@ final class HomepageResolverTest extends TestCase
         return new HomepageResolver($this->homepages->reveal(), $previewedEntries);
     }
 
-    private static function page(string $homepageOf): Page
+    private function page(string $homepageOf): Page
     {
         $page = new Page();
-        Homepages::modifier()->setHomepageOf($page, [$homepageOf]);
+        Homepages::modifier($this->prophesize(HomepageRepositoryInterface::class)->reveal())->setHomepageOf($page, [$homepageOf]);
 
         return $page;
     }

@@ -14,13 +14,14 @@ use Setono\SyliusCMSPlugin\Field\DateTimeHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
-use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
+use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Rendering\ParamsHydrator;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\LocaleIs;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\SignedIn;
+use Sylius\Resource\Translation\Provider\ImmutableTranslationLocaleProvider;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\IdentityTranslator;
 
@@ -40,12 +41,7 @@ final class Conditions
 
         return new ConditionMatcher(
             self::registry($kinds),
-            new ParamsHydrator($handlers, new FallbackValues($handlers, new class() implements FallbackChainInterface {
-                public function localesFor(string $localeCode): array
-                {
-                    return [$localeCode];
-                }
-            })),
+            new ParamsHydrator($handlers, new FallbackValues($handlers, new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US')))),
         );
     }
 

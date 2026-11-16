@@ -68,7 +68,7 @@ final class LintCommandTest extends TestCase
         $this->upgrader->readBlockTree($published)->willReturn(new StoredTree(null, []));
         $this->manager->clear()->shouldNotBeCalled();
 
-        $tester = $this->lint([self::kind([])]);
+        $tester = $this->lint([$this->kind([])]);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
         self::assertStringContainsString('[OK] No problems found.', $tester->getDisplay());
@@ -96,13 +96,13 @@ final class LintCommandTest extends TestCase
         // The published content is a copy of the entry with its upgraded tree, so the entry itself is left as it is
         $isPublishedContent = static fn (EntryInterface $entry): bool => $entry !== $published && 'promo' === ($entry->getBlockTree()->blocks[0]->type ?? null);
         $tester = $this->lint([
-            self::kind([
+            $this->kind([
                 [static fn (EntryInterface $entry): bool => $entry === $neverPublished, new Problem('first', Severity::Warning, $neverPublished, self::unknownBlockType('promo'), block: self::KEY)],
                 [$isPublishedContent, new Problem('first', Severity::Error, $published, new TranslatableMessage('setono_sylius_cms.problem.misfit_layout_value', [
                     '%field%' => new TranslatableMessage('setono_sylius_cms.field.group.full_width'),
                 ]), field: 'fullWidth')],
             ]),
-            self::kind([
+            $this->kind([
                 [static fn (EntryInterface $entry): bool => $entry === $draft, new Problem('second', Severity::Error, $draft, new TranslatableMessage('setono_sylius_cms.problem.misfit_value', [
                     '%field%' => new TranslatableMessage('setono_sylius_cms.field.heading.text'),
                     '%block%' => new TranslatableMessage('setono_sylius_cms.block_type.heading'),
@@ -139,7 +139,7 @@ final class LintCommandTest extends TestCase
         $this->workingCopies->getWorkingCopy($brokenDraft)->willThrow(new InvalidEntryFormatException('Not an entry'));
         $this->workingCopies->getWorkingCopy($after)->willReturn($after);
 
-        $tester = $this->lint([self::kind([[static fn (EntryInterface $entry): bool => $entry === $after, new Problem('first', Severity::Error, $after, self::unknownBlockType('promo'))]])]);
+        $tester = $this->lint([$this->kind([[static fn (EntryInterface $entry): bool => $entry === $after, new Problem('first', Severity::Error, $after, self::unknownBlockType('promo'))]])]);
 
         self::assertSame(Command::FAILURE, $tester->getStatusCode());
         self::assertSame([
@@ -160,7 +160,7 @@ final class LintCommandTest extends TestCase
         $this->entries->iterateAll()->willReturn([$page]);
         $this->workingCopies->getWorkingCopy($page)->willReturn($page);
 
-        $tester = $this->lint([self::kind([[static fn (): bool => true, new Problem('first', Severity::Error, $page, self::unknownBlockType('promo'))]])]);
+        $tester = $this->lint([$this->kind([[static fn (): bool => true, new Problem('first', Severity::Error, $page, self::unknownBlockType('promo'))]])]);
 
         self::assertStringContainsString('[ERROR] Found 1 problem in 1 entry.', $tester->getDisplay());
     }
@@ -208,25 +208,21 @@ final class LintCommandTest extends TestCase
      *
      * @param list<array{\Closure(EntryInterface): bool, Problem}> $problems
      */
-    private static function kind(array $problems): ProblemKindInterface
+    private function kind(array $problems): ProblemKindInterface
     {
-        return new class($problems) implements ProblemKindInterface {
-            /**
-             * @param list<array{\Closure(EntryInterface): bool, Problem}> $problems
-             */
-            public function __construct(private readonly array $problems)
-            {
-            }
+        $kind = $this->prophesize(ProblemKindInterface::class);
+        $kind->findIn(Argument::type(EntryInterface::class))->will(static function (array $arguments) use ($problems): \Generator {
+            $entry = $arguments[0];
+            self::assertInstanceOf(EntryInterface::class, $entry);
 
-            public function findIn(EntryInterface $entry): iterable
-            {
-                foreach ($this->problems as [$matches, $problem]) {
-                    if ($matches($entry)) {
-                        yield $problem;
-                    }
+            foreach ($problems as [$matches, $problem]) {
+                if ($matches($entry)) {
+                    yield $problem;
                 }
             }
-        };
+        });
+
+        return $kind->reveal();
     }
 
     private static function unknownBlockType(string $type): TranslatableMessage
