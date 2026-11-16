@@ -15,7 +15,8 @@ interface VisibleEntriesQueryInterface
 {
     /**
      * One content type's entries that are visible in the render context: published, enabled, inside their date window,
-     * in the channel, with a translation in the locale, and in the shopper's audience. Root alias "entry". No ORDER BY
+     * in the channel, with a translation in the locale that has a title and isn't held back, and in the shopper's
+     * audience. Root alias "entry". No ORDER BY
      */
     public function createQueryBuilder(string $contentType, RenderContext $context): QueryBuilder;
 }

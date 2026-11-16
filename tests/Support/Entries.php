@@ -17,6 +17,7 @@ use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Bundle\CoreBundle\Fixture\Factory\ExampleFactoryInterface;
 use Sylius\Component\Core\Model\AdminUserInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
+use Sylius\Component\Locale\Model\LocaleInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -158,6 +159,36 @@ trait Entries
         /** @var ObjectManager $manager */
         $manager = self::getContainer()->get('sylius.manager.channel');
         $manager->persist($channel);
+        $manager->flush();
+    }
+
+    /**
+     * Adds locales to a channel, after the ones it has, creating those the store doesn't have yet
+     */
+    protected static function addLocales(string $channelCode, string ...$localeCodes): void
+    {
+        /** @var RepositoryInterface<LocaleInterface> $locales */
+        $locales = self::getContainer()->get('sylius.repository.locale');
+        /** @var FactoryInterface<LocaleInterface> $localeFactory */
+        $localeFactory = self::getContainer()->get('sylius.factory.locale');
+        /** @var RepositoryInterface<ChannelInterface> $channels */
+        $channels = self::getContainer()->get('sylius.repository.channel');
+        $channel = $channels->findOneBy(['code' => $channelCode]);
+        self::assertInstanceOf(ChannelInterface::class, $channel);
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('sylius.manager.channel');
+        foreach ($localeCodes as $localeCode) {
+            $locale = $locales->findOneBy(['code' => $localeCode]);
+            if (!$locale instanceof LocaleInterface) {
+                $locale = $localeFactory->createNew();
+                $locale->setCode($localeCode);
+                $manager->persist($locale);
+            }
+
+            $channel->addLocale($locale);
+        }
+
         $manager->flush();
     }
 

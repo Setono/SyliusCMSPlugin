@@ -61,12 +61,43 @@ final class BuilderTest extends WebTestCase
             'previewRender' => '/admin/cms/api/preview/render',
             'presence' => sprintf('/admin/cms/api/entries/%s/presence', $uuid),
         ], $config['endpoints']);
-        self::assertSame([['code' => 'WEB', 'name' => 'Setono CMS Test Store']], $config['channels'], "The store's channels, for the settings' channel picker and the preview's");
+        self::assertSame([['code' => 'WEB', 'name' => 'Setono CMS Test Store', 'locales' => ['en_US']]], $config['channels'], "The store's channels, for the settings' channel picker and the preview's");
+        self::assertSame([['code' => 'en_US', 'name' => 'English (United States)', 'fallbackChain' => ['en_US']]], $config['locales']);
         self::assertSame([], $config['customerGroups']);
         self::assertSame([
             'setono_sylius_cms.builder.loading' => 'Loading…',
             'setono_sylius_cms.builder.load_failed' => 'Couldn\'t load the entry',
         ], $config['strings'], 'The strings the app shows before the registry has loaded');
+    }
+
+    /**
+     * The locale switcher offers the locales of the entry's channels, and an empty translatable field shows its
+     * fallback value. The test app configures de_CH to fall back to de_DE. See "In the builder" in
+     * docs/spec/localization.md
+     *
+     * @test
+     */
+    public function it_gives_the_builder_the_locales_of_each_channel_with_their_names_and_fallback_chains(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        self::addLocales('WEB', 'de_CH', 'da_DK');
+        self::createChannel('OTHER', 'Other Store');
+        $page = self::createPage('About us', 'about-us');
+
+        $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));
+
+        $config = json_decode((string) $crawler->filter('#cms-builder')->attr('data-config'), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertIsArray($config);
+        self::assertSame([
+            ['code' => 'WEB', 'name' => 'Setono CMS Test Store', 'locales' => ['en_US', 'da_DK', 'de_CH']],
+            ['code' => 'OTHER', 'name' => 'Other Store', 'locales' => ['en_US']],
+        ], $config['channels'], "A channel's default locale first, then the others by code");
+        self::assertSame([
+            ['code' => 'en_US', 'name' => 'English (United States)', 'fallbackChain' => ['en_US']],
+            ['code' => 'da_DK', 'name' => 'Danish (Denmark)', 'fallbackChain' => ['da_DK', 'en_US']],
+            ['code' => 'de_CH', 'name' => 'German (Switzerland)', 'fallbackChain' => ['de_CH', 'de_DE', 'en_US']],
+        ], $config['locales']);
     }
 
     /**

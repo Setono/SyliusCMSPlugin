@@ -6,6 +6,11 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Twig;
 
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\RichText;
+use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Localization\FallbackChain;
+use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Preview\FieldMarker;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
@@ -22,7 +27,9 @@ use Setono\SyliusCMSPlugin\Twig\CMSExtension;
 use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Sylius\Component\Core\Model\Channel;
+use Sylius\Resource\Translation\Provider\ImmutableTranslationLocaleProvider;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Twig\Environment;
@@ -94,7 +101,12 @@ final class CMSExtensionTest extends IntegrationTestCase
 
         $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class, 'quote' => Quote::class, 'faq' => Faq::class], new FieldReader());
         $runtimes = new FactoryRuntimeLoader([
-            CMSRuntime::class => static fn (): CMSRuntime => new CMSRuntime(new TwigBlockRenderer($blockTwig, $blockTypes), new FieldMarker($blockTypes)),
+            CMSRuntime::class => static fn (): CMSRuntime => new CMSRuntime(
+                new TwigBlockRenderer($blockTwig, $blockTypes),
+                new FieldMarker($blockTypes),
+                // de_CH falls back to de_DE, and then to en_US
+                new FallbackValues(new FieldHandlerLocator(new ServiceLocator([])), new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'), ['de_CH' => ['de_DE']])),
+            ),
             PreviewContext::class => fn (): PreviewContext => new PreviewContext($this->requestStack, self::signer()),
         ]);
         $blockTwig->addRuntimeLoader($runtimes);
@@ -110,10 +122,10 @@ final class CMSExtensionTest extends IntegrationTestCase
      *
      * @return array<string, mixed>
      */
-    public function rendering(array $variables, ?string $previewMode = null): array
+    public function rendering(array $variables, ?string $previewMode = null, string $locale = 'en_US'): array
     {
         return $variables + [
-            CMSRuntime::RENDER_CONTEXT => new RenderContext(new Channel(), 'en_US', 'USD', null, '@guest', new \DateTimeImmutable(), [], $previewMode),
+            CMSRuntime::RENDER_CONTEXT => new RenderContext(new Channel(), $locale, 'USD', null, '@guest', new \DateTimeImmutable(), [], $previewMode),
         ];
     }
 
@@ -175,6 +187,24 @@ final class CMSExtensionTest extends IntegrationTestCase
     public function faq(BlockView ...$children): BlockView
     {
         return new BlockView(self::FAQ_KEY, 'faq', new Faq(), null, array_values($children));
+    }
+
+    /**
+     * A page with these titles
+     *
+     * @param array<string, string> $titles by locale
+     */
+    public function page(array $titles): Page
+    {
+        $page = new Page();
+        foreach ($titles as $locale => $title) {
+            $translation = new PageTranslation();
+            $translation->setLocale($locale);
+            $translation->setTitle($title);
+            $page->addTranslation($translation);
+        }
+
+        return $page;
     }
 
     public function notABlock(): NotABlock

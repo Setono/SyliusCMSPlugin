@@ -35,8 +35,7 @@ final readonly class EntryNormalizer
             }
 
             $translations[$localeCode] = new ListedObject([
-                // Holding back a translation comes with translations (#232), so every translation is shown
-                'shown' => true,
+                'shown' => $translation->isShown(),
                 'fields' => $fields,
                 'translated' => new \stdClass(),
             ]);

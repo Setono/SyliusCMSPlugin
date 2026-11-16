@@ -118,6 +118,58 @@ final class VisibleEntriesQueryTest extends KernelTestCase
     }
 
     /**
+     * An entry has a translation in a locale once that translation has a title. See "Which locales an entry has" in
+     * docs/spec/localization.md
+     *
+     * @test
+     *
+     * @dataProvider provideTitlesThatAreNone
+     */
+    public function it_leaves_out_an_entry_whose_translation_in_the_locale_has_no_title(?string $title): void
+    {
+        $page = self::createPage('English and Danish', 'english-and-danish', published: true);
+        self::save($page, static function (PageInterface $page) use ($title): void {
+            $danish = new PageTranslation();
+            $danish->setLocale('da_DK');
+            $danish->setTitle($title);
+            $danish->setSlug('engelsk-og-dansk');
+            $page->addTranslation($danish);
+        });
+
+        self::assertSame([], self::visibleTitles(self::context(localeCode: 'da_DK')));
+    }
+
+    /**
+     * @return iterable<string, array{string|null}>
+     */
+    public static function provideTitlesThatAreNone(): iterable
+    {
+        yield 'no title' => [null];
+        yield 'an empty title' => [''];
+    }
+
+    /**
+     * A held-back translation counts as missing, and the entry never falls back to another locale.
+     * See "Held-back translations" in docs/spec/publishing.md
+     *
+     * @test
+     */
+    public function it_leaves_out_an_entry_whose_translation_in_the_locale_is_held_back(): void
+    {
+        $page = self::createPage('English and Danish', 'english-and-danish', published: true);
+        self::save($page, static function (PageInterface $page): void {
+            $danish = new PageTranslation();
+            $danish->setLocale('da_DK');
+            $danish->setTitle('Engelsk og dansk');
+            $danish->setShown(false);
+            $page->addTranslation($danish);
+        });
+
+        self::assertSame([], self::visibleTitles(self::context(localeCode: 'da_DK')));
+        self::assertSame(['English and Danish'], self::visibleTitles(self::context()));
+    }
+
+    /**
      * @test
      */
     public function it_keeps_only_the_entries_whose_audience_allows_the_shopper(): void

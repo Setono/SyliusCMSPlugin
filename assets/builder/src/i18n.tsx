@@ -88,7 +88,19 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.rich_text.bullet_list'
     | 'setono_sylius_cms.builder.rich_text.ordered_list'
     | 'setono_sylius_cms.builder.rich_text.blockquote'
-    | 'setono_sylius_cms.builder.rich_text.horizontal_rule';
+    | 'setono_sylius_cms.builder.rich_text.horizontal_rule'
+    | 'setono_sylius_cms.builder.locale'
+    | 'setono_sylius_cms.builder.all_languages'
+    | 'setono_sylius_cms.builder.all_languages_help'
+    | 'setono_sylius_cms.builder.falls_back_to'
+    | 'setono_sylius_cms.builder.copy_it_here'
+    | 'setono_sylius_cms.builder.no_translation'
+    | 'setono_sylius_cms.builder.add_translation'
+    | 'setono_sylius_cms.builder.show_in_locale'
+    | 'setono_sylius_cms.builder.show_in_locale_help'
+    | 'setono_sylius_cms.builder.entry_title'
+    | 'setono_sylius_cms.builder.slug'
+    | 'setono_sylius_cms.builder.clash_entry_value';
 
 /** Values for the placeholders in a string, such as { '%block%': 'Columns' }. */
 export type TranslationParameters = Readonly<Record<string, string>>;

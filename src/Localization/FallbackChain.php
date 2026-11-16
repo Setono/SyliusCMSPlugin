@@ -7,19 +7,26 @@ namespace Setono\SyliusCMSPlugin\Localization;
 use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 
 /**
- * Falls back from a locale straight to the store's fallback locale. The configurable middle of the chain
- * (setono_sylius_cms.fallback_locales) comes with translations (#232)
+ * Falls back from a locale through the locales configured for it under setono_sylius_cms.fallback_locales, in order,
+ * and then to the store's fallback locale, Sylius's locale parameter that product translations fall back to.
+ * See "Fallback chain" in docs/spec/localization.md
  */
 final readonly class FallbackChain implements FallbackChainInterface
 {
-    public function __construct(private TranslationLocaleProviderInterface $translationLocaleProvider)
-    {
+    /**
+     * @param array<string, list<string>> $fallbackLocales locale code => the locales it falls back through, in order
+     */
+    public function __construct(
+        private TranslationLocaleProviderInterface $translationLocaleProvider,
+        private array $fallbackLocales = [],
+    ) {
     }
 
     public function localesFor(string $localeCode): array
     {
-        $fallbackLocaleCode = $this->translationLocaleProvider->getDefaultLocaleCode();
+        $locales = [$localeCode, ...$this->fallbackLocales[$localeCode] ?? [], $this->translationLocaleProvider->getDefaultLocaleCode()];
 
-        return $localeCode === $fallbackLocaleCode ? [$localeCode] : [$localeCode, $fallbackLocaleCode];
+        // Each locale where the chain first reaches it
+        return array_values(array_unique($locales));
     }
 }

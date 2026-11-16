@@ -104,4 +104,19 @@ final class PageTest extends TestCase
         self::assertInstanceOf(PageTranslation::class, $page->getTranslation('en_US'));
         self::assertSame('About us', $page->getTranslation('en_US')->getTitle());
     }
+
+    /**
+     * A translation made before the first publish starts shown. One added after it is held back where it's added
+     * (docs/spec/publishing.md#held-back-translations)
+     *
+     * @test
+     */
+    public function it_starts_a_translation_shown_until_it_is_held_back(): void
+    {
+        $translation = new PageTranslation();
+        self::assertTrue($translation->isShown());
+
+        $translation->setShown(false);
+        self::assertFalse($translation->isShown());
+    }
 }

@@ -41,6 +41,7 @@
             <argument type="service" id="twig"/>
             <argument type="service" id="sylius.repository.channel"/>
             <argument type="service" id="sylius.repository.customer_group"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
 
             <tag name="controller.service_arguments"/>
         </service>

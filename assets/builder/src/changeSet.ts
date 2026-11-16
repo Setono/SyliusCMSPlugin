@@ -5,8 +5,8 @@
 import { produce, type Patch } from 'immer';
 import { longestIncreasing } from './sequence';
 import { blockList, findBlock, insertBlock, removeBlockFrom } from './tree';
-import type { Entry, FieldValues, JsonValue, StoredBlock } from './types';
-import { isJsonObject, jsonEqual, normalizeValue, writeFieldValue } from './values';
+import type { Entry, EntryTranslation, FieldValues, JsonValue, StoredBlock } from './types';
+import { isJsonObject, jsonEqual, normalizeValue, writeEntryValue, writeFieldValue } from './values';
 
 export interface AddBlockChange {
     op: 'add_block';
@@ -55,7 +55,24 @@ export interface SetStyleChange {
     style: string | null;
 }
 
-export type Change = AddBlockChange | MoveBlockChange | RemoveBlockChange | SetValueChange | SetStyleChange;
+/** A value of one of the entry's own fields, such as a translation's title. It adds a translation the entry hasn't got. */
+export interface SetEntryValueChange {
+    op: 'set_entry_value';
+    field: string;
+    /** The locale for a translatable field, and null for a shared one. */
+    locale: string | null;
+    /** null removes the value. */
+    value: JsonValue | null;
+}
+
+/** A translation's "Show in <language>" switch: off holds it back. It adds a translation the entry hasn't got. */
+export interface SetShownChange {
+    op: 'set_shown';
+    locale: string;
+    shown: boolean;
+}
+
+export type Change = AddBlockChange | MoveBlockChange | RemoveBlockChange | SetValueChange | SetStyleChange | SetEntryValueChange | SetShownChange;
 
 /** Whether a field of a block type is translatable. */
 export type TranslatableLookup = (blockType: string, field: string) => boolean;
@@ -65,7 +82,8 @@ type Target = { kind: 'list'; parent: string | null; depth: number } | { kind: '
 /**
  * Turns the patches of one edit into key-based changes.
  *
- * Patches into a block's fields become set_value changes, and into its style set_style. Patches that touch a list of blocks aren't
+ * Patches into a translation become set_entry_value changes for its fields and set_shown for its switch. Patches into
+ * a block's fields become set_value changes, and into its style set_style. Patches that touch a list of blocks aren't
  * read index by index, because Immer reports a removal from the middle of a list as replacements plus a
  * trailing removal, and a move as a removal from one list and an addition to another. Instead each list's
  * keys are compared before and after the edit, against the tree as the server has it once the changes
@@ -75,8 +93,10 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
     const lists = new Map<string | null, number>();
     const fieldTargets: Array<{ key: string; field: string | undefined }> = [];
     const styleTargets = new Set<string>();
+    const locales = new Set<string>();
 
     for (const patch of patches) {
+        translationLocales(patch.path, before, after).forEach((locale) => locales.add(locale));
         const target = locate(patch.path, before, after);
         if (target?.kind === 'list') {
             lists.set(target.parent, target.depth);
@@ -96,7 +116,7 @@ export function changesFromPatches(patches: readonly Patch[], before: Entry, aft
         done: new Set(),
     };
     const { addedOrRemoved } = diff;
-    const changes: Change[] = [];
+    const changes: Change[] = [...locales].flatMap((locale) => diffTranslation(locale, before.translations[locale], after.translations[locale]));
 
     for (const [parent] of [...lists].sort(([, a], [, b]) => a - b)) {
         if (parent !== null && addedOrRemoved.has(parent)) {
@@ -157,7 +177,7 @@ export function applyChanges(entry: Entry, changes: readonly Change[]): AppliedC
                 continue;
             }
 
-            if (applyChange(blocks, change)) {
+            if (applyChange(working, change)) {
                 applied.push(change);
             }
         }
@@ -173,13 +193,21 @@ function neededKeys(change: Change): string[] {
             return change.parent === null ? [] : [change.parent];
         case 'move_block':
             return change.parent === null ? [change.key] : [change.key, change.parent];
+        case 'set_entry_value':
+        case 'set_shown':
+            return [];
         default:
             return [change.key];
     }
 }
 
-/** Applies one change whose blocks are all there. Answers false for one the server would refuse. */
-function applyChange(blocks: StoredBlock[], change: Change): boolean {
+/**
+ * Applies one change whose blocks are all there. Answers false for one the server would refuse. A translation added by
+ * a value alone starts held back: one added in the builder comes with its switch.
+ */
+function applyChange(working: Entry, change: Change): boolean {
+    const blocks = working.tree.blocks;
+
     switch (change.op) {
         case 'add_block': {
             const taken = new Set<string>();
@@ -225,13 +253,30 @@ function applyChange(blocks: StoredBlock[], change: Change): boolean {
 
             return true;
         }
+        case 'set_entry_value':
+            if (change.locale !== null) {
+                writeEntryValue(working, change.locale, change.field, change.value, false);
+            }
+
+            return change.locale !== null;
+        case 'set_shown': {
+            const translation = working.translations[change.locale];
+            if (translation === undefined) {
+                working.translations[change.locale] = { shown: change.shown, fields: {}, translated: {} };
+            } else {
+                translation.shown = change.shown;
+            }
+
+            return true;
+        }
     }
 }
 
 
 /**
  * Appends later changes to earlier ones, keeping only what the server still needs: the last value per
- * block, field and locale, the last style per block, and nothing for a block that was added and removed again in between.
+ * block, field and locale, the last style per block, the last value per entry field and locale, the last switch per
+ * translation, and nothing for a block that was added and removed again in between.
  */
 export function mergeChanges(earlier: readonly Change[], later: readonly Change[]): Change[] {
     return later.reduce<Change[]>((changes, change) => mergeChange(changes, change), [...earlier]);
@@ -243,6 +288,10 @@ function mergeChange(changes: Change[], change: Change): Change[] {
             return [...changes.filter((earlier) => !isSameValue(earlier, change)), change];
         case 'set_style':
             return [...changes.filter((earlier) => !(earlier.op === 'set_style' && earlier.key === change.key)), change];
+        case 'set_entry_value':
+            return [...changes.filter((earlier) => !(earlier.op === 'set_entry_value' && earlier.field === change.field && earlier.locale === change.locale)), change];
+        case 'set_shown':
+            return [...changes.filter((earlier) => !(earlier.op === 'set_shown' && earlier.locale === change.locale)), change];
         case 'add_block':
         case 'move_block':
             return [...changes, change];
@@ -266,10 +315,23 @@ function mergeRemoval(changes: Change[], removal: RemoveBlockChange): Change[] {
         const later = changes.slice(additionIndex);
         const gone = keysAddedWithin(later, addition);
 
-        return [...changes.slice(0, additionIndex), ...later.filter((change) => !gone.has(change.op === 'add_block' ? change.block.key : change.key))];
+        return [...changes.slice(0, additionIndex), ...later.filter((change) => !gone.has(blockKeyOf(change) ?? ''))];
     }
 
     return [...changes.filter((change) => !((change.op === 'set_value' || change.op === 'set_style') && change.key === removal.key)), removal];
+}
+
+/** The key of the block a change is about, or undefined for a change to the entry. */
+function blockKeyOf(change: Change): string | undefined {
+    switch (change.op) {
+        case 'add_block':
+            return change.block.key;
+        case 'set_entry_value':
+        case 'set_shown':
+            return undefined;
+        default:
+            return change.key;
+    }
 }
 
 /** A later addition into the same list counted its index with the block in place, and so may any later move. */
@@ -297,8 +359,43 @@ function collectKeys(block: StoredBlock, keys: Set<string>): void {
 }
 
 /**
+ * The locales of the translations a patch path touches: one translation, or all of them when it replaces them all, or
+ * the whole entry.
+ */
+function translationLocales(path: Patch['path'], before: Entry, after: Entry): string[] {
+    if (path.length === 0 || (path.length === 1 && path[0] === 'translations')) {
+        return [...new Set([...Object.keys(before.translations), ...Object.keys(after.translations)])];
+    }
+
+    return path[0] === 'translations' ? [String(path[1])] : [];
+}
+
+/**
+ * The changes that make a translation as it was before the edit what it is after it. A new translation sends its
+ * switch, then its fields. One taken away, as undoing its addition does, has its fields emptied, so it's no
+ * translation any more: an entry has a translation in a locale once that translation has a title.
+ */
+function diffTranslation(locale: string, before: EntryTranslation | undefined, after: EntryTranslation | undefined): Change[] {
+    const changes: Change[] = [];
+    if (after !== undefined && after.shown !== before?.shown) {
+        changes.push({ op: 'set_shown', locale, shown: after.shown });
+    }
+
+    const fieldsBefore = before?.fields ?? {};
+    const fieldsAfter = after?.fields ?? {};
+    for (const field of new Set([...Object.keys(fieldsAfter), ...Object.keys(fieldsBefore)])) {
+        const value = normalizeValue(fieldsAfter[field]);
+        if (!jsonEqual(normalizeValue(fieldsBefore[field]), value)) {
+            changes.push({ op: 'set_entry_value', field, locale, value });
+        }
+    }
+
+    return changes;
+}
+
+/**
  * What a patch path points at: a list of blocks (the top level, or a block's children), a block's
- * fields, or its style. Everything else, such as entry fields, has no change of its own yet.
+ * fields, or its style. Everything else, such as the translations, is diffed on its own.
  */
 function locate(path: Patch['path'], before: Entry, after: Entry): Target | null {
     if (path.length === 0 || (path.length === 1 && path[0] === 'tree')) {

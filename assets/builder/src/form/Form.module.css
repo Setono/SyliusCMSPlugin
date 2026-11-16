@@ -18,6 +18,47 @@
     color: var(--builder-color-danger);
 }
 
+/* "All languages": an edit to a shared field changes every locale */
+.badge {
+    margin-left: auto;
+    padding: 0 var(--builder-space-2);
+    border-radius: var(--builder-radius-pill);
+    background: var(--builder-color-neutral-subtle);
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+    white-space: nowrap;
+}
+
+/* An empty translatable field shows the value it falls back to */
+.fallback {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--builder-space-2);
+    align-items: baseline;
+    margin: 0;
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}
+
+.copy {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--builder-color-accent);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.copy:hover {
+    color: var(--builder-color-accent-hover);
+}
+
+.copy:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}
+
 .help {
     margin: 0;
     color: var(--builder-color-text-muted);
@@ -149,6 +190,15 @@
 
 .richTextEditor > :first-child {
     margin-top: 0;
+}
+
+/* The value an empty translatable field falls back to, from Tiptap's placeholder */
+.richTextEditor :global(.is-editor-empty:first-child)::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    color: var(--builder-color-text-muted);
+    pointer-events: none;
 }
 
 .richTextEditor > :last-child {

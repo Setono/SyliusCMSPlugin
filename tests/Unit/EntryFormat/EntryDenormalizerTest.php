@@ -58,6 +58,29 @@ final class EntryDenormalizerTest extends TestCase
     }
 
     /**
+     * The shown switch is drafted, so a translation goes live together with its finished text
+     *
+     * @test
+     */
+    public function it_copies_whether_each_translation_is_shown(): void
+    {
+        $rows = self::page(['en_US' => ['About us', 'about-us'], 'da_DK' => ['Om os', 'om-os']]);
+        $rows->getTranslation('da_DK')->setShown(false);
+        $draft = clone $rows;
+        $draft->getTranslation('da_DK')->setShown(true);
+        $draft->getTranslation('en_US')->setShown(false);
+        $draft->setCurrentLocale('de_DE');
+        $draft->setTitle('Über uns');
+        $draft->getTranslation('de_DE')->setShown(false);
+
+        $this->denormalizer()->denormalize(CanonicalJson::decode(CanonicalJson::encode($this->normalizer()->normalize($draft))), $rows);
+
+        self::assertTrue($rows->getTranslation('da_DK')->isShown());
+        self::assertFalse($rows->getTranslation('en_US')->isShown());
+        self::assertFalse($rows->getTranslation('de_DE')->isShown());
+    }
+
+    /**
      * @test
      */
     public function it_removes_the_translations_the_entry_format_does_not_have(): void
@@ -160,6 +183,8 @@ final class EntryDenormalizerTest extends TestCase
         yield 'a translation without fields' => [static fn (array $data): array => ['translations' => ['en_US' => ['shown' => true]]] + $data, 'The fields of the translation en_US must be a JSON object'];
         yield 'a title that is a number' => [static fn (array $data): array => ['translations' => ['en_US' => ['fields' => ['title' => 1]]]] + $data, 'The title of the translation en_US must be a string or null'];
         yield 'a slug that is a list' => [static fn (array $data): array => ['translations' => ['en_US' => ['fields' => ['slug' => ['about-us']]]]] + $data, 'The slug of the translation en_US must be a string or null'];
+        yield 'a translation without a shown switch' => [static fn (array $data): array => ['translations' => ['en_US' => ['fields' => ['title' => 'About us']]]] + $data, 'The shown switch of the translation en_US must be true or false'];
+        yield 'a shown switch that is a string' => [static fn (array $data): array => ['translations' => ['en_US' => ['shown' => 'yes', 'fields' => ['title' => 'About us']]]] + $data, 'The shown switch of the translation en_US must be true or false'];
         yield 'a tree without blocks' => [static fn (array $data): array => ['tree' => ['layout' => null]] + $data, 'The tree is invalid: The block tree must have a list of blocks'];
     }
 

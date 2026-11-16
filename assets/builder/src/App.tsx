@@ -88,6 +88,7 @@ export function App({ config, api, autosaveDelay }: AppProps) {
                         settings,
                         presence: presence.store,
                         channels: config.channels,
+                        locales: config.locales ?? [],
                         customerGroups: config.customerGroups,
                     },
                 });

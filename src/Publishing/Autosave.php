@@ -59,7 +59,7 @@ final readonly class Autosave implements AutosaveInterface
             );
 
             if ([] !== $merge->changeSet->changes) {
-                $workingCopy->setBlockTree($this->applier->apply($merge->changeSet, $workingCopy->getBlockTree()));
+                $this->applier->apply($merge->changeSet, $workingCopy);
 
                 $this->number($entry, ++$latest, $merge->changeSet);
                 $this->workingCopies->save($entry, $workingCopy);
