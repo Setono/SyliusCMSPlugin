@@ -8,8 +8,8 @@ use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 
 /**
- * Tells the page it's in preview mode, and keeps preview responses, and the token in their URL, out of caches, search
- * engines and Referer headers. See "Preview mode and share links" in docs/spec/rendering.md
+ * Tells the page it's in preview mode, builder or share, and keeps preview and share link responses, and the token in
+ * their URL, out of caches, search engines and Referer headers. See "Preview mode and share links" in docs/spec/rendering.md
  */
 final readonly class PreviewModeListener
 {

@@ -80,6 +80,18 @@
             <tag name="twig.runtime"/>
         </service>
 
+        <!-- The share links of an entry and where its Share draft offers to share it, which its overview page gets
+             through cms_admin_entry_share_links() and cms_admin_share_link_targets() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryShareLinks" class="Setono\SyliusCMSPlugin\Admin\EntryShareLinks">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator"/>
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
         <!-- The locale a new entry's title and slug go into -->
         <service id="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver" class="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver">
             <!-- In the admin, the admin user's locale -->

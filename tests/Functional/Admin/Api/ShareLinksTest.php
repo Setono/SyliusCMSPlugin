@@ -219,19 +219,6 @@ final class ShareLinksTest extends BuilderApiTestCase
         self::assertCount(1, self::shareLinksOf($page));
     }
 
-    private static function addDanish(PageInterface $page): void
-    {
-        $danish = new PageTranslation();
-        $danish->setLocale('da_DK');
-        $danish->setTitle('Om os');
-        $danish->setSlug('om-os');
-        $page->addTranslation($danish);
-
-        /** @var ObjectManager $manager */
-        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
-        $manager->flush();
-    }
-
     /**
      * @test
      */
@@ -253,5 +240,18 @@ final class ShareLinksTest extends BuilderApiTestCase
         $client->loginUser(self::admin(), 'admin');
         $client->request('GET', '/admin/cms/api/entries/0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e40/share-links');
         self::assertResponseStatusCodeSame(404);
+    }
+
+    private static function addDanish(PageInterface $page): void
+    {
+        $danish = new PageTranslation();
+        $danish->setLocale('da_DK');
+        $danish->setTitle('Om os');
+        $danish->setSlug('om-os');
+        $page->addTranslation($danish);
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
+        $manager->flush();
     }
 }

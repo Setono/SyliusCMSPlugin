@@ -105,18 +105,27 @@ setono_sylius_cms:
         close: Close
         content: Content
         content_description: Pages and everything else shoppers read that isn't a product
+        copied: Copied
+        copy: Copy
         create: Create
         create_dialog_load_failed: Couldn't load the form. Try again.
+        create_share_link: Create link
+        date: Date
         discard_changes: Discard changes
         error_count: '{0} No errors|{1} 1 error|]1,Inf[ %count% errors'
         fix_in_builder: Fix in builder
         language: Language
         last_edited: Last edited
         last_published: 'Last published %date%'
+        link: Link
+        made_by: Made by
         new_entry: 'New %content_type%'
         new_entry_heading: New entry
+        new_share_link: New
         no_revisions: Every publish stores a revision, which you can preview and restore. There are none yet.
+        no_share_links: Share the draft with anyone, as a link that shows it in the shop without signing in. There are none yet.
         no_urls: It has no URL yet, because it has no slug.
+        now: Now
         old_urls: 'Redirects from:'
         open_in_builder: Open in builder
         other_content_type: Another content type
@@ -138,8 +147,19 @@ setono_sylius_cms:
         restore: Restore
         revisions: Revisions
         revisions_help: Every publish stores a revision. Preview one as it was, or restore it into the draft to review and publish it.
+        revoke: Revoke
         scheduled: Scheduled
         search: Search
+        share_draft: Share draft
+        share_draft_help: 'Anyone with the link sees the draft in the shop, in the channel and language you pick, without signing in. Shown to and Date are fixed now, as the builder''s preview starts them, and the link works until you revoke it.'
+        share_draft_target: Channel and language
+        share_draft_without_url: It has no URL to share yet. Give it a slug in a language of its channels first.
+        share_link_without_url: The draft has no URL in this language anymore.
+        share_links: Share links
+        share_links_help: Anyone with a share link sees the draft in the shop, without signing in, until you revoke it.
+        shown_to: Shown to
+        shown_to_guest: Guest
+        shown_to_no_group: Signed in without a group
         status: Status
         status_filter:
             needs_attention: Needs attention

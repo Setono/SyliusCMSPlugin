@@ -4,3 +4,6 @@ setono_sylius_cms:
     entry_publish_invalid: '{1} It wasn''t published: one error needs fixing.|]1,Inf[ It wasn''t published: %count% errors need fixing.'
     entry_published: The entry has been published.
     revision_restored: The revision has been restored into the draft. Review it, then publish it.
+    share_link_created: The share link has been made. Copy it from Share links.
+    share_link_revoked: The share link has been revoked. It now answers as it would for anyone else.
+    share_link_target_missing: Pick a channel and a language to share the draft in.

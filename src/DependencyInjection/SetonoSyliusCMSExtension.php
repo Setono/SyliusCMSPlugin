@@ -141,7 +141,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
      * The entry overview page is built from two Sylius template events, whose blocks get the entry (`entry`) and its
      * row (`row`, an Admin\EntryRow). A block that has nothing to show for an entry renders nothing:
      *
-     * - setono_sylius_cms.admin.entry.show.header_actions: the header's buttons, Open in builder first
+     * - setono_sylius_cms.admin.entry.show.header_actions: the header's buttons, Open in builder (20) first, then
+     *   Share draft (10)
      * - setono_sylius_cms.admin.entry.show.sections: the sections, in the spec's order, which the priorities leave
      *   room in: publishing (100), problems (90), placements (80), where_it_shows (70), revisions (60),
      *   share_links (50), urls (40), used_in (30) and translations (20)
@@ -161,6 +162,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 'setono_sylius_cms.admin.entry.show.header_actions' => [
                     'blocks' => [
                         'open_in_builder' => $block('_open_in_builder', 20),
+                        'share_draft' => $block('_share_draft', 10),
                     ],
                 ],
                 'setono_sylius_cms.admin.entry.show.sections' => [
@@ -168,6 +170,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                         'publishing' => $block('_publishing', 100),
                         'problems' => $block('_problems', 90),
                         'revisions' => $block('_revisions', 60),
+                        'share_links' => $block('_share_links', 50),
                         'urls' => $block('_urls', 40),
                         'translations' => $block('_translations', 20),
                     ],
