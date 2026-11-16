@@ -47,6 +47,37 @@ final class PreviewTokenSignerTest extends TestCase
     }
 
     /**
+     * The token carries Shown to and Date. See "Shown to and Date" in docs/spec/targeting.md
+     *
+     * @test
+     */
+    public function it_verifies_a_token_with_shown_to_and_a_date_it_signed(): void
+    {
+        $signer = $this->signer();
+        $date = new \DateTimeImmutable('2026-12-01T09:30:00Z');
+
+        $preview = $signer->verify($signer->sign(new Preview(self::ENTRY, 'WEB', 'en_US', shownTo: 'wholesale', date: $date)));
+
+        self::assertNotNull($preview);
+        self::assertSame('wholesale', $preview->shownTo);
+        self::assertEquals($date, $preview->date);
+        self::assertSame('2026-12-01T09:30:00+00:00', $preview->date?->format(\DATE_ATOM));
+    }
+
+    /**
+     * @test
+     */
+    public function it_verifies_a_token_without_shown_to_or_a_date_as_the_shopper_now(): void
+    {
+        $signer = $this->signer();
+
+        $preview = $signer->verify($signer->sign(new Preview(self::ENTRY, 'WEB', 'en_US')));
+
+        self::assertNull($preview?->shownTo);
+        self::assertNull($preview?->date);
+    }
+
+    /**
      * @test
      */
     public function it_signs_tokens_that_fit_in_a_query_string_unencoded(): void
@@ -157,6 +188,8 @@ final class PreviewTokenSignerTest extends TestCase
         yield 'locale not a string' => [sprintf('{"entry":"%s","channel":"WEB","locale":[],"expires":%d}', self::ENTRY, $expires)];
         yield 'expires not a number' => [sprintf('{"entry":"%s","channel":"WEB","locale":"en_US","expires":"%d"}', self::ENTRY, $expires)];
         yield 'revision not a number' => [sprintf('{"entry":"%s","channel":"WEB","locale":"en_US","revision":"42","expires":%d}', self::ENTRY, $expires)];
+        yield 'shown to not a string' => [sprintf('{"entry":"%s","channel":"WEB","locale":"en_US","shownTo":1,"expires":%d}', self::ENTRY, $expires)];
+        yield 'date not a number' => [sprintf('{"entry":"%s","channel":"WEB","locale":"en_US","date":"2026-12-01T09:30:00Z","expires":%d}', self::ENTRY, $expires)];
     }
 
     /**
@@ -191,6 +224,22 @@ final class PreviewTokenSignerTest extends TestCase
         $signature = self::encode(hash_hmac('sha256', 'setono_sylius_cms_preview.' . $encoded, 'secret', true));
 
         self::assertEquals(new Preview(self::ENTRY, 'WEB', 'da_DK', 42), $this->signer()->verify($encoded . '.' . $signature));
+    }
+
+    /**
+     * @test
+     */
+    public function it_reads_a_signed_payload_with_shown_to_and_a_date(): void
+    {
+        $expires = $this->clock->now()->getTimestamp() + 60;
+        $date = (new \DateTimeImmutable('2026-12-01T09:30:00Z'))->getTimestamp();
+        $encoded = self::encode(sprintf('{"entry":"%s","channel":"WEB","locale":"da_DK","shownTo":"@no_group","date":%d,"expires":%d}', self::ENTRY, $date, $expires));
+        $signature = self::encode(hash_hmac('sha256', 'setono_sylius_cms_preview.' . $encoded, 'secret', true));
+
+        self::assertEquals(
+            new Preview(self::ENTRY, 'WEB', 'da_DK', shownTo: '@no_group', date: new \DateTimeImmutable('2026-12-01T09:30:00Z')),
+            $this->signer()->verify($encoded . '.' . $signature),
+        );
     }
 
     private function signer(string $secret = 'secret'): PreviewTokenSigner

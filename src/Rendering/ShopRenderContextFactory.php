@@ -18,7 +18,9 @@ use Sylius\Component\Locale\Context\LocaleContextInterface;
  * Creates the render context of a shop request from Sylius's contexts. This is the one place the read pipeline's
  * channel, locale, currency, customer, time and preview mode come from. In preview mode, the preview's channel comes
  * through Sylius's channel context, and its locale from the token, which also holds when the builder renders blocks
- * through its own endpoint, outside the shop's URLs
+ * through its own endpoint, outside the shop's URLs. The preview's Shown to and Date set the customer group value and
+ * the time here and nowhere else, so every condition, audience and visible-entries query on the page follows them.
+ * See "Shown to and Date" in docs/spec/targeting.md
  */
 final readonly class ShopRenderContextFactory implements RenderContextFactoryInterface
 {
@@ -44,13 +46,15 @@ final readonly class ShopRenderContextFactory implements RenderContextFactoryInt
             $customer = null;
         }
 
+        $preview = $this->previewContext->getPreview();
+
         return new RenderContext(
             $channel,
-            $this->previewContext->getPreview()->localeCode ?? $this->localeContext->getLocaleCode(),
+            $preview->localeCode ?? $this->localeContext->getLocaleCode(),
             $this->currencyContext->getCurrencyCode(),
             $customer,
-            CustomerGroupValue::of($customer),
-            $this->clock->now(),
+            $preview->shownTo ?? CustomerGroupValue::of($customer),
+            $preview->date ?? $this->clock->now(),
             $hostPageContext,
             $this->previewContext->getMode(),
         );

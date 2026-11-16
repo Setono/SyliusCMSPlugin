@@ -7,10 +7,13 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
+use Setono\SyliusCMSPlugin\Tests\Support\Customers;
 use Symfony\Component\Clock\MockClock;
 
 final class PreviewRenderTest extends BuilderApiTestCase
 {
+    use Customers;
+
     private const FIRST = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f';
 
     private const SECOND = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e50';
@@ -96,6 +99,34 @@ final class PreviewRenderTest extends BuilderApiTestCase
         self::json($client, 'POST', self::uri($page), ['blocks' => [self::storedHeading(self::FIRST, 'Hello')]], $csrfToken);
 
         self::assertTrue($client->getResponse()->headers->hasCacheControlDirective('no-store'));
+    }
+
+    /**
+     * The token's Shown to and Date decide the blocks' visibility conditions here as on the page.
+     * See "Shown to and Date" in docs/spec/targeting.md
+     *
+     * @test
+     */
+    public function it_renders_the_blocks_the_tokens_shown_to_and_date_see(): void
+    {
+        $client = self::createClient();
+        self::createCustomerGroup('wholesale', 'Wholesale');
+        $page = self::createPage('About us', 'about-us', 'Hello');
+        $csrfToken = self::openBuilder($client, $page);
+        $nextWeek = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->modify('+7 days');
+        $blocks = ['blocks' => [
+            ['conditions' => [['kind' => 'customer_group', 'negate' => false, 'params' => ['groups' => ['wholesale']]]]] + self::storedHeading(self::FIRST, 'Wholesale prices'),
+            ['conditions' => [['kind' => 'date_window', 'negate' => false, 'params' => ['from' => $nextWeek->format('Y-m-d\TH:i:s\Z')]]]] + self::storedHeading(self::SECOND, 'Campaign'),
+        ]];
+
+        /** @var array{blocks: array<string, string>} $shown */
+        $shown = self::json($client, 'POST', '/admin/cms/api/preview/render?_cms_preview=' . self::previewToken($page, shownTo: 'wholesale', date: $nextWeek), $blocks, $csrfToken);
+        /** @var array{blocks: array<string, string>} $hidden */
+        $hidden = self::json($client, 'POST', '/admin/cms/api/preview/render?_cms_preview=' . self::previewToken($page, shownTo: '@guest'), $blocks, $csrfToken);
+
+        self::assertStringContainsString('Wholesale prices', $shown['blocks'][self::FIRST]);
+        self::assertStringContainsString('Campaign', $shown['blocks'][self::SECOND]);
+        self::assertSame(['blocks' => [self::FIRST => '', self::SECOND => '']], $hidden);
     }
 
     /**
