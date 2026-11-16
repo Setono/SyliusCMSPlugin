@@ -127,6 +127,10 @@ final class EntryShareLinksTest extends TestCase
     public function it_offers_no_locale_the_draft_has_no_url_in_and_no_channel_that_is_gone(): void
     {
         $page = self::page(['en_US' => 'about-us'], ['WEB', 'GONE', 'UNNAMED']);
+        // An unfinished locale, without a code yet
+        $web = $this->channels->reveal()->findOneByCode('WEB');
+        self::assertInstanceOf(Channel::class, $web);
+        $web->addLocale(new Locale());
 
         self::assertEquals([
             new ShareLinkTarget('UNNAMED', 'UNNAMED', 'en_US'),

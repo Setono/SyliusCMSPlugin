@@ -57,11 +57,9 @@ final readonly class EntryShareLinks
         $workingCopy = $this->workingCopyProvider->getWorkingCopy($entry);
         $contentType = $this->contentTypes->getByEntry($workingCopy);
 
-        $channelCodes = $entry->getChannelCodes();
-        sort($channelCodes);
-
         $targets = [];
-        foreach ($channelCodes as $channelCode) {
+        // By code, as an entry lists its channels
+        foreach ($entry->getChannelCodes() as $channelCode) {
             $channel = $this->channelRepository->findOneByCode($channelCode);
             if (!$channel instanceof CoreChannelInterface) {
                 continue;
@@ -78,7 +76,9 @@ final readonly class EntryShareLinks
     }
 
     /**
-     * @return list<string>
+     * The channel's default locale first, then its other locales by code. A locale without a code has none to share in
+     *
+     * @return array<int, string>
      */
     private static function localeCodesOf(CoreChannelInterface $channel): array
     {
@@ -90,7 +90,7 @@ final readonly class EntryShareLinks
 
         $default = $channel->getDefaultLocale()?->getCode();
 
-        return null === $default ? $codes : array_values(array_unique([$default, ...$codes]));
+        return null === $default ? $codes : array_unique([$default, ...$codes]);
     }
 
     private static function nameOf(?ChannelInterface $channel, string $code): string
