@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Event;
 
 use PHPUnit\Framework\TestCase;
+use Setono\SyliusCMSPlugin\Event\BeforeEntryDelete;
 use Setono\SyliusCMSPlugin\Event\BeforeEntryPublish;
 use Setono\SyliusCMSPlugin\Event\EntryCreated;
+use Setono\SyliusCMSPlugin\Event\EntryDeleted;
 use Setono\SyliusCMSPlugin\Event\EntryPublished;
 use Setono\SyliusCMSPlugin\Event\EntrySettingsChanged;
 use Setono\SyliusCMSPlugin\Event\StorefrontChangedInterface;
@@ -86,6 +88,48 @@ final class EventsTest extends TestCase
         self::assertSame([self::UUID], self::storefrontChange($event)?->getAffectedUuids());
         self::assertSame(self::UUID, $event->uuid);
         self::assertSame(['enabled', 'audience'], $event->changed);
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_delete_go_ahead_unless_a_listener_vetoes_it(): void
+    {
+        $page = new Page();
+        $event = new BeforeEntryDelete($page);
+
+        self::assertSame($page, $event->entry);
+        self::assertFalse($event->isVetoed());
+        self::assertNull($event->getVetoMessage());
+        self::assertFalse($event->isPropagationStopped());
+    }
+
+    /**
+     * @test
+     */
+    public function it_stops_the_delete_and_the_listeners_after_a_veto(): void
+    {
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener(BeforeEntryDelete::class, static fn (BeforeEntryDelete $event) => $event->veto('The homepage stays'), 10);
+        $dispatcher->addListener(BeforeEntryDelete::class, static fn (BeforeEntryDelete $event) => $event->veto('Never'));
+
+        $event = $dispatcher->dispatch(new BeforeEntryDelete(new Page()));
+
+        self::assertTrue($event->isVetoed());
+        self::assertSame('The homepage stays', $event->getVetoMessage());
+        self::assertTrue($event->isPropagationStopped());
+    }
+
+    /**
+     * @test
+     */
+    public function it_changes_shopper_output_for_the_deleted_entry_on_a_delete(): void
+    {
+        $event = new EntryDeleted(self::UUID, 'page');
+
+        self::assertSame([self::UUID], self::storefrontChange($event)?->getAffectedUuids());
+        self::assertSame(self::UUID, $event->uuid);
+        self::assertSame('page', $event->contentType);
     }
 
     /**
