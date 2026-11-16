@@ -17,6 +17,7 @@ final readonly class ContentTypeMetadata
      * @param list<Allow>|null $blocks
      * @param class-string<EntryInterface> $modelClass
      * @param class-string|null $translationModelClass
+     * @param string|null $descriptionField the property of its translations the meta description falls back to
      */
     public function __construct(
         public string $code,
@@ -27,6 +28,7 @@ final readonly class ContentTypeMetadata
         public string $modelClass,
         public ?string $translationModelClass,
         public string $resourceAlias,
+        public ?string $descriptionField = null,
     ) {
     }
 
