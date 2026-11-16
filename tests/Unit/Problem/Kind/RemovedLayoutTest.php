@@ -34,7 +34,7 @@ final class RemovedLayoutTest extends TestCase
             'removed_layout',
             Severity::Warning,
             $page,
-            new TranslatableMessage('setono_sylius_cms.problem.removed_layout', ['%layout%' => 'gone', '%default%' => new TranslatableMessage('app.standard')]),
+            new TranslatableMessage('setono_sylius_cms.problem.removed_layout', ['%layout%' => 'gone', '%default%' => new TranslatableMessage('setono_sylius_cms.layout.page.standard')]),
             Fix::inBuilder($page),
         )], [...self::kind()->findIn($page)]);
     }
@@ -49,7 +49,7 @@ final class RemovedLayoutTest extends TestCase
         $problems = [...self::kind(['page.landing'])->findIn($page)];
 
         self::assertCount(1, $problems);
-        self::assertEquals(new TranslatableMessage('setono_sylius_cms.problem.removed_layout', ['%layout%' => 'landing', '%default%' => new TranslatableMessage('app.standard')]), $problems[0]->message);
+        self::assertEquals(new TranslatableMessage('setono_sylius_cms.problem.removed_layout', ['%layout%' => 'landing', '%default%' => new TranslatableMessage('setono_sylius_cms.layout.page.standard')]), $problems[0]->message);
     }
 
     /**

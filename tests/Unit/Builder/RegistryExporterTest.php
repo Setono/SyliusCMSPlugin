@@ -211,7 +211,7 @@ final class RegistryExporterTest extends TestCase
             ],
             [
                 'code' => 'standard',
-                'label' => '[app.standard]',
+                'label' => '[setono_sylius_cms.layout.page.standard]',
                 'version' => 1,
                 'thumbnail' => '/build/app/standard.svg',
                 'default' => false,

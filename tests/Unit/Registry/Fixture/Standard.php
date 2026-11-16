@@ -14,7 +14,7 @@ use Setono\SyliusCMSPlugin\Model\Page;
 #[Layout(
     code: 'standard',
     contentType: Page::class,
-    label: 'app.standard',
+    label: 'setono_sylius_cms.layout.page.standard',
     template: 'standard.html.twig',
     thumbnail: '/build/app/standard.svg',
     default: true,

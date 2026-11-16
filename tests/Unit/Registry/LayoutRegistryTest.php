@@ -30,7 +30,7 @@ final class LayoutRegistryTest extends TestCase
         self::assertSame(1, $layout->version);
         self::assertSame(Standard::class, $layout->class);
         self::assertSame(['showTitle'], array_keys($layout->fields));
-        self::assertSame('app.standard', $layout->label);
+        self::assertSame('setono_sylius_cms.layout.page.standard', $layout->label);
         self::assertSame('standard.html.twig', $layout->template);
         self::assertSame('/build/app/standard.svg', $layout->thumbnail);
         self::assertSame(['title'], $layout->shows);
