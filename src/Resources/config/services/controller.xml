@@ -199,5 +199,12 @@
 
             <tag name="controller.service_arguments"/>
         </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\RevisionIndexAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\RevisionIndexAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
     </services>
 </container>

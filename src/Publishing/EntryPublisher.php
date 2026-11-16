@@ -9,12 +9,13 @@ use Setono\SyliusCMSPlugin\Event\BeforeEntryPublish;
 use Setono\SyliusCMSPlugin\Event\EntryPublished;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Revision\RevisionRecorderInterface;
 use Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
- * Publishes now. See "Publishing now" in docs/spec/publishing.md. Old slugs (#234), the reference table,
- * the media usage index and revisions (#240) join the steps with their tickets
+ * Publishes now. See "Publishing now" in docs/spec/publishing.md. Old slugs (#234), the reference table and the media
+ * usage index join the steps with their tickets
  */
 final readonly class EntryPublisher implements EntryPublisherInterface
 {
@@ -25,6 +26,7 @@ final readonly class EntryPublisher implements EntryPublisherInterface
         private EventDispatcherInterface $eventDispatcher,
         private ContentTypeRegistryInterface $contentTypes,
         private EntryValidatorInterface $entryValidator,
+        private RevisionRecorderInterface $revisions,
     ) {
     }
 
@@ -51,9 +53,15 @@ final readonly class EntryPublisher implements EntryPublisherInterface
 
             $oldSlugs = $entry->isPublished() ? self::slugs($entry) : [];
 
-            // 3. and 8. Copy the working copy onto the rows, delete the draft and bump changedAt
+            // 3. Copy the working copy onto the rows and delete the draft
             $this->workingCopies->applyToRows($entry, $workingCopy);
-            $entry->publish($this->clock->now()->setTimezone(new \DateTimeZone('UTC')));
+
+            // 7. Store what the rows hold now as a revision
+            $now = $this->clock->now()->setTimezone(new \DateTimeZone('UTC'));
+            $this->revisions->record($entry, $now);
+
+            // 8. Bump changedAt
+            $entry->publish($now);
 
             return $oldSlugs;
         });
