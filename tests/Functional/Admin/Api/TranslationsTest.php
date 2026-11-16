@@ -132,6 +132,51 @@ final class TranslationsTest extends BuilderApiTestCase
     }
 
     /**
+     * Undoing "Add translation" empties the translation's values, which leaves a translation without a title in the
+     * draft. That's no translation (localization.md), so publish doesn't validate it: not its title, nor its slug
+     *
+     * @test
+     */
+    public function it_publishes_when_adding_a_translation_was_undone(): void
+    {
+        $client = self::createClient();
+        self::addLocales('WEB', 'da_DK');
+        $page = self::createPage('About us', 'about-us', 'Hello', published: true);
+        $csrfToken = self::openBuilder($client, $page);
+        self::save($client, $page, [self::setTitle('da_DK', 'About us'), ['op' => 'set_entry_value', 'field' => 'slug', 'locale' => 'da_DK', 'value' => 'about-us']], $csrfToken);
+
+        // The undo, as the builder sends it
+        self::save($client, $page, [
+            ['op' => 'set_entry_value', 'field' => 'slug', 'locale' => 'da_DK', 'value' => null],
+            ['op' => 'set_entry_value', 'field' => 'title', 'locale' => 'da_DK', 'value' => null],
+        ], $csrfToken);
+        self::publish($client, $page, $csrfToken);
+
+        $client->request('GET', '/en_US/about-us');
+        self::assertResponseIsSuccessful();
+        $client->request('GET', '/da_DK/about-us');
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    /**
+     * An untitled translation of another entry claims no URL, so it doesn't clash
+     *
+     * @test
+     */
+    public function another_entrys_translation_without_a_title_claims_no_url(): void
+    {
+        $client = self::createClient();
+        self::addLocales('WEB', 'da_DK');
+        $other = self::createPage('Contact', 'contact-us', published: true);
+        self::addTranslation($other, 'da_DK', null, 'om-os');
+        $page = self::createPage('About us', 'about-us', 'Hello', published: true);
+        $csrfToken = self::openBuilder($client, $page);
+
+        self::save($client, $page, [self::setTitle('da_DK', 'Om os'), ['op' => 'set_entry_value', 'field' => 'slug', 'locale' => 'da_DK', 'value' => 'om-os']], $csrfToken);
+        self::publish($client, $page, $csrfToken);
+    }
+
+    /**
      * @return array<string, string>
      */
     private static function setTitle(string $locale, string $title): array

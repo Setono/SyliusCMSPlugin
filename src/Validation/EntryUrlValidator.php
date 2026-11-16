@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Validation;
 
+use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Routing\Slug;
@@ -32,6 +33,7 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
         private TakenUrlFinderInterface $takenUrls,
         private ChannelRepositoryInterface $channels,
         private TranslatorInterface $translator,
+        private Availability $availability,
     ) {
     }
 
@@ -42,7 +44,7 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
         }
 
         $errors = $slugs = [];
-        foreach (self::slugsOf($entry) as $localeCode => $slug) {
+        foreach ($this->slugsOf($entry) as $localeCode => $slug) {
             if (null !== $slug && Slug::isValid($slug)) {
                 $slugs[$localeCode] = $slug;
 
@@ -67,7 +69,7 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
             return [];
         }
 
-        return $this->clashErrors($this->clashes->findDrafted($entry, self::validSlugsOf($entry), $entry->getChannelCodes()), 'setono_sylius_cms.slug.drafted_elsewhere');
+        return $this->clashErrors($this->clashes->findDrafted($entry, $this->validSlugsOf($entry), $entry->getChannelCodes()), 'setono_sylius_cms.slug.drafted_elsewhere');
     }
 
     public function warnTakenLiveUrls(EntryInterface $entry): array
@@ -96,7 +98,7 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
             return [];
         }
 
-        return $this->clashErrors($this->clashes->findPublished($entry, self::validSlugsOf($entry), $added), 'setono_sylius_cms.slug.taken_in_channel');
+        return $this->clashErrors($this->clashes->findPublished($entry, $this->validSlugsOf($entry), $added), 'setono_sylius_cms.slug.taken_in_channel');
     }
 
     /**
@@ -162,15 +164,19 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
     }
 
     /**
-     * The slug of each translation, by locale code, null where a translation has none
+     * The slug of each translation, by locale code, null where a translation has none. A translation without a title
+     * is no translation (docs/spec/localization.md), such as one whose adding was undone in the builder, so it has no
+     * URL to check
      *
      * @return array<string, string|null>
      */
-    private static function slugsOf(EntryInterface $entry): array
+    private function slugsOf(EntryInterface $entry): array
     {
         $slugs = [];
         foreach ($entry->getTranslations() as $localeCode => $translation) {
-            $slugs[$localeCode] = $translation->getSlug();
+            if ($this->availability->hasTranslation($entry, (string) $localeCode)) {
+                $slugs[(string) $localeCode] = $translation->getSlug();
+            }
         }
         ksort($slugs);
 
@@ -182,10 +188,10 @@ final readonly class EntryUrlValidator implements EntryUrlValidatorInterface
      *
      * @return array<string, string>
      */
-    private static function validSlugsOf(EntryInterface $entry): array
+    private function validSlugsOf(EntryInterface $entry): array
     {
         $slugs = [];
-        foreach (self::slugsOf($entry) as $localeCode => $slug) {
+        foreach ($this->slugsOf($entry) as $localeCode => $slug) {
             if (null !== $slug && Slug::isValid($slug)) {
                 $slugs[$localeCode] = $slug;
             }

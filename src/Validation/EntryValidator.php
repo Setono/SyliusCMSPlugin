@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Validation;
 
+use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
@@ -14,7 +16,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  * Validates the content type's fields as block fields are validated: its shared fields on the entry, and its
  * translatable fields on its translations, in each of the entry's locales. Then it checks the Symfony Validator
  * constraints on the entry's and its translations' other properties, checks its URLs, and validates the block tree in
- * each locale
+ * each locale. A translation without a title is no translation (docs/spec/localization.md), such as one whose adding
+ * was undone in the builder, so it isn't validated, unless the entry has none with a title
  */
 final readonly class EntryValidator implements EntryValidatorInterface
 {
@@ -25,14 +28,14 @@ final readonly class EntryValidator implements EntryValidatorInterface
         private ContentTypeRegistryInterface $contentTypes,
         private ValidatorInterface $validator,
         private EntryUrlValidatorInterface $urlValidator,
+        private Availability $availability,
     ) {
     }
 
     public function validate(EntryInterface $entry): array
     {
         $contentType = $this->contentTypes->getByEntry($entry);
-        $translations = $entry->getTranslations()->toArray();
-        ksort($translations);
+        $translations = $this->translationsOf($entry);
         $locales = array_keys($translations);
 
         $fields = $this->fieldReader->readContentType($contentType->modelClass, false);
@@ -50,6 +53,24 @@ final readonly class EntryValidator implements EntryValidatorInterface
         }
 
         return [...$errors, ...$this->urlValidator->validate($entry), ...$this->blockTreeValidator->validate($entry->getBlockTree(), $contentType->code, $locales)];
+    }
+
+    /**
+     * The entry's translations that are translations, those with a title, or all of them when none has one, by locale
+     *
+     * @return array<string, EntryTranslationInterface>
+     */
+    private function translationsOf(EntryInterface $entry): array
+    {
+        $translations = [];
+        foreach ($entry->getTranslations() as $localeCode => $translation) {
+            $translations[(string) $localeCode] = $translation;
+        }
+        ksort($translations);
+
+        $titled = array_filter($translations, fn (string $localeCode): bool => $this->availability->hasTranslation($entry, $localeCode), \ARRAY_FILTER_USE_KEY);
+
+        return [] === $titled ? $translations : $titled;
     }
 
     /**

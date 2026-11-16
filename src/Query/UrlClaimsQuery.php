@@ -17,7 +17,8 @@ use Setono\SyliusCMSPlugin\Routing\UrlClaim;
 
 /**
  * Reads scalars with DBAL, in SQL that MySQL and PostgreSQL both run. A draft is JSON in a text column, so the drafts
- * whose JSON holds one of the slugs are found with LIKE, and then read to check that the slug is a translation's
+ * whose JSON holds one of the slugs are found with LIKE, and then read to check that the slug is a translation's, one
+ * with a title. The draft's JSON is read here rather than through EntryFormat, so the claims stay one query per kind
  */
 final readonly class UrlClaimsQuery implements UrlClaimsQueryInterface
 {
@@ -56,6 +57,8 @@ final readonly class UrlClaimsQuery implements UrlClaimsQueryInterface
             ->addSelect('translation.slug', 'translation.title')
             ->innerJoin('entry', $manager->getClassMetadata(EntryTranslation::class)->getTableName(), 'translation', 'translation.translatable_id = entry.id')
             ->andWhere('translation.locale = :locale')
+            // A translation without a title is no translation, so it claims no URL
+            ->andWhere("translation.title IS NOT NULL AND translation.title <> ''")
             ->andWhere($published ? 'entry.last_published_at IS NOT NULL' : 'entry.last_published_at IS NULL')
             ->setParameter('locale', $localeCode)
         ;
@@ -107,11 +110,12 @@ final readonly class UrlClaimsQuery implements UrlClaimsQueryInterface
         foreach ($query->executeQuery()->iterateAssociative() as $row) {
             $contentType = self::string($row['content_type']);
             $fields = self::draftedFields(self::string($row['content']), $localeCode);
-            if (($fields['slug'] ?? null) !== ($slugs[$contentType] ?? null)) {
+            $title = $fields['title'] ?? null;
+            if (($fields['slug'] ?? null) !== ($slugs[$contentType] ?? null) || !is_string($title) || '' === $title) {
                 continue;
             }
 
-            $claims[] = ['id' => self::int($row['id']), 'uuid' => self::string($row['uuid']), 'content_type' => $contentType, 'slug' => $slugs[$contentType], 'title' => is_string($fields['title'] ?? null) ? $fields['title'] : null];
+            $claims[] = ['id' => self::int($row['id']), 'uuid' => self::string($row['uuid']), 'content_type' => $contentType, 'slug' => $slugs[$contentType], 'title' => $title];
         }
 
         return $this->withChannels($manager, $localeCode, $claims);

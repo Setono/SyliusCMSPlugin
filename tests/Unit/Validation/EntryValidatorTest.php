@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
+use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
@@ -98,6 +99,7 @@ final class EntryValidatorTest extends TestCase
         self::translation($entry, 'en_US')->headline = 'A headline far too long';
         // Danish falls back to the English headline, and has a tone of its own
         self::translation($entry, 'da_DK')->tone = 'shouty';
+        self::translation($entry, 'da_DK')->setTitle('Vintersalg');
 
         self::assertEquals(
             [
@@ -149,6 +151,20 @@ final class EntryValidatorTest extends TestCase
         );
     }
 
+    /**
+     * A translation without a title is no translation, such as one whose adding was undone in the builder
+     *
+     * @test
+     */
+    public function it_leaves_out_a_translation_without_a_title_when_another_has_one(): void
+    {
+        $entry = self::validEntry();
+        self::translation($entry, 'da_DK')->tone = 'shouty';
+        $entry->setBlockTree(new StoredTree(null, [new StoredBlock(self::KEY, 'heading', 1, fields: ['text' => ['en_US' => 'Hello', 'da_DK' => 42]])]));
+
+        self::assertSame([], $this->validator()->validate($entry));
+    }
+
     private static function validEntry(): Landing
     {
         $entry = new Landing();
@@ -198,6 +214,7 @@ final class EntryValidatorTest extends TestCase
             $contentTypes,
             $validator,
             $this->urlValidator->reveal(),
+            new Availability(),
         );
     }
 }

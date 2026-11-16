@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
@@ -81,6 +82,26 @@ final class EntryUrlValidatorTest extends TestCase
 
         $this->takenUrls->find($page, ['de_DE' => 'uber-uns'], ['WEB'])->shouldHaveBeenCalledOnce();
         $this->clashes->findPublished($page, ['de_DE' => 'uber-uns'], ['WEB'])->shouldHaveBeenCalledOnce();
+    }
+
+    /**
+     * A translation without a title is no translation, such as one whose adding was undone in the builder, so it has no
+     * URL to check
+     *
+     * @test
+     */
+    public function it_checks_no_url_of_a_translation_without_a_title(): void
+    {
+        $page = self::page(['en_US' => 'about-us', 'da_DK' => null, 'de_DE' => 'om-os'], ['WEB']);
+        foreach (['da_DK', 'de_DE'] as $localeCode) {
+            $page->getTranslation($localeCode)->setTitle(null);
+        }
+
+        self::assertSame([], $this->validator()->validate($page));
+        self::assertSame([], $this->validator()->warn($page));
+        $this->takenUrls->find($page, ['en_US' => 'about-us'], ['WEB'])->shouldHaveBeenCalledOnce();
+        $this->clashes->findPublished($page, ['en_US' => 'about-us'], ['WEB'])->shouldHaveBeenCalledOnce();
+        $this->clashes->findDrafted($page, ['en_US' => 'about-us'], ['WEB'])->shouldHaveBeenCalledOnce();
     }
 
     /**
@@ -237,6 +258,7 @@ final class EntryUrlValidatorTest extends TestCase
             $this->takenUrls->reveal(),
             $this->channels->reveal(),
             BlockTreeValidatorTest::translator(),
+            new Availability(),
         );
     }
 
