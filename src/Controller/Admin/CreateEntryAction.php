@@ -17,8 +17,11 @@ use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
 use Sylius\Resource\Factory\FactoryInterface;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormFactoryInterface;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,8 +35,9 @@ use Twig\Environment;
  * loads it, and as a page otherwise. POST creates a never-published entry through the content type's resource factory,
  * which starts it in every channel and in the default layout, puts it in the layout and the channels the editor picked,
  * and opens the builder, whose back
- * button goes to the entry's overview page. A submit the form refuses answers the form with its errors, as a page.
- * See "Create dialog" in docs/spec/admin.md
+ * button goes to the entry's overview page. A submit the form refuses answers the form with its errors, as a page, and so
+ * does a slug whose URL a route or another entry's published URL has, as saving refuses one, with the error on the slug.
+ * See "Create dialog" in docs/spec/admin.md and "Reserved URLs" in docs/spec/urls-and-seo.md
  */
 final readonly class CreateEntryAction
 {
@@ -53,6 +57,7 @@ final readonly class CreateEntryAction
         private EventDispatcherInterface $eventDispatcher,
         private EditRecorder $editRecorder,
         private LayoutRegistryInterface $layouts,
+        private EntryUrlValidatorInterface $urlValidator,
     ) {
     }
 
@@ -94,16 +99,10 @@ final readonly class CreateEntryAction
             $entry->setFallbackLocale($localeCode);
             $entry->setTitle($data['title']);
             $entry->setSlug($data['slug'] ?? null);
-            $this->editRecorder->record($entry);
 
-            $manager = $this->managerRegistry->getManagerForClass($entry::class) ?? throw new \LogicException(sprintf('No Doctrine manager manages %s', $entry::class));
-            $manager->persist($entry);
-            $manager->flush();
-
-            // After the flush's transaction commits
-            $this->eventDispatcher->dispatch(new EntryCreated($entry->getUuid(), $contentType));
-
-            return new RedirectResponse($this->urlGenerator->generate('setono_sylius_cms_admin_builder', ['uuid' => $entry->getUuid()]));
+            if (!$this->hasUrlErrors($form, $entry)) {
+                return $this->save($entry, $contentType);
+            }
         }
 
         $template = !$form->isSubmitted() && $request->isXmlHttpRequest() ? '_create_form' : 'create';
@@ -112,6 +111,40 @@ final readonly class CreateEntryAction
             'form' => $form->createView(),
             'content_type' => $metadata,
         ]), $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK);
+    }
+
+    /**
+     * Adds the entry's URL errors to the slug field: a URL a route takes, or another entry has published. The form
+     * checked the slug's rules already
+     *
+     * @param FormInterface<array{title: string, slug?: string, layout?: string, channels?: array<int, string>}|null> $form
+     */
+    private function hasUrlErrors(FormInterface $form, EntryInterface $entry): bool
+    {
+        if (!$form->has('slug')) {
+            return false;
+        }
+
+        $errors = $this->urlValidator->validate($entry);
+        foreach ($errors as $error) {
+            $form->get('slug')->addError(new FormError($error->message));
+        }
+
+        return [] !== $errors;
+    }
+
+    private function save(EntryInterface $entry, string $contentType): Response
+    {
+        $this->editRecorder->record($entry);
+
+        $manager = $this->managerRegistry->getManagerForClass($entry::class) ?? throw new \LogicException(sprintf('No Doctrine manager manages %s', $entry::class));
+        $manager->persist($entry);
+        $manager->flush();
+
+        // After the flush's transaction commits
+        $this->eventDispatcher->dispatch(new EntryCreated($entry->getUuid(), $contentType));
+
+        return new RedirectResponse($this->urlGenerator->generate('setono_sylius_cms_admin_builder', ['uuid' => $entry->getUuid()]));
     }
 
     /**

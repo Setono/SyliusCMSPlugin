@@ -102,6 +102,26 @@ final class CreateEntryTest extends UITestCase
         self::assertSame(['WEB'], $page->getChannelCodes());
     }
 
+    /**
+     * @test
+     */
+    public function the_dialog_refuses_a_slug_whose_url_a_sylius_route_takes_with_the_error_on_the_slug(): void
+    {
+        $this->signInAsAdmin();
+
+        $browser = $this->visit('/admin/cms/entries/page');
+        $browser->getByRole('link', ['name' => 'Create'])->click();
+        $dialog = $browser->getByRole('dialog', ['name' => 'New Page']);
+        $dialog->getByLabel('Title')->fill('Cart');
+        Expect::locator($dialog->getByLabel('Slug'))->toHaveValue('cart');
+        $dialog->getByRole('button', ['name' => 'Create'])->click();
+
+        $error = $browser->locator('.field:has(#setono_sylius_cms_create_entry_slug) .sylius-validation-error');
+        Expect::locator($error)->toBeVisible();
+        self::assertSame('The URL /en_US/cart is taken by the route sylius_shop_cart_summary.', trim($error->textContent() ?? ''));
+        self::assertSame('cart', $browser->locator('#setono_sylius_cms_create_entry_slug')->inputValue());
+    }
+
     private static function page(string $slug): PageInterface
     {
         /** @var RepositoryInterface<PageInterface> $pages */

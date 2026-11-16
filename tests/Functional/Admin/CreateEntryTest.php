@@ -329,6 +329,33 @@ final class CreateEntryTest extends WebTestCase
     }
 
     /**
+     * Saving rejects a URL that a route already matches, such as Sylius's cart, and one another entry has published in
+     * a channel and locale they share. See "Reserved URLs" and "Unique per channel and locale" in docs/spec/urls-and-seo.md
+     *
+     * @test
+     *
+     * @testWith ["Cart", "", "The URL /en_US/cart is taken by the route sylius_shop_cart_summary."]
+     *           ["About us", "about-us", "The URL /en_US/about-us is already the URL of \"About us\" in Setono CMS Test Store."]
+     */
+    public function it_refuses_a_slug_whose_url_a_route_or_another_entry_has_with_the_error_on_the_slug(string $title, string $slug, string $error): void
+    {
+        $client = self::signedInClient();
+        self::createPage('About us', 'about-us', published: true);
+
+        $client->request('GET', '/admin/cms/entries/page/new');
+        $crawler = $client->submitForm('Create', [
+            'setono_sylius_cms_create_entry[title]' => $title,
+            'setono_sylius_cms_create_entry[slug]' => $slug,
+        ]);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame($error, trim($crawler->filter('#setono_sylius_cms_create_entry_slug')->closest('.field')?->filter('.sylius-validation-error')->text() ?? ''));
+        /** @var RepositoryInterface<PageInterface> $repository */
+        $repository = self::getContainer()->get('setono_sylius_cms.repository.page');
+        self::assertCount(1, $repository->findAll());
+    }
+
+    /**
      * @test
      */
     public function it_answers_404_for_a_content_type_it_does_not_have(): void
