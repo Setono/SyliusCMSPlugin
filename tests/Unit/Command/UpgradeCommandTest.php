@@ -51,9 +51,9 @@ final class UpgradeCommandTest extends TestCase
         $both = new Page();
         $newer = new Page();
         $this->entries->iterateAll()->willReturn([$trees, $both, $newer]);
-        $this->rewriter->rewrite($trees)->willReturn(new EntryRewrite(true, false, []));
-        $this->rewriter->rewrite($both)->willReturn(new EntryRewrite(true, true, []));
-        $this->rewriter->rewrite($newer)->willReturn(new EntryRewrite(false, false, [new NewerVersion(Kind::BlockType, 'teaser', 4, 3)]));
+        $this->rewriter->rewrite($trees)->willReturn(new EntryRewrite(true, false, [], 0));
+        $this->rewriter->rewrite($both)->willReturn(new EntryRewrite(true, true, [], 0));
+        $this->rewriter->rewrite($newer)->willReturn(new EntryRewrite(false, false, [new NewerVersion(Kind::BlockType, 'teaser', 4, 3)], 0));
         $this->manager->flush()->shouldBeCalledOnce();
         $this->manager->clear()->shouldBeCalledOnce();
 
@@ -77,8 +77,8 @@ final class UpgradeCommandTest extends TestCase
         $first = new Page();
         $second = new Page();
         $this->entries->iterateAll()->willReturn([$first, $second]);
-        $this->rewriter->rewrite($first)->willReturn(new EntryRewrite(true, true, []));
-        $this->rewriter->rewrite($second)->willReturn(new EntryRewrite(false, true, []));
+        $this->rewriter->rewrite($first)->willReturn(new EntryRewrite(true, true, [], 0));
+        $this->rewriter->rewrite($second)->willReturn(new EntryRewrite(false, true, [], 0));
 
         self::assertStringContainsString('[OK] Upgraded 1 block tree and 2 drafts.', self::display($this->upgrade([])));
     }
@@ -94,7 +94,7 @@ final class UpgradeCommandTest extends TestCase
         $this->entries->iterateAll()->willReturn([$first, $second, $third]);
         $this->rewriter->rewrite($first)->willReturn(new EntryRewrite(true, true, [], 1));
         $this->rewriter->rewrite($second)->willReturn(new EntryRewrite(false, false, [], 2));
-        $this->rewriter->rewrite($third)->willReturn(new EntryRewrite(false, false, []));
+        $this->rewriter->rewrite($third)->willReturn(new EntryRewrite(false, false, [], 0));
 
         $display = self::display($this->upgrade([]));
 
@@ -126,7 +126,7 @@ final class UpgradeCommandTest extends TestCase
     {
         $entry = new Page();
         $this->entries->iterateAll()->willReturn([$entry]);
-        $this->rewriter->rewrite($entry)->willReturn(new EntryRewrite(true, true, []));
+        $this->rewriter->rewrite($entry)->willReturn(new EntryRewrite(true, true, [], 0));
         $this->manager->flush()->shouldNotBeCalled();
         $this->manager->clear()->shouldBeCalledOnce();
 
@@ -143,7 +143,7 @@ final class UpgradeCommandTest extends TestCase
     {
         $entry = new Page();
         $this->entries->iterateAll()->willReturn([$entry]);
-        $this->rewriter->rewrite($entry)->willReturn(new EntryRewrite(false, false, []));
+        $this->rewriter->rewrite($entry)->willReturn(new EntryRewrite(false, false, [], 0));
 
         self::assertStringContainsString('[OK] Everything is up to date.', self::display($this->upgrade([])));
     }
@@ -157,7 +157,7 @@ final class UpgradeCommandTest extends TestCase
     {
         $entries = array_map(static fn (): EntryInterface => new Page(), range(1, $count));
         $this->entries->iterateAll()->willReturn($entries);
-        $this->rewriter->rewrite(Argument::any())->willReturn(new EntryRewrite(false, false, []));
+        $this->rewriter->rewrite(Argument::any())->willReturn(new EntryRewrite(false, false, [], 0));
 
         $this->manager->flush()->shouldBeCalledTimes($batches);
         $this->manager->clear()->shouldBeCalledTimes($batches);

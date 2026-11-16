@@ -32,17 +32,10 @@ final readonly class RevisionPruner
     {
         // The ids are all read before any is deleted, so deleting never runs under the reading
         $pruned = [];
-        $entry = null;
-        $kept = 0;
+        $seen = [];
         foreach ($this->revisions->iterateIdsByEntryNewestFirst() as $revision) {
-            if ($revision['entry'] !== $entry) {
-                $entry = $revision['entry'];
-                $kept = 0;
-            }
-
-            if ($kept < $this->keep) {
-                ++$kept;
-            } else {
+            $seen[$revision['entry']] = ($seen[$revision['entry']] ?? 0) + 1;
+            if ($seen[$revision['entry']] > $this->keep) {
                 $pruned[] = $revision['id'];
             }
         }

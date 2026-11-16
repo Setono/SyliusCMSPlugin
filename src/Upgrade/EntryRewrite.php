@@ -19,7 +19,7 @@ final readonly class EntryRewrite
         public bool $blockTree,
         public bool $draft,
         public array $newer,
-        public int $revisions = 0,
+        public int $revisions,
     ) {
     }
 }

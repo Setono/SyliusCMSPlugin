@@ -121,10 +121,12 @@ final class RevisionPreviewUrlGeneratorTest extends TestCase
      */
     public function it_refuses_a_preview_the_revision_has_no_page_for(array $slugs, array $channelCodes, ?string $channelCode, ?string $localeCode, string $message): void
     {
-        $this->expectException(RevisionPreviewUnavailableException::class);
-        $this->expectExceptionMessage($message);
-
-        $this->generator()->generate(self::revision($slugs, $channelCodes), $channelCode, $localeCode);
+        try {
+            $this->generator()->generate(self::revision($slugs, $channelCodes), $channelCode, $localeCode);
+            self::fail('The preview was not refused');
+        } catch (RevisionPreviewUnavailableException $e) {
+            self::assertSame($message, $e->getMessage());
+        }
     }
 
     /**

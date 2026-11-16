@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Preview;
 
-use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Twig\Environment;
 
@@ -24,7 +23,8 @@ final readonly class BridgeScriptListener
 
     public function onResponse(ResponseEvent $event): void
     {
-        if (!$event->isMainRequest() || RenderContext::PREVIEW_MODE_BUILDER !== $this->previewContext->getMode() || true === $this->previewContext->getPreview()?->isReadOnly()) {
+        $preview = $this->previewContext->getPreview();
+        if (!$event->isMainRequest() || null === $preview || $preview->isReadOnly()) {
             return;
         }
 
