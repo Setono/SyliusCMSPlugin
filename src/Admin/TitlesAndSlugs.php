@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Admin;
 
+use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
+use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
@@ -30,34 +32,19 @@ final class TitlesAndSlugs
     }
 
     /**
-     * A draft is the entry in the entry format, whose translations hold the title and slug among their fields
+     * A draft is the entry in the entry format, read through EntryFormat. One that can't be read gives none, and fails
+     * where it's opened
      *
      * @return array<string, array{title: ?string, slug: ?string}> locale => the title and slug
      */
     public static function ofDraft(DraftInterface $draft): array
     {
-        $data = CanonicalJson::decode($draft->getContent());
-        $data = is_array($data) ? $data['translations'] ?? null : null;
-
-        $translations = [];
-        foreach (is_array($data) ? $data : [] as $localeCode => $translation) {
-            if (!is_string($localeCode) || !is_array($translation)) {
-                continue;
-            }
-
-            $fields = $translation['fields'] ?? null;
-            $fields = is_array($fields) ? $fields : [];
-            $translations[$localeCode] = ['title' => self::string($fields, 'title'), 'slug' => self::string($fields, 'slug')];
+        try {
+            $values = EntryDenormalizer::translationValues(CanonicalJson::decode($draft->getContent()), ['title', 'slug']);
+        } catch (InvalidEntryFormatException|\JsonException) {
+            return [];
         }
 
-        return $translations;
-    }
-
-    /**
-     * @param array<array-key, mixed> $fields
-     */
-    private static function string(array $fields, string $field): ?string
-    {
-        return is_string($fields[$field] ?? null) ? $fields[$field] : null;
+        return array_map(static fn (array $fields): array => ['title' => $fields['title'], 'slug' => $fields['slug']], $values);
     }
 }

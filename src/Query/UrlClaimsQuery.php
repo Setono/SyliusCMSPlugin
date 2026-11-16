@@ -8,6 +8,8 @@ use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
+use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
+use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
@@ -18,7 +20,8 @@ use Setono\SyliusCMSPlugin\Routing\UrlClaim;
 /**
  * Reads scalars with DBAL, in SQL that MySQL and PostgreSQL both run. A draft is JSON in a text column, so the drafts
  * whose JSON holds one of the slugs are found with LIKE, and then read to check that the slug is a translation's, one
- * with a title. The draft's JSON is read here rather than through EntryFormat, so the claims stay one query per kind
+ * with a title. The drafts are found in SQL, as text, so the claims stay one query per kind, and their translations are
+ * then read through EntryFormat
  */
 final readonly class UrlClaimsQuery implements UrlClaimsQueryInterface
 {
@@ -169,23 +172,18 @@ final readonly class UrlClaimsQuery implements UrlClaimsQueryInterface
     }
 
     /**
-     * The fields of the locale's translation in a draft, which is the entry in the entry format
+     * The title and slug of the locale's translation in a draft, which is the entry in the entry format. A draft that
+     * can't be read claims nothing
      *
-     * @return array<array-key, mixed>
+     * @return array{title?: string|null, slug?: string|null}
      */
     private static function draftedFields(string $content, string $localeCode): array
     {
         try {
-            $data = CanonicalJson::decode($content);
-        } catch (\JsonException) {
+            return EntryDenormalizer::translationValues(CanonicalJson::decode($content), ['title', 'slug'])[$localeCode] ?? [];
+        } catch (InvalidEntryFormatException|\JsonException) {
             return [];
         }
-
-        $fields = is_array($data) && is_array($data['translations'] ?? null) && is_array($data['translations'][$localeCode] ?? null)
-            ? $data['translations'][$localeCode]['fields'] ?? null
-            : null;
-
-        return is_array($fields) ? $fields : [];
     }
 
     /**

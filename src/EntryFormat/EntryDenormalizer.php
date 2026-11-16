@@ -53,11 +53,7 @@ final readonly class EntryDenormalizer
 
         foreach ($translations as $localeCode => $translationData) {
             $translationData = self::map($translationData, sprintf('The translation %s', $localeCode));
-            $fields = self::map($translationData['fields'] ?? null, sprintf('The fields of the translation %s', $localeCode));
-            $values = [];
-            foreach (EntryFields::translatable($contentType) as $field) {
-                $values[$field] = self::nullableString($fields, $field, $localeCode);
-            }
+            $values = self::values($translationData, $localeCode, EntryFields::translatable($contentType));
             $shown = $translationData['shown'] ?? null;
             if (!is_bool($shown)) {
                 throw new InvalidEntryFormatException(sprintf('The shown switch of the translation %s must be true or false', $localeCode));
@@ -85,6 +81,53 @@ final readonly class EntryDenormalizer
         } catch (InvalidStoredTreeException $e) {
             throw new InvalidEntryFormatException(sprintf('The tree is invalid: %s', $e->getMessage()), previous: $e);
         }
+    }
+
+    /**
+     * The values of these translatable entry fields in each translation of an entry in the entry format, by locale,
+     * without copying anything onto an entry: what the admin's lists read of a draft (ADR 0009). A translation that
+     * isn't in the format is left out, so the others are read
+     *
+     * @param list<string> $fields such as title and slug
+     *
+     * @return array<string, array<string, string|null>> locale => field => its value
+     *
+     * @throws InvalidEntryFormatException when the data isn't an entry with translations
+     */
+    public static function translationValues(mixed $data, array $fields): array
+    {
+        $translations = self::map(self::map($data, 'An entry')['translations'] ?? null, 'The translations');
+
+        $values = [];
+        foreach ($translations as $localeCode => $translationData) {
+            try {
+                $values[$localeCode] = self::values(self::map($translationData, sprintf('The translation %s', $localeCode)), $localeCode, $fields);
+            } catch (InvalidEntryFormatException) {
+                continue;
+            }
+        }
+
+        return $values;
+    }
+
+    /**
+     * @param array<string, mixed> $translationData
+     * @param list<string> $fields
+     *
+     * @return array<string, string|null>
+     *
+     * @throws InvalidEntryFormatException
+     */
+    private static function values(array $translationData, string $localeCode, array $fields): array
+    {
+        $data = self::map($translationData['fields'] ?? null, sprintf('The fields of the translation %s', $localeCode));
+
+        $values = [];
+        foreach ($fields as $field) {
+            $values[$field] = self::nullableString($data, $field, $localeCode);
+        }
+
+        return $values;
     }
 
     /**
