@@ -159,6 +159,8 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
      * @test
      *
      * @dataProvider provideTranslationsWithoutTheDescriptionField
+     *
+     * @param array<string, mixed> $resource
      */
     public function a_field_for_the_meta_description_to_fall_back_to_that_its_translations_do_not_have_fails_the_build(array $resource): void
     {

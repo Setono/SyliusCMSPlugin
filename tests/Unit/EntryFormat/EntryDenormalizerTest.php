@@ -154,7 +154,7 @@ final class EntryDenormalizerTest extends TestCase
         $data = CanonicalJson::decode(CanonicalJson::encode($this->normalizer()->normalize($draft)));
         self::assertIsArray($data);
         $data['fields'] = ['noindex' => false];
-        $data['translations']['en_US']['fields'] += ['slug' => 'crepes', 'metaTitle' => 'Crêpes', 'metaDescription' => 'Thinner ones'];
+        $data['translations'] = ['en_US' => ['shown' => true, 'fields' => ['title' => 'Crêpes', 'slug' => 'crepes', 'metaTitle' => 'Crêpes', 'metaDescription' => 'Thinner ones'], 'translated' => []]];
 
         $this->denormalizer()->denormalize($data, $recipe);
 
