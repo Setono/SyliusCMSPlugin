@@ -21,8 +21,8 @@ interface LayoutRegistryInterface
     public function get(string $contentType, string $code): LayoutMetadata;
 
     /**
-     * Every layout of the content type, disabled ones too, in the order they were registered. None for a content type
-     * without its own URL
+     * Every layout of the content type, disabled ones too: the default first, then the others in the order they were
+     * registered. None for a content type without its own URL
      *
      * @return list<LayoutMetadata>
      */

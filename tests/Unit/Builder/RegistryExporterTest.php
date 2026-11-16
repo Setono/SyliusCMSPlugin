@@ -14,15 +14,20 @@ use Setono\SyliusCMSPlugin\Builder\RegistryExporter;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
+use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\OpeningHoursHandler;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Store;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Standard;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Wide;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Component\Translation\TranslatorBagInterface;
@@ -165,17 +170,65 @@ final class RegistryExporterTest extends TestCase
      */
     public function it_exports_what_the_top_level_of_each_content_type_may_hold(): void
     {
+        $contentTypes = $this->exporter()->export()['contentTypes'];
+
+        self::assertSame(['code', 'label', 'blocks', 'layouts'], array_keys($contentTypes[0]));
+        self::assertSame(['page', '[setono_sylius_cms.content_type.page]', [
+            ['type' => 'columns', 'min' => null, 'max' => null],
+            ['type' => 'heading', 'min' => null, 'max' => null],
+        ]], [$contentTypes[0]['code'], $contentTypes[0]['label'], $contentTypes[0]['blocks']]);
+        self::assertSame(['code' => 'recipe', 'label' => '[app.recipe]', 'blocks' => null, 'layouts' => []], $contentTypes[1]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_exports_the_layouts_editors_can_pick_for_each_content_type_with_their_field_schemas_and_the_default_marked(): void
+    {
+        $contentTypes = $this->exporter(disabledLayouts: ['page.wide'])->export()['contentTypes'];
+
         self::assertSame([
             [
-                'code' => 'page',
-                'label' => '[setono_sylius_cms.content_type.page]',
-                'blocks' => [
-                    ['type' => 'columns', 'min' => null, 'max' => null],
-                    ['type' => 'heading', 'min' => null, 'max' => null],
-                ],
+                'code' => 'landing',
+                'label' => '[app.landing]',
+                'version' => 2,
+                'thumbnail' => null,
+                'default' => true,
+                'shows' => [],
+                'fields' => [[
+                    'name' => 'transparentHeader',
+                    'schema' => [
+                        'type' => 'boolean',
+                        'default' => false,
+                        'x-cms-type' => 'toggle',
+                        'x-cms-label' => '[app.transparent_header]',
+                        'x-cms-help' => null,
+                        'x-cms-required' => false,
+                        'x-cms-translatable' => false,
+                    ],
+                ]],
             ],
-            ['code' => 'recipe', 'label' => '[app.recipe]', 'blocks' => null],
-        ], $this->exporter()->export()['contentTypes']);
+            [
+                'code' => 'standard',
+                'label' => '[app.standard]',
+                'version' => 1,
+                'thumbnail' => '/build/app/standard.svg',
+                'default' => false,
+                'shows' => ['title'],
+                'fields' => [[
+                    'name' => 'showTitle',
+                    'schema' => [
+                        'type' => 'boolean',
+                        'default' => true,
+                        'x-cms-type' => 'toggle',
+                        'x-cms-label' => '[app.show_title]',
+                        'x-cms-help' => null,
+                        'x-cms-required' => false,
+                        'x-cms-translatable' => false,
+                    ],
+                ]],
+            ],
+        ], $contentTypes[0]['layouts'], 'The default the config names comes first, marked, and a disabled layout is left out');
     }
 
     /**
@@ -196,7 +249,10 @@ final class RegistryExporterTest extends TestCase
      * @param array<string, array<string, array{label: string, class: string}>> $styles
      * @param array<string, class-string> $blockTypes block types besides the shipped Columns, Column and Heading
      */
-    private function exporter(array $disabled = [], array $styles = [], array $blockTypes = []): RegistryExporter
+    /**
+     * @param list<string> $disabledLayouts
+     */
+    private function exporter(array $disabled = [], array $styles = [], array $blockTypes = [], array $disabledLayouts = []): RegistryExporter
     {
         $translator = $this->prophesize(TranslatorInterface::class);
         $translator->trans(Argument::type('string'))->will(static fn (array $arguments): string => sprintf('[%s]', is_string($arguments[0] ?? null) ? $arguments[0] : ''));
@@ -219,6 +275,7 @@ final class RegistryExporterTest extends TestCase
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator->reveal()),
             OpeningHoursHandler::class => static fn (): OpeningHoursHandler => new OpeningHoursHandler(),
+            ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
         ]));
 
         $blockTypes = new BlockTypeRegistry(['columns' => Columns::class, 'column' => Column::class, 'heading' => Heading::class] + $blockTypes, new FieldReader(), $disabled, $styles);
@@ -234,6 +291,7 @@ final class RegistryExporterTest extends TestCase
             $handlers,
             $translator->reveal(),
             $catalogues->reveal(),
+            new LayoutRegistry(['page' => ['standard' => Standard::class, 'landing' => Landing::class, 'wide' => Wide::class]], new FieldReader(), ['page' => 'landing'], $disabledLayouts),
         );
     }
 }

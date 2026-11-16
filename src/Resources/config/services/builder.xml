@@ -9,6 +9,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
             <argument type="service" id="translator"/>
             <argument type="service" id="translator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier" class="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier">

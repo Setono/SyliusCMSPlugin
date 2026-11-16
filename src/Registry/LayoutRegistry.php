@@ -46,7 +46,15 @@ final class LayoutRegistry implements LayoutRegistryInterface
 
     public function all(string $contentType): array
     {
-        return array_map(fn (string $code): LayoutMetadata => $this->get($contentType, $code), array_keys($this->classes[$contentType] ?? []));
+        if (!isset($this->classes[$contentType])) {
+            return [];
+        }
+
+        $default = $this->defaultCode($contentType);
+        $codes = array_keys($this->classes[$contentType]);
+        usort($codes, static fn (string $a, string $b): int => ($b === $default) <=> ($a === $default));
+
+        return array_map(fn (string $code): LayoutMetadata => $this->get($contentType, $code), $codes);
     }
 
     public function getDefault(string $contentType): LayoutMetadata

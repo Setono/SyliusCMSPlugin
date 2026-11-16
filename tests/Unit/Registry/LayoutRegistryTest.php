@@ -58,12 +58,14 @@ final class LayoutRegistryTest extends TestCase
     /**
      * @test
      */
-    public function it_lists_the_layouts_of_a_content_type_in_the_order_they_were_registered(): void
+    public function it_lists_the_layouts_of_a_content_type_the_default_first_and_then_in_the_order_they_were_registered(): void
     {
-        $registry = new LayoutRegistry(['page' => ['standard' => Standard::class, 'landing' => Landing::class]], new FieldReader(), disabled: ['page.landing']);
+        $classes = ['page' => ['wide' => Wide::class, 'landing' => Landing::class, 'standard' => Standard::class]];
 
-        self::assertSame(['standard', 'landing'], self::codes($registry->all('page')), 'A disabled layout is listed too');
-        self::assertSame([], $registry->all('recipe'));
+        self::assertSame(['standard', 'wide', 'landing'], self::codes((new LayoutRegistry($classes, new FieldReader(), ['page' => 'standard'], ['page.landing']))->all('page')), 'A disabled layout is listed too');
+        self::assertSame(['landing', 'wide', 'standard'], self::codes((new LayoutRegistry($classes, new FieldReader(), ['page' => 'landing']))->all('page')));
+        self::assertSame(['wide', 'landing', 'standard'], self::codes((new LayoutRegistry($classes, new FieldReader(), ['page' => 'wide']))->all('page')));
+        self::assertSame([], (new LayoutRegistry($classes, new FieldReader(), ['page' => 'wide']))->all('recipe'));
     }
 
     /**

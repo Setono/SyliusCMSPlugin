@@ -143,8 +143,17 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertSame('/bundles/setonosyliuscmsplugin/thumbnail/block/columns.svg', $blockTypes['columns']['thumbnail']);
         self::assertFalse($blockTypes['spacer']['disabled']);
 
-        // The test application adds a content type of its own
-        self::assertSame([['code' => 'announcement', 'label' => 'Announcement', 'blocks' => $all], ['code' => 'page', 'label' => 'Page', 'blocks' => $all]], $registry['contentTypes']);
+        // The test application adds a content type of its own, without a URL and so without layouts, and a layout of its own to pages
+        self::assertIsArray($registry['contentTypes']);
+        self::assertSame(['code' => 'announcement', 'label' => 'Announcement', 'blocks' => $all, 'layouts' => []], $registry['contentTypes'][0]);
+        $page = $registry['contentTypes'][1];
+        self::assertIsArray($page);
+        self::assertSame(['page', 'Page', $all], [$page['code'], $page['label'], $page['blocks']]);
+        self::assertIsArray($page['layouts']);
+        self::assertSame([
+            ['standard', 'Standard', '/bundles/setonosyliuscmsplugin/thumbnail/layout/page/standard.svg', true, ['title'], ['showTitle']],
+            ['landing', 'Landing', null, false, [], ['tagline', 'transparentHeader']],
+        ], array_map(static fn (array $layout): array => [$layout['code'], $layout['label'], $layout['thumbnail'], $layout['default'], $layout['shows'], array_column($layout['fields'], 'name')], $page['layouts']));
     }
 
     /**
