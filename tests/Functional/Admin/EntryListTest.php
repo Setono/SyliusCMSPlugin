@@ -61,7 +61,8 @@ final class EntryListTest extends BuilderApiTestCase
 
         $row = self::row($crawler, $about);
         self::assertSame('About us', $row->filter('[data-column="title"] a')->text());
-        self::assertSame(sprintf('/admin/cms/entry/%s/builder?back=/admin/cms/entries', $about->getUuid()), $row->filter('[data-column="title"] a')->attr('href'));
+        // A row opens the entry's overview page
+        self::assertSame(sprintf('/admin/cms/entry/%s', $about->getUuid()), $row->filter('[data-column="title"] a')->attr('href'));
         self::assertSame('/en_US/about-us', $row->filter('[data-column="title"] .description')->text());
         self::assertSame('Page', $row->filter('[data-column="type"]')->text());
         self::assertSame(['Published'], self::statusLabels($row));

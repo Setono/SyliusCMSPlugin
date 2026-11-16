@@ -43,6 +43,22 @@
             <tag name="kernel.event_listener" event="setono_sylius_cms.entry.index"/>
         </service>
 
+        <!-- Checks the admin user on the entry overview page, which the entry resource's controller shows -->
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryShowListener" class="Setono\SyliusCMSPlugin\Admin\EntryShowListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+
+            <tag name="kernel.event_listener" event="setono_sylius_cms.entry.show"/>
+        </service>
+
+        <!-- The URLs of an entry per locale, which its overview page gets through cms_admin_entry_urls() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryUrls" class="Setono\SyliusCMSPlugin\Admin\EntryUrls">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="router"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
         <!-- The entry lists' grid filters -->
         <service id="Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter" class="Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter">
             <argument type="service" id="clock"/>

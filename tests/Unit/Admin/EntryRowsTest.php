@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Admin\EntryRow;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\StatusLabel;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
+use Setono\SyliusCMSPlugin\Builder\EntryStatus;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
@@ -65,6 +66,7 @@ final class EntryRowsTest extends TestCase
         self::assertSame('About us', $row->title);
         self::assertSame('/en_US/about-us', $row->url);
         self::assertEquals([new StatusLabel(StatusLabel::NEVER_PUBLISHED)], $row->statusLabels);
+        self::assertSame(EntryStatus::NEVER_PUBLISHED, $row->status);
     }
 
     /**
@@ -83,9 +85,11 @@ final class EntryRowsTest extends TestCase
         self::assertSame('About our shop', $row->title);
         self::assertSame('/en_US/about-our-shop', $row->url);
         self::assertEquals([new StatusLabel(StatusLabel::PUBLISHED), new StatusLabel(StatusLabel::UNPUBLISHED_CHANGES)], $row->statusLabels);
+        self::assertSame(EntryStatus::UNPUBLISHED_CHANGES, $row->status);
 
         self::assertSame('Contact', $otherRow->title);
         self::assertEquals([new StatusLabel(StatusLabel::PUBLISHED)], $otherRow->statusLabels);
+        self::assertSame(EntryStatus::PUBLISHED, $otherRow->status);
     }
 
     /**

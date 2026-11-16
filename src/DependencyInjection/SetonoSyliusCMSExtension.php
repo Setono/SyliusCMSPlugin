@@ -64,6 +64,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     public function prepend(ContainerBuilder $container): void
     {
         $this->prependGrids($container);
+        $this->prependEntryOverviewEvents($container);
 
         /** @var array{assets: bool} $config */
         $config = $this->processConfiguration(new Configuration(), $container->getExtensionConfig($this->getAlias()));
@@ -77,6 +78,42 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 'sylius.shop.layout.stylesheets' => [
                     'blocks' => [
                         'setono_sylius_cms_stylesheet' => ['template' => '@SetonoSyliusCMSPlugin/shop/stylesheet.html.twig', 'priority' => 20],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * The entry overview page is built from two Sylius template events, whose blocks get the entry (`entry`) and its
+     * row (`row`, an Admin\EntryRow). A block that has nothing to show for an entry renders nothing:
+     *
+     * - setono_sylius_cms.admin.entry.show.header_actions: the header's buttons, Open in builder first
+     * - setono_sylius_cms.admin.entry.show.sections: the sections, in the spec's order, which the priorities leave
+     *   room in: publishing (100), problems (90), placements (80), where_it_shows (70), revisions (60),
+     *   share_links (50), urls (40), used_in (30) and translations (20)
+     *
+     * A section is a block with its template, and projects add, reorder or switch off blocks in their own sylius_ui
+     * config. See "Entry overview page" in docs/spec/admin.md
+     */
+    private function prependEntryOverviewEvents(ContainerBuilder $container): void
+    {
+        $block = static fn (string $template, int $priority): array => [
+            'template' => sprintf('@SetonoSyliusCMSPlugin/admin/entry/show/%s.html.twig', $template),
+            'priority' => $priority,
+        ];
+
+        $container->prependExtensionConfig('sylius_ui', [
+            'events' => [
+                'setono_sylius_cms.admin.entry.show.header_actions' => [
+                    'blocks' => [
+                        'open_in_builder' => $block('_open_in_builder', 20),
+                    ],
+                ],
+                'setono_sylius_cms.admin.entry.show.sections' => [
+                    'blocks' => [
+                        'publishing' => $block('_publishing', 100),
+                        'urls' => $block('_urls', 40),
                     ],
                 ],
             ],

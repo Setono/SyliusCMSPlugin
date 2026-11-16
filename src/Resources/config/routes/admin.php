@@ -15,7 +15,9 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\ValidateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction as DiscardEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\PublishEntryAction as PublishEntryPageAction;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Routing\Requirement\Requirement;
 
@@ -62,6 +64,32 @@ return static function (RoutingConfigurator $routes): void {
         ->controller(CreateEntryAction::class)
         ->methods(['GET', 'POST'])
         ->requirements(['contentType' => '[a-z][a-z0-9_]*'])
+    ;
+
+    // The entry's overview page, between its list and the builder, shown by the entry resource's controller (docs/spec/admin.md#entry-overview-page)
+    $routes->add('setono_sylius_cms_admin_entry_show', '/cms/entry/{uuid}')
+        ->controller('setono_sylius_cms.controller.entry::showAction')
+        ->methods(['GET'])
+        ->requirements(['uuid' => Requirement::UUID])
+        ->defaults(['_sylius' => [
+            'section' => 'admin',
+            'permission' => true,
+            'template' => '@SetonoSyliusCMSPlugin/admin/entry/show.html.twig',
+            'repository' => ['method' => 'findOneByUuid', 'arguments' => ['$uuid']],
+        ]])
+    ;
+
+    // The overview page's Publish and Discard changes, which come back to it
+    $routes->add('setono_sylius_cms_admin_entry_publish', '/cms/entry/{uuid}/publish')
+        ->controller(PublishEntryPageAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_entry_discard', '/cms/entry/{uuid}/discard')
+        ->controller(DiscardEntryPageAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
     ;
 
     $routes->add('setono_sylius_cms_admin_entry_delete', '/cms/entry/{uuid}')

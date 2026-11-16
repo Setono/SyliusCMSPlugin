@@ -166,15 +166,11 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     {
         $this->load();
 
-        self::assertSame([[
-            'events' => [
-                'sylius.shop.layout.stylesheets' => [
-                    'blocks' => [
-                        'setono_sylius_cms_stylesheet' => ['template' => '@SetonoSyliusCMSPlugin/shop/stylesheet.html.twig', 'priority' => 20],
-                    ],
-                ],
+        self::assertSame([
+            'blocks' => [
+                'setono_sylius_cms_stylesheet' => ['template' => '@SetonoSyliusCMSPlugin/shop/stylesheet.html.twig', 'priority' => 20],
             ],
-        ]], $this->container->getExtensionConfig('sylius_ui'));
+        ], $this->templateEvents()['sylius.shop.layout.stylesheets'] ?? null);
     }
 
     /**
@@ -186,7 +182,28 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
 
         $this->load(['assets' => false]);
 
-        self::assertSame([], $this->container->getExtensionConfig('sylius_ui'));
+        self::assertArrayNotHasKey('sylius.shop.layout.stylesheets', $this->templateEvents());
+    }
+
+    /**
+     * @test
+     */
+    public function it_builds_the_entry_overview_page_from_template_events_whose_blocks_are_its_header_actions_and_sections(): void
+    {
+        $this->load();
+
+        $events = $this->templateEvents();
+        self::assertSame([
+            'blocks' => [
+                'open_in_builder' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_open_in_builder.html.twig', 'priority' => 20],
+            ],
+        ], $events['setono_sylius_cms.admin.entry.show.header_actions'] ?? null);
+        self::assertSame([
+            'blocks' => [
+                'publishing' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_publishing.html.twig', 'priority' => 100],
+                'urls' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_urls.html.twig', 'priority' => 40],
+            ],
+        ], $events['setono_sylius_cms.admin.entry.show.sections'] ?? null);
     }
 
     /**
@@ -343,6 +360,25 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $resources = $this->container->getParameter('sylius.resources');
 
         self::assertSame('App\\Entity\\Page', $resources['setono_sylius_cms.page']['classes']['model']);
+    }
+
+    /**
+     * The sylius_ui template events the plugin prepends, merged by event name
+     *
+     * @return array<string, mixed>
+     */
+    private function templateEvents(): array
+    {
+        $events = [];
+        foreach ($this->container->getExtensionConfig('sylius_ui') as $config) {
+            self::assertIsArray($config['events'] ?? null);
+            foreach ($config['events'] as $name => $event) {
+                self::assertArrayNotHasKey($name, $events, sprintf('The template event %s is prepended once', (string) $name));
+                $events[$name] = $event;
+            }
+        }
+
+        return $events;
     }
 
     /**

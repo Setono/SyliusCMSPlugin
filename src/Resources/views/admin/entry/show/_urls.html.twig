@@ -1,0 +1,39 @@
+{#
+ # The overview page's URLs section, a block of setono_sylius_cms.admin.entry.show.sections, for a content type with
+ # its own URL: the URL per locale, and the one the draft gives it once published, when that's another.
+ # See "Entry overview page" in docs/spec/admin.md
+ #}
+{% if row.contentType.hasOwnUrl() %}
+    {% set urls = cms_admin_entry_urls(entry) %}
+    <section class="ui segment" data-section="urls" aria-labelledby="cms-section-urls">
+        <h2 class="ui dividing header" id="cms-section-urls">{{ 'setono_sylius_cms.ui.urls'|trans }}</h2>
+
+        {% if urls is empty %}
+            <p>{{ 'setono_sylius_cms.ui.no_urls'|trans }}</p>
+        {% else %}
+            <table class="ui very basic table">
+                <thead>
+                    <tr>
+                        <th>{{ 'setono_sylius_cms.ui.language'|trans }}</th>
+                        <th>{{ 'setono_sylius_cms.ui.url'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for url in urls %}
+                        <tr data-locale="{{ url.localeCode }}">
+                            <td data-locale-name>{{ url.localeCode|sylius_locale_name }}</td>
+                            <td>
+                                {% if url.url is not null %}
+                                    <code data-url>{{ url.url }}</code>
+                                {% endif %}
+                                {% if url.draftUrl is not null %}
+                                    <div data-draft-url><small>{{ 'setono_sylius_cms.ui.url_after_publishing'|trans({'%url%': url.draftUrl}) }}</small></div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </section>
+{% endif %}

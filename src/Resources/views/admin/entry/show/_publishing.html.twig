@@ -1,0 +1,32 @@
+{#
+ # The overview page's Publishing section, a block of setono_sylius_cms.admin.entry.show.sections: the draft's state,
+ # with Publish while there's something to publish, and Discard changes while there's a draft. Both are forms that come
+ # back to the overview page. See "Entry overview page" in docs/spec/admin.md
+ #}
+<section class="ui segment" data-section="publishing" aria-labelledby="cms-section-publishing">
+    <h2 class="ui dividing header" id="cms-section-publishing">{{ 'setono_sylius_cms.ui.publishing'|trans }}</h2>
+
+    <p data-publishing-state="{{ row.status }}">
+        <strong>{{ ('setono_sylius_cms.ui.status_label.' ~ row.status)|trans }}.</strong>
+        {{ ('setono_sylius_cms.ui.publishing_state.' ~ row.status)|trans }}
+    </p>
+
+    {% if entry.lastPublishedAt is not null %}
+        <p data-last-published>{{ 'setono_sylius_cms.ui.last_published'|trans({'%date%': entry.lastPublishedAt|date('Y-m-d H:i')}) }}</p>
+    {% endif %}
+
+    {% if row.status != 'published' %}
+        <div class="ui buttons">
+            <form method="post" action="{{ path('setono_sylius_cms_admin_entry_publish', {'uuid': entry.uuid}) }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
+                <button type="submit" class="ui labeled icon primary button"><i class="upload icon"></i> {{ 'setono_sylius_cms.ui.publish'|trans }}</button>
+            </form>
+            {% if row.status == 'unpublished_changes' %}
+                <form method="post" action="{{ path('setono_sylius_cms_admin_entry_discard', {'uuid': entry.uuid}) }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
+                    <button type="submit" class="ui labeled icon button" data-requires-confirmation><i class="undo icon"></i> {{ 'setono_sylius_cms.ui.discard_changes'|trans }}</button>
+                </form>
+            {% endif %}
+        </div>
+    {% endif %}
+</section>

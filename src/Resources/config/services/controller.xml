@@ -35,6 +35,28 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <!-- What the entry overview page's forms check, and how they answer -->
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest" class="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="security.csrf.token_manager"/>
+            <argument type="service" id="router"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\PublishEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\PublishEntryAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>

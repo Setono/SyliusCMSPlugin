@@ -38,6 +38,16 @@ final class AdminRuntime implements RuntimeExtensionInterface, ResetInterface
     }
 
     /**
+     * Every content type, which the create dialog offers to pick from
+     *
+     * @return list<ContentTypeMetadata>
+     */
+    public function contentTypes(): array
+    {
+        return $this->contentTypes->all();
+    }
+
+    /**
      * The names of the store's customer groups by code, which audience labels show. Read once per request
      *
      * @return array<string, string>

@@ -71,10 +71,21 @@ setono_sylius_cms:
         content: Content
         content_description: Pages and everything else shoppers read that isn't a product
         create: Create
+        discard_changes: Discard changes
+        language: Language
         last_edited: Last edited
+        last_published: 'Last published %date%'
         new_entry: 'New %content_type%'
+        no_urls: It has no URL yet, because it has no slug.
+        open_in_builder: Open in builder
         overview_placeholder: What needs attention, what's coming up, translations and drafts in progress will show here. Until then, find the entries in their lists.
         problems: Problems
+        publish: Publish
+        publishing: Publishing
+        publishing_state:
+            never_published: Shoppers don't see it until it's published.
+            published: Shoppers see what was published, and there are no changes since.
+            unpublished_changes: The draft has changes that shoppers don't see yet. Publish them, or discard them to go back to what's published.
         search: Search
         status: Status
         status_filter:
@@ -93,6 +104,9 @@ setono_sylius_cms:
         title: Title
         type: Type
         untitled: Untitled
+        url: URL
+        url_after_publishing: 'After publishing: %url%'
+        urls: URLs
 
     # The builder app's UI strings. Every key under setono_sylius_cms.builder reaches the app through the registry endpoint
     builder:

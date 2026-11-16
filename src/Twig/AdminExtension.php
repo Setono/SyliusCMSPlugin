@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Twig;
 
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
+use Setono\SyliusCMSPlugin\Admin\EntryUrls;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
 /**
- * The functions the CMS admin's own templates use, such as the field templates of the entry lists' grids. They're
- * internal to those templates, unlike the cms_* functions of the spec
+ * The functions the CMS admin's own templates use, such as the field templates of the entry lists' grids and the
+ * sections of the entry overview page. They're internal to those templates, unlike the cms_* functions of the spec
  *
  * @internal
  */
@@ -20,7 +21,9 @@ final class AdminExtension extends AbstractExtension
     {
         return [
             new TwigFunction('cms_admin_entry_row', [EntryRows::class, 'get']),
+            new TwigFunction('cms_admin_entry_urls', [EntryUrls::class, 'of']),
             new TwigFunction('cms_admin_content_type', [AdminRuntime::class, 'contentType']),
+            new TwigFunction('cms_admin_content_types', [AdminRuntime::class, 'contentTypes']),
             new TwigFunction('cms_admin_customer_group_names', [AdminRuntime::class, 'customerGroupNames']),
         ];
     }
