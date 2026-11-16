@@ -1,6 +1,8 @@
 import { ChoiceControl } from './ChoiceControl';
 import { DateControl } from './DateControl';
 import { DateTimeControl } from './DateTimeControl';
+import { MediaControl } from './MediaControl';
+import { MediaListControl } from './MediaListControl';
 import { RichTextControl } from './RichTextControl';
 import { TextareaControl } from './TextareaControl';
 import { TextControl } from './TextControl';
@@ -16,6 +18,8 @@ export const fieldControls: Readonly<Record<string, FieldControl>> = {
     toggle: ToggleControl,
     date: DateControl,
     date_time: DateTimeControl,
+    media: MediaControl,
+    media_list: MediaListControl,
 };
 
 export function controlFor(fieldType: string): FieldControl | undefined {

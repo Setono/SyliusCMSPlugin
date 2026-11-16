@@ -6,6 +6,9 @@ import type { BuilderConfig } from './config';
 import { BuilderProvider, type BuilderSession } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
 import { createLeaving } from './leaving';
+import { createMediaApi, type MediaApi } from './media/api';
+import type { MediaLimits } from './media/config';
+import { MediaPickerProvider } from './media/picker';
 import { createPresence, type Presence } from './presence';
 import { createPreviewStore } from './preview';
 import { createCancelSchedule, createDiscard, createPublish, createReload, createSchedule } from './publishing';
@@ -26,17 +29,23 @@ export interface AppProps {
     autosaveDelay?: number;
     /** Goes to another page, which leaving the builder does. */
     navigate?: (url: string) => void;
+    /** The media library's endpoints, which the media picker uses, made from the config's when left out. */
+    mediaApi?: MediaApi;
 }
 
 const goTo = (url: string): void => window.location.assign(url);
 
-type Phase = { name: 'loading' } | { name: 'failed' } | { name: 'ready'; session: BuilderSession; translate: Translate };
+type Phase = { name: 'loading' } | { name: 'failed' } | { name: 'ready'; session: BuilderSession; translate: Translate; media: MediaLimits | null };
 
 /** Loads the registry and the entry, then opens the entry in the builder. */
-export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: AppProps) {
+export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, mediaApi }: AppProps) {
     const [phase, setPhase] = useState<Phase>({ name: 'loading' });
     const initialTranslate = useMemo(() => createTranslator(config.strings ?? {}), [config]);
     const urlsEndpoints = useMemo(() => (urlsApi === undefined ? createUrlsApi(config) : urlsApi), [config, urlsApi]);
+    const mediaEndpoints = useMemo(
+        () => mediaApi ?? (config.media === undefined ? null : createMediaApi({ csrfToken: config.csrfToken, endpoints: config.media.endpoints })),
+        [config, mediaApi],
+    );
 
     useEffect(() => {
         let active = true;
@@ -115,6 +124,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: Ap
                 setPhase({
                     name: 'ready',
                     translate: createTranslator({ ...config.strings, ...registry.strings }),
+                    media: registry.media ?? null,
                     session: {
                         store,
                         validation: validationStore,
@@ -180,10 +190,19 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo }: Ap
         );
     }
 
+    // Media fields pick from the media library, which needs its endpoints from the config and the upload limit from the registry
+    const media = config.media;
+
     return (
         <TranslatorProvider value={phase.translate}>
             <BuilderProvider value={phase.session}>
-                <Shell />
+                {media === undefined || mediaEndpoints === null || phase.media === null ? (
+                    <Shell />
+                ) : (
+                    <MediaPickerProvider api={mediaEndpoints} config={{ locales: media.locales, media: phase.media }}>
+                        <Shell />
+                    </MediaPickerProvider>
+                )}
             </BuilderProvider>
         </TranslatorProvider>
     );

@@ -335,14 +335,19 @@ setono_sylius_cms:
         mark_up_to_date: Mark as up to date
         # The media library, on its own screen and as the builder's media picker. See "Media library" in docs/spec/admin.md
         media:
+            add: Add from the library
             all_media: All media
             alt_text: Alt text
             alt_text_help: Describes the image to people who can't see it, and to search engines. Each language has its own.
             any_kind: Any kind
+            at_most: 'Up to %max%'
             cancel: Cancel
+            choose: Choose
+            choose_count: 'Choose %count%'
             create_folder: Create
             credit: Credit
             credit_help: A credit or copyright line, such as the photographer's name.
+            deleted_media_item: This media item was deleted, so it isn't shown.
             dimensions: '%width% × %height% px'
             drop_here: 'Drop files to upload them into %folder%'
             duplicate: '%filename% is already in the library as %name%.'
@@ -367,8 +372,13 @@ setono_sylius_cms:
             no_matches: No media items match.
             no_media: Nothing here yet. Drop files here, or upload them, to add them.
             not_allowed: '%filename% is a type of file the media library doesn''t take. It takes %types%, up to %limit% each.'
+            nothing_picked: Nothing chosen
             open_file: Open the file
+            pick: Choose from the library
+            picker_title: Choose from the media library
+            remove: Remove
             rename_folder: Rename folder
+            replace: Replace
             save: Save
             save_failed: Couldn't save
             saved: Saved

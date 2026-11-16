@@ -21,6 +21,7 @@ function fakeApi(initial: MediaItem[] = [], uploaded: (files: readonly File[], c
 
             return { items: shown, page: 1, pages: 1, total: shown.length };
         }),
+        find: vi.fn(async (uuids: readonly string[]) => items.filter((item) => uuids.includes(item.uuid))),
         upload: vi.fn(async (files: readonly File[], folder: string | null, copy: boolean) => {
             const answer = uploaded(files, copy);
             items = [...answer.created.map((item) => ({ ...item, folder })), ...items];

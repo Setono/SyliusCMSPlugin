@@ -1,3 +1,5 @@
+import type { MediaLibraryConfig } from './media/config';
+
 /** A channel of the store. */
 export interface Channel {
     code: string;
@@ -68,6 +70,11 @@ export interface BuilderConfig {
     preview?: ShownToAndDate;
     /** UI strings needed before the registry arrives, such as the loading text. Optional. */
     strings?: Record<string, string>;
+    /**
+     * What the media picker needs beside the upload limit and types the registry gives: the media library's endpoints and
+     * the store's locales, which media items have alt text in. Without it, media fields can't be picked.
+     */
+    media?: Pick<MediaLibraryConfig, 'endpoints' | 'locales'>;
 }
 
 export function readConfig(element: HTMLElement): BuilderConfig {

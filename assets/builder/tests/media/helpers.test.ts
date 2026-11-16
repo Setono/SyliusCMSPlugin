@@ -62,6 +62,26 @@ describe('the media endpoints', () => {
         expect(listQuery({ folder: 'campaigns', search: '', kind: null, missingAlt: false }, 1)).toBe('folder=campaigns&page=1');
     });
 
+    it('should ask a picker for the kinds its field takes, unless one kind is picked', () => {
+        expect(listQuery({ folder: ALL_MEDIA, search: '', kind: null, missingAlt: false, kinds: ['image', 'document'] }, 1)).toBe('kind=image%2Cdocument&page=1');
+        expect(listQuery({ folder: ALL_MEDIA, search: '', kind: 'document', missingAlt: false, kinds: ['image', 'document'] }, 1)).toBe('kind=document&page=1');
+    });
+
+    it('should find media items by their UUIDs, 60 at a time', async () => {
+        const uuids = Array.from({ length: 61 }, (_, index) => `uuid-${String(index)}`);
+        const fetch = vi.fn(async (url: string) => {
+            const asked = new URL(url, 'https://shop.example').searchParams.get('uuids')?.split(',') ?? [];
+
+            return new Response(JSON.stringify({ items: asked.slice(0, 1).map((uuid) => mediaItem(uuid)), page: 1, pages: 1, total: 1 }), { status: 200 });
+        });
+
+        const found = await createMediaApi(libraryConfig, fetch).find(uuids);
+
+        expect(found.map(({ uuid }) => uuid)).toEqual(['uuid-0', 'uuid-60']);
+        expect(fetch).toHaveBeenCalledTimes(2);
+        expect(fetch.mock.calls[0]?.[0]).toBe(`/admin/cms/api/media?uuids=${uuids.slice(0, 60).join('%2C')}`);
+    });
+
     it('should upload files as files[] in a form, into a folder, with the CSRF token', async () => {
         const answer = { created: [mediaItem('a')], duplicates: [], refused: [] };
         const fetch = vi.fn(async () => new Response(JSON.stringify(answer), { status: 200 }));

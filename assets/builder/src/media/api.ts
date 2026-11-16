@@ -6,6 +6,8 @@ import { ALL_MEDIA, type MediaFilters, type MediaFolder, type MediaItem, type Me
 export interface MediaApi {
     /** A page of what the library shows, newest first. */
     list(filters: MediaFilters, page: number): Promise<MediaPage>;
+    /** The media items with these UUIDs, in no particular order. Those that don't exist, such as deleted ones, are left out. */
+    find(uuids: readonly string[]): Promise<MediaItem[]>;
     /** Uploads files into a folder, or Unsorted for null. With copy, a duplicate is uploaded as a copy. */
     upload(files: readonly File[], folder: string | null, copy: boolean): Promise<UploadAnswer>;
     /** Saves a media item's metadata, which takes effect at once, and answers with it. */
@@ -47,6 +49,17 @@ export function createMediaApi(config: Pick<MediaLibraryConfig, 'csrfToken' | 'e
             return (await request(`${config.endpoints.media}?${listQuery(filters, page)}`)) as MediaPage;
         },
 
+        async find(uuids) {
+            const found: MediaItem[] = [];
+            // The endpoint answers a page at a time
+            for (let start = 0; start < uuids.length; start += FIND_CHUNK) {
+                const query = new URLSearchParams({ uuids: uuids.slice(start, start + FIND_CHUNK).join(',') });
+                found.push(...((await request(`${config.endpoints.media}?${query.toString()}`)) as MediaPage).items);
+            }
+
+            return found;
+        },
+
         async upload(files, folder, copy) {
             const body = new FormData();
             for (const file of files) {
@@ -85,7 +98,13 @@ export function createMediaApi(config: Pick<MediaLibraryConfig, 'csrfToken' | 'e
     };
 }
 
-/** The list endpoint's query: the folder, unless it's All media, the search, the kind, the missing-alt filter and the page. */
+/** How many media items the list endpoint answers with at most, which find() asks for at a time. */
+const FIND_CHUNK = 60;
+
+/**
+ * The list endpoint's query: the folder, unless it's All media, the search, the kind, or the kinds it may show
+ * separated by commas, the missing-alt filter and the page.
+ */
 export function listQuery(filters: MediaFilters, page: number): string {
     const query = new URLSearchParams();
     if (filters.folder !== ALL_MEDIA) {
@@ -98,6 +117,8 @@ export function listQuery(filters: MediaFilters, page: number): string {
 
     if (filters.kind !== null) {
         query.set('kind', filters.kind);
+    } else if (filters.kinds !== undefined && filters.kinds.length > 0) {
+        query.set('kind', filters.kinds.join(','));
     }
 
     if (filters.missingAlt) {

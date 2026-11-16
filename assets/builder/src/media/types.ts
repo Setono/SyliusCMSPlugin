@@ -78,8 +78,11 @@ export interface MediaFilters {
     /** ALL_MEDIA, UNSORTED or a folder's UUID. */
     folder: string;
     search: string;
+    /** One kind, or null for any of those it may show. */
     kind: MediaKind | null;
     missingAlt: boolean;
+    /** The only kinds it may show, such as those a media field takes in the builder's media picker. Every kind without it. */
+    kinds?: readonly MediaKind[];
 }
 
 /** What a save changes. Left out stays as it is. */

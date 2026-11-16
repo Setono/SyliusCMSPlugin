@@ -46,6 +46,8 @@ function Toolbar() {
     const { store } = useMediaLibraryContext();
     const filters = useMediaLibrary((state) => state.filters);
     const uploading = useMediaLibrary((state) => state.uploading);
+    // A picker offers only the kinds its field takes, and with one kind, the filter stays at it
+    const kinds = filters.kinds ?? MEDIA_KINDS;
     const [search, setSearch] = useState(filters.search);
     const fileInput = useRef<HTMLInputElement>(null);
     const missingAltId = useId();
@@ -86,10 +88,11 @@ function Toolbar() {
                         id={id}
                         className={styles.select}
                         value={filters.kind ?? ''}
+                        disabled={kinds.length === 1}
                         onChange={(event) => void store.getState().setFilters({ kind: event.target.value === '' ? null : (event.target.value as MediaKind) })}
                     >
-                        <option value="">{t('setono_sylius_cms.builder.media.any_kind')}</option>
-                        {MEDIA_KINDS.map((kind) => (
+                        {kinds.length > 1 && <option value="">{t('setono_sylius_cms.builder.media.any_kind')}</option>}
+                        {kinds.map((kind) => (
                             <option key={kind} value={kind}>
                                 {kindLabels[kind]}
                             </option>
@@ -189,9 +192,25 @@ function Grid() {
     const pages = useMediaLibrary((state) => state.pages);
     const filters = useMediaLibrary((state) => state.filters);
     const folders = useMediaLibrary((state) => state.folders);
+    const pick = useMediaLibrary((state) => state.pick);
+    const picked = useMediaLibrary((state) => state.picked);
     const [dragging, setDragging] = useState(false);
 
-    const filtered = filters.search.trim() !== '' || filters.kind !== null || filters.missingAlt;
+    // In a picker, a media item is pressed while it's picked, and on its own screen while it's selected
+    const pressed = (item: MediaItem): boolean => (pick === null ? item.uuid === selected : picked.some(({ uuid }) => uuid === item.uuid));
+    const press = (item: MediaItem): void => {
+        if (pick !== null) {
+            store.getState().togglePicked(item);
+
+            return;
+        }
+
+        store.getState().select(item.uuid === selected ? null : item.uuid);
+    };
+
+    // A kind the picker stays at isn't a filter the editor set
+    const kindFiltered = filters.kind !== null && (filters.kinds ?? MEDIA_KINDS).length > 1;
+    const filtered = filters.search.trim() !== '' || kindFiltered || filters.missingAlt;
     const folderName =
         filters.folder === ALL_MEDIA || filters.folder === UNSORTED
             ? t('setono_sylius_cms.builder.media.unsorted')
@@ -237,9 +256,9 @@ function Grid() {
                         <button
                             type="button"
                             className={styles.item}
-                            aria-pressed={item.uuid === selected}
+                            aria-pressed={pressed(item)}
                             data-media-item={item.uuid}
-                            onClick={() => store.getState().select(item.uuid === selected ? null : item.uuid)}
+                            onClick={() => press(item)}
                         >
                             <Thumbnail item={item} />
                             <span className={styles.itemName}>{item.name}</span>

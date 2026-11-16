@@ -2,6 +2,7 @@
  * The shapes the builder exchanges with the server: the entry format and the stored block tree format
  * (docs/spec/content-model.md), and the registry of block types and field schemas.
  */
+import type { MediaLimits } from './media/config';
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | JsonObject;
 
@@ -297,6 +298,8 @@ export interface Registry {
     contentTypes: ContentTypeDefinition[];
     /** In the order the condition picker lists them. */
     conditionKinds: ConditionKindDefinition[];
+    /** The effective upload limit and the MIME types of each kind of media item, which the media picker checks a file against. */
+    media?: MediaLimits;
     /** The UI strings, already translated, keyed by translation key. */
     strings: Record<string, string>;
 }

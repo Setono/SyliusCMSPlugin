@@ -7,7 +7,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla';
 import type { MediaApi } from './api';
 import type { MediaLimits } from './config';
 import { checkFile, type ClientRefusal } from './upload';
-import { ALL_MEDIA, UNSORTED, type MediaFilters, type MediaFolder, type MediaItem, type MediaItemChanges, type Refused } from './types';
+import { ALL_MEDIA, UNSORTED, type MediaFilters, type MediaFolder, type MediaItem, type MediaItemChanges, type MediaKind, type Refused } from './types';
 
 /** A file whose content matches an existing media item's current file, kept so a copy can still be uploaded. */
 export interface PendingDuplicate {
@@ -20,7 +20,17 @@ export type RefusedUpload = (Refused & { client?: undefined }) | { filename: str
 
 export type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
 
+/** The library opened as the builder's media picker: the kinds of media item it offers, and whether several are picked. */
+export interface PickMode {
+    kinds: readonly MediaKind[];
+    multiple: boolean;
+}
+
 export interface MediaLibraryState {
+    /** The picker it's opened as, or null for the library on its own screen. */
+    pick: PickMode | null;
+    /** What's picked, in the order it was picked: one media item at most, unless several are picked. */
+    picked: MediaItem[];
     folders: MediaFolder[];
     filters: MediaFilters;
     items: MediaItem[];
@@ -43,9 +53,14 @@ export interface MediaLibraryState {
     setFilters(filters: Partial<MediaFilters>): Promise<void>;
     loadMore(): Promise<void>;
     select(uuid: string | null): void;
-    /** Uploads files into the open folder, or Unsorted when the library shows All media or Unsorted. */
+    /**
+     * In a picker: picks the media item, which selects it, or unpicks it when it's picked. Picking one where only one is
+     * picked unpicks the other.
+     */
+    togglePicked(item: MediaItem): void;
+    /** Uploads files into the open folder, or Unsorted when the library shows All media or Unsorted. In a picker, it picks those uploaded. */
     upload(files: readonly File[]): Promise<void>;
-    /** Takes the existing media item a duplicate offers, which selects it. */
+    /** Takes the existing media item a duplicate offers, which selects it, and in a picker picks it. */
     useExisting(duplicate: PendingDuplicate): void;
     uploadCopy(duplicate: PendingDuplicate): Promise<void>;
     dismissUploadMessages(): void;
@@ -61,11 +76,31 @@ export type MediaLibraryStore = StoreApi<MediaLibraryState>;
 
 export const initialFilters: MediaFilters = { folder: ALL_MEDIA, search: '', kind: null, missingAlt: false };
 
-export function createMediaLibraryStore(api: MediaApi, limits: MediaLimits): MediaLibraryStore {
+/**
+ * @param pick the picker it's opened as in the builder, which shows only the kinds of media item it offers, with the kind
+ *             filter set to the one kind when it offers one. Without it, the library on its own screen.
+ */
+export function createMediaLibraryStore(api: MediaApi, limits: MediaLimits, pick: PickMode | null = null): MediaLibraryStore {
     // Only the answer to the last list request is shown
     let listRequests = 0;
+    const filters: MediaFilters = pick === null ? initialFilters : { ...initialFilters, kind: pick.kinds.length === 1 ? (pick.kinds[0] ?? null) : null, kinds: pick.kinds };
 
     return createStore<MediaLibraryState>()((set, get) => {
+        /** In a picker, picks these media items of the kinds it offers: all of them, or the first where only one is picked. */
+        const pickAll = (items: readonly MediaItem[]): void => {
+            const offered = items.filter(({ kind }) => pick?.kinds.includes(kind) ?? false);
+            const first = offered[0];
+            if (pick === null || first === undefined) {
+                return;
+            }
+
+            set((state) => ({
+                picked: pick.multiple ? [...state.picked, ...offered.filter(({ uuid }) => !state.picked.some((picked) => picked.uuid === uuid))] : [first],
+                selected: first.uuid,
+                saveState: 'idle',
+            }));
+        };
+
         const loadPage = async (page: number): Promise<void> => {
             const request = ++listRequests;
             set({ loading: true, loadFailed: false });
@@ -114,6 +149,7 @@ export function createMediaLibraryStore(api: MediaApi, limits: MediaLimits): Med
 
                 if (answer.created.length > 0) {
                     await loadPage(1);
+                    pickAll(answer.created);
                 }
             } catch (error) {
                 failed(error);
@@ -127,8 +163,10 @@ export function createMediaLibraryStore(api: MediaApi, limits: MediaLimits): Med
         };
 
         return {
+            pick,
+            picked: [],
             folders: [],
-            filters: initialFilters,
+            filters,
             items: [],
             page: 1,
             pages: 1,
@@ -170,6 +208,18 @@ export function createMediaLibraryStore(api: MediaApi, limits: MediaLimits): Med
                 set({ selected: uuid, saveState: 'idle', error: null });
             },
 
+            togglePicked(item) {
+                const { picked } = get();
+                if (picked.some(({ uuid }) => uuid === item.uuid)) {
+                    const rest = picked.filter(({ uuid }) => uuid !== item.uuid);
+                    set({ picked: rest, selected: rest.at(-1)?.uuid ?? null, saveState: 'idle', error: null });
+
+                    return;
+                }
+
+                set({ picked: pick?.multiple === true ? [...picked, item] : [item], selected: item.uuid, saveState: 'idle', error: null });
+            },
+
             async upload(files) {
                 const refused: RefusedUpload[] = [];
                 const allowed: File[] = [];
@@ -195,6 +245,7 @@ export function createMediaLibraryStore(api: MediaApi, limits: MediaLimits): Med
                     items: state.items.some(({ uuid }) => uuid === duplicate.mediaItem.uuid) ? state.items : [duplicate.mediaItem, ...state.items],
                     selected: duplicate.mediaItem.uuid,
                 }));
+                pickAll([duplicate.mediaItem]);
             },
 
             async uploadCopy(duplicate) {
@@ -215,6 +266,7 @@ export function createMediaLibraryStore(api: MediaApi, limits: MediaLimits): Med
                     const movedAway = changes.folder !== undefined && folder !== ALL_MEDIA && (folder === UNSORTED ? saved.folder !== null : saved.folder !== folder);
                     set((state) => ({
                         items: movedAway ? state.items.filter((item) => item.uuid !== uuid) : state.items.map((item) => (item.uuid === uuid ? saved : item)),
+                        picked: state.picked.map((item) => (item.uuid === uuid ? saved : item)),
                         selected: movedAway ? null : state.selected,
                         saveState: 'saved',
                     }));
