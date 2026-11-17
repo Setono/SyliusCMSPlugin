@@ -12,9 +12,11 @@ setono_sylius_cms:
         block: 'The block "%block%"'
         condition: 'The condition "%kind%" on the block "%block%"'
         does_not_provide: '%what% doesn''t provide the host-page context %context%.'
+        layout_source: 'The source "%source%" in the layout''s field "%field%"'
         needs: '%what% needs the host-page context %context%.'
         placement: 'The placement in "%slot%"'
         snippet: 'The snippet "%snippet%"'
+        source: 'The source "%source%" in the block "%block%"'
         used_in: 'The Snippet block in "%entry%"'
     field:
         invalid_choice: The value you selected is not a valid choice.
