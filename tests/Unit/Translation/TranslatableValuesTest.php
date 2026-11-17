@@ -157,6 +157,25 @@ final class TranslatableValuesTest extends TestCase
     }
 
     /**
+     * Its translation state is kept as a value's, which the builder records as the fallback is typed in a locale
+     *
+     * @test
+     */
+    public function it_gives_a_bound_field_s_fallback_whose_source_has_changed_since_as_outdated(): void
+    {
+        $page = self::page([self::heading(
+            self::A,
+            ['$bind' => 'product.name', '$params' => [], '$fallback' => ['en_US' => 'this item', 'da_DK' => 'dette produkt']],
+            ['da_DK' => ['from' => 'en_US', 'fingerprint' => Fingerprint::of('this product')]],
+        )]);
+
+        self::assertEquals(
+            [new TranslatableValue('block.' . self::A . '.text', ValueState::Outdated, 'en_US', 'this item', Fingerprint::of('this item'), 'dette produkt')],
+            $this->blockValues($page, 'da_DK'),
+        );
+    }
+
+    /**
      * @test
      */
     public function it_gives_a_value_whose_source_has_changed_since_as_outdated(): void

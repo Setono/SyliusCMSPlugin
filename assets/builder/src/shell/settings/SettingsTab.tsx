@@ -158,7 +158,7 @@ function Layout() {
                             binding={{ stored: values[field], set: (value) => store.getState().setLayoutBinding(field, value) }}
                             outdated={
                                 schema['x-cms-translatable']
-                                    ? outdatedValue(locales, values[field], translated[field], locale, () => store.getState().markLayoutValueUpToDate(field))
+                                    ? outdatedValue(locales, translatedValues(values[field]), translated[field], locale, () => store.getState().markLayoutValueUpToDate(field))
                                     : undefined
                             }
                         />

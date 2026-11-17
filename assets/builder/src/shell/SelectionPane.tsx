@@ -77,7 +77,7 @@ export function SelectionPane() {
                         binding={{ stored: block.fields[name], set: (value) => store.getState().setFieldBinding(block.key, name, value) }}
                         outdated={
                             schema['x-cms-translatable']
-                                ? outdatedValue(locales, block.fields[name], block.translated[name], locale, () => store.getState().markValueUpToDate(block.key, name))
+                                ? outdatedValue(locales, translatedValues(block.fields[name]), block.translated[name], locale, () => store.getState().markValueUpToDate(block.key, name))
                                 : undefined
                         }
                     />

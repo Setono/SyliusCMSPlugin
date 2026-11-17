@@ -10,7 +10,7 @@ import { isMissing } from './fallback';
 import { fingerprint } from './fingerprint';
 import { keepsPartsPerLocale, localeParts } from './links';
 import type { Entry, FieldSchema, JsonObject, JsonValue, LayoutDefinition, StoredBlock, TranslationSource } from './types';
-import { isJsonObject } from './values';
+import { isJsonObject, jsonEqual, normalizeValue } from './values';
 
 /**
  * Untranslated: missing or empty in the locale while another locale has a value. Outdated: the value it was translated
@@ -96,6 +96,26 @@ export function sourceOfTyped(values: JsonValue | undefined, current: Translatio
     const source = typedOver ? untranslatedSource(values, chain) : undefined;
 
     return source === undefined ? null : { from: source.locale, fingerprint: fingerprint(source.value) };
+}
+
+/**
+ * Where the edited locale's value of a bound field's fallback is translated from, when an edit to the field's whole
+ * stored value changed it there, as sourceOfTyped() decides for a typed value. Undefined when it didn't change there,
+ * such as when the field is bound or unbound, which keeps what it holds and its translation state.
+ *
+ * @param before what the field stores before the edit: a binding, or a map from locale to value
+ * @param after what it stores after it
+ * @param chain the edited locale, then the locales it falls back through
+ */
+export function fallbackSource(before: JsonValue | undefined, current: TranslationSource | undefined, after: JsonValue | null, chain: readonly string[]): TranslationSource | null | undefined {
+    const edited = chain[0];
+    const values = translatedValues(before);
+    const typed = localeMap(translatedValues(after ?? undefined))[edited ?? ''];
+    if (edited === undefined || jsonEqual(localeMap(values)[edited], typed)) {
+        return undefined;
+    }
+
+    return sourceOfTyped(values, current, normalizeValue(typed), chain);
 }
 
 /**

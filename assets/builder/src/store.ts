@@ -4,6 +4,7 @@
  */
 import { enablePatches, produceWithPatches, type Patch } from 'immer';
 import { createStore, type StoreApi } from 'zustand/vanilla';
+import { translatedValues } from './bindings';
 import { applyChanges, changesFromPatches, mergeChanges, type Change, type LayoutTranslatableLookup, type TranslatableLookup } from './changeSet';
 import { emptyHistory, rebaseHistory, recordEdit, redoEdit, undoEdit, type History, type Step } from './history';
 import { providedContext } from './hostPageContext';
@@ -13,7 +14,7 @@ import { copyWithNewKeys, findBlock, generateBlockKey, insertBlock, listOf, loca
 import type { Locale } from './config';
 import { isRemovedLayout, layoutOf, renderedLayout, switchLayout } from './layouts';
 import { localeOf } from './locales';
-import { entryValues, sourceOfTyped, upToDate } from './translationState';
+import { entryValues, fallbackSource, sourceOfTyped, upToDate } from './translationState';
 import type {
     BlockTypeDefinition,
     Clash,
@@ -31,7 +32,7 @@ import type {
     TranslationSource,
     VisibilityCondition,
 } from './types';
-import { jsonEqual, normalizeValue, writeEntryTranslated, writeEntryValue, writeFieldValue, writeTranslated } from './values';
+import { normalizeValue, writeEntryTranslated, writeEntryValue, writeFieldValue, writeTranslated, writeWholeValue } from './values';
 
 enablePatches();
 
@@ -679,6 +680,14 @@ export function createBuilderStore({
             },
 
             setFieldBinding(key, field, value) {
+                const block = findBlock(get().entry.tree.blocks, key);
+                if (block === undefined) {
+                    return;
+                }
+
+                const edited = get().locale;
+                const normalized = normalizeValue(value ?? undefined);
+                const source = isTranslatable(block.type, field) ? fallbackSource(block.fields[field], block.translated[field]?.[edited], normalized, chainOf(edited)) : undefined;
                 edit(
                     (working) => {
                         const target = findBlock(working.tree.blocks, key);
@@ -686,11 +695,9 @@ export function createBuilderStore({
                             return;
                         }
 
-                        const normalized = normalizeValue(value ?? undefined);
-                        if (normalized === null) {
-                            delete target.fields[field];
-                        } else if (!jsonEqual(target.fields[field], normalized)) {
-                            target.fields[field] = normalized;
+                        writeWholeValue(target.fields, field, normalized);
+                        if (source !== undefined) {
+                            writeTranslated(target.translated, field, edited, source);
                         }
                     },
                     {},
@@ -702,7 +709,7 @@ export function createBuilderStore({
                 const edited = get().locale;
                 const block = findBlock(get().entry.tree.blocks, key);
                 const current = block?.translated[field]?.[edited];
-                const source = current === undefined ? undefined : upToDate(block?.fields[field], current);
+                const source = current === undefined ? undefined : upToDate(translatedValues(block?.fields[field]), current);
                 if (source === undefined) {
                     return;
                 }
@@ -754,20 +761,22 @@ export function createBuilderStore({
             },
 
             setLayoutBinding(field, value) {
-                const before = get().entry;
+                const { entry: before, locale: edited } = get();
+                const schema = layoutField(before, field);
                 const definition = fieldsLayout(before);
-                if (layoutField(before, field) === undefined || definition === undefined) {
+                if (schema === undefined || definition === undefined) {
                     return;
                 }
 
+                const stored = before.tree.layout;
+                const normalized = normalizeValue(value ?? undefined);
+                const source = schema['x-cms-translatable'] ? fallbackSource(stored?.fields[field], stored?.translated[field]?.[edited], normalized, chainOf(edited)) : undefined;
                 edit(
                     (working) => {
                         const layout = (working.tree.layout ??= { code: definition.code, version: definition.version, fields: {}, translated: {} });
-                        const normalized = normalizeValue(value ?? undefined);
-                        if (normalized === null) {
-                            delete layout.fields[field];
-                        } else if (!jsonEqual(layout.fields[field], normalized)) {
-                            layout.fields[field] = normalized;
+                        writeWholeValue(layout.fields, field, normalized);
+                        if (source !== undefined) {
+                            writeTranslated(layout.translated, field, edited, source);
                         }
                     },
                     {},
@@ -779,7 +788,7 @@ export function createBuilderStore({
                 const { entry: before, locale: edited } = get();
                 const stored = before.tree.layout;
                 const current = stored?.translated[field]?.[edited];
-                const source = current === undefined || layoutField(before, field) === undefined ? undefined : upToDate(stored?.fields[field], current);
+                const source = current === undefined || layoutField(before, field) === undefined ? undefined : upToDate(translatedValues(stored?.fields[field]), current);
                 if (source === undefined) {
                     return;
                 }

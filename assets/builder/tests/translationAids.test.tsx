@@ -4,7 +4,7 @@ import type { BuilderApi, PreviewRequest } from '../src/api';
 import { App } from '../src/App';
 import { fingerprint } from '../src/fingerprint';
 import type { BuilderConfig } from '../src/config';
-import type { Entry, EntryResponse, EntryStatus, PresenceResponse, SaveResponse, StoredBlock, ValidationError } from '../src/types';
+import type { Entry, EntryResponse, EntryStatus, PresenceResponse, Registry, SaveResponse, StoredBlock, ValidationError } from '../src/types';
 import { block, entry, registry, settings, strings } from './fixtures';
 
 const config: BuilderConfig = {
@@ -299,6 +299,52 @@ describe('completeness and outdated flags', () => {
             expect(api.saveChanges).toHaveBeenCalledWith(
                 [{ op: 'set_translated', key: 'a', field: 'text', locale: 'da_DK', translated: { from: 'en_US', fingerprint: fingerprint('Hello there') } }],
                 0,
+            ),
+        );
+    });
+
+    it("should record where a bound field's fallback is translated from, flag it outdated when that changes, and mark it up to date", async () => {
+        const bindable: Registry = {
+            ...registry,
+            strings: translationStrings,
+            blockTypes: registry.blockTypes.map((type) =>
+                type.code === 'heading' ? { ...type, fields: type.fields.map((field) => (field.name === 'text' ? { ...field, schema: { ...field.schema, 'x-cms-bindable': ['text'] } } : field)) } : type,
+            ),
+            bindableProperties: [{ binding: 'customer.first_name', label: 'Customer first name', type: 'text', needs: [], fields: [] }],
+        };
+        const bound = (fallback: Record<string, string>) => ({ $bind: 'customer.first_name', $params: {}, $fallback: fallback });
+        const api = fakeApi(entryWith([block('a', { text: bound({ en_US: 'Hello' }) })], { title: 'Om os', shown: true }));
+        api.fetchRegistry.mockResolvedValue(bindable);
+        await openBuilder(api);
+        switchTo('da_DK');
+        selectHeading();
+
+        fireEvent.change(screen.getByRole('textbox', { name: 'Fallback' }), { target: { value: 'Hej' } });
+
+        await waitFor(() =>
+            expect(api.saveChanges).toHaveBeenCalledWith(
+                [
+                    { op: 'set_value', key: 'a', field: 'text', locale: null, value: bound({ en_US: 'Hello', da_DK: 'Hej' }) },
+                    { op: 'set_translated', key: 'a', field: 'text', locale: 'da_DK', translated: { from: 'en_US', fingerprint: fingerprint('Hello') } },
+                ],
+                0,
+            ),
+        );
+
+        switchTo('en_US');
+        fireEvent.change(screen.getByRole('textbox', { name: 'Fallback' }), { target: { value: 'Hello there' } });
+        expect(options()).toEqual(['English (United States)', 'Danish (Denmark) · 1 outdated']);
+
+        switchTo('da_DK');
+        expect(screen.getByRole('textbox', { name: 'Fallback' })).toHaveValue('Hej');
+        expect(screen.getByText('Hello there', { selector: 'blockquote' })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Mark as up to date' }));
+
+        expect(options()).toEqual(['English (United States)', 'Danish (Denmark)']);
+        await waitFor(() =>
+            expect(api.saveChanges).toHaveBeenLastCalledWith(
+                [{ op: 'set_translated', key: 'a', field: 'text', locale: 'da_DK', translated: { from: 'en_US', fingerprint: fingerprint('Hello there') } }],
+                expect.any(Number),
             ),
         );
     });

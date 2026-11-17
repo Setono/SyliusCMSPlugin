@@ -29,7 +29,7 @@ export type FieldRowProps = Omit<FieldControlProps, 'describedBy' | 'placeholder
     errors?: readonly string[];
     /** What a translatable field shows while it's empty in the edited locale, through the fallback chain. */
     fallback?: FieldFallback | undefined;
-    /** Given when the value is outdated: the value it was translated from has changed since. */
+    /** Given when the value, or a bound field's fallback, is outdated: the value it was translated from has changed since. */
     outdated?: OutdatedValue | undefined;
     /** Whether a shared field carries the "All languages" badge. Fields that are always shared, such as a condition's, leave it out. */
     languageBadge?: boolean;
@@ -57,8 +57,8 @@ export function FieldRow({ errors = [], fallback, outdated, languageBadge = true
     const errorsId = errors.length > 0 ? `${id}-errors` : undefined;
     const placeholder = bound === null && fallback !== undefined && isMissing(value) ? fallback : undefined;
     const fallbackId = placeholder === undefined ? undefined : `${id}-fallback`;
-    const shownOutdated = bound === null ? outdated : undefined;
-    const outdatedId = shownOutdated === undefined ? undefined : `${id}-outdated`;
+    // A bound field's fallback is translated like its value, so it's flagged outdated the same way
+    const outdatedId = outdated === undefined ? undefined : `${id}-outdated`;
     const describedBy = [helpId, fallbackId, outdatedId, errorsId].filter((describing) => describing !== undefined).join(' ');
 
     return (
@@ -109,11 +109,11 @@ export function FieldRow({ errors = [], fallback, outdated, languageBadge = true
                     </button>
                 </p>
             )}
-            {shownOutdated === undefined ? null : (
+            {outdated === undefined ? null : (
                 <div id={outdatedId} className={styles.outdated}>
-                    <p className={styles.outdatedMessage}>{t('setono_sylius_cms.builder.outdated', { '%locale%': shownOutdated.localeName })}</p>
-                    <blockquote className={styles.source}>{plainText(shownOutdated.value)}</blockquote>
-                    <button type="button" className={styles.copy} onClick={shownOutdated.onMarkUpToDate}>
+                    <p className={styles.outdatedMessage}>{t('setono_sylius_cms.builder.outdated', { '%locale%': outdated.localeName })}</p>
+                    <blockquote className={styles.source}>{plainText(outdated.value)}</blockquote>
+                    <button type="button" className={styles.copy} onClick={outdated.onMarkUpToDate}>
                         {t('setono_sylius_cms.builder.mark_up_to_date')}
                     </button>
                 </div>
