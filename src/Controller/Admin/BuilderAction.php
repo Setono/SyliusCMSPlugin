@@ -33,10 +33,10 @@ use Twig\Environment;
  */
 final readonly class BuilderAction
 {
-    /** A path and query of URL characters only (RFC 3986) */
     /** What the endpoints that name another entry hold in place of its UUID, which the builder replaces */
     public const UUID_PLACEHOLDER = '00000000-0000-4000-8000-000000000000';
 
+    /** A path and query of URL characters only (RFC 3986) */
     private const URL_CHARACTERS = '#^[A-Za-z0-9\-._~!$&\'()*+,;=:@/%?]*\z#';
 
     /**
