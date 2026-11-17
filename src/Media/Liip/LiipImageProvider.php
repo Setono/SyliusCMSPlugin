@@ -13,17 +13,20 @@ use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
- * Builds each variant's URL as LiipImagine's signed resolve URL, with the width, the crop and the focal point as runtime
- * filters, and never asks whether the variant is stored: Liip's resolve step generates a missing variant on its first
- * request and redirects to it, so rendering a srcset costs no call to the storage, even on S3. The file's path and the
- * focal point are part of the URL, so a replaced file or a moved focal point gives every variant a new URL. SVG and GIF
- * are served as uploaded. See "Image processing" in docs/spec/media.md and ADR 0014
+ * Builds each variant's URL with LiipImagine, with the width, the crop and the focal point as runtime filters, and never
+ * calls the storage. On the default local storage, a variant Liip has made gets its own URL, which the web server serves
+ * without PHP, once a file check finds it, as Sylius's own Liip setup does. Otherwise, and always on another storage
+ * such as S3, it gets Liip's signed runtime URL, whose resolve step makes a missing variant on its first request and
+ * redirects to it. The file's path and the focal point are part of both URLs, so a replaced file or a moved focal point
+ * gives every variant a new URL. SVG and GIF are served as uploaded. See "Image processing" in docs/spec/media.md and
+ * ADR 0014
  */
 final readonly class LiipImageProvider implements ImageProviderInterface
 {
     public function __construct(
         private CacheManager $cacheManager,
         private MediaUrlGeneratorInterface $mediaUrlGenerator,
+        private ?LocalVariants $localVariants = null,
     ) {
     }
 
@@ -41,12 +44,16 @@ final readonly class LiipImageProvider implements ImageProviderInterface
         $options['x'] = $transform->focalPoint->x;
         $options['y'] = $transform->focalPoint->y;
 
-        return $this->cacheManager->generateUrl(
-            $mediaItem->getPath(),
-            FilterSets::of($transform->format),
-            [TransformFilterLoader::NAME => $options],
-            null,
-            UrlGeneratorInterface::ABSOLUTE_PATH,
-        );
+        $filter = FilterSets::of($transform->format);
+        $runtimeConfig = [TransformFilterLoader::NAME => $options];
+
+        if (null !== $this->localVariants) {
+            $runtimePath = $this->cacheManager->getRuntimePath($mediaItem->getPath(), $runtimeConfig);
+            if ($this->localVariants->isStored($runtimePath, $filter)) {
+                return $this->cacheManager->resolve($runtimePath, $filter);
+            }
+        }
+
+        return $this->cacheManager->generateUrl($mediaItem->getPath(), $filter, $runtimeConfig, null, UrlGeneratorInterface::ABSOLUTE_PATH);
     }
 }

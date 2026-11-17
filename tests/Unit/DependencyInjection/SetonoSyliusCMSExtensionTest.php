@@ -18,6 +18,8 @@ use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Media\DeleteReplacedFile;
+use Setono\SyliusCMSPlugin\Media\Liip\LiipImageProvider;
+use Setono\SyliusCMSPlugin\Media\Liip\LocalVariants;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
@@ -47,6 +49,8 @@ use Sylius\Resource\Factory\TranslatableFactory;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Resource\ResourceInterface;
 use Symfony\Component\DependencyInjection\ChildDefinition;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * See examples of tests and configuration options here: https://github.com/SymfonyTest/SymfonyDependencyInjectionTest
@@ -273,6 +277,40 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
 
         $this->assertContainerBuilderHasAlias('setono_sylius_cms.storage', 'app.s3_storage');
         self::assertSame([], $this->container->getExtensionConfig('flysystem'), 'No local storage is defined');
+    }
+
+    /**
+     * @test
+     */
+    public function it_looks_for_made_variants_in_the_default_local_storage_s_directory(): void
+    {
+        $this->load();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(LocalVariants::class, 0, '%kernel.project_dir%/public/media/cms');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(LiipImageProvider::class, 2, new Reference(LocalVariants::class, ContainerInterface::NULL_ON_INVALID_REFERENCE));
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider elsewhere
+     *
+     * @param array<string, mixed> $media
+     */
+    public function it_does_not_look_for_made_variants_when_media_is_stored_or_variants_are_cached_elsewhere(array $media): void
+    {
+        $this->load(['media' => $media]);
+
+        $this->assertContainerBuilderNotHasService(LocalVariants::class);
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function elsewhere(): iterable
+    {
+        yield 'another storage' => [['storage' => 'app.s3_storage']];
+        yield 'another Liip resolver' => [['liip' => ['resolver' => 'app_s3_cache']]];
     }
 
     /**

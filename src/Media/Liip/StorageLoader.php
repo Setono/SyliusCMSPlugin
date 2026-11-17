@@ -39,7 +39,7 @@ final readonly class StorageLoader implements LoaderInterface
         }
 
         $path = ltrim($path, '/');
-        if (str_starts_with($path, StorageResolver::PREFIX . '/')) {
+        if (str_starts_with($path, VariantPaths::PREFIX . '/')) {
             throw new NotLoadableException(sprintf('"%s" is an image variant, which no variant is made from', $path));
         }
 

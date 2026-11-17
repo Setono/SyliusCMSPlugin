@@ -8,6 +8,7 @@ use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Liip\ImagineBundle\Imagine\Cache\Resolver\ResolverInterface;
 use Liip\ImagineBundle\Imagine\Cache\Signer;
 use Liip\ImagineBundle\Imagine\Filter\FilterConfiguration;
+use Liip\ImagineBundle\Model\Binary;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -17,11 +18,15 @@ use Setono\SyliusCMSPlugin\Media\ImageFormat;
 use Setono\SyliusCMSPlugin\Media\ImageTransform;
 use Setono\SyliusCMSPlugin\Media\Liip\FilterSets;
 use Setono\SyliusCMSPlugin\Media\Liip\LiipImageProvider;
+use Setono\SyliusCMSPlugin\Media\Liip\LocalVariants;
+use Setono\SyliusCMSPlugin\Media\Liip\StorageResolver;
 use Setono\SyliusCMSPlugin\Media\Liip\TransformFilterLoader;
+use Setono\SyliusCMSPlugin\Media\Liip\VariantPaths;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Media\MediaUrlGenerator;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\StorageDirectory;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Routing\Generator\UrlGenerator;
 use Symfony\Component\Routing\RequestContext;
@@ -32,6 +37,7 @@ use Symfony\Component\Routing\RouterInterface;
 final class LiipImageProviderTest extends TestCase
 {
     use ProphecyTrait;
+    use StorageDirectory;
 
     private const PATH = '0196b2a4-7c1e-7f3a-9d2b-1a2b3c4d5e6f/9f3c2a1b4d5e6f70/summer-sale.jpg';
 
@@ -44,7 +50,8 @@ final class LiipImageProviderTest extends TestCase
 
     protected function setUp(): void
     {
-        // The storage behind Liip's resolver is never asked whether a variant is stored, or where it is
+        // Off the default local storage, such as on S3, the storage behind Liip's resolver is never asked whether a variant
+        // is stored, or where it is: every variant gets Liip's runtime URL
         $this->resolver = $this->prophesize(ResolverInterface::class);
         $this->resolver->isStored(Argument::cetera())->shouldNotBeCalled();
         $this->resolver->resolve(Argument::cetera())->shouldNotBeCalled();
@@ -119,6 +126,31 @@ final class LiipImageProviderTest extends TestCase
 
         self::assertSame('/media/cms/' . $svg->getPath(), $this->provider->url($svg, new ImageTransform(320, 1.0, ImageFormat::Webp, new FocalPoint())));
         self::assertSame('/media/cms/' . $gif->getPath(), $this->provider->url($gif, new ImageTransform(960, null, ImageFormat::Avif, new FocalPoint())));
+    }
+
+    /**
+     * On the default local storage, a variant Liip has made is printed at its own URL, which the web server serves
+     * without PHP, as Sylius's own Liip setup does. A local file check finds it, without a call to the storage
+     *
+     * @test
+     */
+    public function it_prints_a_variant_s_stored_url_on_the_default_local_storage_once_liip_has_made_it(): void
+    {
+        $filterConfiguration = new FilterConfiguration(FilterSets::config('setono_sylius_cms', 'setono_sylius_cms'));
+        $resolver = new StorageResolver($this->storage(), new VariantPaths($filterConfiguration), new MediaUrlGenerator());
+        $cacheManager = new CacheManager($filterConfiguration, $this->router(), new Signer(self::SECRET), new EventDispatcher());
+        $cacheManager->addResolver('setono_sylius_cms', $resolver);
+        $provider = new LiipImageProvider($cacheManager, new MediaUrlGenerator(), new LocalVariants($this->temporaryDirectory(), new VariantPaths($filterConfiguration)));
+        $transform = new ImageTransform(640, 16 / 9, ImageFormat::Webp, new FocalPoint(0.25, 0.75));
+
+        // Not made yet: Liip's resolve step makes it on the first request
+        $first = $provider->url(self::image(), $transform);
+        [$filter, $hash, $path] = self::parse($first);
+
+        $resolver->store(new Binary('webp bytes', 'image/webp', 'webp'), 'rc/' . $hash . '/' . $path, $filter);
+
+        self::assertSame('/media/cms/cache/setono_sylius_cms_webp/' . self::PATH . '/' . $hash . '/summer-sale.webp', $provider->url(self::image(), $transform));
+        self::assertStringStartsWith('/media/cache/resolve/setono_sylius_cms_avif/rc/', $provider->url(self::image(), new ImageTransform(640, 16 / 9, ImageFormat::Avif, new FocalPoint(0.25, 0.75))), 'The AVIF variant isn\'t made yet');
     }
 
     private static function image(string $mimeType = 'image/jpeg', string $filename = 'summer-sale.jpg'): MediaItemInterface

@@ -161,6 +161,33 @@ final class ImageTest extends WebTestCase
     }
 
     /**
+     * On the default local storage, a variant's first URL is Liip's runtime URL, whose redirect browsers and CDNs keep for
+     * a year. Once Liip has made the variant, pages print its own URL, which the web server serves without PHP
+     *
+     * @test
+     */
+    public function it_prints_a_variant_s_own_url_once_liip_has_made_it_and_lets_its_runtime_url_s_redirect_be_kept_for_a_year(): void
+    {
+        $client = self::createClient();
+        $image = $this->uploadMediaItem('summer-sale.png', self::redLeftBlueRight());
+        $transform = new ImageTransform(100, 1.0, ImageFormat::Webp, $image->getFocalPoint());
+        $runtimeUrl = self::variantUrl($image, $transform);
+        self::assertStringStartsWith('/media/cache/resolve/setono_sylius_cms_webp/rc/', $runtimeUrl);
+
+        $client->request('GET', $runtimeUrl);
+
+        self::assertResponseRedirects();
+        $response = $client->getResponse();
+        self::assertTrue($response->headers->hasCacheControlDirective('public'));
+        self::assertSame('31536000', $response->headers->getCacheControlDirective('max-age'));
+        self::assertTrue($response->headers->hasCacheControlDirective('immutable'));
+
+        $location = (string) $response->headers->get('Location');
+        self::assertStringStartsWith('/media/cms/cache/setono_sylius_cms_webp/', $location);
+        self::assertSame($location, self::variantUrl($image, $transform));
+    }
+
+    /**
      * @test
      */
     public function it_deletes_a_media_item_s_variants_with_its_file(): void

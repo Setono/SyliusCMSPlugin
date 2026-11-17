@@ -8,41 +8,32 @@ use League\Flysystem\FilesystemOperator;
 use Liip\ImagineBundle\Binary\BinaryInterface;
 use Liip\ImagineBundle\Exception\Imagine\Cache\Resolver\NotStorableException;
 use Liip\ImagineBundle\Imagine\Cache\Resolver\ResolverInterface;
-use Liip\ImagineBundle\Imagine\Filter\FilterConfiguration;
 use Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface;
 
 /**
  * The LiipImagine resolver named setono_sylius_cms by default (media.liip.resolver): it caches image variants in the
- * plugin's media storage, under cache/{filter set}/{source path}/{hash}/{name}.{extension of the format}, and resolves
- * them to their public URLs, which MediaUrlGeneratorInterface builds as it does for media items' files. All variants of
- * a source sit under one directory, so a replaced or deleted file's variants are removed together. See "Image
- * processing" in docs/spec/media.md
+ * plugin's media storage, where VariantPaths puts them, and resolves them to their public URLs, which
+ * MediaUrlGeneratorInterface builds as it does for media items' files. See "Image processing" in docs/spec/media.md
  *
  * @internal
  */
 final readonly class StorageResolver implements ResolverInterface
 {
-    /** The directory of the storage the variants are cached in */
-    public const PREFIX = 'cache';
-
-    /** What Liip puts before the source path of a variant with runtime filters: rc/{hash}/ */
-    private const RUNTIME_PATH = '~^rc/([^/]+)/(.+)$~';
-
     public function __construct(
         private FilesystemOperator $storage,
-        private FilterConfiguration $filterConfiguration,
+        private VariantPaths $variantPaths,
         private MediaUrlGeneratorInterface $mediaUrlGenerator,
     ) {
     }
 
     public function isStored($path, $filter): bool
     {
-        return $this->storage->fileExists($this->variantPath($path, $filter));
+        return $this->storage->fileExists($this->variantPaths->of($path, $filter));
     }
 
     public function resolve($path, $filter): string
     {
-        return $this->mediaUrlGenerator->generate($this->variantPath($path, $filter));
+        return $this->mediaUrlGenerator->generate($this->variantPaths->of($path, $filter));
     }
 
     /**
@@ -55,7 +46,7 @@ final readonly class StorageResolver implements ResolverInterface
             throw new NotStorableException(sprintf('The variant of "%s" in the filter set "%s" has no content to store', $path, $filter));
         }
 
-        $this->storage->write($this->variantPath($path, $filter), $content, ['mimetype' => $binary->getMimeType()]);
+        $this->storage->write($this->variantPaths->of($path, $filter), $content, ['mimetype' => $binary->getMimeType()]);
     }
 
     /**
@@ -69,47 +60,19 @@ final readonly class StorageResolver implements ResolverInterface
     {
         foreach ($filters as $filter) {
             if ([] === $paths) {
-                $this->storage->deleteDirectory(self::PREFIX . '/' . $filter);
+                $this->storage->deleteDirectory(VariantPaths::PREFIX . '/' . $filter);
 
                 continue;
             }
 
             foreach ($paths as $path) {
-                [$source, $hash] = self::split($path);
+                [$source, $hash] = VariantPaths::split($path);
                 if (null === $hash) {
-                    $this->storage->deleteDirectory(self::sourceDirectory($source, $filter));
+                    $this->storage->deleteDirectory(VariantPaths::sourceDirectory($source, $filter));
                 } else {
-                    $this->storage->delete($this->variantPath($path, $filter));
+                    $this->storage->delete($this->variantPaths->of($path, $filter));
                 }
             }
         }
-    }
-
-    private function variantPath(string $path, string $filter): string
-    {
-        [$source, $hash] = self::split($path);
-
-        $format = $this->filterConfiguration->get($filter)['format'] ?? null;
-        $extension = is_string($format) && '' !== $format ? $format : pathinfo($source, \PATHINFO_EXTENSION);
-        $name = pathinfo($source, \PATHINFO_FILENAME) . ('' === $extension ? '' : '.' . $extension);
-
-        return self::sourceDirectory($source, $filter) . (null === $hash ? '' : '/' . $hash) . '/' . $name;
-    }
-
-    private static function sourceDirectory(string $source, string $filter): string
-    {
-        return self::PREFIX . '/' . $filter . '/' . $source;
-    }
-
-    /**
-     * The source path, and the hash of the runtime filters when the path has them
-     *
-     * @return array{string, string|null}
-     */
-    private static function split(string $path): array
-    {
-        $path = ltrim($path, '/');
-
-        return 1 === preg_match(self::RUNTIME_PATH, $path, $matches) ? [$matches[2], $matches[1]] : [$path, null];
     }
 }

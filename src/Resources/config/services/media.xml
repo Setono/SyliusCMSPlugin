@@ -164,14 +164,36 @@
         <!--
         Images: cms_image() asks the image provider for each variant's URL. The default builds LiipImagine's resolve URLs,
         and Liip makes a variant on its first request with the plugin's loader and resolver, both named setono_sylius_cms
-        by default (media.liip), and its filter sets, which SetonoSyliusCMSExtension prepends. See "Image processing" in
+        by default (media.liip), and its filter sets, which SetonoSyliusCMSExtension prepends. On the default local
+        storage, a variant Liip has made gets its own URL instead, once a file check finds it. See "Image processing" in
         docs/spec/media.md
         -->
         <service id="Setono\SyliusCMSPlugin\Media\Liip\LiipImageProvider" class="Setono\SyliusCMSPlugin\Media\Liip\LiipImageProvider">
             <argument type="service" id="liip_imagine.cache.manager"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\Liip\LocalVariants" on-invalid="null"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Media\ImageProviderInterface" alias="Setono\SyliusCMSPlugin\Media\Liip\LiipImageProvider"/>
+
+        <!-- Where the plugin's Liip resolver caches each variant in the media storage -->
+        <service id="Setono\SyliusCMSPlugin\Media\Liip\VariantPaths" class="Setono\SyliusCMSPlugin\Media\Liip\VariantPaths">
+            <argument type="service" id="liip_imagine.filter.configuration"/>
+        </service>
+
+        <!--
+        Whether a variant is made, by a file check in the default local storage's directory (as
+        SetonoSyliusCMSExtension::STORAGE_DIRECTORY has it). The extension removes it when media items are stored elsewhere
+        or cached by another Liip resolver, and the image provider then always builds Liip's runtime URLs
+        -->
+        <service id="Setono\SyliusCMSPlugin\Media\Liip\LocalVariants" class="Setono\SyliusCMSPlugin\Media\Liip\LocalVariants">
+            <argument>%kernel.project_dir%/public/media/cms</argument>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\Liip\VariantPaths"/>
+        </service>
+
+        <!-- Browsers and CDNs keep the redirect that answers a variant's runtime URL for a year -->
+        <service id="Setono\SyliusCMSPlugin\Media\Liip\VariantRedirectCacheListener" class="Setono\SyliusCMSPlugin\Media\Liip\VariantRedirectCacheListener">
+            <tag name="kernel.event_listener" event="kernel.response"/>
+        </service>
 
         <!-- The formats cms_image() offers: AVIF only where Liip's image library writes it -->
         <service id="Setono\SyliusCMSPlugin\Media\Liip\LiipImageFormats" class="Setono\SyliusCMSPlugin\Media\Liip\LiipImageFormats">
@@ -188,7 +210,7 @@
 
         <service id="Setono\SyliusCMSPlugin\Media\Liip\StorageResolver" class="Setono\SyliusCMSPlugin\Media\Liip\StorageResolver">
             <argument type="service" id="setono_sylius_cms.storage"/>
-            <argument type="service" id="liip_imagine.filter.configuration"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\Liip\VariantPaths"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface"/>
 
             <tag name="liip_imagine.cache.resolver" resolver="setono_sylius_cms"/>

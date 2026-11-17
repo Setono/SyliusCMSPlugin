@@ -24,6 +24,7 @@ use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Media\DeleteReplacedFile;
 use Setono\SyliusCMSPlugin\Media\Liip\FilterSets;
+use Setono\SyliusCMSPlugin\Media\Liip\LocalVariants;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
@@ -46,6 +47,9 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     /** The directory the default storage writes to, which the web server serves at MediaUrlGenerator::BASE_URL */
     public const STORAGE_DIRECTORY = '%kernel.project_dir%/public/media/cms';
 
+    /** The name of the plugin's own Liip loader and resolver, which media.liip defaults to */
+    public const LIIP_NAME = 'setono_sylius_cms';
+
     /** The entry lists show the entries edited last first */
     private const GRID_SORTING = ['lastEdited' => 'desc'];
 
@@ -56,7 +60,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, resources: array<string, array<string, mixed>>} $config */
+        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, resources: array<string, array<string, mixed>>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         $container->setParameter('setono_sylius_cms.disabled.block_types', $config['disabled']['block_types']);
@@ -84,6 +88,13 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         // prepend() defines, unless a project configures another, which then goes by that one name
         if (self::STORAGE !== $config['media']['storage']) {
             $container->setAlias(self::STORAGE, $config['media']['storage']);
+        }
+
+        // Made variants are looked for with a file check only where the plugin's Liip resolver caches them in the default
+        // local storage. Elsewhere, such as on S3, that would be a call to the storage, so every variant gets Liip's
+        // runtime URL
+        if (self::STORAGE !== $config['media']['storage'] || self::LIIP_NAME !== $config['media']['liip']['resolver']) {
+            $container->removeDefinition(LocalVariants::class);
         }
 
         // Registers the shipped resources, and turns on the Doctrine mapping of the Model namespace
