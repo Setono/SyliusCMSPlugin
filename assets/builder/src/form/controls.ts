@@ -6,6 +6,7 @@ import { ItemListControl } from './ItemListControl';
 import { LinkControl } from './LinkControl';
 import { MediaControl } from './MediaControl';
 import { MediaListControl } from './MediaListControl';
+import { NumberControl } from './NumberControl';
 import { RichTextControl } from './RichTextControl';
 import { TextareaControl } from './TextareaControl';
 import { TextControl } from './TextControl';
@@ -19,6 +20,7 @@ export const fieldControls: Readonly<Record<string, FieldControl>> = {
     rich_text: RichTextControl,
     choice: ChoiceControl,
     toggle: ToggleControl,
+    number: NumberControl,
     date: DateControl,
     date_time: DateTimeControl,
     media: MediaControl,

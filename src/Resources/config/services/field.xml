@@ -15,6 +15,10 @@
             <tag name="setono_sylius_cms.field_handler"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Field\NumberHandler" class="Setono\SyliusCMSPlugin\Field\NumberHandler">
+            <tag name="setono_sylius_cms.field_handler"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Field\RichTextHandler" class="Setono\SyliusCMSPlugin\Field\RichTextHandler">
             <argument type="service" id="Setono\SyliusCMSPlugin\RichText\RichTextSchema"/>
             <!-- Rich text's links resolve through their link targets, like Link fields -->

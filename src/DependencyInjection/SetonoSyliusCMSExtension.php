@@ -104,7 +104,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     /**
      * Loads the shipped stylesheet on every shop page, at priority 20: above Sylius's own styles (10),
-     * so it declares the cms cascade layer before the theme's CSS. See "Loading the stylesheet and script" in docs/spec/blocks.md
+     * so it declares the cms cascade layer before the theme's CSS. The carousel script loads at the end of the body.
+     * See "Loading the stylesheet and script" in docs/spec/blocks.md
      */
     public function prepend(ContainerBuilder $container): void
     {
@@ -127,6 +128,12 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 'sylius.shop.layout.stylesheets' => [
                     'blocks' => [
                         'setono_sylius_cms_stylesheet' => ['template' => '@SetonoSyliusCMSPlugin/shop/stylesheet.html.twig', 'priority' => 20],
+                    ],
+                ],
+                // The carousel script, after Sylius's own scripts (10)
+                'sylius.shop.layout.javascripts' => [
+                    'blocks' => [
+                        'setono_sylius_cms_javascript' => ['template' => '@SetonoSyliusCMSPlugin/shop/javascript.html.twig', 'priority' => 5],
                     ],
                 ],
             ],
