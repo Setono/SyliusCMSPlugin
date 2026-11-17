@@ -14,6 +14,8 @@ export interface SearchPickerProps {
     searchLabel: string;
     disabled?: boolean | undefined;
     describedBy?: string | undefined;
+    /** The button's id, such as a field's, so the field's label names it. */
+    id?: string | undefined;
     onPick: (result: SearchResult) => void;
 }
 
@@ -22,14 +24,14 @@ export interface SearchPickerProps {
  * searches as the editor types, from the first page of everything, and the arrow keys and Enter pick too. Products
  * and taxons pickers reuse it. Without a search, it's disabled.
  */
-export function SearchPicker({ kind, label, searchLabel, disabled = false, describedBy, onPick }: SearchPickerProps) {
+export function SearchPicker({ kind, label, searchLabel, disabled = false, describedBy, id, onPick }: SearchPickerProps) {
     const search = useSearch();
     const [open, setOpen] = useState(false);
 
     return (
         <Popover.Root open={open} onOpenChange={setOpen}>
             <Popover.Trigger asChild>
-                <button type="button" className={styles.button} disabled={disabled || search === null} aria-describedby={describedBy}>
+                <button id={id} type="button" className={styles.button} disabled={disabled || search === null} aria-describedby={describedBy}>
                     {label}
                 </button>
             </Popover.Trigger>
