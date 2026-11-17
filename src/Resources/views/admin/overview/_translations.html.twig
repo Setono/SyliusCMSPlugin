@@ -1,0 +1,39 @@
+{#
+ # The Overview's Translations, a block of setono_sylius_cms.admin.overview.panels: per channel, how many of its entries
+ # are complete in each of its locales, with a link to those that aren't, which All entries lists with its channel and
+ # translation filters. See "Overview" in docs/spec/admin.md and "Completeness and outdated flags" in
+ # docs/spec/localization.md
+ #}
+<div class="column">
+    <section class="ui segment" data-panel="translations" aria-labelledby="cms-panel-translations">
+        <h2 class="ui dividing header" id="cms-panel-translations">{{ 'setono_sylius_cms.ui.translations'|trans }}</h2>
+
+        {% for channel in cms_admin_translation_completeness() %}
+            <div data-channel="{{ channel.channelCode }}">
+                <h3 class="ui small header">{{ channel.channelName }}</h3>
+
+                {% if channel.entries == 0 %}
+                    <p>{{ 'setono_sylius_cms.ui.no_entries_in_channel'|trans }}</p>
+                {% else %}
+                    <table class="ui very basic compact unstackable table">
+                        <tbody>
+                            {% for locale in channel.locales %}
+                                <tr data-locale="{{ locale.localeCode }}">
+                                    <td>{{ locale.localeCode|sylius_locale_name }}</td>
+                                    <td>{{ 'setono_sylius_cms.ui.complete_of'|trans({'%complete%': locale.complete, '%entries%': locale.entries}) }}</td>
+                                    <td class="right aligned">
+                                        {% if locale.incomplete > 0 %}
+                                            <a href="{{ path('setono_sylius_cms_admin_entry_index_all', {'criteria': {'channel': channel.channelCode, 'translation': locale.localeCode}}) }}">{{ 'setono_sylius_cms.ui.not_complete_count'|trans({'%count%': locale.incomplete}) }}</a>
+                                        {% else %}
+                                            <i class="green check icon" aria-hidden="true"></i>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </section>
+</div>

@@ -242,6 +242,7 @@ setono_sylius_cms:
         all_needing_attention: '{1} The entry that needs attention|]1,Inf[ All %count% entries that need attention'
         all_unpublished_changes: All entries with unpublished changes
         any_channel: Any channel
+        any_translation: Any
         any_status: Any status
         audience:
             everyone: Everyone
@@ -259,6 +260,7 @@ setono_sylius_cms:
             ends: Stops showing
             publishes: Publishes
             starts: Starts showing
+        complete_of: '%complete% of %entries% complete'
         content: Content
         content_description: Pages and everything else shoppers read that isn't a product
         copied: Copied
@@ -293,7 +295,10 @@ setono_sylius_cms:
         no_urls: It has no URL yet, because it has no slug.
         missing_alt_text: '{1} 1 image has no alt text in one or more languages|]1,Inf[ %count% images have no alt text in one or more languages'
         no_drafts_in_progress: No published entry has unpublished changes.
+        no_entries_in_channel: No entries are in this channel.
         nothing_coming_up: No scheduled publishes, and no date windows that start or end.
+        not_complete_count: '%count% not complete'
+        not_complete_in: 'Not complete in %locale%'
         nothing_needs_attention: Nothing needs attention.
         now: Now
         old_urls: 'Redirects from:'

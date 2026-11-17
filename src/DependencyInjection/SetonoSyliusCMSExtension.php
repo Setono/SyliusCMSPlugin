@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
 use Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter;
 use Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter;
+use Setono\SyliusCMSPlugin\Admin\Grid\TranslationFilter;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
 use Setono\SyliusCMSPlugin\Attribute\AsLinkTarget;
 use Setono\SyliusCMSPlugin\Attribute\AsSource;
@@ -297,6 +298,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                     'blocks' => [
                         'needs_attention' => $block('_needs_attention', 40),
                         'coming_up' => $block('_coming_up', 30),
+                        'translations' => $block('_translations', 20),
                         'drafts_in_progress' => $block('_drafts_in_progress', 10),
                     ],
                 ],
@@ -349,6 +351,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                         ],
                         'status' => ['type' => StatusFilter::TYPE, 'label' => 'setono_sylius_cms.ui.status'],
                         'channel' => ['type' => ChannelFilter::TYPE, 'label' => 'setono_sylius_cms.ui.channel'],
+                        // The entries not complete in a locale, which the Overview's Translations links to
+                        'translation' => ['type' => TranslationFilter::TYPE, 'label' => 'setono_sylius_cms.ui.translations'],
                     ],
                     'actions' => [
                         'main' => [
@@ -383,6 +387,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 'filter' => [
                     StatusFilter::TYPE => '@SyliusUi/Grid/Filter/select.html.twig',
                     ChannelFilter::TYPE => '@SyliusUi/Grid/Filter/select.html.twig',
+                    TranslationFilter::TYPE => '@SyliusUi/Grid/Filter/select.html.twig',
                 ],
             ],
         ]);

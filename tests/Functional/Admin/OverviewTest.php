@@ -162,6 +162,65 @@ final class OverviewTest extends WebTestCase
     /**
      * @test
      */
+    public function it_shows_per_channel_and_locale_how_many_entries_are_complete_under_translations_linking_to_those_that_arent(): void
+    {
+        $client = self::signedInClient();
+        self::addLocales('WEB', 'da_DK');
+        self::createChannel('NORDIC', 'Nordic');
+        self::addLocales('NORDIC', 'da_DK');
+        $complete = self::createPageWithBlocks('About us', 'about-us', [
+            new StoredBlock(self::HEADING, 'heading', 1, fields: ['text' => ['en_US' => 'Hello', 'da_DK' => 'Hej']]),
+        ], channels: ['WEB', 'NORDIC']);
+        self::addTranslation($complete, 'da_DK', 'Om os', 'om-os');
+        // No Danish translation
+        $english = self::createPage('English only', 'english-only', channels: ['WEB']);
+        // The Danish translation's heading is untranslated
+        $untranslated = self::createPage('Contact', 'contact', 'Hello', channels: ['WEB', 'NORDIC']);
+        self::addTranslation($untranslated, 'da_DK', 'Kontakt', 'kontakt');
+        self::createChannel('EMPTY', 'Empty');
+
+        $crawler = $client->request('GET', '/admin/cms');
+
+        $panel = $crawler->filter('[data-panel="translations"]');
+        self::assertSame('Translations', $panel->filter('h2')->text());
+        self::assertSame([
+            ['WEB', 'Setono CMS Test Store', [
+                ['en_US', 'English (United States)', '3 of 3 complete', null],
+                ['da_DK', 'Danish (Denmark)', '1 of 3 complete', ['2 not complete', '/admin/cms/entries?criteria%5Bchannel%5D=WEB&criteria%5Btranslation%5D=da_DK']],
+            ]],
+            ['NORDIC', 'Nordic', [
+                ['en_US', 'English (United States)', '2 of 2 complete', null],
+                ['da_DK', 'Danish (Denmark)', '1 of 2 complete', ['1 not complete', '/admin/cms/entries?criteria%5Bchannel%5D=NORDIC&criteria%5Btranslation%5D=da_DK']],
+            ]],
+            ['EMPTY', 'Empty', []],
+        ], $panel->filter('[data-channel]')->each(static fn (Crawler $channel): array => [
+            $channel->attr('data-channel'),
+            $channel->filter('h3')->text(),
+            $channel->filter('[data-locale]')->each(static fn (Crawler $locale): array => [
+                $locale->attr('data-locale'),
+                $locale->filter('td')->eq(0)->text(),
+                $locale->filter('td')->eq(1)->text(),
+                0 === $locale->filter('a')->count() ? null : [$locale->filter('a')->text(), $locale->filter('a')->attr('href')],
+            ]),
+        ]));
+        self::assertSame('No entries are in this channel.', $panel->filter('[data-channel="EMPTY"] p')->text());
+
+        // The link lists the entries in the channel that aren't complete in the locale
+        $crawler = $client->click($panel->selectLink('2 not complete')->link());
+
+        self::assertResponseIsSuccessful();
+        self::assertEqualsCanonicalizing([$english->getUuid(), $untranslated->getUuid()], $crawler->filter('table tbody [data-entry]')->each(static fn (Crawler $title): ?string => $title->attr('data-entry')));
+        self::assertSame('da_DK', $crawler->filter('select[name="criteria[translation]"] option[selected]')->attr('value'));
+        self::assertSame(
+            ['Any', 'Not complete in English (United States)', 'Not complete in Danish (Denmark)'],
+            $crawler->filter('select[name="criteria[translation]"] option')->each(static fn (Crawler $option): string => $option->text()),
+        );
+        self::assertSame('WEB', $crawler->filter('select[name="criteria[channel]"] option[selected]')->attr('value'));
+    }
+
+    /**
+     * @test
+     */
     public function it_lists_scheduled_publishes_and_date_windows_that_start_or_end_under_coming_up_in_time_order(): void
     {
         $client = self::signedInClient();

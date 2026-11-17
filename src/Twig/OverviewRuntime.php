@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig;
 
+use Setono\SyliusCMSPlugin\Admin\ChannelCompleteness;
 use Setono\SyliusCMSPlugin\Admin\ComingUp;
 use Setono\SyliusCMSPlugin\Admin\ComingUpEvent;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\NeedsAttention;
 use Setono\SyliusCMSPlugin\Admin\NeedsAttentionGroups;
+use Setono\SyliusCMSPlugin\Admin\TranslationCompleteness;
 use Setono\SyliusCMSPlugin\Media\MediaFilter;
 use Setono\SyliusCMSPlugin\Media\MediaLocales;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
@@ -34,7 +36,16 @@ final readonly class OverviewRuntime implements RuntimeExtensionInterface
         private NeedsAttention $needsAttention,
         private MediaItemRepositoryInterface $mediaItems,
         private MediaLocales $mediaLocales,
+        private TranslationCompleteness $translationCompleteness,
     ) {
+    }
+
+    /**
+     * @return list<ChannelCompleteness>
+     */
+    public function translationCompleteness(): array
+    {
+        return $this->translationCompleteness->byChannel();
     }
 
     public function needsAttention(): NeedsAttentionGroups

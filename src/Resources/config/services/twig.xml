@@ -101,6 +101,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\NeedsAttention"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaLocales"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\TranslationCompleteness"/>
 
             <tag name="twig.runtime"/>
         </service>
