@@ -25,15 +25,15 @@ final class VariantRedirectCacheListenerTest extends TestCase
     /**
      * @test
      */
-    public function it_lets_browsers_and_cdns_keep_the_redirect_of_a_variant_s_runtime_url_for_a_year(): void
+    public function it_lets_cdns_keep_the_redirect_of_a_variant_s_runtime_url_for_a_year_and_browsers_ask_again(): void
     {
         $response = $this->respond('liip_imagine_filter_runtime', 'setono_sylius_cms_webp', new RedirectResponse('/media/cms/cache/setono_sylius_cms_webp/a/b/c.jpg/Ab3dE6gH/c.webp'));
 
         self::assertSame(302, $response->getStatusCode(), 'Liip\'s redirect status is kept');
         self::assertTrue($response->headers->hasCacheControlDirective('public'));
-        self::assertSame('31536000', $response->headers->getCacheControlDirective('max-age'));
+        self::assertSame('0', $response->headers->getCacheControlDirective('max-age'));
         self::assertSame('31536000', $response->headers->getCacheControlDirective('s-maxage'));
-        self::assertTrue($response->headers->hasCacheControlDirective('immutable'));
+        self::assertFalse($response->headers->hasCacheControlDirective('immutable'), 'A browser can\'t be purged after liip:imagine:cache:remove');
     }
 
     /**

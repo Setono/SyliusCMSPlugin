@@ -179,8 +179,9 @@ final class ImageTest extends WebTestCase
         self::assertResponseRedirects();
         $response = $client->getResponse();
         self::assertTrue($response->headers->hasCacheControlDirective('public'));
-        self::assertSame('31536000', $response->headers->getCacheControlDirective('max-age'));
-        self::assertTrue($response->headers->hasCacheControlDirective('immutable'));
+        self::assertSame('0', $response->headers->getCacheControlDirective('max-age'));
+        self::assertSame('31536000', $response->headers->getCacheControlDirective('s-maxage'));
+        self::assertFalse($response->headers->hasCacheControlDirective('immutable'));
 
         $location = (string) $response->headers->get('Location');
         self::assertStringStartsWith('/media/cms/cache/setono_sylius_cms_webp/', $location);
