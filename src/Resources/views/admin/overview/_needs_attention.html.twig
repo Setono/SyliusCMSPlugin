@@ -2,14 +2,16 @@
  # The Overview's Needs attention, a block of setono_sylius_cms.admin.overview.panels: the errors and warnings across
  # the store, grouped by kind, the groups of errors first. Each problem names its entry, which links to the entry's
  # overview page, and links to where it's fixed. A kind is named by setono_sylius_cms.problem_kind.<code>, or else by
- # its code. See "Overview" and "Problems" in docs/spec/admin.md
+ # its code. Below them it flags the images missing alt text, which aren't problems, with a link to the media library
+ # filtered by missing alt text. See "Overview" and "Problems" in docs/spec/admin.md and "Metadata" in docs/spec/media.md
  #}
 {% set needs_attention = cms_admin_needs_attention() %}
+{% set missing_alt_text = cms_admin_missing_alt_text() %}
 <div class="column">
     <section class="ui segment" data-panel="needs_attention" aria-labelledby="cms-panel-needs-attention">
         <h2 class="ui dividing header" id="cms-panel-needs-attention">{{ 'setono_sylius_cms.ui.status_filter.needs_attention'|trans }}</h2>
 
-        {% if needs_attention.groups is empty %}
+        {% if needs_attention.groups is empty and missing_alt_text == 0 %}
             <p>{{ 'setono_sylius_cms.ui.nothing_needs_attention'|trans }}</p>
         {% endif %}
 
@@ -48,6 +50,14 @@
 
         {% if needs_attention.total > 0 %}
             <a href="{{ path('setono_sylius_cms_admin_entry_index_all', {'criteria': {'status': 'needs_attention'}}) }}">{{ 'setono_sylius_cms.ui.all_needing_attention'|trans({'%count%': needs_attention.total}) }}</a>
+        {% endif %}
+
+        {% if missing_alt_text > 0 %}
+            <div class="ui divider"></div>
+            <div class="cms-flag" data-flag="missing_alt_text">
+                <i class="blue flag icon" aria-hidden="true"></i>
+                <a href="{{ path('setono_sylius_cms_admin_media_index', {'missingAlt': 1}) }}">{{ 'setono_sylius_cms.ui.missing_alt_text'|trans({'%count%': missing_alt_text}) }}</a>
+            </div>
         {% endif %}
     </section>
 </div>

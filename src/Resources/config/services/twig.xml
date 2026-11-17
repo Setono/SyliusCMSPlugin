@@ -99,6 +99,8 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryRows"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\NeedsAttention"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaLocales"/>
 
             <tag name="twig.runtime"/>
         </service>

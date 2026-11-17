@@ -1,4 +1,4 @@
-import type { MediaKind } from './types';
+import type { MediaFilters, MediaKind } from './types';
 
 /** A locale of the store, which media items have alt text in. */
 export interface MediaLocale {
@@ -30,6 +30,8 @@ export interface MediaLibraryConfig {
     locales: MediaLocale[];
     media: MediaLimits;
     strings: Record<string, string>;
+    /** What the library on its own screen shows first, such as only the images missing alt text, which the Overview links to. */
+    filters?: Pick<Partial<MediaFilters>, 'missingAlt'>;
 }
 
 export function readMediaLibraryConfig(element: HTMLElement): MediaLibraryConfig {

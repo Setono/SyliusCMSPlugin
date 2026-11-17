@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
 use Setono\SyliusCMSPlugin\Tests\Support\ScheduledPublishes;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -26,6 +27,7 @@ final class OverviewTest extends WebTestCase
 {
     use ClockSensitiveTrait;
     use Entries;
+    use MediaItems;
     use ScheduledPublishes;
 
     private const HEADING = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f';
@@ -105,6 +107,56 @@ final class OverviewTest extends WebTestCase
         $panel = $crawler->filter('[data-panel="needs_attention"]');
         self::assertCount(0, $panel->filter('[data-problem-kind]'));
         self::assertSame('Nothing needs attention.', $panel->filter('p')->text());
+    }
+
+    /**
+     * Missing alt text is a flag, not a problem, and an image misses it when it has none in one or more of the locales
+     * of the store's channels. See "Metadata" in docs/spec/media.md
+     *
+     * @test
+     */
+    public function it_counts_the_images_missing_alt_text_in_one_or_more_of_the_channels_locales_as_a_flag_linking_to_the_library(): void
+    {
+        $client = self::signedInClient();
+        self::addLocales('WEB', 'da_DK');
+        self::createLocale('fr_FR');
+        $complete = $this->uploadMediaItem('complete.png', self::png());
+        $complete->setAltText('en_US', 'A red square');
+        $complete->setAltText('da_DK', 'En rød firkant');
+        $danishMissing = $this->uploadMediaItem('danish-missing.png', self::png(rgb: [10, 200, 10]));
+        $danishMissing->setAltText('en_US', 'A green square');
+        // French is no channel's locale, so it doesn't stand in for Danish
+        $danishMissing->setAltText('fr_FR', 'Un carré vert');
+        $this->uploadMediaItem('none.png', self::png(rgb: [10, 10, 200]));
+        // Only images have alt text
+        $this->uploadMediaItem('price-list.pdf', self::pdf());
+        self::entityManager()->flush();
+
+        $crawler = $client->request('GET', '/admin/cms');
+
+        $flag = $crawler->filter('[data-panel="needs_attention"] [data-flag="missing_alt_text"]');
+        self::assertSame('2 images have no alt text in one or more languages', $flag->text());
+        self::assertSame('/admin/cms/media?missingAlt=1', $flag->filter('a')->attr('href'));
+        // It's a flag, not a problem
+        self::assertCount(0, $crawler->filter('[data-panel="needs_attention"] [data-problem-kind]'));
+        self::assertCount(0, $crawler->filter('[data-panel="needs_attention"] p'));
+        self::assertSelectorNotExists('.sylius-admin-menu a[href="/admin/cms"] .label');
+    }
+
+    /**
+     * @test
+     */
+    public function it_shows_no_flag_when_every_image_has_alt_text_in_every_channel_locale(): void
+    {
+        $client = self::signedInClient();
+        $image = $this->uploadMediaItem('complete.png', self::png());
+        $image->setAltText('en_US', 'A red square');
+        self::entityManager()->flush();
+
+        $crawler = $client->request('GET', '/admin/cms');
+
+        self::assertCount(0, $crawler->filter('[data-panel="needs_attention"] [data-flag]'));
+        self::assertSame('Nothing needs attention.', $crawler->filter('[data-panel="needs_attention"] p')->text());
     }
 
     /**

@@ -9,8 +9,11 @@ use Setono\SyliusCMSPlugin\Admin\ComingUpEvent;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\NeedsAttention;
 use Setono\SyliusCMSPlugin\Admin\NeedsAttentionGroups;
+use Setono\SyliusCMSPlugin\Media\MediaFilter;
+use Setono\SyliusCMSPlugin\Media\MediaLocales;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Twig\Extension\RuntimeExtensionInterface;
 
 /**
@@ -29,6 +32,8 @@ final readonly class OverviewRuntime implements RuntimeExtensionInterface
         private EntryRows $entryRows,
         private EntryRepositoryInterface $entries,
         private NeedsAttention $needsAttention,
+        private MediaItemRepositoryInterface $mediaItems,
+        private MediaLocales $mediaLocales,
     ) {
     }
 
@@ -38,6 +43,15 @@ final readonly class OverviewRuntime implements RuntimeExtensionInterface
         $this->entryRows->load($groups->entries);
 
         return $groups;
+    }
+
+    /**
+     * How many images miss alt text in one or more of the store's locales, which Needs attention flags. It's what the
+     * media library's missing alt text filter finds. See "Metadata" in docs/spec/media.md
+     */
+    public function missingAltText(): int
+    {
+        return $this->mediaItems->createLibraryPaginator(new MediaFilter(missingAltIn: $this->mediaLocales->codes()))->getNbResults();
     }
 
     /**

@@ -291,6 +291,7 @@ setono_sylius_cms:
         no_revisions: Every publish stores a revision, which you can preview and restore. There are none yet.
         no_share_links: Share the draft with anyone, as a link that shows it in the shop without signing in. There are none yet.
         no_urls: It has no URL yet, because it has no slug.
+        missing_alt_text: '{1} 1 image has no alt text in one or more languages|]1,Inf[ %count% images have no alt text in one or more languages'
         no_drafts_in_progress: No published entry has unpublished changes.
         nothing_coming_up: No scheduled publishes, and no date windows that start or end.
         nothing_needs_attention: Nothing needs attention.

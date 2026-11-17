@@ -16,7 +16,7 @@ use Twig\Environment;
 /**
  * The media library's screen in the Content hub: the hub's page around the library app, which is part of the builder
  * app, so the builder's media picker opens the same library. The app gets its config here: the endpoints, the CSRF
- * token, the store's locales for the alt text, the upload limit and types, and its UI strings.
+ * token, the store's locales for the alt text, the upload limit and types, its UI strings and the filters it starts with.
  * See "Media library" in docs/spec/admin.md
  */
 final readonly class MediaLibraryAction
@@ -43,6 +43,9 @@ final readonly class MediaLibraryAction
                 ...$this->libraryConfig->of($request->getLocale()),
                 'media' => $this->limits->toArray(),
                 'strings' => $this->uiStrings->withPrefix(self::STRINGS_PREFIX),
+                // What it shows first: with missingAlt=1, as the Overview's missing alt text flag links to it, only the
+                // images missing alt text
+                'filters' => ['missingAlt' => $request->query->getBoolean('missingAlt')],
             ],
         ]));
     }
