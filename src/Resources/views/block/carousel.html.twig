@@ -1,8 +1,8 @@
-{# Each visible child is a slide. The stylesheet shows data-cms-per-view slides at once, and the script autoplays every data-cms-autoplay milliseconds #}
-<div class="cms-carousel{{ view.styleClass ? ' ' ~ view.styleClass }}" data-cms-per-view="{{ block.perView }}"{% if block.autoplay %} data-cms-autoplay="{{ block.interval * 1000 }}"{% endif %}>
-    <div class="cms-carousel__track">
-        {%- for slide in children -%}
-            <div class="cms-carousel__slide">{{ cms_block(slide) }}</div>
-        {%- endfor -%}
-    </div>
-</div>
+{# Each visible child is a slide, in the carousel markup a Products carousel shares #}
+{%- import '@SetonoSyliusCMSPlugin/block/_carousel.html.twig' as markup -%}
+{%- set slides = [] -%}
+{%- for slide in children -%}
+    {%- set html -%}{{ cms_block(slide) }}{%- endset -%}
+    {%- set slides = slides|merge([html]) -%}
+{%- endfor -%}
+{{ markup.carousel(slides, block.perView, block.autoplay ? block.interval * 1000 : null, view.styleClass) }}

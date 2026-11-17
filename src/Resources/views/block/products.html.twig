@@ -3,14 +3,14 @@
 {% if products is not null and products|length > 0 %}
     <div class="cms-products cms-products--{{ block.display }}{{ view.styleClass ? ' ' ~ view.styleClass }}">
         {%- if block.display == 'carousel' %}
-            {# The carousel markup around the cards, showing 4 at once on wide screens #}
-            <div class="cms-carousel" data-cms-per-view="4">
-                <div class="cms-carousel__track">
-                    {%- for product in products %}
-                        <div class="cms-carousel__slide"><div class="cms-products__item">{% include '@SyliusShop/Product/_box.html.twig' with {'product': product} only %}</div></div>
-                    {%- endfor %}
-                </div>
-            </div>
+            {# The Carousel block's markup around the cards, showing 4 at once on wide screens #}
+            {%- import '@SetonoSyliusCMSPlugin/block/_carousel.html.twig' as markup -%}
+            {%- set slides = [] -%}
+            {%- for product in products -%}
+                {%- set card -%}<div class="cms-products__item">{% include '@SyliusShop/Product/_box.html.twig' with {'product': product} only %}</div>{%- endset -%}
+                {%- set slides = slides|merge([card]) -%}
+            {%- endfor %}
+            {{ markup.carousel(slides, 4) }}
         {%- else %}
             {%- for product in products %}
                 <div class="cms-products__item">{% include '@SyliusShop/Product/_box.html.twig' with {'product': product} only %}</div>

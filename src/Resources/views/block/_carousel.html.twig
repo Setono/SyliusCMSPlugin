@@ -1,0 +1,12 @@
+{# The carousel markup the Carousel block and a Products carousel share: each slide in its own cms-carousel__slide. The
+   stylesheet shows data-cms-per-view slides at once, and the script autoplays every data-cms-autoplay milliseconds when
+   it's given. See "Carousel" in docs/spec/blocks.md #}
+{%- macro carousel(slides, perView, autoplay = null, class = null) -%}
+<div class="cms-carousel{{ class ? ' ' ~ class }}" data-cms-per-view="{{ perView }}"{% if autoplay %} data-cms-autoplay="{{ autoplay }}"{% endif %}>
+    <div class="cms-carousel__track">
+        {%- for slide in slides -%}
+            <div class="cms-carousel__slide">{{ slide }}</div>
+        {%- endfor -%}
+    </div>
+</div>
+{%- endmacro -%}
