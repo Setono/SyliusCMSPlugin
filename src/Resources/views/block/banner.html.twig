@@ -1,7 +1,7 @@
 {# The image fills the banner, in a <picture> whose narrow source is the mobile image, below the shop's mobile breakpoint
    of 48rem. Without an image the shop gets no media, and the builder's preview a placeholder. The heading, text and
-   buttons sit over it, and are left out when there's nothing to show, but for the builder's preview, which prints an
-   empty heading and text so editors can type them in place #}
+   buttons sit over it, each left out when cms_field() prints nothing for it. In the builder's preview it prints an empty
+   field's markers, so editors can type the heading and text in place #}
 {%- set media -%}
     {{ cms_image(block.image, {
         layout: 'full_width',
@@ -10,16 +10,17 @@
         art_direction: [{media: '(max-width: 47.99rem)', image: block.mobileImage}],
     }) }}
 {%- endset -%}
-{%- set editing = cms_preview_mode() == 'builder' -%}
+{%- set heading -%}{{ cms_field(block, 'heading') }}{%- endset -%}
+{%- set text -%}{{ cms_field(block, 'text') }}{%- endset -%}
 <div class="cms-banner{{ block.fullWidth ? ' cms-full-width' }}{{ view.styleClass ? ' ' ~ view.styleClass }}">
     {{- media -}}
-    {%- if editing or block.heading is not empty or block.text is not null or children is not empty -%}
+    {%- if heading is not empty or text is not empty or children is not empty -%}
         <div class="cms-banner__content">
-            {%- if editing or block.heading is not empty -%}
-                <h2 class="cms-banner__heading">{{ cms_field(block, 'heading') }}</h2>
+            {%- if heading is not empty -%}
+                <h2 class="cms-banner__heading">{{ heading }}</h2>
             {%- endif -%}
-            {%- if editing or block.text is not null -%}
-                <div class="cms-banner__text">{{ cms_field(block, 'text') }}</div>
+            {%- if text is not empty -%}
+                <div class="cms-banner__text">{{ text }}</div>
             {%- endif -%}
             {%- if children is not empty -%}
                 <div class="cms-banner__buttons">{{ cms_blocks(children) }}</div>
