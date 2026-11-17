@@ -35,6 +35,7 @@ use Setono\SyliusCMSPlugin\Json\ListedObject;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
@@ -418,6 +419,23 @@ final class ChangeSetApplierTest extends TestCase
     }
 
     /**
+     * A snippet's declared context is a drafted field shared by all translations. See "Snippets and their context" in
+     * docs/spec/slots.md
+     *
+     * @test
+     */
+    public function it_sets_a_snippet_s_declared_context(): void
+    {
+        $snippet = new Snippet();
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('context', null, ['product'])]), $snippet);
+        self::assertSame(['product'], $snippet->getContext());
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('context', null, null)]), $snippet);
+        self::assertSame([], $snippet->getContext(), 'Removing the value declares no context: any page');
+    }
+
+    /**
      * Translations made before the first publish start shown. See "Held-back translations" in docs/spec/publishing.md
      *
      * @test
@@ -712,6 +730,9 @@ final class ChangeSetApplierTest extends TestCase
         yield 'hide from search engines in a locale' => [$page, new SetEntryValue('noindex', 'en_US', true), 'The entry field "noindex" is shared by all translations, so a value takes no locale'];
         yield 'hide from search engines that is not true or false' => [$page, new SetEntryValue('noindex', null, 'yes'), 'The entry field "noindex" must be true, false or null'];
         yield 'the translation state of hide from search engines' => [$page, new SetEntryTranslated('noindex', 'en_US', null), 'The entry field "noindex" is shared by all translations, so it has no translation state'];
+        yield 'a context of an entry that is not a snippet' => [$page, new SetEntryValue('context', null, ['product']), 'The content type "page" has no entry field "context"'];
+        yield 'a context in a locale' => [new Snippet(), new SetEntryValue('context', 'en_US', ['product']), 'The entry field "context" is shared by all translations, so a value takes no locale'];
+        yield 'a context that is not a list of context keys' => [new Snippet(), new SetEntryValue('context', null, 'product'), 'The entry field "context" must be a list of context keys or null'];
     }
 
     /**
@@ -821,6 +842,7 @@ final class ChangeSetApplierTest extends TestCase
             new ContentTypeRegistry([
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
                 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
+                'snippet' => ['model' => Snippet::class, 'translation' => null, 'resource' => 'setono_sylius_cms.snippet'],
             ]),
             Conditions::registry(),
             new LayoutRegistry(['page' => ['standard' => Standard::class, 'banner' => Banner::class]], new FieldReader()),

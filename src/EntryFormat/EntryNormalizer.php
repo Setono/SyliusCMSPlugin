@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\EntryFormat;
 
 use Setono\SyliusCMSPlugin\Json\ListedObject;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\EntryFields;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
@@ -50,10 +51,23 @@ final readonly class EntryNormalizer
             'contentType' => $contentType->code,
             'version' => $contentType->version,
             'createdAt' => $entry->getCreatedAt()->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z'),
-            // The shared base fields: "Hide from search engines" for a content type with its own URL
-            'fields' => (object) ($contentType->hasOwnUrl() ? ['noindex' => $entry->isNoindex()] : []),
+            // The shared base fields: "Hide from search engines" for a content type with its own URL, and a snippet's context
+            'fields' => (object) self::sharedFields($entry, $contentType),
             'translations' => (object) $translations,
             'tree' => (new StoredTreeSerializer())->normalize($entry->getBlockTree()),
         ]);
+    }
+
+    /**
+     * @return array<string, bool|list<string>>
+     */
+    private static function sharedFields(EntryInterface $entry, ContentTypeMetadata $contentType): array
+    {
+        $fields = [];
+        foreach (EntryFields::shared($contentType) as $field) {
+            $fields[$field] = EntryFields::readShared($entry, $field);
+        }
+
+        return $fields;
     }
 }

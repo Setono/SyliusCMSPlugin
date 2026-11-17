@@ -9,8 +9,10 @@ use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer;
 use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
+use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -197,6 +199,41 @@ final class EntryDenormalizerTest extends TestCase
     /**
      * @test
      */
+    public function it_copies_the_context_a_snippet_declares_and_reads_a_snippet_without_one_as_declaring_none(): void
+    {
+        $snippet = new Snippet();
+        $draft = new Snippet();
+        (new \ReflectionProperty(Entry::class, 'uuid'))->setValue($draft, $snippet->getUuid());
+        $draft->setContext(['product']);
+        $data = CanonicalJson::decode(CanonicalJson::encode($this->normalizer()->normalize($draft)));
+        self::assertIsArray($data);
+
+        $this->denormalizer()->denormalize($data, $snippet);
+        self::assertSame(['product'], $snippet->getContext());
+
+        unset($data['fields']);
+        $this->denormalizer()->denormalize($data, $snippet);
+        self::assertSame([], $snippet->getContext());
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_snippet_s_context_that_is_not_a_list_of_context_keys(): void
+    {
+        $snippet = new Snippet();
+        $data = CanonicalJson::decode(CanonicalJson::encode($this->normalizer()->normalize($snippet)));
+        self::assertIsArray($data);
+
+        $this->expectException(InvalidEntryFormatException::class);
+        $this->expectExceptionMessage('The field context must be a list of context keys or null');
+
+        $this->denormalizer()->denormalize(['fields' => ['context' => 'product']] + $data, $snippet);
+    }
+
+    /**
+     * @test
+     */
     public function it_leaves_a_translation_without_a_title_or_a_slug_without_them(): void
     {
         $page = self::page(['en_US' => ['About us', 'about-us']]);
@@ -268,7 +305,7 @@ final class EntryDenormalizerTest extends TestCase
         yield 'a meta title that is a number' => [static fn (array $data): array => ['translations' => ['en_US' => ['fields' => ['metaTitle' => 1]]]] + $data, 'The metaTitle of the translation en_US must be a string or null'];
         yield 'a meta description that is a list' => [static fn (array $data): array => ['translations' => ['en_US' => ['fields' => ['metaDescription' => ['All about us']]]]] + $data, 'The metaDescription of the translation en_US must be a string or null'];
         yield 'shared fields that are a list' => [static fn (array $data): array => ['fields' => [true]] + $data, 'The fields must be a JSON object'];
-        yield 'hide from search engines that is a string' => [static fn (array $data): array => ['fields' => ['noindex' => 'yes']] + $data, 'The field noindex must be true or false'];
+        yield 'hide from search engines that is a string' => [static fn (array $data): array => ['fields' => ['noindex' => 'yes']] + $data, 'The field noindex must be true, false or null'];
         yield 'a translation without a shown switch' => [static fn (array $data): array => ['translations' => ['en_US' => ['fields' => ['title' => 'About us']]]] + $data, 'The shown switch of the translation en_US must be true or false'];
         yield 'a shown switch that is a string' => [static fn (array $data): array => ['translations' => ['en_US' => ['shown' => 'yes', 'fields' => ['title' => 'About us']]]] + $data, 'The shown switch of the translation en_US must be true or false'];
         $translation = static fn (mixed $translated): array => ['translations' => ['en_US' => ['shown' => true, 'fields' => ['title' => 'About us'], 'translated' => $translated]]];
@@ -314,6 +351,7 @@ final class EntryDenormalizerTest extends TestCase
         return new ContentTypeRegistry([
             'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
+            'snippet' => ['model' => Snippet::class, 'translation' => null, 'resource' => 'setono_sylius_cms.snippet'],
         ]);
     }
 }

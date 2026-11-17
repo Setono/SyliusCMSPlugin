@@ -20,6 +20,7 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\Clash;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
+use Setono\SyliusCMSPlugin\Context\ContextCheckInterface;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer;
 use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
@@ -29,9 +30,11 @@ use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
+use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Publishing\Autosave;
 use Setono\SyliusCMSPlugin\Publishing\DraftLockedException;
 use Setono\SyliusCMSPlugin\Publishing\EditRecorder;
@@ -90,6 +93,9 @@ final class AutosaveTest extends TestCase
     /** @var ObjectProphecy<EntryUrlValidatorInterface> */
     private ObjectProphecy $urlValidator;
 
+    /** @var ObjectProphecy<ContextCheckInterface> */
+    private ObjectProphecy $contextCheck;
+
     private TokenStorage $tokenStorage;
 
     private Page $entry;
@@ -139,6 +145,8 @@ final class AutosaveTest extends TestCase
         $this->scheduledPublishes->findOneByEntry($this->entry)->willReturn(null);
         $this->urlValidator = $this->prophesize(EntryUrlValidatorInterface::class);
         $this->urlValidator->refuseUrlsTakenByRoutes(Argument::cetera())->willReturn([]);
+        $this->contextCheck = $this->prophesize(ContextCheckInterface::class);
+        $this->contextCheck->blockers(Argument::cetera())->willReturn([]);
 
         // The store's one channel has English and Danish
         $channel = new Channel();
@@ -275,6 +283,79 @@ final class AutosaveTest extends TestCase
         self::assertSame([$refused], $result->refused);
         self::assertSame(3, $result->saved->lockToken);
         self::assertSame(['begin', 'lock to write', 'read again', 'get working copy', 'flush', 'commit'], $this->calls);
+    }
+
+    /**
+     * @test
+     */
+    public function it_saves_a_snippet_s_declared_context_when_nothing_is_in_the_way(): void
+    {
+        [$snippet, $workingCopy] = $this->snippet(['product']);
+        $change = new SetEntryValue('context', null, ['product', 'taxon']);
+        $this->contextCheck->blockers($workingCopy, ['product'], ['product', 'taxon'])->willReturn([])->shouldBeCalledOnce();
+
+        $result = $this->autosave()->save($snippet, new ChangeSet([$change]), 3);
+
+        self::assertSame(['product', 'taxon'], $workingCopy->getContext());
+        self::assertSame([], $result->refused);
+        self::assertFalse($result->reverted);
+        self::assertSame(4, $result->saved->lockToken);
+        $this->savedChangeSets->record($snippet, 4, new ChangeSet([$change]), Argument::any())->shouldHaveBeenCalledOnce();
+    }
+
+    /**
+     * The check sees the working copy with the rest of the save in it, such as a block it removes, and a refused change
+     * keeps the context's last saved value, which the builder pulls back in
+     *
+     * @test
+     */
+    public function it_keeps_a_snippet_s_declared_context_while_something_is_in_the_way_saves_the_rest_and_says_why(): void
+    {
+        [$snippet, $workingCopy] = $this->snippet(['product']);
+        $refused = new ValidationError(null, 'context', null, 'The placement in "Product page: under the price" doesn\'t provide the host-page context "Taxon page".');
+        $this->contextCheck->blockers(Argument::that(static fn (Snippet $checked): bool => 'Size guide' === $checked->getTranslation('en_US')->getTitle()), ['product'], ['taxon'])
+            ->willReturn([$refused]);
+        $title = new SetEntryValue('title', 'en_US', 'Size guide');
+
+        $result = $this->autosave()->save($snippet, new ChangeSet([new SetEntryValue('context', null, ['taxon']), $title]), 3);
+
+        self::assertSame(['product'], $workingCopy->getContext(), 'The context keeps its last saved value');
+        self::assertSame('Size guide', $workingCopy->getTranslation('en_US')->getTitle());
+        self::assertSame([$refused], $result->refused);
+        self::assertTrue($result->reverted);
+        self::assertSame(4, $result->saved->lockToken);
+        $this->savedChangeSets->record($snippet, 4, new ChangeSet([$title]), Argument::any())->shouldHaveBeenCalledOnce();
+    }
+
+    /**
+     * @test
+     */
+    public function it_saves_nothing_when_the_only_change_is_a_change_of_a_snippet_s_declared_context_that_something_is_in_the_way_of(): void
+    {
+        [$snippet, $workingCopy] = $this->snippet([]);
+        $refused = new ValidationError(null, 'context', null, 'The placement in "Footer" doesn\'t provide the host-page context "Product page".');
+        $this->contextCheck->blockers($workingCopy, [], ['product'])->willReturn([$refused]);
+
+        $result = $this->autosave()->save($snippet, new ChangeSet([new SetEntryValue('context', null, ['product'])]), 3);
+
+        self::assertSame([], $workingCopy->getContext());
+        self::assertSame([$refused], $result->refused);
+        self::assertTrue($result->reverted);
+        self::assertSame(3, $result->saved->lockToken);
+        $this->savedChangeSets->record(Argument::cetera())->shouldNotHaveBeenCalled();
+        $this->workingCopies->save(Argument::cetera())->shouldNotHaveBeenCalled();
+    }
+
+    /**
+     * @test
+     */
+    public function it_checks_no_context_when_a_save_does_not_change_it(): void
+    {
+        [$snippet] = $this->snippet(['product']);
+        $this->contextCheck->blockers(Argument::cetera())->shouldNotBeCalled();
+
+        $this->autosave()->save($snippet, new ChangeSet([new SetEntryValue('title', 'en_US', 'Size guide'), new SetEntryValue('context', null, ['product'])]), 3);
+        $this->autosave()->save($this->entry, new ChangeSet([new SetValue(self::A, 'text', 'en_US', 'Hello there')]), 3);
     }
 
     /**
@@ -612,12 +693,44 @@ final class AutosaveTest extends TestCase
             $this->urlValidator->reveal(),
             $this->scheduledPublishes->reveal(),
             new ChannelLocales($this->channelRepository->reveal()),
+            $this->contextCheck->reveal(),
         );
+    }
+
+    /**
+     * A snippet that declares the context, with a working copy of its own, saved on at lock token 3
+     *
+     * @param list<string> $context
+     *
+     * @return array{Snippet, Snippet} the snippet and its working copy
+     */
+    private function snippet(array $context): array
+    {
+        $snippet = new Snippet();
+        $workingCopy = new Snippet();
+        $workingCopy->setContext($context);
+        ChannelsAndAudience::modifier()->setChannels($workingCopy, ['WEB']);
+
+        $this->managerRegistry->getManagerForClass(Snippet::class)->willReturn($this->manager->reveal());
+        $this->manager->lock($snippet, LockMode::PESSIMISTIC_WRITE)->will($this->record('lock to write'));
+        $this->manager->refresh($snippet)->will($this->record('read again'));
+        $this->workingCopies->getWorkingCopy($snippet)->willReturn($workingCopy);
+        $this->workingCopies->save($snippet, $workingCopy)->will($this->record('save working copy'));
+        $this->scheduledPublishes->findOneByEntry($snippet)->willReturn(null);
+        $this->savedChangeSets->findLatestLockToken($snippet)->willReturn(3);
+        $this->savedChangeSets->findChangeSetsSince($snippet, 3)->willReturn([]);
+        $this->savedChangeSets->findLatestLockToken($this->entry)->willReturn(3);
+        $this->savedChangeSets->findChangeSetsSince($this->entry, 3)->willReturn([]);
+
+        return [$snippet, $workingCopy];
     }
 
     private static function contentTypes(): ContentTypeRegistry
     {
-        return new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]);
+        return new ContentTypeRegistry([
+            'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+            'snippet' => ['model' => Snippet::class, 'translation' => EntryTranslation::class, 'resource' => 'setono_sylius_cms.snippet'],
+        ]);
     }
 
     /**

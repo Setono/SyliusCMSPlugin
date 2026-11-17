@@ -42,7 +42,7 @@ final readonly class EntryDenormalizer
             throw new InvalidEntryFormatException(sprintf('The data is not the entry %s of the content type "%s"', $entry->getUuid(), $contentType->code));
         }
 
-        $noindex = self::noindex(self::map($data['fields'] ?? [], 'The fields'));
+        $shared = self::sharedFields(self::map($data['fields'] ?? [], 'The fields'), EntryFields::shared($contentType));
         $translations = self::map($data['translations'] ?? null, 'The translations');
         // Translations are indexed by locale
         foreach ($entry->getTranslations()->toArray() as $localeCode => $translation) {
@@ -72,8 +72,8 @@ final readonly class EntryDenormalizer
             $translation->setTranslated(self::translated($translationData['translated'] ?? [], $localeCode));
         }
 
-        if ($contentType->hasOwnUrl()) {
-            $entry->setNoindex($noindex);
+        foreach ($shared as $field => $value) {
+            EntryFields::writeShared($entry, $field, $value);
         }
 
         try {
@@ -131,21 +131,28 @@ final readonly class EntryDenormalizer
     }
 
     /**
-     * "Hide from search engines", from the shared fields. An entry without it, such as a draft saved before the SEO
-     * fields came, has it off
+     * The values of the content type's shared base fields, such as "Hide from search engines" and a snippet's context. An
+     * entry without one, such as a draft saved before the SEO fields came, has its default: off, or no context keys
      *
-     * @param array<string, mixed> $fields
+     * @param array<string, mixed> $data
+     * @param list<string> $fields
+     *
+     * @return array<string, bool|list<string>>
      *
      * @throws InvalidEntryFormatException
      */
-    private static function noindex(array $fields): bool
+    private static function sharedFields(array $data, array $fields): array
     {
-        $noindex = $fields['noindex'] ?? false;
-        if (!is_bool($noindex)) {
-            throw new InvalidEntryFormatException('The field noindex must be true or false');
+        $values = [];
+        foreach ($fields as $field) {
+            try {
+                $values[$field] = EntryFields::sharedValue($field, $data[$field] ?? null);
+            } catch (\InvalidArgumentException $e) {
+                throw new InvalidEntryFormatException(sprintf('The field %s %s', $field, $e->getMessage()), previous: $e);
+            }
         }
 
-        return $noindex;
+        return $values;
     }
 
     /**

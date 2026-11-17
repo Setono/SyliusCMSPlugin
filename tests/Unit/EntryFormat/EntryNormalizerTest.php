@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 
@@ -119,6 +120,18 @@ final class EntryNormalizerTest extends TestCase
     /**
      * @test
      */
+    public function it_writes_the_context_a_snippet_declares(): void
+    {
+        $snippet = new Snippet();
+        $snippet->setContext(['product']);
+
+        self::assertStringContainsString('"fields":{"context":["product"]}', CanonicalJson::encode($this->normalizer()->normalize($snippet)));
+        self::assertStringContainsString('"fields":{"context":[]}', CanonicalJson::encode($this->normalizer()->normalize(new Snippet())));
+    }
+
+    /**
+     * @test
+     */
     public function it_writes_an_entry_without_translations_with_an_empty_map(): void
     {
         self::assertStringContainsString('"translations":{}', CanonicalJson::encode($this->normalizer()->normalize(new Page())));
@@ -129,6 +142,7 @@ final class EntryNormalizerTest extends TestCase
         return new EntryNormalizer(new ContentTypeRegistry([
             'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
+            'snippet' => ['model' => Snippet::class, 'translation' => null, 'resource' => 'setono_sylius_cms.snippet'],
         ]));
     }
 }

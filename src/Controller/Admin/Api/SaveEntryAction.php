@@ -26,7 +26,9 @@ use Symfony\Component\HttpFoundation\Response;
  * carries the lock token from the builder's last load. When colleagues saved since, the save is merged onto theirs, and
  * the answer carries the working copy with their changes, for the builder to pull in, and the clashes. A slug whose URL
  * another route takes isn't saved, and the answer carries why, by locale, in `refused`, for the builder to show on the
- * slug field. While a scheduled publish locks the draft, it saves nothing and answers 423
+ * slug field. A change of a snippet's declared context that something is in the way of isn't saved either: `refused`
+ * lists what's in the way, in the field context, and the answer carries the working copy, for the builder to pull in,
+ * which takes the change back. While a scheduled publish locks the draft, it saves nothing and answers 423
  */
 final readonly class SaveEntryAction
 {
@@ -62,7 +64,7 @@ final readonly class SaveEntryAction
             'lockToken' => $result->saved->lockToken,
         ];
 
-        if ($result->merged) {
+        if ($result->merged || $result->reverted) {
             $answer['entry'] = $this->entryNormalizer->normalize($result->saved->workingCopy);
             $answer['clashes'] = array_map(static fn (Clash $clash): ListedObject => new ListedObject($clash->toArray()), $result->clashes);
         }

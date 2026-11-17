@@ -116,8 +116,8 @@ final readonly class ChangeSetApplier
     }
 
     /**
-     * The change to a field of the entry shared by all translations, such as "Hide from search engines", once the value
-     * is known to fit. Removing the value switches it off
+     * The change to a field of the entry shared by all translations, such as "Hide from search engines" or a snippet's
+     * declared context, once the value is known to fit. Removing the value gives it its default: off, or no context keys
      *
      * @return \Closure(EntryInterface): void
      */
@@ -127,13 +127,13 @@ final readonly class ChangeSetApplier
             throw new InvalidChangeSetException(sprintf('The entry field "%s" is shared by all translations, so a value takes no locale', $change->field));
         }
 
-        if (null !== $change->value && !is_bool($change->value)) {
-            throw new InvalidChangeSetException(sprintf('The entry field "%s" must be true, false or null', $change->field));
+        try {
+            $value = EntryFields::sharedValue($change->field, $change->value);
+        } catch (\InvalidArgumentException $e) {
+            throw new InvalidChangeSetException(sprintf('The entry field "%s" %s', $change->field, $e->getMessage()), previous: $e);
         }
 
-        $value = true === $change->value;
-
-        return static fn (EntryInterface $entry) => $entry->setNoindex($value);
+        return static fn (EntryInterface $entry) => EntryFields::writeShared($entry, $change->field, $value);
     }
 
     /**
