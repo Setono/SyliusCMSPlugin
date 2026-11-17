@@ -10,6 +10,9 @@ namespace Setono\SyliusCMSPlugin\Model;
  */
 interface SnippetInterface extends EntryInterface
 {
+    /** The code of its content type */
+    public const CONTENT_TYPE = 'snippet';
+
     /**
      * The host-page context it needs, as context keys, such as ['product'] for product pages, or [] for any page. It can
      * be placed only in a slot that provides at least these keys

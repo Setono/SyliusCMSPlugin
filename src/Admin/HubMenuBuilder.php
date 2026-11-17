@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Admin;
 
 use Knp\Menu\FactoryInterface;
 use Knp\Menu\ItemInterface;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Sylius\Bundle\UiBundle\Menu\Event\MenuBuilderEvent;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -56,10 +57,10 @@ final readonly class HubMenuBuilder
         ;
 
         $entries
-            ->addChild('snippet', ['route' => 'setono_sylius_cms_admin_entry_index', 'routeParameters' => ['contentType' => 'snippet']])
+            ->addChild('snippet', ['route' => 'setono_sylius_cms_admin_entry_index', 'routeParameters' => ['contentType' => SnippetInterface::CONTENT_TYPE]])
             ->setLabel('setono_sylius_cms.menu.admin.hub.snippets')
             ->setLabelAttribute('icon', 'puzzle piece')
-            ->setExtra('count', $this->entryRepository->countEntries('snippet'))
+            ->setExtra('count', $this->entryRepository->countEntries(SnippetInterface::CONTENT_TYPE))
         ;
 
         $library = $menu->addChild('library')->setLabel('setono_sylius_cms.menu.admin.hub.library');

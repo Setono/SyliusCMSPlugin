@@ -695,7 +695,7 @@ final class Configuration implements ConfigurationInterface
                     ->append(self::resourceWithoutController('bestseller_score', BestsellerScore::class, BestsellerScoreInterface::class))
                     ->append(self::resourceWithoutController('placement', Placement::class, PlacementInterface::class, PlacementRepository::class, PlacementFactory::class))
                     ->append(self::contentTypeResource('page', Page::class, PageInterface::class, PageTranslation::class, PageTranslationInterface::class))
-                    ->append(self::contentTypeResource('snippet', Snippet::class, SnippetInterface::class, EntryTranslation::class, EntryTranslationInterface::class))
+                    ->append(self::contentTypeResource(SnippetInterface::CONTENT_TYPE, Snippet::class, SnippetInterface::class, EntryTranslation::class, EntryTranslationInterface::class))
                 ->end()
             ->end()
         ;

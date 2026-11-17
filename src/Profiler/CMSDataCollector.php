@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Profiler;
 use Setono\SyliusCMSPlugin\Context\EntryTitle;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PlacementInterface;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Query\NotVisibleReason;
 use Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
@@ -239,7 +240,7 @@ final class CMSDataCollector extends DataCollector
 
         $reasons = [];
         if ([] !== $notVisible && null !== $trace->renderContext) {
-            foreach ($this->visibleEntries->whyNotVisible('snippet', array_values($notVisible), $trace->renderContext) as $uuid => $reason) {
+            foreach ($this->visibleEntries->whyNotVisible(SnippetInterface::CONTENT_TYPE, array_values($notVisible), $trace->renderContext) as $uuid => $reason) {
                 $reasons[$uuid] = $reason->value;
             }
         }

@@ -13,9 +13,6 @@ use Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface;
  */
 final readonly class VisibleSnippets implements VisibleSnippetsInterface
 {
-    /** The code of the built-in content type */
-    private const CONTENT_TYPE = 'snippet';
-
     public function __construct(private VisibleEntriesQueryInterface $visibleEntries)
     {
     }
@@ -27,7 +24,7 @@ final readonly class VisibleSnippets implements VisibleSnippetsInterface
         }
 
         /** @var list<mixed> $entries */
-        $entries = $this->visibleEntries->createQueryBuilder(self::CONTENT_TYPE, $context)
+        $entries = $this->visibleEntries->createQueryBuilder(SnippetInterface::CONTENT_TYPE, $context)
             ->andWhere('entry.uuid IN (:snippets)')
             ->setParameter('snippets', $uuids)
             ->getQuery()

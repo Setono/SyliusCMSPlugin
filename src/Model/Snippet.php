@@ -13,7 +13,7 @@ use Setono\SyliusCMSPlugin\Attribute\ContentType;
  * docs/spec/content-model.md
  */
 #[ContentType(
-    code: 'snippet',
+    code: self::CONTENT_TYPE,
     label: 'setono_sylius_cms.content_type.snippet',
     blocks: [new Allow('*')],
 )]
