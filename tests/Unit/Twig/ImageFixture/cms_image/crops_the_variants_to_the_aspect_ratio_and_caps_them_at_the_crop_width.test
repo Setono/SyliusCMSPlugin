@@ -1,10 +1,12 @@
 --TEST--
-cms_image() crops the variants to the aspect ratio the template gives, around the focal point, and caps them at the width of the source's crop, so a square of a 2400 by 1600 source goes up to 1600
+cms_image() crops the variants to the aspect ratio the template gives, around the focal point, and caps them at the width of the source's crop, so a square of a 2400 by 1600 source goes up to 1600, and so does its rendered width
 --TEMPLATE--
 {{ cms_image(image, {width: 400, aspect_ratio: 1}) }}
 {{ cms_image(image, {layout: 'full_width', aspect_ratio: 1}) }}
+{{ cms_image(image, {width: 2000, aspect_ratio: 1}) }}
 --DATA--
 return $this->rendering(['image' => $this->image(2400, 1600)])
 --EXPECT--
 <img src="/webp/640x640/summer-sale.jpg" srcset="/webp/320x320/summer-sale.jpg 320w, /webp/640x640/summer-sale.jpg 640w, /webp/960x960/summer-sale.jpg 960w" sizes="(min-width: 400px) 400px, 100vw" width="400" height="400" alt="A beach at dawn" loading="lazy" decoding="async">
-<img src="/webp/1600x1600/summer-sale.jpg" srcset="/webp/320x320/summer-sale.jpg 320w, /webp/640x640/summer-sale.jpg 640w, /webp/960x960/summer-sale.jpg 960w, /webp/1280x1280/summer-sale.jpg 1280w, /webp/1600x1600/summer-sale.jpg 1600w" sizes="100vw" width="2400" height="2400" alt="A beach at dawn" loading="lazy" decoding="async">
+<img src="/webp/1600x1600/summer-sale.jpg" srcset="/webp/320x320/summer-sale.jpg 320w, /webp/640x640/summer-sale.jpg 640w, /webp/960x960/summer-sale.jpg 960w, /webp/1280x1280/summer-sale.jpg 1280w, /webp/1600x1600/summer-sale.jpg 1600w" sizes="100vw" width="1600" height="1600" alt="A beach at dawn" loading="lazy" decoding="async">
+<img src="/webp/1600x1600/summer-sale.jpg" srcset="/webp/320x320/summer-sale.jpg 320w, /webp/640x640/summer-sale.jpg 640w, /webp/960x960/summer-sale.jpg 960w, /webp/1280x1280/summer-sale.jpg 1280w, /webp/1600x1600/summer-sale.jpg 1600w" sizes="(min-width: 1600px) 1600px, 100vw" width="1600" height="1600" alt="A beach at dawn" loading="lazy" decoding="async">

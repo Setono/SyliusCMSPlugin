@@ -16,7 +16,8 @@ use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 final readonly class ImageRendition
 {
     /**
-     * @param int|null $width the rendered width, or null when neither the options nor the image give one
+     * @param int|null $width the rendered width, or null when neither the options nor the image give one. An image with
+     *                       variants renders no wider than the widest of them
      * @param int|null $height the rendered height, or null when the aspect ratio isn't known
      * @param list<int<1, max>> $widths the variants' widths in ascending order, or none for an image without variants
      * @param float|null $aspectRatio the one the variants are cropped to, or null for the source's
@@ -51,8 +52,14 @@ final readonly class ImageRendition
             return new self($imageProvider, $mediaItem, $options->layout, $width, $height, [], null, null);
         }
 
-        // The widest a variant can be without upscaling: the source's width, or its crop's at another aspect ratio
+        // The widest a variant can be without upscaling: the source's width, or its crop's at another aspect ratio. The
+        // image renders no wider than that either, so its box matches the widest variant it's offered
         $maxWidth = null === $aspectRatio ? $sourceWidth : max(1, min($sourceWidth, (int) floor($sourceHeight * $aspectRatio)));
+        if ($width > $maxWidth) {
+            $width = $maxWidth;
+            $height = null === $renderedAspectRatio ? null : max(1, (int) round($width / $renderedAspectRatio));
+        }
+
         $sizes = ImageLayout::Fixed === $options->layout ? null : ($options->sizes ?? $options->layout->sizes($width));
 
         return new self(
