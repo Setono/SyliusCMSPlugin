@@ -46,23 +46,7 @@ final readonly class SourceResolver
      */
     public function references(string $code, array $params): array
     {
-        if (!$this->sources->has($code)) {
-            return [];
-        }
-
-        $references = [];
-        foreach ($this->sources->get($code)->fields as $name => $field) {
-            $value = $params[$name] ?? null;
-            if (null === $value) {
-                continue;
-            }
-
-            foreach ($this->fieldHandlers->get($field->field)->references($field->field, $value) as $reference) {
-                $references[] = $reference;
-            }
-        }
-
-        return $references;
+        return $this->sources->has($code) ? $this->paramsHydrator->references($this->sources->get($code)->fields, $params) : [];
     }
 
     /**

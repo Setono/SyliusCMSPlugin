@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\DateHandler;
 use Setono\SyliusCMSPlugin\Field\DateTimeHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\ProductHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
@@ -73,6 +74,7 @@ final class Conditions
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator(), $providers),
             DateHandler::class => static fn (): DateHandler => new DateHandler(),
             DateTimeHandler::class => static fn (): DateTimeHandler => new DateTimeHandler(),
+            ProductHandler::class => static fn (): ProductHandler => new ProductHandler(),
         ]));
     }
 }

@@ -7,10 +7,14 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Condition;
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Condition\ConditionMatcher;
+use Setono\SyliusCMSPlugin\Field\Reference;
+use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
+use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ProductAvailable;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
+use Sylius\Component\Core\Model\ProductInterface;
 
 final class ConditionMatcherTest extends TestCase
 {
@@ -111,6 +115,42 @@ final class ConditionMatcherTest extends TestCase
         self::assertFalse($this->matcher()->matches($condition, $this->context('en_US', now: '2026-11-26T23:59:59Z')));
         self::assertTrue($this->matcher()->matches($condition, $this->context('en_US', now: '2026-11-27T00:00:00Z')));
         self::assertFalse($this->matcher()->matches($condition, $this->context('en_US', now: '2026-12-01T00:00:00Z')));
+    }
+
+    /**
+     * A project's condition kind can take a product, a taxon or a media item, which loads with the tree's references
+     *
+     * @test
+     */
+    public function it_hydrates_a_reference_parameter_from_the_references_loaded_before_rendering(): void
+    {
+        $product = $this->prophesize(ProductInterface::class)->reveal();
+        $condition = ['kind' => 'product_available', 'negate' => false, 'params' => ['product' => 'T_SHIRT']];
+        $loaded = new ReferenceMap(['product' => ['T_SHIRT' => $product]]);
+        $matcher = Conditions::matcher(['product_available' => new ProductAvailable()]);
+
+        self::assertTrue($matcher->matches($condition, $this->context('en_US'), $loaded));
+        self::assertTrue($matcher->matchesAll([$condition], $this->context('en_US'), $loaded));
+        self::assertFalse($matcher->matches($condition, $this->context('en_US'), new ReferenceMap()), 'A product the shopper may not see is not loaded');
+        self::assertFalse($matcher->matchesAll([$condition], $this->context('en_US')), 'Without references nothing resolves');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lists_the_references_in_the_parameters_of_the_conditions_whose_kind_it_has(): void
+    {
+        $matcher = Conditions::matcher(['product_available' => new ProductAvailable()]);
+
+        $references = $matcher->references([
+            ['kind' => 'product_available', 'negate' => false, 'params' => ['product' => 'T_SHIRT']],
+            self::localeIs(['da_DK']),
+            ['kind' => 'removed', 'negate' => false, 'params' => ['product' => 'MUG']],
+            ['kind' => 'product_available', 'negate' => true, 'params' => new \stdClass()],
+            ['kind' => 'product_available', 'negate' => true, 'params' => ['product' => 'CAP']],
+        ]);
+
+        self::assertEquals([new Reference('product', 'T_SHIRT', false), new Reference('product', 'CAP', false)], [...$references]);
     }
 
     /**

@@ -34,6 +34,7 @@ use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
+use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ProductAvailable;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Standard;
@@ -78,19 +79,20 @@ final class LayoutRendererTest extends TestCase
     /**
      * @test
      */
-    public function it_loads_the_references_of_the_layout_and_the_blocks_together_before_it_renders(): void
+    public function it_loads_the_references_of_the_layout_the_blocks_and_their_conditions_together_before_it_renders(): void
     {
         $page = new Page();
         $hero = new MediaItem();
         $hero->setKind(MediaKind::Image);
         $hero->setName('Summer');
-        $tree = new StoredTree(new StoredLayout('hero', 1, ['image' => self::HERO]), [new StoredBlock(self::KEY, 'gallery', 1, fields: ['cover' => self::COVER])]);
+        $tree = new StoredTree(new StoredLayout('hero', 1, ['image' => self::HERO]), [new StoredBlock(self::KEY, 'gallery', 1, fields: ['cover' => self::COVER], conditions: [['kind' => 'product_available', 'negate' => true, 'params' => ['product' => 'T_SHIRT']]])]);
         $context = $this->context();
 
         $loader = $this->prophesize(ReferenceLoaderInterface::class);
         $loader->load(Argument::that(static fn (iterable $references): bool => [
             ['media_item', self::HERO, true],
             ['media_item', self::COVER, true],
+            ['product', 'T_SHIRT', false],
         ] === self::references($references)), $context)
             ->willReturn(new ReferenceMap(['media_item' => [self::HERO => $hero]]))
             ->shouldBeCalledOnce()
@@ -193,7 +195,7 @@ final class LayoutRendererTest extends TestCase
             $contentTypes->reveal(),
             $layouts,
             $upgrader->reveal(),
-            new BlockViewBuilder($blockTypes, $hydrator, Conditions::matcher(), $referenceFinder, $referenceLoader),
+            new BlockViewBuilder($blockTypes, $hydrator, Conditions::matcher(['product_available' => new ProductAvailable()]), $referenceFinder, $referenceLoader),
             $hydrator,
             new Environment(new ArrayLoader([
                 'standard.html.twig' => 'standard|{{ layout.showTitle ? "title" : "no title" }}',
