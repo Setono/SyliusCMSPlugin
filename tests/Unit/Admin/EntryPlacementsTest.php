@@ -12,20 +12,31 @@ use Setono\SyliusCMSPlugin\Admin\EntryPlacement;
 use Setono\SyliusCMSPlugin\Admin\EntryPlacements;
 use Setono\SyliusCMSPlugin\Admin\PageScopeCondition;
 use Setono\SyliusCMSPlugin\Admin\PageScopeSummaries;
+use Setono\SyliusCMSPlugin\Admin\SlotOrder;
+use Setono\SyliusCMSPlugin\Admin\WinsFor;
+use Setono\SyliusCMSPlugin\Admin\WinsWhen;
 use Setono\SyliusCMSPlugin\Condition\Kind\ProductKind;
 use Setono\SyliusCMSPlugin\Condition\Kind\TaxonKind;
 use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\ListFieldHandler;
+use Setono\SyliusCMSPlugin\Homepage\CMSHomepageChannels;
+use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\Placement;
 use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
+use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
+use Setono\SyliusCMSPlugin\Targeting\Audience;
+use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
+use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
+use Sylius\Component\Core\Model\Channel;
+use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\IdentityTranslator;
 
@@ -39,12 +50,20 @@ final class EntryPlacementsTest extends TestCase
     /** @var ObjectProphecy<DeclaredContextInterface> */
     private ObjectProphecy $declaredContext;
 
+    /** @var ObjectProphecy<HomepageRepositoryInterface> */
+    private ObjectProphecy $homepages;
+
+    /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> */
+    private ObjectProphecy $channels;
+
     protected function setUp(): void
     {
         $this->placements = $this->prophesize(PlacementRepositoryInterface::class);
         // What the snippet's rows declare, unless a test drafts more
         $this->declaredContext = $this->prophesize(DeclaredContextInterface::class);
         $this->declaredContext->toPlace(Argument::type(SnippetInterface::class))->will(static fn (array $arguments): array => $arguments[0] instanceof SnippetInterface ? $arguments[0]->getContext() : []);
+        $this->homepages = $this->prophesize(HomepageRepositoryInterface::class);
+        $this->channels = $this->prophesize(ChannelRepositoryInterface::class);
     }
 
     /**
@@ -102,7 +121,7 @@ final class EntryPlacementsTest extends TestCase
         $this->placements->findBySnippet($productPages)->willReturn([]);
         $this->placements->findBySlots([])->willReturn([]);
 
-        self::assertSame(['shop.top', 'shop.footer', 'product.after_price'], self::identifiers($this->entryPlacements()->of($anyPage)->offeredSlots ?? []));
+        self::assertSame(['shop.top', 'shop.footer', 'store_homepage', 'product.after_price'], self::identifiers($this->entryPlacements()->of($anyPage)->offeredSlots ?? []));
         self::assertSame(['product.after_price'], self::identifiers($this->entryPlacements()->of($productPages)->offeredSlots ?? []));
     }
 
@@ -148,6 +167,94 @@ final class EntryPlacementsTest extends TestCase
     }
 
     /**
+     * In a capped slot, a placement within the first `cap` wins wherever it matches, one after them wins where fewer
+     * than `cap` placements above it match, and one after `cap` catch-alls never wins. In a slot that isn't capped,
+     * every placement shows wherever it matches. Each wins for its snippet's audience. See "Placements" in
+     * docs/spec/admin.md
+     *
+     * @test
+     */
+    public function it_says_who_each_placement_wins_for_by_its_snippet_s_audience_and_the_catch_all_placements_above_it(): void
+    {
+        $snippet = self::snippetFor(Audience::only('wholesale'));
+        $everyone = new Snippet();
+        $first = new Placement($snippet, 'shop.top', 0);
+        $catchAll = new Placement($everyone, 'shop.top', 1);
+        $afterCatchAll = new Placement($snippet, 'shop.top', 2);
+        $scoped = new Placement($everyone, 'product.after_price', 0);
+        $scoped->setPageScope([['kind' => 'product', 'negate' => false, 'params' => ['products' => ['MUG']]]]);
+        $afterScoped = new Placement($snippet, 'product.after_price', 1);
+        $inFooter = new Placement($snippet, 'shop.footer', 5);
+        $removed = new Placement($snippet, 'shop.removed', 0);
+        $this->placements->findBySnippet($snippet)->willReturn([$afterScoped, $inFooter, $removed, $first, $afterCatchAll]);
+        $this->placements->findBySlots(['product.after_price', 'shop.footer', 'shop.removed', 'shop.top'])->willReturn([$scoped, $afterScoped, $inFooter, $removed, $first, $catchAll, $afterCatchAll]);
+
+        $section = $this->entryPlacements(['shop.top' => 1, 'product.after_price' => 1])->of($snippet);
+
+        self::assertNotNull($section);
+        $wholesale = Audience::only('wholesale');
+        self::assertEquals([
+            [$first, new WinsFor($wholesale, WinsWhen::Matching, 1)],
+            [$afterCatchAll, new WinsFor($wholesale, WinsWhen::Never, 1)],
+            [$inFooter, new WinsFor($wholesale, WinsWhen::Matching, null)],
+            [$afterScoped, new WinsFor($wholesale, WinsWhen::FewerAboveMatch, 1)],
+            [$removed, null],
+        ], array_map(static fn (EntryPlacement $placement): array => [$placement->placement, $placement->winsFor], $section->placements));
+    }
+
+    /**
+     * The Order… dialog of each capped slot the snippet is in: every placement in the slot, of every snippet, with the
+     * slot's warnings. See "Placements" in docs/spec/admin.md
+     *
+     * @test
+     */
+    public function it_gives_each_capped_slot_the_snippet_is_placed_in_its_order_of_every_snippet_s_placements_and_its_warnings(): void
+    {
+        $snippet = self::snippetFor(Audience::only('wholesale'));
+        $other = new Snippet();
+        $othersFirst = new Placement($other, 'store_homepage', 0);
+        $othersFirst->setPageScope([['kind' => 'removed', 'negate' => false, 'params' => []]]);
+        $inHomepage = new Placement($snippet, 'store_homepage', 1);
+        $inTop = new Placement($snippet, 'shop.top', 0);
+        $othersCatchAll = new Placement($other, 'shop.top', 1);
+        $againInTop = new Placement($snippet, 'shop.top', 2);
+        $this->placements->findBySnippet($snippet)->willReturn([$inTop, $againInTop, $inHomepage, new Placement($snippet, 'shop.footer', 0)]);
+        $this->placements->findBySlots(['shop.footer', 'shop.top', 'store_homepage'])->willReturn([$inTop, $othersCatchAll, $againInTop, $othersFirst, $inHomepage]);
+        $this->channels->findAll()->willReturn([self::channel('WEB', 'Web store'), self::channel('B2B', 'Wholesale')]);
+        $this->homepages->findByChannelCodes(['B2B', 'WEB'])->willReturn([new Homepage(new Page(), 'WEB')]);
+        $this->channels->findBy(['code' => ['WEB']])->willReturn([self::channel('WEB', 'Web store')]);
+
+        $section = $this->entryPlacements(['shop.top' => 1, 'store_homepage' => 2])->of($snippet);
+
+        self::assertNotNull($section);
+        self::assertSame([
+            ['shop.top', [$inTop, $othersCatchAll, $againInTop], [1, 2, 3], false, []],
+            ['store_homepage', [$othersFirst, $inHomepage], [1, 2], true, ['Web store']],
+        ], array_map(static fn (SlotOrder $order): array => [
+            $order->slot->identifier,
+            array_map(static fn (EntryPlacement $placement): object => $placement->placement, $order->placements),
+            array_map(static fn (EntryPlacement $placement): int => $placement->position, $order->placements),
+            $order->withoutCatchAll,
+            $order->hiddenByHomepageIn,
+        ], $section->slotOrders));
+        self::assertSame('removed', $section->slotOrders[1]->placements[0]->pageScope[0]->kind ?? null, "Another snippet's placement has its page scope worded");
+    }
+
+    /**
+     * @test
+     */
+    public function it_gives_no_order_to_a_snippet_placed_in_no_capped_slot(): void
+    {
+        $snippet = new Snippet();
+        $inFooter = new Placement($snippet, 'shop.footer', 0);
+        $this->placements->findBySnippet($snippet)->willReturn([$inFooter]);
+        $this->placements->findBySlots(['shop.footer'])->willReturn([$inFooter]);
+        $this->homepages->findByChannelCodes(Argument::cetera())->shouldNotBeCalled();
+
+        self::assertSame([], $this->entryPlacements(['shop.top' => 1])->of($snippet)?->slotOrders);
+    }
+
+    /**
      * @test
      */
     public function it_has_no_placements_section_for_an_entry_that_is_not_a_snippet(): void
@@ -165,16 +272,20 @@ final class EntryPlacementsTest extends TestCase
         return array_map(static fn (SlotMetadata $slot): string => $slot->identifier, $slots);
     }
 
-    private function entryPlacements(): EntryPlacements
+    /**
+     * @param array<string, int> $caps the caps of the slots that have one, by identifier
+     */
+    private function entryPlacements(array $caps = []): EntryPlacements
     {
         $conditionKinds = Conditions::registry(['product' => new ProductKind(), 'taxon' => new TaxonKind()]);
 
         return new EntryPlacements(
             $this->placements->reveal(),
             new SlotRegistry([
-                'shop.top' => ['label' => 'setono_sylius_cms.slot.shop.top', 'provides' => [], 'cap' => null],
+                'shop.top' => ['label' => 'setono_sylius_cms.slot.shop.top', 'provides' => [], 'cap' => $caps['shop.top'] ?? null],
                 'shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null],
-                'product.after_price' => ['label' => 'setono_sylius_cms.slot.product.after_price', 'provides' => ['product'], 'cap' => null],
+                'store_homepage' => ['label' => 'setono_sylius_cms.slot.store_homepage', 'provides' => [], 'cap' => $caps['store_homepage'] ?? null, 'template_event' => ['name' => 'sylius.shop.homepage', 'priority' => 100]],
+                'product.after_price' => ['label' => 'setono_sylius_cms.slot.product.after_price', 'provides' => ['product'], 'cap' => $caps['product.after_price'] ?? null],
             ]),
             $this->declaredContext->reveal(),
             $conditionKinds,
@@ -184,6 +295,24 @@ final class EntryPlacementsTest extends TestCase
                 new ServiceLocator([]),
                 new IdentityTranslator(),
             ),
+            new CMSHomepageChannels($this->homepages->reveal(), $this->channels->reveal()),
         );
+    }
+
+    private static function snippetFor(Audience $audience): Snippet
+    {
+        $snippet = new Snippet();
+        ChannelsAndAudience::modifier()->setAudience($snippet, $audience);
+
+        return $snippet;
+    }
+
+    private static function channel(string $code, string $name): ChannelInterface
+    {
+        $channel = new Channel();
+        $channel->setCode($code);
+        $channel->setName($name);
+
+        return $channel;
     }
 }

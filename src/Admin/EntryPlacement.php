@@ -8,7 +8,8 @@ use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 
 /**
- * One of a snippet's placements as the Placements section of its overview page lists it
+ * One of a snippet's placements as the Placements section of its overview page lists it, or one of a capped slot's as
+ * its Order… dialog lists it
  */
 final readonly class EntryPlacement
 {
@@ -27,6 +28,7 @@ final readonly class EntryPlacement
      * @param list<string> $scopeKinds the codes of the condition kinds its page scope may hold: those that read the
      *                                 host page and whose needs its slot provides, none in a slot the code no longer
      *                                 declares
+     * @param WinsFor|null $winsFor who it wins its slot for, or null in a slot the code no longer declares
      */
     public function __construct(
         public PlacementInterface $placement,
@@ -35,6 +37,7 @@ final readonly class EntryPlacement
         public int $count,
         public array $pageScope = [],
         public array $scopeKinds = [],
+        public ?WinsFor $winsFor = null,
     ) {
         $this->first = 1 === $position;
         $this->last = $position === $count;

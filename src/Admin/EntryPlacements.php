@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Admin;
 
 use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
+use Setono\SyliusCMSPlugin\Homepage\CMSHomepageChannels;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
@@ -16,8 +17,10 @@ use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 
 /**
  * The placements of a snippet, which the Placements section of its overview page lists through
- * cms_admin_entry_placements(), each with its place among its slot's placements of every snippet, its page scope and the
- * condition kinds its page scope may hold, and the slots Add placement offers. See "Placements" in docs/spec/admin.md
+ * cms_admin_entry_placements(), each with its place among its slot's placements of every snippet, its page scope, the
+ * condition kinds its page scope may hold and who it wins for, the slots Add placement offers, and for each capped slot
+ * it's in, every placement in the slot and the slot's warnings, for its Order… dialog. See "Placements" in
+ * docs/spec/admin.md
  */
 final readonly class EntryPlacements
 {
@@ -27,6 +30,7 @@ final readonly class EntryPlacements
         private DeclaredContextInterface $declaredContext,
         private ConditionKindRegistryInterface $conditionKinds,
         private PageScopeSummaries $pageScopes,
+        private CMSHomepageChannels $cmsHomepageChannels,
     ) {
     }
 
@@ -44,32 +48,66 @@ final readonly class EntryPlacements
         $slots = array_values(array_unique(array_map(static fn (PlacementInterface $placement): string => $placement->getSlot(), $placements)));
         sort($slots);
 
-        /** @var array<string, list<string>> $inSlots slot identifier => the UUIDs of its placements of every snippet, in order */
+        /** @var array<string, list<PlacementInterface>> $inSlots slot identifier => its placements of every snippet, in order */
         $inSlots = [];
         if ([] !== $slots) {
             foreach ($this->placements->findBySlots($slots) as $placement) {
-                $inSlots[$placement->getSlot()][] = $placement->getUuid();
+                $inSlots[$placement->getSlot()][] = $placement;
             }
         }
 
-        $pageScopes = $this->pageScopes->of($placements);
+        $cappedSlots = array_values(array_filter(
+            $this->slots->all(),
+            static fn (SlotMetadata $slot): bool => null !== $slot->cap && isset($inSlots[$slot->identifier]),
+        ));
 
-        $listed = array_map(function (PlacementInterface $placement) use ($inSlots, $pageScopes): EntryPlacement {
-            $inSlot = $inSlots[$placement->getSlot()] ?? [$placement->getUuid()];
-            $index = array_search($placement->getUuid(), $inSlot, true);
-            $slot = $this->slots->has($placement->getSlot()) ? $this->slots->get($placement->getSlot()) : null;
+        // The other snippets' placements in the capped slots are worded with the snippet's own, for the Order… dialogs
+        $pageScopes = $this->pageScopes->of([...$placements, ...array_merge(...array_map(static fn (SlotMetadata $slot): array => $inSlots[$slot->identifier] ?? [], $cappedSlots))]);
 
-            return new EntryPlacement(
-                $placement,
-                $slot,
-                false === $index ? count($inSlot) : $index + 1,
-                count($inSlot),
-                $pageScopes[$placement->getUuid()] ?? [],
-                null === $slot ? [] : $this->scopeKinds($slot),
-            );
-        }, $placements);
+        $listed = array_map(fn (PlacementInterface $placement): EntryPlacement => $this->listed($placement, $inSlots[$placement->getSlot()] ?? [$placement], $pageScopes), $placements);
 
-        return new EntryPlacementsSection(self::inDeclaredOrder($listed, $this->slots->all()), $this->slots->providing($this->declaredContext->toPlace($entry)));
+        $slotOrders = array_map(fn (SlotMetadata $slot): SlotOrder => new SlotOrder(
+            $slot,
+            array_map(fn (PlacementInterface $placement): EntryPlacement => $this->listed($placement, $inSlots[$slot->identifier] ?? [], $pageScopes), $inSlots[$slot->identifier] ?? []),
+            [] === array_filter($inSlots[$slot->identifier] ?? [], static fn (PlacementInterface $placement): bool => $placement->isCatchAll()),
+            $slot->isOnStoreHomepage() ? $this->cmsHomepageChannels->names() : [],
+        ), $cappedSlots);
+
+        return new EntryPlacementsSection(
+            self::inDeclaredOrder($listed, $this->slots->all()),
+            $this->slots->providing($this->declaredContext->toPlace($entry)),
+            $slotOrders,
+        );
+    }
+
+    /**
+     * The placement with its place among the slot's placements, its page scope and who it wins for
+     *
+     * @param list<PlacementInterface> $inSlot every placement in its slot, of every snippet, in order
+     * @param array<string, list<PageScopeCondition>> $pageScopes by placement UUID
+     */
+    private function listed(PlacementInterface $placement, array $inSlot, array $pageScopes): EntryPlacement
+    {
+        $index = null;
+        foreach ($inSlot as $i => $candidate) {
+            if ($candidate->getUuid() === $placement->getUuid()) {
+                $index = $i;
+
+                break;
+            }
+        }
+
+        $slot = $this->slots->has($placement->getSlot()) ? $this->slots->get($placement->getSlot()) : null;
+
+        return new EntryPlacement(
+            $placement,
+            $slot,
+            null === $index ? count($inSlot) : $index + 1,
+            count($inSlot),
+            $pageScopes[$placement->getUuid()] ?? [],
+            null === $slot ? [] : $this->scopeKinds($slot),
+            null === $slot || null === $index ? null : WinsFor::at($inSlot, $index, $slot->cap),
+        );
     }
 
     /**

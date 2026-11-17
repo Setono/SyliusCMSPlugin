@@ -88,13 +88,17 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
 
-        <!-- A snippet's placements and the slots it can be placed in, which its overview page gets through cms_admin_entry_placements() -->
+        <!--
+        A snippet's placements, the slots it can be placed in and the order of the capped slots it's in, which its overview
+        page gets through cms_admin_entry_placements()
+        -->
         <service id="Setono\SyliusCMSPlugin\Admin\EntryPlacements" class="Setono\SyliusCMSPlugin\Admin\EntryPlacements">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Context\DeclaredContextInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\PageScopeSummaries"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Homepage\CMSHomepageChannels"/>
         </service>
 
         <!-- Words placements' page scopes, naming what they refer to through the builder's searches -->
