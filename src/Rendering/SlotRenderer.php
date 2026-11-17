@@ -42,7 +42,7 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
      */
     public const TEMPLATE = '@SetonoSyliusCMSPlugin/slot/slot.html.twig';
 
-    /** @var array<string, array<string, list<PlacementData>>> channel code => slot identifier => its placements */
+    /** @var array<string, list<PlacementData>> channel code => its placements */
     private array $placements = [];
 
     public function __construct(
@@ -92,8 +92,8 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
     }
 
     /**
-     * The placements in the slot, in editor order: by position, and placements at the same position in the order the
-     * provider lists them. All of the channel's placements are read once, and every later slot reuses them
+     * The placements in the slot, in editor order. All of the channel's placements are read once, and every later slot
+     * reuses them
      *
      * @return list<PlacementData>
      */
@@ -101,17 +101,7 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
     {
         $channelCode = (string) $channel->getCode();
 
-        if (!isset($this->placements[$channelCode])) {
-            $this->placements[$channelCode] = [];
-            foreach ($this->placementProvider->getPlacements($channel) as $placement) {
-                $this->placements[$channelCode][$placement->slot][] = $placement;
-            }
-        }
-
-        $placements = $this->placements[$channelCode][$slot->identifier] ?? [];
-        usort($placements, static fn (PlacementData $a, PlacementData $b): int => $a->position <=> $b->position);
-
-        return $placements;
+        return PlacementData::inSlot($this->placements[$channelCode] ??= $this->placementProvider->getPlacements($channel), $slot->identifier);
     }
 
     /**

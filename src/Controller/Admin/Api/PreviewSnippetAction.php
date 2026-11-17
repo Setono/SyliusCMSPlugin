@@ -103,11 +103,7 @@ final readonly class PreviewSnippetAction
             return null;
         }
 
-        $inSlot = array_values(array_filter(
-            $this->placementProvider->getPlacements($context->channel),
-            static fn (PlacementData $data): bool => $data->slot === $slot->identifier,
-        ));
-        usort($inSlot, static fn (PlacementData $a, PlacementData $b): int => $a->position <=> $b->position);
+        $inSlot = PlacementData::inSlot($this->placementProvider->getPlacements($context->channel), $slot->identifier);
 
         $snippets = PreviewedSlot::shownInstead($slot, $this->placementPicker->pick($slot, $inSlot, $context), $placement->getUuid());
 

@@ -25,4 +25,20 @@ final readonly class PlacementData
         public int $position,
     ) {
     }
+
+    /**
+     * The placements in the slot, in editor order: by position, and placements at the same position in the order given,
+     * which is the provider's
+     *
+     * @param list<PlacementData> $placements
+     *
+     * @return list<PlacementData>
+     */
+    public static function inSlot(array $placements, string $slot): array
+    {
+        $inSlot = array_values(array_filter($placements, static fn (self $placement): bool => $placement->slot === $slot));
+        usort($inSlot, static fn (self $a, self $b): int => $a->position <=> $b->position);
+
+        return $inSlot;
+    }
 }
