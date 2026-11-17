@@ -23,6 +23,7 @@ use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
+use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Source\SourceInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
@@ -48,6 +49,11 @@ final class ProblemCountFingerprintTest extends TestCase
     ];
 
     private const LAYOUTS = ['page' => ['standard' => Standard::class, 'landing' => Landing::class], 'recipe' => ['landing' => RecipeLanding::class]];
+
+    private const SLOTS = [
+        'shop.top' => ['label' => 'setono_sylius_cms.slot.shop.top', 'provides' => [], 'cap' => null],
+        'shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null],
+    ];
 
     /**
      * @test
@@ -85,6 +91,8 @@ final class ProblemCountFingerprintTest extends TestCase
         yield 'the condition kinds removed' => [self::fingerprint(conditionKinds: new ConditionKindRegistry([], new FieldReader(), new ServiceLocator([])))];
         yield 'a source removed' => [self::fingerprint(sources: ['clearance' => new Clearance()])];
         yield 'a source switched off' => [self::fingerprint(disabledSources: ['clearance'])];
+        yield 'a slot removed' => [self::fingerprint(slots: ['shop.top' => self::SLOTS['shop.top']])];
+        yield 'a slot capped' => [self::fingerprint(slots: ['shop.top' => self::SLOTS['shop.top'], 'shop.footer' => ['cap' => 1] + self::SLOTS['shop.footer']])];
     }
 
     /**
@@ -134,6 +142,7 @@ final class ProblemCountFingerprintTest extends TestCase
      * @param list<string> $disabledLayouts
      * @param array<string, SourceInterface>|null $sources
      * @param list<string> $disabledSources
+     * @param array<string, array{label: string, provides: list<string>, cap: int|null}> $slots
      */
     private static function fingerprint(
         array $kinds = self::KINDS,
@@ -145,6 +154,7 @@ final class ProblemCountFingerprintTest extends TestCase
         ?ConditionKindRegistryInterface $conditionKinds = null,
         ?array $sources = null,
         array $disabledSources = [],
+        array $slots = self::SLOTS,
     ): ProblemCountFingerprint {
         return new ProblemCountFingerprint(
             $kinds,
@@ -153,6 +163,7 @@ final class ProblemCountFingerprintTest extends TestCase
             new LayoutRegistry($layouts, new FieldReader(), disabled: $disabledLayouts),
             $conditionKinds ?? Conditions::registry(),
             Sources::registry($sources ?? ['on_sale' => new OnSale(), 'clearance' => new Clearance()], $disabledSources),
+            new SlotRegistry($slots),
         );
     }
 }

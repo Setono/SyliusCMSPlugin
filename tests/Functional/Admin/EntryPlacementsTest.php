@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 use Doctrine\DBAL\Connection;
 use Setono\SyliusCMSPlugin\Event\PlacementsChanged;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
+use Setono\SyliusCMSPlugin\Problem\ProblemCount;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\Placements;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -190,6 +191,38 @@ final class EntryPlacementsTest extends WebTestCase
         $client->followRedirect();
         self::assertSelectorTextContains('.sylius-flash-message.negative', 'Pick a slot that provides the host-page context the snippet needs.');
         self::assertSame([], self::placementsOf($snippet));
+    }
+
+    /**
+     * @test
+     */
+    public function it_flags_a_placement_in_a_slot_the_code_no_longer_declares_as_a_warning_and_lists_it_to_remove(): void
+    {
+        $client = self::signedInClient();
+        $snippet = self::createSnippet('Free shipping');
+        self::place($snippet, 'shop.footer');
+        self::placeInUndeclaredSlot($snippet, 'shop.removed');
+        self::assertEquals(new ProblemCount(0, 1), self::storedCount($snippet), 'The lists and the Content badge count it');
+
+        $crawler = $client->request('GET', self::overview($snippet));
+
+        $problem = $crawler->filter('[data-section="problems"] [data-problem="removed_slot"]');
+        self::assertCount(1, $problem);
+        self::assertSame('warning', $problem->attr('data-severity'));
+        self::assertSame('A placement in the slot "shop.removed", which the code no longer has, shows nothing.', $problem->filter('.description')->text());
+        self::assertSame(self::overview($snippet) . '#cms-section-placements', $problem->filter('a')->attr('href'));
+
+        self::assertSame([
+            ['shop.footer', 'Every page: the footer', '1 of 1'],
+            ['shop.removed', 'shop.removed', '1 of 1'],
+        ], self::rows($crawler));
+        self::assertSame('The code no longer has this slot, so the placement shows nothing. Remove it.', $crawler->filter('[data-slot="shop.removed"] [data-slot-removed]')->text());
+
+        $client->submit($crawler->filter('[data-placement][data-slot="shop.removed"] form[data-remove]')->form());
+        $crawler = $client->followRedirect();
+
+        self::assertCount(0, $crawler->filter('[data-problem="removed_slot"]'));
+        self::assertEquals(new ProblemCount(), self::storedCount($snippet));
     }
 
     /**

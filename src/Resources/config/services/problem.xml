@@ -33,6 +33,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
 
             <tag name="kernel.reset" method="reset"/>
         </service>
@@ -90,6 +91,14 @@
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\RemovedLayout" class="Setono\SyliusCMSPlugin\Problem\Kind\RemovedLayout">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
+        <!-- A placement in a slot a project removed, on purpose or not: a warning in the admin, so lint leaves it out -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\RemovedSlot" class="Setono\SyliusCMSPlugin\Problem\Kind\RemovedSlot">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
 
             <tag name="setono_sylius_cms.problem_kind"/>
         </service>
