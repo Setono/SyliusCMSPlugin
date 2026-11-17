@@ -180,6 +180,64 @@
         color: var(--cms-button-secondary-color);
     }
 
+    /* Banner: as tall as its image at its width, but at least --cms-banner-min-height, with the image covering it and the
+       heading, text and buttons centred over it in the same grid cell. Full width, the content stays contained */
+    .cms-banner {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        min-height: var(--cms-banner-min-height);
+    }
+
+    .cms-banner__media {
+        display: block;
+        grid-area: 1 / 1;
+        align-self: stretch;
+    }
+
+    .cms-banner__media img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .cms-banner__content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--cms-gap);
+        grid-area: 1 / 1;
+        box-sizing: border-box;
+        padding: var(--cms-block-spacing) max(var(--cms-gap), (100% - var(--cms-content-width)) / 2);
+        text-align: center;
+    }
+
+    /* Over an image, the content sits on the overlay's shade, in white, so it reads on any image */
+    .cms-banner__media ~ .cms-banner__content {
+        background: var(--cms-banner-overlay);
+        color: #ffffff;
+    }
+
+    .cms-banner__heading {
+        margin: 0;
+    }
+
+    .cms-banner__text > :first-child {
+        margin-top: 0;
+    }
+
+    .cms-banner__text > :last-child {
+        margin-bottom: 0;
+    }
+
+    .cms-banner__buttons {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--cms-gap);
+    }
+
     /* Link list: its links one under the other, without bullets */
     .cms-link-list__heading {
         margin: 0 0 0.5em;

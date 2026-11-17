@@ -36,6 +36,10 @@
             <tag name="setono_sylius_cms.block_type"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Block\Banner" class="Setono\SyliusCMSPlugin\Block\Banner">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Block\Accordion" class="Setono\SyliusCMSPlugin\Block\Accordion">
             <tag name="setono_sylius_cms.block_type"/>
         </service>
