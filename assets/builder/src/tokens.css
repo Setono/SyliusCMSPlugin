@@ -1,6 +1,7 @@
 /* The builder's design tokens. Every colour, size and space in its stylesheets comes from here. */
 :root {
     --builder-font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --builder-font-family-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
     --builder-font-size-sm: 0.75rem;
     --builder-font-size-md: 0.875rem;
     --builder-font-size-lg: 1rem;

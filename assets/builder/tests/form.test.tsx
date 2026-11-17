@@ -96,6 +96,29 @@ describe('rendering a form from a field schema', () => {
         expect(onChange).toHaveBeenCalledWith('One\nTwo\nThree');
     });
 
+    it('should render a code field as a multi-line textbox that is not spell checked and reports the code as it is typed', () => {
+        const codeSchema: FieldSchema = { type: 'string', 'x-cms-type': 'code', 'x-cms-label': 'Code', 'x-cms-help': null, 'x-cms-required': false, 'x-cms-translatable': false };
+        const code = '<div id="reviews"></div>\n<script src="https://widgets.example.com/reviews.js" async></script>';
+        const onChange = renderField(codeSchema, code);
+
+        const textbox = screen.getByRole('textbox', { name: 'Code' });
+        expect(textbox.tagName).toBe('TEXTAREA');
+        expect(textbox).toHaveValue(code);
+        expect(textbox).toHaveAttribute('spellcheck', 'false');
+        expect(textbox).toHaveAttribute('autocapitalize', 'off');
+        expect(textbox).toHaveAttribute('dir', 'ltr');
+
+        fireEvent.change(textbox, { target: { value: `${code}\n<p>  Spaces kept  </p>` } });
+
+        expect(onChange).toHaveBeenCalledWith(`${code}\n<p>  Spaces kept  </p>`);
+    });
+
+    it('should render an empty code field as an empty textbox', () => {
+        renderField({ type: 'string', 'x-cms-type': 'code', 'x-cms-label': 'Code', 'x-cms-help': null, 'x-cms-required': false, 'x-cms-translatable': false });
+
+        expect(screen.getByRole('textbox', { name: 'Code' })).toHaveValue('');
+    });
+
     it('should render a note for a field type the builder does not know', () => {
         renderField({ ...textSchema, 'x-cms-type': 'app_opening_hours', 'x-cms-label': 'Opening hours' });
 
