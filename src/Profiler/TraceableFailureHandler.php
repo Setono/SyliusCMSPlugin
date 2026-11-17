@@ -41,6 +41,13 @@ final readonly class TraceableFailureHandler implements FailureHandlerInterface
         $this->handler->snippetFailed($placement, $exception);
     }
 
+    public function pageScopeFailed(PlacementData $placement, string $kind, \Throwable $exception): void
+    {
+        $this->record($exception, new RecordedFailure($placement->snippetUuid, null, null, $placement->uuid, ExceptionMessage::of($exception), $kind));
+
+        $this->handler->pageScopeFailed($placement, $kind, $exception);
+    }
+
     private function record(\Throwable $exception, RecordedFailure $failure): void
     {
         for ($thrown = $exception; null !== $thrown; $thrown = $thrown->getPrevious()) {

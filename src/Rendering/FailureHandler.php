@@ -9,7 +9,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Throws what a block or a snippet threw in dev, so the developer sees it, and in production logs it at error with
  * what an editor needs to find it: the entry's UUID, and the block's key and its block type, or the snippet's slot and
- * placement. See "Failures" in docs/spec/rendering.md
+ * placement, and for a page scope's condition, its kind. See "Failures" in docs/spec/rendering.md
  */
 final readonly class FailureHandler implements FailureHandlerInterface
 {
@@ -47,6 +47,22 @@ final readonly class FailureHandler implements FailureHandlerInterface
             'entry' => $placement->snippetUuid,
             'slot' => $placement->slot,
             'placement' => $placement->uuid,
+            'message' => ExceptionMessage::of($exception),
+            'exception' => $exception,
+        ]);
+    }
+
+    public function pageScopeFailed(PlacementData $placement, string $kind, \Throwable $exception): void
+    {
+        if ($this->debug) {
+            throw $exception;
+        }
+
+        $this->logger->error('A page scope condition of kind {kind} of the snippet {entry}\'s placement {placement} in the slot {slot} threw, so the placement was left out: {message}', [
+            'entry' => $placement->snippetUuid,
+            'slot' => $placement->slot,
+            'placement' => $placement->uuid,
+            'kind' => $kind,
             'message' => ExceptionMessage::of($exception),
             'exception' => $exception,
         ]);

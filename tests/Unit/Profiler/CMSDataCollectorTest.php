@@ -157,7 +157,7 @@ final class CMSDataCollectorTest extends TestCase
                 'candidates' => [],
                 'shown' => 0,
                 'duration' => 2.5,
-                'failures' => [['entry' => '0193a5be-0000-7000-8000-0000000000aa', 'block' => '0193a5be-0000-7000-8000-0000000000bb', 'blockType' => 'broken', 'placement' => null, 'message' => 'Boom']],
+                'failures' => [['entry' => '0193a5be-0000-7000-8000-0000000000aa', 'block' => '0193a5be-0000-7000-8000-0000000000bb', 'blockType' => 'broken', 'placement' => null, 'conditionKind' => null, 'message' => 'Boom']],
             ],
             [
                 'identifier' => 'taxon.header',
@@ -184,7 +184,7 @@ final class CMSDataCollectorTest extends TestCase
                 'failures' => [],
             ],
         ], $collector->getSlots());
-        self::assertSame([['entry' => '0193a5be-0000-7000-8000-0000000000cc', 'block' => '0193a5be-0000-7000-8000-0000000000dd', 'blockType' => 'broken', 'placement' => null, 'message' => 'Boom in the page']], $collector->getFailuresOutsideSlots());
+        self::assertSame([['entry' => '0193a5be-0000-7000-8000-0000000000cc', 'block' => '0193a5be-0000-7000-8000-0000000000dd', 'blockType' => 'broken', 'placement' => null, 'conditionKind' => null, 'message' => 'Boom in the page']], $collector->getFailuresOutsideSlots());
         self::assertSame(2, $collector->getFailureCount());
     }
 

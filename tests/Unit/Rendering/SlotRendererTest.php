@@ -516,7 +516,7 @@ final class SlotRendererTest extends TestCase
             $this->renderContextFactory->reveal(),
             $this->placementProvider->reveal(),
             $picker ?? new PlacementPicker(
-                new PageScopeMatcher(Conditions::matcher(['on_product_page' => new OnProductPage()]), $referenceLoader),
+                new PageScopeMatcher(Conditions::matcher(['on_product_page' => new OnProductPage()]), $referenceLoader, $this->failures->reveal()),
                 $this->visibleSnippets->reveal(),
             ),
             $this->upgrader->reveal(),
@@ -537,8 +537,7 @@ final class SlotRendererTest extends TestCase
 
     /**
      * A snippet whose upgraded tree is a heading with the text, or the block given, or no blocks for neither
-     */
-    /**
+     *
      * @param list<string> $context the context keys it needs
      */
     private function snippet(?string $heading, ?StoredBlock $block = null, array $context = []): SnippetInterface

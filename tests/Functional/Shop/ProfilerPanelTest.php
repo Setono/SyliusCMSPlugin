@@ -183,6 +183,7 @@ final class ProfilerPanelTest extends WebTestCase
             'block' => '0193a5be-0000-7000-8000-000000000002',
             'blockType' => 'broken',
             'placement' => null,
+            'conditionKind' => null,
             'message' => 'Setono\SyliusCMSPlugin\Tests\Functional\Fixture\Broken has no field "missing"',
         ]], self::slots($client)['shop.footer']['failures']);
     }

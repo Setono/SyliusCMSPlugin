@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\Placements;
 use Setono\SyliusCMSPlugin\Tests\Support\RecordingLogger;
 use Setono\SyliusCMSPlugin\Tests\Support\ShareLinks;
+use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\InStock;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -139,6 +140,50 @@ final class RenderingFailuresTest extends WebTestCase
             'type' => 'broken',
             'message' => self::ERROR,
         ]], self::loggedFailures());
+    }
+
+    /**
+     * Such as a project's condition kind asking a service that's down
+     *
+     * @test
+     */
+    public function it_leaves_out_a_placement_whose_page_scope_condition_throws_and_logs_it_while_the_rest_of_the_slot_and_the_page_show(): void
+    {
+        $client = self::createClient(['debug' => false]);
+        $inStock = self::place(self::createSnippet('In stock', [self::heading(self::BEFORE, 'In stock')], published: true), 'shop.footer');
+        self::scope($inStock, [['kind' => 'in_stock', 'negate' => false, 'params' => []]]);
+        self::place(self::createSnippet('Free returns', [self::heading(self::AFTER, 'Free returns')], published: true), 'shop.footer');
+
+        $crawler = $client->request('GET', '/en_US/');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['Free returns'], self::headings($crawler, '.cms-slot--shop-footer'));
+        self::assertSelectorExists('#footer');
+        self::assertSame([[
+            'entry' => $inStock->getSnippet()->getUuid(),
+            'slot' => 'shop.footer',
+            'placement' => $inStock->getUuid(),
+            'kind' => 'in_stock',
+            'message' => InStock::MESSAGE,
+        ]], self::loggedFailures());
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_what_a_page_scope_condition_threw_with_debug_on(): void
+    {
+        $client = self::createClient(['debug' => true]);
+        $client->catchExceptions(false);
+        $inStock = self::place(self::createSnippet('In stock', [self::heading(self::BEFORE, 'In stock')], published: true), 'shop.footer');
+        self::scope($inStock, [['kind' => 'in_stock', 'negate' => false, 'params' => []]]);
+
+        try {
+            $client->request('GET', '/en_US/');
+            self::fail('The exception was thrown');
+        } catch (\Throwable $e) {
+            self::assertStringContainsString(InStock::MESSAGE, $e->getMessage());
+        }
     }
 
     /**

@@ -32,7 +32,7 @@ use Symfony\Component\HttpKernel\DataCollector\DataCollector;
  *
  * @internal
  *
- * @phpstan-type Failure array{entry: string|null, block: string|null, blockType: string|null, placement: string|null, message: string}
+ * @phpstan-type Failure array{entry: string|null, block: string|null, blockType: string|null, placement: string|null, conditionKind: string|null, message: string}
  * @phpstan-type Candidate array{placement: string, snippet: string, title: string, outcome: value-of<PlacementOutcome>, reason: string|null}
  * @phpstan-type ContextKey array{key: string, class: string, id: string|null, passed: bool}
  * @phpstan-type Slot array{identifier: string, label: string|null, templateEvent: string|null, subRequest: string|null, context: list<ContextKey>|null, unresolvedKey: string|null, candidates: list<Candidate>|null, shown: int, duration: float|null, failures: list<Failure>}
@@ -264,6 +264,7 @@ final class CMSDataCollector extends DataCollector
             'block' => $failure->block,
             'blockType' => $failure->blockType,
             'placement' => $failure->placement,
+            'conditionKind' => $failure->conditionKind,
             'message' => $failure->message,
         ];
     }

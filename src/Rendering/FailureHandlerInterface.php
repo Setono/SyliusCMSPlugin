@@ -28,4 +28,14 @@ interface FailureHandlerInterface
      * @throws \Throwable the exception, in dev
      */
     public function snippetFailed(PlacementData $placement, \Throwable $exception): void;
+
+    /**
+     * The placement doesn't show when a condition of its page scope throws, such as a project's condition kind, while
+     * the slot's other placements still do
+     *
+     * @param string $kind the code of the condition's kind
+     *
+     * @throws \Throwable the exception, in dev
+     */
+    public function pageScopeFailed(PlacementData $placement, string $kind, \Throwable $exception): void;
 }

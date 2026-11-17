@@ -177,6 +177,8 @@
                     <td>
                         {% if failure.block is not null %}
                             The block <code>{{ failure.block }}</code> of type <code>{{ failure.blockType }}</code>
+                        {% elseif failure.conditionKind is not null %}
+                            A page scope condition of kind <code>{{ failure.conditionKind }}</code> of the placement <code>{{ failure.placement }}</code>
                         {% else %}
                             The snippet of the placement <code>{{ failure.placement }}</code>
                         {% endif %}

@@ -8,12 +8,14 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Field\Reference;
+use Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface;
 use Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher;
 use Setono\SyliusCMSPlugin\Rendering\PlacementData;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\InStock;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\OnProductPage;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ProductAvailable;
 use Sylius\Component\Core\Model\Product;
@@ -95,6 +97,25 @@ final class PageScopeMatcherTest extends TestCase
     }
 
     /**
+     * As a block whose condition throws: in production the handler logs it and the placement doesn't show, while the
+     * slot's other placements still do. See "Failures" in docs/spec/rendering.md
+     *
+     * @test
+     */
+    public function it_hands_a_placement_whose_page_scope_condition_throws_to_the_failure_handler_and_keeps_it_out(): void
+    {
+        $throws = self::placement('throws', [self::onProductPage(), ['kind' => 'in_stock', 'negate' => false, 'params' => []]]);
+        $everywhere = self::placement('everywhere', []);
+        $failures = $this->prophesize(FailureHandlerInterface::class);
+        $failures->pageScopeFailed($throws, 'in_stock', Argument::that(static fn (\Throwable $e): bool => InStock::MESSAGE === $e->getMessage()))->shouldBeCalledOnce();
+
+        self::assertSame(
+            [$everywhere],
+            $this->matcher(failures: $failures->reveal())->matching([$throws, $everywhere], Rendering::context(hostPageContext: ['product' => new Product()])),
+        );
+    }
+
+    /**
      * @test
      */
     public function it_loads_the_references_of_every_placement_s_scope_in_one_pass_and_matches_with_them(): void
@@ -128,7 +149,7 @@ final class PageScopeMatcherTest extends TestCase
         self::assertSame([$everywhere], $this->matcher($loader->reveal())->matching([$everywhere], Rendering::context()));
     }
 
-    private function matcher(?ReferenceLoaderInterface $loader = null): PageScopeMatcher
+    private function matcher(?ReferenceLoaderInterface $loader = null, ?FailureHandlerInterface $failures = null): PageScopeMatcher
     {
         if (null === $loader) {
             $prophecy = $this->prophesize(ReferenceLoaderInterface::class);
@@ -137,8 +158,9 @@ final class PageScopeMatcherTest extends TestCase
         }
 
         return new PageScopeMatcher(
-            Conditions::matcher(['on_product_page' => new OnProductPage(), 'product_available' => new ProductAvailable()]),
+            Conditions::matcher(['on_product_page' => new OnProductPage(), 'product_available' => new ProductAvailable(), 'in_stock' => new InStock()]),
             $loader,
+            $failures ?? $this->prophesize(FailureHandlerInterface::class)->reveal(),
         );
     }
 

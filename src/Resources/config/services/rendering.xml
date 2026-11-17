@@ -171,6 +171,7 @@
         <service id="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher" class="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher">
             <argument type="service" id="Setono\SyliusCMSPlugin\Condition\ConditionMatcher"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcherInterface" alias="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher"/>
 

@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Rendering\CandidatePlacement;
+use Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface;
 use Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher;
 use Setono\SyliusCMSPlugin\Rendering\PlacementData;
 use Setono\SyliusCMSPlugin\Rendering\PlacementOutcome;
@@ -177,7 +178,7 @@ final class PlacementPickerTest extends TestCase
     private function picker(): PlacementPicker
     {
         return new PlacementPicker(
-            new PageScopeMatcher(Conditions::matcher(['on_product_page' => new OnProductPage()]), new ReferenceLoader(new ServiceLocator([]))),
+            new PageScopeMatcher(Conditions::matcher(['on_product_page' => new OnProductPage()]), new ReferenceLoader(new ServiceLocator([])), $this->prophesize(FailureHandlerInterface::class)->reveal()),
             $this->visibleSnippets->reveal(),
         );
     }

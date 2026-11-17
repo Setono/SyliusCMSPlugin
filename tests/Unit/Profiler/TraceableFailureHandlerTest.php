@@ -56,6 +56,23 @@ final class TraceableFailureHandlerTest extends TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_records_a_page_scope_condition_that_threw_in_the_slot_rendering_now_with_its_kind(): void
+    {
+        $exception = new \RuntimeException('The stock service is down');
+        $placement = new PlacementData('0193a5be-0000-7000-8000-0000000000aa', self::SNIPPET, 'shop.footer', [], 0);
+        $handler = $this->prophesize(FailureHandlerInterface::class);
+        $handler->pageScopeFailed($placement, 'in_stock', $exception)->shouldBeCalledOnce();
+        $slots = new RenderedSlots();
+        $slot = $slots->start('shop.footer');
+
+        (new TraceableFailureHandler($handler->reveal(), $slots))->pageScopeFailed($placement, 'in_stock', $exception);
+
+        self::assertEquals([new RecordedFailure(self::SNIPPET, null, null, '0193a5be-0000-7000-8000-0000000000aa', 'The stock service is down', 'in_stock')], $slot->failures);
+    }
+
+    /**
      * Such as in an entry's own tree
      *
      * @test

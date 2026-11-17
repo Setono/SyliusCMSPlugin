@@ -116,6 +116,41 @@ final class FailureHandlerTest extends TestCase
         (new FailureHandler($logger->reveal(), true))->snippetFailed(self::placement(), $exception);
     }
 
+    /**
+     * Such as a project's condition kind
+     *
+     * @test
+     */
+    public function it_logs_a_page_scope_condition_that_threw_at_error_with_the_snippet_the_placement_and_the_kind_when_debug_is_off(): void
+    {
+        $exception = new \RuntimeException('The stock service is down');
+        $logger = $this->prophesize(LoggerInterface::class);
+        $logger->error(Argument::containingString('{kind}'), [
+            'entry' => self::SNIPPET,
+            'slot' => 'shop.footer',
+            'placement' => self::PLACEMENT,
+            'kind' => 'in_stock',
+            'message' => 'The stock service is down',
+            'exception' => $exception,
+        ])->shouldBeCalledOnce();
+
+        (new FailureHandler($logger->reveal(), false))->pageScopeFailed(self::placement(), 'in_stock', $exception);
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_what_a_page_scope_condition_threw_when_debug_is_on(): void
+    {
+        $exception = new \RuntimeException('The stock service is down');
+        $logger = $this->prophesize(LoggerInterface::class);
+        $logger->error(Argument::cetera())->shouldNotBeCalled();
+
+        $this->expectExceptionObject($exception);
+
+        (new FailureHandler($logger->reveal(), true))->pageScopeFailed(self::placement(), 'in_stock', $exception);
+    }
+
     private static function placement(): PlacementData
     {
         return new PlacementData(self::PLACEMENT, self::SNIPPET, 'shop.footer', [], 0);

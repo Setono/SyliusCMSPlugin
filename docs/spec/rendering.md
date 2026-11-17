@@ -63,7 +63,7 @@ The template gets the block type's hydrated object ([Extending](extending.md#blo
 
 ## Failures
 
-- **In production,** a block that throws while rendering drops out and is logged at `error`, with the entry's UUID, the block's key and its block type. Each block renders into its own string, so no half-printed markup is left behind, and the rest of the snippet and the page still show. A slot whose snippet throws is handled the same way.
+- **In production,** a block that throws while rendering drops out and is logged at `error`, with the entry's UUID, the block's key and its block type. Each block renders into its own string, so no half-printed markup is left behind, and the rest of the snippet and the page still show. A slot whose snippet throws is handled the same way, and so is a placement whose page scope condition throws, such as a project's condition kind: that placement doesn't show and is logged with the snippet's UUID, the placement's UUID and the condition's kind, while the slot's other placements still do.
 - **In dev** (`kernel.debug` on), the exception is thrown.
 - **In the builder's preview,** in dev and in production alike, the error shows on that block, with its message, and the rest of the preview still renders. Share links render like the shop.
 
