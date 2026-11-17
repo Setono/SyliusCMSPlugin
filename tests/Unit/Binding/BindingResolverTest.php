@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Binding;
 
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Binding\BindingType;
+use Setono\SyliusCMSPlugin\Binding\StoredBinding;
 use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductBrand;
@@ -27,7 +28,7 @@ final class BindingResolverTest extends TestCase
         $product = new Product();
         $brand = new ProductBrand();
 
-        $value = Bindings::resolver([$brand])->resolve('product.brand', [], [BindingType::Text], Rendering::hydrationContext(Rendering::context(hostPageContext: ['product' => $product])));
+        $value = Bindings::resolver([$brand])->resolve(new StoredBinding('product.brand'), [BindingType::Text], Rendering::hydrationContext(Rendering::context(hostPageContext: ['product' => $product])));
 
         self::assertSame('Acme', $value);
         self::assertSame([$product], $brand->resolvedFor);
@@ -41,7 +42,7 @@ final class BindingResolverTest extends TestCase
         $stockLevel = new StockLevel();
         $context = Rendering::hydrationContext(Rendering::context(hostPageContext: ['product' => new Product()]));
 
-        self::assertSame(12, Bindings::resolver([$stockLevel])->resolve('product.stock_level', ['includeReserved' => true], [BindingType::Number], $context));
+        self::assertSame(12, Bindings::resolver([$stockLevel])->resolve(new StoredBinding('product.stock_level', ['includeReserved' => true]), [BindingType::Number], $context));
         self::assertInstanceOf(StockLevelParams::class, $stockLevel->resolvedWith[0]);
         self::assertTrue($stockLevel->resolvedWith[0]->includeReserved);
     }
@@ -53,7 +54,7 @@ final class BindingResolverTest extends TestCase
     {
         $context = Rendering::hydrationContext(Rendering::context(hostPageContext: ['product' => new Product()]));
 
-        self::assertSame('7', Bindings::resolver([new StockLevel()])->resolve('product.stock_level', [], [BindingType::Text, BindingType::Number], $context));
+        self::assertSame('7', Bindings::resolver([new StockLevel()])->resolve(new StoredBinding('product.stock_level'), [BindingType::Text, BindingType::Number], $context));
     }
 
     /**
@@ -61,7 +62,7 @@ final class BindingResolverTest extends TestCase
      */
     public function it_is_empty_where_the_page_does_not_have_the_context_key_s_object(): void
     {
-        self::assertNull(Bindings::resolver([new ProductBrand()])->resolve('product.brand', [], [BindingType::Text], Rendering::hydrationContext()));
+        self::assertNull(Bindings::resolver([new ProductBrand()])->resolve(new StoredBinding('product.brand'), [BindingType::Text], Rendering::hydrationContext()));
     }
 
     /**
@@ -71,7 +72,7 @@ final class BindingResolverTest extends TestCase
     {
         $context = Rendering::hydrationContext(Rendering::context(hostPageContext: ['product' => new Product()]));
 
-        self::assertNull(Bindings::resolver([new ProductBrand()])->resolve('product.colour', [], [BindingType::Text], $context));
+        self::assertNull(Bindings::resolver([new ProductBrand()])->resolve(new StoredBinding('product.colour'), [BindingType::Text], $context));
     }
 
     /**
@@ -81,7 +82,7 @@ final class BindingResolverTest extends TestCase
     {
         $context = Rendering::hydrationContext(Rendering::context(hostPageContext: ['product' => new Product()]));
 
-        self::assertNull(Bindings::resolver([new ProductBrand()])->resolve('product.brand', [], [BindingType::Number], $context));
+        self::assertNull(Bindings::resolver([new ProductBrand()])->resolve(new StoredBinding('product.brand'), [BindingType::Number], $context));
     }
 
     /**
@@ -91,6 +92,6 @@ final class BindingResolverTest extends TestCase
     {
         $context = Rendering::hydrationContext(Rendering::context(hostPageContext: ['product' => new Product()]));
 
-        self::assertNull(Bindings::resolver([new ProductBrand('')])->resolve('product.brand', [], [BindingType::Text], $context));
+        self::assertNull(Bindings::resolver([new ProductBrand('')])->resolve(new StoredBinding('product.brand'), [BindingType::Text], $context));
     }
 }

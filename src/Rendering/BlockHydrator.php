@@ -85,7 +85,7 @@ final readonly class BlockHydrator
                 return null;
             }
 
-            $bound = $this->bindings->resolve($binding->property, $binding->params, $field->type->bindable, $context);
+            $bound = $this->bindings->resolve($binding, $field->type->bindable, $context);
             $hydrated = null === $bound || !$this->constraints->accept($class, $field, $bound) ? null : $handler->hydrate($field->field, $bound, $context);
             if (null !== $hydrated) {
                 return $hydrated;

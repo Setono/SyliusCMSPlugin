@@ -197,7 +197,7 @@ final readonly class FieldValidator
         }
 
         $violations = $this->validator->validate($binding, new Callback(
-            fn (StoredBinding $value, ExecutionContextInterface $context) => $this->bindingValidator->validate($value->property, $value->params, $field->type->bindable, $context),
+            fn (StoredBinding $value, ExecutionContextInterface $context) => $this->bindingValidator->validate($value, $field->type->bindable, $context),
         ));
         $errors = array_map(static fn (string|\Stringable $message): ValidationError => new ValidationError($block, $field->name, null, $message), self::messages($violations));
 

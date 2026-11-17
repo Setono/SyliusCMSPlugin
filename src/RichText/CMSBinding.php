@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\RichText;
 
+use Setono\SyliusCMSPlugin\Binding\StoredBinding;
 use Tiptap\Core\Node;
 
 /**
@@ -22,10 +23,8 @@ final class CMSBinding extends Node
     public static $name = self::NAME;
 
     /**
-     * @param (\Closure(string, array<string, mixed>): ?string)|null $resolve what a binding's property and parameters
-     *                                                                       resolve to for the shopper, or null when
-     *                                                                       it's empty. Without it, every token shows
-     *                                                                       its fallback
+     * @param (\Closure(StoredBinding): ?string)|null $resolve what a token's binding resolves to for the shopper, or null
+     *                                                      when it's empty. Without it, every token shows its fallback
      * @param bool $marked whether each token carries its attributes
      */
     public function __construct(
@@ -52,7 +51,7 @@ final class CMSBinding extends Node
         $params = json_decode((string) json_encode($attributes['params'] ?? []), true);
         $params = is_array($params) ? $params : [];
 
-        $value = is_string($property) && null !== $this->resolve ? ($this->resolve)($property, $params) : null;
+        $value = is_string($property) && null !== $this->resolve ? ($this->resolve)(new StoredBinding($property, $params, $fallback)) : null;
         $text = htmlspecialchars($value ?? $fallback ?? '', \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8');
 
         if (!$this->marked || !is_string($property)) {

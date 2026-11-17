@@ -28,22 +28,22 @@ final readonly class BindingValidator
     }
 
     /**
-     * @param string $property "<context key>.<code>"
-     * @param array<array-key, mixed> $params the stored parameter values, by field name
+     * @param StoredBinding $binding the property and its stored parameter values; its fallback is checked as the field's
+     *                               value, by the field's own validation
      * @param list<BindingType> $accepts the binding types the field accepts
      */
-    public function validate(string $property, array $params, array $accepts, ExecutionContextInterface $context): void
+    public function validate(StoredBinding $binding, array $accepts, ExecutionContextInterface $context): void
     {
-        if (!$this->properties->has($property)) {
+        if (!$this->properties->has($binding->property)) {
             $context->buildViolation('setono_sylius_cms.field.unknown_binding')
-                ->setParameter('{{ binding }}', $property)
+                ->setParameter('{{ binding }}', $binding->property)
                 ->addViolation()
             ;
 
             return;
         }
 
-        $metadata = $this->properties->get($property);
+        $metadata = $this->properties->get($binding->property);
         if (!$metadata->fits($accepts)) {
             $context->buildViolation('setono_sylius_cms.field.binding_not_accepted')
                 ->setParameter('{{ binding }}', $this->translator->trans($metadata->label))
@@ -54,7 +54,7 @@ final readonly class BindingValidator
         }
 
         foreach ($metadata->fields as $name => $field) {
-            $value = $params[$name] ?? null;
+            $value = $binding->params[$name] ?? null;
             if ($this->fallbackValues->isMissing($field->field, $value)) {
                 if ($field->field->required) {
                     $context->buildViolation('setono_sylius_cms.field.binding_parameter_required')

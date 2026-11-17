@@ -137,10 +137,8 @@ final readonly class RichTextSchema
      *                                                                            link resolves
      * @param bool $marked whether each link and binding token carries its attributes, and a link that doesn't resolve
      *                     renders as a <span>, so typing in place in the builder's preview reads every link and token back
-     * @param (\Closure(string, array<string, mixed>): ?string)|null $resolveBinding what a binding token's property and
-     *                                                                              parameters resolve to for the shopper.
-     *                                                                              Without it, every token shows its
-     *                                                                              fallback
+     * @param (\Closure(StoredBinding): ?string)|null $resolveBinding what a binding token's binding resolves to for the
+     *                                                             shopper. Without it, every token shows its fallback
      */
     public function render(array $document, ?\Closure $resolveLink = null, bool $marked = false, ?\Closure $resolveBinding = null): string
     {

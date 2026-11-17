@@ -182,7 +182,7 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
 
         $binding = StoredBinding::fromValue($value['ref']);
         if (null !== $binding) {
-            $this->bindingValidator->validate($binding->property, $binding->params, [BindingType::Url], $context);
+            $this->bindingValidator->validate($binding, [BindingType::Url], $context);
         }
 
         foreach (self::refs($binding->fallback ?? $value['ref']) as $ref) {
@@ -217,7 +217,7 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
      */
     private function bound(StoredBinding $binding, HydrationContext $context): ?string
     {
-        $url = $this->bindings->resolve($binding->property, $binding->params, [BindingType::Url], $context);
+        $url = $this->bindings->resolve($binding, [BindingType::Url], $context);
 
         return is_string($url) ? $url : $this->localized($binding->fallback, $context->renderContext->localeCode);
     }

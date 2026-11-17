@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Field;
 use Setono\SyliusCMSPlugin\Binding\BindingResolver;
 use Setono\SyliusCMSPlugin\Binding\BindingType;
 use Setono\SyliusCMSPlugin\Binding\BindingValidator;
+use Setono\SyliusCMSPlugin\Binding\StoredBinding;
 use Setono\SyliusCMSPlugin\Link\LinkResolver;
 use Setono\SyliusCMSPlugin\Link\ResolvedLink;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
@@ -64,10 +65,10 @@ final readonly class RichTextHandler implements SanitizingFieldHandlerInterface,
         };
         /** @var array<string, string|null> $bound each token's property and parameters => what it shows */
         $bound = [];
-        $resolveBinding = function (string $property, array $params) use (&$bound, $context): ?string {
-            $key = serialize([$property, $params]);
+        $resolveBinding = function (StoredBinding $binding) use (&$bound, $context): ?string {
+            $key = serialize([$binding->property, $binding->params]);
             if (!array_key_exists($key, $bound)) {
-                $value = $this->bindings->resolve($property, $params, self::TOKEN_TYPES, $context);
+                $value = $this->bindings->resolve($binding, self::TOKEN_TYPES, $context);
                 $bound[$key] = null === $value ? null : (string) $value;
             }
 
@@ -134,7 +135,7 @@ final readonly class RichTextHandler implements SanitizingFieldHandlerInterface,
 
         // A binding token is refused as a bound field's binding is, each
         foreach ($this->schema->bindings($document) as $binding) {
-            $this->bindingValidator->validate($binding->property, $binding->params, self::TOKEN_TYPES, $context);
+            $this->bindingValidator->validate($binding, self::TOKEN_TYPES, $context);
         }
 
         // A link whose ref its target refuses, such as a javascript: URL, is refused as a Link field's is, once

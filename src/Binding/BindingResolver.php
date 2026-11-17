@@ -29,17 +29,16 @@ final readonly class BindingResolver
      * The property's value, or null when it's empty. A number in a field that accepts text is given as its string, as
      * such a field stores it
      *
-     * @param string $property "<context key>.<code>"
-     * @param array<array-key, mixed> $params the stored parameter values, by field name
+     * @param StoredBinding $binding the property and its stored parameter values; its fallback is the field's to show
      * @param list<BindingType> $accepts the binding types the field accepts
      */
-    public function resolve(string $property, array $params, array $accepts, HydrationContext $context): string|int|float|null
+    public function resolve(StoredBinding $binding, array $accepts, HydrationContext $context): string|int|float|null
     {
-        if (!$this->properties->has($property)) {
+        if (!$this->properties->has($binding->property)) {
             return null;
         }
 
-        $metadata = $this->properties->get($property);
+        $metadata = $this->properties->get($binding->property);
         if (!$metadata->fits($accepts)) {
             return null;
         }
@@ -51,7 +50,7 @@ final readonly class BindingResolver
 
         $value = $metadata->property->resolve(
             $subject,
-            $this->paramsHydrator->hydrate($metadata->params, $metadata->fields, $params, $context),
+            $this->paramsHydrator->hydrate($metadata->params, $metadata->fields, $binding->params, $context),
             $context->renderContext,
         );
 

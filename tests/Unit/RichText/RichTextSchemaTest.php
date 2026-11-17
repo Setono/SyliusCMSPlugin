@@ -402,7 +402,7 @@ final class RichTextSchemaTest extends TestCase
         ]]);
         $resolved = ['product.name' => 'Fish & Chips', 'product.price' => null, 'customer.first_name' => null];
 
-        $html = (new RichTextSchema())->render($document, resolveBinding: static fn (string $property, array $params): ?string => $resolved[$property]);
+        $html = (new RichTextSchema())->render($document, resolveBinding: static fn (StoredBinding $binding): ?string => $resolved[$binding->property]);
 
         self::assertSame('<p>Buy <strong>Fish &amp; Chips</strong> for a good price</p>', $html);
     }
