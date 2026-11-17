@@ -115,7 +115,7 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($registry);
         $blockTypes = self::blockTypes($registry);
 
-        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'button', 'accordion', 'accordion_item', 'link_list', 'link', 'first_match'], array_keys($blockTypes));
+        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'button', 'accordion', 'accordion_item', 'link_list', 'link', 'products', 'taxons', 'first_match'], array_keys($blockTypes));
 
         self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
         self::assertNull($blockTypes['columns']['parents']);
@@ -130,6 +130,8 @@ final class RegistryTest extends BuilderApiTestCase
             ['type' => 'button', 'min' => null, 'max' => null],
             ['type' => 'accordion', 'min' => null, 'max' => null],
             ['type' => 'link_list', 'min' => null, 'max' => null],
+            ['type' => 'products', 'min' => null, 'max' => null],
+            ['type' => 'taxons', 'min' => null, 'max' => null],
             ['type' => 'first_match', 'min' => null, 'max' => null],
         ];
         self::assertSame($all, $blockTypes['group']['children']);
@@ -221,6 +223,61 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($schema);
         self::assertSame(['link', 'Link', true, false], [$schema['x-cms-type'], $schema['x-cms-label'], $schema['x-cms-required'], $schema['x-cms-translatable']]);
         self::assertSame(['targets' => ['entry', 'product', 'taxon', 'url', 'app_store'], 'translatable' => null], $schema['x-cms-options']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_answers_the_products_and_taxons_blocks_with_their_list_fields(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+
+        $registry = self::json($client, 'GET', '/admin/cms/api/registry');
+        self::assertIsArray($registry);
+        $blockTypes = self::blockTypes($registry);
+
+        self::assertSame(['Products', 'Taxons'], [$blockTypes['products']['label'], $blockTypes['taxons']['label']]);
+        // Compared regardless of key order
+        self::assertEquals(
+            [
+                [
+                    'name' => 'products',
+                    'schema' => [
+                        'type' => 'array',
+                        'items' => ['type' => 'string', 'minLength' => 1],
+                        'x-cms-options' => ['max' => null, 'sources' => true, 'limit' => 8],
+                        'x-cms-type' => 'products',
+                        'x-cms-label' => 'Products',
+                        'x-cms-help' => null,
+                        'x-cms-required' => false,
+                        'x-cms-translatable' => false,
+                    ],
+                ],
+                [
+                    'name' => 'display',
+                    'schema' => [
+                        'type' => 'string',
+                        'enum' => ['grid'],
+                        'x-cms-options' => ['choices' => ['grid' => 'Grid'], 'multiple' => false],
+                        'x-cms-type' => 'choice',
+                        'x-cms-label' => 'Display',
+                        'x-cms-help' => null,
+                        'x-cms-required' => false,
+                        'x-cms-translatable' => false,
+                        'default' => 'grid',
+                    ],
+                ],
+            ],
+            $blockTypes['products']['fields'],
+        );
+
+        $taxons = $blockTypes['taxons']['fields'];
+        self::assertIsArray($taxons);
+        self::assertIsArray($taxons[0]);
+        self::assertSame('taxons', $taxons[0]['name']);
+        self::assertIsArray($taxons[0]['schema']);
+        self::assertSame(['taxons', 'Taxons'], [$taxons[0]['schema']['x-cms-type'], $taxons[0]['schema']['x-cms-label']]);
     }
 
     /**

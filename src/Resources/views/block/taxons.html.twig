@@ -1,0 +1,15 @@
+{# Each taxon as a tile leading to its product listing, as Sylius's own taxon menu links it, with its first image through Sylius's images #}
+{% set taxons = cms_value(block, 'taxons') %}
+{% if taxons is not null and taxons|length > 0 %}
+    <div class="cms-taxons{{ view.styleClass ? ' ' ~ view.styleClass }}">
+        {%- for taxon in taxons|filter(taxon => taxon.slug is not empty) %}
+            {% set image = taxon.images.first %}
+            <a class="cms-taxons__item" href="{{ path('sylius_shop_product_index', {'slug': taxon.slug, '_locale': taxon.translation.locale}) }}">
+                {%- if image -%}
+                    <img class="cms-taxons__image" src="{{ image.path|imagine_filter('sylius_shop_product_thumbnail') }}" alt="" loading="lazy">
+                {%- endif -%}
+                <span class="cms-taxons__name">{{ taxon.name }}</span>
+            </a>
+        {%- endfor %}
+    </div>
+{% endif %}

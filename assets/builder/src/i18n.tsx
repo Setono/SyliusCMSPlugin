@@ -182,6 +182,17 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.link.row_label'
     | 'setono_sylius_cms.builder.link.search'
     | 'setono_sylius_cms.builder.link.url'
+    // The Product, Products, Taxon and Taxons fields' controls
+    | 'setono_sylius_cms.builder.items.add_product'
+    | 'setono_sylius_cms.builder.items.add_taxon'
+    | 'setono_sylius_cms.builder.items.at_most'
+    | 'setono_sylius_cms.builder.items.change'
+    | 'setono_sylius_cms.builder.items.choose'
+    | 'setono_sylius_cms.builder.items.not_found'
+    | 'setono_sylius_cms.builder.items.nothing_picked'
+    | 'setono_sylius_cms.builder.items.remove'
+    | 'setono_sylius_cms.builder.items.search_products'
+    | 'setono_sylius_cms.builder.items.search_taxons'
     // Pickers' search
     | 'setono_sylius_cms.builder.search.failed'
     | 'setono_sylius_cms.builder.search.no_results'
