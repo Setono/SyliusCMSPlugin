@@ -208,11 +208,15 @@ export interface PresenceResponse {
 /** JSON Schema for one value (one locale's value, for a translatable field), plus the x-cms-* keywords. */
 export interface FieldSchema {
     'x-cms-type': string;
+    /** The tag name of the custom element a project's own field type is entered with. The shipped field types have none. */
+    'x-cms-control'?: string;
     'x-cms-label': string;
     'x-cms-help': string | null;
     'x-cms-required': boolean;
     'x-cms-translatable': boolean;
     'x-cms-options'?: JsonObject;
+    /** The binding types a field of its field type accepts: text, number or url. Absent when it can't be bound. */
+    'x-cms-bindable'?: string[];
     default?: JsonValue;
     [keyword: string]: JsonValue | undefined;
 }

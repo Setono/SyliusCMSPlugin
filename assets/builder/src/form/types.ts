@@ -2,8 +2,8 @@ import type { ComponentType } from 'react';
 import type { FieldSchema, JsonValue } from '../types';
 
 /**
- * What every field type's control gets. The shipped field types are React components; a project's own
- * field type will get the same as properties of its custom element.
+ * What every field type's control gets. The shipped field types are React components; a project's own field type's
+ * custom element gets the value, the schema and the locale as properties (form/CustomElementControl.tsx).
  */
 export interface FieldControlProps {
     /** The control's id, which its label points at. */

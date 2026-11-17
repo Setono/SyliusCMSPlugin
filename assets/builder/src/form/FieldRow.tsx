@@ -28,7 +28,7 @@ export type FieldRowProps = Omit<FieldControlProps, 'describedBy' | 'placeholder
 export function FieldRow({ errors = [], fallback, outdated, languageBadge = true, ...props }: FieldRowProps) {
     const t = useTranslator();
     const { id, schema, value, onChange } = props;
-    const Control = controlFor(schema['x-cms-type']);
+    const Control = controlFor(schema);
     const label = schema['x-cms-label'];
     const help = schema['x-cms-help'];
     const helpId = help ? `${id}-help` : undefined;
@@ -42,7 +42,8 @@ export function FieldRow({ errors = [], fallback, outdated, languageBadge = true
         <div className={styles.field}>
             <div className={styles.labelRow}>
                 {Control ? (
-                    <label htmlFor={id} className={styles.label}>
+                    // Its id names a control that isn't a form control, such as a project's own field control
+                    <label id={`${id}-row-label`} htmlFor={id} className={styles.label}>
                         {label}
                     </label>
                 ) : (
