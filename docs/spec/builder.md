@@ -191,7 +191,7 @@ The builder talks to plain JSON controllers under the admin firewall, not to API
 | `entry_presence` | POST | `/entries/{uuid}/presence` | Tells the server the editor still has the entry open, and answers with who else does. |
 | `preview_token` | POST | `/preview/token` | Creates a preview token for an entry, channel, locale, sample object, placement, Shown to and Date, and answers with the iframe URL. |
 | `preview_render` | POST | `/preview/render` | Renders the given blocks of the working copy under a preview token, and answers with their HTML by key. |
-| `search` | GET | `/search/{kind}?q=` | Search for pickers. `{kind}` is `product`, `taxon`, `entry`, `snippet`, `media`, `customer_group`, `product_attribute` or a link target's code. |
+| `search` | GET | `/search/{kind}?q=` | Search for pickers. `{kind}` is `product`, `taxon`, `entry`, `snippet`, `media`, `customer_group`, `product_attribute` or a link target's code. With `?refs=a,b` instead of `q`, it looks those refs up, so a picker names the values it holds. |
 | `source_count` | POST | `/sources/count` | How many items a source yields for given parameters under a preview token. |
 | `media_upload` | POST | `/media` | Uploads files into a folder, answering with the new media items or the duplicates found ([Media](media.md)). |
 | `preset_index` | GET | `/presets` | The code and editor presets, with their metadata and whether each fits. |
