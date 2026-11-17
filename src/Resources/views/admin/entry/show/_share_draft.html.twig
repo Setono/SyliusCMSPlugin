@@ -1,9 +1,10 @@
 {#
  # The overview page's Share draft, a block of setono_sylius_cms.admin.entry.show.header_actions, for a content type
- # with its own URL. It opens the Share draft dialog, which the Share links section renders (_share_links.html.twig) and
- # which makes a share link. See "Entry overview page" in docs/spec/admin.md and "Share links" in docs/spec/publishing.md
+ # with its own URL and for a snippet. It opens the Share draft dialog, which the Share links section renders
+ # (_share_links.html.twig) and which makes a share link. See "Entry overview page" in docs/spec/admin.md and
+ # "Share links" in docs/spec/publishing.md
  #}
-{% if row.contentType.hasOwnUrl() %}
+{% if row.contentType.hasOwnUrl() or row.contentType.isSnippet() %}
     <button type="button" class="ui labeled icon button" data-cms-dialog-open aria-haspopup="dialog" aria-controls="cms-share-draft">
         <i class="share alternate icon"></i> {{ 'setono_sylius_cms.ui.share_draft'|trans }}
     </button>

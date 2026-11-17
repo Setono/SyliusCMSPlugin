@@ -26,12 +26,13 @@ interface ShareLinkRepositoryInterface
 
     /**
      * What the share link whose token this is shows: its entry's UUID, its channel, its locale, its Shown to and its
-     * Date (in UTC, or null for the time it's opened). Null when there's no such share link, such as for a revoked one.
+     * Date (in UTC, or null for the time it's opened), and for a snippet, its placement's UUID and its sample object's
+     * context key and ref. Null when there's no such share link, such as for a revoked one.
      *
      * It reads them without loading the entry, because loading an entry asks Sylius's locale context for the entry's
      * locale, and the locale context asks the share link
      *
-     * @return array{entry: string, channel: string, locale: string, shownTo: string, date: \DateTimeImmutable|null}|null
+     * @return array{entry: string, channel: string, locale: string, shownTo: string, date: \DateTimeImmutable|null, placement: string|null, sampleKey: string|null, sampleRef: string|null}|null
      */
     public function lookUpToken(string $token): ?array;
 

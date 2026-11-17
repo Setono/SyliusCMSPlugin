@@ -6,8 +6,9 @@
                                       http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
     <!--
     A revocable link that shows an entry's draft in the shop: its random token, which the shop looks it up by, the
-    channel and locale, and the Shown to and Date fixed when it was made, with who made it and when. Revoking it deletes
-    the row, and deleting the entry deletes its share links
+    channel and locale, and the Shown to and Date fixed when it was made, with who made it and when, and for a snippet
+    the placement whose host page shows it and the sample object. Revoking it deletes the row, deleting the entry
+    deletes its share links, and removing the placement leaves a snippet's link on a plain page
     -->
     <mapped-superclass name="Setono\SyliusCMSPlugin\Model\ShareLink" table="setono_sylius_cms__share_link">
         <indexes>
@@ -27,9 +28,16 @@
         <field name="date" column="shown_at" type="datetime_immutable" nullable="true"/>
         <field name="createdAt" column="created_at" type="datetime_immutable"/>
         <field name="createdBy" column="created_by" type="string" nullable="true"/>
+        <!-- The context key of a snippet's sample object, and its code, or its UUID for an entry -->
+        <field name="sampleKey" column="sample_key" type="string" nullable="true"/>
+        <field name="sampleRef" column="sample_ref" type="string" nullable="true"/>
 
         <many-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\EntryInterface">
             <join-column name="entry_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
+        </many-to-one>
+
+        <many-to-one field="placement" target-entity="Setono\SyliusCMSPlugin\Model\PlacementInterface">
+            <join-column name="placement_id" referenced-column-name="id" nullable="true" on-delete="SET NULL"/>
         </many-to-one>
     </mapped-superclass>
 </doctrine-mapping>

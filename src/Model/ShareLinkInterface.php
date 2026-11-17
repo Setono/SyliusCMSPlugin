@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
+use Setono\SyliusCMSPlugin\Preview\SampleObject;
 use Sylius\Resource\Model\ResourceInterface;
 
 /**
  * A revocable link that shows one entry's draft in the shop, in one channel and locale, to anyone who has it, with no
- * admin account. Its random token alone decides what's shown, and Shown to and Date are fixed when it's created.
+ * admin account. Its random token alone decides what's shown, and Shown to and Date are fixed when it's created, and for
+ * a snippet the placement whose host page shows it and the sample object.
  * Revoking it deletes it. See "Share links" in docs/spec/publishing.md
  */
 interface ShareLinkInterface extends ResourceInterface
@@ -61,4 +63,19 @@ interface ShareLinkInterface extends ResourceInterface
     public function getCreatedBy(): ?string;
 
     public function setCreatedBy(?string $createdBy): void;
+
+    /**
+     * For a snippet, the placement whose host page shows it, or null for a plain page, such as once the placement is
+     * removed
+     */
+    public function getPlacement(): ?PlacementInterface;
+
+    public function setPlacement(?PlacementInterface $placement): void;
+
+    /**
+     * For a snippet, the sample object its page shows it with, or null for none
+     */
+    public function getSample(): ?SampleObject;
+
+    public function setSample(?SampleObject $sample): void;
 }

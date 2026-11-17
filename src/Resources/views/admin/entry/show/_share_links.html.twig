@@ -1,11 +1,13 @@
 {#
  # The overview page's Share links section, a block of setono_sylius_cms.admin.entry.show.sections, for a content type
- # with its own URL: each share link's channel, locale, Shown to, Date and who made it, newest first, with copy and a
- # revoke form that comes back to the overview page, plus New, which opens the Share draft dialog it renders.
- # admin/share-links.js runs the dialog and the copy buttons.
+ # with its own URL and for a snippet: each share link's channel, locale, Shown to, Date and who made it, and for a
+ # snippet where it shows, newest first, with copy and a revoke form that comes back to the overview page, plus New,
+ # which opens the Share draft dialog it renders. A snippet's link shows it on the host page of a placement it picks,
+ # or a plain page. admin/share-links.js runs the dialog and the copy buttons.
  # See "Entry overview page" in docs/spec/admin.md and "Share links" in docs/spec/publishing.md
  #}
-{% if row.contentType.hasOwnUrl() %}
+{% if row.contentType.hasOwnUrl() or row.contentType.isSnippet() %}
+    {% set placements = row.contentType.isSnippet() ? cms_admin_entry_placements(entry) : null %}
     {% set share_links = cms_admin_entry_share_links(entry) %}
     <section class="ui segment" data-section="share_links" aria-labelledby="cms-section-share_links">
         <h2 class="ui dividing header" id="cms-section-share_links">{{ 'setono_sylius_cms.ui.share_links'|trans }}</h2>
@@ -22,6 +24,7 @@
                         <th>{{ 'setono_sylius_cms.ui.language'|trans }}</th>
                         <th>{{ 'setono_sylius_cms.ui.shown_to'|trans }}</th>
                         <th>{{ 'setono_sylius_cms.ui.date'|trans }}</th>
+                        {% if placements is not null %}<th>{{ 'setono_sylius_cms.ui.shown_on'|trans }}</th>{% endif %}
                         <th>{{ 'setono_sylius_cms.ui.made_by'|trans }}</th>
                         <th>{{ 'setono_sylius_cms.ui.link'|trans }}</th>
                         <th></th>
@@ -44,6 +47,12 @@
                                 {%- endif -%}
                             </td>
                             <td data-date>{{ share_link.date is null ? 'setono_sylius_cms.ui.now'|trans : share_link.date|date('Y-m-d H:i') }}</td>
+                            {% if placements is not null %}
+                                <td data-shown-on>
+                                    {{- link.slotLabel is null ? 'setono_sylius_cms.ui.plain_page'|trans : link.slotLabel|trans -}}
+                                    {%- if share_link.sample is not null %} · {{ share_link.sample.ref }}{% endif -%}
+                                </td>
+                            {% endif %}
                             <td data-created-by>{{ share_link.createdBy|default('—') }}</td>
                             <td>
                                 {% if link.url is not null %}
@@ -93,6 +102,18 @@
                             {% endfor %}
                         </select>
                     </div>
+                    {% if placements is not null %}
+                        {# A snippet shows on the host page of a placement, with the sample object its preview starts with #}
+                        <div class="field">
+                            <label for="cms-share-draft-placement">{{ 'setono_sylius_cms.ui.shown_on'|trans }}</label>
+                            <select id="cms-share-draft-placement" name="placement">
+                                {% for placed in placements.placements %}
+                                    <option value="{{ placed.placement.uuid }}">{{ placed.slot is null ? placed.placement.slot : placed.slot.label|trans }}</option>
+                                {% endfor %}
+                                <option value="">{{ 'setono_sylius_cms.ui.plain_page'|trans }}</option>
+                            </select>
+                        </div>
+                    {% endif %}
                     <button type="submit" class="ui primary labeled icon button"><i class="share alternate icon"></i> {{ 'setono_sylius_cms.ui.create_share_link'|trans }}</button>
                 </form>
             {% endif %}

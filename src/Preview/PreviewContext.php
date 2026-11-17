@@ -93,6 +93,16 @@ final class PreviewContext
             return null;
         }
 
-        return new Preview($shareLink['entry'], $shareLink['channel'], $shareLink['locale'], null, $shareLink['shownTo'], $shareLink['date'], true);
+        return new Preview(
+            $shareLink['entry'],
+            $shareLink['channel'],
+            $shareLink['locale'],
+            null,
+            $shareLink['shownTo'],
+            $shareLink['date'],
+            true,
+            $shareLink['placement'],
+            null === $shareLink['sampleKey'] || null === $shareLink['sampleRef'] ? null : new SampleObject($shareLink['sampleKey'], $shareLink['sampleRef']),
+        );
     }
 }

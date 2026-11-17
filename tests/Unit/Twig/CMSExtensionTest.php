@@ -345,7 +345,7 @@ final class CMSExtensionTest extends IntegrationTestCase
     {
         $shareLinks = $this->prophesize(ShareLinkRepositoryInterface::class);
         $shareLinks->lookUpToken(Argument::any())->willReturn(null);
-        $shareLinks->lookUpToken(self::SHARE_TOKEN)->willReturn(['entry' => '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', 'channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => '@guest', 'date' => null]);
+        $shareLinks->lookUpToken(self::SHARE_TOKEN)->willReturn(['entry' => '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', 'channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => '@guest', 'date' => null, 'placement' => null, 'sampleKey' => null, 'sampleRef' => null]);
 
         return $shareLinks->reveal();
     }

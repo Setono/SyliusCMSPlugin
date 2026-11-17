@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
+use Setono\SyliusCMSPlugin\Preview\SampleObject;
+
 class ShareLink implements ShareLinkInterface
 {
     protected ?int $id = null;
@@ -32,6 +34,12 @@ class ShareLink implements ShareLinkInterface
     protected \DateTimeImmutable $createdAt;
 
     protected ?string $createdBy = null;
+
+    protected ?PlacementInterface $placement = null;
+
+    protected ?string $sampleKey = null;
+
+    protected ?string $sampleRef = null;
 
     public function getId(): ?int
     {
@@ -122,5 +130,26 @@ class ShareLink implements ShareLinkInterface
     public function setCreatedBy(?string $createdBy): void
     {
         $this->createdBy = $createdBy;
+    }
+
+    public function getPlacement(): ?PlacementInterface
+    {
+        return $this->placement;
+    }
+
+    public function setPlacement(?PlacementInterface $placement): void
+    {
+        $this->placement = $placement;
+    }
+
+    public function getSample(): ?SampleObject
+    {
+        return null === $this->sampleKey || null === $this->sampleRef ? null : new SampleObject($this->sampleKey, $this->sampleRef);
+    }
+
+    public function setSample(?SampleObject $sample): void
+    {
+        $this->sampleKey = $sample?->key;
+        $this->sampleRef = $sample?->ref;
     }
 }

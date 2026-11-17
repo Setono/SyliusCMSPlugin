@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Attribute\Allow;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\UnknownContentTypeException;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
@@ -36,7 +37,21 @@ final class ContentTypeRegistryTest extends TestCase
         self::assertSame(PageTranslation::class, $page->translationModelClass);
         self::assertSame('setono_sylius_cms.page', $page->resourceAlias);
         self::assertTrue($page->hasOwnUrl());
+        self::assertFalse($page->isSnippet());
         self::assertNull($page->descriptionField, 'A page\'s meta description falls back to nothing');
+    }
+
+    /**
+     * A snippet has no URL of its own, and shows in slots and Snippet blocks
+     *
+     * @test
+     */
+    public function it_tells_the_snippet_content_type(): void
+    {
+        $registry = new ContentTypeRegistry(['snippet' => ['model' => Snippet::class, 'translation' => null, 'resource' => 'setono_sylius_cms.snippet']]);
+
+        self::assertTrue($registry->get('snippet')->isSnippet());
+        self::assertFalse($registry->get('snippet')->hasOwnUrl());
     }
 
     /**

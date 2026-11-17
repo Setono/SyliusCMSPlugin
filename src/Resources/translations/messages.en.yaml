@@ -422,6 +422,7 @@ setono_sylius_cms:
         page_scope: Page scope
         page_scope_removed_kind: 'A condition of the kind "%kind%", which the code no longer has, so it shows nothing'
         pick_content_type: What do you want to create?
+        plain_page: A plain page
         placements: Placements
         placements_help: Placements take effect at once, without publishing, and show the snippet while it is published. A slot shows its placements, of every snippet, in this order.
         position: Position
@@ -466,6 +467,7 @@ setono_sylius_cms:
         share_link_without_url: The draft has no URL in this language anymore.
         share_links: Share links
         share_links_help: Anyone with a share link sees the draft in the shop, without signing in, until you revoke it.
+        shown_on: Shown on
         shown_to: Shown to
         shown_to_guest: Guest
         shown_to_no_group: Signed in without a group

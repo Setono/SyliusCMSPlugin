@@ -15,7 +15,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Makes a share link of the entry's draft for the channel and the locale in the body, `{channel, locale}`, with Shown to
- * and Date fixed now, and answers with it. See "Share links" in docs/spec/publishing.md
+ * and Date fixed now, and answers with it. For a snippet, the body may also name one of its placements, `placement`,
+ * and the ref of a sample object, `sample`, which the link fixes. See "Share links" in docs/spec/publishing.md
  */
 final readonly class CreateShareLinkAction
 {
@@ -45,8 +46,14 @@ final readonly class CreateShareLinkAction
             return BuilderRequest::badRequest('The body needs the channel and the locale, each as a string');
         }
 
+        $placementUuid = $body['placement'] ?? null;
+        $sampleRef = $body['sample'] ?? null;
+        if ((null !== $placementUuid && !is_string($placementUuid)) || (null !== $sampleRef && !is_string($sampleRef))) {
+            return BuilderRequest::badRequest('The placement and the sample must each be a string or null');
+        }
+
         try {
-            $shareLink = $this->creator->create($entry, $channelCode, $localeCode);
+            $shareLink = $this->creator->create($entry, $channelCode, $localeCode, $placementUuid, $sampleRef);
         } catch (ShareLinkUnavailableException $e) {
             return BuilderRequest::badRequest($e->getMessage());
         }

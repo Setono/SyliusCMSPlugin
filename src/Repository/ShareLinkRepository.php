@@ -23,10 +23,11 @@ class ShareLinkRepository extends EntityRepository implements ShareLinkRepositor
 
     public function lookUpToken(string $token): ?array
     {
-        /** @var array{entry: string, channel: string, locale: string, shownTo: string, date: \DateTimeImmutable|null}|null $shareLink */
+        /** @var array{entry: string, channel: string, locale: string, shownTo: string, date: \DateTimeImmutable|null, placement: string|null, sampleKey: string|null, sampleRef: string|null}|null $shareLink */
         $shareLink = $this->createQueryBuilder('o')
-            ->select('sharedEntry.uuid AS entry', 'o.channelCode AS channel', 'o.localeCode AS locale', 'o.shownTo AS shownTo', 'o.date AS date')
+            ->select('sharedEntry.uuid AS entry', 'o.channelCode AS channel', 'o.localeCode AS locale', 'o.shownTo AS shownTo', 'o.date AS date', 'sharedPlacement.uuid AS placement', 'o.sampleKey AS sampleKey', 'o.sampleRef AS sampleRef')
             ->join('o.entry', 'sharedEntry')
+            ->leftJoin('o.placement', 'sharedPlacement')
             ->andWhere('o.token = :token')
             ->setParameter('token', $token)
             ->getQuery()

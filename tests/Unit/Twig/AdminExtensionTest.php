@@ -57,6 +57,7 @@ use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
+use Setono\SyliusCMSPlugin\Tests\Support\SnippetPreviews;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Translation\TranslatableValues;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
@@ -430,10 +431,19 @@ final class AdminExtensionTest extends IntegrationTestCase
 
         return new EntryShareLinks(
             $shareLinks->reveal(),
-            new ShareLinkUrlGenerator($workingCopies->reveal(), self::contentTypes(), $channels->reveal(), new UrlGenerator($routes, new RequestContext(host: 'admin.example.com', scheme: 'https'))),
+            new ShareLinkUrlGenerator(
+                $workingCopies->reveal(),
+                self::contentTypes(),
+                $channels->reveal(),
+                new UrlGenerator($routes, new RequestContext(host: 'admin.example.com', scheme: 'https')),
+                SnippetPreviews::hostPages($this->prophesize(PlacementRepositoryInterface::class)->reveal()),
+                SnippetPreviews::samples(),
+                SnippetPreviews::renderContexts(),
+            ),
             $channels->reveal(),
             $workingCopies->reveal(),
             self::contentTypes(),
+            new SlotRegistry([]),
         );
     }
 
