@@ -8,6 +8,7 @@ use Setono\SyliusCMSPlugin\Condition\ConditionMatcher;
 use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Field\ReferenceType;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
@@ -31,6 +32,7 @@ final readonly class SampleObjects
         private SampleCandidatesInterface $candidates,
         private ReferenceLoaderInterface $referenceLoader,
         private ConditionMatcher $conditions,
+        private HostPageUrlGeneratorInterface $hostPageUrls,
     ) {
     }
 
@@ -75,13 +77,17 @@ final readonly class SampleObjects
     }
 
     /**
-     * The sample object a preview of a placement with the page scope starts with: the first candidate that matches the
-     * scope, or else the first candidate, which the preview then warns is outside it. Null when the key has no
-     * candidate the shopper can see
+     * The sample object a preview of a placement in the slot, with the page scope, starts with: the first candidate
+     * whose page shows the slot and that matches the scope, or else the first whose page shows the slot, which the
+     * preview then warns is outside the scope. A candidate whose page doesn't show the slot, such as an entry whose
+     * layout doesn't render it, comes last, and the preview shows it on a plain page. Null when the key has no candidate
+     * the shopper can see
      *
      * @param list<array<string, mixed>> $pageScope
+     * @param SlotMetadata|null $slot the placement's slot, or null for a snippet previewed without a placement, which
+     *                                any candidate's page shows
      */
-    public function starting(string $key, array $pageScope, RenderContext $context): ?object
+    public function starting(string $key, array $pageScope, RenderContext $context, ?SlotMetadata $slot = null): ?object
     {
         $refs = [];
         foreach ($this->candidates->refs($key, $pageScope, $context) as $ref) {
@@ -94,21 +100,25 @@ final readonly class SampleObjects
 
         $references = $this->referenceLoader->load([...array_values($refs), ...$this->conditions->references($pageScope)], $context);
 
-        $first = null;
+        /** @var array<int, object> $best by rank, lower first: 1 outside the scope, 2 without the slot on its page, 3 both */
+        $best = [];
         foreach (array_keys($refs) as $ref) {
             $candidate = $references->get($key, (string) $ref);
             if (null === $candidate) {
                 continue;
             }
 
-            if ($this->matchesWith($pageScope, $key, $candidate, $context, $references)) {
+            $rank = ($this->showsTheSlot($slot, $candidate, $context) ? 0 : 2) + ($this->matchesWith($pageScope, $key, $candidate, $context, $references) ? 0 : 1);
+            if (0 === $rank) {
                 return $candidate;
             }
 
-            $first ??= $candidate;
+            $best[$rank] ??= $candidate;
         }
 
-        return $first;
+        ksort($best);
+
+        return [] === $best ? null : $best[array_key_first($best)];
     }
 
     /**
@@ -140,6 +150,14 @@ final readonly class SampleObjects
         $references = $this->referenceLoader->load($this->conditions->references($pageScope), $context);
 
         return array_map(fn (object $sample): bool => $this->matchesWith($pageScope, $key, $sample, $context, $references), $samples);
+    }
+
+    /**
+     * Whether the sample object has a page that shows the slot, or any page without a slot
+     */
+    private function showsTheSlot(?SlotMetadata $slot, object $sample, RenderContext $context): bool
+    {
+        return null === $slot || null !== $this->hostPageUrls->generate($slot, $sample, $context->channel, $context->localeCode);
     }
 
     /**

@@ -4,18 +4,29 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Support;
 
+use Setono\SyliusCMSPlugin\Layout\Page\Standard;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\Homepage;
+use Setono\SyliusCMSPlugin\Model\HomepageInterface;
+use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Preview\HostPageUrlGenerator;
 use Setono\SyliusCMSPlugin\Preview\PreviewRenderContextFactory;
 use Setono\SyliusCMSPlugin\Preview\SampleCandidatesInterface;
 use Setono\SyliusCMSPlugin\Preview\SampleObjects;
 use Setono\SyliusCMSPlugin\Preview\SnippetHostPages;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface;
+use Setono\SyliusCMSPlugin\Tests\Unit\Preview\Fixture\Promo;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\DependencyInjection\ServiceLocator;
@@ -55,13 +66,52 @@ final class SnippetPreviews
                 'taxon.header' => ['label' => 'setono_sylius_cms.slot.taxon.header', 'provides' => ['taxon'], 'cap' => null],
             ]),
             self::samples($referenceLoader, $candidates),
-            new HostPageUrlGenerator($urlGenerator, new class() implements CanonicalUrlGeneratorInterface {
+            self::hostPageUrls(urlGenerator: $urlGenerator),
+            $urlGenerator,
+        );
+    }
+
+    /**
+     * The host pages of the stock context keys, for pages in the layouts standard and Promo, whose template renders
+     * app.promo.after_blocks
+     *
+     * @param CanonicalUrlGeneratorInterface|null $canonicalUrls the entries' URLs, or null for none
+     * @param list<string> $cmsHomepageChannels the codes of the channels whose homepage is a CMS page
+     */
+    public static function hostPageUrls(
+        ?CanonicalUrlGeneratorInterface $canonicalUrls = null,
+        array $cmsHomepageChannels = [],
+        ?UrlGeneratorInterface $urlGenerator = null,
+    ): HostPageUrlGenerator {
+        return new HostPageUrlGenerator(
+            $urlGenerator ?? self::router(),
+            $canonicalUrls ?? new class() implements CanonicalUrlGeneratorInterface {
                 public function generate(EntryInterface $entry, ChannelInterface $channel, string $localeCode, int $referenceType = UrlGeneratorInterface::ABSOLUTE_URL): ?string
                 {
                     return null;
                 }
-            }),
-            $urlGenerator,
+            },
+            new ContentTypeRegistry([
+                'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+                'snippet' => ['model' => Snippet::class, 'translation' => null, 'resource' => 'setono_sylius_cms.snippet'],
+            ]),
+            new LayoutRegistry(['page' => ['standard' => Standard::class, 'promo' => Promo::class]], new FieldReader()),
+            new class($cmsHomepageChannels) implements HomepageRepositoryInterface {
+                /**
+                 * @param list<string> $channelCodes
+                 */
+                public function __construct(private readonly array $channelCodes)
+                {
+                }
+
+                public function findByChannelCodes(array $channelCodes): array
+                {
+                    return array_map(
+                        static fn (string $code): HomepageInterface => new Homepage(new Page(), $code),
+                        array_values(array_intersect($this->channelCodes, $channelCodes)),
+                    );
+                }
+            },
         );
     }
 
@@ -86,6 +136,7 @@ final class SnippetPreviews
             },
             $referenceLoader ?? new ReferenceLoader(new ServiceLocator([])),
             Conditions::matcher(),
+            self::hostPageUrls(),
         );
     }
 

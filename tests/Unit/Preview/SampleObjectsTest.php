@@ -14,11 +14,17 @@ use Setono\SyliusCMSPlugin\Preview\SampleObject;
 use Setono\SyliusCMSPlugin\Preview\SampleObjects;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
+use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Setono\SyliusCMSPlugin\Tests\Support\SnippetPreviews;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ProductAvailable;
+use Setono\SyliusCMSPlugin\Tests\Unit\Preview\Fixture\EntryUuidIs;
 use Setono\SyliusCMSPlugin\Tests\Unit\Preview\Fixture\ProductCodeIs;
+use Setono\SyliusCMSPlugin\Tree\StoredLayout;
+use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Component\Core\Model\Product;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\Taxon;
@@ -82,6 +88,38 @@ final class SampleObjectsTest extends TestCase
 
         self::assertInstanceOf(ProductInterface::class, $sample);
         self::assertSame('MUG', $sample->getCode());
+    }
+
+    /**
+     * For a layout's slot, an entry whose layout renders it, so the preview shows the slot on a real page. One that
+     * also matches the page scope comes first
+     *
+     * @test
+     */
+    public function it_starts_with_a_sample_entry_whose_layout_renders_the_slot(): void
+    {
+        $standard = self::page('standard');
+        $promo = self::page('promo');
+        $alsoPromo = self::page('promo');
+        $samples = $this->entrySamples([$standard, $promo, $alsoPromo]);
+        $slot = new SlotMetadata('app.promo.after_blocks', 'label', ['entry']);
+
+        self::assertSame($promo, $samples->starting('entry', [], Rendering::context(), $slot));
+        self::assertSame($alsoPromo, $samples->starting('entry', [self::entryIs($alsoPromo)], Rendering::context(), $slot), 'One in the scope');
+        self::assertSame($promo, $samples->starting('entry', [self::entryIs($standard)], Rendering::context(), $slot), 'One outside the scope, rather than one whose page doesn\'t show the slot');
+        self::assertSame($standard, $samples->starting('entry', [], Rendering::context()), 'Without a slot, the first');
+    }
+
+    /**
+     * The preview then shows it on a plain page
+     *
+     * @test
+     */
+    public function it_starts_with_the_first_candidate_when_no_candidate_s_page_shows_the_slot(): void
+    {
+        $standard = self::page('standard');
+
+        self::assertSame($standard, $this->entrySamples([$standard, self::page(null)])->starting('entry', [], Rendering::context(), new SlotMetadata('app.promo.after_blocks', 'label', ['entry'])));
     }
 
     /**
@@ -193,7 +231,61 @@ final class SampleObjectsTest extends TestCase
             $source->reveal(),
             $loader,
             Conditions::matcher(['product_code_is' => new ProductCodeIs(), 'product_available' => new ProductAvailable()]),
+            SnippetPreviews::hostPageUrls(),
         );
+    }
+
+    /**
+     * Sample entries, which all load, and whose pages are at their UUID
+     *
+     * @param list<Page> $candidates best first
+     */
+    private function entrySamples(array $candidates): SampleObjects
+    {
+        $source = $this->prophesize(SampleCandidatesInterface::class);
+        $source->refs('entry', Argument::cetera())->willReturn(array_map(static fn (Page $page): string => $page->getUuid(), $candidates));
+
+        $records = [];
+        foreach ($candidates as $page) {
+            $records[$page->getUuid()] = $page;
+        }
+
+        $loader = $this->prophesize(ReferenceLoaderInterface::class);
+        $loader->load(Argument::cetera())->willReturn(new ReferenceMap(['entry' => $records]));
+
+        $canonicalUrls = $this->prophesize(CanonicalUrlGeneratorInterface::class);
+        $canonicalUrls->generate(Argument::cetera())->will(static function (array $arguments): string {
+            $page = $arguments[0];
+            self::assertInstanceOf(Page::class, $page);
+
+            return 'https://shop.example/en_US/' . $page->getUuid();
+        });
+
+        return new SampleObjects(
+            $source->reveal(),
+            $loader->reveal(),
+            Conditions::matcher(['entry_uuid_is' => new EntryUuidIs()]),
+            SnippetPreviews::hostPageUrls($canonicalUrls->reveal()),
+        );
+    }
+
+    /**
+     * A page in the layout, or in the default one, standard, for null
+     */
+    private static function page(?string $layout): Page
+    {
+        $page = new Page();
+        $page->setBlockTree(new StoredTree(null === $layout ? null : new StoredLayout($layout, 1), []));
+
+        return $page;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function entryIs(Page $page): array
+    {
+        return ['kind' => 'entry_uuid_is', 'negate' => false, 'params' => ['uuid' => $page->getUuid()]];
     }
 
     /**

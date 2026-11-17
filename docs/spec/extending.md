@@ -109,6 +109,7 @@ use Setono\SyliusCMSPlugin\Model\Page;
     version: 1,
     default: false,
     shows: ['title'],
+    slots: ['page.landing.after_hero'],
 )]
 final class Landing
 {
@@ -127,6 +128,7 @@ final class Landing
 | `version` | `int` | `1` | Versions its fields, like a block type's. |
 | `default` | `bool` | `false` | Marks the content type's default layout. Two defaults for one content type fail the container build, unless `content_types.<code>.default_layout` names one, which always wins ([Configuration](#configuration)). |
 | `shows` | `list<string>` | `[]` | The entry fields its template prints, by property name. The builder marks the others "Not shown in this layout". |
+| `slots` | `list<string>` | `[]` | The slots its template renders with `cms_slot()`, by identifier. A snippet placed in one previews on the page of an entry in this layout ([Builder](builder.md#snippet-preview)). |
 
 Layout fields are the class's typed properties, stored in the tree's `layout.fields` ([Layouts and presets](layouts-and-presets.md)).
 

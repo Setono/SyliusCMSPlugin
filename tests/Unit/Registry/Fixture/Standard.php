@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\Model\Page;
     thumbnail: '/build/app/standard.svg',
     default: true,
     shows: ['title'],
+    slots: ['app.standard.after_title'],
 )]
 final class Standard
 {

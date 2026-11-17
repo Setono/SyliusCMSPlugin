@@ -9,6 +9,8 @@ use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Html;
 use Setono\SyliusCMSPlugin\Tests\Support\Placements;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredLayout;
+use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -230,6 +232,69 @@ final class SnippetPreviewTest extends BuilderApiTestCase
 
         $client->request('GET', self::previewUrl($client, $csrfToken, ['entry' => $snippet->getUuid(), 'sample' => 'T_SHIRT']));
         self::assertSelectorTextSame('.cms-slot .cms-heading', 'T-shirt');
+    }
+
+    /**
+     * Only an entry in a layout whose template renders the slot shows it, so the preview starts with one
+     *
+     * @test
+     */
+    public function it_previews_a_placement_in_a_layout_s_slot_on_the_page_of_an_entry_in_that_layout(): void
+    {
+        $client = self::createClient(server: ['HTTP_HOST' => 'admin.example']);
+        self::createPage('About us', 'about-us', 'Who we are', published: true);
+        $promo = self::createPage('Winter sale', 'winter-sale', 'Everything must go', published: true);
+        $promo->setBlockTree(new StoredTree(new StoredLayout('promo', 1), $promo->getBlockTree()->blocks));
+        self::entityManager()->flush();
+        $snippet = self::createSnippet('More like this', [self::heading(self::KEY, 'More like this')], context: ['entry']);
+        $placement = self::place($snippet, 'app.promo.after_blocks');
+        $csrfToken = self::openBuilder($client, $snippet);
+
+        $url = self::previewUrl($client, $csrfToken, ['entry' => $snippet->getUuid(), 'placement' => $placement->getUuid()]);
+
+        self::assertMatchesRegularExpression('#^http://admin\.example/en_US/winter-sale\?_cms_preview=#', $url, 'Not About us, which comes first by name, but whose layout doesn\'t render the slot');
+        $client->request('GET', $url);
+        self::assertSelectorTextSame('[data-cms-slot-preview="app.promo.after_blocks"] .cms-heading', 'More like this');
+    }
+
+    /**
+     * @test
+     */
+    public function it_previews_a_placement_in_a_layout_s_slot_on_a_plain_page_when_no_entry_is_in_that_layout(): void
+    {
+        $client = self::createClient(server: ['HTTP_HOST' => 'admin.example']);
+        self::createPage('About us', 'about-us', 'Who we are', published: true);
+        $snippet = self::createSnippet('More like this', [self::heading(self::KEY, 'More like this')], context: ['entry']);
+        $placement = self::place($snippet, 'app.promo.after_blocks');
+        $csrfToken = self::openBuilder($client, $snippet);
+
+        $url = self::previewUrl($client, $csrfToken, ['entry' => $snippet->getUuid(), 'placement' => $placement->getUuid()]);
+
+        self::assertMatchesRegularExpression('#^http://admin\.example/en_US/_cms/snippet-preview\?_cms_preview=#', $url);
+        $client->request('GET', $url);
+        self::assertSelectorTextSame('[data-cms-slot-preview="app.promo.after_blocks"] .cms-heading', 'More like this');
+    }
+
+    /**
+     * A CMS homepage replaces Sylius's, whose template renders store_homepage
+     *
+     * @test
+     */
+    public function it_previews_a_placement_in_store_homepage_on_a_plain_page_when_the_channel_s_homepage_is_a_cms_page(): void
+    {
+        $client = self::createClient(server: ['HTTP_HOST' => 'admin.example']);
+        $snippet = self::createSnippet('Welcome', [self::heading(self::KEY, 'Welcome')]);
+        $placement = self::place($snippet, 'store_homepage');
+        $csrfToken = self::openBuilder($client, $snippet);
+
+        self::assertMatchesRegularExpression('#^http://admin\.example/en_US/\?_cms_preview=#', self::previewUrl($client, $csrfToken, ['entry' => $snippet->getUuid(), 'placement' => $placement->getUuid()]));
+
+        self::setHomepageOf(self::createPage('Home', 'home', 'Our store', published: true), 'WEB');
+        $url = self::previewUrl($client, $csrfToken, ['entry' => $snippet->getUuid(), 'placement' => $placement->getUuid()]);
+
+        self::assertMatchesRegularExpression('#^http://admin\.example/en_US/_cms/snippet-preview\?_cms_preview=#', $url);
+        $client->request('GET', $url);
+        self::assertSelectorTextSame('[data-cms-slot-preview="store_homepage"] .cms-heading', 'Welcome');
     }
 
     /**

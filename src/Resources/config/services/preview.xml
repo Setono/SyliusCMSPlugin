@@ -49,6 +49,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\SampleCandidatesInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Condition\ConditionMatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\HostPageUrlGeneratorInterface"/>
         </service>
 
         <!-- The host-page context of the previewed entry's own tree: itself, or a snippet's sample object -->
@@ -62,6 +63,9 @@
         <service id="Setono\SyliusCMSPlugin\Preview\HostPageUrlGenerator" class="Setono\SyliusCMSPlugin\Preview\HostPageUrlGenerator">
             <argument type="service" id="router"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Preview\HostPageUrlGeneratorInterface" alias="Setono\SyliusCMSPlugin\Preview\HostPageUrlGenerator"/>
 
