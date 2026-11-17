@@ -20,8 +20,9 @@ use Symfony\Component\Uid\Uuid;
  * The media items the library shows, newest first, a page at a time: in the folder whose UUID is in `folder`, or in
  * Unsorted for `folder=unsorted`, or else in All media, matching the search in `q`, of the kinds in `kind` (such as
  * `image,document` for a media field that takes both), only the images missing alt text in one or more of the store's
- * locales with `missingAlt=1`, and only the media items with the UUIDs in `uuids`, which the builder's media fields look
- * up the media items they hold with. See "Search and filters" in docs/spec/media.md
+ * locales with `missingAlt=1`, only the media items nothing uses with `unused=1`, and only the media items with the
+ * UUIDs in `uuids`, which the builder's media fields look up the media items they hold with. Each comes with its usage
+ * count. See "Search and filters" in docs/spec/media.md
  */
 final readonly class MediaIndexAction
 {
@@ -67,6 +68,7 @@ final readonly class MediaIndexAction
             kinds: $kinds,
             missingAltIn: $request->query->getBoolean('missingAlt') ? array_values($this->translationLocaleProvider->getDefinedLocalesCodes()) : null,
             uuids: $uuids,
+            unused: $request->query->getBoolean('unused'),
         );
 
         $paginator = $this->mediaItemRepository->createLibraryPaginator($filter);

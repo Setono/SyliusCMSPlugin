@@ -13,11 +13,11 @@ use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
- * Each media item's Used in list comes from the usage index, and a media item can't be deleted while it lists a use.
- * Otherwise a listener can veto the delete, and the media item and its file are deleted. See "Usage index" and
- * "Deleting" in docs/spec/media.md
+ * Each media item's Used in list, the usage counts and the unused filter come from the usage index, and a media item
+ * can't be deleted while it lists a use. Otherwise a listener can veto the delete, and the media item and its file are
+ * deleted. See "Usage index", "Search and filters" and "Deleting" in docs/spec/media.md
  */
-final class MediaDeleteTest extends MediaApiTestCase
+final class MediaUsageTest extends MediaApiTestCase
 {
     private const BLOCK = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e70';
 
@@ -50,6 +50,32 @@ final class MediaDeleteTest extends MediaApiTestCase
         $list = self::json($client, 'GET', '/admin/cms/api/media');
         self::assertIsArray($list);
         self::assertSame(['unused' => 0, 'summer' => 2], array_column($list['items'], 'usageCount', 'name'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_filters_the_media_items_nothing_uses(): void
+    {
+        $client = self::createClient();
+        self::openMediaLibrary($client);
+        $used = $this->uploadMediaItem('used.png', self::png());
+        $draftOnly = $this->uploadMediaItem('draft-only.png', self::png(rgb: [0, 0, 0]));
+        $unused = $this->uploadMediaItem('unused.png', self::png(rgb: [0, 200, 0]));
+        $prices = $this->uploadMediaItem('prices.pdf', "%PDF-1.4\n%%EOF\n");
+        self::createPageWithBlocks('Summer sale', 'sale', [self::block($used->getUuid())], published: true);
+        self::createPageWithBlocks('Our story', 'story', [self::block($draftOnly->getUuid())]);
+
+        $answer = self::json($client, 'GET', '/admin/cms/api/media?unused=1');
+
+        self::assertResponseIsSuccessful();
+        self::assertIsArray($answer);
+        self::assertSame([$prices->getUuid(), $unused->getUuid()], array_column($answer['items'], 'uuid'));
+
+        // With the other filters
+        $answer = self::json($client, 'GET', '/admin/cms/api/media?unused=1&kind=image');
+        self::assertIsArray($answer);
+        self::assertSame([$unused->getUuid()], array_column($answer['items'], 'uuid'));
     }
 
     /**

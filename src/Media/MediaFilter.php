@@ -8,7 +8,7 @@ use Setono\SyliusCMSPlugin\Model\MediaFolderInterface;
 
 /**
  * What the media library shows: a folder (All media unless one is given, or Unsorted), the search and the filters.
- * The unused filter joins with the usage index (#249). See "Search and filters" in docs/spec/media.md
+ * See "Search and filters" in docs/spec/media.md
  */
 final readonly class MediaFilter
 {
@@ -19,6 +19,7 @@ final readonly class MediaFilter
      * @param list<string>|null $missingAltIn the store's locales, to show only images without alt text in one or more of
      *                                        them, or null to show media items with alt text or without
      * @param list<string>|null $uuids only the media items with these UUIDs, such as those a field holds, or null for any
+     * @param bool $unused only the media items with no use in the usage index
      */
     public function __construct(
         public ?MediaFolderInterface $folder = null,
@@ -27,6 +28,7 @@ final readonly class MediaFilter
         public array $kinds = [],
         public ?array $missingAltIn = null,
         public ?array $uuids = null,
+        public bool $unused = false,
     ) {
     }
 }
