@@ -316,7 +316,7 @@ final class SlotRendererTest extends TestCase
             ]),
             new HostPageContextResolver(
                 new ContextKeyRegistry(['product' => ['class' => ProductInterface::class, 'label' => 'setono_sylius_cms.context_key.product']]),
-                new ServiceLocator(['product' => fn (): ContextResolverInterface => $this->productResolver->reveal()]),
+                new ServiceLocator(['product' => $this->productResolver->reveal(...)]),
                 $requestStack,
             ),
             $this->renderContextFactory->reveal(),

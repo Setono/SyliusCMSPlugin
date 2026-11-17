@@ -122,7 +122,7 @@ final class ContextCheckTest extends TestCase
 
     private static function check(ContextDependency ...$dependencies): ContextCheck
     {
-        $finder = new class($dependencies) implements ContextDependencyFinderInterface {
+        $finder = new class(array_values($dependencies)) implements ContextDependencyFinderInterface {
             /**
              * @param list<ContextDependency> $dependencies
              */

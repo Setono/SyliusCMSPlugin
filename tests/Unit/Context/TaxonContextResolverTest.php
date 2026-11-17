@@ -11,6 +11,7 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Context\TaxonContextResolver;
 use Sylius\Component\Core\Model\Taxon;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
+use Sylius\Component\Taxonomy\Model\TaxonInterface;
 use Sylius\Component\Taxonomy\Repository\TaxonRepositoryInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -22,12 +23,14 @@ final class TaxonContextResolverTest extends TestCase
 {
     use ProphecyTrait;
 
-    /** @var ObjectProphecy<TaxonRepositoryInterface<Taxon>> */
+    /** @var ObjectProphecy<TaxonRepositoryInterface<TaxonInterface>> */
     private ObjectProphecy $taxons;
 
     protected function setUp(): void
     {
-        $this->taxons = $this->prophesize(TaxonRepositoryInterface::class);
+        /** @var ObjectProphecy<TaxonRepositoryInterface<TaxonInterface>> $taxons */
+        $taxons = $this->prophesize(TaxonRepositoryInterface::class);
+        $this->taxons = $taxons;
     }
 
     /**

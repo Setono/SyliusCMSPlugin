@@ -43,14 +43,18 @@ final class BlockDependenciesTest extends TestCase
         $page = new Page();
         $page->setBlockTree(new StoredTree(null, [$columns, $gone]));
 
-        self::assertEquals([
-            new ContextDependency(new TranslatableMessage('setono_sylius_cms.context.block', ['%block%' => new TranslatableMessage('Product badge')], 'validators'), ['product'], block: self::NESTED),
-            new ContextDependency(new TranslatableMessage('setono_sylius_cms.context.block', ['%block%' => new TranslatableMessage('Product badge')], 'validators'), ['product'], block: self::OUTER),
-        ], [...(new BlockDependencies(new BlockTypeRegistry([
+        $blockTypes = new BlockTypeRegistry([
             'columns' => Columns::class,
             'column' => Column::class,
             'heading' => Heading::class,
             'product_badge' => ProductBadge::class,
-        ], new FieldReader())))->findIn($page)]);
+        ], new FieldReader());
+        // Named by its block type's label
+        $name = new TranslatableMessage('setono_sylius_cms.context.block', ['%block%' => new TranslatableMessage($blockTypes->get('product_badge')->label)], 'validators');
+
+        self::assertEquals([
+            new ContextDependency($name, ['product'], block: self::NESTED),
+            new ContextDependency($name, ['product'], block: self::OUTER),
+        ], [...(new BlockDependencies($blockTypes))->findIn($page)]);
     }
 }

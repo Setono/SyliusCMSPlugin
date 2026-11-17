@@ -69,6 +69,7 @@ final class HostPageContextTest extends BuilderApiTestCase
         self::assertSame(['status' => 'never_published', 'lockToken' => 1], $response);
         $entry = self::json($client, 'GET', '/admin/cms/api/entries/' . $snippet->getUuid());
         self::assertIsArray($entry);
+        self::assertIsArray($entry['entry'] ?? null);
         self::assertSame(['context' => ['product']], $entry['entry']['fields'] ?? null);
     }
 
@@ -95,6 +96,7 @@ final class HostPageContextTest extends BuilderApiTestCase
             ['block' => null, 'field' => 'context', 'locale' => null, 'message' => 'The placement in "Every page: the footer" doesn\'t provide the host-page context "Product page".'],
         ], $response['refused'] ?? null);
         self::assertSame(0, $response['lockToken'] ?? null, 'Nothing else changed, so nothing saved');
+        self::assertIsArray($response['entry'] ?? null);
         self::assertSame(['context' => []], $response['entry']['fields'] ?? null);
         self::assertSame([], self::reloadSnippet($snippet)->getContext());
     }

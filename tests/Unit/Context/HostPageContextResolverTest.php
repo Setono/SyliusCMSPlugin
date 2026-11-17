@@ -170,8 +170,8 @@ final class HostPageContextResolverTest extends TestCase
                 'entry' => ['class' => EntryInterface::class, 'label' => 'setono_sylius_cms.context_key.entry'],
             ]),
             new ServiceLocator([
-                'product' => fn (): ContextResolverInterface => $this->productResolver->reveal(),
-                'taxon' => fn (): ContextResolverInterface => $this->taxonResolver->reveal(),
+                'product' => $this->productResolver->reveal(...),
+                'taxon' => $this->taxonResolver->reveal(...),
             ]),
             $requestStack ?? $this->requestStack,
         );

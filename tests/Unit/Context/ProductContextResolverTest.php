@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Context\ProductContextResolver;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\Product;
+use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Repository\ProductRepositoryInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,7 +25,7 @@ final class ProductContextResolverTest extends TestCase
 {
     use ProphecyTrait;
 
-    /** @var ObjectProphecy<ProductRepositoryInterface<Product>> */
+    /** @var ObjectProphecy<ProductRepositoryInterface<ProductInterface>> */
     private ObjectProphecy $products;
 
     private Channel $channel;
@@ -32,7 +33,9 @@ final class ProductContextResolverTest extends TestCase
     protected function setUp(): void
     {
         $this->channel = new Channel();
-        $this->products = $this->prophesize(ProductRepositoryInterface::class);
+        /** @var ObjectProphecy<ProductRepositoryInterface<ProductInterface>> $products */
+        $products = $this->prophesize(ProductRepositoryInterface::class);
+        $this->products = $products;
     }
 
     /**

@@ -48,9 +48,11 @@ final class ConditionDependenciesTest extends TestCase
         $snippet = new Snippet();
         $snippet->setBlockTree(new StoredTree(null, [$columns, $gone]));
 
+        $conditionKinds = Conditions::registry(['on_product_page' => new OnProductPage()]);
+        // Named by its kind's label and its block's type's label
         $condition = static fn (TranslatableMessage|string $block): TranslatableMessage => new TranslatableMessage(
             'setono_sylius_cms.context.condition',
-            ['%kind%' => new TranslatableMessage('On a product page'), '%block%' => $block],
+            ['%kind%' => new TranslatableMessage($conditionKinds->get('on_product_page')->label), '%block%' => $block],
             'validators',
         );
 
@@ -59,7 +61,7 @@ final class ConditionDependenciesTest extends TestCase
             new ContextDependency($condition('gone'), ['product'], block: self::GONE),
         ], [...(new ConditionDependencies(
             new BlockTypeRegistry(['columns' => Columns::class, 'column' => Column::class, 'heading' => Heading::class], new FieldReader()),
-            Conditions::registry(['on_product_page' => new OnProductPage()]),
+            $conditionKinds,
         ))->findIn($snippet)]);
     }
 }
