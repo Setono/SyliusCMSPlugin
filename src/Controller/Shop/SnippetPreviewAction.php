@@ -47,7 +47,7 @@ final readonly class SnippetPreviewAction
 
         return new Response($this->twig->render(self::TEMPLATE, [
             'snippet' => $snippet,
-            'blocks' => $this->blockViewBuilder->build($this->upgrader->readBlockTree($snippet)->blocks, $context),
+            'blocks' => $this->blockViewBuilder->build($this->upgrader->readBlockTree($snippet)->blocks, $context, snippet: $snippet->getUuid()),
             'context' => $context->getHostPageContext(),
             CMSRuntime::RENDER_CONTEXT => $context,
         ]));

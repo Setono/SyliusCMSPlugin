@@ -34,12 +34,20 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
         </service>
 
+        <!-- The references in blocks' fields and their visibility conditions' parameters -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\BlockReferences" class="Setono\SyliusCMSPlugin\Rendering\BlockReferences">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Condition\ConditionMatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder" class="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockHydrator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Condition\ConditionMatcher"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockReferences"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer" class="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer">
@@ -68,7 +76,14 @@
         <service id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoader" class="Setono\SyliusCMSPlugin\Rendering\ReferenceLoader">
             <argument type="tagged_locator" tag="setono_sylius_cms.reference_type_loader" index-by="type"/>
         </service>
-        <service id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface" alias="Setono\SyliusCMSPlugin\Rendering\ReferenceLoader"/>
+
+        <!-- Includes the trees of the snippets references show, and their references, in the same pass -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\SnippetTreesReferenceLoader" class="Setono\SyliusCMSPlugin\Rendering\SnippetTreesReferenceLoader">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoader"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockReferences"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface" alias="Setono\SyliusCMSPlugin\Rendering\SnippetTreesReferenceLoader"/>
 
         <!-- The entries, products and taxons references name, those the shopper may see through the visible queries -->
         <service id="Setono\SyliusCMSPlugin\Rendering\EntryReferenceLoader" class="Setono\SyliusCMSPlugin\Rendering\EntryReferenceLoader">
