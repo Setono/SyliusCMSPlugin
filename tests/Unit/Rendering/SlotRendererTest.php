@@ -24,9 +24,12 @@ use Setono\SyliusCMSPlugin\Registry\UnknownSlotException;
 use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
 use Setono\SyliusCMSPlugin\Rendering\BlockReferences;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
+use Setono\SyliusCMSPlugin\Rendering\CandidatePlacement;
 use Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher;
 use Setono\SyliusCMSPlugin\Rendering\PlacementData;
+use Setono\SyliusCMSPlugin\Rendering\PlacementOutcome;
 use Setono\SyliusCMSPlugin\Rendering\PlacementPicker;
+use Setono\SyliusCMSPlugin\Rendering\PlacementPickerInterface;
 use Setono\SyliusCMSPlugin\Rendering\PlacementProviderInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
@@ -364,6 +367,77 @@ final class SlotRendererTest extends TestCase
     }
 
     /**
+     * In a snippet's builder preview, its draft is marked for the builder to select and type in, in its slot outlined
+     * and labelled, while the slot's other snippets show as shoppers see them. See "Snippet preview" in
+     * docs/spec/builder.md
+     *
+     * @test
+     */
+    public function it_renders_the_previewed_snippet_s_draft_for_the_builder_in_its_outlined_slot(): void
+    {
+        $preview = Rendering::context(channel: $this->context->channel, previewMode: RenderContext::PREVIEW_MODE_BUILDER);
+        $this->renderContextFactory->create([])->willReturn($preview);
+        $sale = $this->snippet('Winter sale');
+        $draft = $this->snippet('Summer sale');
+        $salePlacement = self::placement('shop.top', $sale, 0);
+        $draftPlacement = self::placement('shop.top', $draft, 1);
+        $this->placementProvider->getPlacements($this->context->channel)->willReturn([$salePlacement, $draftPlacement]);
+        $picker = $this->prophesize(PlacementPickerInterface::class);
+        $picker->pick(Argument::cetera())->willReturn([
+            new CandidatePlacement($salePlacement, PlacementOutcome::Wins, $sale),
+            new CandidatePlacement($draftPlacement, PlacementOutcome::Wins, $draft, previewed: true),
+        ]);
+
+        $html = $this->renderer(
+            '{{ outlined ? "outlined" : "plain" }}:{% for placed in snippets %}[{{ placed.previewed ? "draft" : "shown" }} {{ placed.context.previewMode ?? "shop" }}]{% endfor %}',
+            $picker->reveal(),
+        )->render('shop.top');
+
+        self::assertSame('outlined:[shown shop][draft builder]', $html);
+    }
+
+    /**
+     * So the editor sees where it goes
+     *
+     * @test
+     */
+    public function it_outlines_the_slot_of_a_previewed_draft_without_blocks_that_show(): void
+    {
+        $preview = Rendering::context(channel: $this->context->channel, previewMode: RenderContext::PREVIEW_MODE_BUILDER);
+        $this->renderContextFactory->create([])->willReturn($preview);
+        $draft = $this->snippet(null);
+        $placement = self::placement('shop.top', $draft, 0);
+        $this->placementProvider->getPlacements($this->context->channel)->willReturn([$placement]);
+        $picker = $this->prophesize(PlacementPickerInterface::class);
+        $picker->pick(Argument::cetera())->willReturn([new CandidatePlacement($placement, PlacementOutcome::Wins, $draft, previewed: true)]);
+
+        self::assertSame('outlined:0', $this->renderer('{{ outlined ? "outlined" : "plain" }}:{{ snippets|first.blocks|length }}', $picker->reveal())->render('shop.top'));
+    }
+
+    /**
+     * A share link renders like the shop, with the draft in its slot as if it won
+     *
+     * @test
+     */
+    public function it_renders_a_share_link_s_draft_as_shoppers_see_the_slot_without_an_outline(): void
+    {
+        $shared = Rendering::context(channel: $this->context->channel, previewMode: RenderContext::PREVIEW_MODE_SHARE);
+        $this->renderContextFactory->create([])->willReturn($shared);
+        $draft = $this->snippet('Summer sale');
+        $empty = $this->snippet(null);
+        $placement = self::placement('shop.top', $draft, 0);
+        $emptyPlacement = self::placement('shop.footer', $empty, 0);
+        $this->placementProvider->getPlacements($this->context->channel)->willReturn([$placement, $emptyPlacement]);
+        $picker = $this->prophesize(PlacementPickerInterface::class);
+        $picker->pick(Argument::any(), [$placement], Argument::any())->willReturn([new CandidatePlacement($placement, PlacementOutcome::Wins, $draft, previewed: true)]);
+        $picker->pick(Argument::any(), [$emptyPlacement], Argument::any())->willReturn([new CandidatePlacement($emptyPlacement, PlacementOutcome::Wins, $empty, previewed: true)]);
+        $renderer = $this->renderer('{{ outlined ? "outlined" : "plain" }}:{% for placed in snippets %}[{{ placed.context.previewMode }}]{% endfor %}', $picker->reveal());
+
+        self::assertSame('plain:[share]', $renderer->render('shop.top'));
+        self::assertSame('', $renderer->render('shop.footer'), 'A draft with no blocks that show prints nothing, as for shoppers');
+    }
+
+    /**
      * @test
      */
     public function it_throws_for_a_slot_the_code_does_not_declare(): void
@@ -373,7 +447,7 @@ final class SlotRendererTest extends TestCase
         $this->renderer()->render('shop.gone');
     }
 
-    private function renderer(string $template = '<div class="{{ slot.wrapperClass }}">{% for placed in snippets %}{% for view in placed.blocks %}[{{ view.block.text }}]{% endfor %}{% endfor %}</div>'): SlotRenderer
+    private function renderer(string $template = '<div class="{{ slot.wrapperClass }}">{% for placed in snippets %}{% for view in placed.blocks %}[{{ view.block.text }}]{% endfor %}{% endfor %}</div>', ?PlacementPickerInterface $picker = null): SlotRenderer
     {
         $handlers = Conditions::fieldHandlers();
         $blockTypes = new BlockTypeRegistry(['heading' => Heading::class], new FieldReader());
@@ -396,7 +470,7 @@ final class SlotRendererTest extends TestCase
             ),
             $this->renderContextFactory->reveal(),
             $this->placementProvider->reveal(),
-            new PlacementPicker(
+            $picker ?? new PlacementPicker(
                 new PageScopeMatcher(Conditions::matcher(['on_product_page' => new OnProductPage()]), $referenceLoader),
                 $this->visibleSnippets->reveal(),
             ),

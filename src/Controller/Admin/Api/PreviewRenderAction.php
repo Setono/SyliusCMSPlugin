@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
-use Setono\SyliusCMSPlugin\Context\EntryContext;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
+use Setono\SyliusCMSPlugin\Preview\PreviewedHostPageContext;
 use Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
@@ -36,6 +36,7 @@ final readonly class PreviewRenderAction
         private BlockViewBuilder $blockViewBuilder,
         private BlockRendererInterface $blockRenderer,
         private StoredDataUpgraderInterface $upgrader,
+        private PreviewedHostPageContext $hostPageContext,
     ) {
     }
 
@@ -69,7 +70,7 @@ final readonly class PreviewRenderAction
         }
 
         $workingCopy = $this->previewedEntry->getPreviewedContent($preview->localeCode) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $preview->entryUuid));
-        $renderContext = $this->renderContextFactory->create(EntryContext::objects($workingCopy));
+        $renderContext = $this->renderContextFactory->create($this->hostPageContext->of($workingCopy));
 
         $html = [];
         foreach ($blocks as $block) {

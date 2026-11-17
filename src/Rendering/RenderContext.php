@@ -62,4 +62,14 @@ final readonly class RenderContext
     {
         return new self($this->channel, $this->localeCode, $this->currencyCode, $this->customer, $this->customerGroup, $this->now, $this->hostPageContext, $previewMode);
     }
+
+    /**
+     * The same context on another page, such as the page of a snippet preview's sample object
+     *
+     * @param array<string, object> $hostPageContext
+     */
+    public function withHostPageContext(array $hostPageContext): self
+    {
+        return new self($this->channel, $this->localeCode, $this->currencyCode, $this->customer, $this->customerGroup, $this->now, $hostPageContext, $this->previewMode);
+    }
 }

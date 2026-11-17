@@ -30,6 +30,58 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Preview\StartingValuesInterface" alias="Setono\SyliusCMSPlugin\Preview\StartingValues"/>
 
+        <!-- The render context of a preview that's being made, before its token is in a request -->
+        <service id="Setono\SyliusCMSPlugin\Preview\PreviewRenderContextFactory" class="Setono\SyliusCMSPlugin\Preview\PreviewRenderContextFactory">
+            <argument type="service" id="clock"/>
+        </service>
+
+        <!-- The sample objects a snippet's preview shows it with, and the one it starts with -->
+        <service id="Setono\SyliusCMSPlugin\Preview\SampleCandidates" class="Setono\SyliusCMSPlugin\Preview\SampleCandidates">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Condition\ConditionMatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Source\Product\TaxonFilter"/>
+            <argument type="tagged_locator" tag="setono_sylius_cms.search" index-by="kind"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Preview\SampleCandidatesInterface" alias="Setono\SyliusCMSPlugin\Preview\SampleCandidates"/>
+
+        <service id="Setono\SyliusCMSPlugin\Preview\SampleObjects" class="Setono\SyliusCMSPlugin\Preview\SampleObjects">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\SampleCandidatesInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Condition\ConditionMatcher"/>
+        </service>
+
+        <!-- The host-page context of the previewed entry's own tree: itself, or a snippet's sample object -->
+        <service id="Setono\SyliusCMSPlugin\Preview\PreviewedHostPageContext" class="Setono\SyliusCMSPlugin\Preview\PreviewedHostPageContext">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\SampleObjects"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
+        </service>
+
+        <!-- The real shop page a slot renders on, which a project decorates for a slot of its own -->
+        <service id="Setono\SyliusCMSPlugin\Preview\HostPageUrlGenerator" class="Setono\SyliusCMSPlugin\Preview\HostPageUrlGenerator">
+            <argument type="service" id="router"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Preview\HostPageUrlGeneratorInterface" alias="Setono\SyliusCMSPlugin\Preview\HostPageUrlGenerator"/>
+
+        <!-- Where a snippet's preview and share links show it: the host page of one of its placements, or a plain page -->
+        <service id="Setono\SyliusCMSPlugin\Preview\SnippetHostPages" class="Setono\SyliusCMSPlugin\Preview\SnippetHostPages">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\SampleObjects"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\HostPageUrlGeneratorInterface"/>
+            <argument type="service" id="router"/>
+        </service>
+
+        <!-- Lets the placement a snippet's preview or share link shows win in its slot with the snippet's draft -->
+        <service id="Setono\SyliusCMSPlugin\Preview\PreviewPlacementPicker" class="Setono\SyliusCMSPlugin\Preview\PreviewPlacementPicker"
+                 decorates="Setono\SyliusCMSPlugin\Rendering\PlacementPickerInterface">
+            <argument type="service" id=".inner"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider"/>
+        </service>
+
         <!-- Ahead of Sylius's hostname-based channel context, which has the default priority 0 -->
         <service id="Setono\SyliusCMSPlugin\Preview\PreviewChannelContext" class="Setono\SyliusCMSPlugin\Preview\PreviewChannelContext">
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>

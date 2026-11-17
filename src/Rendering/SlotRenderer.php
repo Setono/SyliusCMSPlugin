@@ -34,7 +34,10 @@ use Twig\Environment;
  */
 final class SlotRenderer implements SlotRendererInterface, ResetInterface
 {
-    /** The template a slot with something to show renders in. It gets slot, snippets (PlacedSnippet), context and the render context */
+    /**
+     * The template a slot with something to show renders in. It gets slot, snippets (PlacedSnippet), whether it's
+     * outlined for the builder's preview of a snippet, context and the render context
+     */
     public const TEMPLATE = '@SetonoSyliusCMSPlugin/slot/slot.html.twig';
 
     /** @var array<string, array<string, list<PlacementData>>> channel code => slot identifier => its placements */
@@ -76,7 +79,7 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
         $winners = [];
         foreach ($this->placementPicker->pick($slot, $placements, $renderContext) as $candidate) {
             if ($candidate->wins()) {
-                $winners[] = [$candidate->placement, $candidate->snippet];
+                $winners[] = [$candidate->placement, $candidate->snippet, $candidate->previewed];
             }
         }
 
@@ -117,9 +120,11 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
 
     /**
      * The winning snippets' references load together, in one pass, before any of them renders. A snippet whose blocks
-     * all stay hidden shows nothing, and a slot whose snippets show nothing prints nothing
+     * all stay hidden shows nothing, and a slot whose snippets show nothing prints nothing. In the builder's preview of
+     * a snippet, its draft is marked for the builder, in the slot outlined and labelled, even when none of its blocks
+     * show, so the editor sees where it goes
      *
-     * @param list<array{PlacementData, SnippetInterface}> $winners
+     * @param list<array{PlacementData, SnippetInterface, bool}> $winners each with whether it's the previewed draft
      */
     private function renderSnippets(SlotMetadata $slot, array $winners, RenderContext $context): string
     {
@@ -127,20 +132,24 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
             return '';
         }
 
-        $context = self::asShoppersSeeIt($context);
+        $shoppers = self::asShoppersSeeIt($context);
 
         $trees = array_map(fn (array $winner): StoredTree => $this->upgrader->readBlockTree($winner[1]), $winners);
         $references = $this->referenceLoader->load((function () use ($trees): \Generator {
             foreach ($trees as $tree) {
                 yield from $this->blockViewBuilder->references($tree->blocks);
             }
-        })(), $context);
+        })(), $shoppers);
 
+        $outlined = false;
         $snippets = [];
-        foreach ($winners as $index => [$placement, $snippet]) {
-            $blocks = $this->blockViewBuilder->build($trees[$index]->blocks, $context, $references, $snippet->getUuid());
-            if ([] !== $blocks) {
-                $snippets[] = new PlacedSnippet($placement, $snippet, $blocks);
+        foreach ($winners as $index => [$placement, $snippet, $previewed]) {
+            $marked = $previewed && RenderContext::PREVIEW_MODE_BUILDER === $context->previewMode;
+            $snippetContext = $marked ? $context : $shoppers;
+            $blocks = $this->blockViewBuilder->build($trees[$index]->blocks, $snippetContext, $references, $snippet->getUuid());
+            if ([] !== $blocks || $marked) {
+                $snippets[] = new PlacedSnippet($placement, $snippet, $blocks, $previewed, $snippetContext);
+                $outlined = $outlined || $marked;
             }
         }
 
@@ -151,15 +160,16 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
         return $this->twig->render(self::TEMPLATE, [
             'slot' => $slot,
             'snippets' => $snippets,
+            'outlined' => $outlined,
             'context' => $context->getHostPageContext(),
-            CMSRuntime::RENDER_CONTEXT => $context,
+            CMSRuntime::RENDER_CONTEXT => $shoppers,
         ]);
     }
 
     /**
      * In the builder's preview, only the edited entry is marked for the builder to select and type in. Snippets in
-     * slots show as shoppers see them, with the preview's Shown to and Date. #260 puts the previewed snippet's draft in
-     * its slot
+     * slots show as shoppers see them, with the preview's Shown to and Date, but for a snippet's own draft in the slot
+     * of the placement its preview shows
      */
     private static function asShoppersSeeIt(RenderContext $context): RenderContext
     {

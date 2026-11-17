@@ -14,6 +14,8 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaUsesAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PresenceAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRenderAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewSamplesAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewSnippetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRevisionAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewTokenAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PublishEntryAction;
@@ -308,6 +310,17 @@ return static function (RoutingConfigurator $routes): void {
     $routes->add('setono_sylius_cms_admin_api_preview_render', '/cms/api/preview/render')
         ->controller(PreviewRenderAction::class)
         ->methods(['POST'])
+    ;
+
+    // What the top bar says of a snippet's preview, and the sample objects its picker finds, under a preview token
+    $routes->add('setono_sylius_cms_admin_api_preview_snippet', '/cms/api/preview/snippet')
+        ->controller(PreviewSnippetAction::class)
+        ->methods(['GET'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_preview_samples', '/cms/api/preview/samples')
+        ->controller(PreviewSamplesAction::class)
+        ->methods(['GET'])
     ;
 
     // How many items a source yields for the builder's parameters, under a preview token
