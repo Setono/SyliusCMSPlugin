@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Homepage\CMSHomepageChannels;
 use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -129,8 +130,7 @@ final class PlacementHiddenByHomepageTest extends TestCase
                 'shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null, 'template_event' => ['name' => 'sylius.shop.layout.footer', 'priority' => -10]],
                 'store_homepage' => ['label' => 'setono_sylius_cms.slot.store_homepage', 'provides' => [], 'cap' => null, 'template_event' => ['name' => 'sylius.shop.homepage', 'priority' => 100]],
             ]),
-            $this->homepages->reveal(),
-            $this->channels->reveal(),
+            new CMSHomepageChannels($this->homepages->reveal(), $this->channels->reveal()),
         );
     }
 

@@ -86,7 +86,7 @@ final class CappedSlotsTest extends WebTestCase
     }
 
     /**
-     * @return list<string>
+     * @return array<mixed>
      */
     private static function headingsIn(Crawler $crawler, string $slot): array
     {

@@ -139,8 +139,7 @@
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\PlacementHiddenByHomepage" class="Setono\SyliusCMSPlugin\Problem\Kind\PlacementHiddenByHomepage">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface"/>
-            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Homepage\CMSHomepageChannels"/>
 
             <tag name="setono_sylius_cms.problem_kind"/>
         </service>

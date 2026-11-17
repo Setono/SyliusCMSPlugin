@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Problem\Kind;
 
+use Setono\SyliusCMSPlugin\Homepage\CMSHomepageChannels;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Model\PlacementInterface;
@@ -14,10 +15,7 @@ use Setono\SyliusCMSPlugin\Problem\ReferenceProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
-use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
-use Sylius\Component\Channel\Model\ChannelInterface;
-use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
@@ -31,14 +29,10 @@ final readonly class PlacementHiddenByHomepage implements ReferenceProblemKindIn
 {
     public const CODE = 'placement_hidden_by_homepage';
 
-    /**
-     * @param ChannelRepositoryInterface<ChannelInterface> $channelRepository
-     */
     public function __construct(
         private PlacementRepositoryInterface $placements,
         private SlotRegistryInterface $slots,
-        private HomepageRepositoryInterface $homepages,
-        private ChannelRepositoryInterface $channelRepository,
+        private CMSHomepageChannels $cmsHomepageChannels,
     ) {
     }
 
@@ -84,7 +78,7 @@ final readonly class PlacementHiddenByHomepage implements ReferenceProblemKindIn
             return;
         }
 
-        $channels = $this->channelsWithCMSHomepage($entry->getChannelCodes());
+        $channels = $this->cmsHomepageChannels->names($entry->getChannelCodes());
         if ([] === $channels) {
             return;
         }
@@ -101,29 +95,5 @@ final readonly class PlacementHiddenByHomepage implements ReferenceProblemKindIn
                 Fix::inPlacements($entry),
             );
         }
-    }
-
-    /**
-     * Of these channels, those whose homepage is a CMS page, by name, or by code for a deleted one, in code order
-     *
-     * @param list<string> $channelCodes
-     *
-     * @return list<string>
-     */
-    private function channelsWithCMSHomepage(array $channelCodes): array
-    {
-        sort($channelCodes);
-        $codes = array_map(static fn (HomepageInterface $homepage): string => $homepage->getChannelCode(), $this->homepages->findByChannelCodes($channelCodes));
-        if ([] === $codes) {
-            return [];
-        }
-
-        sort($codes);
-        $names = [];
-        foreach ($this->channelRepository->findBy(['code' => $codes]) as $channel) {
-            $names[(string) $channel->getCode()] = $channel->getName() ?? (string) $channel->getCode();
-        }
-
-        return array_map(static fn (string $code): string => $names[$code] ?? $code, $codes);
     }
 }
