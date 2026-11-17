@@ -98,7 +98,8 @@ final class CheckFieldTypesPass implements CompilerPassInterface
     private static function shippedFieldAttributes(): array
     {
         $attributes = [];
-        foreach (glob(dirname((string) (new \ReflectionClass(Field::class))->getFileName()) . '/*.php') ?: [] as $file) {
+        $files = glob(dirname((string) (new \ReflectionClass(Field::class))->getFileName()) . '/*.php');
+        foreach (false === $files ? [] : $files as $file) {
             $class = self::SHIPPED_NAMESPACE . basename($file, '.php');
             if (class_exists($class) && is_subclass_of($class, Field::class) && !(new \ReflectionClass($class))->isAbstract()) {
                 $attributes[] = $class;

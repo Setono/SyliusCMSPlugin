@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler\Fixture;
 
-use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
 use Setono\SyliusCMSPlugin\Attribute\AsSource;
-use Setono\SyliusCMSPlugin\Attribute\FieldType;
-use Setono\SyliusCMSPlugin\Field\Field;
-use Setono\SyliusCMSPlugin\Field\Text;
+use Sylius\Component\Core\Model\ProductInterface;
 
-#[AsSource(code: 'text_again', label: 'app.text_again', of: 'product', params: WithTextAgain::class)]
+#[AsSource(code: 'text_again', label: 'app.text_again', of: ProductInterface::class, params: WithTextAgain::class)]
 final class SourceWithTextAgain
 {
 }

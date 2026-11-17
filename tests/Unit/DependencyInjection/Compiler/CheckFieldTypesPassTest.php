@@ -64,6 +64,8 @@ final class CheckFieldTypesPassTest extends AbstractCompilerPassTestCase
      * @test
      *
      * @dataProvider provideWhereFieldsAre
+     *
+     * @param array<string, mixed> $classes what the registry was handed, by code
      */
     public function it_refuses_a_field_type_with_the_code_of_another(string $registry, array $classes): void
     {

@@ -325,12 +325,22 @@ final class Configuration implements ConfigurationInterface
                             ->scalarPrototype()
                                 ->validate()->always(self::assertScript(...))->end()
                             ->end()
-                            ->validate()->always(static fn (array $scripts): array => array_values(array_unique($scripts)))->end()
+                            ->validate()->always(self::eachOnce(...))->end()
                         ->end()
                     ->end()
                 ->end()
             ->end()
         ;
+    }
+
+    /**
+     * @param list<string> $scripts
+     *
+     * @return list<string> in their order, each once
+     */
+    private static function eachOnce(array $scripts): array
+    {
+        return array_values(array_unique($scripts));
     }
 
     /**
