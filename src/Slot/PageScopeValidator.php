@@ -60,23 +60,22 @@ final readonly class PageScopeValidator implements PageScopeValidatorInterface
             return [new TranslatableMessage('setono_sylius_cms.page_scope.malformed', ['%number%' => $number], self::DOMAIN)];
         }
 
-        if (!$this->conditionKinds->has($condition->kind)) {
+        $kind = $this->conditionKinds->find($condition->kind);
+        if (null === $kind) {
             return [new TranslatableMessage('setono_sylius_cms.page_scope.unknown_kind', ['%number%' => $number, '%kind%' => $condition->kind], self::DOMAIN)];
         }
 
-        $kind = $this->conditionKinds->get($condition->kind);
         $label = new TranslatableMessage($kind->label);
         if (!$kind->readsHostPage()) {
             return [new TranslatableMessage('setono_sylius_cms.page_scope.not_host_page', ['%number%' => $number, '%kind%' => $label], self::DOMAIN)];
         }
 
-        $unprovided = array_values(array_filter($kind->needs, static fn (string $key): bool => !$slot->providesAll([$key])));
-        if ([] !== $unprovided) {
+        if (!$slot->canScopeWith($kind)) {
             return array_map(fn (string $key): TranslatableMessage => new TranslatableMessage('setono_sylius_cms.page_scope.needs', [
                 '%number%' => $number,
                 '%kind%' => $label,
-                '%context%' => $this->contextKeys->has($key) ? new TranslatableMessage($this->contextKeys->get($key)->label) : $key,
-            ], self::DOMAIN), $unprovided);
+                '%context%' => $this->contextKeys->labelOf($key),
+            ], self::DOMAIN), $slot->unprovided($kind->needs));
         }
 
         return $this->validateParams($kind, $number, $label, $condition->params);

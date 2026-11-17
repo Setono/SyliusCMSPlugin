@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Registry;
 
 use PHPUnit\Framework\TestCase;
+use Setono\SyliusCMSPlugin\Condition\Reads;
+use Setono\SyliusCMSPlugin\Registry\ConditionKindMetadata;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
+use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\SignedIn;
 
 final class SlotMetadataTest extends TestCase
 {
@@ -41,6 +44,22 @@ final class SlotMetadataTest extends TestCase
         self::assertTrue($productPage->providesAll(['product']));
         self::assertFalse($productPage->providesAll(['product', 'taxon']));
         self::assertFalse((new SlotMetadata('shop.footer', 'app.label'))->providesAll(['product']));
+        self::assertSame(['taxon'], $productPage->unprovided(['product', 'taxon']));
+    }
+
+    /**
+     * See "Page scopes" in docs/spec/slots.md
+     *
+     * @test
+     */
+    public function it_lets_a_page_scope_hold_a_condition_kind_that_reads_the_host_page_and_needs_only_what_it_provides(): void
+    {
+        $productPage = new SlotMetadata('product.sidebar', 'app.label', ['product']);
+
+        self::assertTrue($productPage->canScopeWith(self::kind([Reads::HostPage], ['product'])));
+        self::assertTrue($productPage->canScopeWith(self::kind([Reads::HostPage], [])));
+        self::assertFalse($productPage->canScopeWith(self::kind([Reads::HostPage], ['taxon'])), 'It needs a key the slot doesn\'t provide');
+        self::assertFalse($productPage->canScopeWith(self::kind([Reads::Customer], [])), 'It reads the shopper, not the page');
     }
 
     /**
@@ -82,5 +101,14 @@ final class SlotMetadataTest extends TestCase
         yield 'two dots in a row' => ['shop..top', false];
         yield 'a trailing dot' => ['shop.', false];
         yield 'a template event name with a space' => ['sylius shop', false];
+    }
+
+    /**
+     * @param list<Reads> $reads
+     * @param list<string> $needs
+     */
+    private static function kind(array $reads, array $needs): ConditionKindMetadata
+    {
+        return new ConditionKindMetadata('kind', 'app.kind', $needs, $reads, null, [], new SignedIn());
     }
 }

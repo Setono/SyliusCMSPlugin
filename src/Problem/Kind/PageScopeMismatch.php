@@ -65,21 +65,19 @@ final readonly class PageScopeMismatch implements ProblemKindInterface
     private function mismatches(SnippetInterface $snippet, SlotMetadata $slot, string $code): iterable
     {
         $slotLabel = new TranslatableMessage($slot->label);
-        if (!$this->conditionKinds->has($code)) {
+        $kind = $this->conditionKinds->find($code);
+        if (null === $kind) {
             yield $this->problem($snippet, new TranslatableMessage('setono_sylius_cms.problem.page_scope_removed_kind', ['%slot%' => $slotLabel, '%kind%' => $code]));
 
             return;
         }
 
-        $kind = $this->conditionKinds->get($code);
-        foreach ($kind->needs as $key) {
-            if (!$slot->providesAll([$key])) {
-                yield $this->problem($snippet, new TranslatableMessage('setono_sylius_cms.problem.page_scope_unprovided', [
-                    '%slot%' => $slotLabel,
-                    '%kind%' => new TranslatableMessage($kind->label),
-                    '%context%' => $this->contextKeys->has($key) ? new TranslatableMessage($this->contextKeys->get($key)->label) : $key,
-                ]));
-            }
+        foreach ($slot->unprovided($kind->needs) as $key) {
+            yield $this->problem($snippet, new TranslatableMessage('setono_sylius_cms.problem.page_scope_unprovided', [
+                '%slot%' => $slotLabel,
+                '%kind%' => new TranslatableMessage($kind->label),
+                '%context%' => $this->contextKeys->labelOf($key),
+            ]));
         }
     }
 

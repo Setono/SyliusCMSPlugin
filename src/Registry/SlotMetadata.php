@@ -64,6 +64,27 @@ final readonly class SlotMetadata
      */
     public function providesAll(array $keys): bool
     {
-        return [] === array_diff($keys, $this->provides);
+        return [] === $this->unprovided($keys);
+    }
+
+    /**
+     * The ones of these context keys it doesn't provide, in the order given
+     *
+     * @param list<string> $keys
+     *
+     * @return list<string>
+     */
+    public function unprovided(array $keys): array
+    {
+        return array_values(array_diff($keys, $this->provides));
+    }
+
+    /**
+     * Whether the page scope of a placement in it may hold a condition of the kind: one that reads the host page, and
+     * needs only what it provides. See "Page scopes" in docs/spec/slots.md
+     */
+    public function canScopeWith(ConditionKindMetadata $kind): bool
+    {
+        return $kind->readsHostPage() && $this->providesAll($kind->needs);
     }
 }

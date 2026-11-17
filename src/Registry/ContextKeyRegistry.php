@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Registry;
 
+use Symfony\Component\Translation\TranslatableMessage;
+
 /**
  * Context keys are data, declared in config, which the container hands this registry as the config holds them
  */
@@ -28,6 +30,13 @@ final class ContextKeyRegistry implements ContextKeyRegistryInterface
     public function get(string $key): ContextKeyMetadata
     {
         return $this->keys()[$key] ?? throw new UnknownContextKeyException($key);
+    }
+
+    public function labelOf(string $key): TranslatableMessage|string
+    {
+        $metadata = $this->keys()[$key] ?? null;
+
+        return null === $metadata ? $key : new TranslatableMessage($metadata->label);
     }
 
     public function all(): array

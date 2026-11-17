@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry;
 use Setono\SyliusCMSPlugin\Registry\UnknownContextKeyException;
 use Sylius\Component\Core\Model\Product;
 use Sylius\Component\Core\Model\ProductInterface;
+use Symfony\Component\Translation\TranslatableMessage;
 
 final class ContextKeyRegistryTest extends TestCase
 {
@@ -24,6 +25,17 @@ final class ContextKeyRegistryTest extends TestCase
         self::assertTrue($registry->has('product'));
         self::assertFalse($registry->has('brand'));
         self::assertEquals(new ContextKeyMetadata('product', ProductInterface::class, 'setono_sylius_cms.context_key.product'), $registry->get('product'));
+    }
+
+    /**
+     * Such as in a message about a key a snippet still declares after a deploy removed it
+     *
+     * @test
+     */
+    public function it_names_a_context_key_by_its_label_or_by_itself_when_the_code_no_longer_declares_it(): void
+    {
+        self::assertEquals(new TranslatableMessage('setono_sylius_cms.context_key.product'), self::registry()->labelOf('product'));
+        self::assertSame('brand', self::registry()->labelOf('brand'));
     }
 
     /**

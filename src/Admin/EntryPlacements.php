@@ -120,7 +120,7 @@ final readonly class EntryPlacements
     {
         return array_values(array_map(
             static fn (ConditionKindMetadata $kind): string => $kind->code,
-            array_filter($this->conditionKinds->all(), static fn (ConditionKindMetadata $kind): bool => $kind->readsHostPage() && $slot->providesAll($kind->needs)),
+            array_filter($this->conditionKinds->all(), $slot->canScopeWith(...)),
         ));
     }
 

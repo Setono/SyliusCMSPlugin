@@ -99,6 +99,8 @@ final readonly class ContextCheck implements ContextCheckInterface
 
     private function label(string $key): string
     {
-        return $this->contextKeys->has($key) ? $this->translator->trans($this->contextKeys->get($key)->label) : $key;
+        $label = $this->contextKeys->labelOf($key);
+
+        return $label instanceof TranslatableMessage ? $label->trans($this->translator) : $label;
     }
 }
