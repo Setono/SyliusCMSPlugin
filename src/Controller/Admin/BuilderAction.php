@@ -34,6 +34,9 @@ use Twig\Environment;
 final readonly class BuilderAction
 {
     /** A path and query of URL characters only (RFC 3986) */
+    /** What the endpoints that name another entry hold in place of its UUID, which the builder replaces */
+    public const UUID_PLACEHOLDER = '00000000-0000-4000-8000-000000000000';
+
     private const URL_CHARACTERS = '#^[A-Za-z0-9\-._~!$&\'()*+,;=:@/%?]*\z#';
 
     /**
@@ -96,6 +99,10 @@ final readonly class BuilderAction
                     'search' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_search', ['kind' => '__kind__']),
                     // How many items a source yields for a list field's parameters, under the preview's token
                     'sourceCount' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_source_count'),
+                    // The blocks a Snippet block shows, which Detach copies, and the builder its Edit snippet opens,
+                    // each with UUID_PLACEHOLDER for the snippet's UUID
+                    'snippetBlocks' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_snippet_blocks', ['uuid' => self::UUID_PLACEHOLDER]),
+                    'builder' => $this->urlGenerator->generate('setono_sylius_cms_admin_builder', ['uuid' => self::UUID_PLACEHOLDER]),
                 ],
                 'channels' => array_map(static fn (array $channel): array => [
                     'code' => $channel['channel']->getCode(),

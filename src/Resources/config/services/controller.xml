@@ -208,6 +208,14 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\SnippetBlocksAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\SnippetBlocksAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface"/>
