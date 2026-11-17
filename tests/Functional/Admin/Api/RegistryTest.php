@@ -115,7 +115,7 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($registry);
         $blockTypes = self::blockTypes($registry);
 
-        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'button', 'accordion', 'accordion_item', 'products', 'taxons', 'first_match'], array_keys($blockTypes));
+        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'button', 'accordion', 'accordion_item', 'products', 'taxons', 'carousel', 'first_match'], array_keys($blockTypes));
 
         self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
         self::assertNull($blockTypes['columns']['parents']);
@@ -132,11 +132,13 @@ final class RegistryTest extends BuilderApiTestCase
             ['type' => 'accordion', 'min' => null, 'max' => null],
             ['type' => 'products', 'min' => null, 'max' => null],
             ['type' => 'taxons', 'min' => null, 'max' => null],
+            ['type' => 'carousel', 'min' => null, 'max' => null],
             ['type' => 'first_match', 'min' => null, 'max' => null],
         ];
         self::assertSame($all, $blockTypes['group']['children']);
         self::assertSame($all, $blockTypes['column']['children']);
         self::assertSame($all, $blockTypes['first_match']['children']);
+        self::assertSame($all, $blockTypes['carousel']['children']);
         self::assertSame([], $blockTypes['first_match']['fields']);
         self::assertSame([], $blockTypes['spacer']['children']);
         self::assertSame([], $blockTypes['heading']['children']);
@@ -287,8 +289,8 @@ final class RegistryTest extends BuilderApiTestCase
                     'name' => 'display',
                     'schema' => [
                         'type' => 'string',
-                        'enum' => ['grid'],
-                        'x-cms-options' => ['choices' => ['grid' => 'Grid'], 'multiple' => false],
+                        'enum' => ['grid', 'carousel'],
+                        'x-cms-options' => ['choices' => ['grid' => 'Grid', 'carousel' => 'Carousel'], 'multiple' => false],
                         'x-cms-type' => 'choice',
                         'x-cms-label' => 'Display',
                         'x-cms-help' => null,
@@ -307,6 +309,46 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertSame('taxons', $taxons[0]['name']);
         self::assertIsArray($taxons[0]['schema']);
         self::assertSame(['taxons', 'Taxons'], [$taxons[0]['schema']['x-cms-type'], $taxons[0]['schema']['x-cms-label']]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_answers_the_carousel_block_with_its_slides_per_view_autoplay_and_interval_in_whole_seconds(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+
+        $registry = self::json($client, 'GET', '/admin/cms/api/registry');
+        self::assertIsArray($registry);
+        $carousel = self::blockTypes($registry)['carousel'];
+
+        self::assertSame('Carousel', $carousel['label']);
+        self::assertSame('/bundles/setonosyliuscmsplugin/thumbnail/block/carousel.svg', $carousel['thumbnail']);
+        self::assertIsArray($carousel['fields']);
+        $fields = array_column($carousel['fields'], 'schema', 'name');
+        self::assertSame(['perView', 'autoplay', 'interval'], array_keys($fields));
+        self::assertIsArray($fields['perView']);
+        self::assertSame(['1', '2', '3', '4'], $fields['perView']['enum']);
+        self::assertSame('1', $fields['perView']['default']);
+        self::assertIsArray($fields['autoplay']);
+        self::assertSame(['toggle', false], [$fields['autoplay']['x-cms-type'], $fields['autoplay']['default']]);
+        // Compared regardless of key order
+        self::assertEquals(
+            [
+                'type' => 'integer',
+                'minimum' => 2,
+                'maximum' => 30,
+                'x-cms-options' => ['min' => 2, 'max' => 30, 'step' => null, 'integer' => true],
+                'x-cms-type' => 'number',
+                'x-cms-label' => 'Interval',
+                'x-cms-help' => 'The seconds each slide shows while it autoplays, from 2 to 30.',
+                'x-cms-required' => false,
+                'x-cms-translatable' => false,
+                'default' => 5,
+            ],
+            $fields['interval'],
+        );
     }
 
     /**

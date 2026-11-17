@@ -8,6 +8,7 @@ setono_sylius_cms:
         accordion: Accordion
         accordion_item: Accordion item
         button: Button
+        carousel: Carousel
         column: Column
         columns: Columns
         first_match: First match
@@ -19,12 +20,18 @@ setono_sylius_cms:
         spacer: Spacer
         taxons: Taxons
     choice:
+        carousel_per_view:
+            1: '1'
+            2: '2'
+            3: '3'
+            4: '4'
         heading_level:
             h1: Heading 1
             h2: Heading 2
             h3: Heading 3
             h4: Heading 4
         products_display:
+            carousel: Carousel
             grid: Grid
         spacer_size:
             large: Large
@@ -47,6 +54,11 @@ setono_sylius_cms:
             title: Title
         button:
             link: Link
+        carousel:
+            autoplay: Autoplay
+            interval: Interval
+            interval_help: The seconds each slide shows while it autoplays, from 2 to 30.
+            per_view: Slides per view
         channel_condition:
             channels: Channels
         customer_group_condition:
