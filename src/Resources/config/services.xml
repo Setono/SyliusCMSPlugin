@@ -3,6 +3,7 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <imports>
         <import resource="services/admin.xml"/>
+        <import resource="services/bestsellers.xml"/>
         <import resource="services/block_type.xml"/>
         <import resource="services/builder.xml"/>
         <import resource="services/command.xml"/>
@@ -13,7 +14,9 @@
         <import resource="services/form.xml"/>
         <import resource="services/homepage.xml"/>
         <import resource="services/layout.xml"/>
+        <import resource="services/link.xml"/>
         <import resource="services/localization.xml"/>
+        <import resource="services/media.xml"/>
         <import resource="services/preview.xml"/>
         <import resource="services/problem.xml"/>
         <import resource="services/publishing.xml"/>
@@ -26,6 +29,7 @@
         <import resource="services/security.xml"/>
         <import resource="services/seo.xml"/>
         <import resource="services/share_link.xml"/>
+        <import resource="services/source.xml"/>
         <import resource="services/targeting.xml"/>
         <import resource="services/translation.xml"/>
         <import resource="services/twig.xml"/>

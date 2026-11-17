@@ -32,6 +32,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
 
             <tag name="kernel.reset" method="reset"/>
         </service>
@@ -49,15 +50,19 @@
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemCountProvider"/>
 
         <!--
-        Has the entries a flush writes counted again once it's done, and those that reference what it writes.
-        RegisterProblemKindsPass hands it the kinds about references and what they reference
+        Has the entries a flush writes counted again once it's done, and those that reference what it writes: of what
+        entries refer to by a field, such as a product's code, only a delete or a change of the field. RegisterProblemKindsPass
+        hands it the kinds about references, what they reference and the fields they refer to it by. preUpdate gives it
+        an update's change set
         -->
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountListener" class="Setono\SyliusCMSPlugin\Problem\ProblemCountListener">
             <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface"/>
             <argument type="collection"/>
             <argument type="collection"/>
+            <argument type="collection"/>
 
             <tag name="doctrine.event_listener" event="onFlush"/>
+            <tag name="doctrine.event_listener" event="preUpdate"/>
             <tag name="doctrine.event_listener" event="postFlush"/>
             <tag name="kernel.reset" method="reset"/>
         </service>
@@ -72,6 +77,15 @@
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
         </service>
 
+        <!-- A list filled by a source the code no longer has, which lists nothing -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\UnknownSource" class="Setono\SyliusCMSPlugin\Problem\Kind\UnknownSource">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\TreeValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+        </service>
+
         <!-- A layout a project removed or turned off on purpose: a warning in the admin, so lint leaves it out -->
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\RemovedLayout" class="Setono\SyliusCMSPlugin\Problem\Kind\RemovedLayout">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
@@ -81,8 +95,7 @@
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue" class="Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue">
-            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\TreeValues"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
 
@@ -97,6 +110,18 @@
 
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
             <tag name="kernel.reset" method="reset"/>
+        </service>
+
+        <!-- A reference in a field to a record that was deleted, such as a media item, which setono:cms:lint reports -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\BrokenReference" class="Setono\SyliusCMSPlugin\Problem\Kind\BrokenReference">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="tagged_locator" tag="setono_sylius_cms.reference_type_loader" index-by="type"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\UrlTakenByRoute" class="Setono\SyliusCMSPlugin\Problem\Kind\UrlTakenByRoute">

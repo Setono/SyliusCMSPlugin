@@ -25,6 +25,8 @@ export interface PreviewSyncOptions {
     openSettings(): void;
     /** Leaves the builder, on Esc pressed in the page. */
     leave(): void;
+    /** Flags the blocks with a link that doesn't resolve in the page, none while no page is connected. */
+    flagUnresolvedLinks?(keys: string[]): void;
 }
 
 export interface PreviewSync {
@@ -36,7 +38,7 @@ export interface PreviewSync {
     dispose(): void;
 }
 
-export function createPreviewSync({ store, strings, render, reload, openBlockPicker, openSettings, leave }: PreviewSyncOptions): PreviewSync {
+export function createPreviewSync({ store, strings, render, reload, openBlockPicker, openSettings, leave, flagUnresolvedLinks }: PreviewSyncOptions): PreviewSync {
     let bridge: { post: (message: ToBridge) => void; token: string } | null = null;
     // Counts the pages, so an answer for a page that's gone is dropped
     let page = 0;
@@ -174,6 +176,7 @@ export function createPreviewSync({ store, strings, render, reload, openBlockPic
             bridge = null;
             page++;
             rendering = false;
+            flagUnresolvedLinks?.([]);
         },
 
         receive(message) {
@@ -242,6 +245,9 @@ export function createPreviewSync({ store, strings, render, reload, openBlockPic
                     }
                     break;
                 }
+                case 'unresolved_links':
+                    flagUnresolvedLinks?.(message.keys);
+                    break;
                 case 'ready':
                     break;
             }

@@ -11,6 +11,8 @@ use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Factory\HomepageFactory;
 use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
+use Setono\SyliusCMSPlugin\Model\BestsellerScore;
+use Setono\SyliusCMSPlugin\Model\BestsellerScoreInterface;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
@@ -23,6 +25,14 @@ use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
 use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
+use Setono\SyliusCMSPlugin\Model\MediaFolder;
+use Setono\SyliusCMSPlugin\Model\MediaFolderInterface;
+use Setono\SyliusCMSPlugin\Model\MediaItem;
+use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
+use Setono\SyliusCMSPlugin\Model\MediaItemTranslation;
+use Setono\SyliusCMSPlugin\Model\MediaItemTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\MediaUsage;
+use Setono\SyliusCMSPlugin\Model\MediaUsageInterface;
 use Setono\SyliusCMSPlugin\Model\OldSlug;
 use Setono\SyliusCMSPlugin\Model\OldSlugInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -41,6 +51,9 @@ use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepository;
+use Setono\SyliusCMSPlugin\Repository\MediaFolderRepository;
+use Setono\SyliusCMSPlugin\Repository\MediaItemRepository;
+use Setono\SyliusCMSPlugin\Repository\MediaUsageRepository;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
@@ -71,12 +84,25 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             [],
         ], [
-            'disabled' => ['block_types' => [], 'layouts' => []],
+            'disabled' => ['block_types' => [], 'layouts' => [], 'sources' => []],
             'assets' => true,
             'content_types' => [],
             'block_styles' => [],
             'fallback_locales' => [],
             'revisions' => ['keep' => 50],
+            'media' => [
+                'storage' => 'setono_sylius_cms.storage',
+                'types' => [
+                    'image' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml'],
+                    'video' => ['video/mp4', 'video/webm'],
+                    'document' => ['application/pdf'],
+                ],
+                'max_upload_size' => null,
+                'grace_period' => 'P1D',
+                'liip' => ['loader' => 'setono_sylius_cms', 'resolver' => 'setono_sylius_cms'],
+                'widths' => [320, 640, 960, 1280, 1600, 1920, 2560],
+            ],
+            'bestsellers' => ['window' => 'P30D'],
             'resources' => [
                 'entry' => [
                     'classes' => [
@@ -167,6 +193,45 @@ final class ConfigurationTest extends TestCase
                         'factory' => HomepageFactory::class,
                     ],
                 ],
+                'media_item' => [
+                    'classes' => [
+                        'model' => MediaItem::class,
+                        'interface' => MediaItemInterface::class,
+                        'repository' => MediaItemRepository::class,
+                        'factory' => TranslatableFactory::class,
+                    ],
+                    'translation' => [
+                        'classes' => [
+                            'model' => MediaItemTranslation::class,
+                            'interface' => MediaItemTranslationInterface::class,
+                            'factory' => Factory::class,
+                        ],
+                    ],
+                ],
+                'media_folder' => [
+                    'classes' => [
+                        'model' => MediaFolder::class,
+                        'interface' => MediaFolderInterface::class,
+                        'repository' => MediaFolderRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'media_usage' => [
+                    'classes' => [
+                        'model' => MediaUsage::class,
+                        'interface' => MediaUsageInterface::class,
+                        'repository' => MediaUsageRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'bestseller_score' => [
+                    'classes' => [
+                        'model' => BestsellerScore::class,
+                        'interface' => BestsellerScoreInterface::class,
+                        'repository' => EntityRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
                 'page' => [
                     'classes' => [
                         'model' => Page::class,
@@ -190,12 +255,124 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
+    public function it_lets_a_project_set_the_media_storage_the_mime_types_of_a_kind_and_the_upload_limit(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['media' => ['storage' => 'app.s3_storage', 'types' => ['document' => ['application/pdf', 'application/zip']], 'max_upload_size' => '20M']],
+        ], ['media' => [
+            'storage' => 'app.s3_storage',
+            'types' => [
+                'image' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml'],
+                'video' => ['video/mp4', 'video/webm'],
+                'document' => ['application/pdf', 'application/zip'],
+            ],
+            'max_upload_size' => 20 * 1024 * 1024,
+            'grace_period' => 'P1D',
+            'liip' => ['loader' => 'setono_sylius_cms', 'resolver' => 'setono_sylius_cms'],
+            'widths' => [320, 640, 960, 1280, 1600, 1920, 2560],
+        ]], 'media');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_name_the_liip_loader_and_resolver_its_images_are_processed_with(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['media' => ['liip' => ['loader' => 'app_s3', 'resolver' => 'app_s3_cache']]],
+        ], ['media' => ['liip' => ['loader' => 'app_s3', 'resolver' => 'app_s3_cache']]], 'media.liip');
+    }
+
+    /**
+     * @test
+     */
+    public function it_takes_the_widths_of_the_image_variants_in_ascending_order_each_once(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['media' => ['widths' => [1200, 400, 800, 400]]],
+        ], ['media' => ['widths' => [400, 800, 1200]]], 'media.widths');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_width_that_is_not_a_positive_number_of_pixels(): void
+    {
+        $this->assertConfigurationIsInvalid([['media' => ['widths' => [640, 0]]]], 'An image width must be a positive number of pixels');
+        $this->assertConfigurationIsInvalid([['media' => ['widths' => ['wide']]]], 'An image width must be a positive number of pixels');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_no_widths(): void
+    {
+        $this->assertConfigurationIsInvalid([['media' => ['widths' => []]]], 'should have at least 1 element');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_set_the_grace_period_before_a_replaced_file_is_deleted(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['media' => ['grace_period' => 'PT12H']],
+        ], ['media' => ['grace_period' => 'PT12H']], 'media.grace_period');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_grace_period_that_is_not_an_iso_8601_duration(): void
+    {
+        $this->assertConfigurationIsInvalid([['media' => ['grace_period' => '1 day']]], '"1 day" isn\'t an ISO 8601 duration, such as P1D');
+    }
+
+    /**
+     * @test
+     */
+    public function it_takes_the_upload_limit_in_bytes(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['media' => ['max_upload_size' => 1500000]],
+        ], ['media' => ['max_upload_size' => 1500000]], 'media.max_upload_size');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_an_upload_limit_that_is_not_a_size(): void
+    {
+        $this->assertConfigurationIsInvalid([['media' => ['max_upload_size' => 'lots']]], 'must be a positive number of bytes');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_what_is_not_a_mime_type(): void
+    {
+        $this->assertConfigurationIsInvalid([['media' => ['types' => ['document' => ['pdf']]]]], '"pdf" isn\'t a MIME type');
+    }
+
+    /**
+     * An uploaded file of it would have no one kind
+     *
+     * @test
+     */
+    public function it_refuses_a_mime_type_in_two_kinds(): void
+    {
+        $this->assertConfigurationIsInvalid([['media' => ['types' => ['document' => ['image/png']]]]], 'The MIME type "image/png" is in both');
+    }
+
+    /**
+     * @test
+     */
     public function it_lets_a_project_switch_off_shipped_block_types_by_code(): void
     {
         $this->assertProcessedConfigurationEquals([
             ['disabled' => ['block_types' => ['spacer']]],
             ['disabled' => ['block_types' => ['group']]],
-        ], ['disabled' => ['block_types' => ['spacer', 'group'], 'layouts' => []]], 'disabled');
+        ], ['disabled' => ['block_types' => ['spacer', 'group'], 'layouts' => [], 'sources' => []]], 'disabled');
     }
 
     /**
@@ -206,7 +383,18 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             ['disabled' => ['layouts' => ['page.landing']]],
             ['disabled' => ['layouts' => ['blog_post.wide']]],
-        ], ['disabled' => ['block_types' => [], 'layouts' => ['page.landing', 'blog_post.wide']]], 'disabled');
+        ], ['disabled' => ['block_types' => [], 'layouts' => ['page.landing', 'blog_post.wide'], 'sources' => []]], 'disabled');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_switch_off_shipped_sources_by_code(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['disabled' => ['sources' => ['newest_products']]],
+            ['disabled' => ['sources' => ['taxon_children']]],
+        ], ['disabled' => ['block_types' => [], 'layouts' => [], 'sources' => ['newest_products', 'taxon_children']]], 'disabled');
     }
 
     /**
@@ -272,7 +460,7 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
-    public function it_lets_a_project_stop_loading_the_shipped_stylesheet(): void
+    public function it_lets_a_project_stop_loading_the_shipped_stylesheet_and_carousel_script(): void
     {
         $this->assertProcessedConfigurationEquals([['assets' => false]], ['assets' => false], 'assets');
     }
@@ -475,6 +663,24 @@ final class ConfigurationTest extends TestCase
     {
         yield 'none' => [0, 'Should be greater than or equal to 1'];
         yield 'not a number' => ['all', 'Invalid type for path "setono_sylius_cms.revisions.keep"'];
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_set_the_window_the_default_bestsellers_calculator_counts_paid_orders_over(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['bestsellers' => ['window' => 'P7D']],
+        ], ['bestsellers' => ['window' => 'P7D']], 'bestsellers');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_bestsellers_window_that_is_not_an_iso_8601_duration(): void
+    {
+        $this->assertConfigurationIsInvalid([['bestsellers' => ['window' => '30 days']]], '"30 days" isn\'t an ISO 8601 duration, such as P1D');
     }
 
     /**

@@ -1,0 +1,8 @@
+--TEST--
+cms_image() renders a <picture> with an AVIF source and WebP in the <img> where the image provider gives AVIF, because Liip doesn't negotiate formats
+--TEMPLATE--
+{{ cms_image(image) }}
+--DATA--
+return $this->withAvif() + $this->rendering(['image' => $this->image(1000, 500)])
+--EXPECT--
+<picture><source type="image/avif" srcset="/avif/320/summer-sale.jpg 320w, /avif/640/summer-sale.jpg 640w, /avif/960/summer-sale.jpg 960w, /avif/1000/summer-sale.jpg 1000w" sizes="(min-width: 1000px) 1000px, 100vw"><img src="/webp/1000/summer-sale.jpg" srcset="/webp/320/summer-sale.jpg 320w, /webp/640/summer-sale.jpg 640w, /webp/960/summer-sale.jpg 960w, /webp/1000/summer-sale.jpg 1000w" sizes="(min-width: 1000px) 1000px, 100vw" width="1000" height="500" alt="A beach at dawn" loading="lazy" decoding="async"></picture>

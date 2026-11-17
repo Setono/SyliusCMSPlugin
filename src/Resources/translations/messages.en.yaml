@@ -2,22 +2,52 @@ setono_sylius_cms:
     block_style:
         dark: Dark
         muted: Muted
+        primary: Primary
+        secondary: Secondary
     block_type:
         accordion: Accordion
         accordion_item: Accordion item
+        banner: Banner
+        button: Button
+        carousel: Carousel
         column: Column
         columns: Columns
+        downloads: Downloads
         first_match: First match
         group: Group
         heading: Heading
+        image: Image
+        link: Link
+        link_list: Link list
+        products: Products
         rich_text: Rich text
         spacer: Spacer
+        taxons: Taxons
+        video: Video
+    # The buttons the carousel script adds in the shop. %number% is the slide's number, which the script fills in
+    carousel:
+        next: Next slide
+        previous: Previous slide
+        slide: Slide %number%
     choice:
+        carousel_per_view:
+            1: '1'
+            2: '2'
+            3: '3'
+            4: '4'
         heading_level:
             h1: Heading 1
             h2: Heading 2
             h3: Heading 3
             h4: Heading 4
+        products_display:
+            carousel: Carousel
+            grid: Grid
+        products_in_taxon_sort:
+            name: Name, A to Z
+            newest: Newest first
+            position: Position in the taxon
+            price: Price, lowest first
         spacer_size:
             large: Large
             medium: Medium
@@ -37,6 +67,27 @@ setono_sylius_cms:
         accordion_item:
             content: Content
             title: Title
+        banner:
+            alt: Alt text
+            alt_help: Describes the image here. Leave it empty to use the image's own alt text from the media library.
+            full_width: Full width
+            heading: Heading
+            image: Image
+            mobile_image: Mobile image
+            mobile_image_help: Shown instead of the image on narrow screens, such as phones. Leave it empty to show the image there too.
+            priority: Load first
+            priority_help: Loads the image before the rest of the page. Turn it on for a banner at the top of the page, and leave it off for banners further down.
+            text: Text
+        bestsellers_source:
+            include_children: Include the taxons below it
+            taxon: Taxon
+        button:
+            link: Link
+        carousel:
+            autoplay: Autoplay
+            interval: Interval
+            interval_help: The seconds each slide shows while it autoplays, from 2 to 30.
+            per_view: Slides per view
         channel_condition:
             channels: Channels
         customer_group_condition:
@@ -44,28 +95,66 @@ setono_sylius_cms:
         date_window_condition:
             from: From
             until: Until
+        downloads:
+            documents: Documents
+            heading: Heading
         group:
             full_width: Full width
         heading:
             level: Level
             text: Text
+        image:
+            alt: Alt text
+            alt_help: Describes the image here. Leave it empty to use the image's own alt text from the media library.
+            caption: Caption
+            image: Image
+            link: Link
+        link:
+            link: Link
+        link_list:
+            heading: Heading
         locale_condition:
             locales: Locales
+        products:
+            display: Display
+            products: Products
+        products_in_taxon_source:
+            include_children: Include the taxons below it
+            sort: Sort by
+            taxon: Taxon
         rich_text:
             content: Content
         spacer:
             size: Size
         standard:
             show_title: Show title
+        taxon_children_source:
+            taxon: Taxon
+        taxons:
+            taxons: Taxons
+        video:
+            embed_url: YouTube or Vimeo URL
+            embed_url_help: Paste the address of a YouTube or Vimeo video, or choose a video from the media library instead.
+            poster: Poster
+            poster_help: Shown before the video plays. Leave it empty to use the video's own poster from the media library.
+            video: Video
     layout:
         page:
             standard: Standard
+    # The link targets' labels. See "Link targets" in docs/spec/extending.md
+    link_target:
+        entry: Entry
+        media: Document or video
+        product: Product
+        taxon: Taxon
+        url: URL
     menu:
         admin:
             hub:
                 all_entries: All entries
                 entries: Entries
                 library: Library
+                media: Media
                 overview: Overview
                 pages: Pages
             main:
@@ -80,8 +169,30 @@ setono_sylius_cms:
             slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team.'
             slug_rules: A slug can't start or end with a slash, or have two slashes in a row.
             title: Title
+    media:
+        # Why a media item can't be deleted. See "Deleting" in docs/spec/media.md
+        in_use: '{1} It''s used in an entry, so it can''t be deleted.|]1,Inf[ It''s used in %count% entries, so it can''t be deleted.'
+        # Why the media library refused a file. See "Uploading" in docs/spec/media.md
+        refused:
+            not_allowed: '%filename% is a %type% file, which the media library doesn''t take. It takes %types%, up to %limit% each.'
+            # A file that would replace the file of a media item of another kind
+            not_document: '%filename% isn''t a document. Only a document can replace a document.'
+            not_image: '%filename% isn''t an image. Only an image can replace an image.'
+            not_uploaded: '%filename% didn''t arrive in full. Try uploading it again.'
+            not_video: '%filename% isn''t a video. Only a video can replace a video.'
+            over_limit: '%filename% is over the upload limit of %limit%.'
+            too_big: '%filename% is %size%, over the upload limit of %limit%.'
+            unreadable: '%filename% couldn''t be read as a %type% file.'
+    # What the builder's preview shows editors and shoppers don't see
+    preview:
+        unresolved_link: '%field% isn''t shown here: what it links to isn''t visible in this channel and locale, or was deleted.'
+        unresolved_rich_text_link: 'A link in %field% shows as plain text here: what it links to isn''t visible in this channel and locale, or was deleted.'
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
+        broken_layout_reference: '%field% in the layout refers to %type% that was deleted, so it isn''t shown.'
+        broken_layout_rich_text_reference: 'A link in %field% in the layout leads to %type% that was deleted, so it shows as plain text.'
+        broken_reference: '%field% in the %block% block refers to %type% that was deleted, so it isn''t shown.'
+        broken_rich_text_reference: 'A link in %field% in the %block% block leads to %type% that was deleted, so it shows as plain text.'
         deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
         deleted_customer_group_negated: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer excludes anyone through it.'
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
@@ -91,13 +202,30 @@ setono_sylius_cms:
         scheduled_publish_failed: 'The publish scheduled for %at% was stopped: %reason%'
         scheduled_publish_overdue: 'The publish scheduled for %at% hasn''t run. The Messenger worker may not be running.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
+        unknown_layout_source: '%field% in the layout is filled by the source "%source%", which the code no longer has, so it lists nothing.'
+        unknown_source: '%field% in the %block% block is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unreadable: 'This content can''t be read: %reason%'
         url_taken_by_route: 'URL taken by a Sylius route: shoppers get the page of the route %route% at %url%.'
     publish:
         invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'
+    # What a reference refers to, by its type, with its article, as a broken reference names it. See "References" in docs/spec/content-model.md
+    reference_type:
+        entry: an entry
+        media_item: a media item
+        product: a product
+        taxon: a taxon
     # Why a scheduled publish was stopped when it ran, which the overview page shows and EntryPublishFailed carries
     scheduled_publish:
         invalid: '{1} Validation found an error to fix: %errors%|]1,Inf[ Validation found %count% errors to fix: %errors%'
+    # The sources' labels. See "Sources" in docs/spec/sources.md
+    source:
+        bestsellers: Bestsellers
+        newest_products: Newest
+        products_in_taxon: In taxon
+        taxon_children: Children of a taxon
+    # The Video block's embed, named to screen readers
+    video:
+        embed_title: Video
     ui:
         all_entries: All entries
         any_channel: Any channel
@@ -134,6 +262,8 @@ setono_sylius_cms:
         last_published: 'Last published %date%'
         link: Link
         made_by: Made by
+        media: Media
+        media_description: Images, videos and documents for your content, shared by every channel
         new_entry: 'New %content_type%'
         new_entry_heading: New entry
         new_share_link: New
@@ -302,12 +432,35 @@ setono_sylius_cms:
         is_not_one_of: is not one of
         is_one_of: is one of
         is_outside: is outside
+        # The Product, Products, Taxon and Taxons fields' controls. See "List fields" in docs/spec/sources.md
+        items:
+            add_product: Add product
+            add_taxon: Add taxon
+            at_most: 'Up to %max%'
+            change: Change…
+            choose: Choose…
+            not_found: '%code% no longer exists, so it isn''t shown.'
+            nothing_picked: Nothing chosen
+            remove: Remove
+            search_products: Search products
+            search_taxons: Search taxons
         keep_mine: Keep mine
         layout: Layout
         layout_removed: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
         leave_anyway: Leave anyway
         leave_unsaved: Your changes aren't saved
         leave_unsaved_description: '%reason%. If you leave now, they''re lost.'
+        # The Link field's control. See "Links" in docs/spec/content-model.md
+        link:
+            anchor: Anchor
+            change: Change…
+            choose: Choose…
+            label: Label
+            label_help: In this language. Leave it empty to show the name of what it links to.
+            nothing_picked: Nothing chosen
+            row_label: Link label
+            search: 'Search: %target%'
+            url: URL
         load_failed: Couldn't load the entry
         loading: Loading…
         locale: Language
@@ -317,6 +470,87 @@ setono_sylius_cms:
         locale_outdated: '%count% outdated'
         locale_untranslated: '%count% untranslated'
         mark_up_to_date: Mark as up to date
+        # The media library, on its own screen and as the builder's media picker. See "Media library" in docs/spec/admin.md
+        media:
+            add: Add from the library
+            all_media: All media
+            alt_text: Alt text
+            alt_text_help: Describes the image to people who can't see it, and to search engines. Each language has its own.
+            any_kind: Any kind
+            at_most: 'Up to %max%'
+            cancel: Cancel
+            choose: Choose
+            choose_count: 'Choose %count%'
+            create_folder: Create
+            credit: Credit
+            credit_help: A credit or copyright line, such as the photographer's name.
+            delete: Delete
+            delete_description: The media item and its file are deleted. This can't be undone.
+            delete_in_use: It can't be deleted while it's used.
+            delete_title: 'Delete %name%?'
+            deleted_media_item: This media item was deleted, so it isn't shown.
+            deleting: Deleting…
+            dimensions: '%width% × %height% px'
+            drop_here: 'Drop files to upload them into %folder%'
+            duplicate: '%filename% is already in the library as %name%.'
+            file: File
+            focal_point: Focal point
+            focal_point_help: Click or drag to set the point that stays in view wherever the image is cropped.
+            folder_name: Folder name
+            folders: Folders
+            kind: Kind
+            kind_document: Documents
+            kind_image: Images
+            kind_video: Videos
+            load_failed: Couldn't load the media library
+            load_more: Load more
+            missing_alt: Missing alt text
+            missing_alt_flag: No alt text
+            move: Move
+            move_folder: Move folder
+            move_to: Move to
+            name: Name
+            new_file: New file
+            new_folder: New folder
+            no_matches: No media items match.
+            no_media: Nothing here yet. Drop files here, or upload them, to add them.
+            not_allowed: '%filename% is a type of file the media library doesn''t take. It takes %types%, up to %limit% each.'
+            not_used: Not used
+            nothing_picked: Nothing chosen
+            open_file: Open the file
+            pick: Choose from the library
+            picker_title: Choose from the media library
+            poster: Poster
+            poster_help: An image shown before the video plays. Video blocks show it unless they set one of their own.
+            remove: Remove
+            rename_folder: Rename folder
+            replace: Replace
+            replace_description: The new file takes effect at once wherever it's used, without publishing again. The media item keeps its name, alt text and focal point.
+            replace_file: Replace file
+            replacing: Replacing…
+            save: Save
+            save_failed: Couldn't save
+            saved: Saved
+            saving: Saving…
+            search: Search
+            search_placeholder: Name, filename or alt text
+            takes_effect: Changes take effect wherever it's used as soon as they're saved.
+            too_big: '%filename% is %size%, over the upload limit of %limit%.'
+            top_level: At the top
+            unsorted: Unsorted
+            untitled: Untitled
+            upload: Upload
+            upload_copy: Upload a copy
+            uploading: Uploading…
+            use_count: '%count% uses'
+            use_count_one: 1 use
+            use_draft: Draft
+            use_existing: Use the existing one
+            use_published: Published
+            use_removed_in_draft: Published, removed in the draft
+            used_in: Used in
+            used_nowhere: It isn't used anywhere.
+            uses_load_failed: Couldn't load where it's used
         meta_description: Meta description
         meta_description_help: Search engines may show it under the title in their results.
         meta_title: Meta title
@@ -363,6 +597,11 @@ setono_sylius_cms:
             heading: 'Heading %level%'
             horizontal_rule: Horizontal line
             italic: Italic
+            link: Link
+            link_apply: Apply
+            link_cancel: Cancel
+            link_remove: Remove link
+            link_target: Links to
             ordered_list: Numbered list
             strike: Strikethrough
             toolbar: Formatting
@@ -381,6 +620,11 @@ setono_sylius_cms:
         scheduled_publish_failed: Scheduled publish failed
         scheduled_publish_overdue: Scheduled publish overdue
         scheduling: Scheduling…
+        # What pickers search, such as products to link to
+        search:
+            failed: The search failed. Try again.
+            no_results: Nothing found
+            searching: Searching…
         search_block_types: Search block types
         select_parent: Select parent
         settings: Settings
@@ -394,6 +638,15 @@ setono_sylius_cms:
         slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team. The URL: %url%'
         slug_help_homepage: 'Generated from the title until you change it. It may have slashes, such as about/team. As a homepage, it shows at %homepage%, and %url% redirects there in the channels it''s the homepage of.'
         slug_help_none: Generated from the title until you change it. It may have slashes, such as about/team.
+        # List fields filled by a source. See "Sources" in docs/spec/builder.md
+        sources:
+            count: '%count% items now'
+            count_one: 1 item now
+            filled_by: Filled by
+            hand_picked: Hand-picked
+            limit: Items to show
+            unavailable: 'Unavailable: %source%'
+            unavailable_help: 'This source isn''t offered any more. The list keeps it until you fill it another way.'
         stay: Stay
         take_theirs: Take theirs
         takes_effect_on_save: Takes effect when saved, without publishing
@@ -404,6 +657,7 @@ setono_sylius_cms:
         unknown_condition_kind: 'Unknown condition: %kind%'
         unknown_condition_kind_help: 'The code no longer has this kind of condition, so the block doesn''t show. Remove the condition to show it again.'
         unpublished_changes: Unpublished changes
+        unresolved_link: A link here isn't shown in the preview's channel and locale
         unsupported_field_type: This field type isn't supported yet
         url_and_seo: URL & SEO
         visibility: Visibility

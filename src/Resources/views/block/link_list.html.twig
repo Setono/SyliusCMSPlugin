@@ -1,0 +1,13 @@
+{# The heading names the list, and is left out when cms_field() prints nothing for it. In the builder's preview it prints an
+   empty field's markers, so editors can type it in place #}
+{%- set heading -%}{{ cms_field(block, 'heading') }}{%- endset -%}
+<nav class="cms-link-list{{ view.styleClass ? ' ' ~ view.styleClass }}"{% if block.heading %} aria-label="{{ block.heading }}"{% endif %}>
+    {%- if heading is not empty %}
+    <h2 class="cms-link-list__heading">{{ heading }}</h2>
+    {%- endif %}
+    <ul class="cms-link-list__links">
+        {%- for link in children -%}
+            {{ cms_block(link) }}
+        {%- endfor -%}
+    </ul>
+</nav>

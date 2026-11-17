@@ -22,10 +22,24 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
         </service>
 
+        <!-- The references a stored tree holds, through the field type handlers: for rendering, the admin's broken references and the usage index -->
+        <!-- Walks the values of a block tree the way it renders, for the reference finder and the problem kinds -->
+        <service id="Setono\SyliusCMSPlugin\Tree\TreeValues" class="Setono\SyliusCMSPlugin\Tree\TreeValues">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder" class="Setono\SyliusCMSPlugin\Tree\ReferenceFinder">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\TreeValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder" class="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockHydrator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Condition\ConditionMatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer" class="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer">
@@ -42,8 +56,44 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockHydrator"/>
             <argument type="service" id="twig"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Rendering\LayoutRendererInterface" alias="Setono\SyliusCMSPlugin\Rendering\LayoutRenderer"/>
+
+        <!--
+        Loads every reference a tree holds before it renders, with one query per type. A project can decorate it to cache
+        references. Each type loads through the service tagged setono_sylius_cms.reference_type_loader with its type
+        -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoader" class="Setono\SyliusCMSPlugin\Rendering\ReferenceLoader">
+            <argument type="tagged_locator" tag="setono_sylius_cms.reference_type_loader" index-by="type"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface" alias="Setono\SyliusCMSPlugin\Rendering\ReferenceLoader"/>
+
+        <!-- The entries, products and taxons references name, those the shopper may see through the visible queries -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\EntryReferenceLoader" class="Setono\SyliusCMSPlugin\Rendering\EntryReferenceLoader">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface"/>
+
+            <tag name="setono_sylius_cms.reference_type_loader" type="entry"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Rendering\ProductReferenceLoader" class="Setono\SyliusCMSPlugin\Rendering\ProductReferenceLoader">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface"/>
+            <argument type="service" id="doctrine"/>
+            <argument>%sylius.model.product.class%</argument>
+
+            <tag name="setono_sylius_cms.reference_type_loader" type="product"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Rendering\TaxonReferenceLoader" class="Setono\SyliusCMSPlugin\Rendering\TaxonReferenceLoader">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleTaxonsQueryInterface"/>
+            <argument type="service" id="doctrine"/>
+            <argument>%sylius.model.taxon.class%</argument>
+
+            <tag name="setono_sylius_cms.reference_type_loader" type="taxon"/>
+        </service>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookup" class="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookup">
             <argument type="service" id="doctrine"/>

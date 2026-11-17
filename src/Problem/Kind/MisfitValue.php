@@ -10,11 +10,9 @@ use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\Severity;
-use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
-use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
-use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
-use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredValue;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
@@ -30,108 +28,65 @@ final readonly class MisfitValue implements ProblemKindInterface
     public const CODE = 'misfit_value';
 
     public function __construct(
-        private BlockTypeRegistryInterface $blockTypes,
-        private LayoutRegistryInterface $layouts,
+        private TreeValues $treeValues,
         private ContentTypeRegistryInterface $contentTypes,
         private FallbackValues $fallbackValues,
     ) {
     }
 
+    /**
+     * A layout that was removed or disabled is another kind's problem, and the default layout ignores its values, so
+     * only the values the tree renders are checked
+     */
     public function findIn(EntryInterface $entry): iterable
     {
-        $tree = $entry->getBlockTree();
+        foreach ($this->treeValues->inTree($entry->getBlockTree(), $this->contentTypes->getByEntry($entry)->code) as $value) {
+            if (!$this->doesNotFit($value)) {
+                continue;
+            }
 
-        // A layout that was removed or disabled is another kind's problem, and the default layout ignores its values
-        $layout = $tree->layout;
-        $contentType = $this->contentTypes->getByEntry($entry)->code;
-        if (null !== $layout && $this->layouts->has($contentType, $layout->code) && !$this->layouts->get($contentType, $layout->code)->disabled) {
-            foreach ($this->misfits($this->layouts->get($contentType, $layout->code)->fields, $layout->fields) as [$field, $locale]) {
+            $field = $value->field;
+            if (null === $value->block || null === $value->blockType) {
                 yield new Problem(
                     self::CODE,
                     Severity::Error,
                     $entry,
                     new TranslatableMessage('setono_sylius_cms.problem.misfit_layout_value', ['%field%' => new TranslatableMessage($field->field->label)]),
-                    Fix::inBuilder($entry, null, $locale),
+                    Fix::inBuilder($entry, null, $value->locale),
                     null,
                     $field->name,
-                    $locale,
+                    $value->locale,
                 );
-            }
-        }
 
-        yield from $this->inBlocks($entry, $tree->blocks);
-    }
-
-    /**
-     * @param list<StoredBlock> $blocks
-     *
-     * @return \Generator<Problem>
-     */
-    private function inBlocks(EntryInterface $entry, array $blocks): \Generator
-    {
-        foreach ($blocks as $block) {
-            // A block of a type the code no longer has is kept as it is, with what's inside it
-            if (!$this->blockTypes->has($block->type)) {
                 continue;
             }
 
-            $blockType = $this->blockTypes->get($block->type);
-            foreach ($this->misfits($blockType->fields, $block->fields) as [$field, $locale]) {
-                yield new Problem(
-                    self::CODE,
-                    Severity::Error,
-                    $entry,
-                    new TranslatableMessage('setono_sylius_cms.problem.misfit_value', [
-                        '%field%' => new TranslatableMessage($field->field->label),
-                        '%block%' => new TranslatableMessage($blockType->label),
-                    ]),
-                    Fix::inBuilder($entry, $block->key, $locale),
-                    $block->key,
-                    $field->name,
-                    $locale,
-                );
-            }
-
-            yield from $this->inBlocks($entry, $block->children);
+            yield new Problem(
+                self::CODE,
+                Severity::Error,
+                $entry,
+                new TranslatableMessage('setono_sylius_cms.problem.misfit_value', [
+                    '%field%' => new TranslatableMessage($field->field->label),
+                    '%block%' => new TranslatableMessage($value->blockType->label),
+                ]),
+                Fix::inBuilder($entry, $value->block->key, $value->locale),
+                $value->block->key,
+                $field->name,
+                $value->locale,
+            );
         }
     }
 
     /**
-     * The fields whose stored values don't fit, each with the locale of the value, or null for a shared value or a
-     * translatable value that isn't a locale map
-     *
-     * @param array<string, FieldMetadata> $fields
-     * @param array<string, mixed> $values the stored values by field name
-     *
-     * @return \Generator<array{FieldMetadata, string|null}>
+     * A translatable field's value that isn't a locale map doesn't fit, unless it's empty, and nor does a value its
+     * field type doesn't take
      */
-    private function misfits(array $fields, array $values): \Generator
+    private function doesNotFit(StoredValue $value): bool
     {
-        foreach ($fields as $name => $field) {
-            $stored = $values[$name] ?? null;
-            if (!$field->translatable) {
-                if (!$this->fallbackValues->fits($field->field, $stored)) {
-                    yield [$field, null];
-                }
-
-                continue;
-            }
-
-            if (null === $stored || '' === $stored || [] === $stored) {
-                continue;
-            }
-
-            if (!is_array($stored) || array_is_list($stored)) {
-                yield [$field, null];
-
-                continue;
-            }
-
-            foreach ($stored as $locale => $value) {
-                if (!$this->fallbackValues->fits($field->field, $value)) {
-                    yield [$field, (string) $locale];
-                }
-            }
+        if ($value->isNotByLocale()) {
+            return '' !== $value->value && [] !== $value->value;
         }
+
+        return !$this->fallbackValues->fits($value->field->field, $value->value);
     }
 }

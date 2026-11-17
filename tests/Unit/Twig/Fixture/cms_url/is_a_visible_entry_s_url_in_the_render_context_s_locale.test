@@ -1,0 +1,8 @@
+--TEST--
+cms_url() is the URL of an entry the shopper may see, in the render context's channel and locale
+--TEMPLATE--
+{{ cms_url(entry) }}
+--DATA--
+return $this->rendering(['entry' => $this->visiblePage(['en_US' => ['About us', 'about-us'], 'de_DE' => ['Über uns', 'ueber-uns']])], locale: 'de_DE')
+--EXPECT--
+/de_DE/ueber-uns

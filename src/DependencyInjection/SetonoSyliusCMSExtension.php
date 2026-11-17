@@ -7,6 +7,8 @@ namespace Setono\SyliusCMSPlugin\DependencyInjection;
 use Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter;
 use Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
+use Setono\SyliusCMSPlugin\Attribute\AsLinkTarget;
+use Setono\SyliusCMSPlugin\Attribute\AsSource;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
@@ -14,10 +16,15 @@ use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBlockTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterConditionKindsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLayoutsPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLinkTargetsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterProblemKindsPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterSourcesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterUpgradersPass;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
+use Setono\SyliusCMSPlugin\Media\DeleteReplacedFile;
+use Setono\SyliusCMSPlugin\Media\Liip\FilterSets;
+use Setono\SyliusCMSPlugin\Media\Liip\LocalVariants;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
@@ -34,6 +41,15 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public const CHOICES_PROVIDER_TAG = 'setono_sylius_cms.choices_provider';
 
+    /** The service id of the storage media items are stored in, which media.storage defaults to */
+    public const STORAGE = 'setono_sylius_cms.storage';
+
+    /** The directory the default storage writes to, which the web server serves at MediaUrlGenerator::BASE_URL */
+    public const STORAGE_DIRECTORY = '%kernel.project_dir%/public/media/cms';
+
+    /** The name of the plugin's own Liip loader and resolver, which media.liip defaults to */
+    public const LIIP_NAME = 'setono_sylius_cms';
+
     /** The entry lists show the entries edited last first */
     private const GRID_SORTING = ['lastEdited' => 'desc'];
 
@@ -44,12 +60,13 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, resources: array<string, array<string, mixed>>} $config */
+        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, resources: array<string, array<string, mixed>>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         $container->setParameter('setono_sylius_cms.disabled.block_types', $config['disabled']['block_types']);
         // RegisterLayoutsPass checks them against the layouts the code has
         $container->setParameter('setono_sylius_cms.disabled.layouts', $config['disabled']['layouts']);
+        $container->setParameter('setono_sylius_cms.disabled.sources', $config['disabled']['sources']);
         $container->setParameter('setono_sylius_cms.default_layouts', array_filter(array_map(
             static fn (array $contentType): ?string => $contentType['default_layout'] ?? null,
             $config['content_types'],
@@ -58,9 +75,27 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $container->setParameter(RegisterContentTypesPass::CONFIG_PARAMETER, $config['content_types']);
         $container->setParameter('setono_sylius_cms.fallback_locales', $config['fallback_locales']);
         $container->setParameter('setono_sylius_cms.revisions.keep', $config['revisions']['keep']);
+        $container->setParameter('setono_sylius_cms.media.types', $config['media']['types']);
+        $container->setParameter('setono_sylius_cms.media.max_upload_size', $config['media']['max_upload_size']);
+        $container->setParameter('setono_sylius_cms.media.grace_period', $config['media']['grace_period']);
+        $container->setParameter('setono_sylius_cms.media.widths', $config['media']['widths']);
+        $container->setParameter('setono_sylius_cms.bestsellers.window', $config['bestsellers']['window']);
 
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.xml');
+
+        // The Flysystem storage media items are stored in: the plugin's own local one, setono_sylius_cms.storage, which
+        // prepend() defines, unless a project configures another, which then goes by that one name
+        if (self::STORAGE !== $config['media']['storage']) {
+            $container->setAlias(self::STORAGE, $config['media']['storage']);
+        }
+
+        // Made variants are looked for with a file check only where the plugin's Liip resolver caches them in the default
+        // local storage. Elsewhere, such as on S3, that would be a call to the storage, so every variant gets Liip's
+        // runtime URL
+        if (self::STORAGE !== $config['media']['storage'] || self::LIIP_NAME !== $config['media']['liip']['resolver']) {
+            $container->removeDefinition(LocalVariants::class);
+        }
 
         // Registers the shipped resources, and turns on the Doctrine mapping of the Model namespace
         $this->registerResources('setono_sylius_cms', SyliusResourceBundle::DRIVER_DOCTRINE_ORM, $config['resources'], $container);
@@ -80,11 +115,18 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $container->registerAttributeForAutoconfiguration(AsUpgrader::class, static function (ChildDefinition $definition): void {
             $definition->addTag(RegisterUpgradersPass::TAG);
         });
+        $container->registerAttributeForAutoconfiguration(AsLinkTarget::class, static function (ChildDefinition $definition): void {
+            $definition->addTag(RegisterLinkTargetsPass::TAG);
+        });
+        $container->registerAttributeForAutoconfiguration(AsSource::class, static function (ChildDefinition $definition): void {
+            $definition->addTag(RegisterSourcesPass::TAG);
+        });
     }
 
     /**
      * Loads the shipped stylesheet on every shop page, at priority 20: above Sylius's own styles (10),
-     * so it declares the cms cascade layer before the theme's CSS. See "Loading the stylesheet and script" in docs/spec/blocks.md
+     * so it declares the cms cascade layer before the theme's CSS. The carousel script loads at the end of the body.
+     * See "Loading the stylesheet and script" in docs/spec/blocks.md
      */
     public function prepend(ContainerBuilder $container): void
     {
@@ -93,8 +135,14 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $this->prependProblems($container);
         $this->prependMessenger($container);
 
-        /** @var array{assets: bool} $config */
+        /** @var array{assets: bool, media: array{storage: string, liip: array{loader: string, resolver: string}}} $config */
         $config = $this->processConfiguration(new Configuration(), $container->getExtensionConfig($this->getAlias()));
+
+        if (self::STORAGE === $config['media']['storage']) {
+            $this->prependStorage($container);
+        }
+
+        $this->prependImageFilterSets($container, $config['media']['liip']['loader'], $config['media']['liip']['resolver']);
 
         if (!$config['assets']) {
             return;
@@ -107,8 +155,46 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                         'setono_sylius_cms_stylesheet' => ['template' => '@SetonoSyliusCMSPlugin/shop/stylesheet.html.twig', 'priority' => 20],
                     ],
                 ],
+                // The carousel script, after Sylius's own scripts (10)
+                'sylius.shop.layout.javascripts' => [
+                    'blocks' => [
+                        'setono_sylius_cms_javascript' => ['template' => '@SetonoSyliusCMSPlugin/shop/javascript.html.twig', 'priority' => 5],
+                    ],
+                ],
             ],
         ]);
+    }
+
+    /**
+     * The plugin's own media storage, setono_sylius_cms.storage, defined in flysystem-bundle's config as Sylius defines
+     * sylius.storage: a local public directory beside Sylius's own public/media/image, which the web server serves at
+     * /media/cms, where MediaUrlGenerator builds its URLs. It holds the only copy of every file, so a project keeps it
+     * across deploys. A project moves it by configuring the storage of that name in its own flysystem config, or by
+     * naming another storage in media.storage, and then aliases MediaUrlGeneratorInterface. See "Image processing" in
+     * docs/spec/media.md
+     */
+    private function prependStorage(ContainerBuilder $container): void
+    {
+        $container->prependExtensionConfig('flysystem', [
+            'storages' => [
+                self::STORAGE => [
+                    'adapter' => 'local',
+                    'options' => ['directory' => self::STORAGE_DIRECTORY],
+                    'visibility' => 'public',
+                    'directory_visibility' => 'public',
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * The LiipImagine filter sets image variants are made with, one per format, reading with the loader and caching with
+     * the resolver media.liip names. A project changes their quality in its own liip_imagine config.
+     * See "Image processing" in docs/spec/media.md
+     */
+    private function prependImageFilterSets(ContainerBuilder $container, string $loader, string $resolver): void
+    {
+        $container->prependExtensionConfig('liip_imagine', ['filter_sets' => FilterSets::config($loader, $resolver)]);
     }
 
     /**
@@ -122,6 +208,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
             'messenger' => [
                 'routing' => [
                     ScheduledPublishDue::class => 'main',
+                    DeleteReplacedFile::class => 'main',
                 ],
             ],
         ]);

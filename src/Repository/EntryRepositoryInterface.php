@@ -16,6 +16,24 @@ interface EntryRepositoryInterface
     public function findOneByUuid(string $uuid): ?EntryInterface;
 
     /**
+     * The entries with these UUIDs, of any content type
+     *
+     * @param list<string> $uuids
+     *
+     * @return list<EntryInterface>
+     */
+    public function findByUuids(array $uuids): array;
+
+    /**
+     * Those of the UUIDs that an entry has
+     *
+     * @param list<string> $uuids
+     *
+     * @return list<string>
+     */
+    public function findExistingUuids(array $uuids): array;
+
+    /**
      * The entry with this id. One the entity manager has loaded already is answered without a query
      */
     public function findOneById(int $id): ?EntryInterface;
@@ -53,4 +71,15 @@ interface EntryRepositoryInterface
      * @return list<EntryInterface>
      */
     public function findByCustomerGroupCodes(array $codes): array;
+
+    /**
+     * The entries that may refer to one of the records, by their codes or UUIDs, in their rows' block tree or their
+     * draft. As both are JSON, it's the entries that hold one of them as a JSON string anywhere, which can be more than
+     * those that refer to it
+     *
+     * @param list<string> $ids
+     *
+     * @return list<EntryInterface>
+     */
+    public function findReferencing(array $ids): array;
 }

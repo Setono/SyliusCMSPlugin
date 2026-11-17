@@ -48,6 +48,7 @@ The stylesheet reads these, each with the default shown. Themes set them on `:ro
 | `--cms-dark-background`, `--cms-dark-color` | `#1b1c1d`, `#ffffff` | The Group's `dark` style. |
 | `--cms-banner-min-height` | `360px` | The Banner's height when its image is shorter. |
 | `--cms-banner-overlay` | `rgba(0, 0, 0, 0.35)` | The shade behind a Banner's text. |
+| `--cms-banner-color` | `#ffffff` | The colour of a Banner's text over its image. Without an image, it has the shop's colours. |
 | `--cms-button-primary-background`, `--cms-button-primary-color` | `#1b1c1d`, `#ffffff` | The Button's `primary` style. |
 | `--cms-button-secondary-background`, `--cms-button-secondary-color` | `transparent`, `inherit` | The Button's `secondary` style. |
 | `--cms-radius` | `0.25rem` | Rounded corners on buttons and tiles. |
@@ -203,8 +204,11 @@ An image with an optional mobile image, a heading, text and buttons. Its buttons
 | `heading` | Text, bindable | yes |
 | `text` | Rich text | yes |
 | `fullWidth` | Toggle, off by default | no |
+| `priority` | Toggle "Load first", off by default: passes `priority` to `cms_image()`, so a hero banner's image loads eagerly with `fetchpriority="high"` | no |
 
 Markup: `cms-banner`, with `cms-banner__media` (a `<picture>` with the mobile image as a narrow source), `cms-banner__content`, `cms-banner__heading`, `cms-banner__text` and `cms-banner__buttons`.
+
+The images are full width (`sizes="100vw"`) and load lazily unless `priority` is on. Turn it on for a banner at the top of a page, and leave it off for banners further down and the slides of a banner carousel.
 
 ### Accordion and Accordion item
 

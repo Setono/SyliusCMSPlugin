@@ -23,9 +23,12 @@ final readonly class BlockHydrator
     ) {
     }
 
-    public function hydrate(BlockTypeMetadata $blockType, StoredBlock $block, RenderContext $context): object
+    /**
+     * @param ReferenceMap $references the records the tree's references resolve to, loaded before it renders
+     */
+    public function hydrate(BlockTypeMetadata $blockType, StoredBlock $block, RenderContext $context, ReferenceMap $references): object
     {
-        return $this->hydrateObject($blockType->class, $blockType->fields, $block->fields, $context);
+        return $this->hydrateObject($blockType->class, $blockType->fields, $block->fields, $context, $references);
     }
 
     /**
@@ -35,11 +38,12 @@ final readonly class BlockHydrator
      * @param class-string $class
      * @param array<string, FieldMetadata> $fields
      * @param array<string, mixed> $values the stored values by field: a translatable field's by locale
+     * @param ReferenceMap $references the records the tree's references resolve to, loaded before it renders
      */
-    public function hydrateObject(string $class, array $fields, array $values, RenderContext $context): object
+    public function hydrateObject(string $class, array $fields, array $values, RenderContext $context, ReferenceMap $references): object
     {
         $object = new $class();
-        $hydrationContext = new HydrationContext($context);
+        $hydrationContext = new HydrationContext($context, $references);
 
         foreach ($fields as $name => $field) {
             $hydrated = $this->hydrateField($field, $values[$name] ?? null, $context->localeCode, $hydrationContext);

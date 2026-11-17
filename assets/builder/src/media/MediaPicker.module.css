@@ -1,0 +1,36 @@
+/* The media library opened as the builder's media picker, in a dialog that fills the viewport */
+.overlay {
+    composes: overlay from '../ui/Dialog.module.css';
+}
+
+.dialog {
+    composes: surface from '../ui/Dialog.module.css';
+    position: fixed;
+    inset: var(--builder-space-4);
+    max-width: 90rem;
+    margin: 0 auto;
+    padding: var(--builder-space-4);
+    background: var(--builder-color-canvas);
+}
+
+.title {
+    composes: title from '../ui/Dialog.module.css';
+}
+
+.library {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.actions {
+    composes: actions from '../ui/Dialog.module.css';
+}
+
+.primary {
+    composes: primary from '../ui/Buttons.module.css';
+}
+
+.secondary {
+    composes: secondary from '../ui/Buttons.module.css';
+}

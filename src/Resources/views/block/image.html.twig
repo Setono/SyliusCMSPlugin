@@ -1,0 +1,18 @@
+{# The block renders nothing in the shop without an image to show. In the builder's preview, cms_image() prints a placeholder.
+   The caption is left out when cms_field() prints nothing for it; in the builder's preview it prints an empty field's
+   markers, so editors can type it in place #}
+{%- set image -%}{{ cms_image(block.image, {alt: block.alt}) }}{%- endset -%}
+{%- if image is not empty -%}
+    {%- set link = cms_link(block.link) -%}
+    <figure class="cms-image{{ view.styleClass ? ' ' ~ view.styleClass }}">
+        {%- if link is not null -%}
+            <a href="{{ link.url }}"{% if block.link.label is not empty %} aria-label="{{ block.link.label }}"{% endif %}>{{ image }}</a>
+        {%- else -%}
+            {{ image }}
+        {%- endif -%}
+        {%- set caption -%}{{ cms_field(block, 'caption') }}{%- endset -%}
+        {%- if caption is not empty -%}
+            <figcaption class="cms-image__caption">{{ caption }}</figcaption>
+        {%- endif -%}
+    </figure>
+{%- endif -%}

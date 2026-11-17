@@ -4,11 +4,11 @@
  * entry lists and its overview page count with. Pure functions, with no React and no I/O. See "Completeness and
  * outdated flags" in docs/spec/localization.md and "Translation state" in docs/spec/content-model.md
  */
-import type { TranslatableLookup } from './changeSet';
 import { hiddenInPreview } from './conditions';
 import { isMissing } from './fallback';
 import { fingerprint } from './fingerprint';
-import type { Entry, JsonObject, JsonValue, LayoutDefinition, StoredBlock, TranslationSource } from './types';
+import { keepsPartsPerLocale, localeParts } from './links';
+import type { Entry, FieldSchema, JsonObject, JsonValue, LayoutDefinition, StoredBlock, TranslationSource } from './types';
 import { isJsonObject } from './values';
 
 /**
@@ -30,6 +30,9 @@ export interface OutdatedValue {
     localeName: string;
     onMarkUpToDate(): void;
 }
+
+/** The schema of a block type's field, or undefined when the code doesn't have it. */
+export type FieldSchemaLookup = (blockType: string, field: string) => FieldSchema | undefined;
 
 /** How many of an entry's translatable values are untranslated and outdated in a locale. */
 export interface LocaleCounts {
@@ -141,9 +144,10 @@ export function entryTranslated(entry: Pick<Entry, 'translations'>, field: strin
  * title, its layout's fields and its blocks' fields. A block a locale condition hides in the locale is left out, with
  * everything inside it, because nobody reads it there.
  *
+ * @param schemaOf the schemas of the block types' fields
  * @param layout the definition of the layout the tree is in, or undefined when it was removed or disabled, so its values aren't shown
  */
-export function localeCounts(entry: Entry, locale: string, isTranslatable: TranslatableLookup, layout: LayoutDefinition | undefined): LocaleCounts {
+export function localeCounts(entry: Entry, locale: string, schemaOf: FieldSchemaLookup, layout: LayoutDefinition | undefined): LocaleCounts {
     const counts: LocaleCounts = { untranslated: 0, outdated: 0 };
     const count = (state: ValueState | null): void => {
         if (state === 'untranslated') {
@@ -161,8 +165,9 @@ export function localeCounts(entry: Entry, locale: string, isTranslatable: Trans
     const stored = entry.tree.layout;
     if (stored !== null && layout !== undefined) {
         for (const { name, schema } of layout.fields) {
-            if (schema['x-cms-translatable']) {
-                count(valueState(stored.fields[name], stored.translated[name], locale));
+            const values = localeValues(schema, stored.fields[name]);
+            if (values !== null) {
+                count(valueState(values, stored.translated[name], locale));
             }
         }
     }
@@ -175,8 +180,9 @@ export function localeCounts(entry: Entry, locale: string, isTranslatable: Trans
             }
 
             for (const field of Object.keys(block.fields)) {
-                if (isTranslatable(block.type, field)) {
-                    count(valueState(block.fields[field], block.translated[field], locale));
+                const values = localeValues(schemaOf(block.type, field), block.fields[field]);
+                if (values !== null) {
+                    count(valueState(values, block.translated[field], locale));
                 }
             }
 
@@ -186,6 +192,23 @@ export function localeCounts(entry: Entry, locale: string, isTranslatable: Trans
     countBlocks(entry.tree.blocks);
 
     return counts;
+}
+
+/**
+ * A field's values by locale, as the translation state reads them: a translatable field's own, or the label and URL a
+ * Link of the default shape keeps per locale inside its one value. Null for a shared field, or one the code doesn't have,
+ * which has nothing to translate.
+ */
+export function localeValues(schema: FieldSchema | undefined, stored: JsonValue | undefined): JsonValue | undefined | null {
+    if (schema === undefined) {
+        return null;
+    }
+
+    if (keepsPartsPerLocale(schema)) {
+        return localeParts(stored);
+    }
+
+    return schema['x-cms-translatable'] === true ? stored : null;
 }
 
 function localeMap(values: JsonValue | undefined): JsonObject {

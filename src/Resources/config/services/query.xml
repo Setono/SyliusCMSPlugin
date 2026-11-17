@@ -8,6 +8,19 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface" alias="Setono\SyliusCMSPlugin\Query\VisibleEntriesQuery"/>
 
+        <service id="Setono\SyliusCMSPlugin\Query\VisibleProductsQuery" class="Setono\SyliusCMSPlugin\Query\VisibleProductsQuery">
+            <argument type="service" id="doctrine"/>
+            <argument>%sylius.model.product.class%</argument>
+            <argument>%sylius.model.product_translation.class%</argument>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface" alias="Setono\SyliusCMSPlugin\Query\VisibleProductsQuery"/>
+
+        <service id="Setono\SyliusCMSPlugin\Query\VisibleTaxonsQuery" class="Setono\SyliusCMSPlugin\Query\VisibleTaxonsQuery">
+            <argument type="service" id="doctrine"/>
+            <argument>%sylius.model.taxon.class%</argument>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Query\VisibleTaxonsQueryInterface" alias="Setono\SyliusCMSPlugin\Query\VisibleTaxonsQuery"/>
+
         <!-- The entries that have a URL, published or drafted, for the URL checks -->
         <service id="Setono\SyliusCMSPlugin\Query\UrlClaimsQuery" class="Setono\SyliusCMSPlugin\Query\UrlClaimsQuery">
             <argument type="service" id="doctrine"/>

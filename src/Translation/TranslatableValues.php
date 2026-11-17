@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Translation;
 
 use Setono\SyliusCMSPlugin\Condition\Kind\LocaleKind;
 use Setono\SyliusCMSPlugin\Field\Field;
+use Setono\SyliusCMSPlugin\Field\LinkLocaleParts;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
@@ -66,7 +67,7 @@ final readonly class TranslatableValues
         // A layout that was removed or disabled isn't rendered, so there's nothing in it to translate
         if (null !== $layout && $this->layouts->has($contentType->code, $layout->code) && !$this->layouts->get($contentType->code, $layout->code)->disabled) {
             foreach ($this->translatable($this->layouts->get($contentType->code, $layout->code)->fields) as $name => $field) {
-                $this->add($values, sprintf('layout.%s', $name), $field, $layout->fields[$name] ?? null, $layout->translated[$name] ?? null, $localeCode);
+                $this->addField($values, sprintf('layout.%s', $name), $field, $layout->fields[$name] ?? null, $layout->translated[$name] ?? null, $localeCode);
             }
         }
 
@@ -95,7 +96,7 @@ final readonly class TranslatableValues
         // A block of a type the code no longer has isn't rendered, so there's nothing in it to translate
         if ($this->blockTypes->has($block->type)) {
             foreach ($this->translatable($this->blockTypes->get($block->type)->fields) as $name => $field) {
-                $this->add($values, sprintf('block.%s.%s', $block->key, $name), $field, $block->fields[$name] ?? null, $block->translated[$name] ?? null, $localeCode);
+                $this->addField($values, sprintf('block.%s.%s', $block->key, $name), $field, $block->fields[$name] ?? null, $block->translated[$name] ?? null, $localeCode);
             }
         }
 
@@ -113,15 +114,35 @@ final readonly class TranslatableValues
     {
         return array_map(
             static fn (FieldMetadata $field): Field => $field->field,
-            array_filter($fields, static fn (FieldMetadata $field): bool => $field->translatable),
+            array_filter($fields, static fn (FieldMetadata $field): bool => $field->translatable || LinkLocaleParts::areKeptBy($field->field)),
         );
+    }
+
+    /**
+     * Adds a field's value at the path. A Link that keeps its label and URL per locale inside its one value has those
+     * as its value in each locale
+     *
+     * @param list<TranslatableValue> $values
+     * @param mixed $stored what the field stores: a map from locale to value, or a link
+     * @param mixed $translated where each locale's value was translated from
+     */
+    private function addField(array &$values, string $path, Field $field, mixed $stored, mixed $translated, string $localeCode): void
+    {
+        if (LinkLocaleParts::areKeptBy($field)) {
+            $this->add($values, $path, null, LinkLocaleParts::byLocale($stored), $translated, $localeCode);
+
+            return;
+        }
+
+        $this->add($values, $path, $field, $stored, $translated, $localeCode);
     }
 
     /**
      * Adds the value at the path to the values, unless no locale has a value there
      *
      * @param list<TranslatableValue> $values
-     * @param Field|null $field the field, or null for an entry field, which is a string
+     * @param Field|null $field the field, or null for a value that's missing only when it's null or '': an entry field, which is
+     *                         a string, or a link's parts in a locale
      * @param mixed $stored what the field stores: a map from locale to value
      * @param mixed $translated where each locale's value was translated from
      */

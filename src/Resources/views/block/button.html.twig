@@ -1,0 +1,2 @@
+{% set link = cms_link(block.link) %}
+{% if link is not null %}<a class="cms-button{{ view.styleClass ? ' ' ~ view.styleClass }}" href="{{ link.url }}">{{ block.link.label ?? link.name }}</a>{% endif %}

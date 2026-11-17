@@ -34,7 +34,7 @@ export interface PreviewProps {
  */
 export function Preview({ className, onOpenSettings }: PreviewProps) {
     const t = useTranslator();
-    const { store, createPreviewUrl, renderPreview, leave } = useBuilder();
+    const { store, preview, createPreviewUrl, renderPreview, leave } = useBuilder();
     const channel = usePreviewState((state) => state.channel);
     const width = usePreviewState((state) => state.width);
     const shownTo = usePreviewState((state) => state.shownTo);
@@ -86,6 +86,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
             },
             openSettings: () => openSettings.current?.(),
             leave,
+            flagUnresolvedLinks: (keys) => preview.getState().setUnresolvedLinks(keys),
         });
         sync.current = created;
 
@@ -93,7 +94,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
             created.dispose();
             sync.current = null;
         };
-    }, [store, renderPreview, leave, t]);
+    }, [store, preview, renderPreview, leave, t]);
 
     useEffect(() => {
         if (channel === null) {
@@ -127,6 +128,12 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
             active = false;
         };
     }, [createPreviewUrl, channel, locale, shownTo, date, translated, homepage, reloads]);
+
+    // Sources count what they yield under the token of the page shown, so in its channel, locale, Shown to and Date
+    useEffect(() => {
+        const token = frame.state === 'loaded' ? new URL(frame.url, window.location.href).searchParams.get('_cms_preview') : null;
+        preview.getState().setToken(token === '' ? null : token);
+    }, [preview, frame]);
 
     useEffect(() => {
         if (frame.state !== 'loaded') {

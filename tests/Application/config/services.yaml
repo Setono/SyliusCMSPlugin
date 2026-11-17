@@ -9,3 +9,10 @@ services:
 
     # The test application's own layout for pages, which #[Layout] registers through autoconfiguration
     Setono\SyliusCMSPlugin\Tests\Application\Layout\Landing: ~
+
+    # The test application's own link target, which #[AsLinkTarget] registers through autoconfiguration
+    Setono\SyliusCMSPlugin\Tests\Application\Link\StoreLinkTarget: ~
+
+    # The test application's own condition kind, with a product parameter, which #[AsConditionKind] registers through
+    # autoconfiguration
+    Setono\SyliusCMSPlugin\Tests\Application\Condition\ProductAvailableKind: ~

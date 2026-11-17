@@ -1,0 +1,12 @@
+--TEST--
+cms_video() takes the template's poster over the video's own, given as a media item or by its UUID, falls back to the video's own for an empty one, and adds the template's class
+--TEMPLATE--
+{{ cms_video(video, {poster: poster, class: 'app-video "tour"'}) }}
+{{ cms_video(video, {poster: posterUuid}) }}
+{{ cms_video(video, {poster: null}) }}
+--DATA--
+return $this->rendering(['video' => $this->video($this->image()), 'poster' => $this->image('summer.jpg'), 'posterUuid' => $this->inTheLibrary($this->image('winter.jpg'))])
+--EXPECT--
+<video src="/media/cms/shop-tour.mp4" poster="/webp/1280x720/summer.jpg" width="1920" height="1080" class="app-video &quot;tour&quot;" preload="metadata" controls playsinline></video>
+<video src="/media/cms/shop-tour.mp4" poster="/webp/1280x720/winter.jpg" width="1920" height="1080" preload="metadata" controls playsinline></video>
+<video src="/media/cms/shop-tour.mp4" poster="/webp/1280x720/tour-poster.jpg" width="1920" height="1080" preload="metadata" controls playsinline></video>

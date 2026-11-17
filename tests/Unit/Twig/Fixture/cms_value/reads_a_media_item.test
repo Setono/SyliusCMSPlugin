@@ -1,0 +1,8 @@
+--TEST--
+cms_value() reads a media field as its media item, without printing it
+--TEMPLATE--
+{{ cms_value(block, "cover").name }}
+--DATA--
+return $this->rendering(['block' => $this->gallery('Summer <sale>')])
+--EXPECT--
+Summer &lt;sale&gt;

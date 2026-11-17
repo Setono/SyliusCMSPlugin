@@ -7,11 +7,15 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Event;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Event\BeforeEntryDelete;
 use Setono\SyliusCMSPlugin\Event\BeforeEntryPublish;
+use Setono\SyliusCMSPlugin\Event\BeforeMediaItemDelete;
 use Setono\SyliusCMSPlugin\Event\EntryCreated;
 use Setono\SyliusCMSPlugin\Event\EntryDeleted;
 use Setono\SyliusCMSPlugin\Event\EntryPublished;
 use Setono\SyliusCMSPlugin\Event\EntrySettingsChanged;
+use Setono\SyliusCMSPlugin\Event\MediaItemDeleted;
+use Setono\SyliusCMSPlugin\Event\MediaItemReplaced;
 use Setono\SyliusCMSPlugin\Event\StorefrontChangedInterface;
+use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
@@ -130,6 +134,57 @@ final class EventsTest extends TestCase
         self::assertSame([self::UUID], self::storefrontChange($event)?->getAffectedUuids());
         self::assertSame(self::UUID, $event->uuid);
         self::assertSame('page', $event->contentType);
+    }
+
+    /**
+     * @test
+     */
+    public function it_changes_shopper_output_for_the_media_item_whose_file_is_replaced(): void
+    {
+        $event = new MediaItemReplaced(self::UUID);
+
+        self::assertSame([self::UUID], self::storefrontChange($event)?->getAffectedUuids());
+        self::assertSame(self::UUID, $event->uuid);
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_media_item_be_deleted_unless_a_listener_vetoes_it(): void
+    {
+        $mediaItem = new MediaItem();
+        $event = new BeforeMediaItemDelete($mediaItem);
+
+        self::assertSame($mediaItem, $event->mediaItem);
+        self::assertFalse($event->isVetoed());
+        self::assertNull($event->getVetoMessage());
+    }
+
+    /**
+     * @test
+     */
+    public function it_stops_the_delete_of_a_media_item_and_the_listeners_after_a_veto(): void
+    {
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener(BeforeMediaItemDelete::class, static fn (BeforeMediaItemDelete $event) => $event->veto('The logo stays'), 10);
+        $dispatcher->addListener(BeforeMediaItemDelete::class, static fn (BeforeMediaItemDelete $event) => $event->veto('Never'));
+
+        $event = $dispatcher->dispatch(new BeforeMediaItemDelete(new MediaItem()));
+
+        self::assertTrue($event->isVetoed());
+        self::assertSame('The logo stays', $event->getVetoMessage());
+        self::assertTrue($event->isPropagationStopped());
+    }
+
+    /**
+     * @test
+     */
+    public function it_changes_shopper_output_for_the_deleted_media_item(): void
+    {
+        $event = new MediaItemDeleted(self::UUID);
+
+        self::assertSame([self::UUID], self::storefrontChange($event)?->getAffectedUuids());
+        self::assertSame(self::UUID, $event->uuid);
     }
 
     /**

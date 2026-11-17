@@ -49,6 +49,8 @@ On upload, the plugin:
 2. reads its dimensions
 3. strips embedded metadata from the stored original, so location and device data never leak
 
+Stripping keeps the image data byte for byte: JPEG, PNG, WebP and GIF lose their metadata segments or chunks, and an AVIF's Exif and XMP items are emptied in place, since its boxes point at them by offset. Only an image whose EXIF orientation isn't upright is encoded again. An AVIF's orientation is its `irot` and `imir` properties, which it keeps.
+
 ## Metadata
 
 | What | Kinds | Notes |
@@ -58,11 +60,11 @@ On upload, the plugin:
 | Dimensions | images, videos | Read on upload. |
 | MIME type and size | all | |
 | Credit | all | A free-text credit or copyright line. |
-| Alt text | images | Translatable, one value per locale. It falls back through the [fallback chain](../../GLOSSARY.md#entries) ([Localization](localization.md)). |
+| Alt text | images | Translatable, one value per locale of the store's channels (every channel's locales, not every locale Sylius defines). It falls back through the [fallback chain](../../GLOSSARY.md#entries) ([Localization](localization.md)). |
 | Focal point | images | One point, as `x` and `y` from 0 to 1, with 0.5 and 0.5 by default. Every crop keeps it in view. There's no per-use crop in v2.0. |
 | Poster | videos | Another image media item, shown before the video plays. |
 
-- **Missing alt text is flagged, not required**, so bulk uploads aren't blocked. The library grid and the media item show the flag, and the overview counts it as a flag, not as a problem ([Admin](admin.md#problems)). There's no "decorative" switch.
+- **Missing alt text is flagged, not required**, so bulk uploads aren't blocked. An image misses it when it has none in one or more of the locales of the store's channels. The library grid and the media item show the flag, and the overview counts it as a flag, not as a problem ([Admin](admin.md#problems)). There's no "decorative" switch.
 - **Alt text can be overridden for one use.** A block type that shows an image gives it a translatable Text field for the override, such as the Image block's alt override ([Blocks](blocks.md)). An empty override falls back to the media item's alt text.
 - **Captions are block fields**, because a caption depends on where the image is used.
 
@@ -126,11 +128,14 @@ The index drives:
 ## Image processing
 
 - **Storage.** Media items are stored in the plugin's own Flysystem storage, `media.storage`, which is a local public directory by default: `%kernel.project_dir%/public/media/cms`. Like Sylius's own `public/media/image`, it holds the only copy of every file, so a project must keep it across deploys, such as on a shared or persistent volume. Gaufrette isn't supported, and Sylius's `sylius.storage` isn't reused ([ADR 0014](../adr/0014-images-are-processed-by-liip-behind-an-image-provider.md)).
+- **The default storage** is the Flysystem storage `setono_sylius_cms.storage`, which the plugin defines in flysystem-bundle's config the way Sylius defines `sylius.storage`: the `local` adapter, public visibility. Its code uses only what Flysystem 2 and 3 both have, so a shop on either major installs the plugin.
+- **File URLs** are built by the plugin, never asked of the storage: `Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface::generate(string $path)` turns a storage path into a public URL, for media items' files and the image variants cached beside them. The default gives `/media/cms/{path}`, where the default storage is served, without a storage call.
 - **LiipImagine** generates image variants on first request, with the plugin's own loader and resolver, both named `setono_sylius_cms` by default (`media.liip.loader` and `media.liip.resolver`). It caches them in the plugin's storage.
 - **Cropping.** A variant with an aspect ratio that differs from the source is cropped around the media item's focal point.
 - **Formats.** Variants are output as WebP, and as AVIF where the server's image library supports it. SVG and animated GIF are served as uploaded, at every width.
 - **No storage calls when building URLs.** The default image provider builds variant URLs itself and lets Liip's resolve step generate what's missing, so rendering a `srcset` never costs a remote call per entry, even on S3.
-- **Moving to S3** or similar means configuring both the plugin's Flysystem storage and its Liip loader and resolver.
+- **Variant URLs.** On the default local storage, cached by the plugin's own Liip resolver, a variant Liip has made gets its own URL (`/media/cms/cache/…`), which the web server serves without PHP, once a file check in the storage's directory finds it, as Sylius's own Liip setup does. Otherwise, and always on another storage such as S3, a variant gets Liip's signed runtime URL (`/media/cache/resolve/…`), which makes it on its first request and redirects to it. That redirect carries `Cache-Control: public, max-age=0, s-maxage=31536000`, so CDNs keep it for a year while browsers ask again each time: the URL names the file's storage path and is signed with the focal point, so a replace or a moved focal point gives a new one. Liip's redirect status, and its other redirects, such as for Sylius's product images, are left as Liip is configured. Variants removed by hand, such as with `liip:imagine:cache:remove` after changing a filter set's quality, keep their URLs, so a CDN's kept redirect leads to a missing file until it's purged: purge the CDN too. Browsers don't keep the redirect, because a visitor's browser can't be purged.
+- **Moving to S3** or similar means configuring the plugin's Flysystem storage, either the storage `setono_sylius_cms.storage` in the project's own flysystem config or another one named in `media.storage`, and aliasing `MediaUrlGeneratorInterface` to a service that builds the storage's URLs, such as the bucket's or its CDN's. The plugin's Liip loader and resolver read and write through the storage, so they follow it; a project can name its own in `media.liip` instead.
 - **The image provider.** Templates never call Liip. The [image helper](#the-image-helper) asks `ImageProviderInterface` for each variant's URL ([Extending](extending.md#images)). A project can swap in an image CDN by aliasing the interface, and the Sylius 2 port can add a Symfony UX Image adapter.
 
 The first visitor to each variant waits for it to be generated.
@@ -151,6 +156,8 @@ The first visitor to each variant waits for it to be generated.
 | `alt` | `string\|null` | the media item's alt text | Overrides the alt text. Templates pass the block's alt override here. |
 | `class` | `string\|null` | `null` | Added to the `<img>`. |
 | `format` | `'auto'`, `'webp'` or `'original'` | `'auto'` | **Auto** renders a `<picture>` with an AVIF `<source>` where supported and WebP in the `<img>`. **WebP** renders a plain `<img>`. **Original** keeps the source format. |
+| `art_direction` | list of `{media, image, aspect_ratio?}` | `[]` | Other images for some screens, such as a Banner's mobile image. Each whose `image` (a media item, its UUID or `null`) is an image becomes a `<source media="{media}">` in a `<picture>`, before the image's own sources: an AVIF one first where offered, then one in the `<img>`'s format, sized by the same `layout`, `width` and `sizes`, at its own aspect ratio or `aspect_ratio`. An empty, broken or non-image one is left out, and without the main image nothing renders. |
+| `picture_class` | `string\|null` | `null` | Always renders a `<picture>` with this class, also when it has no `<source>`. A builder placeholder takes it too. |
 
 What it renders:
 

@@ -5,3 +5,7 @@ framework:
     # In debug, Symfony sends "X-Robots-Tag: noindex" on every response. Off, as in production, the tests see only
     # the one the plugin sends on preview responses (docs/spec/rendering.md#preview-mode-and-share-links)
     disallow_search_engine_index: false
+    # The database is rolled back after every test, but a filesystem cache isn't, so what a test caches, such as Sylius's
+    # list of locales after a test adds one, would outlive it. In memory, the cache goes with the kernel
+    cache:
+        app: cache.adapter.array

@@ -8,9 +8,24 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\NestingRulesInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
             <argument type="service" id="translator"/>
-            <argument type="service" id="translator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\UiStrings"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaLimits"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
+        </service>
+
+        <!-- What the media library app needs to reach the library, on its own screen and as the builder's media picker -->
+        <service id="Setono\SyliusCMSPlugin\Builder\MediaLibraryConfig" class="Setono\SyliusCMSPlugin\Builder\MediaLibraryConfig">
+            <argument type="service" id="router"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaLocales"/>
+        </service>
+
+        <!-- The builder app's UI strings, which the media library's page hands its app too -->
+        <service id="Setono\SyliusCMSPlugin\Builder\UiStrings" class="Setono\SyliusCMSPlugin\Builder\UiStrings">
+            <argument type="service" id="translator"/>
+            <argument type="service" id="translator"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier" class="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier">
@@ -26,6 +41,39 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Targeting\CustomerGroupChoicesProvider"/>
 
             <tag name="setono_sylius_cms.search" kind="customer_group"/>
+        </service>
+
+        <!-- Products, taxons and entries are searched by these, which their link targets search with too. A link target without a search of its kind is searched under its code (RegisterLinkTargetsPass) -->
+        <service id="Setono\SyliusCMSPlugin\Builder\Search\ProductSearch" class="Setono\SyliusCMSPlugin\Builder\Search\ProductSearch">
+            <argument type="service" id="doctrine"/>
+            <argument>%sylius.model.product.class%</argument>
+            <argument>%sylius.model.product_translation.class%</argument>
+
+            <tag name="setono_sylius_cms.search" kind="product"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Builder\Search\TaxonSearch" class="Setono\SyliusCMSPlugin\Builder\Search\TaxonSearch">
+            <argument type="service" id="doctrine"/>
+            <argument>%sylius.model.taxon.class%</argument>
+            <argument>%sylius.model.taxon_translation.class%</argument>
+
+            <tag name="setono_sylius_cms.search" kind="taxon"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Builder\Search\EntrySearch" class="Setono\SyliusCMSPlugin\Builder\Search\EntrySearch">
+            <argument type="service" id="doctrine"/>
+            <argument>%setono_sylius_cms.model.entry.class%</argument>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+
+            <tag name="setono_sylius_cms.search" kind="entry"/>
+        </service>
+
+        <!-- The documents and videos the media link target links to, which the search under its code finds -->
+        <service id="Setono\SyliusCMSPlugin\Builder\Search\MediaSearch" class="Setono\SyliusCMSPlugin\Builder\Search\MediaSearch">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+
+            <tag name="setono_sylius_cms.search" kind="media"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger" class="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger"/>

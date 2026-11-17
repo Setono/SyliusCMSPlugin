@@ -35,8 +35,9 @@ final class VisibilityConditionsTest extends BuilderApiTestCase
         /** @var list<array{code: string, label: string, fields: list<array{name: string, schema: array<string, mixed>}>}> $exported */
         $exported = $registry['conditionKinds'];
         $kinds = array_column($exported, null, 'code');
-        self::assertSame(['channel', 'locale', 'date_window', 'customer_group'], array_keys($kinds));
-        self::assertSame(['Channel', 'Locale', 'Date window', 'Customer group'], array_column($exported, 'label'));
+        // The test application adds a kind of its own
+        self::assertSame(['app_product_available', 'channel', 'locale', 'date_window', 'customer_group'], array_keys($kinds));
+        self::assertSame(['Product is available', 'Channel', 'Locale', 'Date window', 'Customer group'], array_column($exported, 'label'));
 
         self::assertSame([
             'name' => 'channels',
@@ -57,6 +58,7 @@ final class VisibilityConditionsTest extends BuilderApiTestCase
         self::assertSame(['choices' => ['@guest' => 'Guests', '@no_group' => 'Signed in without a group', 'wholesale' => 'Wholesale'], 'multiple' => true], $kinds['customer_group']['fields'][0]['schema']['x-cms-options']);
         self::assertSame(['from', 'until'], array_column($kinds['date_window']['fields'], 'name'));
         self::assertSame('date_time', $kinds['date_window']['fields'][0]['schema']['x-cms-type']);
+        self::assertSame('product', $kinds['app_product_available']['fields'][0]['schema']['x-cms-type']);
     }
 
     /**

@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Problem;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\OnFlushEventArgs;
+use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\UnitOfWork;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
@@ -22,14 +23,17 @@ use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountListener;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface;
+use Setono\SyliusCMSPlugin\Problem\ReferenceProblemKindInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\ChannelAndTaxonReferences;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\CustomerGroupReferences;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\ProductAndTaxonCodeReferences;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\Taxon;
 use Sylius\Component\Customer\Model\CustomerGroup;
 use Sylius\Component\Customer\Model\CustomerGroupInterface;
 use Sylius\Component\Product\Model\Product;
+use Sylius\Component\Product\Model\ProductInterface;
 use Sylius\Component\Taxonomy\Model\TaxonInterface;
 
 final class ProblemCountListenerTest extends TestCase
@@ -199,23 +203,7 @@ final class ProblemCountListenerTest extends TestCase
     public function it_asks_no_kind_when_a_flush_writes_nothing_they_reference(): void
     {
         $page = new Page();
-        $kinds = new class([new CustomerGroupReferences([new Page()])]) implements \IteratorAggregate {
-            public int $built = 0;
-
-            /**
-             * @param list<CustomerGroupReferences> $kinds
-             */
-            public function __construct(private readonly array $kinds)
-            {
-            }
-
-            public function getIterator(): \Iterator
-            {
-                ++$this->built;
-
-                return new \ArrayIterator($this->kinds);
-            }
-        };
+        $kinds = self::countingBuilds([new CustomerGroupReferences([new Page()])]);
         $listener = new ProblemCountListener($this->updater->reveal(), $kinds, [CustomerGroupInterface::class]);
 
         $listener->onFlush($this->flushing([], [$page, new Channel()], []));
@@ -224,6 +212,69 @@ final class ProblemCountListenerTest extends TestCase
 
         self::assertSame(0, $kinds->built, 'No kind is even built');
         self::assertSame([[$page]], $this->updated);
+    }
+
+    /**
+     * Entries refer to a product or a taxon by its code, so only deleting one or changing its code breaks or mends a
+     * reference to it
+     *
+     * @test
+     */
+    public function it_counts_the_entries_that_may_refer_to_a_record_a_flush_deletes_or_changes_the_code_of(): void
+    {
+        $referencing = new Page();
+        $deleted = self::product('MUG');
+        $recoded = self::product('CAP');
+        $codes = new ProductAndTaxonCodeReferences([$referencing]);
+        $listener = new ProblemCountListener($this->updater->reveal(), [$codes], [ProductInterface::class, TaxonInterface::class], [ProductInterface::class => ['code'], TaxonInterface::class => ['code']]);
+
+        $listener->onFlush($this->flushing([], [$recoded], [$deleted]));
+        $listener->preUpdate($this->updating($recoded, ['code' => ['HAT', 'CAP']]));
+        $listener->postFlush();
+
+        self::assertSame([[$deleted, $recoded]], $codes->asked);
+        self::assertSame([['HAT']], $codes->formerValues, 'The entries that referred to its former code may too');
+        self::assertSame([[$referencing]], $this->updated);
+    }
+
+    /**
+     * So a product import or an edit of a product's name runs no query to find the entries that refer to it
+     *
+     * @test
+     */
+    public function it_asks_no_kind_about_a_record_a_flush_inserts_or_changes_only_other_fields_of_when_entries_refer_to_it_by_a_field(): void
+    {
+        $page = new Page();
+        $renamed = self::product('MUG');
+        $kinds = self::countingBuilds([new ProductAndTaxonCodeReferences([new Page()])]);
+        $listener = new ProblemCountListener($this->updater->reveal(), $kinds, [ProductInterface::class, TaxonInterface::class], [ProductInterface::class => ['code'], TaxonInterface::class => ['code']]);
+
+        $listener->onFlush($this->flushing([self::product('CAP'), new Taxon()], [$page, $renamed], []));
+        $listener->preUpdate($this->updating($page, ['updatedAt' => [null, new \DateTime()]]));
+        $listener->preUpdate($this->updating($renamed, ['enabled' => [true, false]]));
+        $listener->postFlush();
+
+        self::assertSame(0, $kinds->built, 'No kind is even built');
+        self::assertSame([[$page]], $this->updated);
+    }
+
+    /**
+     * A kind that reads every write of a class still hears of an insert, while one that refers to it by a field doesn't
+     *
+     * @test
+     */
+    public function it_asks_each_kind_only_about_the_writes_that_may_change_what_it_finds(): void
+    {
+        $taxon = new Taxon();
+        $codes = new ProductAndTaxonCodeReferences();
+        $channelsAndTaxons = new ChannelAndTaxonReferences();
+        $listener = new ProblemCountListener($this->updater->reveal(), [$codes, $channelsAndTaxons], [ProductInterface::class, TaxonInterface::class, ChannelInterface::class], [ProductInterface::class => ['code']]);
+
+        $listener->onFlush($this->flushing([$taxon], [], []));
+        $listener->postFlush();
+
+        self::assertSame([[$taxon]], $channelsAndTaxons->asked);
+        self::assertSame([], $codes->asked, 'An inserted taxon breaks or mends no reference by code');
     }
 
     /**
@@ -258,6 +309,52 @@ final class ProblemCountListenerTest extends TestCase
         $manager->getUnitOfWork()->willReturn($unitOfWork->reveal());
 
         return new OnFlushEventArgs($manager->reveal());
+    }
+
+    /**
+     * An update of the entity in the flush, as Doctrine tells it after onFlush, with the fields it changes
+     *
+     * @param array<string, array{mixed, mixed}> $changeSet
+     */
+    private function updating(object $entity, array $changeSet): PreUpdateEventArgs
+    {
+        return new PreUpdateEventArgs($entity, $this->prophesize(EntityManagerInterface::class)->reveal(), $changeSet);
+    }
+
+    /**
+     * The kinds, counting how often they're built
+     *
+     * @param list<ReferenceProblemKindInterface> $kinds
+     *
+     * @return \IteratorAggregate<int, ReferenceProblemKindInterface>&object{built: int}
+     */
+    private static function countingBuilds(array $kinds): \IteratorAggregate
+    {
+        return new class($kinds) implements \IteratorAggregate {
+            public int $built = 0;
+
+            /**
+             * @param list<ReferenceProblemKindInterface> $kinds
+             */
+            public function __construct(private readonly array $kinds)
+            {
+            }
+
+            public function getIterator(): \Iterator
+            {
+                ++$this->built;
+
+                return new \ArrayIterator($this->kinds);
+            }
+        };
+    }
+
+    private static function product(string $code): Product
+    {
+        $product = new Product();
+        $product->setCode($code);
+
+        return $product;
     }
 
     private static function customerGroup(string $code): CustomerGroup

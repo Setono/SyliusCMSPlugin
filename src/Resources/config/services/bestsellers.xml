@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- The default bestsellers calculator, which counts the orders whose checkout completed inside bestsellers.window -->
+        <service id="Setono\SyliusCMSPlugin\Bestsellers\CompletedOrdersCalculator" class="Setono\SyliusCMSPlugin\Bestsellers\CompletedOrdersCalculator">
+            <argument type="service" id="sylius.manager.order"/>
+            <argument>%sylius.model.order.class%</argument>
+            <argument type="service" id="clock"/>
+            <argument>%setono_sylius_cms.bestsellers.window%</argument>
+        </service>
+        <!-- A project with analytics data aliases this to its own calculator -->
+        <service id="Setono\SyliusCMSPlugin\Bestsellers\BestsellersCalculatorInterface" alias="Setono\SyliusCMSPlugin\Bestsellers\CompletedOrdersCalculator"/>
+
+        <!-- Runs the calculator for a channel and replaces the channel's scores, for setono:cms:bestsellers:compute -->
+        <service id="Setono\SyliusCMSPlugin\Bestsellers\BestsellersComputer" class="Setono\SyliusCMSPlugin\Bestsellers\BestsellersComputer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Bestsellers\BestsellersCalculatorInterface"/>
+            <argument type="service" id="setono_sylius_cms.factory.bestseller_score"/>
+            <argument type="service" id="doctrine"/>
+            <argument>%setono_sylius_cms.model.bestseller_score.class%</argument>
+        </service>
+    </services>
+</container>

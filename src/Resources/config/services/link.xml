@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- The link targets, by code, which RegisterLinkTargetsPass hands it -->
+        <service id="Setono\SyliusCMSPlugin\Registry\LinkTargetRegistry" class="Setono\SyliusCMSPlugin\Registry\LinkTargetRegistry">
+            <argument type="collection"/>
+            <argument/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\LinkTargetRegistry"/>
+
+        <!-- Resolves links through their targets, for the Link field and rich text's links -->
+        <service id="Setono\SyliusCMSPlugin\Link\LinkResolver" class="Setono\SyliusCMSPlugin\Link\LinkResolver">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface"/>
+        </service>
+
+        <!--
+        The shipped link targets. A link target is a service carrying #[AsLinkTarget], which autoconfiguration tags
+        setono_sylius_cms.link_target, and RegisterLinkTargetsPass hands to the registry by code. The builder offers them
+        by their tag's priority, so the shipped ones come first, in this order, and then a project's
+        -->
+        <service id="Setono\SyliusCMSPlugin\Link\Target\EntryLinkTarget" class="Setono\SyliusCMSPlugin\Link\Target\EntryLinkTarget">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\EntryReferenceLoader"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\Search\EntrySearch"/>
+
+            <tag name="setono_sylius_cms.link_target" priority="40"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Link\Target\ProductLinkTarget" class="Setono\SyliusCMSPlugin\Link\Target\ProductLinkTarget">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ProductReferenceLoader"/>
+            <argument type="service" id="router"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\Search\ProductSearch"/>
+
+            <tag name="setono_sylius_cms.link_target" priority="30"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Link\Target\TaxonLinkTarget" class="Setono\SyliusCMSPlugin\Link\Target\TaxonLinkTarget">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\TaxonReferenceLoader"/>
+            <argument type="service" id="router"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\Search\TaxonSearch"/>
+
+            <tag name="setono_sylius_cms.link_target" priority="20"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Link\Target\MediaLinkTarget" class="Setono\SyliusCMSPlugin\Link\Target\MediaLinkTarget">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaItemReferenceLoader"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\PermanentUrlGeneratorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\Search\MediaSearch"/>
+
+            <tag name="setono_sylius_cms.link_target" priority="15"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Link\Target\UrlLinkTarget" class="Setono\SyliusCMSPlugin\Link\Target\UrlLinkTarget">
+            <tag name="setono_sylius_cms.link_target" priority="10"/>
+        </service>
+    </services>
+</container>

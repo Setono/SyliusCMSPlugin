@@ -1,0 +1,32 @@
+{#
+ # The media library in the hub: the library app, which is part of the prebuilt builder app, mounted on #cms-media-library
+ # with its config. See "Media library" in docs/spec/admin.md
+ #}
+{% extends '@SetonoSyliusCMSPlugin/admin/layout.html.twig' %}
+
+{% import '@SyliusUi/Macro/headers.html.twig' as headers %}
+{% import '@SyliusAdmin/Macro/breadcrumb.html.twig' as breadcrumb %}
+
+{% block title %}{{ 'setono_sylius_cms.ui.media'|trans }} {{ parent() }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('bundles/setonosyliuscmsplugin/builder/builder.css') }}">
+{% endblock %}
+
+{% block hub_content %}
+    {{ headers.default('setono_sylius_cms.ui.media'|trans, 'images outline', 'setono_sylius_cms.ui.media_description'|trans) }}
+
+    {{ breadcrumb.crumble([
+        { label: 'sylius.ui.administration'|trans, url: path('sylius_admin_dashboard') },
+        { label: 'setono_sylius_cms.ui.content'|trans, url: path('setono_sylius_cms_admin_overview') },
+        { label: 'setono_sylius_cms.ui.media'|trans },
+    ]) }}
+
+    <div id="cms-media-library" data-config="{{ config|json_encode }}"></div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="module" src="{{ asset('bundles/setonosyliuscmsplugin/builder/builder.js') }}"></script>
+{% endblock %}

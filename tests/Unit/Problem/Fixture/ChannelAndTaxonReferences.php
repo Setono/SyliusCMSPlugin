@@ -30,7 +30,12 @@ final class ChannelAndTaxonReferences implements ReferenceProblemKindInterface
         return [ChannelInterface::class, TaxonInterface::class];
     }
 
-    public function findEntriesReferencing(array $referenced): iterable
+    public static function getReferenceFields(): array
+    {
+        return [];
+    }
+
+    public function findEntriesReferencing(array $referenced, array $formerValues = []): iterable
     {
         $this->asked[] = $referenced;
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin;
 
+use Setono\SyliusCMSPlugin\Builder\MediaLibraryConfig;
 use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
@@ -49,6 +50,7 @@ final readonly class BuilderAction
         private RepositoryInterface $customerGroupRepository,
         private FallbackChainInterface $fallbackChain,
         private StartingValuesInterface $startingValues,
+        private MediaLibraryConfig $mediaLibraryConfig,
     ) {
     }
 
@@ -83,6 +85,10 @@ final readonly class BuilderAction
                     'presence' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_presence', ['uuid' => $entry->getUuid()]),
                     'slug' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_slug'),
                     'urls' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_urls', ['uuid' => $entry->getUuid()]),
+                    // What pickers search, with __kind__ for the kind, such as product or a link target's code
+                    'search' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_search', ['kind' => '__kind__']),
+                    // How many items a source yields for a list field's parameters, under the preview's token
+                    'sourceCount' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_source_count'),
                 ],
                 'channels' => array_map(static fn (array $channel): array => [
                     'code' => $channel['channel']->getCode(),
@@ -91,6 +97,9 @@ final readonly class BuilderAction
                 ], $channels),
                 'locales' => $locales,
                 'customerGroups' => $this->customerGroups(),
+                // The media picker is the media library opened as a picker, with the library's endpoints, and the
+                // store's locales for the alt text. The registry gives it the upload limit and types
+                'media' => $this->mediaLibraryConfig->of($request->getLocale()),
                 // Where the preview's Shown to and Date start. Date is a UTC date and time, or null for now
                 'preview' => [
                     'shownTo' => $this->startingValues->shownTo($entry),

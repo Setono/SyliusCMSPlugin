@@ -115,7 +115,7 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($registry);
         $blockTypes = self::blockTypes($registry);
 
-        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'accordion', 'accordion_item', 'first_match'], array_keys($blockTypes));
+        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'video', 'button', 'banner', 'accordion', 'accordion_item', 'link_list', 'link', 'downloads', 'products', 'taxons', 'carousel', 'first_match'], array_keys($blockTypes));
 
         self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
         self::assertNull($blockTypes['columns']['parents']);
@@ -127,12 +127,22 @@ final class RegistryTest extends BuilderApiTestCase
             ['type' => 'spacer', 'min' => null, 'max' => null],
             ['type' => 'heading', 'min' => null, 'max' => null],
             ['type' => 'rich_text', 'min' => null, 'max' => null],
+            ['type' => 'image', 'min' => null, 'max' => null],
+            ['type' => 'video', 'min' => null, 'max' => null],
+            ['type' => 'button', 'min' => null, 'max' => null],
+            ['type' => 'banner', 'min' => null, 'max' => null],
             ['type' => 'accordion', 'min' => null, 'max' => null],
+            ['type' => 'link_list', 'min' => null, 'max' => null],
+            ['type' => 'downloads', 'min' => null, 'max' => null],
+            ['type' => 'products', 'min' => null, 'max' => null],
+            ['type' => 'taxons', 'min' => null, 'max' => null],
+            ['type' => 'carousel', 'min' => null, 'max' => null],
             ['type' => 'first_match', 'min' => null, 'max' => null],
         ];
         self::assertSame($all, $blockTypes['group']['children']);
         self::assertSame($all, $blockTypes['column']['children']);
         self::assertSame($all, $blockTypes['first_match']['children']);
+        self::assertSame($all, $blockTypes['carousel']['children']);
         self::assertSame([], $blockTypes['first_match']['fields']);
         self::assertSame([], $blockTypes['spacer']['children']);
         self::assertSame([], $blockTypes['heading']['children']);
@@ -142,6 +152,14 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertNull($blockTypes['accordion']['parents']);
         self::assertSame(['accordion'], $blockTypes['accordion_item']['parents']);
         self::assertSame([], $blockTypes['accordion_item']['children']);
+
+        self::assertSame([['type' => 'button', 'min' => null, 'max' => null]], $blockTypes['banner']['children']);
+        self::assertNull($blockTypes['banner']['parents']);
+        self::assertNull($blockTypes['button']['parents'], 'A Button goes in a Banner and anywhere else');
+
+        self::assertSame([['type' => 'link', 'min' => null, 'max' => null]], $blockTypes['link_list']['children']);
+        self::assertSame(['link_list'], $blockTypes['link']['parents']);
+        self::assertSame([], $blockTypes['link']['children']);
 
         self::assertSame('/bundles/setonosyliuscmsplugin/thumbnail/block/columns.svg', $blockTypes['columns']['thumbnail']);
         self::assertFalse($blockTypes['spacer']['disabled']);
@@ -183,6 +201,179 @@ final class RegistryTest extends BuilderApiTestCase
             ['code' => 'brand', 'label' => 'Brand'],
         ], $blockTypes['group']['styles']);
         self::assertSame([], $blockTypes['heading']['styles']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_answers_the_link_targets_the_shipped_ones_first_and_the_button_with_its_link_and_styles(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+
+        $registry = self::json($client, 'GET', '/admin/cms/api/registry');
+        self::assertIsArray($registry);
+
+        self::assertSame([
+            ['code' => 'entry', 'label' => 'Entry', 'translatableRef' => false],
+            ['code' => 'product', 'label' => 'Product', 'translatableRef' => false],
+            ['code' => 'taxon', 'label' => 'Taxon', 'translatableRef' => false],
+            ['code' => 'media', 'label' => 'Document or video', 'translatableRef' => false],
+            ['code' => 'url', 'label' => 'URL', 'translatableRef' => true],
+            ['code' => 'app_store', 'label' => 'Store', 'translatableRef' => false],
+        ], $registry['linkTargets']);
+
+        $button = self::blockTypes($registry)['button'];
+        self::assertSame('Button', $button['label']);
+        self::assertSame([['code' => 'primary', 'label' => 'Primary'], ['code' => 'secondary', 'label' => 'Secondary']], $button['styles']);
+        self::assertIsArray($button['fields']);
+        $link = $button['fields'][0] ?? null;
+        self::assertIsArray($link);
+        self::assertSame('link', $link['name']);
+        $schema = $link['schema'];
+        self::assertIsArray($schema);
+        self::assertSame(['link', 'Link', true, false], [$schema['x-cms-type'], $schema['x-cms-label'], $schema['x-cms-required'], $schema['x-cms-translatable']]);
+        self::assertSame(['targets' => ['entry', 'product', 'taxon', 'media', 'url', 'app_store'], 'translatable' => null], $schema['x-cms-options']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_answers_the_image_block_with_a_required_image_an_alt_text_and_a_caption_per_language_and_a_link(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+
+        $registry = self::json($client, 'GET', '/admin/cms/api/registry');
+        self::assertIsArray($registry);
+
+        $image = self::blockTypes($registry)['image'];
+        self::assertSame('Image', $image['label']);
+        self::assertSame('/bundles/setonosyliuscmsplugin/thumbnail/block/image.svg', $image['thumbnail']);
+        self::assertSame([], $image['children']);
+        self::assertIsArray($image['fields']);
+
+        $fields = [];
+        foreach ($image['fields'] as $field) {
+            self::assertIsArray($field);
+            self::assertIsArray($field['schema']);
+            self::assertIsString($field['name']);
+            $fields[$field['name']] = [$field['schema']['x-cms-type'], $field['schema']['x-cms-label'], $field['schema']['x-cms-required'], $field['schema']['x-cms-translatable']];
+        }
+
+        self::assertSame([
+            'image' => ['media', 'Image', true, false],
+            'alt' => ['text', 'Alt text', false, true],
+            'caption' => ['text', 'Caption', false, true],
+            'link' => ['link', 'Link', false, false],
+        ], $fields);
+    }
+
+    /**
+     * @test
+     */
+    public function it_answers_the_products_and_taxons_blocks_with_their_list_fields(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+
+        $registry = self::json($client, 'GET', '/admin/cms/api/registry');
+        self::assertIsArray($registry);
+        $blockTypes = self::blockTypes($registry);
+
+        self::assertSame(['Products', 'Taxons'], [$blockTypes['products']['label'], $blockTypes['taxons']['label']]);
+        // Compared regardless of key order
+        self::assertEquals(
+            [
+                [
+                    'name' => 'products',
+                    'schema' => [
+                        // Hand-picked codes, or a source of products
+                        'anyOf' => [
+                            ['type' => 'array', 'items' => ['type' => 'string', 'minLength' => 1]],
+                            [
+                                'type' => 'object',
+                                'properties' => [
+                                    '$source' => ['type' => 'string', 'minLength' => 1],
+                                    '$params' => ['type' => 'object'],
+                                    '$limit' => ['type' => 'integer', 'minimum' => 1],
+                                ],
+                                'required' => ['$source', '$params', '$limit'],
+                                'additionalProperties' => false,
+                            ],
+                        ],
+                        'x-cms-options' => ['max' => null, 'sources' => ['products_in_taxon', 'bestsellers', 'newest_products'], 'limit' => 8],
+                        'x-cms-type' => 'products',
+                        'x-cms-label' => 'Products',
+                        'x-cms-help' => null,
+                        'x-cms-required' => false,
+                        'x-cms-translatable' => false,
+                    ],
+                ],
+                [
+                    'name' => 'display',
+                    'schema' => [
+                        'type' => 'string',
+                        'enum' => ['grid', 'carousel'],
+                        'x-cms-options' => ['choices' => ['grid' => 'Grid', 'carousel' => 'Carousel'], 'multiple' => false],
+                        'x-cms-type' => 'choice',
+                        'x-cms-label' => 'Display',
+                        'x-cms-help' => null,
+                        'x-cms-required' => false,
+                        'x-cms-translatable' => false,
+                        'default' => 'grid',
+                    ],
+                ],
+            ],
+            $blockTypes['products']['fields'],
+        );
+
+        $taxons = $blockTypes['taxons']['fields'];
+        self::assertIsArray($taxons);
+        self::assertIsArray($taxons[0]);
+        self::assertSame('taxons', $taxons[0]['name']);
+        self::assertIsArray($taxons[0]['schema']);
+        self::assertSame(['taxons', 'Taxons'], [$taxons[0]['schema']['x-cms-type'], $taxons[0]['schema']['x-cms-label']]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_answers_the_carousel_block_with_its_slides_per_view_autoplay_and_interval_in_whole_seconds(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+
+        $registry = self::json($client, 'GET', '/admin/cms/api/registry');
+        self::assertIsArray($registry);
+        $carousel = self::blockTypes($registry)['carousel'];
+
+        self::assertSame('Carousel', $carousel['label']);
+        self::assertSame('/bundles/setonosyliuscmsplugin/thumbnail/block/carousel.svg', $carousel['thumbnail']);
+        self::assertIsArray($carousel['fields']);
+        $fields = array_column($carousel['fields'], 'schema', 'name');
+        self::assertSame(['perView', 'autoplay', 'interval'], array_keys($fields));
+        self::assertIsArray($fields['perView']);
+        self::assertSame(['1', '2', '3', '4'], $fields['perView']['enum']);
+        self::assertSame('1', $fields['perView']['default']);
+        self::assertIsArray($fields['autoplay']);
+        self::assertSame(['toggle', false], [$fields['autoplay']['x-cms-type'], $fields['autoplay']['default']]);
+        // Compared regardless of key order
+        self::assertEquals(
+            [
+                'type' => 'integer',
+                'minimum' => 2,
+                'maximum' => 30,
+                'x-cms-options' => ['min' => 2, 'max' => 30, 'step' => null, 'integer' => true],
+                'x-cms-type' => 'number',
+                'x-cms-label' => 'Interval',
+                'x-cms-help' => 'The seconds each slide shows while it autoplays, from 2 to 30.',
+                'x-cms-required' => false,
+                'x-cms-translatable' => false,
+                'default' => 5,
+            ],
+            $fields['interval'],
+        );
     }
 
     /**

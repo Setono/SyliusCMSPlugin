@@ -1,0 +1,93 @@
+/* The search picker: a button, and a popover with a search box and what it finds */
+.button {
+    composes: button from '../ui/Buttons.module.css';
+}
+
+/* Rendered in a portal at the end of the body, outside the shell, so it sets its own type and box model. */
+.popover {
+    box-sizing: border-box;
+    width: var(--builder-popover-width);
+    max-width: calc(100vw - 2 * var(--builder-space-2));
+    max-height: min(24rem, var(--radix-popover-content-available-height));
+    overflow-y: auto;
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-surface);
+    box-shadow: var(--builder-shadow-popover);
+    color: var(--builder-color-text);
+    font-family: var(--builder-font-family);
+    font-size: var(--builder-font-size-md);
+    line-height: var(--builder-line-height);
+}
+
+.popover *,
+.popover *::before,
+.popover *::after {
+    box-sizing: border-box;
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+    padding: var(--builder-space-2);
+}
+
+.search {
+    width: 100%;
+    min-height: var(--builder-control-height);
+    padding: var(--builder-space-1) var(--builder-space-2);
+    border: 1px solid var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-surface);
+    color: var(--builder-color-text);
+    font: inherit;
+}
+
+.search:focus-visible {
+    border-color: var(--builder-color-focus);
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: -1px;
+}
+
+.note {
+    margin: 0;
+    padding: var(--builder-space-1) var(--builder-space-2);
+    color: var(--builder-color-text-muted);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.option {
+    display: flex;
+    gap: var(--builder-space-2);
+    align-items: center;
+    padding: var(--builder-space-1) var(--builder-space-2);
+    border-radius: var(--builder-radius-sm);
+    cursor: pointer;
+}
+
+.option[aria-selected='true'] {
+    background: var(--builder-color-selected);
+}
+
+.thumbnail {
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-neutral-subtle);
+    object-fit: cover;
+}
+
+.name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

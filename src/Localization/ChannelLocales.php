@@ -62,6 +62,36 @@ final class ChannelLocales implements ResetInterface
      */
     public function ofChannels(array $channelCodes): array
     {
+        $locales = [];
+        foreach ($this->byChannel() as $channelCode => $localeCodes) {
+            if (in_array($channelCode, $channelCodes, true)) {
+                $locales = [...$locales, ...$localeCodes];
+            }
+        }
+
+        return array_values(array_unique($locales));
+    }
+
+    /**
+     * The locales of every channel of the store, each once, channel by channel in the order the store lists its channels
+     *
+     * @return list<string>
+     */
+    public function all(): array
+    {
+        return $this->ofChannels(array_keys($this->byChannel()));
+    }
+
+    public function reset(): void
+    {
+        $this->byChannel = null;
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    private function byChannel(): array
+    {
         if (null === $this->byChannel) {
             $this->byChannel = [];
             foreach ($this->channelRepository->findBy([], ['id' => 'ASC']) as $channel) {
@@ -72,18 +102,6 @@ final class ChannelLocales implements ResetInterface
             }
         }
 
-        $locales = [];
-        foreach ($this->byChannel as $channelCode => $localeCodes) {
-            if (in_array($channelCode, $channelCodes, true)) {
-                $locales = [...$locales, ...$localeCodes];
-            }
-        }
-
-        return array_values(array_unique($locales));
-    }
-
-    public function reset(): void
-    {
-        $this->byChannel = null;
+        return $this->byChannel;
     }
 }

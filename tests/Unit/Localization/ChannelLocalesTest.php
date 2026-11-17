@@ -46,6 +46,18 @@ final class ChannelLocalesTest extends TestCase
         self::assertSame(['en_US', 'da_DK'], $channelLocales->ofChannels(['WEB']));
     }
 
+    /**
+     * @test
+     */
+    public function it_gives_the_locales_of_every_channel_each_once(): void
+    {
+        /** @var \Prophecy\Prophecy\ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> $repository */
+        $repository = $this->prophesize(ChannelRepositoryInterface::class);
+        $repository->findBy([], ['id' => 'ASC'])->willReturn([self::channel('WEB', 'en_US', 'en_US', 'da_DK'), self::channel('NORDIC', 'sv_SE', 'da_DK', 'sv_SE'), new Channel()]);
+
+        self::assertSame(['en_US', 'da_DK', 'sv_SE'], (new ChannelLocales($repository->reveal()))->all());
+    }
+
     private static function channel(?string $code, ?string $default, ?string ...$localeCodes): Channel
     {
         $channel = new Channel();

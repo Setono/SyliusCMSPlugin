@@ -1,0 +1,20 @@
+{# Each product through the shop's own product card, so CMS product lists match the shop's other lists on every theme #}
+{% set products = cms_value(block, 'products') %}
+{% if products is not null and products|length > 0 %}
+    <div class="cms-products cms-products--{{ block.display }}{{ view.styleClass ? ' ' ~ view.styleClass }}">
+        {%- if block.display == 'carousel' %}
+            {# The Carousel block's markup around the cards, showing 4 at once on wide screens #}
+            {%- import '@SetonoSyliusCMSPlugin/block/_carousel.html.twig' as markup -%}
+            {%- set slides = [] -%}
+            {%- for product in products -%}
+                {%- set card -%}<div class="cms-products__item">{% include '@SyliusShop/Product/_box.html.twig' with {'product': product} only %}</div>{%- endset -%}
+                {%- set slides = slides|merge([card]) -%}
+            {%- endfor %}
+            {{ markup.carousel(slides, 4) }}
+        {%- else %}
+            {%- for product in products %}
+                <div class="cms-products__item">{% include '@SyliusShop/Product/_box.html.twig' with {'product': product} only %}</div>
+            {%- endfor %}
+        {%- endif %}
+    </div>
+{% endif %}

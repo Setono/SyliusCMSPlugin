@@ -70,7 +70,12 @@ export type FromBridge =
      * The editor typed in place: the field's new value in the edited locale, a string for text and textareas and a
      * document for rich text. null means it's empty.
      */
-    | { type: 'edit'; key: string; field: string; value: JsonValue | null };
+    | { type: 'edit'; key: string; field: string; value: JsonValue | null }
+    /**
+     * The blocks in the page with a link that doesn't resolve in the preview's channel and locale, which shoppers don't
+     * see: sent once the bridge is set up, and again whenever they change.
+     */
+    | { type: 'unresolved_links'; keys: string[] };
 
 /** Tells the plugin's messages apart from any other postMessage traffic the shop page has. */
 const CHANNEL = 'setono_sylius_cms.bridge';

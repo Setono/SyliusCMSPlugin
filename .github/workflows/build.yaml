@@ -299,11 +299,11 @@ jobs:
             -   name: "Build"
                 run: "npm run build"
 
-            # The compiled builder is committed, so host projects need no Node. It must match its sources
+            # The compiled builder and shop script are committed, so host projects need no Node. They must match their sources
             -   name: "Check the committed build matches the sources"
                 run: |
-                    git diff --exit-code -- src/Resources/public/builder
-                    test -z "$(git status --porcelain -- src/Resources/public/builder)"
+                    git diff --exit-code -- src/Resources/public/builder src/Resources/public/shop/cms.js
+                    test -z "$(git status --porcelain -- src/Resources/public/builder src/Resources/public/shop/cms.js)"
 
     mutation-tests:
         name: "Mutation tests"

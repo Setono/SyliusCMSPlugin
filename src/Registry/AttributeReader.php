@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Registry;
 
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
+use Setono\SyliusCMSPlugin\Attribute\AsLinkTarget;
+use Setono\SyliusCMSPlugin\Attribute\AsSource;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\ContentType;
@@ -46,6 +48,30 @@ final class AttributeReader
     public static function conditionKind(string $class): ?AsConditionKind
     {
         foreach ((new \ReflectionClass($class))->getAttributes(AsConditionKind::class) as $attribute) {
+            return $attribute->newInstance();
+        }
+
+        return null;
+    }
+
+    /**
+     * @param class-string $class
+     */
+    public static function linkTarget(string $class): ?AsLinkTarget
+    {
+        foreach ((new \ReflectionClass($class))->getAttributes(AsLinkTarget::class) as $attribute) {
+            return $attribute->newInstance();
+        }
+
+        return null;
+    }
+
+    /**
+     * @param class-string $class
+     */
+    public static function source(string $class): ?AsSource
+    {
+        foreach ((new \ReflectionClass($class))->getAttributes(AsSource::class) as $attribute) {
             return $attribute->newInstance();
         }
 

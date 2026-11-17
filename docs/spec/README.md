@@ -26,7 +26,7 @@ This specification is the source of truth for building v2. It was assembled from
   - Doctrine ORM and Sylius's ResourceBundle and GridBundle
   - Symfony Messenger, on Sylius's `main` transport, for scheduled publishes, admin imports and deleting replaced media files
   - LiipImagine, behind the plugin's own image provider ([ADR 0014](../adr/0014-images-are-processed-by-liip-behind-an-image-provider.md))
-  - Flysystem, through the plugin's own storage
+  - Flysystem 2 or 3, through the plugin's own storage, defined in flysystem-bundle's config as Sylius defines its own
   - Pagerfanta's `AdapterInterface` (`^3` on 1.14) as part of the source contract ([ADR 0022](../adr/0022-sources-return-a-pagerfanta-adapter.md))
   - `ueberdosis/tiptap-php` for rich text (new dependency)
 - **No Symfony UX, no Encore entry and no Node in host projects.** The builder ships prebuilt ([ADR 0008](../adr/0008-the-builder-is-a-react-app-with-a-twig-preview-in-a-same-origin-iframe.md)).

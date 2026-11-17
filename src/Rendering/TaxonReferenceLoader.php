@@ -1,0 +1,51 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Setono\SyliusCMSPlugin\Rendering;
+
+use Doctrine\Persistence\ManagerRegistry;
+use Setono\SyliusCMSPlugin\Query\VisibleTaxonsQueryInterface;
+use Sylius\Component\Core\Model\TaxonInterface;
+
+/**
+ * Loads the taxons references name, by code: those the shopper may see, through the visible taxons query, so a link to
+ * a disabled taxon isn't rendered, with their translations and images, which their tiles and links read. See "Visible queries" in docs/spec/sources.md
+ *
+ * @internal
+ */
+final readonly class TaxonReferenceLoader implements ReferenceTypeLoaderInterface
+{
+    /**
+     * @param class-string $taxonClass
+     */
+    public function __construct(
+        private VisibleTaxonsQueryInterface $visibleTaxons,
+        private ManagerRegistry $managerRegistry,
+        private string $taxonClass,
+    ) {
+    }
+
+    public function load(array $ids, RenderContext $context): array
+    {
+        /** @var list<TaxonInterface> $taxons */
+        $taxons = $this->visibleTaxons->createQueryBuilder($context)
+            // What a taxon's tile and link show, so a Taxons block runs no query per taxon
+            ->leftJoin('taxon.translations', 'cms_taxon_translation')
+            ->addSelect('cms_taxon_translation')
+            ->leftJoin('taxon.images', 'cms_taxon_image')
+            ->addSelect('cms_taxon_image')
+            ->andWhere('taxon.code IN (:cms_codes)')
+            ->setParameter('cms_codes', $ids)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return CodedRecords::byCode($taxons);
+    }
+
+    public function existing(array $ids): array
+    {
+        return CodedRecords::existing($this->managerRegistry, $this->taxonClass, $ids);
+    }
+}

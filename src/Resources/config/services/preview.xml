@@ -52,6 +52,14 @@
             <argument type="service" id="logger"/>
         </service>
 
+        <!-- Follows a block whose link doesn't resolve with a notice, in the builder's preview, inside the block's markers -->
+        <service id="Setono\SyliusCMSPlugin\Preview\UnresolvedLinkNotices" class="Setono\SyliusCMSPlugin\Preview\UnresolvedLinkNotices"
+                 decorates="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface" decoration-priority="10">
+            <argument type="service" id=".inner"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="translator"/>
+        </service>
+
         <!-- Marks the fields cms_field() prints that editors can type in place, in the builder's preview -->
         <service id="Setono\SyliusCMSPlugin\Preview\FieldMarker" class="Setono\SyliusCMSPlugin\Preview\FieldMarker">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>

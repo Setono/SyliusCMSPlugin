@@ -6,12 +6,20 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Twig;
 
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Setono\SyliusCMSPlugin\Block\Button;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\RichText;
+use Setono\SyliusCMSPlugin\Builder\Search\SearchInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Link\ResolvedLink;
+use Setono\SyliusCMSPlugin\Link\Target\EntryLinkTarget;
+use Setono\SyliusCMSPlugin\Link\Target\TaxonLinkTarget;
 use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Media\MediaKind;
+use Setono\SyliusCMSPlugin\Model\MediaItem;
+use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Preview\FieldMarker;
@@ -22,20 +30,29 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
+use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer;
 use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
 use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGenerator;
 use Setono\SyliusCMSPlugin\Seo\MetaValues;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\Faq;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\NotABlock;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\Quote;
 use Setono\SyliusCMSPlugin\Twig\CMSExtension;
 use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Setono\SyliusCMSPlugin\Twig\HeadTagsRuntime;
+use Setono\SyliusCMSPlugin\Twig\LinkRuntime;
+use Setono\SyliusCMSPlugin\Twig\RenderContexts;
+use Setono\SyliusCMSPlugin\Value\ItemList;
+use Setono\SyliusCMSPlugin\Value\Link;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\ChannelInterface;
+use Sylius\Component\Core\Model\Taxon;
 use Sylius\Component\Locale\Model\Locale;
 use Sylius\Resource\Translation\Provider\ImmutableTranslationLocaleProvider;
 use Symfony\Component\Clock\MockClock;
@@ -78,9 +95,13 @@ final class CMSExtensionTest extends IntegrationTestCase
 
     private RequestStack $requestStack;
 
+    /** @var array<string, Page> the pages the shopper may see, by UUID */
+    private array $visiblePages = [];
+
     protected function setUp(): void
     {
         $this->requestStack = new RequestStack();
+        $this->visiblePages = [];
     }
 
     protected static function getFixturesDirectory(): string
@@ -117,12 +138,15 @@ final class CMSExtensionTest extends IntegrationTestCase
         $blockTwig = new Environment(new ChainLoader([new ArrayLoader(self::BLOCK_TEMPLATES), $filesystem]), ['strict_variables' => true]);
         $blockTwig->addExtension(new CMSExtension());
 
-        $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class, 'quote' => Quote::class, 'faq' => Faq::class], new FieldReader());
+        $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class, 'button' => Button::class, 'quote' => Quote::class, 'faq' => Faq::class], new FieldReader());
         // de_CH falls back to de_DE, and then to en_US
         $fallbackValues = new FallbackValues(new FieldHandlerLocator(new ServiceLocator([])), new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'), ['de_CH' => ['de_DE']]));
         $contentTypes = new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]);
         $shopRoutes = new RouteCollection();
         $shopRoutes->add('setono_sylius_cms_shop_entry', new Route('/{_locale}/{path}', requirements: ['path' => '.+(?<!/)']));
+        $shopRoutes->add('sylius_shop_product_index', new Route('/{_locale}/taxons/{slug}', requirements: ['slug' => '.+(?<!/)']));
+        $shopUrls = new UrlGenerator($shopRoutes, new RequestContext(host: 'shop.example', scheme: 'https'));
+        $canonicalUrls = new CanonicalUrlGenerator($contentTypes, $shopUrls);
         $runtimes = new FactoryRuntimeLoader([
             CMSRuntime::class => fn (): CMSRuntime => new CMSRuntime(
                 new TwigBlockRenderer($blockTwig, $blockTypes),
@@ -132,8 +156,13 @@ final class CMSExtensionTest extends IntegrationTestCase
             ),
             HeadTagsRuntime::class => static fn (): HeadTagsRuntime => new HeadTagsRuntime(
                 new MetaValues($contentTypes, $fallbackValues),
-                new CanonicalUrlGenerator($contentTypes, new UrlGenerator($shopRoutes, new RequestContext(host: 'shop.example', scheme: 'https'))),
+                $canonicalUrls,
                 new Availability(),
+            ),
+            LinkRuntime::class => fn (): LinkRuntime => new LinkRuntime(
+                new EntryLinkTarget($this->visibleEntries(), $canonicalUrls, $this->prophesize(SearchInterface::class)->reveal()),
+                new TaxonLinkTarget($this->prophesize(ReferenceTypeLoaderInterface::class)->reveal(), $shopUrls, $this->prophesize(SearchInterface::class)->reveal()),
+                new RenderContexts($this->shopRenderContext()),
             ),
         ]);
         $blockTwig->addRuntimeLoader($runtimes);
@@ -152,7 +181,7 @@ final class CMSExtensionTest extends IntegrationTestCase
     public function rendering(array $variables, ?string $previewMode = null, string $locale = 'en_US', ?ChannelInterface $channel = null): array
     {
         return $variables + [
-            CMSRuntime::RENDER_CONTEXT => new RenderContext($channel ?? new Channel(), $locale, 'USD', null, '@guest', new \DateTimeImmutable(), [], $previewMode),
+            CMSRuntime::RENDER_CONTEXT => Rendering::context(localeCode: $locale, channel: $channel ?? new Channel(), previewMode: $previewMode),
         ];
     }
 
@@ -236,6 +265,67 @@ final class CMSExtensionTest extends IntegrationTestCase
     }
 
     /**
+     * Loads the pages made visible with visiblePage()
+     */
+    private function visibleEntries(): ReferenceTypeLoaderInterface
+    {
+        // Prophecy binds the promise to the double, so the pages are reached through a reference
+        $visiblePages = &$this->visiblePages;
+        $loader = $this->prophesize(ReferenceTypeLoaderInterface::class);
+        $loader->load(Argument::type('array'), Argument::type(RenderContext::class))->will(static function (array $arguments) use (&$visiblePages): array {
+            /** @var list<string> $uuids */
+            $uuids = $arguments[0];
+
+            return array_intersect_key($visiblePages, array_flip($uuids));
+        });
+
+        return $loader->reveal();
+    }
+
+    /**
+     * The render context of a page in the shop outside the CMS's templates: in da_DK
+     */
+    private function shopRenderContext(): RenderContextFactoryInterface
+    {
+        $factory = $this->prophesize(RenderContextFactoryInterface::class);
+        $factory->create()->willReturn(Rendering::context(localeCode: 'da_DK', currencyCode: 'DKK'));
+
+        return $factory->reveal();
+    }
+
+    /**
+     * A page the shopper may see, with a title and a slug in each locale
+     *
+     * @param array<string, array{string, string}> $translations by locale: the title and the slug
+     */
+    public function visiblePage(array $translations): Page
+    {
+        $page = $this->pageWith(array_map(static fn (array $translation): array => ['title' => $translation[0], 'slug' => $translation[1]], $translations));
+        $this->visiblePages[$page->getUuid()] = $page;
+
+        return $page;
+    }
+
+    /**
+     * A Link value whose link resolves to the URL, or doesn't resolve for a URL of null
+     */
+    public function link(?string $url, ?string $label = null): Link
+    {
+        return new Link('product', 'T_SHIRT_RED', null, $label, null === $url ? null : new ResolvedLink('product', 'T_SHIRT_RED', $url, 'Red <T-shirt>'));
+    }
+
+    /**
+     * A Button block whose link resolves to the URL, or doesn't resolve for a URL of null
+     */
+    public function button(?string $url, ?string $label = null, ?string $styleClass = null): BlockView
+    {
+        $button = new Button();
+        $button->link = $this->link($url, $label);
+
+        return new BlockView(self::KEY, 'button', $button, $styleClass, []);
+    }
+
+    /**
      * The share links there are: one, whose token is SHARE_TOKEN
      */
     private function shareLinks(): ShareLinkRepositoryInterface
@@ -301,9 +391,51 @@ final class CMSExtensionTest extends IntegrationTestCase
         return $page;
     }
 
+    /**
+     * A taxon with these names and slugs
+     *
+     * @param array<string, array{string, string}> $translations name and slug by locale
+     */
+    public function taxon(array $translations): Taxon
+    {
+        $taxon = new Taxon();
+        $taxon->setCode('T_SHIRTS');
+        foreach ($translations as $locale => [$name, $slug]) {
+            $taxon->setCurrentLocale($locale);
+            $taxon->setName($name);
+            $taxon->setSlug($slug);
+        }
+
+        return $taxon;
+    }
+
     public function notABlock(): NotABlock
     {
         return new NotABlock();
+    }
+
+    /**
+     * A gallery block, hydrated with a cover media item of this name, or none, and a list of images with these names, or
+     * none for no list
+     *
+     * @param list<string>|null $images
+     */
+    public function gallery(?string $cover, ?array $images = null): Gallery
+    {
+        $gallery = new Gallery();
+        $gallery->cover = null === $cover ? null : self::mediaItem($cover);
+        $gallery->images = null === $images ? null : ItemList::of(array_map(self::mediaItem(...), $images));
+
+        return $gallery;
+    }
+
+    private static function mediaItem(string $name): MediaItemInterface
+    {
+        $mediaItem = new MediaItem();
+        $mediaItem->setKind(MediaKind::Image);
+        $mediaItem->setName($name);
+
+        return $mediaItem;
     }
 
     private static function signer(): PreviewTokenSigner

@@ -1,0 +1,8 @@
+--TEST--
+cms_image() needs a media query for an art-directed image
+--TEMPLATE--
+{{ cms_image(image, {art_direction: [{image: mobile}]}) }}
+--DATA--
+return $this->rendering(['image' => $this->image(), 'mobile' => $this->mobileImage()])
+--EXCEPTION--
+Twig\Error\RuntimeError: An exception has been thrown during the rendering of a template ("The required option "media" is missing.") in "index.twig" at line 2.

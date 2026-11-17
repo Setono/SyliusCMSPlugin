@@ -17,7 +17,7 @@ use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
-use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
+use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
 final class FallbackValuesTest extends TestCase
@@ -183,7 +183,7 @@ final class FallbackValuesTest extends TestCase
         return new FallbackValues(
             new FieldHandlerLocator(new ServiceLocator([
                 TextHandler::class => static fn (): TextHandler => new TextHandler(),
-                RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
+                RichTextHandler::class => Links::richTextHandler(...),
             ])),
             $fallbackChain->reveal(),
         );

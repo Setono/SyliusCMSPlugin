@@ -134,3 +134,20 @@ export function fieldNodes(field: FieldRange): ChildNode[] {
 
     return nodes;
 }
+
+/**
+ * The keys of the blocks in the page whose own output holds a notice of a link that doesn't resolve, which the plugin
+ * follows such a block's output with in the builder's preview (src/Preview/UnresolvedLinkNotices.php): an element
+ * with data-cms-unresolved-link. In document order, each once.
+ */
+export function blocksWithUnresolvedLinks(root: Document | Element): string[] {
+    const keys: string[] = [];
+    for (const notice of Array.from(root.querySelectorAll('[data-cms-unresolved-link]'))) {
+        const key = blockContaining(root, notice)?.key;
+        if (key !== undefined && !keys.includes(key)) {
+            keys.push(key);
+        }
+    }
+
+    return keys;
+}

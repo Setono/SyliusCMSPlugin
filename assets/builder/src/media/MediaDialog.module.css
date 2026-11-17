@@ -1,0 +1,26 @@
+/* A dialog about the selected media item, such as Replace file or Delete, made of the builder's dialog. It takes its fields and buttons from the library's styles. */
+.overlay {
+    composes: overlay from '../ui/Dialog.module.css';
+}
+
+.dialog {
+    composes: dialog from '../ui/Dialog.module.css';
+}
+
+.title {
+    composes: title from '../ui/Dialog.module.css';
+}
+
+.description {
+    composes: description from '../ui/Dialog.module.css';
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-3);
+}
+
+.actions {
+    composes: actions from '../ui/Dialog.module.css';
+}

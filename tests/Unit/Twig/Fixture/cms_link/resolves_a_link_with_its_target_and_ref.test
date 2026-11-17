@@ -1,0 +1,8 @@
+--TEST--
+cms_link() resolves a Link value to where it leads, the name of what it leads to, and the target and ref it resolved
+--TEMPLATE--
+{% set link = cms_link(value) %}{{ link.url }}|{{ link.name }}|{{ link.target }}|{{ link.ref }}
+--DATA--
+return ['value' => $this->link('https://shop.example/en_US/products/red-t-shirt')]
+--EXPECT--
+https://shop.example/en_US/products/red-t-shirt|Red &lt;T-shirt&gt;|product|T_SHIRT_RED

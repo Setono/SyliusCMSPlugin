@@ -1,3 +1,5 @@
+import type { MediaLibraryConfig } from './media/config';
+
 /** A channel of the store. */
 export interface Channel {
     code: string;
@@ -57,6 +59,10 @@ export interface BuilderConfig {
         slug?: string;
         /** The entry's URL warnings and old URLs, which the URL & SEO tab shows. */
         urls?: string;
+        /** What pickers search, with __kind__ for the kind, such as product. Without it, nothing can be searched. */
+        search?: string;
+        /** How many items a source yields for a list field's parameters, under a preview token. Without it, no count shows. */
+        sourceCount?: string;
     };
     /** The store's channels. The settings pick the entry's channels from them, and the preview picks from the entry's. */
     channels: Channel[];
@@ -68,6 +74,11 @@ export interface BuilderConfig {
     preview?: ShownToAndDate;
     /** UI strings needed before the registry arrives, such as the loading text. Optional. */
     strings?: Record<string, string>;
+    /**
+     * What the media picker needs beside the upload limit and types the registry gives: the media library's endpoints and
+     * the store's locales, which media items have alt text in. Without it, media fields can't be picked.
+     */
+    media?: Pick<MediaLibraryConfig, 'endpoints' | 'locales'>;
 }
 
 export function readConfig(element: HTMLElement): BuilderConfig {

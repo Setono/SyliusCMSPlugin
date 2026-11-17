@@ -6,14 +6,20 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection;
 
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
+use Setono\SyliusCMSPlugin\Attribute\AsSource;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
+use Setono\SyliusCMSPlugin\Bestsellers\BestsellersCalculatorInterface;
+use Setono\SyliusCMSPlugin\Bestsellers\CompletedOrdersCalculator;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
+use Setono\SyliusCMSPlugin\Media\DeleteReplacedFile;
+use Setono\SyliusCMSPlugin\Media\Liip\LiipImageProvider;
+use Setono\SyliusCMSPlugin\Media\Liip\LocalVariants;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
@@ -25,6 +31,7 @@ use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\SourceRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
@@ -33,13 +40,17 @@ use Setono\SyliusCMSPlugin\Revision\RevisionPruner;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\SignedIn;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
+use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\LandingFromOne;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
+use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Resource\Factory\Factory;
 use Sylius\Resource\Factory\TranslatableFactory;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Resource\ResourceInterface;
 use Symfony\Component\DependencyInjection\ChildDefinition;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * See examples of tests and configuration options here: https://github.com/SymfonyTest/SymfonyDependencyInjectionTest
@@ -175,6 +186,33 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_autoconfigures_sources_by_their_attribute(): void
+    {
+        $this->load();
+
+        $configurators = $this->container->getAutoconfiguredAttributes();
+        self::assertArrayHasKey(AsSource::class, $configurators);
+
+        $definition = new ChildDefinition('');
+        $configurators[AsSource::class]($definition, new AsSource('on_sale', 'app.on_sale', ProductInterface::class), new \ReflectionClass(OnSale::class));
+
+        self::assertSame(['setono_sylius_cms.source' => [[]]], $definition->getTags());
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_the_disabled_sources_to_the_source_registry(): void
+    {
+        $this->load(['disabled' => ['sources' => ['newest_products']]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.sources', ['newest_products']);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(SourceRegistry::class, 3, '%setono_sylius_cms.disabled.sources%');
+    }
+
+    /**
+     * @test
+     */
     public function it_hands_the_disabled_block_types_to_the_block_type_registry(): void
     {
         $this->load(['disabled' => ['block_types' => ['spacer']]]);
@@ -207,6 +245,72 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.block_styles', $blockStyles);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(BlockTypeRegistry::class, 3, '%setono_sylius_cms.block_styles%');
+    }
+
+    /**
+     * @test
+     */
+    public function it_stores_media_in_the_plugin_s_own_local_storage_by_default_which_flysystem_bundle_defines_as_sylius_defines_its_own(): void
+    {
+        $this->load();
+
+        self::assertSame([['storages' => [
+            'setono_sylius_cms.storage' => [
+                'adapter' => 'local',
+                'options' => ['directory' => '%kernel.project_dir%/public/media/cms'],
+                'visibility' => 'public',
+                'directory_visibility' => 'public',
+            ],
+        ]]], $this->container->getExtensionConfig('flysystem'));
+        self::assertFalse($this->container->has('setono_sylius_cms.storage'), 'The plugin defines no storage of its own');
+        self::assertFalse($this->container->hasDefinition('setono_sylius_cms.media.storage') || $this->container->hasAlias('setono_sylius_cms.media.storage'), 'The storage goes by one name');
+    }
+
+    /**
+     * @test
+     */
+    public function it_stores_media_in_the_storage_a_project_configures_under_the_one_name(): void
+    {
+        $this->container->loadFromExtension('setono_sylius_cms', ['media' => ['storage' => 'app.s3_storage']]);
+
+        $this->load(['media' => ['storage' => 'app.s3_storage']]);
+
+        $this->assertContainerBuilderHasAlias('setono_sylius_cms.storage', 'app.s3_storage');
+        self::assertSame([], $this->container->getExtensionConfig('flysystem'), 'No local storage is defined');
+    }
+
+    /**
+     * @test
+     */
+    public function it_looks_for_made_variants_in_the_default_local_storage_s_directory(): void
+    {
+        $this->load();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(LocalVariants::class, 0, '%kernel.project_dir%/public/media/cms');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(LiipImageProvider::class, 2, new Reference(LocalVariants::class, ContainerInterface::NULL_ON_INVALID_REFERENCE));
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider elsewhere
+     *
+     * @param array<string, mixed> $media
+     */
+    public function it_does_not_look_for_made_variants_when_media_is_stored_or_variants_are_cached_elsewhere(array $media): void
+    {
+        $this->load(['media' => $media]);
+
+        $this->assertContainerBuilderNotHasService(LocalVariants::class);
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function elsewhere(): iterable
+    {
+        yield 'another storage' => [['storage' => 'app.s3_storage']];
+        yield 'another Liip resolver' => [['liip' => ['resolver' => 'app_s3_cache']]];
     }
 
     /**
@@ -270,6 +374,32 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_loads_the_carousel_script_through_the_shop_layout_javascripts_template_event_after_sylius_own_scripts(): void
+    {
+        $this->load();
+
+        self::assertSame([
+            'blocks' => [
+                'setono_sylius_cms_javascript' => ['template' => '@SetonoSyliusCMSPlugin/shop/javascript.html.twig', 'priority' => 5],
+            ],
+        ], $this->templateEvents()['sylius.shop.layout.javascripts'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function it_does_not_load_the_carousel_script_when_assets_is_off(): void
+    {
+        $this->container->loadFromExtension('setono_sylius_cms', ['assets' => false]);
+
+        $this->load(['assets' => false]);
+
+        self::assertArrayNotHasKey('sylius.shop.layout.javascripts', $this->templateEvents());
+    }
+
+    /**
+     * @test
+     */
     public function it_builds_the_entry_overview_page_from_template_events_whose_blocks_are_its_header_actions_and_sections(): void
     {
         $this->load();
@@ -297,12 +427,76 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
-    public function it_routes_the_message_that_runs_a_scheduled_publish_to_sylius_main_transport(): void
+    public function it_routes_the_messages_that_run_a_scheduled_publish_and_delete_a_replaced_file_to_sylius_main_transport(): void
     {
         $this->load();
 
         $framework = $this->container->getExtensionConfig('framework');
-        self::assertSame([['messenger' => ['routing' => [ScheduledPublishDue::class => 'main']]]], $framework);
+        self::assertSame([['messenger' => ['routing' => [ScheduledPublishDue::class => 'main', DeleteReplacedFile::class => 'main']]]], $framework);
+    }
+
+    /**
+     * @test
+     */
+    public function it_makes_the_grace_period_a_parameter(): void
+    {
+        $this->load(['media' => ['grace_period' => 'PT6H']]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.media.grace_period', 'PT6H');
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_the_bestsellers_window_to_the_default_calculator_which_the_calculator_interface_aliases(): void
+    {
+        $this->load(['bestsellers' => ['window' => 'P7D']]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.bestsellers.window', 'P7D');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(CompletedOrdersCalculator::class, 3, '%setono_sylius_cms.bestsellers.window%');
+        $this->assertContainerBuilderHasAlias(BestsellersCalculatorInterface::class, CompletedOrdersCalculator::class);
+    }
+
+    /**
+     * @test
+     */
+    public function it_makes_the_widths_of_the_image_variants_a_parameter(): void
+    {
+        $this->load(['media' => ['widths' => [400, 800]]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.media.widths', [400, 800]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_adds_a_liip_filter_set_per_format_that_reads_and_caches_with_the_plugin_s_own_loader_and_resolver(): void
+    {
+        $this->load();
+
+        self::assertSame([['filter_sets' => [
+            'setono_sylius_cms_webp' => ['data_loader' => 'setono_sylius_cms', 'cache' => 'setono_sylius_cms', 'quality' => 80, 'format' => 'webp', 'filters' => [], 'post_processors' => []],
+            'setono_sylius_cms_avif' => ['data_loader' => 'setono_sylius_cms', 'cache' => 'setono_sylius_cms', 'quality' => 60, 'format' => 'avif', 'filters' => [], 'post_processors' => []],
+            'setono_sylius_cms_original' => ['data_loader' => 'setono_sylius_cms', 'cache' => 'setono_sylius_cms', 'quality' => 85, 'format' => null, 'filters' => [], 'post_processors' => []],
+        ]]], $this->container->getExtensionConfig('liip_imagine'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_makes_the_filter_sets_read_and_cache_with_the_liip_loader_and_resolver_a_project_names(): void
+    {
+        $this->container->loadFromExtension('setono_sylius_cms', ['media' => ['liip' => ['loader' => 'app_s3', 'resolver' => 'app_s3_cache']]]);
+
+        $this->load(['media' => ['liip' => ['loader' => 'app_s3', 'resolver' => 'app_s3_cache']]]);
+
+        /** @var array<string, array{data_loader: string, cache: string}> $filterSets */
+        $filterSets = $this->container->getExtensionConfig('liip_imagine')[0]['filter_sets'] ?? [];
+        self::assertCount(3, $filterSets);
+        foreach ($filterSets as $filterSet) {
+            self::assertSame('app_s3', $filterSet['data_loader']);
+            self::assertSame('app_s3_cache', $filterSet['cache']);
+        }
     }
 
     /**

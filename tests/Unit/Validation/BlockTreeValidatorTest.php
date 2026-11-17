@@ -21,10 +21,11 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
-use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
+use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\LandingTranslation;
+use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Offer;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Testimonial;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -154,6 +155,43 @@ final class BlockTreeValidatorTest extends TestCase
     /**
      * @test
      */
+    public function it_checks_the_constraints_on_a_block_type_s_class_against_the_values_of_its_fields_at_the_block(): void
+    {
+        $neither = new StoredBlock(self::A, 'offer', 1);
+        $both = self::offer(self::B, 'SUMMER', 'Ten percent off');
+        $code = self::offer(self::C, 'SUMMER', null);
+        $text = self::offer(self::D, null, 'Ten percent off');
+        $empty = self::offer(self::E, '', null);
+
+        $message = 'Fill in one of these, but only one: Coupon code, Offer text.';
+        self::assertEquals(
+            [
+                new ValidationError(self::A, null, null, $message),
+                new ValidationError(self::B, null, null, $message),
+                new ValidationError(self::E, null, null, $message),
+            ],
+            $this->validator()->validate(new StoredTree(null, [$neither, $both, $code, $text, $empty]), 'page', ['en_US', 'da_DK']),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_reports_a_block_type_constraint_that_fails_in_some_locales_only_in_those(): void
+    {
+        // Danish falls back to English, so it has the English text, but English has none
+        $danishText = self::offer(self::A, null, null);
+        $danishText->setValue('text', 'da_DK', 'Ti procent rabat');
+
+        self::assertEquals(
+            [new ValidationError(self::A, null, 'en_US', 'Fill in one of these, but only one: Coupon code, Offer text.')],
+            $this->validator()->validate(new StoredTree(null, [$danishText]), 'page', ['en_US', 'da_DK']),
+        );
+    }
+
+    /**
+     * @test
+     */
     public function it_finds_columns_with_too_few_or_too_many_columns_at_the_columns_block(): void
     {
         $one = new StoredBlock(self::A, 'columns', 1, children: [new StoredBlock(self::C, 'column', 1)]);
@@ -277,6 +315,15 @@ final class BlockTreeValidatorTest extends TestCase
         return $block;
     }
 
+    private static function offer(string $key, ?string $code, ?string $text): StoredBlock
+    {
+        $block = new StoredBlock($key, 'offer', 1);
+        $block->setValue('code', null, $code);
+        $block->setValue('text', 'en_US', $text);
+
+        return $block;
+    }
+
     private static function heading(string $key, string $text): StoredBlock
     {
         $block = new StoredBlock($key, 'heading', 1);
@@ -310,10 +357,11 @@ final class BlockTreeValidatorTest extends TestCase
             'columns' => Columns::class,
             'column' => Column::class,
             'testimonial' => Testimonial::class,
+            'offer' => Offer::class,
         ], new FieldReader());
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
-            RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
+            RichTextHandler::class => Links::richTextHandler(...),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator),
         ]));
 

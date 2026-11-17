@@ -1,5 +1,12 @@
+import { render } from '@testing-library/react';
+import { createElement, useState, type ReactElement } from 'react';
+import { vi, type Mock } from 'vitest';
+import { FieldRow } from '../src/form/FieldRow';
+import { createTranslator, TranslatorProvider } from '../src/i18n';
+import type { SearchApi, SearchResult } from '../src/search/api';
+import { SearchProvider } from '../src/search/context';
 import { createBuilderStore, type BuilderStore } from '../src/store';
-import type { AllowedBlockType, BlockTypeDefinition, ConditionKindDefinition, ContentTypeDefinition, Entry, EntrySettings, FieldSchema, FieldValues, LayoutDefinition, Registry, StoredBlock } from '../src/types';
+import type { AllowedBlockType, BlockTypeDefinition, ConditionKindDefinition, ContentTypeDefinition, Entry, EntrySettings, FieldSchema, FieldValues, JsonValue, LayoutDefinition, Registry, StoredBlock } from '../src/types';
 
 /** What '*' resolves to everywhere but inside Columns: every block type except Column. */
 const anyBlock: AllowedBlockType[] = ['group', 'columns', 'spacer', 'heading'].map((type) => ({ type, min: null, max: null }));
@@ -294,6 +301,7 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.deleted': 'deleted',
     'setono_sylius_cms.builder.unsupported_field_type': "This field type isn't supported yet",
     'setono_sylius_cms.builder.has_errors': 'Has errors',
+    'setono_sylius_cms.builder.unresolved_link': "A link here isn't shown in the preview's channel and locale",
     'setono_sylius_cms.builder.unknown_block_type': 'Unknown block type: %type%',
     'setono_sylius_cms.builder.unknown_block_type_help': "The code no longer has this block type. The block is kept as it is, but the shop doesn't show it.",
     'setono_sylius_cms.builder.preview': 'Preview',
@@ -436,4 +444,55 @@ export type Shape = Array<string | Shape>;
 
 export function shape(blocks: readonly StoredBlock[]): Shape {
     return blocks.flatMap((stored) => (stored.children.length === 0 ? [stored.key] : [stored.key, shape(stored.children)]));
+}
+
+/** A search over what's given by kind: it searches each kind's results by name, and looks them up by ref. */
+export function fakeSearch(catalog: Readonly<Record<string, readonly SearchResult[]>>): SearchApi & { search: Mock; find: Mock } {
+    return {
+        search: vi.fn(async (kind: string, query: string) => (catalog[kind] ?? []).filter(({ name }) => name.toLowerCase().includes(query.toLowerCase()))),
+        find: vi.fn(async (kind: string, refs: readonly string[]) => (catalog[kind] ?? []).filter(({ ref }) => refs.includes(ref))),
+    };
+}
+
+interface FieldProps {
+    schema: FieldSchema;
+    initial?: JsonValue | undefined;
+    locale: string;
+    onChange: (value: JsonValue | null) => void;
+}
+
+/** A field whose value lives in the test, as the builder's store keeps it, with every change recorded. An emptied value is left out, as the store leaves it out. */
+export function Field({ schema, initial, locale, onChange }: FieldProps): ReactElement {
+    const [value, setValue] = useState<JsonValue | undefined>(initial);
+
+    return createElement(FieldRow, {
+        id: 'field',
+        schema,
+        value,
+        locale,
+        onChange: (next: JsonValue | null) => {
+            onChange(next);
+            setValue(next === null || (Array.isArray(next) && next.length === 0) ? undefined : next);
+        },
+    });
+}
+
+export interface RenderFieldOptions {
+    initial?: JsonValue | undefined;
+    locale?: string;
+    /** The UI strings the field is rendered with. */
+    strings: Record<string, string>;
+    /** The search pickers search with, or null for none. */
+    search?: SearchApi | null;
+    /** Wraps the field in the providers the field type's control needs, inside the translator and the search. */
+    providers?: (field: ReactElement) => ReactElement;
+}
+
+/** Renders one field with its control, as the builder's right pane does, and answers with what records its changes. */
+export function renderField(schema: FieldSchema, { initial, locale = 'en_US', strings, search = null, providers = (field) => field }: RenderFieldOptions): { onChange: Mock } {
+    const onChange = vi.fn();
+    const field = providers(createElement(Field, { schema, initial, locale, onChange }));
+    render(createElement(TranslatorProvider, { value: createTranslator(strings) }, search === null ? field : createElement(SearchProvider, { api: search, children: field })));
+
+    return { onChange };
 }

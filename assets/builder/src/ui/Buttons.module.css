@@ -1,0 +1,63 @@
+/* The builder's buttons, which the other modules compose: neutral, primary, danger and icon-only */
+.button {
+    min-height: var(--builder-control-height);
+    padding: 0 var(--builder-space-3);
+    border: 1px solid var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-surface);
+    color: var(--builder-color-text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+    background: var(--builder-color-hover);
+}
+
+.button:disabled {
+    cursor: default;
+    opacity: var(--builder-disabled-opacity);
+}
+
+.button:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}
+
+/* A dialog's or a form's main action, and its other one */
+.secondary {
+    composes: button;
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.primary {
+    composes: button;
+    border-color: transparent;
+    font-weight: var(--builder-font-weight-medium);
+    background: var(--builder-color-accent);
+    color: var(--builder-color-accent-text);
+}
+
+.primary:hover:not(:disabled) {
+    background: var(--builder-color-accent-hover);
+}
+
+.danger {
+    composes: button;
+    border-color: var(--builder-color-danger);
+    color: var(--builder-color-danger);
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.danger:hover:not(:disabled) {
+    background: var(--builder-color-danger-subtle);
+}
+
+/* A button that shows only an icon, named by its aria-label */
+.iconButton {
+    composes: button;
+    display: grid;
+    place-items: center;
+    width: var(--builder-control-height);
+    padding: 0;
+}

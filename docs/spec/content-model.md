@@ -273,7 +273,7 @@ A Link field stores:
 | Key | Value |
 | --- | --- |
 | `target` | The link target's code: `entry`, `product`, `taxon`, `media`, `url`, or a project's own ([Extending](extending.md#link-targets)). |
-| `ref` | What the target refers to, as a string: a UUID for `entry` and `media`, a code for `product` and `taxon`, and a URL for `url` (including `mailto:` and `tel:`). A target whose ref is translatable, such as `url`, stores a locale map of strings here instead. |
+| `ref` | What the target refers to, as a string: a UUID for `entry` and `media`, a code for `product` and `taxon`, and a URL for `url`: `http://` or `https://`, `mailto:`, `tel:`, a path (`/…`), a query (`?…`) or an anchor (`#…`). Any other scheme, such as `javascript:`, doesn't render and publish refuses it ([Extending](extending.md#link-targets)). A target whose ref is translatable, such as `url`, stores a locale map of strings here instead. |
 | `anchor` | A fragment without the `#`, or `null`. |
 | `label` | A locale map. An empty label shows the target's current name in the shopper's locale. |
 

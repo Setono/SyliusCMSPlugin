@@ -134,3 +134,20 @@ export function AlertIcon() {
         </Icon>
     );
 }
+
+/** Marks a link that leads nowhere in the preview: a broken chain. */
+export function LinkIcon() {
+    return (
+        <Icon>
+            <path d="M6.5 9.5 9.5 6.5M7 4.5l1-1a2.8 2.8 0 0 1 4 4l-1 1M9 11.5l-1 1a2.8 2.8 0 0 1-4-4l1-1" />
+        </Icon>
+    );
+}
+
+export function LinkOffIcon() {
+    return (
+        <Icon>
+            <path d="M6.5 9.5 9.5 6.5M7 4.5l1-1a2.8 2.8 0 0 1 4 4l-1 1M9 11.5l-1 1a2.8 2.8 0 0 1-4-4l1-1M2 2l12 12" />
+        </Icon>
+    );
+}

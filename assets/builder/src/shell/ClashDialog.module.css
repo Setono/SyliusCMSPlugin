@@ -1,38 +1,10 @@
-/* Rendered in a portal at the end of the body, outside the shell, so it sets its own type and box model. */
+/* The clash dialog and the leave dialog, made of the builder's dialog */
 .overlay {
-    position: fixed;
-    inset: 0;
-    background: var(--builder-color-overlay);
+    composes: overlay from '../ui/Dialog.module.css';
 }
 
 .dialog {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    gap: var(--builder-space-3);
-    width: 30rem;
-    max-width: calc(100vw - 2 * var(--builder-space-4));
-    max-height: calc(100vh - 2 * var(--builder-space-4));
-    overflow-y: auto;
-    padding: var(--builder-space-5);
-    border: 1px solid var(--builder-color-border);
-    border-radius: var(--builder-radius-md);
-    background: var(--builder-color-surface);
-    box-shadow: var(--builder-shadow-popover);
-    color: var(--builder-color-text);
-    font-family: var(--builder-font-family);
-    font-size: var(--builder-font-size-md);
-    line-height: var(--builder-line-height);
-    transform: translate(-50%, -50%);
-}
-
-.dialog *,
-.dialog *::before,
-.dialog *::after {
-    box-sizing: border-box;
+    composes: dialog from '../ui/Dialog.module.css';
 }
 
 .header {
@@ -43,9 +15,7 @@
 }
 
 .title {
-    margin: 0;
-    font-size: var(--builder-font-size-lg);
-    font-weight: var(--builder-font-weight-bold);
+    composes: title from '../ui/Dialog.module.css';
 }
 
 .count {
@@ -55,7 +25,7 @@
 }
 
 .description {
-    margin: 0;
+    composes: description from '../ui/Dialog.module.css';
 }
 
 .values {
@@ -87,43 +57,13 @@
 }
 
 .actions {
-    display: flex;
-    gap: var(--builder-space-2);
-    justify-content: flex-end;
-}
-
-.primary,
-.secondary {
-    min-height: var(--builder-control-height);
-    padding: 0 var(--builder-space-4);
-    border-radius: var(--builder-radius-sm);
-    font: inherit;
-    font-weight: var(--builder-font-weight-medium);
-    cursor: pointer;
+    composes: actions from '../ui/Dialog.module.css';
 }
 
 .primary {
-    border: 0;
-    background: var(--builder-color-accent);
-    color: var(--builder-color-accent-text);
-}
-
-.primary:hover {
-    background: var(--builder-color-accent-hover);
+    composes: primary from '../ui/Buttons.module.css';
 }
 
 .secondary {
-    border: 1px solid var(--builder-color-border-strong);
-    background: var(--builder-color-surface);
-    color: var(--builder-color-text);
-}
-
-.secondary:hover {
-    background: var(--builder-color-hover);
-}
-
-.primary:focus-visible,
-.secondary:focus-visible {
-    outline: 2px solid var(--builder-color-focus);
-    outline-offset: 2px;
+    composes: secondary from '../ui/Buttons.module.css';
 }

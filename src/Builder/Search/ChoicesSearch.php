@@ -40,4 +40,16 @@ final readonly class ChoicesSearch implements SearchInterface
 
         return $results;
     }
+
+    public function find(array $refs, string $localeCode): array
+    {
+        $results = [];
+        foreach ($this->choicesProvider->getChoices($localeCode) as $value => $label) {
+            if (in_array((string) $value, $refs, true)) {
+                $results[] = new SearchResult((string) $value, $label);
+            }
+        }
+
+        return $results;
+    }
 }

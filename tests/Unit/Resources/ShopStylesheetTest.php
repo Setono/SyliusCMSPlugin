@@ -57,6 +57,7 @@ final class ShopStylesheetTest extends TestCase
             '--cms-dark-color' => ['--cms-dark-color', '#ffffff'],
             '--cms-banner-min-height' => ['--cms-banner-min-height', '360px'],
             '--cms-banner-overlay' => ['--cms-banner-overlay', 'rgba(0, 0, 0, 0.35)'],
+            '--cms-banner-color' => ['--cms-banner-color', '#ffffff'],
             '--cms-button-primary-background' => ['--cms-button-primary-background', '#1b1c1d'],
             '--cms-button-primary-color' => ['--cms-button-primary-color', '#ffffff'],
             '--cms-button-secondary-background' => ['--cms-button-secondary-background', 'transparent'],
@@ -104,6 +105,68 @@ final class ShopStylesheetTest extends TestCase
     /**
      * @test
      */
+    public function it_sets_the_slides_per_view_on_each_carousel_from_data_cms_per_view(): void
+    {
+        $wide = self::withoutMedia();
+        self::assertSame('1', self::declarations('.cms-carousel', $wide)['--cms-carousel-per-view'] ?? null);
+        foreach (['2', '3', '4'] as $perView) {
+            self::assertSame($perView, self::declarations(sprintf('.cms-carousel[data-cms-per-view="%s"]', $perView), $wide)['--cms-carousel-per-view'] ?? null);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_shows_at_most_2_slides_below_48rem_and_1_below_30rem(): void
+    {
+        $narrow = self::media('(width < 48rem)');
+        self::assertSame('2', self::declarations('.cms-carousel[data-cms-per-view="3"]', $narrow)['--cms-carousel-per-view'] ?? null);
+        self::assertSame('2', self::declarations('.cms-carousel[data-cms-per-view="4"]', $narrow)['--cms-carousel-per-view'] ?? null);
+
+        self::assertSame('1', self::declarations('.cms-carousel[data-cms-per-view]', self::media('(width < 30rem)'))['--cms-carousel-per-view'] ?? null);
+        self::assertGreaterThan(strpos(self::css(), '@media (width < 48rem)'), strpos(self::css(), '@media (width < 30rem)'), 'The narrowest screens come last, so they win');
+    }
+
+    /**
+     * @test
+     */
+    public function it_scrolls_a_carousel_s_track_with_scroll_snap_and_sizes_its_slides_by_the_slides_per_view(): void
+    {
+        $track = self::declarations('.cms-carousel__track');
+        self::assertSame('auto', $track['overflow-x'] ?? null);
+        self::assertSame('x mandatory', $track['scroll-snap-type'] ?? null);
+        self::assertSame('calc((100% - (var(--cms-carousel-per-view) - 1) * var(--cms-gap)) / var(--cms-carousel-per-view))', $track['grid-auto-columns'] ?? null);
+        self::assertSame('start', self::declarations('.cms-carousel__slide')['scroll-snap-align'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function it_makes_a_banner_at_least_its_min_height_with_its_image_covering_it_and_its_content_over_it(): void
+    {
+        self::assertSame('var(--cms-banner-min-height)', self::declarations('.cms-banner')['min-height'] ?? null);
+
+        // The media and the content share the banner's one grid cell, so the content sits over the image
+        self::assertSame('1 / 1', self::declarations('.cms-banner__media')['grid-area'] ?? null);
+        self::assertSame('1 / 1', self::declarations('.cms-banner__content')['grid-area'] ?? null);
+        self::assertSame('stretch', self::declarations('.cms-banner__media')['align-self'] ?? null, 'The media fills a banner its content or min height makes taller');
+        self::assertSame(['width' => '100%', 'height' => '100%', 'object-fit' => 'cover'], array_intersect_key(self::declarations('.cms-banner__media img'), ['width' => true, 'height' => true, 'object-fit' => true]));
+    }
+
+    /**
+     * @test
+     */
+    public function it_shades_a_banner_s_image_behind_its_content_with_the_overlay_in_the_banner_s_colour(): void
+    {
+        self::assertSame('var(--cms-banner-overlay)', self::declarations('.cms-banner__media ~ .cms-banner__content')['background'] ?? null);
+        self::assertSame('var(--cms-banner-color)', self::declarations('.cms-banner__media ~ .cms-banner__content')['color'] ?? null);
+        self::assertArrayNotHasKey('background', self::declarations('.cms-banner__content'), 'A banner without an image has no shade');
+        self::assertArrayNotHasKey('color', self::declarations('.cms-banner__content'), 'A banner without an image has the shop\'s colours');
+    }
+
+    /**
+     * @test
+     */
     public function it_never_styles_html_or_body(): void
     {
         self::assertDoesNotMatchRegularExpression('/(^|[\s,}>~+])(html|body)\b/', self::css());
@@ -121,13 +184,40 @@ final class ShopStylesheetTest extends TestCase
     }
 
     /**
-     * The declarations of every rule whose selector list has the selector, merged in order
+     * The stylesheet without its media queries
+     */
+    private static function withoutMedia(): string
+    {
+        $css = self::css();
+        while (false !== $start = strpos($css, '@media')) {
+            $css = substr($css, 0, $start) . substr($css, self::closingBraceOf($css, (int) strpos($css, '{', $start)) + 1);
+        }
+
+        return $css;
+    }
+
+    /**
+     * The rules inside the media query, such as "(width < 48rem)"
+     */
+    private static function media(string $query): string
+    {
+        $css = self::css();
+        $start = strpos($css, sprintf('@media %s {', $query));
+        self::assertIsInt($start, sprintf('The stylesheet has a @media %s', $query));
+        $opening = (int) strpos($css, '{', $start);
+
+        return substr($css, $opening + 1, self::closingBraceOf($css, $opening) - $opening - 1);
+    }
+
+    /**
+     * The declarations of every rule whose selector list has the selector, merged in order, in the whole stylesheet,
+     * whose media queries count as if they always applied, or in the CSS given
      *
      * @return array<string, string> property => value
      */
-    private static function declarations(string $selector): array
+    private static function declarations(string $selector, ?string $css = null): array
     {
-        preg_match_all('/([^{}]+)\{([^{}]*)\}/', self::css(), $rules, \PREG_SET_ORDER);
+        preg_match_all('/([^{}]+)\{([^{}]*)\}/', $css ?? self::css(), $rules, \PREG_SET_ORDER);
 
         $declarations = [];
         foreach ($rules as [, $selectors, $body]) {

@@ -1,0 +1,104 @@
+/* The controls of the fields that hold what's picked: Product, Products, Taxon, Taxons, Media and Media list */
+.control {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+}
+
+.picked {
+    display: flex;
+    gap: var(--builder-space-2);
+    align-items: center;
+    min-height: var(--builder-control-height);
+}
+
+.summary {
+    display: flex;
+    flex: 1;
+    gap: var(--builder-space-2);
+    align-items: center;
+    min-width: 0;
+    min-height: var(--builder-thumbnail-size);
+}
+
+.thumbnail,
+.fileThumbnail {
+    flex: none;
+    width: var(--builder-thumbnail-size);
+    height: var(--builder-thumbnail-size);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-neutral-subtle);
+}
+
+.thumbnail {
+    object-fit: cover;
+}
+
+.fileThumbnail {
+    display: grid;
+    place-items: center;
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+    font-weight: var(--builder-font-weight-bold);
+}
+
+.name,
+.nothing {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nothing {
+    margin: 0;
+    color: var(--builder-color-text-muted);
+}
+
+/* What a field holds that no longer exists, such as a deleted product or media item */
+.gone {
+    padding: var(--builder-space-1) var(--builder-space-2);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-danger-subtle);
+    color: var(--builder-color-danger);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.listItem {
+    display: flex;
+    gap: var(--builder-space-2);
+    align-items: center;
+}
+
+.itemActions {
+    display: flex;
+    flex: none;
+    gap: 2px;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--builder-space-2);
+    align-items: center;
+}
+
+.button {
+    composes: button from '../ui/Buttons.module.css';
+}
+
+.iconButton {
+    composes: iconButton from '../ui/Buttons.module.css';
+}
+
+.most {
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}

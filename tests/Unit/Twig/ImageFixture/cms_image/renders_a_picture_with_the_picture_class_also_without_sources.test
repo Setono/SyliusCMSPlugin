@@ -1,0 +1,12 @@
+--TEST--
+cms_image() renders a <picture> with the picture class the template gives, also when it has no <source>, and the class stays on the <img>
+--TEMPLATE--
+{{ cms_image(image, {layout: 'full_width', picture_class: 'cms-banner__media', class: 'app-banner__image'}) }}
+{{ cms_image(image, {layout: 'full_width', picture_class: 'cms-banner__media', art_direction: [{media: '(max-width: 47.99rem)', image: mobile}]}) }}
+{{ cms_image(svg, {picture_class: ' '}) }}
+--DATA--
+return $this->rendering(['image' => $this->image(640, 320), 'mobile' => $this->mobileImage(320, 400), 'svg' => $this->svg()])
+--EXPECT--
+<picture class="cms-banner__media"><img src="/webp/640/summer-sale.jpg" srcset="/webp/320/summer-sale.jpg 320w, /webp/640/summer-sale.jpg 640w" sizes="100vw" width="640" height="320" alt="A beach at dawn" class="app-banner__image" loading="lazy" decoding="async"></picture>
+<picture class="cms-banner__media"><source media="(max-width: 47.99rem)" srcset="/webp/320/summer-sale-mobile.jpg 320w" sizes="100vw" width="320" height="400"><img src="/webp/640/summer-sale.jpg" srcset="/webp/320/summer-sale.jpg 320w, /webp/640/summer-sale.jpg 640w" sizes="100vw" width="640" height="320" alt="A beach at dawn" loading="lazy" decoding="async"></picture>
+<img src="/media/cms/logo.svg" width="120" height="40" alt="Our logo" loading="lazy" decoding="async">

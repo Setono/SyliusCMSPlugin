@@ -1,5 +1,6 @@
 import { isMissing, type FieldFallback } from '../fallback';
 import { useTranslator } from '../i18n';
+import { keepsPartsPerLocale } from '../links';
 import type { OutdatedValue } from '../translationState';
 import { plainText } from '../values';
 import styles from './Form.module.css';
@@ -52,7 +53,7 @@ export function FieldRow({ errors = [], fallback, outdated, languageBadge = true
                         *
                     </span>
                 )}
-                {languageBadge && !schema['x-cms-translatable'] && (
+                {languageBadge && !schema['x-cms-translatable'] && !keepsPartsPerLocale(schema) && (
                     <span className={styles.badge} title={t('setono_sylius_cms.builder.all_languages_help')}>
                         {t('setono_sylius_cms.builder.all_languages')}
                     </span>

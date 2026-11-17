@@ -14,13 +14,14 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\Post;
 use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\PostTranslation;
 use Sylius\Component\Core\Model\Channel;
 use Symfony\Component\Routing\Generator\UrlGenerator;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 
 /**
- * The canonical URL is the entry's own absolute URL in the channel and locale, without the query string.
- * See "Head tags" in docs/spec/urls-and-seo.md
+ * The canonical URL is the entry's own absolute URL in the channel and locale, without the query string, and its path is
+ * where links to the entry lead. See "Head tags" in docs/spec/urls-and-seo.md and "Link targets" in docs/spec/extending.md
  */
 final class CanonicalUrlGeneratorTest extends TestCase
 {
@@ -33,6 +34,19 @@ final class CanonicalUrlGeneratorTest extends TestCase
 
         self::assertSame('https://shop.example/en_US/about-us', self::generator()->generate($page, new Channel(), 'en_US'));
         self::assertSame('https://shop.example/da_DK/om-os/team', self::generator()->generate($page, new Channel(), 'da_DK'));
+    }
+
+    /**
+     * Links to the entry lead to its path, as Sylius's path() gives
+     *
+     * @test
+     */
+    public function it_generates_the_entrys_path_in_the_locale_when_asked_for_a_path(): void
+    {
+        $page = self::page(['en_US' => 'about-us', 'da_DK' => 'om-os/team']);
+
+        self::assertSame('/en_US/about-us', self::generator()->generate($page, new Channel(), 'en_US', UrlGeneratorInterface::ABSOLUTE_PATH));
+        self::assertSame('/da_DK/om-os/team', self::generator()->generate($page, new Channel(), 'da_DK', UrlGeneratorInterface::ABSOLUTE_PATH));
     }
 
     /**

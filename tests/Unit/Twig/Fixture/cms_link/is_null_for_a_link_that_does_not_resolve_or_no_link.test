@@ -1,0 +1,8 @@
+--TEST--
+cms_link() is null for a link that doesn't resolve, such as one to a disabled product, and for a field without a link, so the link isn't rendered
+--TEMPLATE--
+{{ cms_link(unresolved) is null ? "not rendered" }}|{{ cms_link(missing) is null ? "not rendered" }}
+--DATA--
+return ['unresolved' => $this->link(null, 'Buy it'), 'missing' => null]
+--EXPECT--
+not rendered|not rendered

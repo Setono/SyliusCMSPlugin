@@ -25,8 +25,8 @@ final class InvalidContentTest extends WebTestCase
         $client = self::createClient();
         self::createPageWithBlocks('About us', 'about-us', [
             self::heading('0193a5be-0000-7000-8000-000000000001', 'Before'),
-            new StoredBlock('0193a5be-0000-7000-8000-000000000002', 'banner', 1, fields: ['title' => 'Winter sale'], children: [
-                self::heading('0193a5be-0000-7000-8000-000000000003', 'Inside the banner'),
+            new StoredBlock('0193a5be-0000-7000-8000-000000000002', 'countdown', 1, fields: ['title' => 'Winter sale'], children: [
+                self::heading('0193a5be-0000-7000-8000-000000000003', 'Inside the countdown'),
             ]),
             self::heading('0193a5be-0000-7000-8000-000000000004', 'After'),
         ], published: true);

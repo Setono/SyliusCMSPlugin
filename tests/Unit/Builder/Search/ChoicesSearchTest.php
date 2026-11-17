@@ -56,6 +56,17 @@ final class ChoicesSearchTest extends TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_looks_choices_up_by_value_in_the_providers_order(): void
+    {
+        $search = new ChoicesSearch($this->provider(['@guest' => 'Guests', 'wholesale' => 'Wholesale', 'vip' => 'VIP']));
+
+        self::assertEquals([new SearchResult('@guest', 'Guests'), new SearchResult('vip', 'VIP')], $search->find(['vip', 'deleted', '@guest'], 'en_US'));
+        self::assertSame([], $search->find([], 'en_US'));
+    }
+
+    /**
      * @param array<string, string> $choices
      */
     private function provider(array $choices): ChoicesProviderInterface

@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Preview\FieldMarker;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
+use Setono\SyliusCMSPlugin\Rendering\FieldValue;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Value\RichText;
 use Twig\Extension\RuntimeExtensionInterface;
@@ -58,7 +59,7 @@ final readonly class CMSRuntime implements RuntimeExtensionInterface
             return self::escape($subject, $name, $this->fallbackValues->entryValue($subject, $name, $renderContext->localeCode));
         }
 
-        $html = self::print($subject, $name);
+        $html = self::escape($subject, $name, FieldValue::read($subject, $name));
 
         $view = self::viewOf($context['view'] ?? null, $subject);
         if (!$renderContext instanceof RenderContext || null === $view) {
@@ -68,20 +69,32 @@ final readonly class CMSRuntime implements RuntimeExtensionInterface
         return $this->fieldMarker->mark($html, $view, $name, $renderContext);
     }
 
-    private static function print(object $subject, string $name): string
+    /**
+     * Reads a field of a block, a layout or an entry without printing it, such as a media list's ItemList to loop over or
+     * a media field's media item. A block's or a layout's value is already hydrated, with fallback resolved, and null
+     * when it's missing, such as a broken reference. An entry's translatable field falls back through the fallback
+     * chain of the render context's locale. It's never marked for typing in place
+     *
+     * @param array<string, mixed> $context
+     */
+    public function value(array $context, object $subject, string $name): mixed
     {
-        if (!property_exists($subject, $name)) {
-            throw new \InvalidArgumentException(sprintf('%s has no field "%s"', $subject::class, $name));
+        if (!$subject instanceof EntryInterface) {
+            return FieldValue::read($subject, $name);
         }
 
-        $property = new \ReflectionProperty($subject, $name);
-        if (!$property->isPublic()) {
-            throw new \InvalidArgumentException(sprintf('The field "%s" of %s must be a public property', $name, $subject::class));
+        $renderContext = $context[self::RENDER_CONTEXT] ?? null;
+        if (!$renderContext instanceof RenderContext) {
+            throw new \LogicException(sprintf('An entry\'s fields can only be read from a template that has the render context in "%s", such as a layout template', self::RENDER_CONTEXT));
         }
 
-        return self::escape($subject, $name, $property->getValue($subject));
+        return $this->fallbackValues->entryValue($subject, $name, $renderContext->localeCode);
     }
 
+    /**
+     * The value of a field of a block or a layout: its public property, which holds the hydrated value. One that was
+     * never set is missing
+     */
     private static function escape(object $subject, string $name, mixed $value): string
     {
         if (null === $value) {

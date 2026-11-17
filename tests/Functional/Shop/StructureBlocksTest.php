@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\Html;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -38,7 +39,7 @@ final class StructureBlocksTest extends WebTestCase
             . '<div class="cms-column"><h2 class="cms-heading">Left</h2></div>'
             . '<div class="cms-column"><h2 class="cms-heading">Right</h2></div>'
             . '</div></div></div>',
-            self::withoutWhitespaceBetweenTags($crawler->filter('.cms-tree > .cms-group')->outerHtml()),
+            Html::withoutWhitespaceBetweenTags($crawler->filter('.cms-tree > .cms-group')->outerHtml()),
         );
     }
 
@@ -116,10 +117,5 @@ final class StructureBlocksTest extends WebTestCase
         $crawler = $client->request('GET', '/en_US/plain');
 
         self::assertSame('cms-group', $crawler->filter('.cms-tree > .cms-group')->attr('class'));
-    }
-
-    private static function withoutWhitespaceBetweenTags(string $html): string
-    {
-        return (string) preg_replace('/>\s+</', '><', trim($html));
     }
 }

@@ -1,0 +1,14 @@
+--TEST--
+cms_video() renders a video media item from its current file, with its own poster as one WebP variant cropped to 16:9 and at most 1280 wide, a poster served as uploaded when it has no variants, and no poster when it has none
+--TEMPLATE--
+{{ cms_video(video) }}
+{{ cms_video(narrowPoster) }}
+{{ cms_video(svgPoster) }}
+{{ cms_video(noPoster) }}
+--DATA--
+return $this->rendering(['video' => $this->video($this->image()), 'narrowPoster' => $this->video($this->image('small.jpg', 800, 600)), 'svgPoster' => $this->video($this->svg()), 'noPoster' => $this->video()])
+--EXPECT--
+<video src="/media/cms/shop-tour.mp4" poster="/webp/1280x720/tour-poster.jpg" width="1920" height="1080" preload="metadata" controls playsinline></video>
+<video src="/media/cms/shop-tour.mp4" poster="/webp/800x450/small.jpg" width="1920" height="1080" preload="metadata" controls playsinline></video>
+<video src="/media/cms/shop-tour.mp4" poster="/media/cms/logo.svg" width="1920" height="1080" preload="metadata" controls playsinline></video>
+<video src="/media/cms/shop-tour.mp4" width="1920" height="1080" preload="metadata" controls playsinline></video>

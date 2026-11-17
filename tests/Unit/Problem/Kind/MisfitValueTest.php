@@ -26,7 +26,7 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
-use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
+use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\OpeningHoursHandler;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Store;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Kind\Fixture\Wide;
@@ -34,6 +34,7 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Testimonial;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Component\Translation\Translator;
@@ -211,14 +212,13 @@ final class MisfitValueTest extends TestCase
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
-            RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
+            RichTextHandler::class => Links::richTextHandler(...),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new Translator('en')),
             OpeningHoursHandler::class => static fn (): OpeningHoursHandler => new OpeningHoursHandler(),
         ]));
 
         return new MisfitValue(
-            new BlockTypeRegistry(['heading' => Heading::class, 'group' => Group::class, 'rich_text' => RichText::class, 'store' => Store::class, 'testimonial' => Testimonial::class], new FieldReader()),
-            new LayoutRegistry(['page' => ['wide' => Wide::class]], new FieldReader(), disabled: $disabledLayouts),
+            new TreeValues(new BlockTypeRegistry(['heading' => Heading::class, 'group' => Group::class, 'rich_text' => RichText::class, 'store' => Store::class, 'testimonial' => Testimonial::class], new FieldReader()), new LayoutRegistry(['page' => ['wide' => Wide::class]], new FieldReader(), disabled: $disabledLayouts)),
             new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
             new FallbackValues($handlers, $this->prophesize(FallbackChainInterface::class)->reveal()),
         );

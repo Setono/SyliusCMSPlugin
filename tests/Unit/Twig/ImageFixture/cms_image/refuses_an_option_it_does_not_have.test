@@ -1,0 +1,8 @@
+--TEST--
+cms_image() refuses an option it doesn't have
+--TEMPLATE--
+{{ cms_image(image, {lazy: false}) }}
+--DATA--
+return $this->rendering(['image' => $this->image()])
+--EXCEPTION--
+Twig\Error\RuntimeError: An exception has been thrown during the rendering of a template ("The option "lazy" does not exist. Defined options are: "alt", "art_direction", "aspect_ratio", "class", "format", "layout", "picture_class", "priority", "sizes", "width".") in "index.twig" at line 2.

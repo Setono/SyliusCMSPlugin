@@ -3,6 +3,7 @@ import { useStore } from 'zustand';
 import type { BuilderApi, PreviewRequest } from './api';
 import type { Channel, CustomerGroup, Locale } from './config';
 import type { LeavingState, LeavingStore } from './leaving';
+import { localeOf } from './locales';
 import type { PresenceState, PresenceStore } from './presence';
 import type { PreviewState, PreviewStore } from './preview';
 import type { SettingsState, SettingsStore } from './settings';
@@ -67,6 +68,16 @@ export function useBuilder(): BuilderSession {
     }
 
     return session;
+}
+
+/**
+ * The locale first, then the locales its translatable values fall back through, as the store has them, or only the
+ * locale outside the builder
+ */
+export function useFallbackChain(locale: string): readonly string[] {
+    const session = useContext(BuilderContext);
+
+    return session === null ? [locale] : localeOf(session.locales, locale).fallbackChain;
 }
 
 /** Selects from the builder's store. The selector must return state as it is, not a new object. */

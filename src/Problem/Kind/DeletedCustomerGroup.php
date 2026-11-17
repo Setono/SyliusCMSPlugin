@@ -13,7 +13,7 @@ use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\CustomerGroupValue;
-use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Sylius\Component\Customer\Model\CustomerGroupInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Component\Translation\TranslatableMessage;
@@ -49,7 +49,15 @@ final class DeletedCustomerGroup implements ReferenceProblemKindInterface, Reset
         return [CustomerGroupInterface::class];
     }
 
-    public function findEntriesReferencing(array $referenced): iterable
+    /**
+     * None: a group added again with a code entries name mends their conditions and audiences, so every write counts
+     */
+    public static function getReferenceFields(): array
+    {
+        return [];
+    }
+
+    public function findEntriesReferencing(array $referenced, array $formerValues = []): iterable
     {
         // The store's groups changed
         $this->reset();
@@ -77,7 +85,7 @@ final class DeletedCustomerGroup implements ReferenceProblemKindInterface, Reset
             );
         }
 
-        yield from $this->inBlocks($entry, $entry->getBlockTree()->blocks);
+        yield from $this->inBlocks($entry);
     }
 
     public function reset(): void
@@ -86,13 +94,13 @@ final class DeletedCustomerGroup implements ReferenceProblemKindInterface, Reset
     }
 
     /**
-     * @param list<StoredBlock> $blocks
+     * The deleted groups in the conditions of every block, of any type, at any depth
      *
      * @return \Generator<Problem>
      */
-    private function inBlocks(EntryInterface $entry, array $blocks): \Generator
+    private function inBlocks(EntryInterface $entry): \Generator
     {
-        foreach ($blocks as $block) {
+        foreach (TreeValues::blocks($entry->getBlockTree()->blocks) as $block) {
             foreach ($block->conditions as $condition) {
                 if (CustomerGroupKind::CODE !== ($condition['kind'] ?? null)) {
                     continue;
@@ -114,8 +122,6 @@ final class DeletedCustomerGroup implements ReferenceProblemKindInterface, Reset
                     );
                 }
             }
-
-            yield from $this->inBlocks($entry, $block->children);
         }
     }
 

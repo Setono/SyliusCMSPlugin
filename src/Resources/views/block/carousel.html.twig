@@ -1,0 +1,8 @@
+{# Each visible child is a slide, in the carousel markup a Products carousel shares #}
+{%- import '@SetonoSyliusCMSPlugin/block/_carousel.html.twig' as markup -%}
+{%- set slides = [] -%}
+{%- for slide in children -%}
+    {%- set html -%}{{ cms_block(slide) }}{%- endset -%}
+    {%- set slides = slides|merge([html]) -%}
+{%- endfor -%}
+{{ markup.carousel(slides, block.perView, block.autoplay ? block.interval * 1000 : null, view.styleClass) }}

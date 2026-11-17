@@ -1,0 +1,8 @@
+--TEST--
+cms_value() reads a missing value as null, such as a media field whose media item was deleted, and a missing list as one with nothing to loop over
+--TEMPLATE--
+{{ cms_value(block, "cover") is null ? "no cover" }}|{% for item in cms_value(block, "images") %}{{ item.name }}{% else %}no images{% endfor %}
+--DATA--
+return $this->rendering(['block' => $this->gallery(null)])
+--EXPECT--
+no cover|no images

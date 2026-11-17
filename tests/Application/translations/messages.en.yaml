@@ -2,12 +2,21 @@ app:
     cms:
         block_style:
             brand: Brand
+        block_type:
+            gallery: Gallery
+        condition_kind:
+            product_available: Product is available
         greeting: Hello
         content_type:
             announcement: Announcement
         field:
+            image: Image
+            product_available:
+                product: Product
             subtitle: Subtitle
             tagline: Tagline
             transparent_header: Transparent header
         layout:
             landing: Landing
+        link_target:
+            store: Store
