@@ -57,6 +57,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockReferences"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer" class="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer">
@@ -64,6 +65,23 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface" alias="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer"/>
+
+        <!--
+        Outside the preview's decorators (decoration priority 0 and 10), so a block that throws for the shop or a share
+        link drops out, with its preview markers, while the builder's preview shows the error on the block
+        -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\FailSafeBlockRenderer" class="Setono\SyliusCMSPlugin\Rendering\FailSafeBlockRenderer"
+                 decorates="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface" decoration-priority="-10">
+            <argument type="service" id=".inner"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface"/>
+        </service>
+
+        <!-- Throws what a block or a snippet in a slot threw in dev, and logs it in production -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\FailureHandler" class="Setono\SyliusCMSPlugin\Rendering\FailureHandler">
+            <argument type="service" id="logger"/>
+            <argument>%kernel.debug%</argument>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface" alias="Setono\SyliusCMSPlugin\Rendering\FailureHandler"/>
 
         <!-- Renders an entry with its own URL in its layout: at its URL, and as a homepage -->
         <service id="Setono\SyliusCMSPlugin\Rendering\LayoutRenderer" class="Setono\SyliusCMSPlugin\Rendering\LayoutRenderer">
@@ -125,7 +143,7 @@
         -->
         <service id="Setono\SyliusCMSPlugin\Rendering\SlotRenderer" class="Setono\SyliusCMSPlugin\Rendering\SlotRenderer">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Context\HostPageContextResolver"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Context\HostPageContextResolverInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\PlacementProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\PlacementPickerInterface"/>
@@ -133,6 +151,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
             <argument type="service" id="twig"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface"/>
 
             <tag name="kernel.reset" method="reset"/>
         </service>

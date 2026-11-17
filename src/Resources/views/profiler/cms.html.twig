@@ -1,0 +1,193 @@
+{#
+ # The CMS panel of the Symfony profiler (Profiler\CMSDataCollector): each slot rendered on the page, with the context it
+ # resolved, every candidate placement in editor order with whether it showed and, if not, why, its render time and any
+ # block or snippet that threw. See "Profiler panel" in docs/spec/rendering.md
+ #}
+{% extends '@WebProfiler/Profiler/layout.html.twig' %}
+
+{% set why = {
+    scope_does_not_match: 'Its page scope doesn\'t match this page',
+    context_not_provided: 'Its snippet needs context the slot doesn\'t provide',
+    cap_reached: 'The slot\'s cap was already reached',
+    snippet_not_visible: 'Its snippet isn\'t visible',
+    not_published: 'Its snippet isn\'t published',
+    disabled: 'Its snippet is disabled',
+    outside_date_window: 'Its snippet is outside its date window',
+    not_in_channel: 'Its snippet isn\'t in the channel',
+    not_translated: 'Its snippet isn\'t translated into the locale, or the translation is held back',
+    outside_audience: 'The shopper is outside its snippet\'s audience',
+} %}
+
+{% block head %}
+    {{ parent() }}
+
+    <style>
+        .cms-profiler-slot { margin-bottom: 2em; }
+        .cms-profiler-slot h3 small { color: var(--color-muted); font-weight: normal; margin-left: .5em; }
+        .cms-profiler-slot .cms-profiler-uuid { color: var(--color-muted); display: block; font-size: var(--font-size-monospace); }
+    </style>
+{% endblock %}
+
+{% block toolbar %}
+    {% set icon %}
+        {{ _self.icon() }}
+        <span class="sf-toolbar-value">{{ collector.showingSlotCount }}</span>
+        <span class="sf-toolbar-label">/ {{ collector.slotCount }} slots</span>
+    {% endset %}
+
+    {% set text %}
+        <div class="sf-toolbar-info-piece">
+            <b>Slots rendered</b>
+            <span class="sf-toolbar-status">{{ collector.slotCount }}</span>
+        </div>
+        <div class="sf-toolbar-info-piece">
+            <b>Slots that show something</b>
+            <span class="sf-toolbar-status">{{ collector.showingSlotCount }}</span>
+        </div>
+        <div class="sf-toolbar-info-piece">
+            <b>Blocks and snippets that threw</b>
+            <span class="sf-toolbar-status{{ collector.failureCount ? ' sf-toolbar-status-red' }}">{{ collector.failureCount }}</span>
+        </div>
+    {% endset %}
+
+    {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { link: profiler_url, status: collector.failureCount ? 'red' }) }}
+{% endblock %}
+
+{% block menu %}
+    <span class="label{{ collector.failureCount ? ' label-status-error' }}{{ collector.slotCount == 0 ? ' disabled' }}">
+        <span class="icon">{{ _self.icon() }}</span>
+        <strong>CMS</strong>
+        {% if collector.failureCount %}
+            <span class="count"><span>{{ collector.failureCount }}</span></span>
+        {% endif %}
+    </span>
+{% endblock %}
+
+{% block panel %}
+    <h2>CMS slots</h2>
+
+    <div class="metrics">
+        <div class="metric">
+            <span class="value">{{ collector.slotCount }}</span>
+            <span class="label">Slots rendered</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ collector.showingSlotCount }}</span>
+            <span class="label">Slots that show something</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ collector.failureCount }}</span>
+            <span class="label">Blocks and snippets that threw</span>
+        </div>
+    </div>
+
+    {% if collector.failuresOutsideSlots is not empty %}
+        <h3>Blocks that threw outside slots</h3>
+        {{ _self.failures(collector.failuresOutsideSlots) }}
+    {% endif %}
+
+    {% for slot in collector.slots %}
+        <section class="cms-profiler-slot" data-cms-slot="{{ slot.identifier }}" aria-labelledby="cms-profiler-slot-{{ loop.index }}">
+            <h3 id="cms-profiler-slot-{{ loop.index }}">
+                {{ slot.identifier }}
+                <small>{{ slot.label is not null ? slot.label|trans : 'Not declared' }}</small>
+            </h3>
+
+            <p class="text-muted">
+                {% if slot.templateEvent is not null %}On the template event <code>{{ slot.templateEvent }}</code>{% else %}Rendered with <code>cms_slot()</code>{% endif %}
+                {%- if slot.subRequest is not null %}, in the sub-request <code data-sub-request>{{ slot.subRequest }}</code>{% endif %}
+                {%- if slot.duration is not null %}, in <span data-duration>{{ '%0.1f'|format(slot.duration) }}</span> ms{% endif %}
+            </p>
+
+            {% if slot.context is not null %}
+                <h4>Context</h4>
+                {% if slot.context is empty %}
+                    <p data-context>It provides no context keys.</p>
+                {% else %}
+                    <table data-context>
+                        <thead>
+                            <tr><th scope="col">Key</th><th scope="col">Object</th><th scope="col">From</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for resolved in slot.context %}
+                                <tr data-context-key="{{ resolved.key }}">
+                                    <td><code>{{ resolved.key }}</code></td>
+                                    <td>{{ resolved.class }}{% if resolved.id is not null %} <code>{{ resolved.id }}</code>{% endif %}</td>
+                                    <td data-from>{{ resolved.passed ? (slot.templateEvent is not null ? 'The template event' : 'cms_slot()') : 'Its context resolver' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            {% elseif slot.unresolvedKey is not null %}
+                <h4>Context</h4>
+                <p data-context data-unresolved="{{ slot.unresolvedKey }}">The context key <code>{{ slot.unresolvedKey }}</code> couldn't be resolved on this page, so the slot printed nothing.</p>
+            {% else %}
+                <p data-context>It has no placements in this channel, so it resolved no context and printed nothing.</p>
+            {% endif %}
+
+            {% if slot.candidates is not null %}
+                <h4>Placements</h4>
+                <table data-candidates>
+                    <thead>
+                        <tr><th scope="col">#</th><th scope="col">Snippet</th><th scope="col">Shows?</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for candidate in slot.candidates %}
+                            <tr data-cms-candidate="{{ candidate.placement }}" data-outcome="{{ candidate.outcome }}"{% if candidate.reason is not null %} data-reason="{{ candidate.reason }}"{% endif %}>
+                                <td>{{ loop.index }}</td>
+                                <td>
+                                    <span data-snippet-title>{{ candidate.title }}</span>
+                                    <span class="cms-profiler-uuid">{{ candidate.snippet }}</span>
+                                </td>
+                                <td data-why>
+                                    {%- if candidate.outcome == 'wins' -%}
+                                        <span class="label status-success">Shows</span>
+                                    {%- else -%}
+                                        {{ why[candidate.reason ?? candidate.outcome] }}
+                                    {%- endif -%}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+
+            {% if slot.failures is not empty %}
+                <h4>Threw</h4>
+                {{ _self.failures(slot.failures) }}
+            {% endif %}
+        </section>
+    {% else %}
+        <div class="empty empty-panel">
+            <p>No slots were rendered.</p>
+        </div>
+    {% endfor %}
+{% endblock %}
+
+{% macro failures(failures) %}
+    <table data-failures>
+        <thead>
+            <tr><th scope="col">Entry</th><th scope="col">Block or placement</th><th scope="col">Message</th></tr>
+        </thead>
+        <tbody>
+            {% for failure in failures %}
+                <tr data-failure>
+                    <td><code>{{ failure.entry ?? 'None' }}</code></td>
+                    <td>
+                        {% if failure.block is not null %}
+                            The block <code>{{ failure.block }}</code> of type <code>{{ failure.blockType }}</code>
+                        {% else %}
+                            The snippet of the placement <code>{{ failure.placement }}</code>
+                        {% endif %}
+                    </td>
+                    <td data-message>{{ failure.message }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endmacro %}
+
+{% macro icon() %}
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+{% endmacro %}

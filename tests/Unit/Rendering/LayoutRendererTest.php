@@ -29,6 +29,7 @@ use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
 use Setono\SyliusCMSPlugin\Rendering\BlockReferences;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
+use Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface;
 use Setono\SyliusCMSPlugin\Rendering\LayoutRenderer;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
@@ -197,7 +198,7 @@ final class LayoutRendererTest extends TestCase
             $contentTypes->reveal(),
             $layouts,
             $upgrader->reveal(),
-            new BlockViewBuilder($blockTypes, $hydrator, $conditions = Conditions::matcher(['product_available' => new ProductAvailable()]), new BlockReferences($blockTypes, $conditions, $referenceFinder), $referenceLoader, $upgrader->reveal()),
+            new BlockViewBuilder($blockTypes, $hydrator, $conditions = Conditions::matcher(['product_available' => new ProductAvailable()]), new BlockReferences($blockTypes, $conditions, $referenceFinder), $referenceLoader, $upgrader->reveal(), $this->prophesize(FailureHandlerInterface::class)->reveal()),
             $hydrator,
             new Environment(new ArrayLoader([
                 'standard.html.twig' => 'standard|{{ layout.showTitle ? "title" : "no title" }}',

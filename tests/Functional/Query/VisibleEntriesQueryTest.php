@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Query;
 
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Query\NotVisibleReason;
 use Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface;
 use Setono\SyliusCMSPlugin\Registry\UnknownContentTypeException;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
@@ -211,6 +212,61 @@ final class VisibleEntriesQueryTest extends KernelTestCase
         $this->expectException(UnknownContentTypeException::class);
 
         self::query()->createQueryBuilder('recipe', self::context());
+    }
+
+    /**
+     * The first rule of "When an entry shows" each entry fails, in its order, from the same rules the query filters on
+     *
+     * @test
+     */
+    public function it_says_why_each_entry_that_is_not_visible_is_not_by_the_first_rule_it_fails(): void
+    {
+        $visible = self::createPage('Visible', 'visible', published: true);
+        self::addTranslation($visible, 'da_DK', 'Synlig');
+        $draft = self::createPage('Draft', 'draft');
+        self::save($draft, static fn (PageInterface $page) => $page->setEnabled(false));
+        $disabled = self::createPage('Disabled', 'disabled', published: true);
+        self::save($disabled, static fn (PageInterface $page) => $page->setEnabled(false));
+        $ended = self::createPage('Ended', 'ended', published: true);
+        self::save($ended, static fn (PageInterface $page) => $page->setDateWindow(new DateWindow(null, self::utc('2026-11-01 00:00:00'))));
+        $elsewhere = self::createPage('Elsewhere', 'elsewhere', published: true, channels: ['OTHER']);
+        $englishOnly = self::createPage('English only', 'english-only', published: true);
+        $heldBack = self::createPage('Held back', 'held-back', published: true);
+        self::addTranslation($heldBack, 'da_DK', 'Holdt tilbage', shown: false);
+        $wholesale = self::createPage('Only wholesale', 'only-wholesale', published: true);
+        self::addTranslation($wholesale, 'da_DK', 'Kun engros');
+        self::save($wholesale, static fn (PageInterface $page) => self::channelsAndAudience()->setAudience($page, Audience::only('wholesale')));
+
+        $reasons = self::query()->whyNotVisible('page', [
+            $visible->getUuid(), $draft->getUuid(), $disabled->getUuid(), $ended->getUuid(), $elsewhere->getUuid(),
+            $englishOnly->getUuid(), $heldBack->getUuid(), $wholesale->getUuid(), '0193a5be-0000-7000-8000-00000000dead',
+        ], self::context(localeCode: 'da_DK'));
+        ksort($reasons);
+
+        $expected = [
+            $draft->getUuid() => NotVisibleReason::NotPublished,
+            $disabled->getUuid() => NotVisibleReason::Disabled,
+            $ended->getUuid() => NotVisibleReason::OutsideDateWindow,
+            $elsewhere->getUuid() => NotVisibleReason::NotInChannel,
+            $englishOnly->getUuid() => NotVisibleReason::NotTranslated,
+            $heldBack->getUuid() => NotVisibleReason::NotTranslated,
+            $wholesale->getUuid() => NotVisibleReason::OutsideAudience,
+        ];
+        ksort($expected);
+
+        self::assertSame($expected, $reasons);
+    }
+
+    /**
+     * @test
+     */
+    public function it_says_why_only_of_the_entries_of_the_content_type(): void
+    {
+        $snippet = self::createSnippet('Unpublished snippet');
+
+        self::assertSame([], self::query()->whyNotVisible('page', [$snippet->getUuid()], self::context()));
+        self::assertSame([$snippet->getUuid() => NotVisibleReason::NotPublished], self::query()->whyNotVisible('snippet', [$snippet->getUuid()], self::context()));
+        self::assertSame([], self::query()->whyNotVisible('snippet', [], self::context()));
     }
 
     /**

@@ -44,6 +44,8 @@ use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
+use Setono\SyliusCMSPlugin\Profiler\CMSDataCollector;
+use Setono\SyliusCMSPlugin\Profiler\TraceableSlotRenderer;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry;
@@ -51,6 +53,7 @@ use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistry;
+use Setono\SyliusCMSPlugin\Rendering\SlotRendererInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
@@ -98,6 +101,39 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $resources = array_map(static fn (ResourceInterface $resource): string => (string) $resource, $this->container->getResources());
 
         self::assertContains(dirname(__DIR__, 3) . '/src/Resources/config/services.xml', $resources);
+    }
+
+    /**
+     * The profiler panel and what records it, which decorate the rendering services. See "Profiler panel" in
+     * docs/spec/rendering.md
+     *
+     * @test
+     */
+    public function it_registers_the_profiler_panel_in_debug(): void
+    {
+        $this->setParameter('kernel.debug', true);
+
+        $this->load();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithTag(CMSDataCollector::class, 'data_collector', [
+            'id' => CMSDataCollector::NAME,
+            'template' => '@SetonoSyliusCMSPlugin/profiler/cms.html.twig',
+            'priority' => -10,
+        ]);
+        self::assertSame(SlotRendererInterface::class, $this->container->getDefinition(TraceableSlotRenderer::class)->getDecoratedService()[0] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function it_registers_no_profiler_panel_without_debug(): void
+    {
+        $this->setParameter('kernel.debug', false);
+
+        $this->load();
+
+        $this->assertContainerBuilderNotHasService(CMSDataCollector::class);
+        $this->assertContainerBuilderNotHasService(TraceableSlotRenderer::class);
     }
 
     /**

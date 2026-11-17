@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+The CMS panel of the Symfony profiler, and the decorators of the rendering services that record what it shows.
+SetonoSyliusCMSExtension loads this file in debug only. See "Profiler panel" in docs/spec/rendering.md
+-->
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="Setono\SyliusCMSPlugin\Profiler\RenderedSlots" class="Setono\SyliusCMSPlugin\Profiler\RenderedSlots">
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Profiler\TraceableSlotRenderer" class="Setono\SyliusCMSPlugin\Profiler\TraceableSlotRenderer"
+                 decorates="Setono\SyliusCMSPlugin\Rendering\SlotRendererInterface">
+            <argument type="service" id=".inner"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Profiler\RenderedSlots"/>
+            <argument type="service" id="request_stack"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Profiler\TraceableHostPageContextResolver" class="Setono\SyliusCMSPlugin\Profiler\TraceableHostPageContextResolver"
+                 decorates="Setono\SyliusCMSPlugin\Context\HostPageContextResolverInterface">
+            <argument type="service" id=".inner"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Profiler\RenderedSlots"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Profiler\TraceablePlacementPicker" class="Setono\SyliusCMSPlugin\Profiler\TraceablePlacementPicker"
+                 decorates="Setono\SyliusCMSPlugin\Rendering\PlacementPickerInterface">
+            <argument type="service" id=".inner"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Profiler\RenderedSlots"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Profiler\TraceableFailureHandler" class="Setono\SyliusCMSPlugin\Profiler\TraceableFailureHandler"
+                 decorates="Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface">
+            <argument type="service" id=".inner"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Profiler\RenderedSlots"/>
+        </service>
+
+        <!-- After Doctrine's collector (250), so the queries it makes when it collects aren't among the page's -->
+        <service id="Setono\SyliusCMSPlugin\Profiler\CMSDataCollector" class="Setono\SyliusCMSPlugin\Profiler\CMSDataCollector">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Profiler\RenderedSlots"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+
+            <tag name="data_collector" id="setono_sylius_cms" template="@SetonoSyliusCMSPlugin/profiler/cms.html.twig" priority="-10"/>
+        </service>
+    </services>
+</container>
