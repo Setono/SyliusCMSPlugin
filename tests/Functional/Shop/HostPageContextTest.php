@@ -90,6 +90,32 @@ final class HostPageContextTest extends WebTestCase
         self::assertCount(0, $crawler->filter('.cms-slot'), 'A product page provides no taxon');
     }
 
+    /**
+     * Such as a snippet placed while a project's context key was declared, which a deploy removed
+     *
+     * @test
+     */
+    public function it_keeps_but_shows_nothing_of_a_snippet_that_needs_a_context_key_the_code_no_longer_declares_and_flags_it(): void
+    {
+        $client = self::createClient();
+        $snippet = self::createSnippet('Brand story', [self::heading(self::HEADING, 'Our brand')], published: true, context: ['brand']);
+        self::placeUnchecked($snippet, 'shop.footer');
+
+        $crawler = $client->request('GET', '/en_US/');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('.cms-slot--shop-footer'));
+        self::assertSame([['shop.footer', 0]], self::placementsOf($snippet));
+
+        $client->loginUser(self::admin(), 'admin');
+        $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s', $snippet->getUuid()));
+
+        $problem = $crawler->filter('[data-section="problems"] [data-problem="removed_context_key"]');
+        self::assertSame('warning', $problem->attr('data-severity'));
+        self::assertSame('It needs the context key "brand", which the code no longer has, so none of its placements shows it.', $problem->filter('.description')->text());
+        self::assertSame(sprintf('/admin/cms/entry/%s/builder', $snippet->getUuid()), $problem->selectLink('Fix in builder')->attr('href'));
+    }
+
     private static function note(string $text): StoredBlock
     {
         $block = new StoredBlock(self::NOTE, 'app_product_note', 1);

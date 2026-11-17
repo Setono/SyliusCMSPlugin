@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\Registry\ConditionKindMetadata;
 use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\SourceMetadata;
@@ -17,7 +18,8 @@ use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * A hash of the problem kinds whose problems are stored and of the registries they read: the block types, content
- * types, layouts, condition kinds and sources, each with its fields, and so the field types, and the slots. A deploy that adds or
+ * types, layouts, condition kinds and sources, each with its fields, and so the field types, the slots and the context
+ * keys. A deploy that adds or
  * removes any of them, or switches one off, changes it. The routes aren't in it: setono:cms:check-routes counts again
  * the entries it checks. It's read once a request
  */
@@ -43,6 +45,7 @@ final class ProblemCountFingerprint implements ProblemCountFingerprintInterface,
         private readonly ConditionKindRegistryInterface $conditionKinds,
         private readonly ?SourceRegistryInterface $sources = null,
         private readonly ?SlotRegistryInterface $slots = null,
+        private readonly ?ContextKeyRegistryInterface $contextKeys = null,
     ) {
     }
 
@@ -59,6 +62,7 @@ final class ProblemCountFingerprint implements ProblemCountFingerprintInterface,
             // What a source declares, without its service, and whether it's switched off
             array_map(static fn (SourceMetadata $source): array => [$source->code, $source->of, $source->needs, $source->params, $source->fields, $source->disabled], $this->sources?->all() ?? []),
             $this->slots?->all() ?? [],
+            $this->contextKeys?->all() ?? [],
         ]));
     }
 

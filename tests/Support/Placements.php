@@ -34,6 +34,15 @@ trait Placements
      */
     protected static function placeInUndeclaredSlot(SnippetInterface $snippet, string $slot): PlacementInterface
     {
+        return self::placeUnchecked($snippet, $slot);
+    }
+
+    /**
+     * Places the snippet in the slot without asking whether it may go there, as a placement made before a deploy changed
+     * the slots or the context keys is. The placement goes after the slot's placements
+     */
+    protected static function placeUnchecked(SnippetInterface $snippet, string $slot): PlacementInterface
+    {
         /** @var PlacementFactoryInterface $factory */
         $factory = self::getContainer()->get('setono_sylius_cms.factory.placement');
         $placement = $factory->createFor($snippet, $slot, self::placements()->nextPosition($slot));

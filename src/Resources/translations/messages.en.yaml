@@ -212,6 +212,7 @@ setono_sylius_cms:
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
         removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
+        removed_context_key: 'It needs the context key "%key%", which the code no longer has, so none of its placements shows it.'
         removed_slot: 'A placement in the slot "%slot%", which the code no longer has, shows nothing.'
         scheduled_publish_failed: 'The publish scheduled for %at% was stopped: %reason%'
         scheduled_publish_overdue: 'The publish scheduled for %at% hasn''t run. The Messenger worker may not be running.'
@@ -225,6 +226,7 @@ setono_sylius_cms:
         broken_reference: Broken references
         deleted_customer_group: Deleted customer groups
         misfit_value: Values that don't fit their field
+        removed_context_key: Removed context keys
         removed_layout: Removed layouts
         scheduled_publish_failed: Failed scheduled publishes
         scheduled_publish_overdue: Overdue scheduled publishes
