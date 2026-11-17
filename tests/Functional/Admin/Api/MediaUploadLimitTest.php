@@ -38,7 +38,7 @@ final class MediaUploadLimitTest extends MediaApiTestCase
     /**
      * @test
      */
-    public function the_library_and_the_registry_get_the_configured_limit(): void
+    public function it_gives_the_library_and_the_registry_the_configured_limit(): void
     {
         $client = self::createClient();
         $config = self::openMediaLibrary($client);

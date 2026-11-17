@@ -50,7 +50,7 @@ final class MimeTypeDetectorTest extends TestCase
     /**
      * @test
      */
-    public function an_html_page_named_svg_is_not_an_svg(): void
+    public function it_does_not_take_an_html_page_named_svg_for_an_svg(): void
     {
         $detector = new MimeTypeDetector(new MimeTypes());
 

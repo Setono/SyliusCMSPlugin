@@ -33,7 +33,7 @@ final class UploadLimitTest extends TestCase
      *
      * @test
      */
-    public function a_configured_limit_above_phps_is_lowered_to_it(): void
+    public function it_lowers_a_configured_limit_above_phps_to_it(): void
     {
         self::assertSame(8 * 1024 * 1024, (new UploadLimit(64 * 1024 * 1024, 8 * 1024 * 1024))->bytes());
     }

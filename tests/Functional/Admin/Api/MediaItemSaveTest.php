@@ -144,7 +144,7 @@ final class MediaItemSaveTest extends MediaApiTestCase
     /**
      * @test
      */
-    public function only_a_video_has_a_poster(): void
+    public function it_gives_only_a_video_a_poster(): void
     {
         $client = self::createClient();
         $config = self::openMediaLibrary($client);

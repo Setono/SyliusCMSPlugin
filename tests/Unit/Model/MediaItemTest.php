@@ -67,7 +67,7 @@ final class MediaItemTest extends TestCase
     /**
      * @test
      */
-    public function a_folder_contains_itself_and_the_folders_inside_it_at_any_depth(): void
+    public function it_lets_a_folder_contain_itself_and_the_folders_inside_it_at_any_depth(): void
     {
         $campaigns = new MediaFolder();
         $summer = new MediaFolder();
@@ -87,7 +87,7 @@ final class MediaItemTest extends TestCase
      *
      * @dataProvider outsideTheImage
      */
-    public function a_focal_point_is_inside_the_image(float $x, float $y): void
+    public function it_keeps_a_focal_point_inside_the_image(float $x, float $y): void
     {
         $this->expectException(\InvalidArgumentException::class);
 

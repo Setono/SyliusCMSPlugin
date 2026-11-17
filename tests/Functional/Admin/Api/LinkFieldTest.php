@@ -44,7 +44,7 @@ final class LinkFieldTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function publish_refuses_a_button_without_a_link_and_a_url_a_link_can_not_lead_to(): void
+    public function it_refuses_to_publish_a_button_without_a_link_and_a_url_a_link_can_not_lead_to(): void
     {
         $client = self::createClient();
         $page = self::createPageWithBlocks('Shop now', 'shop-now', [new StoredBlock(self::BUTTON, 'button', 1)]);

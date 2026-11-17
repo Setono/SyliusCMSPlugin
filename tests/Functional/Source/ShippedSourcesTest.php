@@ -34,7 +34,7 @@ final class ShippedSourcesTest extends KernelTestCase
     /**
      * @test
      */
-    public function in_taxon_lists_the_visible_products_in_the_taxon_by_their_position_in_it(): void
+    public function it_lists_with_in_taxon_the_visible_products_in_the_taxon_by_their_position_in_it(): void
     {
         $shirts = self::createTaxon('T_SHIRTS', 'T-shirts');
         $mugs = self::createTaxon('MUGS', 'Mugs');
@@ -53,7 +53,7 @@ final class ShippedSourcesTest extends KernelTestCase
     /**
      * @test
      */
-    public function in_taxon_lists_the_products_below_the_taxon_only_with_its_children_and_each_once(): void
+    public function it_lists_with_in_taxon_the_products_below_the_taxon_only_with_its_children_and_each_once(): void
     {
         $clothing = self::createTaxon('CLOTHING', 'Clothing');
         $shirts = self::createChildTaxon($clothing, 'T_SHIRTS', 'T-shirts');
@@ -83,7 +83,7 @@ final class ShippedSourcesTest extends KernelTestCase
     /**
      * @test
      */
-    public function in_taxon_lists_the_newest_products_first_then_the_one_created_last(): void
+    public function it_lists_with_in_taxon_the_newest_products_first_then_the_one_created_last(): void
     {
         $shirts = self::createTaxon('T_SHIRTS', 'T-shirts');
         foreach (['OLD' => '2026-01-01', 'NEW' => '2026-11-01', 'SAME_SECOND' => '2026-06-01', 'SAME_SECOND_LATER' => '2026-06-01'] as $code => $createdAt) {
@@ -98,7 +98,7 @@ final class ShippedSourcesTest extends KernelTestCase
     /**
      * @test
      */
-    public function in_taxon_lists_the_products_by_the_lowest_price_of_their_enabled_variants_in_the_channel(): void
+    public function it_lists_with_in_taxon_the_products_by_the_lowest_price_of_their_enabled_variants_in_the_channel(): void
     {
         self::createChannel('OUTLET');
         $shirts = self::createTaxon('T_SHIRTS', 'T-shirts');
@@ -128,7 +128,7 @@ final class ShippedSourcesTest extends KernelTestCase
     /**
      * @test
      */
-    public function in_taxon_lists_the_products_by_their_name_in_the_locale(): void
+    public function it_lists_with_in_taxon_the_products_by_their_name_in_the_locale(): void
     {
         $shirts = self::createTaxon('T_SHIRTS', 'T-shirts');
         foreach (['B' => 'Basic', 'Z' => 'Anchor', 'A' => 'Striped', 'P' => 'Plain'] as $code => $name) {
@@ -141,7 +141,7 @@ final class ShippedSourcesTest extends KernelTestCase
     /**
      * @test
      */
-    public function in_taxon_pages_never_overlap_or_skip_products(): void
+    public function it_pages_in_taxon_without_overlapping_or_skipping_products(): void
     {
         $shirts = self::createTaxon('T_SHIRTS', 'T-shirts');
         foreach (['A', 'B', 'C', 'D', 'E'] as $code) {
@@ -166,7 +166,7 @@ final class ShippedSourcesTest extends KernelTestCase
     /**
      * @test
      */
-    public function in_taxon_lists_nothing_without_a_taxon(): void
+    public function it_lists_nothing_with_in_taxon_without_a_taxon(): void
     {
         self::placeInTaxon(self::createProduct('BASIC', 'Basic'), self::createTaxon('T_SHIRTS', 'T-shirts'));
 
@@ -178,7 +178,7 @@ final class ShippedSourcesTest extends KernelTestCase
     /**
      * @test
      */
-    public function newest_lists_the_visible_products_newest_first(): void
+    public function it_lists_with_newest_the_visible_products_newest_first(): void
     {
         foreach (['OLD' => '2026-01-01', 'NEW' => '2026-11-01', 'MIDDLE' => '2026-06-01'] as $code => $createdAt) {
             self::createProduct($code, $code)->setCreatedAt(new \DateTime($createdAt));
@@ -196,7 +196,7 @@ final class ShippedSourcesTest extends KernelTestCase
     /**
      * @test
      */
-    public function bestsellers_lists_the_visible_products_scored_in_the_channel_highest_first_then_by_id(): void
+    public function it_lists_with_bestsellers_the_visible_products_scored_in_the_channel_highest_first_then_by_id(): void
     {
         self::createChannel('OUTLET');
         foreach (['BASIC', 'STRIPED', 'PLAIN', 'SAME', 'UNSCORED'] as $code) {
@@ -219,7 +219,7 @@ final class ShippedSourcesTest extends KernelTestCase
     /**
      * @test
      */
-    public function bestsellers_lists_the_scored_products_in_the_taxon_or_below_it_with_its_children(): void
+    public function it_lists_with_bestsellers_the_scored_products_in_the_taxon_or_below_it_with_its_children(): void
     {
         $clothing = self::createTaxon('CLOTHING', 'Clothing');
         $shirts = self::createChildTaxon($clothing, 'T_SHIRTS', 'T-shirts');
@@ -243,7 +243,7 @@ final class ShippedSourcesTest extends KernelTestCase
     /**
      * @test
      */
-    public function bestsellers_never_comes_up_short_while_enough_visible_products_are_scored(): void
+    public function it_never_comes_up_short_with_bestsellers_while_enough_visible_products_are_scored(): void
     {
         $shirts = self::createTaxon('T_SHIRTS', 'T-shirts');
         $scores = [];
@@ -266,7 +266,7 @@ final class ShippedSourcesTest extends KernelTestCase
     /**
      * @test
      */
-    public function bestsellers_lists_nothing_until_the_scores_are_first_computed(): void
+    public function it_lists_nothing_with_bestsellers_until_the_scores_are_first_computed(): void
     {
         self::createProduct('BASIC', 'Basic');
 
@@ -279,7 +279,7 @@ final class ShippedSourcesTest extends KernelTestCase
     /**
      * @test
      */
-    public function children_of_a_taxon_lists_the_enabled_taxons_right_below_it_by_their_position(): void
+    public function it_lists_with_children_of_a_taxon_the_enabled_taxons_right_below_it_by_their_position(): void
     {
         $clothing = self::createTaxon('CLOTHING', 'Clothing');
         self::createChildTaxon($clothing, 'T_SHIRTS', 'T-shirts');

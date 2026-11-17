@@ -54,7 +54,7 @@ final class ResolvedLinkTest extends TestCase
     /**
      * @test
      */
-    public function no_anchor_leaves_the_url_as_it_is(): void
+    public function it_leaves_the_url_as_it_is_without_an_anchor(): void
     {
         $link = new ResolvedLink('url', '/faq#top', '/faq#top', '');
 

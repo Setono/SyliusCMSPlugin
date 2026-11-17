@@ -73,7 +73,7 @@ final class ImageNormalizerTest extends TestCase
     /**
      * @test
      */
-    public function stripping_twice_gives_the_same_file_so_a_stored_original_uploaded_again_is_a_duplicate(): void
+    public function it_gives_the_same_file_when_it_strips_one_twice_so_a_stored_original_uploaded_again_is_a_duplicate(): void
     {
         $once = self::normalizer()->normalize((string) file_get_contents(self::ROTATED_WITH_LOCATION), 'image/jpeg');
 

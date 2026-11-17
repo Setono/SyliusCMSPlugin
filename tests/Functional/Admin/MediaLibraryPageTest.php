@@ -19,7 +19,7 @@ final class MediaLibraryPageTest extends WebTestCase
     /**
      * @test
      */
-    public function the_hubs_library_opens_the_media_library_with_the_config_its_app_needs(): void
+    public function it_opens_the_media_library_from_the_hubs_library_with_the_config_its_app_needs(): void
     {
         $client = self::createClient();
         $client->loginUser(self::admin(), 'admin');

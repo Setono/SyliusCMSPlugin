@@ -71,7 +71,7 @@ final class UrlLinkTargetTest extends TestCase
      *
      * @dataProvider refused
      */
-    public function publish_refuses_a_url_a_link_cannot_lead_to(string $url): void
+    public function it_refuses_a_url_a_link_cannot_lead_to(string $url): void
     {
         self::assertSame('setono_sylius_cms.field.not_link_url', (new UrlLinkTarget())->refError($url));
     }
@@ -92,7 +92,7 @@ final class UrlLinkTargetTest extends TestCase
     /**
      * @test
      */
-    public function publish_accepts_a_url_a_link_can_lead_to(): void
+    public function it_accepts_a_url_a_link_can_lead_to(): void
     {
         self::assertNull((new UrlLinkTarget())->refError('mailto:shop@example.com'));
     }

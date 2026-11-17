@@ -302,7 +302,7 @@ final class LinkHandlerTest extends TestCase
     /**
      * @test
      */
-    public function a_link_without_a_ref_is_empty(): void
+    public function it_counts_a_link_without_a_ref_as_empty(): void
     {
         $handler = Links::handler();
 

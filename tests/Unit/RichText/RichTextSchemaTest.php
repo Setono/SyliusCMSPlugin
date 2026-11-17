@@ -138,7 +138,7 @@ final class RichTextSchemaTest extends TestCase
      *
      * @dataProvider provideHeadingLevels
      */
-    public function sanitising_keeps_a_heading_of_level_2_to_4(int $level): void
+    public function it_keeps_a_heading_of_level_2_to_4_when_sanitising(int $level): void
     {
         $heading = self::doc(['type' => 'heading', 'attrs' => ['level' => $level], 'content' => [self::text('Title')]]);
 

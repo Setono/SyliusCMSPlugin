@@ -38,7 +38,7 @@ final class ProjectBestsellersCalculatorTest extends KernelTestCase
     /**
      * @test
      */
-    public function the_command_stores_the_scores_of_the_calculator_the_interface_is_aliased_to_and_the_source_lists_by_them(): void
+    public function it_stores_the_scores_of_the_calculator_the_interface_is_aliased_to_and_lists_the_bestsellers_by_them(): void
     {
         $kernel = self::bootKernel();
         $shirt = self::createProduct('SHIRT', 'Shirt');
