@@ -5,7 +5,7 @@ import { filledBy, limitOf, offeredSources, withLimit, withSourceParam, type Sou
 import type { FieldSchema, JsonValue } from '../types';
 import { FieldRow } from './FieldRow';
 import formStyles from './Form.module.css';
-import styles from './ItemControl.module.css';
+import styles from './CatalogControl.module.css';
 
 export interface FilledByProps {
     /** The select's id, which the field's label points at too. */

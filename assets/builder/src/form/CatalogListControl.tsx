@@ -4,10 +4,10 @@ import { useKnownRefs } from '../search/context';
 import { SearchPicker } from '../search/SearchPicker';
 import { offeredSources, sourceOf } from '../sources/sources';
 import { ArrowDownIcon, ArrowUpIcon, TrashIcon } from '../shell/icons';
-import styles from './ItemControl.module.css';
+import styles from './CatalogControl.module.css';
 import { FilledBy } from './FilledBy';
-import { codesOf, itemKindOf, mostOf, type ItemKind } from './items';
-import { ItemSummary } from './ItemSummary';
+import { catalogKindOf, codesOf, mostOf, type CatalogKind } from './catalog';
+import { CatalogSummary } from './CatalogSummary';
 import type { FieldControlProps } from './types';
 
 /**
@@ -15,10 +15,10 @@ import type { FieldControlProps } from './types';
  * the "Filled by" select comes first and takes the field's id, above the hand-picked items or the source's parameters.
  * Otherwise it's only hand-picked. See "List fields" in docs/spec/sources.md
  */
-export function ItemListControl({ id, value, onChange, schema, locale, describedBy }: FieldControlProps) {
+export function CatalogListControl({ id, value, onChange, schema, locale, describedBy }: FieldControlProps) {
     const source = sourceOf(value);
     const handPicked = (itemsId: string, itemsDescribedBy: string | undefined) => (
-        <HandPickedItems id={itemsId} codes={codesOf(value)} onChange={onChange} itemKind={itemKindOf(schema)} max={mostOf(schema)} label={schema['x-cms-label']} describedBy={itemsDescribedBy} />
+        <HandPickedList id={itemsId} codes={codesOf(value)} onChange={onChange} catalogKind={catalogKindOf(schema)} max={mostOf(schema)} label={schema['x-cms-label']} describedBy={itemsDescribedBy} />
     );
 
     if (source === null && offeredSources(schema).length === 0) {
@@ -32,12 +32,12 @@ export function ItemListControl({ id, value, onChange, schema, locale, described
     );
 }
 
-export interface HandPickedItemsProps {
+export interface HandPickedListProps {
     id: string;
     /** The codes it holds, in the editor's order. */
     codes: readonly string[];
     onChange: (codes: string[]) => void;
-    itemKind: ItemKind;
+    catalogKind: CatalogKind;
     /** The most it holds, or null for no most. */
     max: number | null;
     /** The field's label, which names the list. */
@@ -51,9 +51,9 @@ export interface HandPickedItemsProps {
  * What it holds already isn't added again, and it holds no more than its most. One that no longer exists stays in the
  * list, flagged, until it's removed.
  */
-export function HandPickedItems({ id, codes, onChange, itemKind, max, label, describedBy }: HandPickedItemsProps) {
+export function HandPickedList({ id, codes, onChange, catalogKind, max, label, describedBy }: HandPickedListProps) {
     const t = useTranslator();
-    const known = useKnownRefs(itemKind.kind, codes);
+    const known = useKnownRefs(catalogKind.kind, codes);
     const full = max !== null && codes.length >= max;
 
     const move = (index: number, by: -1 | 1): void => {
@@ -73,7 +73,7 @@ export function HandPickedItems({ id, codes, onChange, itemKind, max, label, des
                 <ul className={styles.list} aria-label={label}>
                     {codes.map((code, index) => (
                         <li key={`${code}-${String(index)}`} className={styles.listItem}>
-                            <ItemSummary code={code} item={known[code]} />
+                            <CatalogSummary code={code} item={known[code]} />
                             <span className={styles.itemActions}>
                                 <IconButton label={t('setono_sylius_cms.builder.move_up')} disabled={index === 0} onClick={() => move(index, -1)}>
                                     <ArrowUpIcon />
@@ -92,9 +92,9 @@ export function HandPickedItems({ id, codes, onChange, itemKind, max, label, des
             <div className={styles.actions}>
                 <SearchPicker
                     id={id}
-                    kind={itemKind.kind}
-                    label={t(itemKind.add)}
-                    searchLabel={t(itemKind.search)}
+                    kind={catalogKind.kind}
+                    label={t(catalogKind.add)}
+                    searchLabel={t(catalogKind.search)}
                     disabled={full}
                     describedBy={describedBy}
                     onPick={(result) => {

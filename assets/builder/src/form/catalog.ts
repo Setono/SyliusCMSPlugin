@@ -6,7 +6,7 @@ import type { MessageKey } from '../i18n';
 import type { FieldSchema, JsonValue } from '../types';
 import { isJsonObject } from '../values';
 
-export interface ItemKind {
+export interface CatalogKind {
     /** What the search endpoint searches, and the type of reference the field stores: product or taxon. */
     kind: string;
     /** The list control's add button. */
@@ -15,14 +15,14 @@ export interface ItemKind {
     search: MessageKey;
 }
 
-const PRODUCT: ItemKind = { kind: 'product', add: 'setono_sylius_cms.builder.items.add_product', search: 'setono_sylius_cms.builder.items.search_products' };
-const TAXON: ItemKind = { kind: 'taxon', add: 'setono_sylius_cms.builder.items.add_taxon', search: 'setono_sylius_cms.builder.items.search_taxons' };
+const PRODUCT: CatalogKind = { kind: 'product', add: 'setono_sylius_cms.builder.items.add_product', search: 'setono_sylius_cms.builder.items.search_products' };
+const TAXON: CatalogKind = { kind: 'taxon', add: 'setono_sylius_cms.builder.items.add_taxon', search: 'setono_sylius_cms.builder.items.search_taxons' };
 
 /** The kind of item a field holds, by its field type: one item, or a list of them. */
-const ITEM_KINDS: Readonly<Record<string, ItemKind>> = { product: PRODUCT, products: PRODUCT, taxon: TAXON, taxons: TAXON };
+const CATALOG_KINDS: Readonly<Record<string, CatalogKind>> = { product: PRODUCT, products: PRODUCT, taxon: TAXON, taxons: TAXON };
 
-export function itemKindOf(schema: FieldSchema): ItemKind {
-    return ITEM_KINDS[schema['x-cms-type']] ?? PRODUCT;
+export function catalogKindOf(schema: FieldSchema): CatalogKind {
+    return CATALOG_KINDS[schema['x-cms-type']] ?? PRODUCT;
 }
 
 /** The most items an editor may pick for a list field, from its schema, or null for no most. */
