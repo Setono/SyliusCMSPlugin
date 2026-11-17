@@ -38,11 +38,10 @@ final class NumberHandler implements FitCheckingFieldHandlerInterface
     {
         $field = self::number($field);
 
-        if (!$this->fits($field, $value)) {
+        if ((!is_int($value) && !is_float($value)) || !$this->fits($field, $value)) {
             return null;
         }
 
-        /** @var int|float $value */
         return $field->integer ? (int) $value : $value;
     }
 
