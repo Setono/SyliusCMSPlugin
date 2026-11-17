@@ -15,7 +15,7 @@ use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
-use Setono\SyliusCMSPlugin\Video\VideoEmbed;
+use Setono\SyliusCMSPlugin\Media\Video\VideoEmbed;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Uid\Uuid;
 use Twig\Extension\RuntimeExtensionInterface;

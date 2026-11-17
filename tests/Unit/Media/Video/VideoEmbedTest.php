@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Tests\Unit\Video;
+namespace Setono\SyliusCMSPlugin\Tests\Unit\Media\Video;
 
 use PHPUnit\Framework\TestCase;
-use Setono\SyliusCMSPlugin\Video\VideoEmbed;
+use Setono\SyliusCMSPlugin\Media\Video\VideoEmbed;
 
 final class VideoEmbedTest extends TestCase
 {

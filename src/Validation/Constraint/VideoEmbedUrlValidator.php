@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Validation\Constraint;
 
-use Setono\SyliusCMSPlugin\Video\VideoEmbed;
+use Setono\SyliusCMSPlugin\Media\Video\VideoEmbed;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;

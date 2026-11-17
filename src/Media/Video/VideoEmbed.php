@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Setono\SyliusCMSPlugin\Video;
+namespace Setono\SyliusCMSPlugin\Media\Video;
 
 /**
  * A YouTube or Vimeo video as the Video block embeds it, read from the URL an editor pastes: a watch page, a share link,
