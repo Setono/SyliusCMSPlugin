@@ -31,7 +31,7 @@ import type {
     TranslationSource,
     VisibilityCondition,
 } from './types';
-import { normalizeValue, writeEntryTranslated, writeEntryValue, writeFieldValue, writeTranslated } from './values';
+import { jsonEqual, normalizeValue, writeEntryTranslated, writeEntryValue, writeFieldValue, writeTranslated } from './values';
 
 enablePatches();
 
@@ -156,6 +156,12 @@ export interface BuilderActions {
      * updating a value that has a source brings it up to date. See "Translation state" in docs/spec/content-model.md
      */
     setFieldValue(key: string, field: string, value: JsonValue | null): void;
+    /**
+     * Sets what a block's field stores, whole and in every locale: a binding, or what it stores once it's unbound.
+     * null removes it. Changes one after another to the same field's binding, such as typing its fallback, are undone
+     * in one step.
+     */
+    setFieldBinding(key: string, field: string, value: JsonValue | null): void;
     /** Records that a block's outdated value in the edited locale is up to date with the value it was translated from. */
     markValueUpToDate(key: string, field: string): void;
     /** Picks one of the block type's styles for a block, by its code, or none when the style is null. */
@@ -639,6 +645,26 @@ export function createBuilderStore({
                     },
                     {},
                     JSON.stringify(['set_value', key, field]),
+                );
+            },
+
+            setFieldBinding(key, field, value) {
+                edit(
+                    (working) => {
+                        const target = findBlock(working.tree.blocks, key);
+                        if (target === undefined) {
+                            return;
+                        }
+
+                        const normalized = normalizeValue(value ?? undefined);
+                        if (normalized === null) {
+                            delete target.fields[field];
+                        } else if (!jsonEqual(target.fields[field], normalized)) {
+                            target.fields[field] = normalized;
+                        }
+                    },
+                    {},
+                    JSON.stringify(['set_binding', key, field]),
                 );
             },
 

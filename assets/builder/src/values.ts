@@ -13,14 +13,14 @@ export function normalizeValue(value: JsonValue | undefined): JsonValue | null {
     return value;
 }
 
-/** A field's value in the edited locale, or its one value when it's shared. */
+/** A field's value in the edited locale, or its one value when it's shared. A binding is a translatable field's whole value, so it has none in a locale. */
 export function readFieldValue(fields: FieldValues, field: string, translatable: boolean, locale: string): JsonValue | undefined {
     const stored = fields[field];
     if (!translatable) {
         return stored;
     }
 
-    return isJsonObject(stored) ? stored[locale] : undefined;
+    return isJsonObject(stored) && typeof stored.$bind !== 'string' ? stored[locale] : undefined;
 }
 
 /**
@@ -40,10 +40,13 @@ export function writeFieldValue(fields: FieldValues, field: string, translatable
         return;
     }
 
+    // A locale's value replaces a binding, which is the whole field's
     const values = fields[field];
-    if (!isJsonObject(values)) {
+    if (!isJsonObject(values) || typeof values.$bind === 'string') {
         if (normalized !== null) {
             fields[field] = { [locale]: normalized };
+        } else {
+            delete fields[field];
         }
 
         return;

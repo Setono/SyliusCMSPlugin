@@ -1,7 +1,11 @@
+import { newBinding, propertyOf, type BindablePropertyDefinition } from '../bindings';
+import { useBindableProperties } from '../bindingsContext';
 import { useTranslator } from '../i18n';
 import { useLinkRef, useLinkTargets } from '../linkTargets';
 import type { EditedLink, LinkChange, LinkTargetDefinition } from '../links';
 import { SearchPicker } from '../search/SearchPicker';
+import { BindingPicker } from './BindingPicker';
+import bindingStyles from './Bindings.module.css';
 import formStyles from './Form.module.css';
 import styles from './LinkControl.module.css';
 
@@ -10,7 +14,9 @@ export interface LinkTargetFieldsProps {
     id: string;
     /** The link targets offered, in order. */
     offered: readonly LinkTargetDefinition[];
-    link: Pick<EditedLink, 'target' | 'ref' | 'anchor' | 'refFallback'>;
+    link: Pick<EditedLink, 'target' | 'ref' | 'anchor' | 'refFallback'> & { binding?: EditedLink['binding'] };
+    /** The properties of type url a typed ref can be bound to, as a Link field's can. Left out, it can't be bound, as a link in rich text can't. */
+    bindable?: readonly BindablePropertyDefinition[] | undefined;
     onChange: (change: LinkChange) => void;
     required?: boolean | undefined;
     describedBy?: string | undefined;
@@ -20,9 +26,14 @@ export interface LinkTargetFieldsProps {
  * Where a link leads: its target, what it links to, picked with the target's search or typed for a URL, and an anchor.
  * The Link field's control and links in rich text share it. See "Links" in docs/spec/content-model.md
  */
-export function LinkTargetFields({ id, offered, link, onChange, required, describedBy }: LinkTargetFieldsProps) {
+export function LinkTargetFields({ id, offered, link, onChange, required, describedBy, bindable }: LinkTargetFieldsProps) {
     const t = useTranslator();
     const linkTargets = useLinkTargets();
+    const properties = useBindableProperties();
+    const binding = link.binding ?? null;
+    const boundLabel = binding === null ? null : (propertyOf(properties, binding.$bind)?.label ?? binding.$bind);
+    // A bound link leads to a URL the binding resolves to, so it's a link to a URL
+    const canBind = bindable !== undefined && link.target === 'url' && (bindable.length > 0 || binding !== null);
     const target = linkTargets.find(({ code }) => code === link.target);
     const { refIsTyped, found } = useLinkRef(link);
     const targetLabel = target?.label ?? link.target;
@@ -47,9 +58,30 @@ export function LinkTargetFields({ id, offered, link, onChange, required, descri
             </select>
             {refIsTyped ? (
                 <div className={styles.part}>
-                    <label htmlFor={`${id}-ref`} className={styles.label}>
-                        {t('setono_sylius_cms.builder.link.url')}
-                    </label>
+                    <div className={bindingStyles.chipRow}>
+                        <label htmlFor={`${id}-ref`} className={styles.label}>
+                            {binding === null ? t('setono_sylius_cms.builder.link.url') : t('setono_sylius_cms.builder.binding.fallback')}
+                        </label>
+                        {canBind && (
+                            <BindingPicker
+                                offered={bindable ?? []}
+                                label={t('setono_sylius_cms.builder.binding.bind', { '%field%': t('setono_sylius_cms.builder.link.url') })}
+                                className={bindingStyles.labelRowBind}
+                                onPick={(property) => onChange({ bind: newBinding(property.binding) })}
+                            />
+                        )}
+                    </div>
+                    {binding !== null && boundLabel !== null && (
+                        <div className={bindingStyles.chipRow} role="group" aria-label={t('setono_sylius_cms.builder.binding.bound', { '%property%': boundLabel })}>
+                            <span className={bindingStyles.chip} data-binding={binding.$bind}>
+                                <span aria-hidden="true">⚡</span>
+                                {boundLabel}
+                            </span>
+                            <button type="button" className={bindingStyles.unbind} aria-label={t('setono_sylius_cms.builder.binding.unbind', { '%property%': boundLabel })} onClick={() => onChange({ bind: null })}>
+                                ✕
+                            </button>
+                        </div>
+                    )}
                     <input
                         id={`${id}-ref`}
                         type="text"

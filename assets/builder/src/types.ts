@@ -4,6 +4,7 @@
  */
 import type { LinkTargetDefinition } from './links';
 import type { MediaLimits } from './media/config';
+import type { BindablePropertyDefinition } from './bindings';
 import type { SourceDefinition } from './sources/sources';
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | JsonObject;
@@ -338,6 +339,8 @@ export interface Registry {
     contextKeys?: ContextKeyDefinition[];
     /** The slots, in the order they're declared. */
     slots?: SlotDefinition[];
+    /** The bindable properties, in the order the binding picker lists them. */
+    bindableProperties?: BindablePropertyDefinition[];
     /** The effective upload limit and the MIME types of each kind of media item, which the media picker checks a file against. */
     media?: MediaLimits;
     /** The UI strings, already translated, keyed by translation key. */

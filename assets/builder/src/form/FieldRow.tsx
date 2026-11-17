@@ -1,12 +1,28 @@
+import { acceptedTypes, bindsWholeValue, isBinding, newBinding } from '../bindings';
+import { useOfferedProperties } from '../bindingsContext';
 import { isMissing, type FieldFallback } from '../fallback';
 import { useTranslator } from '../i18n';
 import { keepsPartsPerLocale } from '../links';
 import type { OutdatedValue } from '../translationState';
+import type { JsonValue } from '../types';
 import { plainText } from '../values';
+import { BindingPicker } from './BindingPicker';
+import bindingStyles from './Bindings.module.css';
+import { BoundField } from './BoundField';
 import styles from './Form.module.css';
 import type { FieldControlProps } from './types';
 import { UnsupportedControl } from './UnsupportedControl';
 import { controlFor } from './controls';
+
+/** What a field that can be bound as a whole needs to show and set a binding. */
+export interface FieldBinding {
+    /** What the field stores: a binding, or its value, which for a translatable field is a locale map. */
+    stored: JsonValue | undefined;
+    /** Sets what the field stores, whole: a binding, or once it's unbound, what the binding fell back to. */
+    set: (value: JsonValue | null) => void;
+}
+
+const NONE: readonly string[] = [];
 
 export type FieldRowProps = Omit<FieldControlProps, 'describedBy' | 'placeholder'> & {
     /** What publish would refuse in the field, shown under it and describing its control. */
@@ -17,25 +33,32 @@ export type FieldRowProps = Omit<FieldControlProps, 'describedBy' | 'placeholder
     outdated?: OutdatedValue | undefined;
     /** Whether a shared field carries the "All languages" badge. Fields that are always shared, such as a condition's, leave it out. */
     languageBadge?: boolean;
+    /** Given where the field can show a binding, as a block's can: a ⚡ button beside it binds it, when its field type can be bound. */
+    binding?: FieldBinding | undefined;
 };
 
 /**
  * One field rendered from its schema: its label, its field type's control, its help text and its errors. A shared field
  * carries an "All languages" badge, an empty translatable field shows its fallback value as a placeholder, with
  * "Copy it here", and an outdated field shows the current text of its source, with "Mark as up to date". See
- * "Translation aids" in docs/spec/builder.md
+ * "Translation aids" in docs/spec/builder.md. A field that can be bound has a ⚡ button, and a bound one shows its
+ * binding instead of its control. See "Bindings" in docs/spec/builder.md
  */
-export function FieldRow({ errors = [], fallback, outdated, languageBadge = true, ...props }: FieldRowProps) {
+export function FieldRow({ errors = [], fallback, outdated, languageBadge = true, binding, ...props }: FieldRowProps) {
     const t = useTranslator();
     const { id, schema, value, onChange } = props;
     const Control = controlFor(schema);
+    const bindable = binding !== undefined && bindsWholeValue(schema);
+    const offered = useOfferedProperties(bindable ? acceptedTypes(schema) : NONE);
+    const bound = bindable && isBinding(binding.stored) ? binding.stored : null;
     const label = schema['x-cms-label'];
     const help = schema['x-cms-help'];
     const helpId = help ? `${id}-help` : undefined;
     const errorsId = errors.length > 0 ? `${id}-errors` : undefined;
-    const placeholder = fallback !== undefined && isMissing(value) ? fallback : undefined;
+    const placeholder = bound === null && fallback !== undefined && isMissing(value) ? fallback : undefined;
     const fallbackId = placeholder === undefined ? undefined : `${id}-fallback`;
-    const outdatedId = outdated === undefined ? undefined : `${id}-outdated`;
+    const shownOutdated = bound === null ? outdated : undefined;
+    const outdatedId = shownOutdated === undefined ? undefined : `${id}-outdated`;
     const describedBy = [helpId, fallbackId, outdatedId, errorsId].filter((describing) => describing !== undefined).join(' ');
 
     return (
@@ -59,8 +82,19 @@ export function FieldRow({ errors = [], fallback, outdated, languageBadge = true
                         {t('setono_sylius_cms.builder.all_languages')}
                     </span>
                 )}
+                {binding !== undefined && (offered.length > 0 || bound !== null) && (
+                    <BindingPicker
+                        offered={offered}
+                        label={t('setono_sylius_cms.builder.binding.bind', { '%field%': label })}
+                        className={bindingStyles.labelRowBind}
+                        // What the field holds, typed or the binding's fallback, becomes the new binding's fallback
+                        onPick={(property) => binding.set(newBinding(property.binding, bound === null ? (binding.stored ?? null) : bound.$fallback))}
+                    />
+                )}
             </div>
-            {Control ? (
+            {bound !== null ? (
+                <BoundField id={id} schema={schema} locale={props.locale} binding={bound} onChange={binding?.set ?? onChange} placeholder={fallback} describedBy={describedBy === '' ? undefined : describedBy} />
+            ) : Control ? (
                 <Control {...props} placeholder={placeholder?.value} describedBy={describedBy === '' ? undefined : describedBy} />
             ) : (
                 <UnsupportedControl id={id} />
@@ -73,11 +107,11 @@ export function FieldRow({ errors = [], fallback, outdated, languageBadge = true
                     </button>
                 </p>
             )}
-            {outdated === undefined ? null : (
+            {shownOutdated === undefined ? null : (
                 <div id={outdatedId} className={styles.outdated}>
-                    <p className={styles.outdatedMessage}>{t('setono_sylius_cms.builder.outdated', { '%locale%': outdated.localeName })}</p>
-                    <blockquote className={styles.source}>{plainText(outdated.value)}</blockquote>
-                    <button type="button" className={styles.copy} onClick={outdated.onMarkUpToDate}>
+                    <p className={styles.outdatedMessage}>{t('setono_sylius_cms.builder.outdated', { '%locale%': shownOutdated.localeName })}</p>
+                    <blockquote className={styles.source}>{plainText(shownOutdated.value)}</blockquote>
+                    <button type="button" className={styles.copy} onClick={shownOutdated.onMarkUpToDate}>
                         {t('setono_sylius_cms.builder.mark_up_to_date')}
                     </button>
                 </div>

@@ -502,6 +502,16 @@ setono_sylius_cms:
         audience_except: Everyone except these
         audience_only: Only these
         back: Back
+        # A field that shows a property of the host page, the channel or the customer. See "Bindings" in docs/spec/builder.md
+        binding:
+            bind: 'Bind %field% to a property'
+            bound: 'Shows %property%'
+            fallback: Fallback
+            fallback_help: Shown when the property is empty, such as a guest''s first name. Without one, nothing shows.
+            none: Nothing can be shown in this field here.
+            pick: Show instead
+            removed: This property no longer exists, so the fallback shows.
+            unbind: 'Stop showing %property%'
         block_settings: Settings
         block_style: Style
         blocks: Blocks
@@ -720,6 +730,10 @@ setono_sylius_cms:
         reload: Reload
         remove_condition: Remove condition
         rich_text:
+            binding: Binding
+            binding_cancel: Cancel
+            binding_insert: Insert
+            binding_property: Shows
             blockquote: Quote
             bold: Bold
             bullet_list: Bulleted list
