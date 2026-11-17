@@ -1,0 +1,16 @@
+# CI uploads the coverage of each PHPUnit suite under a flag of its own (.github/workflows/build.yaml), and Codecov
+# merges the flags, so the project and patch checks count code that only the functional or UI suite reaches
+flag_management:
+    default_rules:
+        # A commit missing one suite's upload keeps that suite's coverage from the last commit that has it, instead of
+        # dropping it
+        carryforward: true
+
+    individual_flags:
+        -   name: "unit"
+        -   name: "functional"
+        -   name: "ui"
+
+comment:
+    # Marks the flags carried forward from an earlier commit in the PR comment's flags table
+    show_carryforward_flags: true
