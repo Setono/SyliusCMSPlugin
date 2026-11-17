@@ -59,8 +59,8 @@ describe('binding a field', () => {
     it('should list the properties whose type fits and whose context is provided, plus the customer, and bind the field, keeping what it holds as the fallback', async () => {
         const set = renderRow({ en_US: 'This product' });
 
-        fireEvent.click(screen.getByRole('button', { name: 'Bind Text to a property' }));
-        const list = await screen.findByRole('dialog', { name: 'Bind Text to a property' });
+        fireEvent.click(screen.getByRole('button', { name: 'Bind to a property' }));
+        const list = await screen.findByRole('dialog', { name: 'Bind to a property' });
         expect(within(list).getAllByRole('button').map((button) => button.textContent)).toEqual(['Product name', 'Product attribute', 'Customer first name']);
 
         fireEvent.click(within(list).getByRole('button', { name: 'Product name' }));
@@ -71,7 +71,7 @@ describe('binding a field', () => {
     it("should leave out a field's ⚡ where nothing fits", () => {
         renderRow(undefined, vi.fn(), { schema: { ...textSchema, 'x-cms-type': 'number', 'x-cms-bindable': ['number'] } });
 
-        expect(screen.queryByRole('button', { name: 'Bind Text to a property' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Bind to a property' })).toBeNull();
     });
 
     it("should show a bound field's property and its fallback in the edited locale in place of its control", () => {
@@ -146,7 +146,7 @@ describe('binding a link to a URL', () => {
     it("should offer the url properties for a link to a URL and bind its ref, keeping its label", async () => {
         const onChange = renderLink({ target: 'url', ref: {}, anchor: null, label: { en_US: 'View product' } });
 
-        fireEvent.click(screen.getByRole('button', { name: 'Bind setono_sylius_cms.builder.link.url to a property' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Bind to a property' }));
         const list = await screen.findByRole('dialog');
         expect(within(list).getAllByRole('button').map((button) => button.textContent)).toEqual(['Product URL']);
         fireEvent.click(within(list).getByRole('button', { name: 'Product URL' }));

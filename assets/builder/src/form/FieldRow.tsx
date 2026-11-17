@@ -85,7 +85,9 @@ export function FieldRow({ errors = [], fallback, outdated, languageBadge = true
                 {binding !== undefined && (offered.length > 0 || bound !== null) && (
                     <BindingPicker
                         offered={offered}
-                        label={t('setono_sylius_cms.builder.binding.bind', { '%field%': label })}
+                        // Named apart from the field, so the field's label names only its control; described by the label
+                        label={t('setono_sylius_cms.builder.binding.bind')}
+                        describedBy={`${id}-row-label`}
                         className={bindingStyles.labelRowBind}
                         // What the field holds, typed or the binding's fallback, becomes the new binding's fallback
                         onPick={(property) => binding.set(newBinding(property.binding, bound === null ? (binding.stored ?? null) : bound.$fallback))}

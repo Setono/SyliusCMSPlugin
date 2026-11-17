@@ -8,8 +8,10 @@ export interface BindingPickerProps {
     /** The properties that fit, in the registry's order. */
     offered: readonly BindablePropertyDefinition[];
     onPick: (property: BindablePropertyDefinition) => void;
-    /** The button's accessible name, such as "Bind Heading text". */
+    /** The button's accessible name, which doesn't name the field, so the field's label names only its control. */
     label: string;
+    /** The id of what names the field it binds, which describes the button. */
+    describedBy?: string | undefined;
     className?: string | undefined;
 }
 
@@ -18,14 +20,14 @@ export interface BindingPickerProps {
  * snippet declares, plus the channel's and the customer's, whose type fits the field, and binds the field to the one
  * picked. See "Bindings" in docs/spec/builder.md
  */
-export function BindingPicker({ offered, onPick, label, className }: BindingPickerProps) {
+export function BindingPicker({ offered, onPick, label, describedBy, className }: BindingPickerProps) {
     const t = useTranslator();
     const [open, setOpen] = useState(false);
 
     return (
         <Popover.Root open={open} onOpenChange={setOpen}>
             <Popover.Trigger asChild>
-                <button type="button" className={`${styles.bind} ${className ?? ''}`} aria-label={label} title={label}>
+                <button type="button" className={`${styles.bind} ${className ?? ''}`} aria-label={label} aria-describedby={describedBy} title={label}>
                     ⚡
                 </button>
             </Popover.Trigger>

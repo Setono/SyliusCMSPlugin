@@ -534,7 +534,7 @@ setono_sylius_cms:
         back: Back
         # A field that shows a property of the host page, the channel or the customer. See "Bindings" in docs/spec/builder.md
         binding:
-            bind: 'Bind %field% to a property'
+            bind: Bind to a property
             bound: 'Shows %property%'
             fallback: Fallback
             fallback_help: Shown when the property is empty, such as a guest''s first name. Without one, nothing shows.

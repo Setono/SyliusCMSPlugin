@@ -59,13 +59,14 @@ export function LinkTargetFields({ id, offered, link, onChange, required, descri
             {refIsTyped ? (
                 <div className={styles.part}>
                     <div className={bindingStyles.chipRow}>
-                        <label htmlFor={`${id}-ref`} className={styles.label}>
+                        <label id={`${id}-ref-label`} htmlFor={`${id}-ref`} className={styles.label}>
                             {binding === null ? t('setono_sylius_cms.builder.link.url') : t('setono_sylius_cms.builder.binding.fallback')}
                         </label>
                         {canBind && (
                             <BindingPicker
                                 offered={bindable ?? []}
-                                label={t('setono_sylius_cms.builder.binding.bind', { '%field%': t('setono_sylius_cms.builder.link.url') })}
+                                label={t('setono_sylius_cms.builder.binding.bind')}
+                                describedBy={`${id}-ref-label`}
                                 className={bindingStyles.labelRowBind}
                                 onPick={(property) => onChange({ bind: newBinding(property.binding) })}
                             />

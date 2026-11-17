@@ -38,8 +38,8 @@ final class BindingsTest extends UITestCase
 
         // ⚡ lists the product's text properties, the channel's and the customer's, and binds the heading
         $browser->getByRole('navigation', ['name' => 'Blocks'])->getByRole('button', ['name' => 'Heading', 'exact' => false])->first()->click();
-        $browser->getByRole('button', ['name' => 'Bind Text to a property'])->click();
-        $properties = $browser->getByRole('dialog', ['name' => 'Bind Text to a property']);
+        $browser->getByRole('button', ['name' => 'Bind to a property'])->click();
+        $properties = $browser->getByRole('dialog', ['name' => 'Bind to a property']);
         Expect::locator($properties->getByRole('button', ['name' => 'Customer first name']))->toBeVisible();
         Expect::locator($properties->getByRole('button', ['name' => 'Taxon name']))->toHaveCount(0);
         $properties->getByRole('button', ['name' => 'Product name', 'exact' => true])->click();

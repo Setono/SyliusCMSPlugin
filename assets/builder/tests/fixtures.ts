@@ -236,7 +236,7 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.not_shown_in_layout': 'Not shown in this layout',
     'setono_sylius_cms.builder.loading': 'Loading…',
     'setono_sylius_cms.builder.back': 'Back',
-    'setono_sylius_cms.builder.binding.bind': 'Bind %field% to a property',
+    'setono_sylius_cms.builder.binding.bind': 'Bind to a property',
     'setono_sylius_cms.builder.binding.bound': 'Shows %property%',
     'setono_sylius_cms.builder.binding.fallback': 'Fallback',
     'setono_sylius_cms.builder.binding.fallback_help': 'Shown when the property is empty.',
