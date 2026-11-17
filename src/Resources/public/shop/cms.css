@@ -151,4 +151,17 @@
         background: var(--cms-button-secondary-background);
         color: var(--cms-button-secondary-color);
     }
+
+    /* Link list: its links one under the other, without bullets */
+    .cms-link-list__heading {
+        margin: 0 0 0.5em;
+    }
+
+    .cms-link-list__links {
+        display: grid;
+        row-gap: 0.25em;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
 }

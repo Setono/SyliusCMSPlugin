@@ -40,6 +40,14 @@
             <tag name="setono_sylius_cms.block_type"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Block\LinkList" class="Setono\SyliusCMSPlugin\Block\LinkList">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Block\Link" class="Setono\SyliusCMSPlugin\Block\Link">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Block\FirstMatch" class="Setono\SyliusCMSPlugin\Block\FirstMatch">
             <tag name="setono_sylius_cms.block_type"/>
         </service>
