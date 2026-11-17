@@ -71,11 +71,8 @@ final readonly class BindingDependencies implements ContextDependencyFinderInter
      */
     private function needs(StoredBinding $binding): array
     {
-        if ($this->properties->has($binding->property)) {
-            return $this->properties->get($binding->property)->needs();
-        }
-
-        return in_array($binding->contextKey(), BindablePropertyMetadata::EVERYWHERE, true) ? [] : [$binding->contextKey()];
+        // Read from the binding, so one of a property the code no longer has still needs its key
+        return BindablePropertyMetadata::needsFor($binding->contextKey());
     }
 
     private function name(StoredBinding $binding, StoredValue $value): TranslatableMessage

@@ -13,8 +13,14 @@ use Setono\SyliusCMSPlugin\Binding\BindingType;
  */
 final readonly class BindablePropertyMetadata
 {
+    /** What a property of the channel reads in place of a context key */
+    public const CHANNEL = 'channel';
+
+    /** What a property of the signed-in customer reads in place of a context key */
+    public const CUSTOMER = 'customer';
+
     /** The keys a property reads that are available everywhere, so never context keys a snippet declares */
-    public const EVERYWHERE = ['channel', 'customer'];
+    public const EVERYWHERE = [self::CHANNEL, self::CUSTOMER];
 
     /**
      * @param string $contextKey the context key whose object it reads, or "channel" or "customer"
@@ -49,7 +55,17 @@ final readonly class BindablePropertyMetadata
      */
     public function needs(): array
     {
-        return in_array($this->contextKey, self::EVERYWHERE, true) ? [] : [$this->contextKey];
+        return self::needsFor($this->contextKey);
+    }
+
+    /**
+     * The context keys a property of the key needs: the key itself, or none for the channel's and the customer's
+     *
+     * @return list<string>
+     */
+    public static function needsFor(string $contextKey): array
+    {
+        return in_array($contextKey, self::EVERYWHERE, true) ? [] : [$contextKey];
     }
 
     /**

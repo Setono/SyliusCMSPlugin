@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Binding;
 
 use Setono\SyliusCMSPlugin\Field\HydrationContext;
+use Setono\SyliusCMSPlugin\Registry\BindablePropertyMetadata;
 use Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface;
 use Setono\SyliusCMSPlugin\Rendering\ParamsHydrator;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
@@ -67,8 +68,8 @@ final readonly class BindingResolver
     private static function subject(string $contextKey, RenderContext $context): ?object
     {
         return match ($contextKey) {
-            'channel' => $context->channel,
-            'customer' => $context->customer,
+            BindablePropertyMetadata::CHANNEL => $context->channel,
+            BindablePropertyMetadata::CUSTOMER => $context->customer,
             default => $context->get($contextKey),
         };
     }
