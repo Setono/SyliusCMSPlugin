@@ -1,0 +1,8 @@
+--TEST--
+cms_image() renders an image constrained to the source's width by default: a WebP srcset of the widths it needs up to twice that, capped at the source's width so it never upscales, sizes from the width, width and height from the source, the alt text, and lazy loading
+--TEMPLATE--
+{{ cms_image(image) }}
+--DATA--
+return $this->rendering(['image' => $this->image(1000, 500)])
+--EXPECT--
+<img src="/webp/1000/summer-sale.jpg" srcset="/webp/320/summer-sale.jpg 320w, /webp/640/summer-sale.jpg 640w, /webp/960/summer-sale.jpg 960w, /webp/1000/summer-sale.jpg 1000w" sizes="(min-width: 1000px) 1000px, 100vw" width="1000" height="500" alt="A beach at dawn" loading="lazy" decoding="async">

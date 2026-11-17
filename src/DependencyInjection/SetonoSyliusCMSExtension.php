@@ -21,6 +21,7 @@ use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterUpgradersPass;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Media\DeleteReplacedFile;
+use Setono\SyliusCMSPlugin\Media\Liip\FilterSets;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
@@ -47,7 +48,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string}, resources: array<string, array<string, mixed>>} $config */
+        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, resources: array<string, array<string, mixed>>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         $container->setParameter('setono_sylius_cms.disabled.block_types', $config['disabled']['block_types']);
@@ -64,6 +65,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $container->setParameter('setono_sylius_cms.media.types', $config['media']['types']);
         $container->setParameter('setono_sylius_cms.media.max_upload_size', $config['media']['max_upload_size']);
         $container->setParameter('setono_sylius_cms.media.grace_period', $config['media']['grace_period']);
+        $container->setParameter('setono_sylius_cms.media.widths', $config['media']['widths']);
 
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.xml');
@@ -105,8 +107,10 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $this->prependProblems($container);
         $this->prependMessenger($container);
 
-        /** @var array{assets: bool} $config */
+        /** @var array{assets: bool, media: array{liip: array{loader: string, resolver: string}}} $config */
         $config = $this->processConfiguration(new Configuration(), $container->getExtensionConfig($this->getAlias()));
+
+        $this->prependImageFilterSets($container, $config['media']['liip']['loader'], $config['media']['liip']['resolver']);
 
         if (!$config['assets']) {
             return;
@@ -121,6 +125,16 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 ],
             ],
         ]);
+    }
+
+    /**
+     * The LiipImagine filter sets image variants are made with, one per format, reading with the loader and caching with
+     * the resolver media.liip names. A project changes their quality in its own liip_imagine config.
+     * See "Image processing" in docs/spec/media.md
+     */
+    private function prependImageFilterSets(ContainerBuilder $container, string $loader, string $resolver): void
+    {
+        $container->prependExtensionConfig('liip_imagine', ['filter_sets' => FilterSets::config($loader, $resolver)]);
     }
 
     /**

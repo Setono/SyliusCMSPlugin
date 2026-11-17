@@ -1,0 +1,16 @@
+--TEST--
+cms_image() serves an SVG and a GIF as uploaded, with one src at every width and no srcset or <picture>, sized by the width the template gives or the source's
+--TEMPLATE--
+{{ cms_image(svg) }}
+{{ cms_image(svg, {width: 60}) }}
+{{ cms_image(bare) }}
+{{ cms_image(bare, {width: 300, aspect_ratio: 3}) }}
+{{ cms_image(gif, {width: 240}) }}
+--DATA--
+return $this->withAvif() + $this->rendering(['svg' => $this->svg(), 'bare' => $this->svg(null, null), 'gif' => $this->gif()])
+--EXPECT--
+<img src="/media/cms/logo.svg" width="120" height="40" alt="Our logo" loading="lazy" decoding="async">
+<img src="/media/cms/logo.svg" width="60" height="20" alt="Our logo" loading="lazy" decoding="async">
+<img src="/media/cms/logo.svg" alt="Our logo" loading="lazy" decoding="async">
+<img src="/media/cms/logo.svg" width="300" height="100" alt="Our logo" loading="lazy" decoding="async">
+<img src="/media/cms/dancing.gif" width="240" height="135" alt="A dancing cat" loading="lazy" decoding="async">

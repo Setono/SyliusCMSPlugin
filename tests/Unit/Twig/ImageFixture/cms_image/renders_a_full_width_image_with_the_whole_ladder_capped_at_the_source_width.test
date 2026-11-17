@@ -1,0 +1,8 @@
+--TEST--
+cms_image() renders a full-width image with every width of the ladder, capped at the source's width, sized to the viewport
+--TEMPLATE--
+{{ cms_image(image, {layout: 'full_width'}) }}
+--DATA--
+return $this->rendering(['image' => $this->image(2400, 1600)])
+--EXPECT--
+<img src="/webp/2400/summer-sale.jpg" srcset="/webp/320/summer-sale.jpg 320w, /webp/640/summer-sale.jpg 640w, /webp/960/summer-sale.jpg 960w, /webp/1280/summer-sale.jpg 1280w, /webp/1600/summer-sale.jpg 1600w, /webp/1920/summer-sale.jpg 1920w, /webp/2400/summer-sale.jpg 2400w" sizes="100vw" width="2400" height="1600" alt="A beach at dawn" loading="lazy" decoding="async">

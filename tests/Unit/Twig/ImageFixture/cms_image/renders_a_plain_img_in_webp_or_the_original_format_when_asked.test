@@ -1,0 +1,10 @@
+--TEST--
+cms_image() renders a plain <img> of WebP variants, or of variants in the source's own format, when the template asks for that format, even where AVIF is supported
+--TEMPLATE--
+{{ cms_image(image, {layout: 'fixed', width: 200, format: 'webp'}) }}
+{{ cms_image(image, {layout: 'fixed', width: 200, format: 'original'}) }}
+--DATA--
+return $this->withAvif() + $this->rendering(['image' => $this->image()])
+--EXPECT--
+<img src="/webp/200/summer-sale.jpg" srcset="/webp/200/summer-sale.jpg 1x, /webp/400/summer-sale.jpg 2x" width="200" height="133" alt="A beach at dawn" loading="lazy" decoding="async">
+<img src="/original/200/summer-sale.jpg" srcset="/original/200/summer-sale.jpg 1x, /original/400/summer-sale.jpg 2x" width="200" height="133" alt="A beach at dawn" loading="lazy" decoding="async">

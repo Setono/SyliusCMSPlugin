@@ -115,6 +115,34 @@
         height: var(--cms-spacer-large);
     }
 
+    /* Image: never wider than its container, keeping its aspect ratio, with the caption below it */
+    .cms-image {
+        margin: 0;
+    }
+
+    .cms-image img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+    }
+
+    .cms-image > a {
+        display: block;
+    }
+
+    .cms-image__caption {
+        margin-top: 0.5em;
+    }
+
+    /* An empty image in the builder's preview: a grey box at the image's aspect ratio, which cms_image() sets */
+    .cms-image-placeholder {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        background: var(--cms-placeholder-background);
+    }
+
     /* Button: as wide as its label. Directly inside the tree, it starts where the contained blocks start */
     .cms-button {
         display: inline-block;

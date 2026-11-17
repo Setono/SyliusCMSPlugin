@@ -19,6 +19,7 @@ final class CMSExtension extends AbstractExtension
             new TwigFunction('cms_value', [CMSRuntime::class, 'value'], ['needs_context' => true]),
             new TwigFunction('cms_block', [CMSRuntime::class, 'block'], ['is_safe' => ['html'], 'needs_context' => true]),
             new TwigFunction('cms_blocks', [CMSRuntime::class, 'blocks'], ['is_safe' => ['html'], 'needs_context' => true]),
+            new TwigFunction('cms_image', [ImageRuntime::class, 'image'], ['is_safe' => ['html'], 'needs_context' => true]),
             new TwigFunction('cms_link', [LinkRuntime::class, 'link']),
             new TwigFunction('cms_url', [LinkRuntime::class, 'url'], ['needs_context' => true]),
             new TwigFunction('cms_preview_mode', [CMSRuntime::class, 'previewMode']),

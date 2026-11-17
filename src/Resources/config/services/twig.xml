@@ -22,6 +22,16 @@
             <tag name="twig.runtime"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Twig\ImageRuntime" class="Setono\SyliusCMSPlugin\Twig\ImageRuntime">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\ImageProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\AltTextResolverInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
+            <argument>%setono_sylius_cms.media.widths%</argument>
+
+            <tag name="twig.runtime"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Twig\HeadTagsRuntime" class="Setono\SyliusCMSPlugin\Twig\HeadTagsRuntime">
             <argument type="service" id="Setono\SyliusCMSPlugin\Seo\MetaValuesInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface"/>

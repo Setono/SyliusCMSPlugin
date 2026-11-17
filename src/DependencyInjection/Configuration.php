@@ -255,10 +255,52 @@ final class Configuration implements ConfigurationInterface
                             ->cannotBeEmpty()
                             ->validate()->always(self::assertDuration(...))->end()
                         ->end()
+                        ->arrayNode('liip')
+                            ->info('The names of the LiipImagine loader and resolver image variants are read and cached with. The plugin\'s own read from and cache into media.storage')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->scalarNode('loader')->defaultValue('setono_sylius_cms')->cannotBeEmpty()->end()
+                                ->scalarNode('resolver')->defaultValue('setono_sylius_cms')->cannotBeEmpty()->end()
+                            ->end()
+                        ->end()
+                        ->arrayNode('widths')
+                            ->info('The widths in pixels cms_image() offers an image at, which a srcset takes what its layout needs of, capped at the source\'s width')
+                            ->requiresAtLeastOneElement()
+                            ->defaultValue([320, 640, 960, 1280, 1600, 1920, 2560])
+                            ->scalarPrototype()
+                                ->validate()->always(self::assertWidth(...))->end()
+                            ->end()
+                            ->validate()->always(self::ascendingWidths(...))->end()
+                        ->end()
                     ->end()
                 ->end()
             ->end()
         ;
+    }
+
+    /**
+     * @param list<int> $widths
+     *
+     * @return list<int> in ascending order, each once
+     */
+    private static function ascendingWidths(array $widths): array
+    {
+        $widths = array_values(array_unique($widths));
+        sort($widths);
+
+        return $widths;
+    }
+
+    /**
+     * @throws \InvalidArgumentException when it isn't a positive number of pixels
+     */
+    private static function assertWidth(mixed $width): int
+    {
+        if (!is_int($width) || $width < 1) {
+            throw new \InvalidArgumentException(sprintf('An image width must be a positive number of pixels, not %s', is_scalar($width) ? var_export($width, true) : get_debug_type($width)));
+        }
+
+        return $width;
     }
 
     /**
