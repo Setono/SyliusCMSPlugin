@@ -13,16 +13,19 @@ use Psr\Log\LoggerInterface;
  */
 final class RecordingLogger extends AbstractLogger
 {
-    /** @var list<array{level: string, message: string, context: array<array-key, mixed>}> */
+    /** @var list<array{level: mixed, message: string, context: array<array-key, mixed>}> */
     private array $records = [];
 
     public function __construct(private readonly LoggerInterface $logger)
     {
     }
 
+    /**
+     * @param array<array-key, mixed> $context
+     */
     public function log($level, string|\Stringable $message, array $context = []): void
     {
-        $this->records[] = ['level' => (string) $level, 'message' => (string) $message, 'context' => $context];
+        $this->records[] = ['level' => $level, 'message' => (string) $message, 'context' => $context];
 
         $this->logger->log($level, $message, $context);
     }

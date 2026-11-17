@@ -83,7 +83,10 @@ final class TraceableFailureHandlerTest extends TestCase
         $exception = new \RuntimeException('Boom');
         $handler = $this->prophesize(FailureHandlerInterface::class);
         $handler->blockFailed(Argument::cetera())->will(static function (array $arguments): void {
-            throw $arguments[1];
+            $thrown = $arguments[1];
+            self::assertInstanceOf(\Throwable::class, $thrown);
+
+            throw $thrown;
         });
         $slots = new RenderedSlots();
         $traceable = new TraceableFailureHandler($handler->reveal(), $slots);

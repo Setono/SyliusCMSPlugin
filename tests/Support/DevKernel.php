@@ -15,7 +15,10 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  */
 final class DevKernel extends FixtureKernel
 {
-    public function __construct(string $environment, bool $debug)
+    /**
+     * Whatever environment a test asks for, as KernelTestCase passes the one it runs in
+     */
+    public function __construct()
     {
         parent::__construct('dev', true);
     }
