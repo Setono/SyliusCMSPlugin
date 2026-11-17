@@ -76,6 +76,89 @@ final readonly class FieldValidator
     }
 
     /**
+     * Checks the constraints on the class itself, which read several of its fields together, such as ExactlyOneOf.
+     * They get the class's FieldValues in each locale, or once when none of its fields is translatable. An error found
+     * in every locale is reported once, without a locale, and one found in some locales in each of them. A violation
+     * at a property path is reported at that field, and one without at the block
+     *
+     * @param class-string $class the class whose attributes carry the constraints
+     * @param array<string, FieldMetadata> $fields by name
+     * @param array<string, mixed> $stored the stored values by field name, a translatable field's as a map from locale
+     *                                     code to value
+     * @param list<string> $locales the locales the translatable fields are checked in
+     * @param string|null $block the key of the block the fields are in
+     *
+     * @return list<ValidationError>
+     */
+    public function validateTogether(string $class, array $fields, array $stored, array $locales, ?string $block = null): array
+    {
+        $constraints = $this->validator->getMetadataFor($class)->getConstraints();
+        if ([] === $constraints) {
+            return [];
+        }
+
+        $labels = array_map(fn (FieldMetadata $field): string => $this->translator->trans($field->field->label), $fields);
+        $translatable = [] !== array_filter($fields, static fn (FieldMetadata $field): bool => $field->translatable);
+        $checkedIn = $translatable && [] !== $locales ? $locales : [null];
+
+        /** @var array<string, array{field: string|null, message: string|\Stringable, locales: list<string|null>}> $found */
+        $found = [];
+        foreach ($checkedIn as $locale) {
+            $values = [];
+            foreach ($fields as $name => $field) {
+                foreach ($this->rendered($field, $stored[$name] ?? null, $locale) as $value) {
+                    $values[$name] = $value;
+                }
+            }
+
+            foreach ($this->validator->validate(new FieldValues($values, $labels, $locale), $constraints) as $violation) {
+                $path = $violation->getPropertyPath();
+                $key = $path . "\0" . $violation->getMessage();
+                $found[$key] ??= ['field' => '' === $path ? null : $path, 'message' => $violation->getMessage(), 'locales' => []];
+                $found[$key]['locales'][] = $locale;
+            }
+        }
+
+        $errors = [];
+        foreach ($found as ['field' => $field, 'message' => $message, 'locales' => $foundIn]) {
+            foreach (count($foundIn) === count($checkedIn) ? [null] : $foundIn as $locale) {
+                $errors[] = new ValidationError($block, $field, $locale, $message);
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * The value the field renders in the locale, as stored, when it has one that isn't missing and fits its field type:
+     * a shared field's own, and a translatable field's first along the locale's fallback chain
+     *
+     * @return iterable<mixed> the value, or nothing
+     */
+    private function rendered(FieldMetadata $field, mixed $stored, ?string $locale): iterable
+    {
+        if (!$field->translatable) {
+            if (!$this->fallbackValues->isMissing($field->field, $stored) && $this->fallbackValues->fits($field->field, $stored)) {
+                yield $stored;
+            }
+
+            return;
+        }
+
+        if (null === $locale) {
+            return;
+        }
+
+        foreach ($this->fallbackValues->inFallbackOrder($field->field, $stored, $locale) as $value) {
+            if ($this->fallbackValues->fits($field->field, $value)) {
+                yield $value;
+
+                return;
+            }
+        }
+    }
+
+    /**
      * The value a translatable field renders in a locale, and the locale it's from: the first value the fallback
      * chain finds that isn't missing, or null in the locale itself
      *

@@ -1,0 +1,10 @@
+--TEST--
+cms_video() renders a YouTube or Vimeo URL as the provider's privacy-enhanced embed in a lazy iframe, titled by the template, without a poster
+--TEMPLATE--
+{{ cms_video('https://youtu.be/dQw4w9WgXcQ?t=90', {title: 'Our "summer" sale', class: 'app-video'}) }}
+{{ cms_video('https://vimeo.com/76979871/8272103f6e', {poster: poster}) }}
+--DATA--
+return $this->rendering(['poster' => $this->image()])
+--EXPECT--
+<iframe src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=90" title="Our &quot;summer&quot; sale" class="app-video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" allowfullscreen></iframe>
+<iframe src="https://player.vimeo.com/video/76979871?h=8272103f6e&amp;dnt=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" allowfullscreen></iframe>

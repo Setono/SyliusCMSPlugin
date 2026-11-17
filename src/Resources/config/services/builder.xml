@@ -64,6 +64,13 @@
             <tag name="setono_sylius_cms.search" kind="entry"/>
         </service>
 
+        <!-- The documents and videos the media link target links to, which the search under its code finds -->
+        <service id="Setono\SyliusCMSPlugin\Builder\Search\MediaSearch" class="Setono\SyliusCMSPlugin\Builder\Search\MediaSearch">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+
+            <tag name="setono_sylius_cms.search" kind="media"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger" class="Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger"/>
 
         <service id="Setono\SyliusCMSPlugin\Builder\PresenceTracker" class="Setono\SyliusCMSPlugin\Builder\PresenceTracker">

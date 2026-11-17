@@ -1,0 +1,10 @@
+--TEST--
+cms_video() renders a grey 16:9 placeholder with the template's class for no video in the builder's preview, as cms_image() does for no image
+--TEMPLATE--
+{{ cms_video(null) }}
+{{ cms_video('https://example.com', {class: 'app-video'}) }}
+--DATA--
+return $this->rendering([], 'builder')
+--EXPECT--
+<span class="cms-image-placeholder" style="aspect-ratio: 1.7778" aria-hidden="true"></span>
+<span class="cms-image-placeholder app-video" style="aspect-ratio: 1.7778" aria-hidden="true"></span>

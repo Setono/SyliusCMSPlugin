@@ -25,8 +25,17 @@ final class StoragePath
      */
     public static function for(string $uuid, string $originalFilename, string $extension): string
     {
+        return sprintf('%s/%s/%s', $uuid, bin2hex(random_bytes(8)), self::filename($originalFilename, $extension));
+    }
+
+    /**
+     * The original filename as a slug with the extension, such as summer-sale.jpg for "Summer Sale!.JPEG", which the
+     * file is stored under and the permanent URL of a document or video ends with
+     */
+    public static function filename(string $originalFilename, string $extension): string
+    {
         $slug = (new AsciiSlugger())->slug(pathinfo($originalFilename, \PATHINFO_FILENAME))->lower()->truncate(self::MAX_SLUG_LENGTH)->trim('-')->toString();
 
-        return sprintf('%s/%s/%s.%s', $uuid, bin2hex(random_bytes(8)), '' === $slug ? 'file' : $slug, $extension);
+        return sprintf('%s.%s', '' === $slug ? 'file' : $slug, $extension);
     }
 }

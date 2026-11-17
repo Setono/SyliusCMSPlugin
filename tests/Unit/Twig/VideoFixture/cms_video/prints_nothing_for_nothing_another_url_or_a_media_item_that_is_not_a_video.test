@@ -1,0 +1,8 @@
+--TEST--
+cms_video() prints nothing for null, an empty string, a URL that isn't a YouTube or Vimeo video, a media item that isn't a video, or a UUID no media item has
+--TEMPLATE--
+[{{ cms_video(null) }}][{{ cms_video('') }}][{{ cms_video('https://example.com/watch?v=dQw4w9WgXcQ') }}][{{ cms_video(image) }}][{{ cms_video('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f') }}]
+--DATA--
+return $this->rendering(['image' => $this->image()])
+--EXPECT--
+[][][][][]

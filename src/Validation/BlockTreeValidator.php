@@ -74,6 +74,9 @@ final readonly class BlockTreeValidator
                     : $this->fieldValidator->validateShared($blockType->class, $field, $stored, $block->key))];
             }
 
+            // The constraints on the block type's class, which read its fields together
+            $errors = [...$errors, ...$this->fieldValidator->validateTogether($blockType->class, $blockType->fields, $block->fields, $locales, $block->key)];
+
             $errors = [...$errors, ...$this->validateList($block->children, $this->nestingRules->children($block->type), $block->key, $locales)];
         }
 
