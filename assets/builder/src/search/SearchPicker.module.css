@@ -1,27 +1,6 @@
 /* The search picker: a button, and a popover with a search box and what it finds */
 .button {
-    min-height: var(--builder-control-height);
-    padding: 0 var(--builder-space-3);
-    border: 1px solid var(--builder-color-border-strong);
-    border-radius: var(--builder-radius-sm);
-    background: var(--builder-color-surface);
-    color: var(--builder-color-text);
-    font: inherit;
-    cursor: pointer;
-}
-
-.button:hover:not(:disabled) {
-    background: var(--builder-color-hover);
-}
-
-.button:disabled {
-    cursor: default;
-    opacity: 0.5;
-}
-
-.button:focus-visible {
-    outline: 2px solid var(--builder-color-focus);
-    outline-offset: 2px;
+    composes: button from '../ui/Buttons.module.css';
 }
 
 /* Rendered in a portal at the end of the body, outside the shell, so it sets its own type and box model. */

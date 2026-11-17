@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslator } from '../i18n';
 import { useMediaLibrary, useMediaLibraryContext } from './context';
-import { Field } from './Field';
 import { flattenTree, folderAndDescendants, folderTree } from './folders';
+import { LabelledControl } from './LabelledControl';
 import styles from './MediaLibrary.module.css';
 import { ALL_MEDIA, UNSORTED } from './types';
 
@@ -93,7 +93,7 @@ export function FolderTree() {
             ) : (
                 <form className={styles.folderForm} onSubmit={(event) => void submit(event)}>
                     {editing === 'move' ? (
-                        <Field label={t('setono_sylius_cms.builder.media.move_to')}>
+                        <LabelledControl label={t('setono_sylius_cms.builder.media.move_to')}>
                             {(id) => (
                                 <select id={id} className={styles.select} value={parent} onChange={(event) => setParent(event.target.value)}>
                                     <option value="">{t('setono_sylius_cms.builder.media.top_level')}</option>
@@ -106,11 +106,11 @@ export function FolderTree() {
                                         ))}
                                 </select>
                             )}
-                        </Field>
+                        </LabelledControl>
                     ) : (
-                        <Field label={t('setono_sylius_cms.builder.media.folder_name')}>
+                        <LabelledControl label={t('setono_sylius_cms.builder.media.folder_name')}>
                             {(id) => <input id={id} className={styles.input} value={name} required autoFocus onChange={(event) => setName(event.target.value)} />}
-                        </Field>
+                        </LabelledControl>
                     )}
                     <div className={styles.actions}>
                         <button type="submit" className={styles.primary}>

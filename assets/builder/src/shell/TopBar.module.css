@@ -178,7 +178,7 @@
 .historyButton:disabled {
     color: var(--builder-color-text-muted);
     cursor: default;
-    opacity: 0.5;
+    opacity: var(--builder-disabled-opacity);
 }
 
 .saveState {
@@ -258,7 +258,7 @@
 
 .discardButton:disabled {
     cursor: progress;
-    opacity: 0.7;
+    opacity: var(--builder-disabled-opacity);
 }
 
 .publishButton {
@@ -279,7 +279,7 @@
 
 .publishButton:disabled {
     cursor: progress;
-    opacity: 0.7;
+    opacity: var(--builder-disabled-opacity);
 }
 
 /* Publish and its menu, as one split button */
@@ -313,7 +313,7 @@
 
 .publishMenuButton:disabled {
     cursor: progress;
-    opacity: 0.7;
+    opacity: var(--builder-disabled-opacity);
 }
 
 /* Rendered in a portal at the end of the body, outside the shell, so it sets its own type and box model. */

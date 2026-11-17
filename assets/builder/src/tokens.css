@@ -39,6 +39,7 @@
     --builder-radius-sm: 4px;
     --builder-radius-md: 6px;
     --builder-radius-pill: 999px;
+    --builder-disabled-opacity: 0.5;
     --builder-shadow-popover: 0 8px 24px rgb(16 24 40 / 14%), 0 2px 6px rgb(16 24 40 / 8%);
 
     --builder-control-height: 2.25rem;

@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import styles from './MediaLibrary.module.css';
 
-interface FieldProps {
+interface LabelledControlProps {
     label: string;
     help?: string;
     /** The label's look: a field's name, or a locale's under a fieldset's legend. */
@@ -11,7 +11,7 @@ interface FieldProps {
 }
 
 /** A label, the control it names, and help below it, as the builder's own fields have them. */
-export function Field({ label, help, variant = 'label', className, children }: FieldProps) {
+export function LabelledControl({ label, help, variant = 'label', className, children }: LabelledControlProps) {
     const id = useId();
 
     return (

@@ -2,7 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { useState, type FormEvent } from 'react';
 import { useTranslator } from '../i18n';
 import { useMediaLibraryContext } from './context';
-import { Field } from './Field';
+import { LabelledControl } from './LabelledControl';
 import dialogStyles from './MediaDialog.module.css';
 import styles from './MediaLibrary.module.css';
 import type { MediaItem } from './types';
@@ -55,7 +55,7 @@ export function ReplaceFileDialog({ item, onClose }: { item: MediaItem; onClose:
                     <Dialog.Description className={dialogStyles.description}>{t('setono_sylius_cms.builder.media.replace_description')}</Dialog.Description>
                     <UsedIn uuid={item.uuid} />
                     <form className={dialogStyles.form} onSubmit={(event) => void replace(event)}>
-                        <Field label={t('setono_sylius_cms.builder.media.new_file')}>
+                        <LabelledControl label={t('setono_sylius_cms.builder.media.new_file')}>
                             {(id) => (
                                 <input
                                     id={id}
@@ -67,7 +67,7 @@ export function ReplaceFileDialog({ item, onClose }: { item: MediaItem; onClose:
                                     }}
                                 />
                             )}
-                        </Field>
+                        </LabelledControl>
                         {error !== null && (
                             <p className={styles.refused} role="alert">
                                 {error}

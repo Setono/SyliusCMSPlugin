@@ -2,8 +2,8 @@ import { useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import { useTranslator, type Translate } from '../i18n';
 import type { MediaLimits } from './config';
 import { useMediaLibrary, useMediaLibraryContext } from './context';
-import { Field } from './Field';
 import { FolderTree } from './FolderTree';
+import { LabelledControl } from './LabelledControl';
 import styles from './MediaLibrary.module.css';
 import { MediaItemDetails } from './MediaItemDetails';
 import type { RefusedUpload } from './store';
@@ -72,7 +72,7 @@ function Toolbar() {
 
     return (
         <div className={styles.toolbar}>
-            <Field label={t('setono_sylius_cms.builder.media.search')} className={styles.searchField}>
+            <LabelledControl label={t('setono_sylius_cms.builder.media.search')} className={styles.searchField}>
                 {(id) => (
                     <input
                         id={id}
@@ -83,8 +83,8 @@ function Toolbar() {
                         onChange={(event) => setSearch(event.target.value)}
                     />
                 )}
-            </Field>
-            <Field label={t('setono_sylius_cms.builder.media.kind')}>
+            </LabelledControl>
+            <LabelledControl label={t('setono_sylius_cms.builder.media.kind')}>
                 {(id) => (
                     <select
                         id={id}
@@ -101,7 +101,7 @@ function Toolbar() {
                         ))}
                     </select>
                 )}
-            </Field>
+            </LabelledControl>
             <div className={styles.checkboxField}>
                 <input
                     id={missingAltId}

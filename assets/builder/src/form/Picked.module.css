@@ -90,43 +90,12 @@
     align-items: center;
 }
 
-.button,
-.iconButton {
-    min-height: var(--builder-control-height);
-    border: 1px solid var(--builder-color-border-strong);
-    border-radius: var(--builder-radius-sm);
-    background: var(--builder-color-surface);
-    color: var(--builder-color-text);
-    font: inherit;
-    cursor: pointer;
-}
-
 .button {
-    padding: 0 var(--builder-space-3);
+    composes: button from '../ui/Buttons.module.css';
 }
 
 .iconButton {
-    display: grid;
-    place-items: center;
-    width: var(--builder-control-height);
-    padding: 0;
-}
-
-.button:hover:not(:disabled),
-.iconButton:hover:not(:disabled) {
-    background: var(--builder-color-hover);
-}
-
-.button:disabled,
-.iconButton:disabled {
-    cursor: default;
-    opacity: 0.5;
-}
-
-.button:focus-visible,
-.iconButton:focus-visible {
-    outline: 2px solid var(--builder-color-focus);
-    outline-offset: 2px;
+    composes: iconButton from '../ui/Buttons.module.css';
 }
 
 .most {

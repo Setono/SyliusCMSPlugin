@@ -1,0 +1,62 @@
+/*
+ * The builder's dialogs, which the other modules compose. They're rendered in a portal at the end of the body, outside
+ * the shell, so they set their own type and box model.
+ */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--builder-color-overlay);
+}
+
+/* The dialog's box, wherever it sits */
+.surface {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-3);
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-surface);
+    box-shadow: var(--builder-shadow-popover);
+    color: var(--builder-color-text);
+    font-family: var(--builder-font-family);
+    font-size: var(--builder-font-size-md);
+    line-height: var(--builder-line-height);
+}
+
+.surface *,
+.surface *::before,
+.surface *::after {
+    box-sizing: border-box;
+}
+
+/* A dialog of the dialog width, in the middle of the viewport */
+.dialog {
+    composes: surface;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: var(--builder-dialog-width);
+    max-width: calc(100vw - 2 * var(--builder-space-4));
+    max-height: calc(100vh - 2 * var(--builder-space-4));
+    overflow-y: auto;
+    padding: var(--builder-space-5);
+    transform: translate(-50%, -50%);
+}
+
+.title {
+    margin: 0;
+    font-size: var(--builder-font-size-lg);
+    font-weight: var(--builder-font-weight-bold);
+    overflow-wrap: anywhere;
+}
+
+.description {
+    margin: 0;
+}
+
+.actions {
+    display: flex;
+    gap: var(--builder-space-2);
+    justify-content: flex-end;
+}
