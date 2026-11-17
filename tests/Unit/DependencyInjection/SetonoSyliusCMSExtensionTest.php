@@ -6,12 +6,15 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection;
 
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
+use Setono\SyliusCMSPlugin\Attribute\AsContextResolver;
 use Setono\SyliusCMSPlugin\Attribute\AsSource;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
 use Setono\SyliusCMSPlugin\Bestsellers\BestsellersCalculatorInterface;
 use Setono\SyliusCMSPlugin\Bestsellers\CompletedOrdersCalculator;
+use Setono\SyliusCMSPlugin\Context\ProductContextResolver;
+use Setono\SyliusCMSPlugin\Context\TaxonContextResolver;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
@@ -53,6 +56,7 @@ use Setono\SyliusCMSPlugin\Repository\PlacementRepository;
 use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 use Setono\SyliusCMSPlugin\Revision\RevisionPruner;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\SignedIn;
+use Setono\SyliusCMSPlugin\Tests\Unit\Context\Fixture\StoreLocationResolver;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
@@ -213,6 +217,33 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $configurators[AsSource::class]($definition, new AsSource('on_sale', 'app.on_sale', ProductInterface::class), new \ReflectionClass(OnSale::class));
 
         self::assertSame(['setono_sylius_cms.source' => [[]]], $definition->getTags());
+    }
+
+    /**
+     * @test
+     */
+    public function it_autoconfigures_context_resolvers_by_their_attribute(): void
+    {
+        $this->load();
+
+        $configurators = $this->container->getAutoconfiguredAttributes();
+        self::assertArrayHasKey(AsContextResolver::class, $configurators);
+
+        $definition = new ChildDefinition('');
+        $configurators[AsContextResolver::class]($definition, new AsContextResolver('store_location'), new \ReflectionClass(StoreLocationResolver::class));
+
+        self::assertSame(['setono_sylius_cms.context_resolver' => [[]]], $definition->getTags());
+    }
+
+    /**
+     * @test
+     */
+    public function it_registers_the_product_and_taxon_resolvers_with_a_low_priority_so_a_project_s_replace_them(): void
+    {
+        $this->load();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithTag(ProductContextResolver::class, 'setono_sylius_cms.context_resolver', ['priority' => -100]);
+        $this->assertContainerBuilderHasServiceDefinitionWithTag(TaxonContextResolver::class, 'setono_sylius_cms.context_resolver', ['priority' => -100]);
     }
 
     /**

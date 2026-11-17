@@ -8,6 +8,7 @@ use Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter;
 use Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter;
 use Setono\SyliusCMSPlugin\Admin\Grid\TranslationFilter;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
+use Setono\SyliusCMSPlugin\Attribute\AsContextResolver;
 use Setono\SyliusCMSPlugin\Attribute\AsLinkTarget;
 use Setono\SyliusCMSPlugin\Attribute\AsSource;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
@@ -17,6 +18,7 @@ use Setono\SyliusCMSPlugin\Block\EmbedCode;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBlockTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterConditionKindsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContextResolversPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLayoutsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLinkTargetsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterProblemKindsPass;
@@ -135,6 +137,9 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         });
         $container->registerAttributeForAutoconfiguration(AsSource::class, static function (ChildDefinition $definition): void {
             $definition->addTag(RegisterSourcesPass::TAG);
+        });
+        $container->registerAttributeForAutoconfiguration(AsContextResolver::class, static function (ChildDefinition $definition): void {
+            $definition->addTag(RegisterContextResolversPass::TAG);
         });
     }
 
