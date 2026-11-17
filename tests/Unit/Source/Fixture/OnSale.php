@@ -5,21 +5,23 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture;
 
 use Pagerfanta\Adapter\AdapterInterface;
-use Pagerfanta\Adapter\ArrayAdapter;
 use Setono\SyliusCMSPlugin\Attribute\AsSource;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Source\SourceInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 
 /**
- * A project's product source with parameters: the products it's given in its taxon, or none when only new ones are
- * asked for
+ * A project's product source with parameters: the products it's given, or none when only new ones are asked for. It
+ * records the parameters it resolved with and the adapters it returned
  */
 #[AsSource(code: 'on_sale', label: 'app.source.on_sale', of: ProductInterface::class, params: OnSaleParams::class)]
 final class OnSale implements SourceInterface
 {
-    /** @var list<OnSaleParams> the parameters it resolved with */
+    /** @var list<OnSaleParams> */
     public array $resolvedWith = [];
+
+    /** @var list<RecordingAdapter<ProductInterface>> */
+    public array $adapters = [];
 
     /**
      * @param list<ProductInterface> $products
@@ -36,6 +38,6 @@ final class OnSale implements SourceInterface
 
         $this->resolvedWith[] = $params;
 
-        return new ArrayAdapter($params->onlyNew ? [] : $this->products);
+        return $this->adapters[] = new RecordingAdapter($params->onlyNew ? [] : $this->products);
     }
 }

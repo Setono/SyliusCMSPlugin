@@ -17,13 +17,17 @@ setono_sylius_cms:
         not_media_list: This value should be a list of media items from the media library.
         not_product: This value should be a product's code.
         not_rich_text: This value should be formatted text.
+        not_source: This value should be a source, with its settings and how many items to show.
         not_taxon: This value should be a taxon's code.
         not_text: This value should be text.
         not_toggle: This value should be on or off.
         required: This field is required.
+        source_of_another_kind: '{{ source }} lists something else than this field.'
+        source_parameter_required: '{{ parameter }} is required.'
         too_long: This value is too long. It should have {{ limit }} characters or less.
         too_many_items: 'This list has too many items. It should have {{ limit }} item or less.|This list has too many items. It should have {{ limit }} items or less.'
         too_many_media_items: 'This list has too many media items. It should have {{ limit }} media item or less.|This list has too many media items. It should have {{ limit }} media items or less.'
+        unknown_source: 'The source "{{ source }}" no longer exists, so this list shows nothing.'
     slug:
         blank: A URL needs a slug.
         drafted_elsewhere: '"%title%" has the URL %url% in its draft too, in %channels%. Only one of them can be published there.'

@@ -23,11 +23,15 @@ use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
+use Setono\SyliusCMSPlugin\Source\SourceInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
+use Setono\SyliusCMSPlugin\Tests\Support\Sources;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\RecipeLanding;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Standard;
+use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\Clearance;
+use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
 final class ProblemCountFingerprintTest extends TestCase
@@ -79,6 +83,8 @@ final class ProblemCountFingerprintTest extends TestCase
         yield 'a layout of the second content type removed' => [self::fingerprint(layouts: ['page' => self::LAYOUTS['page']])];
         yield 'a layout switched off' => [self::fingerprint(disabledLayouts: ['page.landing'])];
         yield 'the condition kinds removed' => [self::fingerprint(conditionKinds: new ConditionKindRegistry([], new FieldReader(), new ServiceLocator([])))];
+        yield 'a source removed' => [self::fingerprint(sources: ['clearance' => new Clearance()])];
+        yield 'a source switched off' => [self::fingerprint(disabledSources: ['clearance'])];
     }
 
     /**
@@ -126,6 +132,8 @@ final class ProblemCountFingerprintTest extends TestCase
      * @param array<string, array{model: class-string<EntryInterface>, translation: class-string|null, resource: string}> $contentTypes
      * @param array<string, array<string, class-string>> $layouts
      * @param list<string> $disabledLayouts
+     * @param array<string, SourceInterface>|null $sources
+     * @param list<string> $disabledSources
      */
     private static function fingerprint(
         array $kinds = self::KINDS,
@@ -135,6 +143,8 @@ final class ProblemCountFingerprintTest extends TestCase
         array $layouts = self::LAYOUTS,
         array $disabledLayouts = [],
         ?ConditionKindRegistryInterface $conditionKinds = null,
+        ?array $sources = null,
+        array $disabledSources = [],
     ): ProblemCountFingerprint {
         return new ProblemCountFingerprint(
             $kinds,
@@ -142,6 +152,7 @@ final class ProblemCountFingerprintTest extends TestCase
             new ContentTypeRegistry($contentTypes),
             new LayoutRegistry($layouts, new FieldReader(), disabled: $disabledLayouts),
             $conditionKinds ?? Conditions::registry(),
+            Sources::registry($sources ?? ['on_sale' => new OnSale(), 'clearance' => new Clearance()], $disabledSources),
         );
     }
 }

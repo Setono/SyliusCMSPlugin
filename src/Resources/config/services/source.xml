@@ -2,6 +2,15 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
+        <!-- Resolves what list fields store when a source fills them: the references of its parameters, its adapter and what publish checks -->
+        <service id="Setono\SyliusCMSPlugin\Source\SourceResolver" class="Setono\SyliusCMSPlugin\Source\SourceResolver">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ParamsHydrator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+            <argument type="service" id="translator"/>
+        </service>
+
         <!-- Narrows a visible-products query to the products in a taxon, or in it or below it, for the product sources with a taxon parameter -->
         <service id="Setono\SyliusCMSPlugin\Source\Product\TaxonFilter" class="Setono\SyliusCMSPlugin\Source\Product\TaxonFilter">
             <argument>%sylius.model.product_taxon.class%</argument>

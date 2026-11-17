@@ -142,6 +142,8 @@ setono_sylius_cms:
         scheduled_publish_failed: 'The publish scheduled for %at% was stopped: %reason%'
         scheduled_publish_overdue: 'The publish scheduled for %at% hasn''t run. The Messenger worker may not be running.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
+        unknown_layout_source: '%field% in the layout is filled by the source "%source%", which the code no longer has, so it lists nothing.'
+        unknown_source: '%field% in the %block% block is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unreadable: 'This content can''t be read: %reason%'
         url_taken_by_route: 'URL taken by a Sylius route: shoppers get the page of the route %route% at %url%.'
     publish:

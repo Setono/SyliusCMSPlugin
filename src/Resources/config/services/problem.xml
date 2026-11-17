@@ -32,6 +32,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
 
             <tag name="kernel.reset" method="reset"/>
         </service>
@@ -68,6 +69,16 @@
         -->
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType" class="Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+        </service>
+
+        <!-- A list filled by a source the code no longer has, which lists nothing -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\UnknownSource" class="Setono\SyliusCMSPlugin\Problem\Kind\UnknownSource">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
 
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
         </service>
