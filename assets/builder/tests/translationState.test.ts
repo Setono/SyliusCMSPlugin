@@ -3,8 +3,8 @@ import { applyChanges, mergeChanges, type Change } from '../src/changeSet';
 import type { Locale } from '../src/config';
 import { fingerprint } from '../src/fingerprint';
 import { createBuilderStore } from '../src/store';
-import { entryTranslated, entryValues, localeCounts, outdatedSource, sourceOfTyped, upToDate, valueState } from '../src/translationState';
-import type { Entry, EntryStatus, JsonValue, StoredBlock, TranslationSource } from '../src/types';
+import { entryTranslated, entryValues, localeCounts, outdatedSource, sourceOfTyped, upToDate, valueState, type FieldSchemaLookup } from '../src/translationState';
+import type { Entry, EntryStatus, FieldSchema, JsonValue, StoredBlock, TranslationSource } from '../src/types';
 import { block, blockOf, blockTypes, entry, page, standard } from './fixtures';
 
 const locales: Locale[] = [
@@ -18,6 +18,29 @@ const from = (locale: string, value: JsonValue): TranslationSource => ({ from: l
 const document = (text: string): JsonValue => ({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] });
 
 const isTranslatable = (blockType: string, field: string): boolean => (blockType === 'heading' && field === 'text') || (blockType === 'accordion_item' && field === 'title');
+
+const text: FieldSchema = { type: 'string', 'x-cms-type': 'text', 'x-cms-label': 'Text', 'x-cms-help': null, 'x-cms-required': false, 'x-cms-translatable': true };
+
+function link(translatable: boolean | null): FieldSchema {
+    return {
+        type: 'object',
+        'x-cms-type': 'link',
+        'x-cms-label': 'Link',
+        'x-cms-help': null,
+        'x-cms-required': true,
+        'x-cms-translatable': translatable === true,
+        'x-cms-options': { targets: null, translatable },
+    };
+}
+
+/** The headings' and accordion items' translatable texts, and a button's link of each shape. */
+const schemaOf: FieldSchemaLookup = (blockType, field) => {
+    if (blockType === 'button') {
+        return field === 'link' ? link(null) : field === 'shared' ? link(false) : undefined;
+    }
+
+    return isTranslatable(blockType, field) ? text : undefined;
+};
 
 /** A heading with its text in English and Danish, the Danish translated from the English given. */
 function translatedHeading(key: string, english: string, translatedFrom: string): StoredBlock {
@@ -129,14 +152,14 @@ describe('the counts of a locale', () => {
             'About',
         );
 
-        expect(localeCounts(edited, 'da_DK', isTranslatable, standard)).toEqual({ untranslated: 1, outdated: 2 });
-        expect(localeCounts(edited, 'en_US', isTranslatable, standard)).toEqual({ untranslated: 0, outdated: 0 });
+        expect(localeCounts(edited, 'da_DK', schemaOf, standard)).toEqual({ untranslated: 1, outdated: 2 });
+        expect(localeCounts(edited, 'en_US', schemaOf, standard)).toEqual({ untranslated: 0, outdated: 0 });
     });
 
     it('should leave out shared fields and fields of blocks of types the code no longer has', () => {
         const edited = danish([blockOf('removed', 'a', [], { text: { en_US: 'Hello' } }), block('b', { level: 'h3' })]);
 
-        expect(localeCounts(edited, 'da_DK', isTranslatable, standard)).toEqual({ untranslated: 0, outdated: 0 });
+        expect(localeCounts(edited, 'da_DK', schemaOf, standard)).toEqual({ untranslated: 0, outdated: 0 });
     });
 
     it('should leave out a block a locale condition hides in the locale, with everything inside it', () => {
@@ -147,16 +170,27 @@ describe('the counts of a locale', () => {
             { ...block('c', { text: { en_US: 'Not in the web store' } }), conditions: [{ ...onlyWeb, negate: true }] },
         ]);
 
-        expect(localeCounts(edited, 'da_DK', isTranslatable, standard)).toEqual({ untranslated: 1, outdated: 0 });
+        expect(localeCounts(edited, 'da_DK', schemaOf, standard)).toEqual({ untranslated: 1, outdated: 0 });
         // The title, the slug and both headings, in a locale the entry has no translation in
-        expect(localeCounts(edited, 'de_DE', isTranslatable, standard)).toEqual({ untranslated: 4, outdated: 0 });
+        expect(localeCounts(edited, 'de_DE', schemaOf, standard)).toEqual({ untranslated: 4, outdated: 0 });
+    });
+
+    it('should count the label and URL a link keeps per locale as one value, and leave out a link for every locale', () => {
+        const edited = danish([
+            blockOf('button', 'a', [], { link: { target: 'url', ref: { en_US: 'https://example.com/en' }, anchor: null, label: { en_US: 'Shop now' } } }),
+            { ...blockOf('button', 'b', [], { link: { target: 'product', ref: 'MUG', anchor: null, label: { en_US: 'Mugs', da_DK: 'Krus' } } }), translated: { link: { da_DK: from('en_US', { label: 'Mug' }) } } },
+            blockOf('button', 'c', [], { shared: { target: 'product', ref: 'MUG', anchor: null, label: 'Mugs' } }),
+        ]);
+
+        expect(localeCounts(edited, 'da_DK', schemaOf, standard)).toEqual({ untranslated: 1, outdated: 1 });
+        expect(localeCounts(edited, 'en_US', schemaOf, standard)).toEqual({ untranslated: 0, outdated: 0 });
     });
 
     it('should count an entry field that one translation is missing', () => {
         const edited = danish([]);
         edited.translations.da_DK = { shown: true, fields: { title: 'Om os', slug: null }, translated: {} };
 
-        expect(localeCounts(edited, 'da_DK', isTranslatable, standard)).toEqual({ untranslated: 1, outdated: 0 });
+        expect(localeCounts(edited, 'da_DK', schemaOf, standard)).toEqual({ untranslated: 1, outdated: 0 });
         expect(entryValues(edited, 'slug')).toEqual({ en_US: 'about-us', da_DK: null });
         expect(entryTranslated(danish([]), 'title')).toEqual({ da_DK: from('en_US', 'About us') });
     });

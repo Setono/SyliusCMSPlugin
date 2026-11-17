@@ -26,6 +26,7 @@ function storeOn(edited: Entry, locale = 'en_US') {
 }
 
 const isTranslatable = (): boolean => false;
+const noBlockFields = (): undefined => undefined;
 const isLayoutTranslatable = (layout: string, field: string): boolean => layout === 'landing' && field === 'tagline';
 
 describe('switching layout in the builder', () => {
@@ -134,8 +135,8 @@ describe('editing the layout fields', () => {
     it('should count the untranslated and outdated values of the layout the entry renders in', () => {
         const edited = inLayout({ code: 'landing', version: 2, fields: { tagline: { en_US: 'Big news' }, transparentHeader: true }, translated: {} });
 
-        expect(localeCounts(edited, 'da_DK', isTranslatable, landing)).toEqual({ untranslated: 3, outdated: 0 });
-        expect(localeCounts(edited, 'da_DK', isTranslatable, undefined)).toEqual({ untranslated: 2, outdated: 0 });
+        expect(localeCounts(edited, 'da_DK', noBlockFields, landing)).toEqual({ untranslated: 3, outdated: 0 });
+        expect(localeCounts(edited, 'da_DK', noBlockFields, undefined)).toEqual({ untranslated: 2, outdated: 0 });
     });
 });
 

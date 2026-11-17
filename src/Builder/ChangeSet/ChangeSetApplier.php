@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Builder\ChangeSet;
 
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\LinkLocaleParts;
 use Setono\SyliusCMSPlugin\Field\SanitizingFieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
@@ -263,15 +264,8 @@ final readonly class ChangeSetApplier
         $block = $tree->findBlock($change->key) ?? throw new InvalidChangeSetException(sprintf('The tree has no block with the key %s', $change->key));
         $field = $this->blockType($block)->fields[$change->field] ?? throw new InvalidChangeSetException(sprintf('The block type "%s" has no field "%s"', $block->type, $change->field));
 
-        if ($field->translatable && null === $change->locale) {
-            throw new InvalidChangeSetException(sprintf('The field "%s" is translatable, so a value needs a locale', $change->field));
-        }
-
-        if (!$field->translatable && null !== $change->locale) {
-            throw new InvalidChangeSetException(sprintf('The field "%s" is shared by all translations, so a value takes no locale', $change->field));
-        }
-
-        $block->setValue($change->field, $change->locale, null === $change->value ? null : $this->sanitize($field, $change->value));
+        [$locale, $value] = $this->valueToSet($field, $change->field, $change->locale, $change->value, $block->fields[$change->field] ?? null);
+        $block->setValue($change->field, $locale, $value);
     }
 
     private function setTranslated(SetTranslated $change, StoredTree $tree): void
@@ -279,7 +273,7 @@ final readonly class ChangeSetApplier
         $block = $tree->findBlock($change->key) ?? throw new InvalidChangeSetException(sprintf('The tree has no block with the key %s', $change->key));
         $field = $this->blockType($block)->fields[$change->field] ?? throw new InvalidChangeSetException(sprintf('The block type "%s" has no field "%s"', $block->type, $change->field));
 
-        if (!$field->translatable) {
+        if (!$field->translatable && !LinkLocaleParts::areKeptBy($field->field)) {
             throw new InvalidChangeSetException(sprintf('The field "%s" is shared by all translations, so it has no translation state', $change->field));
         }
 
@@ -324,22 +318,15 @@ final readonly class ChangeSetApplier
     {
         [$layout, $field] = $this->layoutField($change->layout, $change->field, $tree, $contentType);
 
-        if ($field->translatable && null === $change->locale) {
-            throw new InvalidChangeSetException(sprintf('The field "%s" is translatable, so a value needs a locale', $change->field));
-        }
-
-        if (!$field->translatable && null !== $change->locale) {
-            throw new InvalidChangeSetException(sprintf('The field "%s" is shared by all translations, so a value takes no locale', $change->field));
-        }
-
-        $layout->setValue($change->field, $change->locale, null === $change->value ? null : $this->sanitize($field, $change->value));
+        [$locale, $value] = $this->valueToSet($field, $change->field, $change->locale, $change->value, $layout->fields[$change->field] ?? null);
+        $layout->setValue($change->field, $locale, $value);
     }
 
     private function setLayoutTranslated(SetLayoutTranslated $change, StoredTree $tree, ContentTypeMetadata $contentType): void
     {
         [$layout, $field] = $this->layoutField($change->layout, $change->field, $tree, $contentType);
 
-        if (!$field->translatable) {
+        if (!$field->translatable && !LinkLocaleParts::areKeptBy($field->field)) {
             throw new InvalidChangeSetException(sprintf('The field "%s" is shared by all translations, so it has no translation state', $change->field));
         }
 
@@ -431,6 +418,35 @@ final readonly class ChangeSetApplier
         }
 
         return is_array($value) ? array_map(fn (mixed $localized): mixed => $this->sanitize($field, $localized), $value) : $value;
+    }
+
+    /**
+     * The locale and the sanitised value a change sets in a field. A Link that keeps its label and URL per locale
+     * inside its one value takes those parts in a locale, as a translator writes them, and they're set into the link
+     *
+     * @param mixed $stored what the field stores now
+     *
+     * @return array{string|null, mixed}
+     */
+    private function valueToSet(FieldMetadata $field, string $name, ?string $locale, mixed $value, mixed $stored): array
+    {
+        if (null !== $locale && LinkLocaleParts::areKeptBy($field->field)) {
+            try {
+                return [null, $this->sanitize($field, LinkLocaleParts::with($stored, $locale, $value))];
+            } catch (\InvalidArgumentException $e) {
+                throw new InvalidChangeSetException(sprintf('The parts of the link "%s" in %s: %s', $name, $locale, $e->getMessage()), previous: $e);
+            }
+        }
+
+        if ($field->translatable && null === $locale) {
+            throw new InvalidChangeSetException(sprintf('The field "%s" is translatable, so a value needs a locale', $name));
+        }
+
+        if (!$field->translatable && null !== $locale) {
+            throw new InvalidChangeSetException(sprintf('The field "%s" is shared by all translations, so a value takes no locale', $name));
+        }
+
+        return [$locale, null === $value ? null : $this->sanitize($field, $value)];
     }
 
     private function sanitize(FieldMetadata $field, mixed $value): mixed

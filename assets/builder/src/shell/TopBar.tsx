@@ -8,7 +8,7 @@ import { isRemovedLayout, layoutOf } from '../layouts';
 import { LocalDateTimeInput } from '../form/LocalDateTimeInput';
 import { locks } from '../store';
 import { localeCounts } from '../translationState';
-import type { EntryStatus, Schedule } from '../types';
+import type { EntryStatus, FieldSchema, Schedule } from '../types';
 import { ArrowLeftIcon, ChevronDownIcon, DesktopIcon, MobileIcon, RedoIcon, UndoIcon } from './icons';
 import { saveStateText } from './saveStateText';
 import styles from './TopBar.module.css';
@@ -107,14 +107,13 @@ function LocaleSwitcher() {
         return null;
     }
 
-    const isTranslatable = (blockType: string, field: string): boolean =>
-        blockTypes.get(blockType)?.fields.find((definition) => definition.name === field)?.schema['x-cms-translatable'] === true;
+    const schemaOf = (blockType: string, field: string): FieldSchema | undefined => blockTypes.get(blockType)?.fields.find((definition) => definition.name === field)?.schema;
     const label = (code: string, name: string): string => {
         if (!hasTranslation(entry, code)) {
             return `${name} · ${t('setono_sylius_cms.builder.locale_no_translation')}`;
         }
 
-        const { untranslated, outdated } = localeCounts(entry, code, isTranslatable, isRemovedLayout(layouts, entry.tree.layout) ? undefined : layoutOf(layouts, entry.tree.layout));
+        const { untranslated, outdated } = localeCounts(entry, code, schemaOf, isRemovedLayout(layouts, entry.tree.layout) ? undefined : layoutOf(layouts, entry.tree.layout));
         const counts = [
             ...(untranslated > 0 ? [t('setono_sylius_cms.builder.locale_untranslated', { '%count%': String(untranslated) })] : []),
             ...(outdated > 0 ? [t('setono_sylius_cms.builder.locale_outdated', { '%count%': String(outdated) })] : []),

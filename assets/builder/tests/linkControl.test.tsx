@@ -10,6 +10,7 @@ import { SearchProvider } from '../src/search/context';
 import type { FieldSchema, JsonValue } from '../src/types';
 
 const strings = {
+    'setono_sylius_cms.builder.all_languages': 'All languages',
     'setono_sylius_cms.builder.link.anchor': 'Anchor',
     'setono_sylius_cms.builder.link.change': 'Change…',
     'setono_sylius_cms.builder.link.choose': 'Choose…',
@@ -184,6 +185,16 @@ describe('a link field', () => {
         fireEvent.change(screen.getByRole('textbox', { name: 'Label' }), { target: { value: 'Ring an' } });
 
         expect(onChange).toHaveBeenLastCalledWith({ target: 'url', ref: 'tel:+4512345678', anchor: null, label: 'Ring an' });
+    });
+
+    it('should carry no All languages badge while it keeps its label and URL per locale', () => {
+        renderField({ initial: { target: 'product', ref: 'MUG', anchor: null, label: { en_US: 'Mugs' } } });
+        expect(screen.queryByText('All languages')).not.toBeInTheDocument();
+    });
+
+    it('should carry the All languages badge when it keeps one link for every locale', () => {
+        renderField({ initial: { target: 'product', ref: 'MUG', anchor: null, label: null }, schema: { ...linkSchema, 'x-cms-options': { targets: null, translatable: false } } });
+        expect(screen.getByText('All languages')).toBeInTheDocument();
     });
 
     it('should not let anything be chosen without a search', () => {

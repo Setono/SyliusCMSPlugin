@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { linkShape, offeredTargets, readLink, writeLink, type LinkTargetDefinition } from '../src/links';
+import { keepsPartsPerLocale, linkShape, localeParts, offeredTargets, readLink, writeLink, type LinkTargetDefinition } from '../src/links';
 import type { FieldSchema } from '../src/types';
 
 const linkTargets: LinkTargetDefinition[] = [
@@ -30,6 +30,24 @@ describe('the shape of a Link field', () => {
     it('should offer the targets the field links to, in its order, and every target when it names none', () => {
         expect(offeredTargets(schema({ targets: ['url', 'media', 'product'], translatable: null }), linkTargets).map(({ code }) => code)).toEqual(['url', 'product']);
         expect(offeredTargets(schema({ targets: null, translatable: null }), linkTargets).map(({ code }) => code)).toEqual(['entry', 'product', 'url']);
+    });
+});
+
+describe('the label and URL a link keeps per locale', () => {
+    it('should give each locale its label and URL, leaving out empty ones and the locales with neither', () => {
+        expect(localeParts({ target: 'url', ref: { en_US: 'https://example.com/en', da_DK: '' }, anchor: null, label: { en_US: 'Shop now', de_DE: 'Jetzt kaufen' } })).toEqual({
+            en_US: { label: 'Shop now', ref: 'https://example.com/en' },
+            de_DE: { label: 'Jetzt kaufen' },
+        });
+        expect(localeParts({ target: 'product', ref: 'MUG', anchor: null, label: {} })).toEqual({});
+        expect(localeParts(undefined)).toEqual({});
+    });
+
+    it('should keep them per locale only in a Link field of the default shape', () => {
+        expect(keepsPartsPerLocale(schema({ targets: null, translatable: null }))).toBe(true);
+        expect(keepsPartsPerLocale(schema({ targets: null, translatable: false }))).toBe(false);
+        expect(keepsPartsPerLocale(schema({ targets: null, translatable: true }))).toBe(false);
+        expect(keepsPartsPerLocale({ type: 'string', 'x-cms-type': 'text', 'x-cms-label': 'Text', 'x-cms-help': null, 'x-cms-required': false, 'x-cms-translatable': false })).toBe(false);
     });
 });
 

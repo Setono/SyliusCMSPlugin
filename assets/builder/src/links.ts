@@ -27,6 +27,38 @@ export function linkShape(schema: FieldSchema): LinkShape {
     return translatable === true ? 'whole' : translatable === false ? 'shared' : 'per_locale';
 }
 
+/**
+ * Whether a field is a Link that keeps its label, and the ref of a target whose ref is translatable, per locale inside
+ * its one shared value, as a Link field of the default shape does. Those are translated, so it carries no "All
+ * languages" badge, and the translation state counts them.
+ */
+export function keepsPartsPerLocale(schema: FieldSchema): boolean {
+    return schema['x-cms-type'] === 'link' && linkShape(schema) === 'per_locale';
+}
+
+/**
+ * The label and URL a link of the default shape keeps per locale, by locale: {label?, ref?} with what each locale has
+ * of them, leaving out the locales that have neither, as the server's LinkLocaleParts::byLocale() gives them.
+ */
+export function localeParts(value: JsonValue | undefined): JsonObject {
+    const link = isJsonObject(value) ? value : {};
+    const parts: Record<string, JsonObject> = {};
+    for (const part of ['label', 'ref']) {
+        const map = link[part];
+        if (!isJsonObject(map)) {
+            continue;
+        }
+
+        for (const [locale, localized] of Object.entries(map)) {
+            if (typeof localized === 'string' && localized !== '') {
+                parts[locale] = { ...parts[locale], [part]: localized };
+            }
+        }
+    }
+
+    return parts;
+}
+
 /** The link targets the field links to, in its order. Those the registry doesn't have are left out. */
 export function offeredTargets(schema: FieldSchema, linkTargets: readonly LinkTargetDefinition[]): LinkTargetDefinition[] {
     const codes = schema['x-cms-options']?.targets;

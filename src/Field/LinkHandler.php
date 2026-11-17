@@ -30,7 +30,7 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
     {
         $field = self::link($field);
         $targets = $this->targets($field);
-        $perLocale = self::perLocale($field);
+        $perLocale = LinkLocaleParts::areKeptBy($field);
         $localeMap = ['type' => 'object', 'additionalProperties' => ['type' => 'string']];
 
         return [
@@ -49,7 +49,7 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
     public function hydrate(Field $field, mixed $value, HydrationContext $context): ?LinkValue
     {
         $field = self::link($field);
-        $value = self::normalized($value);
+        $value = LinkLocaleParts::normalized($value);
         if (!$this->fits($field, $value) || !in_array($value['target'], $this->targets($field), true)) {
             return null;
         }
@@ -77,7 +77,7 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
      */
     public function fits(Field $field, mixed $value): bool
     {
-        $value = self::normalized($value);
+        $value = LinkLocaleParts::normalized($value);
         if (!is_array($value) || !is_string($value['target'] ?? null) || !array_key_exists('ref', $value)) {
             return false;
         }
@@ -88,28 +88,28 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
         }
 
         $label = $value['label'] ?? null;
-        if (!self::perLocale(self::link($field))) {
+        if (!LinkLocaleParts::areKeptBy($field)) {
             return is_string($value['ref']) && (null === $label || is_string($label));
         }
 
-        return (is_string($value['ref']) || self::isLocaleMap($value['ref'])) && (null === $label || self::isLocaleMap($label));
+        return (is_string($value['ref']) || LinkLocaleParts::isLocaleMap($value['ref'])) && (null === $label || LinkLocaleParts::isLocaleMap($label));
     }
 
     public function isEmpty(Field $field, mixed $value): bool
     {
-        $value = self::normalized($value);
+        $value = LinkLocaleParts::normalized($value);
         if (!is_array($value)) {
             return false;
         }
 
         $ref = $value['ref'] ?? null;
 
-        return is_array($ref) ? self::isLocaleMap($ref) && [] === self::refs($ref) : null === $ref || '' === $ref;
+        return is_array($ref) ? LinkLocaleParts::isLocaleMap($ref) && [] === self::refs($ref) : null === $ref || '' === $ref;
     }
 
     public function references(Field $field, mixed $value): iterable
     {
-        $value = self::normalized($value);
+        $value = LinkLocaleParts::normalized($value);
         if (!is_array($value) || !is_string($value['target'] ?? null)) {
             return [];
         }
@@ -128,7 +128,7 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
     public function validate(Field $field, mixed $value, ExecutionContextInterface $context): void
     {
         $field = self::link($field);
-        $value = self::normalized($value);
+        $value = LinkLocaleParts::normalized($value);
         if (null === $value) {
             return;
         }
@@ -203,59 +203,13 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
      */
     private static function refs(mixed $ref): array
     {
-        if (is_array($ref) && !self::isLocaleMap($ref)) {
+        if (is_array($ref) && !LinkLocaleParts::isLocaleMap($ref)) {
             return [];
         }
 
         $refs = is_array($ref) ? $ref : [$ref];
 
         return array_values(array_filter($refs, static fn (mixed $ref): bool => is_string($ref) && '' !== $ref));
-    }
-
-    /**
-     * The stored link with its locale maps as arrays: canonical JSON decodes an empty map, such as a label in no locale,
-     * as an empty stdClass
-     */
-    private static function normalized(mixed $value): mixed
-    {
-        if (!is_array($value)) {
-            return $value;
-        }
-
-        foreach (['ref', 'label'] as $key) {
-            if (($value[$key] ?? null) instanceof \stdClass) {
-                $value[$key] = get_object_vars($value[$key]);
-            }
-        }
-
-        return $value;
-    }
-
-    /**
-     * Whether the label, and the ref of a target whose ref is translatable, are kept per locale inside the one value,
-     * which is the shape of a Link field whose translatable is null
-     */
-    private static function perLocale(Link $field): bool
-    {
-        return null === $field->translatable;
-    }
-
-    /**
-     * @phpstan-assert-if-true array<string, string> $value
-     */
-    private static function isLocaleMap(mixed $value): bool
-    {
-        if (!is_array($value) || ([] !== $value && array_is_list($value))) {
-            return false;
-        }
-
-        foreach ($value as $locale => $localized) {
-            if (!is_string($locale) || str_starts_with($locale, '$') || !is_string($localized)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private static function link(Field $field): Link

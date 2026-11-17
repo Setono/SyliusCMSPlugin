@@ -596,7 +596,7 @@ interface TranslationStateInterface
 }
 ```
 
-Each value has a `path` (`entry.<field>`, `layout.<field>` or `block.<key>.<field>`), a `state` (`Untranslated`, `Outdated` or `UpToDate`), the source locale, the source value, the source's current fingerprint and the current value. A translator passes the fingerprint it read back to `write()`, so a source that changed while the translation was in flight leaves the value outdated. Completeness counts and outdated flags read the same service ([Localization](localization.md#completeness-and-outdated-flags)).
+Each value has a `path` (`entry.<field>`, `layout.<field>` or `block.<key>.<field>`), a `state` (`Untranslated`, `Outdated` or `UpToDate`), the source locale, the source value, the source's current fingerprint and the current value. A Link field of the default shape is shared, but its label, and the URL of a target whose ref is translatable, are per locale: its value in a locale is `{"label": …, "ref": …}` with what that locale has of them, and `write()` sets them into the link. A translator passes the fingerprint it read back to `write()`, so a source that changed while the translation was in flight leaves the value outdated. Completeness counts and outdated flags read the same service ([Localization](localization.md#completeness-and-outdated-flags)).
 
 ## Events
 

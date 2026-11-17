@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\RichText;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\LinkHandler;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
@@ -26,6 +27,7 @@ use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Translation\Fixture\LinkShapes;
 use Setono\SyliusCMSPlugin\Tests\Unit\Translation\Fixture\Promo;
 use Setono\SyliusCMSPlugin\Translation\Completeness;
 use Setono\SyliusCMSPlugin\Translation\Fingerprint;
@@ -334,6 +336,72 @@ final class TranslatableValuesTest extends TestCase
     }
 
     /**
+     * A Link field of the default shape is shared, but keeps its label, and the URL of a target whose ref is
+     * translatable, per locale. See "Translatable and shared fields" in docs/spec/localization.md
+     *
+     * @test
+     */
+    public function it_gives_the_label_and_url_a_link_keeps_per_locale_as_one_value_untranslated_in_a_locale_that_has_neither(): void
+    {
+        $parts = ['label' => 'Shop now', 'ref' => 'https://example.com/en'];
+        $page = self::page([self::links(self::A, ['link' => ['target' => 'url', 'ref' => ['en_US' => 'https://example.com/en'], 'anchor' => null, 'label' => ['en_US' => 'Shop now']]])]);
+
+        self::assertEquals(
+            [new TranslatableValue('block.' . self::A . '.link', ValueState::Untranslated, 'en_US', $parts, Fingerprint::of($parts), null)],
+            $this->blockValues($page, 'da_DK'),
+        );
+        self::assertEquals(
+            [new TranslatableValue('block.' . self::A . '.link', ValueState::UpToDate, null, null, null, $parts)],
+            $this->blockValues($page, 'en_US'),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_gives_a_link_up_to_date_in_a_locale_that_has_its_label_or_its_url(): void
+    {
+        $page = self::page([
+            self::links(self::A, ['link' => ['target' => 'app_store', 'ref' => 'CPH', 'anchor' => null, 'label' => ['en_US' => 'Visit us', 'da_DK' => 'Besøg os']]]),
+            self::links(self::B, ['link' => ['target' => 'url', 'ref' => ['en_US' => 'https://example.com/en', 'da_DK' => 'https://example.com/da'], 'anchor' => null, 'label' => ['en_US' => 'Visit us']]]),
+            self::links(self::C, ['link' => ['target' => 'app_store', 'ref' => 'CPH', 'anchor' => null, 'label' => new \stdClass()]]),
+        ]);
+
+        self::assertEquals([
+            new TranslatableValue('block.' . self::A . '.link', ValueState::UpToDate, null, null, null, ['label' => 'Besøg os']),
+            new TranslatableValue('block.' . self::B . '.link', ValueState::UpToDate, null, null, null, ['ref' => 'https://example.com/da']),
+        ], $this->blockValues($page, 'da_DK'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_gives_nothing_of_a_link_for_every_locale_and_a_whole_link_per_locale_as_a_translatable_value(): void
+    {
+        $link = ['target' => 'url', 'ref' => 'https://example.com', 'anchor' => null, 'label' => 'Shop now'];
+        $page = self::page([self::links(self::A, ['oneForEveryLocale' => $link, 'perLocale' => ['en_US' => $link]])]);
+
+        self::assertEquals(
+            [new TranslatableValue('block.' . self::A . '.perLocale', ValueState::Untranslated, 'en_US', $link, Fingerprint::of($link), null)],
+            $this->blockValues($page, 'da_DK'),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_gives_a_link_whose_label_was_translated_from_another_locale_that_changed_since_as_outdated(): void
+    {
+        $block = self::links(self::A, ['link' => ['target' => 'app_store', 'ref' => 'CPH', 'anchor' => null, 'label' => ['en_US' => 'Visit us today', 'da_DK' => 'Besøg os']]]);
+        $block->translated = ['link' => ['da_DK' => ['from' => 'en_US', 'fingerprint' => Fingerprint::of(['label' => 'Visit us'])]]];
+
+        self::assertEquals(
+            [new TranslatableValue('block.' . self::A . '.link', ValueState::Outdated, 'en_US', ['label' => 'Visit us today'], Fingerprint::of(['label' => 'Visit us today']), ['label' => 'Besøg os'])],
+            $this->blockValues(self::page([$block]), 'da_DK'),
+        );
+    }
+
+    /**
      * @test
      */
     public function it_counts_the_untranslated_and_outdated_values_of_a_locale(): void
@@ -365,6 +433,14 @@ final class TranslatableValuesTest extends TestCase
         $block->translated = ['text' => $translated];
 
         return $block;
+    }
+
+    /**
+     * @param array<string, mixed> $fields
+     */
+    private static function links(string $key, array $fields): StoredBlock
+    {
+        return new StoredBlock($key, 'link_shapes', 1, fields: $fields);
     }
 
     /**
@@ -400,6 +476,7 @@ final class TranslatableValuesTest extends TestCase
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
             RichTextHandler::class => Links::richTextHandler(...),
+            LinkHandler::class => static fn (): LinkHandler => Links::handler(),
         ]));
 
         return new TranslatableValues(
@@ -407,7 +484,7 @@ final class TranslatableValuesTest extends TestCase
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
                 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
             ]),
-            new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class, 'group' => Group::class], new FieldReader()),
+            new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class, 'group' => Group::class, 'link_shapes' => LinkShapes::class], new FieldReader()),
             new LayoutRegistry(['page' => ['promo' => Promo::class]], new FieldReader(), disabled: $disabledLayouts),
             new FallbackValues($handlers, $fallbackChain->reveal()),
             $fallbackChain->reveal(),

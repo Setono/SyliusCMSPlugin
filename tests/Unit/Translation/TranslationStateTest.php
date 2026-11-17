@@ -16,8 +16,10 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayoutTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetLayoutValue;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetTranslated;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetValue;
+use Setono\SyliusCMSPlugin\Builder\ChangeSet\InvalidChangeSetException;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\LinkHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
@@ -34,6 +36,8 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
+use Setono\SyliusCMSPlugin\Tests\Support\Links;
+use Setono\SyliusCMSPlugin\Tests\Unit\Translation\Fixture\LinkShapes;
 use Setono\SyliusCMSPlugin\Tests\Unit\Translation\Fixture\Promo;
 use Setono\SyliusCMSPlugin\Translation\Fingerprint;
 use Setono\SyliusCMSPlugin\Translation\TranslatableValue;
@@ -52,6 +56,8 @@ final class TranslationStateTest extends TestCase
     use ProphecyTrait;
 
     private const KEY = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a';
+
+    private const LINK_KEY = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4b';
 
     /**
      * @test
@@ -186,6 +192,51 @@ final class TranslationStateTest extends TestCase
         $state->write($entry, 'da_DK', 'block.' . self::KEY . '.text', 'Hej der', 'en_US', $written->sourceFingerprint ?? '');
 
         self::assertSame(ValueState::UpToDate, self::blockValue($state->values($entry, 'da_DK'))->state);
+    }
+
+    /**
+     * A Link field of the default shape is shared, but keeps its label, and the URL of a target whose ref is
+     * translatable, per locale: a translator writes those, and the rest of the link stays as it is
+     *
+     * @test
+     */
+    public function it_writes_the_label_and_url_of_a_link_in_the_locale_into_the_link_and_where_they_were_translated_from(): void
+    {
+        $entry = self::page('Hello');
+        $entry->getBlockTree()->blocks[] = new StoredBlock(self::LINK_KEY, 'link_shapes', 1, fields: [
+            'link' => ['target' => 'url', 'ref' => ['en_US' => 'https://example.com/en'], 'anchor' => 'hours', 'label' => ['en_US' => 'Visit us']],
+        ]);
+        $state = new TranslationState($this->ownWorkingCopy(), $this->applyingAutosave(), self::translatableValues());
+        $read = self::valueAt($state->values($entry, 'da_DK'), 'block.' . self::LINK_KEY . '.link');
+        self::assertSame(ValueState::Untranslated, $read->state);
+        self::assertSame(['label' => 'Visit us', 'ref' => 'https://example.com/en'], $read->sourceValue);
+
+        $state->write($entry, 'da_DK', 'block.' . self::LINK_KEY . '.link', ['label' => 'Besøg os', 'ref' => 'https://example.com/da'], 'en_US', $read->sourceFingerprint ?? '');
+
+        $written = self::valueAt($state->values($entry, 'da_DK'), 'block.' . self::LINK_KEY . '.link');
+        self::assertSame(ValueState::UpToDate, $written->state);
+        self::assertSame('en_US', $written->sourceLocaleCode);
+        self::assertSame(['label' => 'Besøg os', 'ref' => 'https://example.com/da'], $written->value);
+        self::assertSame(
+            ['target' => 'url', 'ref' => ['en_US' => 'https://example.com/en', 'da_DK' => 'https://example.com/da'], 'anchor' => 'hours', 'label' => ['en_US' => 'Visit us', 'da_DK' => 'Besøg os']],
+            $entry->getBlockTree()->findBlock(self::LINK_KEY)?->fields['link'],
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_to_write_a_url_into_a_link_whose_ref_is_shared_by_every_locale(): void
+    {
+        $entry = self::page('Hello');
+        $entry->getBlockTree()->blocks[] = new StoredBlock(self::LINK_KEY, 'link_shapes', 1, fields: [
+            'link' => ['target' => 'app_store', 'ref' => 'CPH', 'anchor' => null, 'label' => ['en_US' => 'Visit us']],
+        ]);
+        $state = new TranslationState($this->ownWorkingCopy(), $this->applyingAutosave(), self::translatableValues());
+
+        $this->expectException(InvalidChangeSetException::class);
+
+        $state->write($entry, 'da_DK', 'block.' . self::LINK_KEY . '.link', ['label' => 'Besøg os', 'ref' => 'AAR'], 'en_US', Fingerprint::of(['label' => 'Visit us']));
     }
 
     /**
@@ -361,12 +412,13 @@ final class TranslationStateTest extends TestCase
 
     private static function blockTypes(): BlockTypeRegistry
     {
-        return new BlockTypeRegistry(['heading' => Heading::class], new FieldReader());
+        return new BlockTypeRegistry(['heading' => Heading::class, 'link_shapes' => LinkShapes::class], new FieldReader());
     }
 
     private static function fieldHandlers(): FieldHandlerLocator
     {
         return new FieldHandlerLocator(new ServiceLocator([
+            LinkHandler::class => static fn (): LinkHandler => Links::handler(),
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
