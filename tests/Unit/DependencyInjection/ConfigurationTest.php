@@ -85,6 +85,7 @@ final class ConfigurationTest extends TestCase
             [],
         ], [
             'disabled' => ['block_types' => [], 'layouts' => [], 'sources' => []],
+            'embed_code' => false,
             'assets' => true,
             'content_types' => [],
             'block_styles' => [],
@@ -456,6 +457,22 @@ final class ConfigurationTest extends TestCase
         yield 'an empty default layout' => [['page' => ['default_layout' => '']], 'cannot contain an empty value'];
         yield 'a numeric default layout' => [['page' => ['default_layout' => 42]], 'The layout code "42" must match ^[a-z][a-z0-9_]*$'];
         yield 'a numeric content type code' => [[42 => ['default_layout' => 'wide']], 'The content type code "42" must match ^[a-z][a-z0-9_]*$'];
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_opt_in_to_the_embed_code_block(): void
+    {
+        $this->assertProcessedConfigurationEquals([['embed_code' => true]], ['embed_code' => true], 'embed_code');
+    }
+
+    /**
+     * @test
+     */
+    public function it_takes_a_boolean_for_embed_code(): void
+    {
+        $this->assertConfigurationIsInvalid([['embed_code' => 'yes']], 'Invalid type for path "setono_sylius_cms.embed_code"');
     }
 
     /**

@@ -216,9 +216,41 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
      */
     public function it_hands_the_disabled_block_types_to_the_block_type_registry(): void
     {
-        $this->load(['disabled' => ['block_types' => ['spacer']]]);
+        $this->load(['disabled' => ['block_types' => ['spacer']], 'embed_code' => true]);
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.block_types', ['spacer']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_disables_the_embed_code_block_type_until_a_project_opts_in(): void
+    {
+        $this->load(['disabled' => ['block_types' => ['spacer']]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.block_types', ['spacer', 'embed_code']);
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.embed_code', false);
+    }
+
+    /**
+     * @test
+     */
+    public function it_disables_the_embed_code_block_type_once_when_a_project_also_lists_it_as_disabled(): void
+    {
+        $this->load(['disabled' => ['block_types' => ['embed_code']]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.block_types', ['embed_code']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_enables_the_embed_code_block_type_when_a_project_opts_in(): void
+    {
+        $this->load(['embed_code' => true]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.block_types', []);
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.embed_code', true);
     }
 
     /**

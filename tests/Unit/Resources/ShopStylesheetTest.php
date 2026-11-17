@@ -167,6 +167,15 @@ final class ShopStylesheetTest extends TestCase
     /**
      * @test
      */
+    public function it_shows_the_embed_code_placeholder_as_a_grey_box_like_an_empty_image_s(): void
+    {
+        self::assertSame('var(--cms-placeholder-background)', self::declarations('.cms-embed-code--placeholder')['background'] ?? null);
+        self::assertArrayNotHasKey('background', self::declarations('.cms-embed-code'), 'The code itself has the shop\'s colours');
+    }
+
+    /**
+     * @test
+     */
     public function it_never_styles_html_or_body(): void
     {
         self::assertDoesNotMatchRegularExpression('/(^|[\s,}>~+])(html|body)\b/', self::css());

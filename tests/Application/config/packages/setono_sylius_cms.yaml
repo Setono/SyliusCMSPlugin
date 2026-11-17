@@ -11,3 +11,6 @@ setono_sylius_cms:
     # The field control of the test application's own opening hours field type, a custom element
     builder:
         scripts: ['/cms/opening-hours.js']
+
+    # The Embed code block, opted in to as a project opts in (ADR 0018). EmbedCodeOffKernel switches it off again
+    embed_code: true

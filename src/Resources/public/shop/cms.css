@@ -281,6 +281,15 @@
         list-style: none;
     }
 
+    /* Embed code in the builder's preview: a grey box with a note in place of the code, whose scripts don't run there */
+    .cms-embed-code--placeholder {
+        box-sizing: border-box;
+        padding: 2rem 1rem;
+        background: var(--cms-placeholder-background);
+        font-size: 0.875em;
+        text-align: center;
+    }
+
     /* Products and Taxons: a grid of the shop's product cards or of taxon tiles, as many to a row as fit at
        --cms-grid-item-min-width. A row that isn't full keeps its cards at the width of a full row's */
     .cms-products--grid,

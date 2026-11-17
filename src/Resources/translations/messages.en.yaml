@@ -13,6 +13,7 @@ setono_sylius_cms:
         column: Column
         columns: Columns
         downloads: Downloads
+        embed_code: Embed code
         first_match: First match
         group: Group
         heading: Heading
@@ -98,6 +99,9 @@ setono_sylius_cms:
         downloads:
             documents: Documents
             heading: Heading
+        embed_code:
+            code: Code
+            code_help: 'HTML, scripts included, such as a review widget or a newsletter form. It runs in the shop as it is, but not in the builder''s preview.'
         group:
             full_width: Full width
         heading:
@@ -185,6 +189,7 @@ setono_sylius_cms:
             unreadable: '%filename% couldn''t be read as a %type% file.'
     # What the builder's preview shows editors and shoppers don't see
     preview:
+        embed_code: 'Embed code runs in the shop, not in the builder''s preview.'
         unresolved_link: '%field% isn''t shown here: what it links to isn''t visible in this channel and locale, or was deleted.'
         unresolved_rich_text_link: 'A link in %field% shows as plain text here: what it links to isn''t visible in this channel and locale, or was deleted.'
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
