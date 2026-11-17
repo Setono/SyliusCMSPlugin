@@ -18,27 +18,28 @@
 
         <!--
         The shipped sources. A source is a service carrying #[AsSource], which autoconfiguration tags
-        setono_sylius_cms.source, and RegisterSourcesPass hands to the registry by code. The builder offers them in the
-        order they're defined in, so the shipped ones come first, in this order
+        setono_sylius_cms.source, and RegisterSourcesPass hands to the registry by code. The builder offers them by their
+        tag's priority, so the shipped ones come first, in this order, and then a project's. The gaps leave room for the
+        shipped sources still to come: Bestsellers (50), Associations (30) and Same taxon (20)
         -->
         <service id="Setono\SyliusCMSPlugin\Source\Product\ProductsInTaxonSource" class="Setono\SyliusCMSPlugin\Source\Product\ProductsInTaxonSource">
             <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Source\Product\TaxonFilter"/>
             <argument>%sylius.model.channel_pricing.class%</argument>
 
-            <tag name="setono_sylius_cms.source"/>
+            <tag name="setono_sylius_cms.source" priority="60"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Source\Product\NewestProductsSource" class="Setono\SyliusCMSPlugin\Source\Product\NewestProductsSource">
             <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface"/>
 
-            <tag name="setono_sylius_cms.source"/>
+            <tag name="setono_sylius_cms.source" priority="40"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Source\Taxon\TaxonChildrenSource" class="Setono\SyliusCMSPlugin\Source\Taxon\TaxonChildrenSource">
             <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleTaxonsQueryInterface"/>
 
-            <tag name="setono_sylius_cms.source"/>
+            <tag name="setono_sylius_cms.source" priority="10"/>
         </service>
     </services>
 </container>

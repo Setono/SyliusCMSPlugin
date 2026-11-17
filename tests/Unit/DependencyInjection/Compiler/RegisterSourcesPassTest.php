@@ -8,6 +8,7 @@ use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractCompilerPassTestCase
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterSourcesPass;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistry;
 use Setono\SyliusCMSPlugin\Source\SourceInterface;
+use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\Clearance;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\InvalidCode;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\MissingParams;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\NotASource;
@@ -58,6 +59,26 @@ final class RegisterSourcesPassTest extends AbstractCompilerPassTestCase
             'on_sale' => new ServiceClosureArgument(new Reference('app.on_sale')),
             'product_taxons' => new ServiceClosureArgument(new Reference('app.product_taxons')),
         ], $this->locatorArgument());
+    }
+
+    /**
+     * A bundle's services are defined after an app's, so the shipped sources give their tag a priority to come first
+     *
+     * @test
+     */
+    public function it_orders_the_sources_by_their_tag_s_priority_and_else_as_they_are_defined(): void
+    {
+        $this->setSource('app.product_taxons', ProductTaxons::class);
+        $this->setSource('app.clearance', Clearance::class);
+        $this->setDefinition('app.on_sale', (new Definition(OnSale::class))->addTag('setono_sylius_cms.source', ['priority' => 10]));
+
+        $this->compile();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(SourceRegistry::class, 0, [
+            'on_sale' => OnSale::class,
+            'product_taxons' => ProductTaxons::class,
+            'clearance' => Clearance::class,
+        ]);
     }
 
     /**

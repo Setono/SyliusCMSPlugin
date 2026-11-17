@@ -15,9 +15,10 @@ use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * Hands the services carrying #[AsSource], which autoconfiguration tags, to the source registry, by code, in the order
- * they're defined in, which is the order the builder offers them in. Two sources with the same code fail the container
- * build, and so does a source that doesn't implement SourceInterface, that lists a class that doesn't exist or whose
- * parameters class doesn't exist. See "Sources" in docs/spec/extending.md
+ * the builder offers them in: by their tag's priority, highest first, which puts the shipped ones before a project's,
+ * and else in the order they're defined in. Two sources with the same code fail the container build, and so does a
+ * source that doesn't implement SourceInterface, that lists a class that doesn't exist or whose parameters class
+ * doesn't exist. See "Sources" in docs/spec/extending.md
  */
 final class RegisterSourcesPass implements CompilerPassInterface
 {
@@ -35,7 +36,7 @@ final class RegisterSourcesPass implements CompilerPassInterface
         /** @var array<string, Reference> $sources */
         $sources = [];
 
-        foreach (TaggedClasses::of($container, self::TAG, 'source') as $id => $class) {
+        foreach (TaggedClasses::byPriority($container, self::TAG, 'source') as $id => $class) {
             $attribute = AttributeReader::source($class) ?? throw new \LogicException(sprintf('The service "%s" is tagged "%s", but its class %s has no #[AsSource]', $id, self::TAG, $class));
             $code = $attribute->code;
 

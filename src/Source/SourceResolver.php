@@ -39,17 +39,19 @@ final readonly class SourceResolver
     /**
      * The references its parameter values hold, or none for a source the code no longer has
      *
+     * @param array<array-key, mixed> $params the stored parameter values, by field name
+     *
      * @return list<Reference>
      */
-    public function references(StoredSource $stored): array
+    public function references(string $code, array $params): array
     {
-        if (!$this->sources->has($stored->code)) {
+        if (!$this->sources->has($code)) {
             return [];
         }
 
         $references = [];
-        foreach ($this->sources->get($stored->code)->fields as $name => $field) {
-            $value = $stored->params[$name] ?? null;
+        foreach ($this->sources->get($code)->fields as $name => $field) {
+            $value = $params[$name] ?? null;
             if (null !== $value) {
                 $references = [...$references, ...$this->fieldHandlers->get($field->field)->references($field->field, $value)];
             }
@@ -62,17 +64,18 @@ final readonly class SourceResolver
      * The source's adapter, with its parameters hydrated from the references in the context, or an empty one when it
      * yields nothing
      *
+     * @param array<array-key, mixed> $params the stored parameter values, by field name
      * @param class-string|null $of what the list lists, such as ProductInterface::class, or null for anything
      *
      * @return AdapterInterface<object>
      */
-    public function resolve(StoredSource $stored, ?string $of, HydrationContext $context): AdapterInterface
+    public function resolve(string $code, array $params, ?string $of, HydrationContext $context): AdapterInterface
     {
-        if (!$this->sources->has($stored->code)) {
+        if (!$this->sources->has($code)) {
             return new ArrayAdapter([]);
         }
 
-        $source = $this->sources->get($stored->code);
+        $source = $this->sources->get($code);
         if (null !== $of && !$source->lists($of)) {
             return new ArrayAdapter([]);
         }
@@ -83,27 +86,28 @@ final readonly class SourceResolver
             }
         }
 
-        return $source->source->resolve($this->paramsHydrator->hydrate($source->params, $source->fields, $stored->params, $context), $context->renderContext);
+        return $source->source->resolve($this->paramsHydrator->hydrate($source->params, $source->fields, $params, $context), $context->renderContext);
     }
 
     /**
      * Adds a violation for a source the code no longer has, one that lists something else than $of, a required
      * parameter that's missing, and a parameter its field type refuses. A disabled source is fine
      *
+     * @param array<array-key, mixed> $params the stored parameter values, by field name
      * @param class-string $of
      */
-    public function validate(StoredSource $stored, string $of, ExecutionContextInterface $context): void
+    public function validate(string $code, array $params, string $of, ExecutionContextInterface $context): void
     {
-        if (!$this->sources->has($stored->code)) {
+        if (!$this->sources->has($code)) {
             $context->buildViolation('setono_sylius_cms.field.unknown_source')
-                ->setParameter('{{ source }}', $stored->code)
+                ->setParameter('{{ source }}', $code)
                 ->addViolation()
             ;
 
             return;
         }
 
-        $source = $this->sources->get($stored->code);
+        $source = $this->sources->get($code);
         if (!$source->lists($of)) {
             $context->buildViolation('setono_sylius_cms.field.source_of_another_kind')
                 ->setParameter('{{ source }}', $this->translator->trans($source->label))
@@ -113,11 +117,11 @@ final readonly class SourceResolver
             return;
         }
 
-        $this->validateParams($source, $stored->params, $context);
+        $this->validateParams($source, $params, $context);
     }
 
     /**
-     * @param array<string, mixed> $params
+     * @param array<array-key, mixed> $params
      */
     private function validateParams(SourceMetadata $source, array $params, ExecutionContextInterface $context): void
     {

@@ -84,7 +84,7 @@ final readonly class ListFieldHandler implements FitCheckingFieldHandlerInterfac
         $resolver = $this->sourceResolver;
         $of = $field->itemClass();
 
-        return ItemList::lazy(static fn () => $resolver->resolve($stored, $of, $context), $stored->limit);
+        return ItemList::lazy(static fn () => $resolver->resolve($stored->code, $stored->params, $of, $context), $stored->limit);
     }
 
     /**
@@ -106,7 +106,7 @@ final readonly class ListFieldHandler implements FitCheckingFieldHandlerInterfac
 
         $stored = StoredSource::fromValue($value);
 
-        return null === $stored ? [] : $this->sourceResolver->references($stored);
+        return null === $stored ? [] : $this->sourceResolver->references($stored->code, $stored->params);
     }
 
     public function validate(Field $field, mixed $value, ExecutionContextInterface $context): void
@@ -125,7 +125,7 @@ final readonly class ListFieldHandler implements FitCheckingFieldHandlerInterfac
                 return;
             }
 
-            $this->sourceResolver->validate($stored, $field->itemClass(), $context);
+            $this->sourceResolver->validate($stored->code, $stored->params, $field->itemClass(), $context);
 
             return;
         }

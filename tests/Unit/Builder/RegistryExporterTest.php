@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Condition\ConditionKindInterface;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\DateTimeHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\TaxonHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Media\MediaTypes;
@@ -28,9 +29,13 @@ use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
+use Setono\SyliusCMSPlugin\Tests\Support\Sources;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\OpeningHoursHandler;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Store;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Titled;
+use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\Clearance;
+use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
+use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\ProductTaxons;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Standard;
@@ -352,6 +357,50 @@ final class RegistryExporterTest extends TestCase
     }
 
     /**
+     * The "Filled by" select offers them, with their parameters filled in inline. A disabled source isn't offered, and
+     * the lists it fills already keep resolving through it. See "Sources" in docs/spec/builder.md
+     *
+     * @test
+     */
+    public function it_exports_the_sources_editors_may_pick_with_their_parameters_as_shared_fields_but_not_a_disabled_one(): void
+    {
+        self::assertSame([
+            [
+                'code' => 'on_sale',
+                'label' => '[app.source.on_sale]',
+                'needs' => [],
+                'fields' => [
+                    [
+                        'name' => 'taxon',
+                        'schema' => [
+                            'type' => 'string',
+                            'minLength' => 1,
+                            'x-cms-type' => 'taxon',
+                            'x-cms-label' => '[app.source.on_sale.taxon]',
+                            'x-cms-help' => null,
+                            'x-cms-required' => true,
+                            'x-cms-translatable' => false,
+                        ],
+                    ],
+                    [
+                        'name' => 'onlyNew',
+                        'schema' => [
+                            'type' => 'boolean',
+                            'default' => false,
+                            'x-cms-type' => 'toggle',
+                            'x-cms-label' => '[app.source.on_sale.only_new]',
+                            'x-cms-help' => null,
+                            'x-cms-required' => false,
+                            'x-cms-translatable' => false,
+                        ],
+                    ],
+                ],
+            ],
+            ['code' => 'product_taxons', 'label' => '[app.source.product_taxons]', 'needs' => ['product'], 'fields' => []],
+        ], $this->exporter()->export()['sources']);
+    }
+
+    /**
      * @param list<string> $disabled
      * @param array<string, array<string, array{label: string, class: string}>> $styles
      * @param array<string, class-string> $blockTypes block types besides the shipped Columns, Column and Heading
@@ -383,6 +432,7 @@ final class RegistryExporterTest extends TestCase
             OpeningHoursHandler::class => static fn (): OpeningHoursHandler => new OpeningHoursHandler(),
             DateTimeHandler::class => static fn (): DateTimeHandler => new DateTimeHandler(),
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
+            TaxonHandler::class => static fn (): TaxonHandler => new TaxonHandler(),
         ]));
 
         $blockTypes = new BlockTypeRegistry(['columns' => Columns::class, 'column' => Column::class, 'heading' => Heading::class] + $blockTypes, new FieldReader(), $disabled, $styles);
@@ -404,6 +454,7 @@ final class RegistryExporterTest extends TestCase
             new UploadLimit(2 * 1024 * 1024, 8 * 1024 * 1024),
             new MediaTypes(['image' => ['image/jpeg', 'image/png'], 'document' => ['application/pdf']]),
             Links::registry(),
+            Sources::registry(['on_sale' => new OnSale(), 'clearance' => new Clearance(), 'product_taxons' => new ProductTaxons()], ['clearance']),
         );
     }
 }

@@ -22,13 +22,15 @@ use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\LinkTargetMetadata;
 use Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\NestingRulesInterface;
+use Setono\SyliusCMSPlugin\Registry\SourceMetadata;
+use Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface;
 use Symfony\Component\Translation\TranslatorBagInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * What the builder's registry endpoint answers: the block types with their field schemas, nesting rules and block styles,
  * what the top level of each content type may hold, the layouts editors can pick for it with their field schemas, the
- * condition kinds with their parameters' field schemas, the link targets, the effective upload limit with the MIME types
+ * condition kinds with their parameters' field schemas, the link targets, the sources editors may pick with their parameters' field schemas, the effective upload limit with the MIME types
  * of each kind of media item, and the UI strings, translated in the current locale, which in the admin is the admin user's locale. The
  * shape is internal to the builder
  */
@@ -48,11 +50,12 @@ final readonly class RegistryExporter
         private UploadLimit $uploadLimit,
         private MediaTypes $mediaTypes,
         private LinkTargetRegistryInterface $linkTargets,
+        private ?SourceRegistryInterface $sources = null,
     ) {
     }
 
     /**
-     * @return array{blockTypes: list<array<string, mixed>>, contentTypes: list<array<string, mixed>>, conditionKinds: list<array<string, mixed>>, linkTargets: list<array{code: string, label: string, translatableRef: bool}>, media: array{maxUploadSize: int, types: array<string, list<string>>}, strings: array<string, string>}
+     * @return array{blockTypes: list<array<string, mixed>>, contentTypes: list<array<string, mixed>>, conditionKinds: list<array<string, mixed>>, linkTargets: list<array{code: string, label: string, translatableRef: bool}>, sources: list<array<string, mixed>>, media: array{maxUploadSize: int, types: array<string, list<string>>}, strings: array<string, string>}
      */
     public function export(): array
     {
@@ -66,6 +69,8 @@ final readonly class RegistryExporter
                 'label' => $this->translator->trans($target->label),
                 'translatableRef' => $target->translatableRef,
             ], $this->linkTargets->all()),
+            // In the order the "Filled by" select offers them, after Hand-picked. Each list field's schema names those it offers
+            'sources' => $this->sources(),
             'media' => $this->media(),
             'strings' => (new UiStrings($this->translator, $this->catalogues))->withPrefix(self::STRINGS_PREFIX),
         ];
@@ -159,6 +164,39 @@ final readonly class RegistryExporter
                 $conditionKind->fields,
             )),
         ];
+    }
+
+    /**
+     * The sources editors may pick, whose parameters the builder renders as fields shared by all translations. A
+     * disabled one is left out: the lists it fills already keep resolving through it, but editors aren't offered it
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function sources(): array
+    {
+        $sources = array_filter($this->sources?->all() ?? [], static fn (SourceMetadata $source): bool => !$source->disabled);
+
+        return array_values(array_map(fn (SourceMetadata $source): array => [
+            'code' => $source->code,
+            'label' => $this->translator->trans($source->label),
+            'needs' => $source->needs,
+            'fields' => $this->sharedFields($source->fields),
+        ], $sources));
+    }
+
+    /**
+     * Parameter fields, shared by all translations whatever their field type's default
+     *
+     * @param array<string, FieldMetadata> $fields
+     *
+     * @return list<array{name: string, schema: array<string, mixed>}>
+     */
+    private function sharedFields(array $fields): array
+    {
+        return array_values(array_map(
+            fn (FieldMetadata $field): array => ['name' => $field->name, 'schema' => array_replace($this->schema($field), ['x-cms-translatable' => false])],
+            $fields,
+        ));
     }
 
     /**
