@@ -19,4 +19,16 @@ interface VisibleEntriesQueryInterface
      * audience. Root alias "entry". No ORDER BY
      */
     public function createQueryBuilder(string $contentType, RenderContext $context): QueryBuilder;
+
+    /**
+     * Why each of these entries of one content type isn't visible in the render context: the first rule it fails, from
+     * the rules createQueryBuilder() filters on, read with one query. Such as for the profiler panel, which says why a
+     * placement's snippet doesn't show
+     *
+     * @param list<string> $uuids
+     *
+     * @return array<string, NotVisibleReason> by UUID, leaving out the visible entries, and the UUIDs no entry of the
+     *                                         content type has
+     */
+    public function whyNotVisible(string $contentType, array $uuids, RenderContext $context): array;
 }
