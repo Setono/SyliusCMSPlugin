@@ -643,7 +643,7 @@ Every event that changes shopper output implements `StorefrontChangedInterface`,
 | `cms_slot(id, context = {})` | safe HTML | Renders a slot from a template, passing host-page context by key ([Slots](slots.md#rendering-a-slot)). |
 | `cms_image(media, options = {})` | safe HTML | Renders an image media item ([Media](media.md#the-image-helper)). |
 | `cms_link(link)` | `?ResolvedLink` | Resolves a `Link` value. `null` means don't render the link. |
-| `cms_url(entry)` | `?string` | An entry's URL in the current channel and locale, or `null` when it has none or isn't visible. |
+| `cms_url(entry)` | `?string` | An entry's URL in the current channel and locale, or `null` when it has none or isn't visible. Given a taxon, its product listing's URL, as the `taxon` link target builds it, or `null` without a translation in the locale. |
 | `cms_head_tags(entry)` | safe HTML | Prints the meta and link tags of an entry shown at its own URL or as a homepage, for the shop layout's `metatags` block: the meta description, robots, the canonical link and the hreflang links ([URLs and SEO](urls-and-seo.md#head-tags)). A tag added later reaches every layout that calls it. |
 | `cms_meta_title(entry)` | `string` | The title text of an entry shown at its own URL or as a homepage, for the shop layout's `title` block: the meta title, or else the title, each through the fallback chain. |
 | `cms_preview_mode()` | `?string` | `builder` in the builder's preview, `share` on a share link, otherwise `null`. Themes use it to leave out analytics and other tracking ([Rendering](rendering.md#preview-mode-and-share-links)). |

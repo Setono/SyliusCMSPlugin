@@ -66,6 +66,8 @@ use Twig\Loader\ChainLoader;
 use Twig\Loader\FilesystemLoader;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\Test\IntegrationTestCase;
+use Setono\SyliusCMSPlugin\Link\Target\TaxonLinkTarget;
+use Sylius\Component\Core\Model\Taxon;
 
 /**
  * Runs the .test files in Fixture, one directory per function. Twig evaluates their --DATA-- sections inside this
@@ -141,7 +143,9 @@ final class CMSExtensionTest extends IntegrationTestCase
         $contentTypes = new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]);
         $shopRoutes = new RouteCollection();
         $shopRoutes->add('setono_sylius_cms_shop_entry', new Route('/{_locale}/{path}', requirements: ['path' => '.+(?<!/)']));
-        $canonicalUrls = new CanonicalUrlGenerator($contentTypes, new UrlGenerator($shopRoutes, new RequestContext(host: 'shop.example', scheme: 'https')));
+        $shopRoutes->add('sylius_shop_product_index', new Route('/{_locale}/taxons/{slug}', requirements: ['slug' => '.+(?<!/)']));
+        $shopUrls = new UrlGenerator($shopRoutes, new RequestContext(host: 'shop.example', scheme: 'https'));
+        $canonicalUrls = new CanonicalUrlGenerator($contentTypes, $shopUrls);
         $runtimes = new FactoryRuntimeLoader([
             CMSRuntime::class => fn (): CMSRuntime => new CMSRuntime(
                 new TwigBlockRenderer($blockTwig, $blockTypes),
@@ -156,6 +160,7 @@ final class CMSExtensionTest extends IntegrationTestCase
             ),
             LinkRuntime::class => fn (): LinkRuntime => new LinkRuntime(
                 new EntryLinkTarget($this->visibleEntries(), $canonicalUrls, $this->prophesize(SearchInterface::class)->reveal()),
+                new TaxonLinkTarget($this->prophesize(ReferenceTypeLoaderInterface::class)->reveal(), $shopUrls, $this->prophesize(SearchInterface::class)->reveal()),
                 new RenderContexts($this->shopRenderContext()),
             ),
         ]);
@@ -383,6 +388,24 @@ final class CMSExtensionTest extends IntegrationTestCase
         }
 
         return $page;
+    }
+
+    /**
+     * A taxon with these names and slugs
+     *
+     * @param array<string, array{string, string}> $translations name and slug by locale
+     */
+    public function taxon(array $translations): Taxon
+    {
+        $taxon = new Taxon();
+        $taxon->setCode('T_SHIRTS');
+        foreach ($translations as $locale => [$name, $slug]) {
+            $taxon->setCurrentLocale($locale);
+            $taxon->setName($name);
+            $taxon->setSlug($slug);
+        }
+
+        return $taxon;
     }
 
     public function notABlock(): NotABlock

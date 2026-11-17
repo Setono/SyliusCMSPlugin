@@ -88,7 +88,7 @@ final class ProductsAndTaxonsTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $links = $crawler->filter('.cms-tree > .cms-taxons > .cms-taxons__item');
         self::assertSame(
-            [['Mugs', '/en_US/taxons/mugs', null], ['T-shirts', '/en_US/taxons/t-shirts', 'http://localhost/media/cache/resolve/sylius_shop_product_thumbnail/ab/cd/t-shirts.jpg']],
+            [['Mugs', 'http://localhost/en_US/taxons/mugs', null], ['T-shirts', 'http://localhost/en_US/taxons/t-shirts', 'http://localhost/media/cache/resolve/sylius_shop_product_thumbnail/ab/cd/t-shirts.jpg']],
             $links->each(static fn (Crawler $link): array => [
                 $link->filter('.cms-taxons__name')->text(),
                 $link->attr('href'),
