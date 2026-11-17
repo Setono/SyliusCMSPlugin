@@ -89,6 +89,52 @@ final class OverviewTest extends WebTestCase
         self::assertSame('No scheduled publishes, and no date windows that start or end.', $panel->filter('p')->text());
     }
 
+    /**
+     * @test
+     */
+    public function it_lists_the_entries_with_unpublished_changes_under_drafts_in_progress_the_one_edited_last_first(): void
+    {
+        $client = self::signedInClient();
+        $older = self::createPage('Older', 'older', published: true);
+        $newer = self::createPage('Newer', 'newer', published: true);
+        self::mockTime('2026-11-18 09:00:00');
+        self::saveChanges($older, [['op' => 'set_entry_value', 'field' => 'title', 'locale' => 'en_US', 'value' => 'Older, edited']]);
+        self::mockTime('2026-11-19 16:30:00');
+        self::saveChanges($newer, [['op' => 'set_entry_value', 'field' => 'title', 'locale' => 'en_US', 'value' => 'Newer, edited']]);
+        // Neither one without changes since its publish, nor one never published, has a draft
+        self::createPage('Published', 'published', published: true);
+        self::createPage('Never published', 'never-published');
+
+        $crawler = $client->request('GET', '/admin/cms');
+
+        $panel = $crawler->filter('[data-panel="drafts_in_progress"]');
+        self::assertSame('Drafts in progress', $panel->filter('h2')->text());
+        self::assertSame([
+            ['Newer, edited', sprintf('/admin/cms/entry/%s', $newer->getUuid()), 'Page · Last edited 2026-11-19 16:30 by John Doe'],
+            ['Older, edited', sprintf('/admin/cms/entry/%s', $older->getUuid()), 'Page · Last edited 2026-11-18 09:00 by John Doe'],
+        ], $panel->filter('[data-entry]')->each(static fn (Crawler $draft): array => [
+            $draft->filter('a')->text(),
+            $draft->filter('a')->attr('href'),
+            $draft->filter('.description')->text(),
+        ]));
+        self::assertSame('/admin/cms/entries?criteria%5Bstatus%5D=unpublished_changes', $panel->selectLink('All entries with unpublished changes')->attr('href'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_says_when_no_drafts_are_in_progress(): void
+    {
+        $client = self::signedInClient();
+        self::createPage('Never published', 'never-published');
+
+        $crawler = $client->request('GET', '/admin/cms');
+
+        $panel = $crawler->filter('[data-panel="drafts_in_progress"]');
+        self::assertCount(0, $panel->filter('[data-entry]'));
+        self::assertSame('No published entry has unpublished changes.', $panel->filter('p')->text());
+    }
+
     private static function pageWithDraft(string $title, string $slug): PageInterface
     {
         $page = self::createPage($title, $slug, 'Hello', published: true);

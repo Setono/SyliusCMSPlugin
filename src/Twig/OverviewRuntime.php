@@ -7,6 +7,8 @@ namespace Setono\SyliusCMSPlugin\Twig;
 use Setono\SyliusCMSPlugin\Admin\ComingUp;
 use Setono\SyliusCMSPlugin\Admin\ComingUpEvent;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Twig\Extension\RuntimeExtensionInterface;
 
 /**
@@ -17,9 +19,13 @@ use Twig\Extension\RuntimeExtensionInterface;
  */
 final readonly class OverviewRuntime implements RuntimeExtensionInterface
 {
+    /** How many entries Drafts in progress lists */
+    public const DRAFTS_IN_PROGRESS = 10;
+
     public function __construct(
         private ComingUp $comingUp,
         private EntryRows $entryRows,
+        private EntryRepositoryInterface $entries,
     ) {
     }
 
@@ -32,5 +38,18 @@ final readonly class OverviewRuntime implements RuntimeExtensionInterface
         $this->entryRows->load(array_map(static fn (ComingUpEvent $event) => $event->entry, $events));
 
         return $events;
+    }
+
+    /**
+     * The entries with unpublished changes, the one edited last first
+     *
+     * @return list<EntryInterface>
+     */
+    public function draftsInProgress(): array
+    {
+        $entries = $this->entries->findWithDraft(self::DRAFTS_IN_PROGRESS);
+        $this->entryRows->load($entries);
+
+        return $entries;
     }
 }

@@ -228,6 +228,7 @@ setono_sylius_cms:
         embed_title: Video
     ui:
         all_entries: All entries
+        all_unpublished_changes: All entries with unpublished changes
         any_channel: Any channel
         any_status: Any status
         audience:
@@ -256,6 +257,7 @@ setono_sylius_cms:
         date: Date
         discard_changes: Discard changes
         dismiss: Dismiss
+        drafts_in_progress: Drafts in progress
         error_count: '{0} No errors|{1} 1 error|]1,Inf[ %count% errors'
         fix_in_builder: Fix in builder
         fix_in_publishing: Go to Publishing
@@ -265,6 +267,7 @@ setono_sylius_cms:
         homepage_url: 'The homepage, where its own URL redirects in the channels it''s the homepage of'
         language: Language
         last_edited: Last edited
+        last_edited_at: 'Last edited %at%'
         last_published: 'Last published %date%'
         link: Link
         made_by: Made by
@@ -276,6 +279,7 @@ setono_sylius_cms:
         no_revisions: Every publish stores a revision, which you can preview and restore. There are none yet.
         no_share_links: Share the draft with anyone, as a link that shows it in the shop without signing in. There are none yet.
         no_urls: It has no URL yet, because it has no slug.
+        no_drafts_in_progress: No published entry has unpublished changes.
         nothing_coming_up: No scheduled publishes, and no date windows that start or end.
         now: Now
         old_urls: 'Redirects from:'

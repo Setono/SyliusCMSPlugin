@@ -171,6 +171,21 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         return $this->findByDateWindowBoundaryAfter('showUntil', $now, $limit);
     }
 
+    public function findWithDraft(int $limit): array
+    {
+        /** @var list<EntryInterface> $entries */
+        $entries = $this->createQueryBuilder('o')
+            ->andWhere(sprintf('EXISTS (SELECT cms_draft.id FROM %s cms_draft WHERE cms_draft.entry = o)', DraftInterface::class))
+            ->addOrderBy('o.lastEditedAt', 'DESC')
+            ->addOrderBy('o.id', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $entries;
+    }
+
     /**
      * The entries whose date window's start or end, $boundary, comes after $now, the first first. The columns hold UTC
      *

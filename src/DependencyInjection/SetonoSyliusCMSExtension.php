@@ -296,6 +296,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 'setono_sylius_cms.admin.overview.panels' => [
                     'blocks' => [
                         'coming_up' => $block('_coming_up', 30),
+                        'drafts_in_progress' => $block('_drafts_in_progress', 10),
                     ],
                 ],
             ],

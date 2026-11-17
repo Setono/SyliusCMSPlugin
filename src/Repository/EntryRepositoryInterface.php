@@ -76,6 +76,14 @@ interface EntryRepositoryInterface
     public function findEndingAfter(\DateTimeImmutable $now, int $limit): array;
 
     /**
+     * The entries with a draft, which are published entries with unpublished changes, the one edited last first, which
+     * the Overview's Drafts in progress lists
+     *
+     * @return list<EntryInterface>
+     */
+    public function findWithDraft(int $limit): array;
+
+    /**
      * The entries that may name one of the customer groups in their audience or in a customer group condition, in
      * their rows or their draft. As a draft is JSON, it's the entries whose rows or draft hold a code anywhere, which
      * can be more than those that name it
