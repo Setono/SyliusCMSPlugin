@@ -27,7 +27,7 @@
 /* Rendered in a portal at the end of the body, outside the shell, so it sets its own type and box model. */
 .popover {
     box-sizing: border-box;
-    width: 20rem;
+    width: var(--builder-popover-width);
     max-width: calc(100vw - 2 * var(--builder-space-2));
     max-height: min(24rem, var(--radix-popover-content-available-height));
     overflow-y: auto;
