@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Problem\Kind;
 
+use Setono\SyliusCMSPlugin\Binding\BoundValue;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\Fix;
@@ -79,10 +80,14 @@ final readonly class MisfitValue implements ProblemKindInterface
 
     /**
      * A translatable field's value that isn't a locale map doesn't fit, unless it's empty, and nor does a value its
-     * field type doesn't take
+     * field type doesn't take. A binding fits a field that can be bound, in its shape
      */
     private function doesNotFit(StoredValue $value): bool
     {
+        if (BoundValue::isBound($value->field, $value->value)) {
+            return null === BoundValue::of($value->field, $value->value);
+        }
+
         if ($value->isNotByLocale()) {
             return '' !== $value->value && [] !== $value->value;
         }

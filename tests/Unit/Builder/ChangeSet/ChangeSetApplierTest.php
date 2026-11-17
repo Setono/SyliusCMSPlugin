@@ -215,6 +215,47 @@ final class ChangeSetApplierTest extends TestCase
     }
 
     /**
+     * A binding is the whole value of a field that can be bound, also a translatable one. See "Field values" in
+     * docs/spec/content-model.md
+     *
+     * @test
+     */
+    public function it_sets_a_binding_as_a_translatable_field_s_whole_value_without_a_locale_and_removes_it_again(): void
+    {
+        $binding = ['$bind' => 'product.name', '$params' => [], '$fallback' => ['en_US' => 'this product']];
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1, fields: ['text' => ['en_US' => 'Hello']])]);
+
+        $tree = $this->apply($tree, new SetValue(self::A, 'text', null, $binding));
+        self::assertSame(['text' => $binding], $tree->blocks[0]->fields);
+
+        $tree = $this->apply($tree, new SetValue(self::A, 'text', null, null), new SetValue(self::A, 'text', 'da_DK', 'Hej'));
+        self::assertSame(['text' => ['da_DK' => 'Hej']], $tree->blocks[0]->fields);
+    }
+
+    /**
+     * @test
+     */
+    public function it_replaces_a_binding_with_a_value_set_in_a_locale(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1, fields: ['text' => ['$bind' => 'product.name', '$params' => [], '$fallback' => null]])]);
+
+        $tree = $this->apply($tree, new SetValue(self::A, 'text', 'en_US', 'Hello'));
+
+        self::assertSame(['text' => ['en_US' => 'Hello']], $tree->blocks[0]->fields);
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_translatable_value_without_a_locale_that_is_no_binding(): void
+    {
+        $this->expectException(InvalidChangeSetException::class);
+        $this->expectExceptionMessage('The field "text" is translatable, so a value needs a locale');
+
+        $this->apply(new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)]), new SetValue(self::A, 'text', null, ['en_US' => 'Hello']));
+    }
+
+    /**
      * @test
      */
     public function it_replaces_a_blocks_visibility_conditions_of_any_block_type(): void

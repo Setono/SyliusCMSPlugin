@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Builder\ChangeSet;
 
+use Setono\SyliusCMSPlugin\Binding\BoundValue;
+use Setono\SyliusCMSPlugin\Binding\StoredBinding;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\LinkLocaleParts;
 use Setono\SyliusCMSPlugin\Field\SanitizingFieldHandlerInterface;
@@ -413,6 +415,10 @@ final readonly class ChangeSetApplier
      */
     private function sanitizeStored(FieldMetadata $field, mixed $value): mixed
     {
+        if (BoundValue::isBound($field, $value)) {
+            return $this->sanitizeBinding($field, $value);
+        }
+
         if (!$field->translatable) {
             return $this->sanitize($field, $value);
         }
@@ -438,6 +444,11 @@ final readonly class ChangeSetApplier
             }
         }
 
+        // A binding is the whole value of a field that can be bound, which takes it, or null to unbind it, with no locale
+        if (null === $locale && BoundValue::isBindable($field) && (null === $value || StoredBinding::isBinding($value))) {
+            return [null, null === $value ? null : $this->sanitizeBinding($field, $value)];
+        }
+
         if ($field->translatable && null === $locale) {
             throw new InvalidChangeSetException(sprintf('The field "%s" is translatable, so a value needs a locale', $name));
         }
@@ -447,6 +458,24 @@ final readonly class ChangeSetApplier
         }
 
         return [$locale, null === $value ? null : $this->sanitize($field, $value)];
+    }
+
+    /**
+     * A binding with its fallback sanitised as the field's value would be. One of another shape is saved as it is,
+     * because invalid content saves: publish refuses it
+     */
+    private function sanitizeBinding(FieldMetadata $field, mixed $value): mixed
+    {
+        $binding = BoundValue::of($field, $value);
+        if (null === $binding || null === $binding->fallback) {
+            return $value;
+        }
+
+        $fallback = $field->translatable && is_array($binding->fallback)
+            ? array_map(fn (mixed $localized): mixed => $this->sanitize($field, $localized), $binding->fallback)
+            : $this->sanitize($field, $binding->fallback);
+
+        return (new StoredBinding($binding->property, $binding->params, $fallback))->toArray();
     }
 
     private function sanitize(FieldMetadata $field, mixed $value): mixed
