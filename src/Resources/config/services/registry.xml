@@ -41,6 +41,16 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistry"/>
 
+        <service id="Setono\SyliusCMSPlugin\Registry\SourceRegistry" class="Setono\SyliusCMSPlugin\Registry\SourceRegistry">
+            <!-- Replaced by RegisterSourcesPass with the source classes by code -->
+            <argument type="collection"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\FieldReader"/>
+            <!-- Replaced by RegisterSourcesPass with a locator of the sources by code -->
+            <argument type="collection"/>
+            <argument>%setono_sylius_cms.disabled.sources%</argument>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\SourceRegistry"/>
+
         <service id="Setono\SyliusCMSPlugin\Registry\NestingRules" class="Setono\SyliusCMSPlugin\Registry\NestingRules">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
