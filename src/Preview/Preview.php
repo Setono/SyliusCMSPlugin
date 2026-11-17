@@ -8,8 +8,9 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 
 /**
  * What the builder's preview shows: the edited entry, in a channel and a locale, to a shopper (Shown to) at a time
- * (Date). The sample object and the placement join it with their tickets. See "Preview mode" in docs/spec/builder.md
- * and "Shown to and Date" in docs/spec/targeting.md.
+ * (Date). A snippet shows in one of its placements, on the host page of a sample object, or on a plain page when it has
+ * no placement. See "Preview mode" and "Snippet preview" in docs/spec/builder.md and "Shown to and Date" in
+ * docs/spec/targeting.md.
  *
  * A preview of one of the entry's revisions shows the revision's content instead of the working copy, read-only.
  * A share link shows the entry's working copy read-only too, with the channel, locale, Shown to and Date it fixed when
@@ -23,6 +24,8 @@ final readonly class Preview
      *                             "@no_group", or null for the shopper's own
      * @param \DateTimeImmutable|null $date the time it shows the page at, or null for now
      * @param bool $shared whether a share link shows it, rather than the builder
+     * @param string|null $placementUuid the placement a snippet shows in, or null for a plain page
+     * @param SampleObject|null $sample the host-page object a snippet shows with, or null for none
      */
     public function __construct(
         public string $entryUuid,
@@ -32,6 +35,8 @@ final readonly class Preview
         public ?string $shownTo = null,
         public ?\DateTimeImmutable $date = null,
         public bool $shared = false,
+        public ?string $placementUuid = null,
+        public ?SampleObject $sample = null,
     ) {
     }
 

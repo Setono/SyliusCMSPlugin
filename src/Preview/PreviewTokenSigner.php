@@ -37,6 +37,8 @@ final readonly class PreviewTokenSigner
             'revision' => $preview->revisionId,
             'shownTo' => $preview->shownTo,
             'date' => $preview->date?->getTimestamp(),
+            'placement' => $preview->placementUuid,
+            'sample' => null === $preview->sample ? null : [$preview->sample->key, $preview->sample->ref],
             'expires' => $this->clock->now()->getTimestamp() + self::LIFETIME,
         ], \JSON_THROW_ON_ERROR));
 
@@ -65,11 +67,36 @@ final readonly class PreviewTokenSigner
             return null;
         }
 
+        $placement = $data['placement'] ?? null;
+        $sample = $data['sample'] ?? null;
+        if ((null !== $placement && !is_string($placement)) || (null !== $sample && !self::isSample($sample))) {
+            return null;
+        }
+
         if ($this->clock->now()->getTimestamp() >= $data['expires']) {
             return null;
         }
 
-        return new Preview($data['entry'], $data['channel'], $data['locale'], $revision, $shownTo, null === $date ? null : new \DateTimeImmutable('@' . $date));
+        return new Preview(
+            $data['entry'],
+            $data['channel'],
+            $data['locale'],
+            $revision,
+            $shownTo,
+            null === $date ? null : new \DateTimeImmutable('@' . $date),
+            placementUuid: $placement,
+            sample: null === $sample ? null : new SampleObject($sample[0], $sample[1]),
+        );
+    }
+
+    /**
+     * A sample object is signed as its context key and its ref
+     *
+     * @phpstan-assert-if-true array{string, string} $value
+     */
+    private static function isSample(mixed $value): bool
+    {
+        return is_array($value) && 2 === count($value) && is_string($value[0] ?? null) && is_string($value[1] ?? null);
     }
 
     private function signature(string $payload): string

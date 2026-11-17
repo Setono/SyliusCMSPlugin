@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Preview;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
+use Setono\SyliusCMSPlugin\Preview\SampleObject;
 use Symfony\Component\Clock\MockClock;
 
 final class PreviewTokenSignerTest extends TestCase
@@ -62,6 +63,36 @@ final class PreviewTokenSignerTest extends TestCase
         self::assertSame('wholesale', $preview->shownTo);
         self::assertEquals($date, $preview->date);
         self::assertSame('2026-12-01T09:30:00+00:00', $preview->date?->format(\DATE_ATOM));
+    }
+
+    /**
+     * A snippet's preview shows it in one of its placements, on the page of a sample object. See "Preview mode" in
+     * docs/spec/builder.md
+     *
+     * @test
+     */
+    public function it_verifies_a_token_with_a_placement_and_a_sample_object_it_signed(): void
+    {
+        $signer = $this->signer();
+
+        $preview = $signer->verify($signer->sign(new Preview(self::ENTRY, 'WEB', 'en_US', placementUuid: '0193a5be-0000-7000-8000-0000000000c1', sample: new SampleObject('product', 'T_SHIRT'))));
+
+        self::assertNotNull($preview);
+        self::assertSame('0193a5be-0000-7000-8000-0000000000c1', $preview->placementUuid);
+        self::assertEquals(new SampleObject('product', 'T_SHIRT'), $preview->sample);
+    }
+
+    /**
+     * @test
+     */
+    public function it_verifies_a_token_without_a_placement_or_a_sample_object(): void
+    {
+        $signer = $this->signer();
+
+        $preview = $signer->verify($signer->sign(new Preview(self::ENTRY, 'WEB', 'en_US')));
+
+        self::assertNull($preview?->placementUuid);
+        self::assertNull($preview?->sample);
     }
 
     /**
@@ -190,6 +221,10 @@ final class PreviewTokenSignerTest extends TestCase
         yield 'revision not a number' => [sprintf('{"entry":"%s","channel":"WEB","locale":"en_US","revision":"42","expires":%d}', self::ENTRY, $expires)];
         yield 'shown to not a string' => [sprintf('{"entry":"%s","channel":"WEB","locale":"en_US","shownTo":1,"expires":%d}', self::ENTRY, $expires)];
         yield 'date not a number' => [sprintf('{"entry":"%s","channel":"WEB","locale":"en_US","date":"2026-12-01T09:30:00Z","expires":%d}', self::ENTRY, $expires)];
+        yield 'placement not a string' => [sprintf('{"entry":"%s","channel":"WEB","locale":"en_US","placement":1,"expires":%d}', self::ENTRY, $expires)];
+        yield 'sample not a pair' => [sprintf('{"entry":"%s","channel":"WEB","locale":"en_US","sample":"T_SHIRT","expires":%d}', self::ENTRY, $expires)];
+        yield 'sample without a ref' => [sprintf('{"entry":"%s","channel":"WEB","locale":"en_US","sample":["product"],"expires":%d}', self::ENTRY, $expires)];
+        yield 'sample ref not a string' => [sprintf('{"entry":"%s","channel":"WEB","locale":"en_US","sample":["product",1],"expires":%d}', self::ENTRY, $expires)];
     }
 
     /**
