@@ -62,6 +62,20 @@ interface EntryRepositoryInterface
     public function countEntries(?string $contentType = null): int;
 
     /**
+     * The entries whose date window starts after $now, the first to start first, which the Overview's Coming up lists
+     *
+     * @return list<EntryInterface>
+     */
+    public function findStartingAfter(\DateTimeImmutable $now, int $limit): array;
+
+    /**
+     * The entries whose date window ends after $now, the first to end first, which the Overview's Coming up lists
+     *
+     * @return list<EntryInterface>
+     */
+    public function findEndingAfter(\DateTimeImmutable $now, int $limit): array;
+
+    /**
      * The entries that may name one of the customer groups in their audience or in a customer group condition, in
      * their rows or their draft. As a draft is JSON, it's the entries whose rows or draft hold a code anywhere, which
      * can be more than those that name it

@@ -132,6 +132,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     {
         $this->prependGrids($container);
         $this->prependEntryOverviewEvents($container);
+        $this->prependOverviewEvents($container);
         $this->prependProblems($container);
         $this->prependMessenger($container);
 
@@ -270,6 +271,31 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                         'share_links' => $block('_share_links', 50),
                         'urls' => $block('_urls', 40),
                         'translations' => $block('_translations', 20),
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * The Overview, the Content hub's home, is built from the Sylius template event
+     * setono_sylius_cms.admin.overview.panels, whose blocks are its panels in the spec's order, which the priorities
+     * leave room in: needs_attention (40), coming_up (30), translations (20) and drafts_in_progress (10). A panel reads
+     * what it shows itself, through a cms_admin_* function, and projects add, reorder or switch off panels in their own
+     * sylius_ui config. See "Overview" in docs/spec/admin.md
+     */
+    private function prependOverviewEvents(ContainerBuilder $container): void
+    {
+        $block = static fn (string $template, int $priority): array => [
+            'template' => sprintf('@SetonoSyliusCMSPlugin/admin/overview/%s.html.twig', $template),
+            'priority' => $priority,
+        ];
+
+        $container->prependExtensionConfig('sylius_ui', [
+            'events' => [
+                'setono_sylius_cms.admin.overview.panels' => [
+                    'blocks' => [
+                        'coming_up' => $block('_coming_up', 30),
                     ],
                 ],
             ],

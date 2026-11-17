@@ -9,8 +9,9 @@ use Twig\TwigFunction;
 
 /**
  * The functions the CMS admin's own templates use, such as the field templates of the entry lists' grids and the
- * sections of the entry overview page. They're internal to those templates, unlike the cms_* functions of the spec.
- * Their logic is in AdminRuntime and EntryOverviewRuntime, which Twig builds only when a template calls one
+ * sections of the entry overview page and the panels of the Overview. They're internal to those templates, unlike the
+ * cms_* functions of the spec. Their logic is in AdminRuntime, EntryOverviewRuntime and OverviewRuntime, which Twig
+ * builds only when a template calls one
  *
  * @internal
  */
@@ -31,6 +32,7 @@ final class AdminExtension extends AbstractExtension
             new TwigFunction('cms_admin_content_type', [AdminRuntime::class, 'contentType']),
             new TwigFunction('cms_admin_content_types', [AdminRuntime::class, 'contentTypes']),
             new TwigFunction('cms_admin_customer_group_names', [AdminRuntime::class, 'customerGroupNames']),
+            new TwigFunction('cms_admin_coming_up', [OverviewRuntime::class, 'comingUp']),
         ];
     }
 }

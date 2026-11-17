@@ -22,4 +22,12 @@ interface ScheduledPublishRepositoryInterface
      * @return list<ScheduledPublishInterface>
      */
     public function findByEntries(array $entries): array;
+
+    /**
+     * The scheduled publishes that wait and aren't overdue at $now, earliest first, with their entries, which the
+     * Overview's Coming up lists. A failed or overdue one needs attention instead
+     *
+     * @return list<ScheduledPublishInterface>
+     */
+    public function findComingUp(\DateTimeImmutable $now, int $limit): array;
 }

@@ -1,0 +1,31 @@
+{#
+ # The Overview's Coming up, a block of setono_sylius_cms.admin.overview.panels: the scheduled publishes that wait, and
+ # the date windows that start or end, in time order, each with its entry, which links to the entry's overview page.
+ # See "Overview" in docs/spec/admin.md
+ #}
+{% set events = cms_admin_coming_up() %}
+<div class="column">
+    <section class="ui segment" data-panel="coming_up" aria-labelledby="cms-panel-coming-up">
+        <h2 class="ui dividing header" id="cms-panel-coming-up">{{ 'setono_sylius_cms.ui.coming_up'|trans }}</h2>
+
+        {% if events is empty %}
+            <p>{{ 'setono_sylius_cms.ui.nothing_coming_up'|trans }}</p>
+        {% else %}
+            <div class="ui divided relaxed list">
+                {% for event in events %}
+                    {% set row = cms_admin_entry_row(event.entry) %}
+                    <div class="item" data-event="{{ event.kind.value }}" data-entry="{{ event.entry.uuid }}">
+                        <div class="right floated content">
+                            <time datetime="{{ event.at|date('c') }}">{{ event.at|date('Y-m-d H:i') }}</time>
+                        </div>
+                        <i class="{{ event.kind.value == 'publishes' ? 'clock outline' : (event.kind.value == 'starts' ? 'eye' : 'eye slash') }} icon" aria-hidden="true"></i>
+                        <div class="content">
+                            <a class="header" href="{{ path('setono_sylius_cms_admin_entry_show', {'uuid': event.entry.uuid}) }}">{{ row.title|default('setono_sylius_cms.ui.untitled'|trans) }}</a>
+                            <div class="description">{{ ('setono_sylius_cms.ui.coming_up_event.' ~ event.kind.value)|trans }} · {{ row.contentType.label|trans }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </section>
+</div>

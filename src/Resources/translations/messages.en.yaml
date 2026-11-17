@@ -240,6 +240,12 @@ setono_sylius_cms:
         cancel_schedule: Cancel the schedule
         channel: Channel
         close: Close
+        coming_up: Coming up
+        # What happens to an entry in the Overview's Coming up
+        coming_up_event:
+            ends: Stops showing
+            publishes: Publishes
+            starts: Starts showing
         content: Content
         content_description: Pages and everything else shoppers read that isn't a product
         copied: Copied
@@ -270,11 +276,11 @@ setono_sylius_cms:
         no_revisions: Every publish stores a revision, which you can preview and restore. There are none yet.
         no_share_links: Share the draft with anyone, as a link that shows it in the shop without signing in. There are none yet.
         no_urls: It has no URL yet, because it has no slug.
+        nothing_coming_up: No scheduled publishes, and no date windows that start or end.
         now: Now
         old_urls: 'Redirects from:'
         open_in_builder: Open in builder
         other_content_type: Another content type
-        overview_placeholder: What needs attention, what's coming up, translations and drafts in progress will show here. Until then, find the entries in their lists.
         pick_content_type: What do you want to create?
         preview: Preview
         problem_severity:
