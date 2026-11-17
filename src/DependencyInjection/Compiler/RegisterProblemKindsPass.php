@@ -23,8 +23,8 @@ use Symfony\Component\DependencyInjection\Reference;
  * overview page reads every kind through, and those whose tag has `lint: true` to setono:cms:lint. The time-dependent
  * kinds go to the problem count provider, which finds their problems when it reads the counts, and the others to the
  * problem count updater, which stores theirs, with their classes to the fingerprint of what the counts depend on.
- * Those of them about references go to the problem count listener, with the classes they reference. A tag's
- * `priority` orders them. See "Problems" in docs/spec/admin.md
+ * Those of them about references go to the problem count listener, with the classes they reference and the fields
+ * they refer to them by. A tag's `priority` orders them. See "Problems" in docs/spec/admin.md
  */
 final class RegisterProblemKindsPass implements CompilerPassInterface
 {
@@ -70,11 +70,12 @@ final class RegisterProblemKindsPass implements CompilerPassInterface
 
         // What the kinds about references read is known now, so a flush is checked without building a kind
         if ($container->hasDefinition(ProblemCountListener::class)) {
-            $referenceKinds = $referencedClasses = [];
+            $referenceKinds = $referenceKindClasses = $referencedClasses = [];
             foreach ($stored as $kind) {
                 $class = $classes[(string) $kind];
                 if (is_a($class, ReferenceProblemKindInterface::class, true)) {
                     $referenceKinds[] = $kind;
+                    $referenceKindClasses[] = $class;
                     $referencedClasses = [...$referencedClasses, ...$class::getReferencedClasses()];
                 }
             }
@@ -82,8 +83,34 @@ final class RegisterProblemKindsPass implements CompilerPassInterface
             $container->getDefinition(ProblemCountListener::class)
                 ->setArgument(1, new IteratorArgument($referenceKinds))
                 ->setArgument(2, array_values(array_unique($referencedClasses)))
+                ->setArgument(3, self::referenceFields($referenceKindClasses))
             ;
         }
+    }
+
+    /**
+     * The referenced classes that every kind about them refers to by a field, with those fields, so a write of one that
+     * neither deletes it nor changes a field counts nothing. A class any kind reads every write of is left out
+     *
+     * @param list<class-string<ReferenceProblemKindInterface>> $kinds
+     *
+     * @return array<class-string, list<string>>
+     */
+    private static function referenceFields(array $kinds): array
+    {
+        /** @var array<class-string, list<string>|null> $fields null for a class whose every write counts */
+        $fields = [];
+        foreach ($kinds as $kind) {
+            $byClass = $kind::getReferenceFields();
+            foreach ($kind::getReferencedClasses() as $class) {
+                $field = $byClass[$class] ?? null;
+                $fields[$class] = null === $field || (array_key_exists($class, $fields) && null === $fields[$class])
+                    ? null
+                    : array_values(array_unique([...$fields[$class] ?? [], $field]));
+            }
+        }
+
+        return array_filter($fields, static fn (?array $classFields): bool => null !== $classFields);
     }
 
     /**

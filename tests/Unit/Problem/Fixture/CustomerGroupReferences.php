@@ -29,7 +29,12 @@ final class CustomerGroupReferences implements ReferenceProblemKindInterface
         return [CustomerGroupInterface::class];
     }
 
-    public function findEntriesReferencing(array $referenced): iterable
+    public static function getReferenceFields(): array
+    {
+        return [];
+    }
+
+    public function findEntriesReferencing(array $referenced, array $formerValues = []): iterable
     {
         $this->asked[] = $referenced;
 

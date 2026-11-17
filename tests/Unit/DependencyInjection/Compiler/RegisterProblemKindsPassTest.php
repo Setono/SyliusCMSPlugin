@@ -18,8 +18,10 @@ use Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\ChannelAndTaxonReferences;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\CustomerGroupReferences;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\ProductAndTaxonCodeReferences;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Customer\Model\CustomerGroupInterface;
+use Sylius\Component\Product\Model\ProductInterface;
 use Sylius\Component\Taxonomy\Model\TaxonInterface;
 use Symfony\Component\DependencyInjection\Argument\IteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -87,7 +89,7 @@ final class RegisterProblemKindsPassTest extends AbstractCompilerPassTestCase
      */
     public function it_hands_the_kinds_about_what_entries_reference_and_what_they_reference_to_the_count_listener(): void
     {
-        $this->setDefinition(ProblemCountListener::class, new Definition(ProblemCountListener::class, [null, [], []]));
+        $this->setDefinition(ProblemCountListener::class, new Definition(ProblemCountListener::class, [null, [], [], []]));
         $this->setDefinition('app.unknown', (new Definition(UnknownBlockType::class))->addTag('setono_sylius_cms.problem_kind'));
         $this->setDefinition('app.customer_groups', (new Definition(CustomerGroupReferences::class))->addTag('setono_sylius_cms.problem_kind', ['priority' => 10]));
         $this->setDefinition('app.channels_and_taxons', (new Definition(ChannelAndTaxonReferences::class))->addTag('setono_sylius_cms.problem_kind'));
@@ -102,6 +104,26 @@ final class RegisterProblemKindsPassTest extends AbstractCompilerPassTestCase
         );
         // Each once
         self::assertSame([CustomerGroupInterface::class, ChannelInterface::class, TaxonInterface::class], $listener->getArgument(2));
+        self::assertSame([], $listener->getArgument(3), 'Every write of what the kinds reference counts');
+    }
+
+    /**
+     * A class that every kind about it refers to by a field counts only when one is deleted or the field changes, and
+     * one that any kind reads every write of counts on every write
+     *
+     * @test
+     */
+    public function it_hands_the_count_listener_the_fields_that_every_kind_about_a_class_refers_to_it_by(): void
+    {
+        $this->setDefinition(ProblemCountListener::class, new Definition(ProblemCountListener::class, [null, [], [], []]));
+        $this->setDefinition('app.codes', (new Definition(ProductAndTaxonCodeReferences::class))->addTag('setono_sylius_cms.problem_kind'));
+        $this->setDefinition('app.channels_and_taxons', (new Definition(ChannelAndTaxonReferences::class))->addTag('setono_sylius_cms.problem_kind'));
+
+        $this->compile();
+
+        $listener = $this->container->getDefinition(ProblemCountListener::class);
+        self::assertSame([ProductInterface::class, TaxonInterface::class, ChannelInterface::class], $listener->getArgument(2));
+        self::assertSame([ProductInterface::class => ['code']], $listener->getArgument(3));
     }
 
     /**

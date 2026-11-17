@@ -180,6 +180,27 @@ final class BrokenReferenceTest extends TestCase
     }
 
     /**
+     * Fields refer to them by UUID and code, so only deleting one or changing those counts the entries again, and a
+     * changed code's former value still finds the entries that referred to it
+     *
+     * @test
+     */
+    public function it_refers_to_records_by_uuid_and_code_and_finds_the_entries_that_refer_to_a_former_code_too(): void
+    {
+        $page = new Page();
+        $product = new Product();
+        $product->setCode('T_SHIRT');
+        $entries = $this->prophesize(EntryRepositoryInterface::class);
+        $entries->findReferencing(['SHIRT', 'T_SHIRT'])->willReturn([$page]);
+
+        self::assertSame(
+            [MediaItemInterface::class => 'uuid', EntryInterface::class => 'uuid', ProductInterface::class => 'code', TaxonInterface::class => 'code'],
+            BrokenReference::getReferenceFields(),
+        );
+        self::assertSame([$page], [...$this->kind($this->prophesize(ReferenceTypeLoaderInterface::class)->reveal(), $entries->reveal())->findEntriesReferencing([$product], ['SHIRT', 'T_SHIRT'])]);
+    }
+
+    /**
      * @test
      */
     public function it_finds_no_entry_without_a_media_item(): void
