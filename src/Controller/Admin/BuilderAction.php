@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin;
 
+use Setono\SyliusCMSPlugin\Builder\MediaLibraryConfig;
 use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
-use Setono\SyliusCMSPlugin\Media\MediaLocales;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Preview\StartingValuesInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
@@ -50,7 +50,7 @@ final readonly class BuilderAction
         private RepositoryInterface $customerGroupRepository,
         private FallbackChainInterface $fallbackChain,
         private StartingValuesInterface $startingValues,
-        private MediaLocales $mediaLocales,
+        private MediaLibraryConfig $mediaLibraryConfig,
     ) {
     }
 
@@ -99,13 +99,7 @@ final readonly class BuilderAction
                 'customerGroups' => $this->customerGroups(),
                 // The media picker is the media library opened as a picker, with the library's endpoints, and the
                 // store's locales for the alt text. The registry gives it the upload limit and types
-                'media' => [
-                    'endpoints' => [
-                        'media' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_media_index'),
-                        'folders' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_media_folder_index'),
-                    ],
-                    'locales' => $this->mediaLocales->all($request->getLocale()),
-                ],
+                'media' => $this->mediaLibraryConfig->of($request->getLocale()),
                 // Where the preview's Shown to and Date start. Date is a UTC date and time, or null for now
                 'preview' => [
                     'shownTo' => $this->startingValues->shownTo($entry),

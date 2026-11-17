@@ -33,6 +33,12 @@
             <argument>%setono_sylius_cms.media.types%</argument>
         </service>
 
+        <!-- The upload limit and the MIME types, as the builder's registry and the media library's screen hand them to the app -->
+        <service id="Setono\SyliusCMSPlugin\Media\MediaLimits" class="Setono\SyliusCMSPlugin\Media\MediaLimits">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\UploadLimit"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaTypes"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Media\MimeTypeDetector" class="Setono\SyliusCMSPlugin\Media\MimeTypeDetector">
             <argument type="service" id="mime_types"/>
         </service>

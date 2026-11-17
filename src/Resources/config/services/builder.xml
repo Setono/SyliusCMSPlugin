@@ -8,13 +8,18 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\NestingRulesInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
             <argument type="service" id="translator"/>
-            <argument type="service" id="translator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\UiStrings"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Media\UploadLimit"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaTypes"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaLimits"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
+        </service>
+
+        <!-- What the media library app needs to reach the library, on its own screen and as the builder's media picker -->
+        <service id="Setono\SyliusCMSPlugin\Builder\MediaLibraryConfig" class="Setono\SyliusCMSPlugin\Builder\MediaLibraryConfig">
+            <argument type="service" id="router"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaLocales"/>
         </service>
 
         <!-- The builder app's UI strings, which the media library's page hands its app too -->

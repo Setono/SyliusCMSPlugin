@@ -44,6 +44,8 @@ use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Component\Translation\TranslatorBagInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use Setono\SyliusCMSPlugin\Media\MediaLimits;
+use Setono\SyliusCMSPlugin\Builder\UiStrings;
 
 final class RegistryExporterTest extends TestCase
 {
@@ -447,12 +449,11 @@ final class RegistryExporterTest extends TestCase
             new NestingRules($blockTypes, $contentTypes),
             $handlers,
             $translator->reveal(),
-            $catalogues->reveal(),
+            new UiStrings($translator->reveal(), $catalogues->reveal()),
             Conditions::registry($conditionKinds),
             new LayoutRegistry(['page' => ['standard' => Standard::class, 'landing' => Landing::class, 'wide' => Wide::class]], new FieldReader(), ['page' => 'landing'], $disabledLayouts),
             // A configured limit below PHP's
-            new UploadLimit(2 * 1024 * 1024, 8 * 1024 * 1024),
-            new MediaTypes(['image' => ['image/jpeg', 'image/png'], 'document' => ['application/pdf']]),
+            new MediaLimits(new UploadLimit(2 * 1024 * 1024, 8 * 1024 * 1024), new MediaTypes(['image' => ['image/jpeg', 'image/png'], 'document' => ['application/pdf']])),
             Links::registry(),
             Sources::registry(['on_sale' => new OnSale(), 'clearance' => new Clearance(), 'product_taxons' => new ProductTaxons()], ['clearance']),
         );

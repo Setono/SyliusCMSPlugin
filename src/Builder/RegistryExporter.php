@@ -6,8 +6,7 @@ namespace Setono\SyliusCMSPlugin\Builder;
 
 use Setono\SyliusCMSPlugin\Attribute\Style;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
-use Setono\SyliusCMSPlugin\Media\MediaTypes;
-use Setono\SyliusCMSPlugin\Media\UploadLimit;
+use Setono\SyliusCMSPlugin\Media\MediaLimits;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Registry\AllowedBlockType;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
@@ -24,7 +23,6 @@ use Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\NestingRulesInterface;
 use Setono\SyliusCMSPlugin\Registry\SourceMetadata;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface;
-use Symfony\Component\Translation\TranslatorBagInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -44,13 +42,12 @@ final readonly class RegistryExporter
         private NestingRulesInterface $nestingRules,
         private FieldHandlerLocator $fieldHandlers,
         private TranslatorInterface $translator,
-        private TranslatorBagInterface $catalogues,
+        private UiStrings $uiStrings,
         private ConditionKindRegistryInterface $conditionKinds,
         private LayoutRegistryInterface $layouts,
-        private UploadLimit $uploadLimit,
-        private MediaTypes $mediaTypes,
+        private MediaLimits $mediaLimits,
         private LinkTargetRegistryInterface $linkTargets,
-        private ?SourceRegistryInterface $sources = null,
+        private SourceRegistryInterface $sources,
     ) {
     }
 
@@ -71,8 +68,8 @@ final readonly class RegistryExporter
             ], $this->linkTargets->all()),
             // In the order the "Filled by" select offers them, after Hand-picked. Each list field's schema names those it offers
             'sources' => $this->sources(),
-            'media' => $this->media(),
-            'strings' => (new UiStrings($this->translator, $this->catalogues))->withPrefix(self::STRINGS_PREFIX),
+            'media' => $this->mediaLimits->toArray(),
+            'strings' => $this->uiStrings->withPrefix(self::STRINGS_PREFIX),
         ];
     }
 
@@ -174,7 +171,7 @@ final readonly class RegistryExporter
      */
     private function sources(): array
     {
-        $sources = array_filter($this->sources?->all() ?? [], static fn (SourceMetadata $source): bool => !$source->disabled);
+        $sources = array_filter($this->sources->all(), static fn (SourceMetadata $source): bool => !$source->disabled);
 
         return array_values(array_map(fn (SourceMetadata $source): array => [
             'code' => $source->code,
@@ -234,18 +231,5 @@ final readonly class RegistryExporter
         $schema['x-cms-translatable'] = $field->translatable;
 
         return $schema;
-    }
-
-    /**
-     * The effective upload limit and the MIME types of each kind, so the builder checks a file before uploading it
-     *
-     * @return array{maxUploadSize: int, types: array<string, list<string>>}
-     */
-    private function media(): array
-    {
-        return [
-            'maxUploadSize' => $this->uploadLimit->bytes(),
-            'types' => $this->mediaTypes->all(),
-        ];
     }
 }
