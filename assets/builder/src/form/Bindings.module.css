@@ -111,3 +111,10 @@
     font-size: var(--builder-font-size-sm);
     font-weight: var(--builder-font-weight-medium);
 }
+
+/* Rich text's panel that inserts a binding token: the property, its parameters and the fallback */
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+}

@@ -1,12 +1,12 @@
 import type { Editor } from '@tiptap/core';
 import { useState, type KeyboardEvent } from 'react';
-import { newBinding, propertyOf, TOKEN_TYPES, withParam, type StoredBinding } from '../bindings';
+import { newBinding, propertyOf, TOKEN_TYPES, type StoredBinding } from '../bindings';
 import { useOfferedProperties } from '../bindingsContext';
 import { useTranslator } from '../i18n';
 import type { RichTextBinding } from '../richText/schema';
-import { FieldRow } from './FieldRow';
+import { BindingFallback, BindingParams } from './BindingParts';
+import styles from './Bindings.module.css';
 import formStyles from './Form.module.css';
-import styles from './LinkControl.module.css';
 
 export interface RichTextBindingPanelProps {
     id: string;
@@ -54,13 +54,13 @@ export function RichTextBindingPanel({ id, editor, onClose }: RichTextBindingPan
     };
 
     return (
-        <div role="group" aria-label={t('setono_sylius_cms.builder.rich_text.binding')} className={`${styles.control} ${formStyles.linkPanel}`} onKeyDown={onKeyDown}>
+        <div role="group" aria-label={t('setono_sylius_cms.builder.rich_text.binding')} className={`${styles.panel} ${formStyles.linkPanel}`} onKeyDown={onKeyDown}>
             {offered.length === 0 ? (
                 <p className={formStyles.help}>{t('setono_sylius_cms.builder.binding.none')}</p>
             ) : (
                 <>
                     <div className={styles.part}>
-                        <label htmlFor={`${id}-binding`} className={styles.label}>
+                        <label htmlFor={`${id}-binding`} className={styles.partLabel}>
                             {t('setono_sylius_cms.builder.rich_text.binding_property')}
                         </label>
                         <select id={`${id}-binding`} className={formStyles.select} value={binding?.$bind ?? ''} onChange={(event) => setBinding(newBinding(event.currentTarget.value))}>
@@ -71,22 +71,8 @@ export function RichTextBindingPanel({ id, editor, onClose }: RichTextBindingPan
                             ))}
                         </select>
                     </div>
-                    {binding !== null &&
-                        property?.fields.map(({ name, schema }) => (
-                            <FieldRow
-                                key={name}
-                                id={`${id}-binding-param-${name}`}
-                                schema={schema}
-                                locale=""
-                                value={binding.$params[name]}
-                                onChange={(value) => setBinding(withParam(binding, name, value))}
-                                languageBadge={false}
-                            />
-                        ))}
-                    <div className={styles.part}>
-                        <label htmlFor={`${id}-binding-fallback`} className={styles.label}>
-                            {t('setono_sylius_cms.builder.binding.fallback')}
-                        </label>
+                    {binding !== null && <BindingParams id={`${id}-binding`} property={property} binding={binding} locale="" onChange={setBinding} />}
+                    <BindingFallback id={`${id}-binding-fallback`}>
                         <input
                             id={`${id}-binding-fallback`}
                             type="text"
@@ -95,10 +81,7 @@ export function RichTextBindingPanel({ id, editor, onClose }: RichTextBindingPan
                             aria-describedby={`${id}-binding-fallback-help`}
                             onChange={(event) => setFallback(event.currentTarget.value)}
                         />
-                        <p id={`${id}-binding-fallback-help`} className={formStyles.help}>
-                            {t('setono_sylius_cms.builder.binding.fallback_help')}
-                        </p>
-                    </div>
+                    </BindingFallback>
                 </>
             )}
             <div className={formStyles.linkPanelActions}>

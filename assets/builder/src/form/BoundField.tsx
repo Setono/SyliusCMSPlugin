@@ -1,11 +1,11 @@
-import { bindingOf, fallbackIn, propertyOf, withFallback, withParam, type StoredBinding } from '../bindings';
+import { bindingOf, fallbackIn, propertyOf, withFallback, type StoredBinding } from '../bindings';
 import { useBindableProperties } from '../bindingsContext';
 import type { FieldFallback } from '../fallback';
 import { useTranslator } from '../i18n';
 import type { FieldSchema, JsonValue } from '../types';
+import { BindingFallback, BindingParams } from './BindingParts';
 import styles from './Bindings.module.css';
 import { controlFor } from './controls';
-import { FieldRow } from './FieldRow';
 import formStyles from './Form.module.css';
 
 export interface BoundFieldProps {
@@ -46,22 +46,9 @@ export function BoundField({ id, schema, locale, binding: stored, onChange, plac
                 </button>
             </div>
             {property === undefined && <p className={formStyles.help}>{t('setono_sylius_cms.builder.binding.removed')}</p>}
-            {property?.fields.map(({ name, schema: paramSchema }) => (
-                <FieldRow
-                    key={name}
-                    id={`${id}-param-${name}`}
-                    schema={paramSchema}
-                    locale={locale}
-                    value={binding.$params[name]}
-                    onChange={(value) => onChange(withParam(binding, name, value))}
-                    languageBadge={false}
-                />
-            ))}
+            <BindingParams id={id} property={property} binding={binding} locale={locale} onChange={onChange} />
             {Control !== undefined && (
-                <div className={styles.part}>
-                    <label htmlFor={`${id}-fallback`} className={styles.partLabel}>
-                        {t('setono_sylius_cms.builder.binding.fallback')}
-                    </label>
+                <BindingFallback id={`${id}-fallback`}>
                     <Control
                         id={`${id}-fallback`}
                         schema={{ ...schema, 'x-cms-required': false, 'x-cms-label': t('setono_sylius_cms.builder.binding.fallback') }}
@@ -71,10 +58,7 @@ export function BoundField({ id, schema, locale, binding: stored, onChange, plac
                         placeholder={placeholder?.value}
                         describedBy={`${id}-fallback-help`}
                     />
-                    <p id={`${id}-fallback-help`} className={formStyles.help}>
-                        {t('setono_sylius_cms.builder.binding.fallback_help')}
-                    </p>
-                </div>
+                </BindingFallback>
             )}
         </div>
     );
