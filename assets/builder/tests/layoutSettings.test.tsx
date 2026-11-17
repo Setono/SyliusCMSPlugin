@@ -108,6 +108,34 @@ describe('the layout in the entry settings', () => {
         await waitFor(() => expect(api.createPreviewUrl).toHaveBeenCalledTimes(2));
     });
 
+    it("should bind a layout field, keeping what it holds as the fallback, as a block's field is bound", async () => {
+        const bindable: Registry = {
+            ...titled,
+            contentTypes: titled.contentTypes.map((contentType) => ({
+                ...contentType,
+                layouts: contentType.layouts.map((layout) => ({
+                    ...layout,
+                    fields: layout.fields.map((field) => (field.name === 'tagline' ? { ...field, schema: { ...field.schema, 'x-cms-bindable': ['text'] } } : field)),
+                })),
+            })),
+            bindableProperties: [{ binding: 'customer.first_name', label: 'Customer first name', type: 'text', needs: [], fields: [] }],
+        };
+        const api = fakeApi(inLayout({ code: 'landing', version: 2, fields: { tagline: { en_US: 'Big news' } }, translated: {} }), bindable);
+        await openBuilder(api);
+
+        fireEvent.click(settingsPanel().getByRole('button', { name: 'Bind to a property' }));
+        fireEvent.click(within(await screen.findByRole('dialog', { name: 'Bind to a property' })).getByRole('button', { name: 'Customer first name' }));
+
+        expect(settingsPanel().getByRole('group', { name: 'Shows Customer first name' })).toBeInTheDocument();
+        expect(settingsPanel().getByRole('textbox', { name: 'Fallback' })).toHaveValue('Big news');
+        await waitFor(() =>
+            expect(api.saveChanges).toHaveBeenCalledWith(
+                [{ op: 'set_layout_value', layout: 'landing', field: 'tagline', locale: null, value: { $bind: 'customer.first_name', $params: {}, $fallback: { en_US: 'Big news' } } }],
+                0,
+            ),
+        );
+    });
+
     it('should flag a layout that was removed from code, show none of its fields, and clear the flag once one is picked', async () => {
         await openBuilder(fakeApi(inLayout({ code: 'gone', version: 1, fields: { tagline: { en_US: 'Big news' } }, translated: {} })));
 

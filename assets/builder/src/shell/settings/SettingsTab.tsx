@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import { translatedValues } from '../../bindings';
 import { useBuilder, useBuilderState, useSettingsState } from '../../context';
 import { FieldRow } from '../../form/FieldRow';
 import formStyles from '../../form/Form.module.css';
@@ -152,7 +153,9 @@ function Layout() {
                             locale={locale}
                             value={readFieldValue(values, field, schema['x-cms-translatable'], locale)}
                             onChange={(value) => store.getState().setLayoutValue(field, value)}
-                            fallback={schema['x-cms-translatable'] ? fieldFallback(locales, values[field], locale) : undefined}
+                            // A bound field's fallback is translated like its value
+                            fallback={schema['x-cms-translatable'] ? fieldFallback(locales, translatedValues(values[field]), locale) : undefined}
+                            binding={{ stored: values[field], set: (value) => store.getState().setLayoutBinding(field, value) }}
                             outdated={
                                 schema['x-cms-translatable']
                                     ? outdatedValue(locales, values[field], translated[field], locale, () => store.getState().markLayoutValueUpToDate(field))

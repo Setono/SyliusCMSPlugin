@@ -189,6 +189,11 @@ export interface BuilderActions {
      * translated from as for a block's value. It does nothing in a layout that was removed or disabled.
      */
     setLayoutValue(field: string, value: JsonValue | null): void;
+    /**
+     * Sets a layout field's whole stored value, as setFieldBinding does a block's: binding it, unbinding it, or changing
+     * its binding. It does nothing in a layout that was removed or disabled.
+     */
+    setLayoutBinding(field: string, value: JsonValue | null): void;
     /** Records that a layout field's outdated value in the edited locale is up to date with the value it was translated from. */
     markLayoutValueUpToDate(field: string): void;
     /** Edits another locale. It isn't an edit to the working copy: nothing is saved or undone. */
@@ -745,6 +750,28 @@ export function createBuilderStore({
                     },
                     {},
                     JSON.stringify(['set_layout_value', field]),
+                );
+            },
+
+            setLayoutBinding(field, value) {
+                const before = get().entry;
+                const definition = fieldsLayout(before);
+                if (layoutField(before, field) === undefined || definition === undefined) {
+                    return;
+                }
+
+                edit(
+                    (working) => {
+                        const layout = (working.tree.layout ??= { code: definition.code, version: definition.version, fields: {}, translated: {} });
+                        const normalized = normalizeValue(value ?? undefined);
+                        if (normalized === null) {
+                            delete layout.fields[field];
+                        } else if (!jsonEqual(layout.fields[field], normalized)) {
+                            layout.fields[field] = normalized;
+                        }
+                    },
+                    {},
+                    JSON.stringify(['set_layout_binding', field]),
                 );
             },
 
