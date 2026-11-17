@@ -119,7 +119,9 @@ setono_sylius_cms:
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
         broken_layout_reference: '%field% in the layout refers to %type% that was deleted, so it isn''t shown.'
+        broken_layout_rich_text_reference: 'A link in %field% in the layout leads to %type% that was deleted, so it shows as plain text.'
         broken_reference: '%field% in the %block% block refers to %type% that was deleted, so it isn''t shown.'
+        broken_rich_text_reference: 'A link in %field% in the %block% block leads to %type% that was deleted, so it shows as plain text.'
         deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
         deleted_customer_group_negated: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer excludes anyone through it.'
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'

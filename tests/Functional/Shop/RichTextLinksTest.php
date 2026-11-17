@@ -121,7 +121,7 @@ final class RichTextLinksTest extends WebTestCase
         self::assertEquals(new ProblemCount(1, 0), self::storedCount($page), 'Deleting the product counts the entries that link to it again');
         $problems = $client->request('GET', sprintf('/admin/cms/entry/%s', $page->getUuid()))->filter('[data-section="problems"] [data-problem]');
         self::assertSame(
-            [['broken_reference', self::RICH_TEXT, 'Content in the Rich text block refers to a product that was deleted, so it isn\'t shown.']],
+            [['broken_reference', self::RICH_TEXT, 'A link in Content in the Rich text block leads to a product that was deleted, so it shows as plain text.']],
             $problems->each(static fn (Crawler $problem): array => [$problem->attr('data-problem'), $problem->attr('data-block'), $problem->filter('.description')->text()]),
         );
     }

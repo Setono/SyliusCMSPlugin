@@ -7,9 +7,11 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Problem\Kind;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Setono\SyliusCMSPlugin\Block\RichText;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\MediaHandler;
 use Setono\SyliusCMSPlugin\Field\MediaListHandler;
+use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
@@ -26,6 +28,7 @@ use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Hero;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
@@ -104,6 +107,36 @@ final class BrokenReferenceTest extends TestCase
         $mediaItems->existing(Argument::cetera())->shouldNotBeCalled();
 
         self::assertSame([], [...$this->kind($mediaItems->reveal())->findIn(self::page(new StoredTree(null, [new StoredBlock(self::A, 'gallery', 1)])))]);
+    }
+
+    /**
+     * A link in rich text that doesn't resolve still shows its text, as plain text
+     *
+     * @test
+     */
+    public function it_says_a_link_in_rich_text_that_leads_to_a_deleted_record_shows_as_plain_text(): void
+    {
+        $page = self::page(new StoredTree(null, [new StoredBlock(self::A, 'rich_text', 1, fields: ['content' => ['da_DK' => ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [
+            ['type' => 'text', 'text' => 'Waffles', 'marks' => [['type' => 'cmsLink', 'attrs' => ['target' => 'recipe', 'ref' => 'WAFFLES', 'anchor' => null]]]],
+        ]]]]]])]));
+
+        $products = $this->prophesize(ReferenceTypeLoaderInterface::class);
+        $products->existing(['WAFFLES'])->willReturn([])->shouldBeCalledOnce();
+
+        self::assertEquals([new Problem(
+            'broken_reference',
+            Severity::Error,
+            $page,
+            new TranslatableMessage('setono_sylius_cms.problem.broken_rich_text_reference', [
+                '%field%' => new TranslatableMessage('setono_sylius_cms.field.rich_text.content'),
+                '%block%' => new TranslatableMessage('setono_sylius_cms.block_type.rich_text'),
+                '%type%' => new TranslatableMessage('setono_sylius_cms.reference_type.product'),
+            ]),
+            Fix::inBuilder($page, self::A, 'da_DK'),
+            self::A,
+            'content',
+            'da_DK',
+        )], [...$this->kind($this->prophesize(ReferenceTypeLoaderInterface::class)->reveal(), products: $products->reveal())->findIn($page)]);
     }
 
     /**
@@ -190,21 +223,26 @@ final class BrokenReferenceTest extends TestCase
         return $page;
     }
 
-    private function kind(ReferenceTypeLoaderInterface $mediaItems, ?EntryRepositoryInterface $entries = null): BrokenReference
+    private function kind(ReferenceTypeLoaderInterface $mediaItems, ?EntryRepositoryInterface $entries = null, ?ReferenceTypeLoaderInterface $products = null): BrokenReference
     {
-        $blockTypes = new BlockTypeRegistry(['gallery' => Gallery::class], new FieldReader());
+        $blockTypes = new BlockTypeRegistry(['gallery' => Gallery::class, 'rich_text' => RichText::class], new FieldReader());
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             MediaHandler::class => static fn (): MediaHandler => new MediaHandler(),
             MediaListHandler::class => static fn (): MediaListHandler => new MediaListHandler(),
+            RichTextHandler::class => Links::richTextHandler(...),
         ]));
+        $products ??= $this->prophesize(ReferenceTypeLoaderInterface::class)->reveal();
 
         return new BrokenReference(
             new ReferenceFinder($blockTypes, new LayoutRegistry(['page' => ['hero' => Hero::class]], new FieldReader()), $handlers),
             new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
             $blockTypes,
             new LayoutRegistry(['page' => ['hero' => Hero::class]], new FieldReader()),
-            new ServiceLocator(['media_item' => static fn (): ReferenceTypeLoaderInterface => $mediaItems]),
+            new ServiceLocator([
+                'media_item' => static fn (): ReferenceTypeLoaderInterface => $mediaItems,
+                'product' => static fn (): ReferenceTypeLoaderInterface => $products,
+            ]),
             $entries ?? $this->prophesize(EntryRepositoryInterface::class)->reveal(),
         );
     }
