@@ -1,5 +1,7 @@
+{# The heading names the list, and is left out when it's empty, but for the builder's preview, which prints it empty so
+   editors can type it in place #}
 <nav class="cms-link-list{{ view.styleClass ? ' ' ~ view.styleClass }}"{% if block.heading %} aria-label="{{ block.heading }}"{% endif %}>
-    {%- if block.heading %}
+    {%- if block.heading or cms_preview_mode() == 'builder' %}
     <h2 class="cms-link-list__heading">{{ cms_field(block, 'heading') }}</h2>
     {%- endif %}
     <ul class="cms-link-list__links">

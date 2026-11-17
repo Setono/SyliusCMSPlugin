@@ -38,6 +38,9 @@ final class BannerTest extends UITestCase
         // Until an image is picked, the preview shows a grey box where it goes
         $preview = $page->frameLocator('iframe[title="Preview"]');
         Expect::locator($preview->locator('.cms-tree > .cms-banner > .cms-image-placeholder.cms-banner__media'))->toBeVisible();
+        // And its empty heading and text are there to type in place
+        Expect::locator($preview->locator('.cms-tree > .cms-banner > .cms-banner__content > h2.cms-banner__heading'))->toBeAttached();
+        Expect::locator($preview->locator('.cms-tree > .cms-banner > .cms-banner__content > div.cms-banner__text'))->toBeAttached();
 
         $page->getByLabel('Image', ['exact' => true])->click();
         $picker = $page->getByRole('dialog', ['name' => 'Choose from the media library']);

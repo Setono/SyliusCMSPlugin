@@ -1,4 +1,5 @@
-{# The block renders nothing in the shop without an image to show. In the builder's preview, cms_image() prints a placeholder #}
+{# The block renders nothing in the shop without an image to show. In the builder's preview, cms_image() prints a placeholder,
+   and an empty caption is printed so editors can type it in place #}
 {%- set image -%}{{ cms_image(block.image, {alt: block.alt}) }}{%- endset -%}
 {%- if image is not empty -%}
     {%- set link = cms_link(block.link) -%}
@@ -8,7 +9,7 @@
         {%- else -%}
             {{ image }}
         {%- endif -%}
-        {%- if block.caption is not empty -%}
+        {%- if block.caption is not empty or cms_preview_mode() == 'builder' -%}
             <figcaption class="cms-image__caption">{{ cms_field(block, 'caption') }}</figcaption>
         {%- endif -%}
     </figure>
