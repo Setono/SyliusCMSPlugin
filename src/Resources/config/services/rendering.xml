@@ -16,6 +16,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Binding\BindingResolver"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\FieldConstraints"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\ParamsHydrator" class="Setono\SyliusCMSPlugin\Rendering\ParamsHydrator">

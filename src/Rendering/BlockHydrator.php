@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Validation\FieldConstraints;
 
 /**
  * Turns a stored block into its block type object, and a tree's layout into its layout object, whose properties hold
@@ -23,6 +24,7 @@ final readonly class BlockHydrator
         private FieldHandlerLocator $fieldHandlers,
         private FallbackValues $fallbackValues,
         private BindingResolver $bindings,
+        private FieldConstraints $constraints,
     ) {
     }
 
@@ -49,7 +51,7 @@ final readonly class BlockHydrator
         $hydrationContext = new HydrationContext($context, $references);
 
         foreach ($fields as $name => $field) {
-            $hydrated = $this->hydrateField($field, $values[$name] ?? null, $context->localeCode, $hydrationContext);
+            $hydrated = $this->hydrateField($class, $field, $values[$name] ?? null, $context->localeCode, $hydrationContext);
             if (null === $hydrated) {
                 continue;
             }
@@ -68,9 +70,12 @@ final readonly class BlockHydrator
      * Hydrates a shared value, or a translatable value in the current locale. A missing value is null, and a
      * translatable value falls back through the fallback chain past values that are missing or don't fit, which the
      * handler hydrates as null. A binding is resolved first, as a value is read before its locale: when its value is
-     * empty, its fallback is hydrated as the field's value would be, and without one the field is empty
+     * empty, or fails the field's own constraints, such as a number outside a field's range, its fallback is hydrated
+     * as the field's value would be, and without one the field is empty
+     *
+     * @param class-string $class the class whose property declares the field, and carries its constraints
      */
-    private function hydrateField(FieldMetadata $field, mixed $value, string $localeCode, HydrationContext $context): mixed
+    private function hydrateField(string $class, FieldMetadata $field, mixed $value, string $localeCode, HydrationContext $context): mixed
     {
         $handler = $this->fieldHandlers->get($field->field);
 
@@ -81,7 +86,7 @@ final readonly class BlockHydrator
             }
 
             $bound = $this->bindings->resolve($binding->property, $binding->params, $field->type->bindable, $context);
-            $hydrated = null === $bound ? null : $handler->hydrate($field->field, $bound, $context);
+            $hydrated = null === $bound || !$this->constraints->accept($class, $field, $bound) ? null : $handler->hydrate($field->field, $bound, $context);
             if (null !== $hydrated) {
                 return $hydrated;
             }

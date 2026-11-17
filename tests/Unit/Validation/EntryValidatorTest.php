@@ -32,6 +32,7 @@ use Setono\SyliusCMSPlugin\Validation\BlockTreeValidator;
 use Setono\SyliusCMSPlugin\Validation\EmbedCodeValidator;
 use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
 use Setono\SyliusCMSPlugin\Validation\EntryValidator;
+use Setono\SyliusCMSPlugin\Validation\FieldConstraints;
 use Setono\SyliusCMSPlugin\Validation\FieldValidator;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Symfony\Component\DependencyInjection\ServiceLocator;
@@ -289,7 +290,7 @@ final class EntryValidatorTest extends TestCase
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator),
         ]));
         $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator();
-        $fieldValidator = new FieldValidator($handlers, new FallbackValues($handlers, $fallbackChain->reveal()), $validator, $translator, Bindings::validator());
+        $fieldValidator = new FieldValidator(new FieldConstraints($handlers, $validator), new FallbackValues($handlers, $fallbackChain->reveal()), $validator, $translator, Bindings::validator());
 
         return new EntryValidator(
             new BlockTreeValidator($blockTypes, new NestingRules($blockTypes, $contentTypes), $fieldValidator, $translator),

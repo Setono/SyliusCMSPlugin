@@ -7,7 +7,6 @@ namespace Setono\SyliusCMSPlugin\Validation;
 use Setono\SyliusCMSPlugin\Binding\BindingValidator;
 use Setono\SyliusCMSPlugin\Binding\BoundValue;
 use Setono\SyliusCMSPlugin\Binding\StoredBinding;
-use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\LinkLocaleParts;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
@@ -28,7 +27,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 final readonly class FieldValidator
 {
     public function __construct(
-        private FieldHandlerLocator $fieldHandlers,
+        private FieldConstraints $constraints,
         private FallbackValues $fallbackValues,
         private ValidatorInterface $validator,
         private TranslatorInterface $translator,
@@ -262,14 +261,7 @@ final readonly class FieldValidator
 
             $violations = $this->validator->validatePropertyValue($class, $field->name, null);
         } else {
-            $handler = $this->fieldHandlers->get($field->field);
-            $violations = $this->validator->validate($value, new Callback(
-                static fn (mixed $value, ExecutionContextInterface $context) => $handler->validate($field->field, $value, $context),
-            ));
-
-            if (0 === count($violations)) {
-                $violations = $this->validator->validatePropertyValue($class, $field->name, $value);
-            }
+            $violations = $this->constraints->validate($class, $field, $value);
         }
 
         return self::messages($violations);

@@ -93,6 +93,8 @@ Each shipped block type's template is `@SetonoSyliusCMSPlugin/block/<code>.html.
 
 "All" in the children column means `Allow('*')`: any block type that doesn't limit its parents. None of the shipped block types needs host-page context itself. Sources and snippets inside them can ([Sources](sources.md), [Slots](slots.md#snippets-and-their-context)).
 
+Every Text, Textarea and Number field below is bindable, such as Heading's `text` and Banner's `heading` ([Content model](content-model.md#fields)).
+
 | Group | Code | Children | Parents |
 | --- | --- | --- | --- |
 | Structure | `group` | all | |
@@ -148,7 +150,7 @@ Markup: `cms-spacer cms-spacer--<size>`.
 
 | Field | Field type | Translatable |
 | --- | --- | --- |
-| `text` | Text, required, bindable | yes |
+| `text` | Text, required | yes |
 | `level` | Choice: `h1`, `h2` (default), `h3`, `h4` | no |
 
 Markup: an `<h1>` to `<h4>` with the class `cms-heading`.
@@ -201,7 +203,7 @@ An image with an optional mobile image, a heading, text and buttons. Its buttons
 | `image` | Media (`image`) | no |
 | `mobileImage` | Media (`image`): shown below the shop's mobile breakpoint | no |
 | `alt` | Text: overrides the image's alt text | yes |
-| `heading` | Text, bindable | yes |
+| `heading` | Text | yes |
 | `text` | Rich text | yes |
 | `fullWidth` | Toggle, off by default | no |
 | `priority` | Toggle "Load first", off by default: passes `priority` to `cms_image()`, so a hero banner's image loads eagerly with `fetchpriority="high"` | no |

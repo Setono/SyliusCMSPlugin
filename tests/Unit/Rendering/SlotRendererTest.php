@@ -522,7 +522,7 @@ final class SlotRendererTest extends TestCase
             $this->upgrader->reveal(),
             new BlockViewBuilder(
                 $blockTypes,
-                new BlockHydrator($handlers, new FallbackValues($handlers, new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'))), Bindings::resolver()),
+                Rendering::hydrator($handlers, new FallbackValues($handlers, new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US')))),
                 $conditions = Conditions::matcher(),
                 new BlockReferences($blockTypes, $conditions, new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())), $handlers)),
                 $referenceLoader,

@@ -25,7 +25,9 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Rendering\Fixture\StockNote;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Sylius\Component\Core\Model\Product;
 use Sylius\Resource\Translation\Provider\ImmutableTranslationLocaleProvider;
+use Setono\SyliusCMSPlugin\Validation\FieldConstraints;
 use Symfony\Component\DependencyInjection\ServiceLocator;
+use Symfony\Component\Validator\Validation;
 
 /**
  * Hydration resolves a binding from the host-page context, the channel or the customer before the fallback chain: an
@@ -111,6 +113,23 @@ final class BlockHydratorTest extends TestCase
     }
 
     /**
+     * As for an empty value, such as a Video's embedUrl bound to a URL that isn't an embed URL, or a Carousel's
+     * interval bound to a number outside its range
+     *
+     * @test
+     */
+    public function it_shows_the_fallback_when_the_bound_value_fails_the_field_s_constraints(): void
+    {
+        $note = $this->hydrate([
+            'count' => ['$bind' => 'product.stock_level', '$params' => ['includeReserved' => true], '$fallback' => 5],
+            'code' => self::binding('product.brand', 'BRAND'),
+        ], new ProductBrand('acme'), self::onProductPage());
+
+        self::assertSame(5, $note->count, '12 is above its maximum, 10');
+        self::assertSame('BRAND', $note->code, 'acme isn\'t upper case');
+    }
+
+    /**
      * @test
      */
     public function it_leaves_a_binding_of_another_shape_empty(): void
@@ -155,7 +174,7 @@ final class BlockHydratorTest extends TestCase
         ]));
         $fallbackChain = new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US', 'da_DK'], 'en_US'));
         $properties = $property instanceof StockLevel ? [$property] : [$property, new StockLevel()];
-        $hydrator = new BlockHydrator($handlers, new FallbackValues($handlers, $fallbackChain), Bindings::resolver($properties));
+        $hydrator = Rendering::hydrator($handlers, new FallbackValues($handlers, $fallbackChain), Bindings::resolver($properties));
 
         $block = new StoredBlock(self::KEY, 'stock_note', 1);
         $block->fields = $fields;

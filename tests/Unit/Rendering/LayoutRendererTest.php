@@ -36,6 +36,7 @@ use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ProductAvailable;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
@@ -188,7 +189,7 @@ final class LayoutRendererTest extends TestCase
             MediaHandler::class => static fn (): MediaHandler => new MediaHandler(),
             MediaListHandler::class => static fn (): MediaListHandler => new MediaListHandler(),
         ]));
-        $hydrator = new BlockHydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal()), Bindings::resolver());
+        $hydrator = Rendering::hydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal()));
         $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'gallery' => Gallery::class], new FieldReader());
         $layouts = new LayoutRegistry(['page' => ['standard' => Standard::class, 'landing' => Landing::class, 'hero' => Hero::class]], new FieldReader(), disabled: $disabled);
         $referenceFinder = new ReferenceFinder(new TreeValues($blockTypes, $layouts), $handlers);

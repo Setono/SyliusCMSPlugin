@@ -118,7 +118,7 @@ On a content type, translatability follows where the property sits: on the trans
 
 **A list field** (Products, Taxons, Entries) is either hand-picked, or filled by a [source](../../GLOSSARY.md#content-structure) of the same kind with a number of items to show ([Sources](sources.md)). Media list fields are always hand-picked.
 
-**A bindable field** (Text, Textarea and Number) can show a [binding](../../GLOSSARY.md#shop-pages) instead of a fixed value, with an optional fallback. Rich text holds bindings as inline tokens, and a Link holds one in its `ref`, so it keeps its own label and anchor ([Links](#links), [Slots](slots.md#bindings)).
+**A bindable field** (Text, Textarea and Number) can show a [binding](../../GLOSSARY.md#shop-pages) instead of a fixed value, with an optional fallback. Rich text holds bindings as inline tokens, and a Link holds one in its `ref`, so it keeps its own label and anchor ([Links](#links), [Slots](slots.md#bindings)). A bound value goes through the field's own constraints when it renders, such as a Video's embed URL check or a Carousel's interval range: one that fails them shows the fallback, as an empty value does.
 
 **Values that don't fit.** A stored value that doesn't fit its field type, such as a string in a Number field, counts as missing. `setono:cms:lint` reports these ([Extending](extending.md#console-commands)).
 

@@ -58,7 +58,7 @@ The template gets the block type's hydrated object ([Extending](extending.md#blo
 
 - **Values are hydrated lazily**, when a template reads them, by the field type's handler.
 - **Translatable values** are read in the current locale and fall back through the [fallback chain](../../GLOSSARY.md#entries) ([Localization](localization.md)).
-- **Bindings** resolve the bindable property against the host-page context, the channel or the customer. When the bound value is empty, the binding's fallback shows, and without a fallback the field is empty. Rich text binding tokens resolve the same way ([Slots](slots.md#bindings)).
+- **Bindings** resolve the bindable property against the host-page context, the channel or the customer. When the bound value is empty, or fails the field's own constraints, the binding's fallback shows, and without a fallback the field is empty. Rich text binding tokens resolve the same way ([Slots](slots.md#bindings)).
 - **Rich text** is rendered to HTML by `ueberdosis/tiptap-php`, with its links resolved through link targets.
 
 ## Failures

@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Support;
 
+use Setono\SyliusCMSPlugin\Binding\BindingResolver;
+use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\HydrationContext;
+use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Validation\FieldConstraints;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
+use Symfony\Component\Validator\Validation;
 
 /**
  * The render context a test renders, hydrates or queries in: by default a guest's, now, in the channel WEB, en_US and USD
@@ -52,6 +58,19 @@ final class Rendering
     public static function hydrationContext(?RenderContext $renderContext = null, ReferenceMap $references = new ReferenceMap()): HydrationContext
     {
         return new HydrationContext($renderContext ?? self::context(), $references);
+    }
+
+    /**
+     * Hydrates blocks with the field handlers, checking bound values against the constraints on their properties' attributes
+     */
+    public static function hydrator(FieldHandlerLocator $handlers, FallbackValues $fallbackValues, ?BindingResolver $bindings = null): BlockHydrator
+    {
+        return new BlockHydrator(
+            $handlers,
+            $fallbackValues,
+            $bindings ?? Bindings::resolver(),
+            new FieldConstraints($handlers, Validation::createValidatorBuilder()->enableAttributeMapping()->getValidator()),
+        );
     }
 
     private static function channel(): ChannelInterface

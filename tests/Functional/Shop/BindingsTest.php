@@ -58,6 +58,26 @@ final class BindingsTest extends WebTestCase
     }
 
     /**
+     * Publish can't check a value that depends on the page, so it's checked when it renders, as an empty one is
+     *
+     * @test
+     */
+    public function it_shows_the_fallback_where_the_bound_value_fails_the_field_s_own_constraints(): void
+    {
+        $client = self::createClient();
+        self::createProduct('T_SHIRT', 'T-shirt');
+        $snippet = self::createSnippet('Product video', [
+            new StoredBlock(self::HEADING, 'video', 1, fields: ['embedUrl' => self::binding('product.name', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')]),
+        ], published: true, context: ['product']);
+        self::place($snippet, 'product.after_price');
+
+        $crawler = $client->request('GET', '/en_US/products/t-shirt');
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('dQw4w9WgXcQ', (string) $crawler->filter('.cms-slot--product-after-price .cms-video iframe')->attr('src'), 'T-shirt isn\'t a YouTube or Vimeo URL');
+    }
+
+    /**
      * @test
      */
     public function it_shows_the_fallback_of_a_customer_binding_to_a_guest_and_the_customer_s_own_value_once_signed_in(): void
