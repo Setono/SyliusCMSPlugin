@@ -1,9 +1,10 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { BuilderApi } from '../src/api';
 import { App } from '../src/App';
 import type { Change } from '../src/changeSet';
 import type { BuilderConfig, SnippetPlacement } from '../src/config';
+import { BuilderProvider, useProvidedContext, type BuilderSession } from '../src/context';
 import { contextBlockers, contextChoices, contextNames, declaredContext, missingContext, providedContext } from '../src/hostPageContext';
 import { createTranslator } from '../src/i18n';
 import { createNestingRules, insertableIn, leftOutIn } from '../src/nesting';
@@ -173,6 +174,30 @@ describe('the block types the picker offers', () => {
 
         expect(store.getState().addBlock('product_note')).not.toBeNull();
         expect(store.getState().addBlock('taxon_banner')).toBeNull();
+    });
+});
+
+describe('the context the edited entry provides, as a hook', () => {
+    it("should follow a snippet's declared context as the editor changes it", () => {
+        const store = createBuilderStore({ locale: 'en_US', blockTypes: [heading], contentTypes: [snippet], entry: snippetEntry([]), status: 'never_published' });
+        const { result } = renderHook(() => useProvidedContext(), {
+            wrapper: ({ children }) => <BuilderProvider value={{ store } as unknown as BuilderSession}>{children}</BuilderProvider>,
+        });
+        expect(result.current).toEqual([]);
+
+        act(() => store.getState().setSharedEntryValue('context', ['product']));
+        const product = result.current;
+        expect(product).toEqual(['product']);
+
+        act(() => store.getState().setSharedEntryValue('noindex', true));
+        expect(result.current).toBe(product);
+    });
+
+    it('should provide what the content type provides, and nothing outside the builder', () => {
+        const store = createBuilderStore({ locale: 'en_US', blockTypes: [heading], contentTypes: [page], entry: entry(), status: 'never_published' });
+
+        expect(renderHook(() => useProvidedContext(), { wrapper: ({ children }) => <BuilderProvider value={{ store } as unknown as BuilderSession}>{children}</BuilderProvider> }).result.current).toEqual(['entry']);
+        expect(renderHook(() => useProvidedContext()).result.current).toBeNull();
     });
 });
 

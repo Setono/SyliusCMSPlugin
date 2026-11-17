@@ -3,7 +3,7 @@ import { useKnownRefs } from '../search/context';
 import { SearchPicker } from '../search/SearchPicker';
 import { offeredSources, sourceOf } from '../sources/sources';
 import { catalogKindOf, type CatalogKind } from './catalog';
-import { CatalogSummary } from './CatalogSummary';
+import { PickedSummary } from './PickedSummary';
 import { FilledBy } from './FilledBy';
 import { mostOf, PickList, refsOf } from './PickList';
 import type { FieldControlProps } from './types';
@@ -59,7 +59,7 @@ export function HandPickedList({ id, codes, onChange, catalogKind, max, label, d
             label={label}
             nothing={t('setono_sylius_cms.builder.items.nothing_picked')}
             removeLabel={t('setono_sylius_cms.builder.items.remove')}
-            summary={(code) => <CatalogSummary code={code} item={known[code]} />}
+            summary={(code) => <PickedSummary code={code} item={known[code]} />}
             most={max === null ? null : t('setono_sylius_cms.builder.items.at_most', { '%max%': String(max) })}
             add={
                 <SearchPicker

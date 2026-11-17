@@ -1,8 +1,8 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { offeredProperties, type BindablePropertyDefinition } from './bindings';
-import { useBuilderState } from './context';
-import { providedContext } from './hostPageContext';
-import type { Entry } from './types';
+import { useProvidedContext } from './context';
+
+const NONE: readonly string[] = [];
 
 /** The bindable properties, and the context keys the entry provides or the snippet declares, which decide what fits. */
 export interface Bindings {
@@ -20,10 +20,7 @@ export const BindingsProvider = BindingsContext.Provider;
  * which follows the snippet's context setting as the editor changes it. Inside a BuilderProvider.
  */
 export function BuilderBindingsProvider({ properties, children }: { properties: readonly BindablePropertyDefinition[]; children: ReactNode }) {
-    const provides = useBuilderState((state) => state.rules.provides);
-    // A snippet declares its context in an entry field, so what's provided changes only when an entry field does
-    const fields = useBuilderState((state) => state.entry.fields);
-    const provided = useMemo(() => providedContext(provides, { fields } as Entry), [provides, fields]);
+    const provided = useProvidedContext() ?? NONE;
     const value = useMemo(() => ({ properties, provided }), [properties, provided]);
 
     return <BindingsContext.Provider value={value}>{children}</BindingsContext.Provider>;

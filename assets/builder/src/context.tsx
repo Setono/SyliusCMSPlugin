@@ -1,7 +1,8 @@
-import { createContext, useContext } from 'react';
+import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand';
 import type { BuilderApi, PreviewRequest } from './api';
 import type { Channel, CustomerGroup, Locale, SnippetPlacement } from './config';
+import { providedContext } from './hostPageContext';
 import type { LeavingState, LeavingStore } from './leaving';
 import { localeOf } from './locales';
 import type { PresenceState, PresenceStore } from './presence';
@@ -101,6 +102,28 @@ export function useFallbackChain(locale: string): readonly string[] {
 /** Selects from the builder's store. The selector must return state as it is, not a new object. */
 export function useBuilderState<T>(selector: (state: BuilderState) => T): T {
     return useStore(useBuilder().store, selector);
+}
+
+/**
+ * The context keys the edited entry provides its tree, or the snippet declares, which follows the snippet's context
+ * setting as the editor changes it. Null outside the builder, such as a field control rendered on its own, where
+ * nothing narrows what's offered.
+ */
+export function useProvidedContext(): readonly string[] | null {
+    const store = useContext(BuilderContext)?.store ?? null;
+    const subscribe = useCallback((changed: () => void) => store?.subscribe(changed) ?? (() => undefined), [store]);
+    // The keys joined, a string, so only a change of them renders again
+    const joined = useSyncExternalStore(subscribe, () => {
+        if (store === null) {
+            return null;
+        }
+
+        const { rules, entry } = store.getState();
+
+        return providedContext(rules.provides, entry).join(',');
+    });
+
+    return useMemo(() => (joined === null ? null : joined === '' ? [] : joined.split(',')), [joined]);
 }
 
 /** Selects from the on-save settings. The selector must return state as it is, not a new object. */

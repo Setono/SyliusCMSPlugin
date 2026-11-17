@@ -1,7 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { useBuilderState, usePreviewState } from '../context';
-import { providedContext } from '../hostPageContext';
+import { usePreviewState, useProvidedContext } from '../context';
 import type { JsonObject } from '../types';
 import type { SourcesApi } from './api';
 import type { SourceDefinition } from './sources';
@@ -38,7 +36,7 @@ export function useSources(): Sources {
  */
 export function PreviewSourcesProvider({ sources, api, children }: { sources: readonly SourceDefinition[]; api: SourcesApi | null; children: ReactNode }) {
     const token = usePreviewState((state) => state.token);
-    const provided = useBuilderState(useShallow((state) => providedContext(state.rules.provides, state.entry)));
+    const provided = useProvidedContext() ?? undefined;
     const value = useMemo<Sources>(
         () => ({ sources, count: api === null || token === null ? null : (source, params) => api.count(token, source, params), provided }),
         [sources, api, token, provided],
