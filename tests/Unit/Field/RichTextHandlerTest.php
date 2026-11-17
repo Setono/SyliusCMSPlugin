@@ -151,6 +151,27 @@ final class RichTextHandlerTest extends TestCase
 
         self::assertInstanceOf(RichTextValue::class, $value);
         self::assertSame('<p>a store that closed<strong>, a recipe that was deleted</strong>, a target the code no longer has, a URL that leads nowhere</p>', $value->html);
+        self::assertSame(4, $value->unresolvedLinks);
+    }
+
+    /**
+     * @test
+     */
+    public function it_counts_each_link_that_does_not_resolve_once_and_none_that_resolve(): void
+    {
+        $closed = ['type' => 'cmsLink', 'attrs' => ['target' => 'app_store', 'ref' => 'odense', 'anchor' => null]];
+
+        $value = self::handler()->hydrate(new RichText(label: 'Content'), self::paragraph(
+            ['type' => 'text', 'text' => 'a store that closed', 'marks' => [$closed]],
+            ['type' => 'text', 'text' => ' and '],
+            ['type' => 'text', 'text' => 'the same one', 'marks' => [$closed]],
+            ['type' => 'text', 'text' => ' and '],
+            ['type' => 'text', 'text' => 'one that is open', 'marks' => [['type' => 'cmsLink', 'attrs' => ['target' => 'app_store', 'ref' => 'aarhus', 'anchor' => null]]]],
+        ), $this->hydrationContext());
+
+        self::assertInstanceOf(RichTextValue::class, $value);
+        self::assertSame(1, $value->unresolvedLinks);
+        self::assertSame(0, self::handler()->hydrate(new RichText(label: 'Content'), self::DOCUMENT, $this->hydrationContext())?->unresolvedLinks);
     }
 
     /**

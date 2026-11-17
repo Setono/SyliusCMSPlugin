@@ -115,6 +115,7 @@ setono_sylius_cms:
     # What the builder's preview shows editors and shoppers don't see
     preview:
         unresolved_link: '%field% isn''t shown here: what it links to isn''t visible in this channel and locale, or was deleted.'
+        unresolved_rich_text_link: 'A link in %field% shows as plain text here: what it links to isn''t visible in this channel and locale, or was deleted.'
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
         broken_layout_reference: '%field% in the layout refers to %type% that was deleted, so it isn''t shown.'

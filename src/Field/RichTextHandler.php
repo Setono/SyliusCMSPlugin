@@ -54,8 +54,10 @@ final readonly class RichTextHandler implements SanitizingFieldHandlerInterface,
             return $resolved[$key];
         };
         $inBuilder = RenderContext::PREVIEW_MODE_BUILDER === $context->renderContext->previewMode;
+        $html = $this->schema->render($document, $resolveLink, $inBuilder);
 
-        return new RichTextValue($document, $this->schema->render($document, $resolveLink, $inBuilder));
+        // Rendering resolved every link
+        return new RichTextValue($document, $html, count(array_filter($resolved, is_null(...))));
     }
 
     /**
