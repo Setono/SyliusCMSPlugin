@@ -57,6 +57,7 @@ final class ShopStylesheetTest extends TestCase
             '--cms-dark-color' => ['--cms-dark-color', '#ffffff'],
             '--cms-banner-min-height' => ['--cms-banner-min-height', '360px'],
             '--cms-banner-overlay' => ['--cms-banner-overlay', 'rgba(0, 0, 0, 0.35)'],
+            '--cms-banner-color' => ['--cms-banner-color', '#ffffff'],
             '--cms-button-primary-background' => ['--cms-button-primary-background', '#1b1c1d'],
             '--cms-button-primary-color' => ['--cms-button-primary-color', '#ffffff'],
             '--cms-button-secondary-background' => ['--cms-button-secondary-background', 'transparent'],
@@ -155,10 +156,12 @@ final class ShopStylesheetTest extends TestCase
     /**
      * @test
      */
-    public function it_shades_a_banner_s_image_behind_its_content_with_the_overlay(): void
+    public function it_shades_a_banner_s_image_behind_its_content_with_the_overlay_in_the_banner_s_colour(): void
     {
         self::assertSame('var(--cms-banner-overlay)', self::declarations('.cms-banner__media ~ .cms-banner__content')['background'] ?? null);
+        self::assertSame('var(--cms-banner-color)', self::declarations('.cms-banner__media ~ .cms-banner__content')['color'] ?? null);
         self::assertArrayNotHasKey('background', self::declarations('.cms-banner__content'), 'A banner without an image has no shade');
+        self::assertArrayNotHasKey('color', self::declarations('.cms-banner__content'), 'A banner without an image has the shop\'s colours');
     }
 
     /**

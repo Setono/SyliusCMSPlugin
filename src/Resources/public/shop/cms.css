@@ -21,6 +21,7 @@
         --cms-dark-color: #ffffff;
         --cms-banner-min-height: 360px;
         --cms-banner-overlay: rgba(0, 0, 0, 0.35);
+        --cms-banner-color: #ffffff;
         --cms-button-primary-background: #1b1c1d;
         --cms-button-primary-color: #ffffff;
         --cms-button-secondary-background: transparent;
@@ -228,10 +229,11 @@
         text-align: center;
     }
 
-    /* Over an image, the content sits on the overlay's shade, in white, so it reads on any image */
+    /* Over an image, the content sits on the overlay's shade, in the banner's colour, white by default, so it reads on
+       any image */
     .cms-banner__media ~ .cms-banner__content {
         background: var(--cms-banner-overlay);
-        color: #ffffff;
+        color: var(--cms-banner-color);
     }
 
     .cms-banner__heading {
