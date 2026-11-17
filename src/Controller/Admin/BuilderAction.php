@@ -87,6 +87,8 @@ final readonly class BuilderAction
                     'urls' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_urls', ['uuid' => $entry->getUuid()]),
                     // What pickers search, with __kind__ for the kind, such as product or a link target's code
                     'search' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_search', ['kind' => '__kind__']),
+                    // How many items a source yields for a list field's parameters, under the preview's token
+                    'sourceCount' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_source_count'),
                 ],
                 'channels' => array_map(static fn (array $channel): array => [
                     'code' => $channel['channel']->getCode(),

@@ -41,6 +41,11 @@ setono_sylius_cms:
         products_display:
             carousel: Carousel
             grid: Grid
+        products_in_taxon_sort:
+            name: Name, A to Z
+            newest: Newest first
+            position: Position in the taxon
+            price: Price, lowest first
         spacer_size:
             large: Large
             medium: Medium
@@ -103,12 +108,18 @@ setono_sylius_cms:
         products:
             display: Display
             products: Products
+        products_in_taxon_source:
+            include_children: Include the taxons below it
+            sort: Sort by
+            taxon: Taxon
         rich_text:
             content: Content
         spacer:
             size: Size
         standard:
             show_title: Show title
+        taxon_children_source:
+            taxon: Taxon
         taxons:
             taxons: Taxons
     layout:
@@ -174,6 +185,8 @@ setono_sylius_cms:
         scheduled_publish_failed: 'The publish scheduled for %at% was stopped: %reason%'
         scheduled_publish_overdue: 'The publish scheduled for %at% hasn''t run. The Messenger worker may not be running.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
+        unknown_layout_source: '%field% in the layout is filled by the source "%source%", which the code no longer has, so it lists nothing.'
+        unknown_source: '%field% in the %block% block is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unreadable: 'This content can''t be read: %reason%'
         url_taken_by_route: 'URL taken by a Sylius route: shoppers get the page of the route %route% at %url%.'
     publish:
@@ -187,6 +200,11 @@ setono_sylius_cms:
     # Why a scheduled publish was stopped when it ran, which the overview page shows and EntryPublishFailed carries
     scheduled_publish:
         invalid: '{1} Validation found an error to fix: %errors%|]1,Inf[ Validation found %count% errors to fix: %errors%'
+    # The sources' labels. See "Sources" in docs/spec/sources.md
+    source:
+        newest_products: Newest
+        products_in_taxon: In taxon
+        taxon_children: Children of a taxon
     ui:
         all_entries: All entries
         any_channel: Any channel
@@ -597,6 +615,15 @@ setono_sylius_cms:
         slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team. The URL: %url%'
         slug_help_homepage: 'Generated from the title until you change it. It may have slashes, such as about/team. As a homepage, it shows at %homepage%, and %url% redirects there in the channels it''s the homepage of.'
         slug_help_none: Generated from the title until you change it. It may have slashes, such as about/team.
+        # List fields filled by a source. See "Sources" in docs/spec/builder.md
+        sources:
+            count: '%count% items now'
+            count_one: 1 item now
+            filled_by: Filled by
+            hand_picked: Hand-picked
+            limit: Items to show
+            unavailable: 'Unavailable: %source%'
+            unavailable_help: 'This source isn''t offered any more. The list keeps it until you fill it another way.'
         stay: Stay
         take_theirs: Take theirs
         takes_effect_on_save: Takes effect when saved, without publishing

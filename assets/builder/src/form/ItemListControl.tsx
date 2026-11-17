@@ -2,18 +2,34 @@ import type { ReactNode } from 'react';
 import { useTranslator } from '../i18n';
 import { useKnownRefs } from '../search/context';
 import { SearchPicker } from '../search/SearchPicker';
+import { offeredSources, sourceOf } from '../sources/sources';
 import { ArrowDownIcon, ArrowUpIcon, TrashIcon } from '../shell/icons';
 import styles from './ItemControl.module.css';
+import { FilledBy } from './FilledBy';
 import { codesOf, itemKindOf, mostOf, type ItemKind } from './items';
 import { ItemSummary } from './ItemSummary';
 import type { FieldControlProps } from './types';
 
 /**
- * A Products or Taxons field. Today a list is hand-picked; the sources that fill lists (#253) add a "Filled by" select
- * above the hand-picked items here, which keeps the field's id. See "List fields" in docs/spec/sources.md
+ * A Products or Taxons field: hand-picked, or filled by a source. When the field offers sources, or a source fills it,
+ * the "Filled by" select comes first and takes the field's id, above the hand-picked items or the source's parameters.
+ * Otherwise it's only hand-picked. See "List fields" in docs/spec/sources.md
  */
-export function ItemListControl({ id, value, onChange, schema, describedBy }: FieldControlProps) {
-    return <HandPickedItems id={id} codes={codesOf(value)} onChange={onChange} itemKind={itemKindOf(schema)} max={mostOf(schema)} label={schema['x-cms-label']} describedBy={describedBy} />;
+export function ItemListControl({ id, value, onChange, schema, locale, describedBy }: FieldControlProps) {
+    const source = sourceOf(value);
+    const handPicked = (itemsId: string, itemsDescribedBy: string | undefined) => (
+        <HandPickedItems id={itemsId} codes={codesOf(value)} onChange={onChange} itemKind={itemKindOf(schema)} max={mostOf(schema)} label={schema['x-cms-label']} describedBy={itemsDescribedBy} />
+    );
+
+    if (source === null && offeredSources(schema).length === 0) {
+        return handPicked(id, describedBy);
+    }
+
+    return (
+        <FilledBy id={id} schema={schema} source={source} onChange={onChange} locale={locale} describedBy={describedBy}>
+            {handPicked(`${id}-items`, undefined)}
+        </FilledBy>
+    );
 }
 
 export interface HandPickedItemsProps {

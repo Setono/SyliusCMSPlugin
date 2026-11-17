@@ -61,7 +61,11 @@
             <tag name="setono_sylius_cms.field_handler"/>
         </service>
 
+        <!-- A list field a source fills resolves the source when a template first reads it -->
         <service id="Setono\SyliusCMSPlugin\Field\ListFieldHandler" class="Setono\SyliusCMSPlugin\Field\ListFieldHandler">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Source\SourceResolver"/>
+
             <tag name="setono_sylius_cms.field_handler"/>
         </service>
 
