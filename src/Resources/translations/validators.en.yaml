@@ -1,5 +1,6 @@
 setono_sylius_cms:
     block:
+        exactly_one_of: 'Fill in one of these, but only one: %fields%.'
         not_allowed: '%block% can''t go here.'
         too_few: '{1} Needs at least one %type% block inside.|]1,Inf[ Needs at least %count% %type% blocks inside.'
         too_many: '[0,1] Can hold at most one %type% block.|]1,Inf[ Can hold at most %count% %type% blocks.'
