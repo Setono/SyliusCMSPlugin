@@ -36,7 +36,7 @@ final class BindingsTest extends BuilderApiTestCase
 
         $entry = self::json($client, 'GET', '/admin/cms/api/entries/' . $snippet->getUuid());
         self::assertIsArray($entry);
-        self::assertSame(['$bind' => 'product.name', '$fallback' => ['en_US' => 'This product'], '$params' => []], self::at($entry, 'entry', 'tree', 'blocks', 0, 'fields', 'text'));
+        self::assertSame(['$bind' => 'product.name', '$fallback' => ['en_US' => 'This product'], '$params' => []], self::valueAt($entry, 'entry', 'tree', 'blocks', 0, 'fields', 'text'));
         self::assertSame(['errors' => []], self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/validate', $snippet->getUuid())));
     }
 
@@ -123,12 +123,12 @@ final class BindingsTest extends BuilderApiTestCase
             'customer.first_name', 'customer.last_name', 'customer.full_name',
         ], array_keys($properties));
         self::assertSame(['binding' => 'product.name', 'label' => 'Product name', 'type' => 'text', 'needs' => ['product'], 'fields' => []], $properties['product.name']);
-        self::assertSame('url', self::at($properties, 'product.url', 'type'));
-        self::assertSame([], self::at($properties, 'customer.first_name', 'needs'));
-        self::assertSame('attribute', self::at($properties, 'product.attribute', 'fields', 0, 'name'));
+        self::assertSame('url', self::valueAt($properties, 'product.url', 'type'));
+        self::assertSame([], self::valueAt($properties, 'customer.first_name', 'needs'));
+        self::assertSame('attribute', self::valueAt($properties, 'product.attribute', 'fields', 0, 'name'));
         self::assertIsArray($registry['blockTypes'] ?? null);
         $blockTypes = array_column($registry['blockTypes'], null, 'code');
-        self::assertSame(['text', 'number'], self::at($blockTypes, 'heading', 'fields', 0, 'schema', 'x-cms-bindable'));
+        self::assertSame(['text', 'number'], self::valueAt($blockTypes, 'heading', 'fields', 0, 'schema', 'x-cms-bindable'));
     }
 
     /**
@@ -147,7 +147,7 @@ final class BindingsTest extends BuilderApiTestCase
     /**
      * What the decoded JSON holds at the path, or null
      */
-    private static function at(mixed $value, string|int ...$path): mixed
+    private static function valueAt(mixed $value, string|int ...$path): mixed
     {
         foreach ($path as $key) {
             $value = is_array($value) ? $value[$key] ?? null : null;
