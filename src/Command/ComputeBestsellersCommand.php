@@ -74,7 +74,12 @@ final class ComputeBestsellersCommand extends Command
     {
         $code = self::stringOption($input, 'channel');
         if (null === $code) {
-            return array_values(array_filter($this->channels->findAll(), static fn (mixed $channel): bool => $channel instanceof ChannelInterface));
+            $channels = [];
+            foreach ($this->channels->findAll() as $channel) {
+                $channels[] = $channel;
+            }
+
+            return $channels;
         }
 
         $channel = $this->channels->findOneByCode($code);
