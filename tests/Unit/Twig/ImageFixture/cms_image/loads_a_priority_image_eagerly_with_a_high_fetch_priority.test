@@ -1,0 +1,8 @@
+--TEST--
+cms_image() loads an image with priority eagerly, with a high fetch priority, for an image above the fold
+--TEMPLATE--
+{{ cms_image(image, {layout: 'fixed', width: 200, priority: true}) }}
+--DATA--
+return $this->rendering(['image' => $this->image()])
+--EXPECT--
+<img src="/webp/200/summer-sale.jpg" srcset="/webp/200/summer-sale.jpg 1x, /webp/400/summer-sale.jpg 2x" width="200" height="133" alt="A beach at dawn" fetchpriority="high">

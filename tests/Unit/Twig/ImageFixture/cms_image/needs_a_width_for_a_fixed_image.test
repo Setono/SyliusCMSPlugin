@@ -1,0 +1,8 @@
+--TEST--
+cms_image() needs a width for the fixed layout
+--TEMPLATE--
+{{ cms_image(image, {layout: 'fixed'}) }}
+--DATA--
+return $this->rendering(['image' => $this->image()])
+--EXCEPTION--
+Twig\Error\RuntimeError: An exception has been thrown during the rendering of a template ("cms_image() needs a width for the fixed layout") in "index.twig" at line 2.

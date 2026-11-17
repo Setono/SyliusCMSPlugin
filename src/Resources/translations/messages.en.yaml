@@ -13,6 +13,7 @@ setono_sylius_cms:
         first_match: First match
         group: Group
         heading: Heading
+        image: Image
         rich_text: Rich text
         spacer: Spacer
     choice:
@@ -54,6 +55,12 @@ setono_sylius_cms:
         heading:
             level: Level
             text: Text
+        image:
+            alt: Alt text
+            alt_help: Describes the image here. Leave it empty to use the image's own alt text from the media library.
+            caption: Caption
+            image: Image
+            link: Link
         locale_condition:
             locales: Locales
         rich_text:

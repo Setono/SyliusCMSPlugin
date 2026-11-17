@@ -1,0 +1,8 @@
+--TEST--
+cms_image() prints nothing for null, a UUID no media item has, something that isn't a UUID or a media item that isn't an image, for shoppers and on share links
+--TEMPLATE--
+[{{ cms_image(null) }}][{{ cms_image('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f') }}][{{ cms_image('summer-sale.jpg') }}][{{ cms_image(video) }}]
+--DATA--
+return $this->rendering(['video' => $this->video()], 'share')
+--EXPECT--
+[][][][]
