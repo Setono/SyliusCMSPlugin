@@ -4,6 +4,7 @@
  */
 import type { LinkTargetDefinition } from './links';
 import type { MediaLimits } from './media/config';
+import type { SourceDefinition } from './sources/sources';
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | JsonObject;
 
@@ -301,6 +302,8 @@ export interface Registry {
     conditionKinds: ConditionKindDefinition[];
     /** What links lead to, in the order Link fields offer them. Without them, Link fields offer nothing. */
     linkTargets?: LinkTargetDefinition[];
+    /** The sources editors may pick, in the order the "Filled by" select offers them. A disabled one isn't given. */
+    sources?: SourceDefinition[];
     /** The effective upload limit and the MIME types of each kind of media item, which the media picker checks a file against. */
     media?: MediaLimits;
     /** The UI strings, already translated, keyed by translation key. */

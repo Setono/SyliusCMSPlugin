@@ -15,6 +15,9 @@ import { createPresence, type Presence } from './presence';
 import { createPreviewStore } from './preview';
 import { createSearchApi, type SearchApi } from './search/api';
 import { SearchProvider } from './search/context';
+import { createSourcesApi, type SourcesApi } from './sources/api';
+import { PreviewSourcesProvider } from './sources/context';
+import type { SourceDefinition } from './sources/sources';
 import { createCancelSchedule, createDiscard, createPublish, createReload, createSchedule } from './publishing';
 import { createSettingsStore } from './settings';
 import { createSlugFollower, type SlugFollower } from './slugs';
@@ -37,14 +40,16 @@ export interface AppProps {
     mediaApi?: MediaApi;
     /** The search endpoint pickers search with, made from the config's when left out. */
     searchApi?: SearchApi;
+    /** The source_count endpoint, made from the config's when left out. */
+    sourcesApi?: SourcesApi;
 }
 
 const goTo = (url: string): void => window.location.assign(url);
 
-type Phase = { name: 'loading' } | { name: 'failed' } | { name: 'ready'; session: BuilderSession; translate: Translate; media: MediaLimits | null; linkTargets: LinkTargetDefinition[] };
+type Phase = { name: 'loading' } | { name: 'failed' } | { name: 'ready'; session: BuilderSession; translate: Translate; media: MediaLimits | null; linkTargets: LinkTargetDefinition[]; sources: SourceDefinition[] };
 
 /** Loads the registry and the entry, then opens the entry in the builder. */
-export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, mediaApi, searchApi }: AppProps) {
+export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, mediaApi, searchApi, sourcesApi }: AppProps) {
     const [phase, setPhase] = useState<Phase>({ name: 'loading' });
     const initialTranslate = useMemo(() => createTranslator(config.strings ?? {}), [config]);
     const urlsEndpoints = useMemo(() => (urlsApi === undefined ? createUrlsApi(config) : urlsApi), [config, urlsApi]);
@@ -55,6 +60,10 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
     const searchEndpoint = useMemo(
         () => searchApi ?? (config.endpoints.search === undefined ? null : createSearchApi(config.endpoints.search)),
         [config, searchApi],
+    );
+    const sourcesEndpoint = useMemo(
+        () => sourcesApi ?? (config.endpoints.sourceCount === undefined ? null : createSourcesApi(config.endpoints.sourceCount)),
+        [config, sourcesApi],
     );
 
     useEffect(() => {
@@ -136,6 +145,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                     translate: createTranslator({ ...config.strings, ...registry.strings }),
                     media: registry.media ?? null,
                     linkTargets: registry.linkTargets ?? [],
+                    sources: registry.sources ?? [],
                     session: {
                         store,
                         validation: validationStore,
@@ -205,7 +215,10 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
     const media = config.media;
     const shell = (
         <LinkTargetsProvider value={phase.linkTargets}>
-            <Shell />
+            {/* List fields offer the sources, and count what they yield in the preview */}
+            <PreviewSourcesProvider sources={phase.sources} api={sourcesEndpoint}>
+                <Shell />
+            </PreviewSourcesProvider>
         </LinkTargetsProvider>
     );
     // Link fields pick what they link to with the search

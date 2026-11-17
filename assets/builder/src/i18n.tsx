@@ -189,6 +189,14 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.search.failed'
     | 'setono_sylius_cms.builder.search.no_results'
     | 'setono_sylius_cms.builder.search.searching'
+    // List fields filled by a source
+    | 'setono_sylius_cms.builder.sources.count'
+    | 'setono_sylius_cms.builder.sources.count_one'
+    | 'setono_sylius_cms.builder.sources.filled_by'
+    | 'setono_sylius_cms.builder.sources.hand_picked'
+    | 'setono_sylius_cms.builder.sources.limit'
+    | 'setono_sylius_cms.builder.sources.unavailable'
+    | 'setono_sylius_cms.builder.sources.unavailable_help'
     // The media library, on its own screen and as the media picker
     | 'setono_sylius_cms.builder.media.add'
     | 'setono_sylius_cms.builder.media.all_media'
