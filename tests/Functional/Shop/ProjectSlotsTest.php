@@ -79,7 +79,7 @@ final class ProjectSlotsTest extends WebTestCase
         $crawler = $client->request('GET', '/en_US/winter-sale');
 
         self::assertResponseIsSuccessful();
-        self::assertSame(['More like this'], $crawler->filter('.cms-slot--app-promo-after-blocks .cms-heading')->each(static fn ($heading): string => $heading->text()));
+        self::assertSame(['More like this'], $crawler->filter('.cms-slot--app-promo-after-blocks .cms-heading')->each(static fn (Crawler $heading): string => $heading->text()));
         self::assertSame(['app.promo.after_blocks'], array_map(static fn (SlotMetadata $slot): string => $slot->identifier, self::slots()->providing(['entry'])));
     }
 

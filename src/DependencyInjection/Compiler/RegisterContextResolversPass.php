@@ -23,15 +23,13 @@ final class RegisterContextResolversPass implements CompilerPassInterface
 {
     public const TAG = 'setono_sylius_cms.context_resolver';
 
-    private const CONTEXT_KEYS_PARAMETER = 'setono_sylius_cms.context_keys';
-
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasDefinition(HostPageContextResolver::class)) {
             return;
         }
 
-        $contextKeys = $container->hasParameter(self::CONTEXT_KEYS_PARAMETER) ? $container->getParameter(self::CONTEXT_KEYS_PARAMETER) : [];
+        $contextKeys = $container->hasParameter(DeclaredContextKeys::PARAMETER) ? $container->getParameter(DeclaredContextKeys::PARAMETER) : [];
         $contextKeys = is_array($contextKeys) ? $contextKeys : [];
 
         $priorities = self::priorities($container);
@@ -47,7 +45,7 @@ final class RegisterContextResolversPass implements CompilerPassInterface
             }
 
             if (!isset($contextKeys[$key])) {
-                throw new \LogicException(sprintf('The context resolver %s resolves the context key "%s", which isn\'t declared under %s', $class, $key, self::CONTEXT_KEYS_PARAMETER));
+                throw new \LogicException(sprintf('The context resolver %s resolves the context key "%s", which isn\'t declared under %s', $class, $key, DeclaredContextKeys::PARAMETER));
             }
 
             $priority = $priorities[$id] ?? 0;
