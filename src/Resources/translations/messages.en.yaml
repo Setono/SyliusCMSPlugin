@@ -1,4 +1,31 @@
 setono_sylius_cms:
+    # The shipped bindable properties, by context key. See "Shipped bindable properties" in docs/spec/slots.md
+    bindable_property:
+        channel:
+            contact_email: Channel contact email
+            contact_phone: Channel contact phone
+            name: Channel name
+        customer:
+            first_name: Customer first name
+            full_name: Customer full name
+            last_name: Customer last name
+        entry:
+            title: Entry title
+            url: Entry URL
+        product:
+            attribute: Product attribute
+            code: Product code
+            description: Product description
+            main_taxon_name: Product main taxon
+            name: Product name
+            original_price: Product original price
+            price: Product price
+            short_description: Product short description
+            url: Product URL
+        taxon:
+            description: Taxon description
+            name: Taxon name
+            url: Taxon URL
     block_style:
         dark: Dark
         muted: Muted
@@ -126,6 +153,8 @@ setono_sylius_cms:
             heading: Heading
         locale_condition:
             locales: Locales
+        product_attribute_binding:
+            attribute: Attribute
         products:
             display: Display
             products: Products

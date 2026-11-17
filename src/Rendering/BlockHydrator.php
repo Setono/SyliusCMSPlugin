@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Rendering;
 
+use Setono\SyliusCMSPlugin\Binding\BindingResolver;
+use Setono\SyliusCMSPlugin\Binding\BoundValue;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\HydrationContext;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
@@ -20,6 +22,7 @@ final readonly class BlockHydrator
     public function __construct(
         private FieldHandlerLocator $fieldHandlers,
         private FallbackValues $fallbackValues,
+        private BindingResolver $bindings,
     ) {
     }
 
@@ -64,11 +67,27 @@ final readonly class BlockHydrator
     /**
      * Hydrates a shared value, or a translatable value in the current locale. A missing value is null, and a
      * translatable value falls back through the fallback chain past values that are missing or don't fit, which the
-     * handler hydrates as null
+     * handler hydrates as null. A binding is resolved first, as a value is read before its locale: when its value is
+     * empty, its fallback is hydrated as the field's value would be, and without one the field is empty
      */
     private function hydrateField(FieldMetadata $field, mixed $value, string $localeCode, HydrationContext $context): mixed
     {
         $handler = $this->fieldHandlers->get($field->field);
+
+        if (BoundValue::isBound($field, $value)) {
+            $binding = BoundValue::of($field, $value);
+            if (null === $binding) {
+                return null;
+            }
+
+            $bound = $this->bindings->resolve($binding->property, $binding->params, $field->type->bindable, $context);
+            $hydrated = null === $bound ? null : $handler->hydrate($field->field, $bound, $context);
+            if (null !== $hydrated) {
+                return $hydrated;
+            }
+
+            $value = $binding->fallback;
+        }
 
         if (!$field->translatable) {
             return $this->fallbackValues->isMissing($field->field, $value) ? null : $handler->hydrate($field->field, $value, $context);

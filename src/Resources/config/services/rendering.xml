@@ -15,6 +15,7 @@
         <service id="Setono\SyliusCMSPlugin\Rendering\BlockHydrator" class="Setono\SyliusCMSPlugin\Rendering\BlockHydrator">
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Binding\BindingResolver"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\ParamsHydrator" class="Setono\SyliusCMSPlugin\Rendering\ParamsHydrator">

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Field;
 
 use Setono\SyliusCMSPlugin\Attribute\FieldType;
+use Setono\SyliusCMSPlugin\Binding\BindingType;
 
 /**
  * A link to an entry, a product, a taxon, a URL or a project's own link target, with an optional anchor and label.
@@ -13,7 +14,7 @@ use Setono\SyliusCMSPlugin\Attribute\FieldType;
  * false keeps one link for every locale, and true a whole link per locale. See "Links" in docs/spec/content-model.md
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-#[FieldType(code: 'link')]
+#[FieldType(code: 'link', bindable: [BindingType::Url])]
 final class Link extends Field
 {
     /**

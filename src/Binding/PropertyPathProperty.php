@@ -13,7 +13,7 @@ use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 /**
  * A bindable property that's a plain property path on its subject, such as brand.name on a product, declared in
  * setono_sylius_cms.bindable_properties. A path that doesn't reach a value, such as through a product without a brand,
- * is empty, and so is a value that isn't a string, a number or a Stringable. See "Bindable properties" in
+ * is empty, and so is a value that isn't a string or a number. See "Bindable properties" in
  * docs/spec/extending.md
  */
 final readonly class PropertyPathProperty implements BindablePropertyInterface
@@ -35,10 +35,6 @@ final readonly class PropertyPathProperty implements BindablePropertyInterface
             return null;
         }
 
-        return match (true) {
-            is_string($value), is_int($value), is_float($value) => $value,
-            $value instanceof \Stringable => (string) $value,
-            default => null,
-        };
+        return is_string($value) || is_int($value) || is_float($value) ? $value : null;
     }
 }

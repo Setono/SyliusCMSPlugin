@@ -30,6 +30,7 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Setono\SyliusCMSPlugin\Rendering\SlotRenderer;
 use Setono\SyliusCMSPlugin\Rendering\VisibleSnippetsInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
@@ -325,7 +326,7 @@ final class SlotRendererTest extends TestCase
             $this->upgrader->reveal(),
             new BlockViewBuilder(
                 $blockTypes,
-                new BlockHydrator($handlers, new FallbackValues($handlers, new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US')))),
+                new BlockHydrator($handlers, new FallbackValues($handlers, new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'))), Bindings::resolver()),
                 Conditions::matcher(),
                 new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())), $handlers),
                 $referenceLoader,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
+use Setono\SyliusCMSPlugin\Binding\BindingType;
 use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Factory\HomepageFactory;
@@ -125,6 +126,7 @@ final class Configuration implements ConfigurationInterface
         $this->addContentTypesSection($rootNode);
         $this->addSlotsSection($rootNode);
         $this->addContextKeysSection($rootNode);
+        $this->addBindablePropertiesSection($rootNode);
         $this->addFallbackLocalesSection($rootNode);
         $this->addRevisionsSection($rootNode);
         $this->addMediaSection($rootNode);
@@ -271,6 +273,55 @@ final class Configuration implements ConfigurationInterface
                 ->end()
             ->end()
         ;
+    }
+
+    /**
+     * Bindable properties that are plain property paths, by context key (or channel or customer) and code, such as
+     * product.brand reading brand.name. A property that needs more is a service carrying #[AsBindableProperty]. See
+     * "Bindable properties" in docs/spec/extending.md
+     */
+    private function addBindablePropertiesSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('bindable_properties')
+                    ->info('Bindable properties that are plain property paths: context key, channel or customer => code => {label, type, path}')
+                    ->useAttributeAsKey('context_key')
+                    ->normalizeKeys(false)
+                    ->arrayPrototype()
+                        ->useAttributeAsKey('code')
+                        ->normalizeKeys(false)
+                        ->arrayPrototype()
+                            ->children()
+                                ->scalarNode('label')->info('A translation key')->isRequired()->cannotBeEmpty()->end()
+                                ->enumNode('type')
+                                    ->info('What the path reads, which decides the fields it can be bound to')
+                                    ->values(array_map(static fn (BindingType $type): string => $type->value, BindingType::cases()))
+                                    ->isRequired()
+                                ->end()
+                                ->scalarNode('path')->info('A property path on the object, such as brand.name')->isRequired()->cannotBeEmpty()->end()
+                            ->end()
+                        ->end()
+                        ->validate()->always(static fn (array $properties): array => self::assertCodes('bindable property', $properties))->end()
+                    ->end()
+                    ->validate()->always(static fn (array $contextKeys): array => self::assertCodes('context key', $contextKeys))->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * @param array<array-key, mixed> $values
+     *
+     * @return array<array-key, mixed>
+     */
+    private static function assertCodes(string $kind, array $values): array
+    {
+        foreach (array_keys($values) as $code) {
+            self::assertCode($kind, (string) $code);
+        }
+
+        return $values;
     }
 
     /**

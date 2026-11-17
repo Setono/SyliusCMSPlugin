@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Field;
 
 use Setono\SyliusCMSPlugin\Attribute\FieldType;
+use Setono\SyliusCMSPlugin\Binding\BindingType;
 
 /**
  * A number, stored as a JSON number and hydrated as int|float|null, or as ?int when it takes only whole numbers
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-#[FieldType(code: 'number')]
+#[FieldType(code: 'number', bindable: [BindingType::Number])]
 final class Number extends Field
 {
     /**

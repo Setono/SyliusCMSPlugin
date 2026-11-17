@@ -34,6 +34,7 @@ use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ProductAvailable;
@@ -461,7 +462,7 @@ final class BlockViewBuilderTest extends TestCase
 
         return new BlockViewBuilder(
             $blockTypes,
-            new BlockHydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal())),
+            new BlockHydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal()), Bindings::resolver()),
             Conditions::matcher(['product_available' => new ProductAvailable()]),
             new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())), $handlers),
             $referenceLoader ?? new ReferenceLoader(new ServiceLocator([])),
