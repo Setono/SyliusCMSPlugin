@@ -23,6 +23,7 @@ app:
             transparent_header: Transparent header
         layout:
             landing: Landing
+            promo: Promo
         opening_hours:
             monday: Monday
             tuesday: Tuesday
@@ -38,4 +39,5 @@ app:
             store: Store
         slot:
             announcements: Announcements, above the header
+            promo_after_blocks: 'Promo pages: after the blocks'
             store_locator_top: Store locator, at the top
