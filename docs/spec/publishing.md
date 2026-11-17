@@ -78,7 +78,7 @@ Publish validates, refuses on errors, and points at the blocks and fields that h
 - each field type's own validation ([Extending](extending.md#field-types))
 - the nesting rules: allowed block types, min and max, parents and needed context ([Content model](content-model.md#blocks-and-nesting))
 - blocks of a type the code no longer has
-- the Embed code block: while `embed_code` is off, an `embed_code` block whose key isn't already in the entry's published tree is refused, however it got into the draft ([Blocks](blocks.md#embed-code))
+- the Embed code block: while `embed_code` is off, an `embed_code` block that isn't already in the entry's published tree, with the same key, is refused, however it got into the draft, and the builder flags it ([Blocks](blocks.md#embed-code))
 - the slug: unique per channel and locale, and not matched by another route ([URLs and SEO](urls-and-seo.md#routing))
 
 Slug checks also run whenever a slug or the channels change, so the builder shows a clash before publish.
