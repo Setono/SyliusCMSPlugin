@@ -27,6 +27,7 @@ use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\Product;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 
 final class CMSDataCollectorTest extends TestCase
@@ -47,8 +48,15 @@ final class CMSDataCollectorTest extends TestCase
 
     private RenderedSlots $slots;
 
+    private RequestStack $requestStack;
+
+    private Request $mainRequest;
+
     protected function setUp(): void
     {
+        $this->mainRequest = new Request();
+        $this->requestStack = new RequestStack();
+        $this->requestStack->push($this->mainRequest);
         $this->visibleEntries = $this->prophesize(VisibleEntriesQueryInterface::class);
         $this->entries = $this->prophesize(EntryRepositoryInterface::class);
         $this->entries->findByUuids(Argument::any())->willReturn([]);
@@ -204,8 +212,10 @@ final class CMSDataCollectorTest extends TestCase
         $this->placements->findOutsideChannel(Argument::cetera())->willReturn([])->shouldBeCalledOnce();
 
         $collector = $this->collector();
-        $collector->collect(new Request(), new Response());
-        $collector->collect(new Request(), new Response());
+        $collector->collect($this->mainRequest, new Response());
+        $collector->collect($this->mainRequest, new Response());
+        $collector->lateCollect();
+        $collector->lateCollect();
 
         self::assertSame('disabled', $collector->getSlots()[0]['candidates'][0]['reason'] ?? null);
     }
@@ -261,6 +271,54 @@ final class CMSDataCollectorTest extends TestCase
     }
 
     /**
+     * Doctrine's collector collects the page's queries late, before this one, so what it reads waits until then
+     *
+     * @test
+     */
+    public function it_reads_nothing_from_the_database_until_it_collects_late(): void
+    {
+        $draft = self::snippet('Draft');
+        $slot = $this->slots->start('shop.top');
+        $slot->renderContext = Rendering::context();
+        $slot->candidates = [new CandidatePlacement(self::placement('01', $draft), PlacementOutcome::SnippetNotVisible)];
+        $this->visibleEntries->whyNotVisible(Argument::cetera())->shouldNotBeCalled();
+        $this->entries->findByUuids(Argument::any())->shouldNotBeCalled();
+        $this->placements->findOutsideChannel(Argument::cetera())->shouldNotBeCalled();
+
+        $collector = $this->collector();
+        $collector->collect($this->mainRequest, new Response());
+
+        self::assertSame([[
+            'placement' => self::uuid('01'),
+            'snippet' => $draft->getUuid(),
+            'title' => $draft->getUuid(),
+            'outcome' => 'snippet_not_visible',
+            'reason' => null,
+        ]], $collector->getSlots()[0]['candidates']);
+    }
+
+    /**
+     * Its profile is saved before the main request's, so reading there would come before Doctrine's collector takes the
+     * main request's queries. The main request's profile lists the sub-request's slots too
+     *
+     * @test
+     */
+    public function it_reads_nothing_from_the_database_for_a_sub_request_s_profile(): void
+    {
+        $slot = $this->slots->start('taxon.header', 'sylius_shop_partial_taxon_show_by_slug');
+        $slot->candidates = [];
+        $this->placements->findOutsideChannel(Argument::cetera())->shouldNotBeCalled();
+        $subRequest = new Request();
+        $this->requestStack->push($subRequest);
+
+        $collector = $this->collector();
+        $collector->collect($subRequest, new Response());
+        $collector->lateCollect();
+
+        self::assertSame([], $collector->getSlots()[0]['candidates']);
+    }
+
+    /**
      * @test
      */
     public function it_counts_the_slots_that_show_something(): void
@@ -294,7 +352,8 @@ final class CMSDataCollectorTest extends TestCase
     private function collected(): CMSDataCollector
     {
         $collector = $this->collector();
-        $collector->collect(new Request(), new Response());
+        $collector->collect($this->mainRequest, new Response());
+        $collector->lateCollect();
 
         return $collector;
     }
@@ -306,7 +365,7 @@ final class CMSDataCollectorTest extends TestCase
             'shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null],
             'product.after_price' => ['label' => 'setono_sylius_cms.slot.product.after_price', 'provides' => ['product'], 'cap' => null, 'template_event' => ['name' => 'sylius.shop.product.show.right_sidebar', 'priority' => 28]],
             'taxon.header' => ['label' => 'setono_sylius_cms.slot.taxon.header', 'provides' => ['taxon'], 'cap' => null, 'template_event' => ['name' => 'sylius.shop.taxon.header', 'priority' => 1]],
-        ]), $this->visibleEntries->reveal(), $this->entries->reveal(), $this->placements->reveal(), $this->channelContext->reveal());
+        ]), $this->visibleEntries->reveal(), $this->entries->reveal(), $this->placements->reveal(), $this->channelContext->reveal(), $this->requestStack);
     }
 
     private static function snippet(string $title): SnippetInterface

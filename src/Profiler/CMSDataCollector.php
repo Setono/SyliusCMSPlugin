@@ -20,16 +20,19 @@ use Sylius\Component\Channel\Context\ChannelNotFoundException;
 use Sylius\Resource\Model\CodeAwareInterface;
 use Sylius\Resource\Model\ResourceInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\DataCollector\DataCollector;
+use Symfony\Component\HttpKernel\DataCollector\LateDataCollectorInterface;
 
 /**
  * The CMS panel of the Symfony profiler: each slot rendered on the page, sub-requests' such as taxon.header's included,
  * with the context it resolved and where each key came from, every candidate placement in editor order with whether it
  * showed and, if not, why, its render time, and any block or snippet that threw. Also the blocks that threw outside any
- * slot. Why a snippet isn't visible is read from the visible-entries query when the profiler collects, and so are the
- * placements whose snippet isn't in the channel, which the shop never reads, so a page that isn't profiled doesn't
- * ask. Registered in debug only. See "Profiler panel" in docs/spec/rendering.md
+ * slot. Why a snippet isn't visible is read from the visible-entries query, and the placements whose snippet isn't in the
+ * channel, which the shop never reads, from the database, when the profiler collects late: after Doctrine's collector,
+ * which collects late too, has taken the page's queries, so they aren't counted among them, and a page that isn't
+ * profiled doesn't ask. Registered in debug only. See "Profiler panel" in docs/spec/rendering.md
  *
  * @internal
  *
@@ -38,7 +41,7 @@ use Symfony\Component\HttpKernel\DataCollector\DataCollector;
  * @phpstan-type ContextKey array{key: string, class: string, id: string|null, passed: bool}
  * @phpstan-type Slot array{identifier: string, label: string|null, templateEvent: string|null, subRequest: string|null, context: list<ContextKey>|null, unresolvedKey: string|null, candidates: list<Candidate>|null, shown: int, duration: float|null, failures: list<Failure>}
  */
-final class CMSDataCollector extends DataCollector
+final class CMSDataCollector extends DataCollector implements LateDataCollectorInterface
 {
     public const NAME = 'setono_sylius_cms';
 
@@ -48,6 +51,9 @@ final class CMSDataCollector extends DataCollector
     /** @var \WeakMap<SlotTrace, list<PlacementInterface>> each slot's placements whose snippet isn't in the channel */
     private \WeakMap $outsideChannel;
 
+    /** Whether it last collected for the main request, whose profile is saved after its sub-requests' */
+    private bool $main = false;
+
     public function __construct(
         private readonly RenderedSlots $slots,
         private readonly SlotRegistryInterface $slotRegistry,
@@ -55,6 +61,7 @@ final class CMSDataCollector extends DataCollector
         private readonly EntryRepositoryInterface $entries,
         private readonly PlacementRepositoryInterface $placements,
         private readonly ChannelContextInterface $channelContext,
+        private readonly RequestStack $requestStack,
     ) {
         $this->read = new \WeakMap();
         $this->outsideChannel = new \WeakMap();
@@ -62,12 +69,24 @@ final class CMSDataCollector extends DataCollector
 
     public function collect(Request $request, Response $response, ?\Throwable $exception = null): void
     {
-        $this->readOutsideChannel();
+        // What it reads from the database waits for lateCollect()
+        $this->main = $this->requestStack->getMainRequest() === $request;
+        $this->data = $this->collected(false);
+    }
 
-        $this->data = [
-            'slots' => array_map($this->slot(...), $this->slots->all()),
-            'failures' => array_map(self::failure(...), $this->slots->failuresOutsideSlots()),
-        ];
+    /**
+     * Reads why snippets aren't visible, the titles of those the slots didn't load and the placements outside the
+     * channel, for the main request's profile, which lists its sub-requests' slots too. A sub-request's is saved before
+     * it, so reading there would come before Doctrine's collector takes the main request's queries
+     */
+    public function lateCollect(): void
+    {
+        if (!$this->main) {
+            return;
+        }
+
+        $this->readOutsideChannel();
+        $this->data = $this->collected(true);
     }
 
     public function getName(): string
@@ -119,9 +138,22 @@ final class CMSDataCollector extends DataCollector
     }
 
     /**
+     * @param bool $read whether it reads from the database, which only lateCollect() does
+     *
+     * @return array{slots: list<Slot>, failures: list<Failure>}
+     */
+    private function collected(bool $read): array
+    {
+        return [
+            'slots' => array_map(fn (SlotTrace $trace): array => $this->slot($trace, $read), $this->slots->all()),
+            'failures' => array_map(self::failure(...), $this->slots->failuresOutsideSlots()),
+        ];
+    }
+
+    /**
      * @return Slot
      */
-    private function slot(SlotTrace $trace): array
+    private function slot(SlotTrace $trace, bool $read): array
     {
         $metadata = $this->slotRegistry->find($trace->identifier);
 
@@ -136,7 +168,7 @@ final class CMSDataCollector extends DataCollector
                 array_values($trace->context),
             ),
             'unresolvedKey' => $trace->unresolvedKey,
-            'candidates' => $this->candidates($trace),
+            'candidates' => $this->candidates($trace, $read),
             'shown' => count(array_filter($trace->candidates ?? [], static fn (CandidatePlacement $candidate): bool => $candidate->wins())),
             'duration' => $trace->duration,
             'failures' => array_map(self::failure(...), $trace->failures),
@@ -150,7 +182,7 @@ final class CMSDataCollector extends DataCollector
      *
      * @return list<Candidate>|null
      */
-    private function candidates(SlotTrace $trace): ?array
+    private function candidates(SlotTrace $trace, bool $read): ?array
     {
         $outsideChannel = $this->outsideChannel[$trace] ?? [];
         if (null === $trace->candidates && [] === $outsideChannel) {
@@ -158,16 +190,16 @@ final class CMSDataCollector extends DataCollector
         }
 
         $candidates = $trace->candidates ?? [];
-        $read = $this->read[$trace] ??= $this->readFor($trace, $candidates);
+        $found = $read ? ($this->read[$trace] ??= $this->readFor($trace, $candidates)) : ['reasons' => [], 'titles' => []];
 
         $listed = [];
         foreach ($candidates as $candidate) {
             $listed[] = [$candidate->placement->position, [
                 'placement' => $candidate->placement->uuid,
                 'snippet' => $candidate->placement->snippetUuid,
-                'title' => null === $candidate->snippet ? $read['titles'][$candidate->placement->snippetUuid] ?? $candidate->placement->snippetUuid : EntryTitle::of($candidate->snippet),
+                'title' => null === $candidate->snippet ? $found['titles'][$candidate->placement->snippetUuid] ?? $candidate->placement->snippetUuid : EntryTitle::of($candidate->snippet),
                 'outcome' => $candidate->outcome->value,
-                'reason' => PlacementOutcome::SnippetNotVisible === $candidate->outcome ? $read['reasons'][$candidate->placement->snippetUuid] ?? null : null,
+                'reason' => PlacementOutcome::SnippetNotVisible === $candidate->outcome ? $found['reasons'][$candidate->placement->snippetUuid] ?? null : null,
             ]];
         }
 

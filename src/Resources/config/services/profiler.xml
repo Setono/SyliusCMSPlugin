@@ -35,7 +35,7 @@ SetonoSyliusCMSExtension loads this file in debug only. See "Profiler panel" in 
             <argument type="service" id="Setono\SyliusCMSPlugin\Profiler\RenderedSlots"/>
         </service>
 
-        <!-- After Doctrine's collector (250), so the queries it makes when it collects aren't among the page's -->
+        <!-- After Doctrine's collector (250), so the queries it makes when it collects late aren't among the page's -->
         <service id="Setono\SyliusCMSPlugin\Profiler\CMSDataCollector" class="Setono\SyliusCMSPlugin\Profiler\CMSDataCollector">
             <argument type="service" id="Setono\SyliusCMSPlugin\Profiler\RenderedSlots"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
@@ -43,6 +43,7 @@ SetonoSyliusCMSExtension loads this file in debug only. See "Profiler panel" in 
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
             <argument type="service" id="sylius.context.channel"/>
+            <argument type="service" id="request_stack"/>
 
             <tag name="data_collector" id="setono_sylius_cms" template="@SetonoSyliusCMSPlugin/profiler/cms.html.twig" priority="-10"/>
         </service>
