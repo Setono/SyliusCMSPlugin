@@ -222,11 +222,11 @@ final class ChangeSetApplierTest extends TestCase
      */
     public function it_sets_a_binding_as_a_translatable_field_s_whole_value_without_a_locale_and_removes_it_again(): void
     {
-        $binding = ['$bind' => 'product.name', '$params' => [], '$fallback' => ['en_US' => 'this product']];
+        $binding = ['$bind' => 'product.name', '$params' => new \stdClass(), '$fallback' => ['en_US' => 'this product']];
         $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1, fields: ['text' => ['en_US' => 'Hello']])]);
 
         $tree = $this->apply($tree, new SetValue(self::A, 'text', null, $binding));
-        self::assertSame(['text' => $binding], $tree->blocks[0]->fields);
+        self::assertEquals(['text' => $binding], $tree->blocks[0]->fields);
 
         $tree = $this->apply($tree, new SetValue(self::A, 'text', null, null), new SetValue(self::A, 'text', 'da_DK', 'Hej'));
         self::assertSame(['text' => ['da_DK' => 'Hej']], $tree->blocks[0]->fields);

@@ -81,11 +81,15 @@ final class StoredBindingTest extends TestCase
     /**
      * @test
      */
-    public function it_gives_the_stored_shape(): void
+    public function it_gives_the_stored_shape_with_no_parameters_as_an_empty_map(): void
     {
-        self::assertSame(
-            ['$bind' => 'product.name', '$params' => [], '$fallback' => 'this product'],
+        self::assertEquals(
+            ['$bind' => 'product.name', '$params' => new \stdClass(), '$fallback' => 'this product'],
             (new StoredBinding('product.name', [], 'this product'))->toArray(),
+        );
+        self::assertSame(
+            ['$bind' => 'product.attribute', '$params' => ['attribute' => 'material'], '$fallback' => null],
+            (new StoredBinding('product.attribute', ['attribute' => 'material']))->toArray(),
         );
     }
 }

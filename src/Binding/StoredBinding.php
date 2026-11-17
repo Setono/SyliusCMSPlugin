@@ -97,10 +97,12 @@ final readonly class StoredBinding
     }
 
     /**
-     * @return array{'$bind': string, '$params': array<string, mixed>, '$fallback': mixed}
+     * The binding as it's stored, with no parameters as an empty map, so it stays a map in JSON
+     *
+     * @return array{'$bind': string, '$params': array<string, mixed>|\stdClass, '$fallback': mixed}
      */
     public function toArray(): array
     {
-        return [self::BIND => $this->property, self::PARAMS => $this->params, self::FALLBACK => $this->fallback];
+        return [self::BIND => $this->property, self::PARAMS => [] === $this->params ? new \stdClass() : $this->params, self::FALLBACK => $this->fallback];
     }
 }
