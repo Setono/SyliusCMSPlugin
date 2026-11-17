@@ -1,5 +1,6 @@
 setono_sylius_cms:
     block:
+        embed_code_off: 'Embed code is switched off in this shop, so a new Embed code block can''t be published. Remove it.'
         exactly_one_of: 'Fill in one of these, but only one: %fields%.'
         not_allowed: '%block% can''t go here.'
         too_few: '{1} Needs at least one %type% block inside.|]1,Inf[ Needs at least %count% %type% blocks inside.'

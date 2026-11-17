@@ -25,15 +25,16 @@ final readonly class PublishCheck
     }
 
     /**
+     * @param EntryInterface $entry the entry, whose rows hold what's published now
      * @param EntryInterface $workingCopy what would be published: the draft, or the rows of an entry that has none
      * @param bool $scheduled whether it's for a scheduled publish, which listeners are told
      *
      * @throws InvalidEntryException when validation finds errors, before listeners hear of it
      * @throws PublishVetoedException when a BeforeEntryPublish listener vetoes
      */
-    public function check(EntryInterface $workingCopy, bool $scheduled): void
+    public function check(EntryInterface $entry, EntryInterface $workingCopy, bool $scheduled): void
     {
-        $errors = $this->entryValidator->validate($workingCopy);
+        $errors = $this->entryValidator->validate($entry, $workingCopy);
         if ([] !== $errors) {
             throw new InvalidEntryException($errors);
         }

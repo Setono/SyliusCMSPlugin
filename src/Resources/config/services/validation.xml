@@ -27,6 +27,12 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface" alias="Setono\SyliusCMSPlugin\Validation\EntryUrlValidator"/>
 
+        <!-- The Embed code block's publish rule while setono_sylius_cms.embed_code is off (ADR 0018) -->
+        <service id="Setono\SyliusCMSPlugin\Validation\EmbedCodeValidator" class="Setono\SyliusCMSPlugin\Validation\EmbedCodeValidator">
+            <argument>%setono_sylius_cms.embed_code%</argument>
+            <argument type="service" id="translator"/>
+        </service>
+
         <!-- What publish validates, and entry_validate answers. Decorate it to add checks of your own -->
         <service id="Setono\SyliusCMSPlugin\Validation\EntryValidator" class="Setono\SyliusCMSPlugin\Validation\EntryValidator">
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\BlockTreeValidator"/>
@@ -36,6 +42,7 @@
             <argument type="service" id="validator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EmbedCodeValidator"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface" alias="Setono\SyliusCMSPlugin\Validation\EntryValidator"/>
     </services>

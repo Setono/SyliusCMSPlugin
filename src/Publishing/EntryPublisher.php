@@ -50,7 +50,7 @@ final readonly class EntryPublisher implements EntryPublisherInterface
             $workingCopy = $this->workingCopies->getWorkingCopy($entry);
 
             // 1 and 2. Validation refuses on errors, and a listener can veto the publish
-            $this->check->check($workingCopy, false);
+            $this->check->check($entry, $workingCopy, false);
 
             $scheduledPublish = $this->scheduledPublishes->findOneByEntry($entry);
             if (null !== $scheduledPublish) {
@@ -77,7 +77,7 @@ final readonly class EntryPublisher implements EntryPublisherInterface
             }
 
             $workingCopy = $this->workingCopies->getWorkingCopy($entry);
-            $this->check->check($workingCopy, true);
+            $this->check->check($entry, $workingCopy, true);
 
             $this->manager->remove($scheduledPublish);
 

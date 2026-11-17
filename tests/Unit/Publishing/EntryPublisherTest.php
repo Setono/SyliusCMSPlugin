@@ -98,7 +98,7 @@ final class EntryPublisherTest extends TestCase
         });
 
         $this->entryValidator = $this->prophesize(EntryValidatorInterface::class);
-        $this->entryValidator->validate($this->workingCopy)->will(static function () use (&$calls): array {
+        $this->entryValidator->validate($this->page, $this->workingCopy)->will(static function () use (&$calls): array {
             $calls[] = 'validate';
 
             return [];
@@ -215,7 +215,7 @@ final class EntryPublisherTest extends TestCase
     public function it_refuses_a_working_copy_with_errors_before_listeners_hear_of_it(): void
     {
         $errors = [new ValidationError('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', 'text', 'en_US', 'This field is required.')];
-        $this->entryValidator->validate($this->workingCopy)->willReturn($errors);
+        $this->entryValidator->validate($this->page, $this->workingCopy)->willReturn($errors);
         $this->workingCopies->applyToRows(Argument::cetera())->shouldNotBeCalled();
 
         try {
@@ -352,7 +352,7 @@ final class EntryPublisherTest extends TestCase
     {
         $scheduledPublish = $this->scheduledPublish();
         $errors = [new ValidationError(null, 'slug', 'en_US', 'This slug is taken.')];
-        $this->entryValidator->validate($this->workingCopy)->willReturn($errors);
+        $this->entryValidator->validate($this->page, $this->workingCopy)->willReturn($errors);
 
         try {
             $this->publisher()->publishScheduled($this->page, $scheduledPublish->getToken());

@@ -25,6 +25,6 @@ final readonly class ValidateEntryAction
     {
         $entry = $this->builderRequest->entry($uuid);
 
-        return new JsonResponse(['errors' => $this->entryValidator->validate($this->workingCopies->getWorkingCopy($entry))]);
+        return new JsonResponse(['errors' => $this->entryValidator->validate($entry, $this->workingCopies->getWorkingCopy($entry))]);
     }
 }

@@ -98,7 +98,7 @@ final class PublishSchedulerTest extends TestCase
 
         $calls = &$this->calls;
         $this->entryValidator = $this->prophesize(EntryValidatorInterface::class);
-        $this->entryValidator->validate($this->workingCopy)->will(static function () use (&$calls): array {
+        $this->entryValidator->validate($this->page, $this->workingCopy)->will(static function () use (&$calls): array {
             $calls[] = 'validate';
 
             return [];
@@ -248,7 +248,7 @@ final class PublishSchedulerTest extends TestCase
     public function it_schedules_nothing_when_validation_finds_errors(): void
     {
         $errors = [new ValidationError(null, 'title', 'en_US', 'This value should not be blank.')];
-        $this->entryValidator->validate($this->workingCopy)->willReturn($errors);
+        $this->entryValidator->validate($this->page, $this->workingCopy)->willReturn($errors);
 
         try {
             $this->scheduler()->schedule($this->page, new \DateTimeImmutable('2026-11-14 12:00:00', new \DateTimeZone('UTC')));
