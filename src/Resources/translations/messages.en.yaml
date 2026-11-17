@@ -226,7 +226,6 @@ setono_sylius_cms:
             never_published: Never published
             scheduled: Scheduled
             unpublished_changes: Unpublished changes
-        unresolved_link: A link here isn't shown in the preview's channel and locale
         store_homepage: The store's own homepage
         status_label:
             date_window: 'Shows %from%–%until%'
@@ -513,6 +512,7 @@ setono_sylius_cms:
         unknown_condition_kind: 'Unknown condition: %kind%'
         unknown_condition_kind_help: 'The code no longer has this kind of condition, so the block doesn''t show. Remove the condition to show it again.'
         unpublished_changes: Unpublished changes
+        unresolved_link: A link here isn't shown in the preview's channel and locale
         unsupported_field_type: This field type isn't supported yet
         url_and_seo: URL & SEO
         visibility: Visibility

@@ -176,6 +176,18 @@ final class LinkHandlerTest extends TestCase
     /**
      * @test
      */
+    public function it_hydrates_a_label_in_no_locale_as_canonical_json_decodes_it_as_none(): void
+    {
+        $link = Links::handler()->hydrate(new Link(label: 'Link'), ['target' => 'app_store', 'ref' => 'aarhus', 'anchor' => null, 'label' => new \stdClass()], $this->context('en_US'));
+
+        self::assertNotNull($link);
+        self::assertNull($link->label);
+        self::assertSame('Aarhus', $link->resolved?->name);
+    }
+
+    /**
+     * @test
+     */
     public function it_adds_the_anchor_to_where_the_link_leads(): void
     {
         $value = ['target' => 'app_store', 'ref' => 'aarhus', 'anchor' => 'opening-hours', 'label' => []];
@@ -260,6 +272,8 @@ final class LinkHandlerTest extends TestCase
         yield 'a ref per locale' => [null, ['target' => 'url', 'ref' => ['en_US' => 'https://example.com']]];
         yield 'one link for every locale' => [false, ['target' => 'url', 'ref' => 'https://example.com', 'anchor' => 'top', 'label' => 'Example']];
         yield 'one locale\'s link' => [true, ['target' => 'url', 'ref' => 'https://example.com', 'anchor' => null, 'label' => null]];
+        yield 'a label in no locale, as canonical JSON decodes it' => [null, ['target' => 'product', 'ref' => 'T_SHIRT', 'anchor' => null, 'label' => new \stdClass()]];
+        yield 'a ref in no locale, as canonical JSON decodes it' => [null, ['target' => 'url', 'ref' => new \stdClass(), 'anchor' => null, 'label' => new \stdClass()]];
     }
 
     /**
@@ -295,6 +309,7 @@ final class LinkHandlerTest extends TestCase
         self::assertTrue($handler->isEmpty(new Link(label: 'Link'), ['target' => 'app_store', 'ref' => '', 'label' => ['en_US' => 'Visit us']]));
         self::assertTrue($handler->isEmpty(new Link(label: 'Link'), ['target' => 'url', 'ref' => ['en_US' => '']]));
         self::assertTrue($handler->isEmpty(new Link(label: 'Link'), ['target' => 'url']));
+        self::assertTrue($handler->isEmpty(new Link(label: 'Link'), ['target' => 'url', 'ref' => new \stdClass()]));
         self::assertFalse($handler->isEmpty(new Link(label: 'Link'), self::storeLink([])));
     }
 
