@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Rendering;
 
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -119,7 +120,7 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
      *
      * @param non-empty-list<PlacementData> $placements
      *
-     * @return list<array{PlacementData, \Setono\SyliusCMSPlugin\Model\SnippetInterface}>
+     * @return list<array{PlacementData, SnippetInterface}>
      */
     private function withVisibleSnippets(array $placements, RenderContext $context): array
     {
@@ -142,7 +143,7 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
      * The shown snippets' references load together, in one pass, before any of them renders. A snippet whose blocks
      * all stay hidden shows nothing, and a slot whose snippets show nothing prints nothing
      *
-     * @param list<array{PlacementData, \Setono\SyliusCMSPlugin\Model\SnippetInterface}> $shown
+     * @param list<array{PlacementData, SnippetInterface}> $shown
      */
     private function renderSnippets(SlotMetadata $slot, array $shown, RenderContext $context): string
     {
