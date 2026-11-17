@@ -61,6 +61,20 @@ final class RegisterLinkTargetsPassTest extends AbstractCompilerPassTestCase
     /**
      * @test
      */
+    public function it_hands_them_by_the_priority_of_their_tag_highest_first(): void
+    {
+        $this->setTarget('app.store', StoreLinkTarget::class);
+        $this->setDefinition(UrlLinkTarget::class, (new Definition(UrlLinkTarget::class))->addTag('setono_sylius_cms.link_target', ['priority' => 10]));
+        $this->setTarget('app.recipe', RecipeLinkTarget::class);
+
+        $this->compile();
+
+        self::assertSame(['url', 'app_store', 'recipe'], array_keys((array) $this->container->getDefinition(LinkTargetRegistry::class)->getArgument(0)));
+    }
+
+    /**
+     * @test
+     */
     public function it_makes_the_search_endpoint_search_a_link_target_under_its_code(): void
     {
         $this->setTarget('app.store', StoreLinkTarget::class);

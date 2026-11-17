@@ -27,6 +27,7 @@ use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
+use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\OpeningHoursHandler;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Store;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Titled;
@@ -336,6 +337,21 @@ final class RegistryExporterTest extends TestCase
     }
 
     /**
+     * The link control offers them, a URL typed per locale and the others picked with the search under their code.
+     * See "Link targets" in docs/spec/extending.md
+     *
+     * @test
+     */
+    public function it_exports_the_link_targets_in_the_order_they_are_registered(): void
+    {
+        self::assertSame([
+            ['code' => 'url', 'label' => '[setono_sylius_cms.link_target.url]', 'translatableRef' => true],
+            ['code' => 'app_store', 'label' => '[app.link_target.store]', 'translatableRef' => false],
+            ['code' => 'recipe', 'label' => '[app.link_target.recipe]', 'translatableRef' => false],
+        ], $this->exporter()->export()['linkTargets']);
+    }
+
+    /**
      * @param list<string> $disabled
      * @param array<string, array<string, array{label: string, class: string}>> $styles
      * @param array<string, class-string> $blockTypes block types besides the shipped Columns, Column and Heading
@@ -387,6 +403,7 @@ final class RegistryExporterTest extends TestCase
             // A configured limit below PHP's
             new UploadLimit(2 * 1024 * 1024, 8 * 1024 * 1024),
             new MediaTypes(['image' => ['image/jpeg', 'image/png'], 'document' => ['application/pdf']]),
+            Links::registry(),
         );
     }
 }

@@ -13,6 +13,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\UploadLimit"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaTypes"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface"/>
         </service>
 
         <!-- The builder app's UI strings, which the media library's page hands its app too -->

@@ -115,7 +115,7 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($registry);
         $blockTypes = self::blockTypes($registry);
 
-        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'accordion', 'accordion_item', 'first_match'], array_keys($blockTypes));
+        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'button', 'accordion', 'accordion_item', 'first_match'], array_keys($blockTypes));
 
         self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
         self::assertNull($blockTypes['columns']['parents']);
@@ -127,6 +127,7 @@ final class RegistryTest extends BuilderApiTestCase
             ['type' => 'spacer', 'min' => null, 'max' => null],
             ['type' => 'heading', 'min' => null, 'max' => null],
             ['type' => 'rich_text', 'min' => null, 'max' => null],
+            ['type' => 'button', 'min' => null, 'max' => null],
             ['type' => 'accordion', 'min' => null, 'max' => null],
             ['type' => 'first_match', 'min' => null, 'max' => null],
         ];
@@ -183,6 +184,37 @@ final class RegistryTest extends BuilderApiTestCase
             ['code' => 'brand', 'label' => 'Brand'],
         ], $blockTypes['group']['styles']);
         self::assertSame([], $blockTypes['heading']['styles']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_answers_the_link_targets_the_shipped_ones_first_and_the_button_with_its_link_and_styles(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+
+        $registry = self::json($client, 'GET', '/admin/cms/api/registry');
+        self::assertIsArray($registry);
+
+        self::assertSame([
+            ['code' => 'entry', 'label' => 'Entry', 'translatableRef' => false],
+            ['code' => 'product', 'label' => 'Product', 'translatableRef' => false],
+            ['code' => 'taxon', 'label' => 'Taxon', 'translatableRef' => false],
+            ['code' => 'url', 'label' => 'URL', 'translatableRef' => true],
+            ['code' => 'app_store', 'label' => 'Store', 'translatableRef' => false],
+        ], $registry['linkTargets']);
+
+        $button = self::blockTypes($registry)['button'];
+        self::assertSame('Button', $button['label']);
+        self::assertSame([['code' => 'primary', 'label' => 'Primary'], ['code' => 'secondary', 'label' => 'Secondary']], $button['styles']);
+        self::assertIsArray($button['fields']);
+        self::assertSame('link', $button['fields'][0]['name']);
+        self::assertSame('link', $button['fields'][0]['schema']['x-cms-type']);
+        self::assertSame('Link', $button['fields'][0]['schema']['x-cms-label']);
+        self::assertTrue($button['fields'][0]['schema']['x-cms-required']);
+        self::assertFalse($button['fields'][0]['schema']['x-cms-translatable']);
+        self::assertSame(['targets' => ['entry', 'product', 'taxon', 'url', 'app_store'], 'translatable' => null], $button['fields'][0]['schema']['x-cms-options']);
     }
 
     /**

@@ -15,15 +15,16 @@
         </service>
 
         <!--
-        The shipped link targets, in the order the builder offers them. A link target is a service carrying #[AsLinkTarget],
-        which autoconfiguration tags setono_sylius_cms.link_target, and RegisterLinkTargetsPass hands to the registry by code
+        The shipped link targets. A link target is a service carrying #[AsLinkTarget], which autoconfiguration tags
+        setono_sylius_cms.link_target, and RegisterLinkTargetsPass hands to the registry by code. The builder offers them
+        by their tag's priority, so the shipped ones come first, in this order, and then a project's
         -->
         <service id="Setono\SyliusCMSPlugin\Link\Target\EntryLinkTarget" class="Setono\SyliusCMSPlugin\Link\Target\EntryLinkTarget">
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\EntryReferenceLoader"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\Search\EntrySearch"/>
 
-            <tag name="setono_sylius_cms.link_target"/>
+            <tag name="setono_sylius_cms.link_target" priority="40"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Link\Target\ProductLinkTarget" class="Setono\SyliusCMSPlugin\Link\Target\ProductLinkTarget">
@@ -31,7 +32,7 @@
             <argument type="service" id="router"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\Search\ProductSearch"/>
 
-            <tag name="setono_sylius_cms.link_target"/>
+            <tag name="setono_sylius_cms.link_target" priority="30"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Link\Target\TaxonLinkTarget" class="Setono\SyliusCMSPlugin\Link\Target\TaxonLinkTarget">
@@ -39,11 +40,11 @@
             <argument type="service" id="router"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\Search\TaxonSearch"/>
 
-            <tag name="setono_sylius_cms.link_target"/>
+            <tag name="setono_sylius_cms.link_target" priority="20"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Link\Target\UrlLinkTarget" class="Setono\SyliusCMSPlugin\Link\Target\UrlLinkTarget">
-            <tag name="setono_sylius_cms.link_target"/>
+            <tag name="setono_sylius_cms.link_target" priority="10"/>
         </service>
     </services>
 </container>

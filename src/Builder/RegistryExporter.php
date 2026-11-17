@@ -19,6 +19,8 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Registry\LayoutMetadata;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\LinkTargetMetadata;
+use Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\NestingRulesInterface;
 use Symfony\Component\Translation\TranslatorBagInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -26,8 +28,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * What the builder's registry endpoint answers: the block types with their field schemas, nesting rules and block styles,
  * what the top level of each content type may hold, the layouts editors can pick for it with their field schemas, the
- * condition kinds with their parameters' field schemas, the effective upload limit with the MIME types of each kind of
- * media item, and the UI strings, translated in the current locale, which in the admin is the admin user's locale. The
+ * condition kinds with their parameters' field schemas, the link targets, the effective upload limit with the MIME types
+ * of each kind of media item, and the UI strings, translated in the current locale, which in the admin is the admin user's locale. The
  * shape is internal to the builder
  */
 final readonly class RegistryExporter
@@ -45,11 +47,12 @@ final readonly class RegistryExporter
         private LayoutRegistryInterface $layouts,
         private UploadLimit $uploadLimit,
         private MediaTypes $mediaTypes,
+        private LinkTargetRegistryInterface $linkTargets,
     ) {
     }
 
     /**
-     * @return array{blockTypes: list<array<string, mixed>>, contentTypes: list<array<string, mixed>>, conditionKinds: list<array<string, mixed>>, media: array{maxUploadSize: int, types: array<string, list<string>>}, strings: array<string, string>}
+     * @return array{blockTypes: list<array<string, mixed>>, contentTypes: list<array<string, mixed>>, conditionKinds: list<array<string, mixed>>, linkTargets: list<array{code: string, label: string, translatableRef: bool}>, media: array{maxUploadSize: int, types: array<string, list<string>>}, strings: array<string, string>}
      */
     public function export(): array
     {
@@ -57,6 +60,12 @@ final readonly class RegistryExporter
             'blockTypes' => array_map($this->blockType(...), $this->blockTypes->all()),
             'contentTypes' => array_map($this->contentType(...), $this->contentTypes->all()),
             'conditionKinds' => array_map($this->conditionKind(...), $this->conditionKinds->all()),
+            // In the order the link control offers them. A target whose ref is translatable, such as a URL, is typed per locale, and the others are picked with the search under their code
+            'linkTargets' => array_map(fn (LinkTargetMetadata $target): array => [
+                'code' => $target->code,
+                'label' => $this->translator->trans($target->label),
+                'translatableRef' => $target->translatableRef,
+            ], $this->linkTargets->all()),
             'media' => $this->media(),
             'strings' => (new UiStrings($this->translator, $this->catalogues))->withPrefix(self::STRINGS_PREFIX),
         ];
