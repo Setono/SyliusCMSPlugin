@@ -19,8 +19,6 @@ final class MediaPickerTest extends UITestCase
 
     private const BLOCK = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e70';
 
-    private ?string $uploadDirectory = null;
-
     protected static function getKernelClass(): string
     {
         return MediaFieldsKernel::class;
@@ -57,34 +55,5 @@ final class MediaPickerTest extends UITestCase
         Expect::locator($browser->getByText('summer-sale', ['exact' => true]))->toBeVisible();
         Expect::locator($browser->getByRole('status'))->toHaveText('Saved');
         Expect::locator($browser->frameLocator('iframe')->locator('.cms-tree .app-media-names__image'))->toHaveText('summer-sale');
-    }
-
-    /**
-     * @after
-     */
-    protected function removeFileToUpload(): void
-    {
-        if (null === $this->uploadDirectory) {
-            return;
-        }
-
-        foreach ((array) glob($this->uploadDirectory . '/*') as $file) {
-            unlink((string) $file);
-        }
-
-        rmdir($this->uploadDirectory);
-        $this->uploadDirectory = null;
-    }
-
-    /**
-     * A file with this name on disk, as an editor picks it in the browser's file dialog
-     */
-    private function fileToUpload(string $filename, string $content): string
-    {
-        $this->uploadDirectory = sys_get_temp_dir() . '/setono_sylius_cms_ui_' . bin2hex(random_bytes(4));
-        mkdir($this->uploadDirectory);
-        file_put_contents($this->uploadDirectory . '/' . $filename, $content);
-
-        return $this->uploadDirectory . '/' . $filename;
     }
 }
