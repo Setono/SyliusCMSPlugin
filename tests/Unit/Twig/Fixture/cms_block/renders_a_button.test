@@ -1,0 +1,12 @@
+--TEST--
+cms_block() renders a Button as a link with its style's class, labelled with the link's label or else the name of what it leads to, and a Button whose link doesn't resolve as nothing
+--TEMPLATE--
+{{ cms_block(named) }}|{{ cms_block(labelled) }}|{{ cms_block(unresolved) }}|
+--DATA--
+return $this->rendering([
+    'named' => $this->button('https://shop.example/en_US/products/red-t-shirt', null, 'cms-button--primary'),
+    'labelled' => $this->button('https://shop.example/en_US/products/red-t-shirt', 'Shop <now>'),
+    'unresolved' => $this->button(null, 'Shop now'),
+])
+--EXPECT--
+<a class="cms-button cms-button--primary" href="https://shop.example/en_US/products/red-t-shirt">Red &lt;T-shirt&gt;</a>|<a class="cms-button" href="https://shop.example/en_US/products/red-t-shirt">Shop &lt;now&gt;</a>||

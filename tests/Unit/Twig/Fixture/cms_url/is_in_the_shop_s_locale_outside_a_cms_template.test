@@ -1,0 +1,8 @@
+--TEST--
+cms_url() in a template without the render context, such as a theme's, is the entry's URL in the shop's channel and locale
+--TEMPLATE--
+{{ cms_url(entry) }}
+--DATA--
+return ['entry' => $this->visiblePage(['en_US' => ['About us', 'about-us'], 'da_DK' => ['Om os', 'om-os']])]
+--EXPECT--
+https://shop.example/da_DK/om-os

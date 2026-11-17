@@ -1,0 +1,8 @@
+--TEST--
+cms_url() is null for an entry the shopper may not see, such as an unpublished one, and for no entry
+--TEMPLATE--
+{{ cms_url(entry) is null ? "no URL" }}|{{ cms_url(null) is null ? "no URL" }}
+--DATA--
+return $this->rendering(['entry' => $this->pageWith(['en_US' => ['title' => 'Our team', 'slug' => 'team']])])
+--EXPECT--
+no URL|no URL
