@@ -21,6 +21,7 @@ use Setono\SyliusCMSPlugin\Publishing\EditRecorder;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 use Setono\SyliusCMSPlugin\Slot\InvalidPageScopeException;
+use Setono\SyliusCMSPlugin\Slot\OutdatedPlacementOrderException;
 use Setono\SyliusCMSPlugin\Slot\PageScopeValidatorInterface;
 use Setono\SyliusCMSPlugin\Slot\PlacementEditor;
 use Setono\SyliusCMSPlugin\Slot\SlotNotOfferedException;
@@ -312,6 +313,91 @@ final class PlacementEditorTest extends TestCase
         self::assertSame([0, 1], [$first->getPosition(), $last->getPosition()]);
         self::assertSame([], $this->calls);
         self::assertSame($changedAt, $snippet->getChangedAt());
+    }
+
+    /**
+     * Such as in the Order… dialog of a capped slot, which lists the placements of every snippet
+     *
+     * @test
+     */
+    public function it_orders_a_slot_s_placements_as_given_bumping_the_changed_at_of_the_snippets_whose_placements_moved(): void
+    {
+        $hero = new Snippet();
+        $sale = new Snippet();
+        $fallback = new Snippet();
+        $changedAt = $fallback->getChangedAt();
+        $first = new Placement($hero, 'shop.footer', 0);
+        $second = new Placement($sale, 'shop.footer', 1);
+        $third = new Placement($fallback, 'shop.footer', 2);
+        $this->placements->findBySlots(['shop.footer'])->willReturn([$first, $second, $third]);
+
+        self::assertTrue($this->editor()->reorder('shop.footer', [$second->getUuid(), $first->getUuid(), $third->getUuid()]));
+
+        self::assertSame([1, 0, 2], [$first->getPosition(), $second->getPosition(), $third->getPosition()]);
+        self::assertSame([
+            'begin',
+            'flush',
+            'commit',
+            sprintf('placements changed: %s, %s in shop.footer', $sale->getUuid(), $hero->getUuid()),
+        ], $this->calls);
+        self::assertSame(self::NOW, $hero->getChangedAt()->format('Y-m-d\TH:i:sP'));
+        self::assertSame(self::NOW, $sale->getChangedAt()->format('Y-m-d\TH:i:sP'));
+        self::assertSame($changedAt, $fallback->getChangedAt());
+    }
+
+    /**
+     * @test
+     */
+    public function it_numbers_the_slot_s_placements_in_the_order_given_and_changes_nothing_when_they_are_in_that_order_already(): void
+    {
+        $snippet = new Snippet();
+        $changedAt = $snippet->getChangedAt();
+        $first = new Placement($snippet, 'shop.footer', 0);
+        $second = new Placement($snippet, 'shop.footer', 1);
+        $this->placements->findBySlots(['shop.footer'])->willReturn([$first, $second]);
+
+        self::assertFalse($this->editor()->reorder('shop.footer', [$first->getUuid(), $second->getUuid()]));
+
+        self::assertSame([0, 1], [$first->getPosition(), $second->getPosition()]);
+        self::assertSame([], $this->calls);
+        self::assertSame($changedAt, $snippet->getChangedAt());
+    }
+
+    /**
+     * Such as an order made before another tab added or removed one of the slot's placements
+     *
+     * @test
+     *
+     * @dataProvider provideOrdersThatAreNotTheSlotsPlacements
+     *
+     * @param list<int> $indexes the placements of the slot, by their index, and -1 for one that isn't the slot's
+     */
+    public function it_refuses_an_order_that_is_not_exactly_the_slot_s_placements_and_writes_nothing(array $indexes): void
+    {
+        $snippet = new Snippet();
+        $inSlot = [new Placement($snippet, 'shop.footer', 0), new Placement($snippet, 'shop.footer', 1)];
+        $this->placements->findBySlots(['shop.footer'])->willReturn($inSlot);
+        $elsewhere = new Placement($snippet, 'shop.top', 0);
+
+        try {
+            $this->editor()->reorder('shop.footer', array_map(static fn (int $index): string => ($inSlot[$index] ?? $elsewhere)->getUuid(), $indexes));
+            self::fail('An order of other placements is refused');
+        } catch (OutdatedPlacementOrderException) {
+        }
+
+        self::assertSame([0, 1], [$inSlot[0]->getPosition(), $inSlot[1]->getPosition()]);
+        self::assertSame([], $this->calls);
+    }
+
+    /**
+     * @return iterable<string, array{list<int>}>
+     */
+    public static function provideOrdersThatAreNotTheSlotsPlacements(): iterable
+    {
+        yield 'one left out' => [[1]];
+        yield 'one of another slot' => [[1, 0, -1]];
+        yield 'one twice' => [[1, 1]];
+        yield 'none' => [[]];
     }
 
     private function editor(): PlacementEditor
