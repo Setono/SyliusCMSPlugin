@@ -1,7 +1,7 @@
 import { useTranslator } from '../i18n';
 import { useKnownMediaItems, useMediaPicker } from '../media/picker';
-import styles from './MediaControl.module.css';
 import { MediaItemSummary, mediaOptions } from './MediaItemSummary';
+import styles from './Picked.module.css';
 import type { FieldControlProps } from './types';
 
 /**

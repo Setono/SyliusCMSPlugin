@@ -3,8 +3,7 @@
  * them. The kind is also what the search endpoint searches. See "Shipped field types" in docs/spec/extending.md
  */
 import type { MessageKey } from '../i18n';
-import type { FieldSchema, JsonValue } from '../types';
-import { isJsonObject } from '../values';
+import type { FieldSchema } from '../types';
 
 export interface CatalogKind {
     /** What the search endpoint searches, and the type of reference the field stores: product or taxon. */
@@ -25,14 +24,3 @@ export function catalogKindOf(schema: FieldSchema): CatalogKind {
     return CATALOG_KINDS[schema['x-cms-type']] ?? PRODUCT;
 }
 
-/** The most items an editor may pick for a list field, from its schema, or null for no most. */
-export function mostOf(schema: FieldSchema): number | null {
-    const options = isJsonObject(schema['x-cms-options']) ? schema['x-cms-options'] : {};
-
-    return typeof options.max === 'number' ? options.max : null;
-}
-
-/** The codes a hand-picked list holds, in order. Any other value holds none. */
-export function codesOf(value: JsonValue | undefined): string[] {
-    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item !== '') : [];
-}

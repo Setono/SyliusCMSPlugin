@@ -1,7 +1,7 @@
 import { useTranslator } from '../i18n';
 import { useKnownRefs } from '../search/context';
 import { SearchPicker } from '../search/SearchPicker';
-import styles from './CatalogControl.module.css';
+import styles from './Picked.module.css';
 import { catalogKindOf } from './catalog';
 import { CatalogSummary } from './CatalogSummary';
 import type { FieldControlProps } from './types';

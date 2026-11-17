@@ -1,15 +1,12 @@
-import type { ReactNode } from 'react';
 import { useTranslator } from '../i18n';
 import { useKnownRefs } from '../search/context';
 import { SearchPicker } from '../search/SearchPicker';
 import { offeredSources, sourceOf } from '../sources/sources';
-import { ArrowDownIcon, ArrowUpIcon, TrashIcon } from '../shell/icons';
-import styles from './CatalogControl.module.css';
-import { FilledBy } from './FilledBy';
-import { catalogKindOf, codesOf, mostOf, type CatalogKind } from './catalog';
+import { catalogKindOf, type CatalogKind } from './catalog';
 import { CatalogSummary } from './CatalogSummary';
+import { FilledBy } from './FilledBy';
+import { mostOf, PickList, refsOf } from './PickList';
 import type { FieldControlProps } from './types';
-
 /**
  * A Products or Taxons field: hand-picked, or filled by a source. When the field offers sources, or a source fills it,
  * the "Filled by" select comes first and takes the field's id, above the hand-picked items or the source's parameters.
@@ -18,7 +15,7 @@ import type { FieldControlProps } from './types';
 export function CatalogListControl({ id, value, onChange, schema, locale, describedBy }: FieldControlProps) {
     const source = sourceOf(value);
     const handPicked = (itemsId: string, itemsDescribedBy: string | undefined) => (
-        <HandPickedList id={itemsId} codes={codesOf(value)} onChange={onChange} catalogKind={catalogKindOf(schema)} max={mostOf(schema)} label={schema['x-cms-label']} describedBy={itemsDescribedBy} />
+        <HandPickedList id={itemsId} codes={refsOf(value)} onChange={onChange} catalogKind={catalogKindOf(schema)} max={mostOf(schema)} label={schema['x-cms-label']} describedBy={itemsDescribedBy} />
     );
 
     if (source === null && offeredSources(schema).length === 0) {
@@ -54,48 +51,23 @@ export interface HandPickedListProps {
 export function HandPickedList({ id, codes, onChange, catalogKind, max, label, describedBy }: HandPickedListProps) {
     const t = useTranslator();
     const known = useKnownRefs(catalogKind.kind, codes);
-    const full = max !== null && codes.length >= max;
-
-    const move = (index: number, by: -1 | 1): void => {
-        const next = [...codes];
-        const [moved] = next.splice(index, 1);
-        if (moved !== undefined) {
-            next.splice(index + by, 0, moved);
-            onChange(next);
-        }
-    };
 
     return (
-        <div className={styles.control}>
-            {codes.length === 0 ? (
-                <p className={styles.nothing}>{t('setono_sylius_cms.builder.items.nothing_picked')}</p>
-            ) : (
-                <ul className={styles.list} aria-label={label}>
-                    {codes.map((code, index) => (
-                        <li key={`${code}-${String(index)}`} className={styles.listItem}>
-                            <CatalogSummary code={code} item={known[code]} />
-                            <span className={styles.itemActions}>
-                                <IconButton label={t('setono_sylius_cms.builder.move_up')} disabled={index === 0} onClick={() => move(index, -1)}>
-                                    <ArrowUpIcon />
-                                </IconButton>
-                                <IconButton label={t('setono_sylius_cms.builder.move_down')} disabled={index === codes.length - 1} onClick={() => move(index, 1)}>
-                                    <ArrowDownIcon />
-                                </IconButton>
-                                <IconButton label={t('setono_sylius_cms.builder.items.remove')} onClick={() => onChange(codes.filter((_, at) => at !== index))}>
-                                    <TrashIcon />
-                                </IconButton>
-                            </span>
-                        </li>
-                    ))}
-                </ul>
-            )}
-            <div className={styles.actions}>
+        <PickList
+            refs={codes}
+            onChange={onChange}
+            label={label}
+            nothing={t('setono_sylius_cms.builder.items.nothing_picked')}
+            removeLabel={t('setono_sylius_cms.builder.items.remove')}
+            summary={(code) => <CatalogSummary code={code} item={known[code]} />}
+            most={max === null ? null : t('setono_sylius_cms.builder.items.at_most', { '%max%': String(max) })}
+            add={
                 <SearchPicker
                     id={id}
                     kind={catalogKind.kind}
                     label={t(catalogKind.add)}
                     searchLabel={t(catalogKind.search)}
-                    disabled={full}
+                    disabled={max !== null && codes.length >= max}
                     describedBy={describedBy}
                     onPick={(result) => {
                         if (!codes.includes(result.ref)) {
@@ -103,16 +75,7 @@ export function HandPickedList({ id, codes, onChange, catalogKind, max, label, d
                         }
                     }}
                 />
-                {max !== null && <span className={styles.most}>{t('setono_sylius_cms.builder.items.at_most', { '%max%': String(max) })}</span>}
-            </div>
-        </div>
-    );
-}
-
-function IconButton({ label, disabled = false, onClick, children }: { label: string; disabled?: boolean; onClick: () => void; children: ReactNode }) {
-    return (
-        <button type="button" className={styles.iconButton} aria-label={label} title={label} disabled={disabled} onClick={onClick}>
-            {children}
-        </button>
+            }
+        />
     );
 }

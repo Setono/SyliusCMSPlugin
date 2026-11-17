@@ -4,8 +4,8 @@ import { useSourceCount, useSources } from '../sources/context';
 import { filledBy, limitOf, offeredSources, withLimit, withSourceParam, type SourceDefinition, type SourceValue } from '../sources/sources';
 import type { FieldSchema, JsonValue } from '../types';
 import { FieldRow } from './FieldRow';
+import styles from './FilledBy.module.css';
 import formStyles from './Form.module.css';
-import styles from './CatalogControl.module.css';
 
 export interface FilledByProps {
     /** The select's id, which the field's label points at too. */

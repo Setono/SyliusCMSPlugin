@@ -1,6 +1,6 @@
 import { useTranslator } from '../i18n';
 import type { SearchResult } from '../search/api';
-import styles from './CatalogControl.module.css';
+import styles from './Picked.module.css';
 
 /**
  * A product or taxon a field holds, by its thumbnail and name as the search names it: undefined while it's looked up,
@@ -15,7 +15,7 @@ export function CatalogSummary({ code, item }: { code: string; item: SearchResul
     }
 
     if (item === null) {
-        return <span className={`${styles.summary} ${styles.notFound}`}>{t('setono_sylius_cms.builder.items.not_found', { '%code%': code })}</span>;
+        return <span className={`${styles.summary} ${styles.gone}`}>{t('setono_sylius_cms.builder.items.not_found', { '%code%': code })}</span>;
     }
 
     return (
