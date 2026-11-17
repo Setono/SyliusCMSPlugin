@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Model\MediaUsageInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
+use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
 
 /**
  * The media item resource's repository. Its queries work on MySQL and PostgreSQL alike
@@ -130,16 +131,16 @@ class MediaItemRepository extends EntityRepository implements MediaItemRepositor
             ->select('1')
             ->from($this->getClassMetadata()->getAssociationTargetClass('translations'), 'searchedTranslation')
             ->andWhere('searchedTranslation.translatable = o')
-            ->andWhere('LOWER(searchedTranslation.altText) LIKE :search')
+            ->andWhere('LOWER(searchedTranslation.altText) LIKE :search ' . SearchPattern::ESCAPE)
         ;
 
         $queryBuilder
             ->andWhere($queryBuilder->expr()->orX(
-                'LOWER(o.name) LIKE :search',
-                'LOWER(o.originalFilename) LIKE :search',
+                'LOWER(o.name) LIKE :search ' . SearchPattern::ESCAPE,
+                'LOWER(o.originalFilename) LIKE :search ' . SearchPattern::ESCAPE,
                 $queryBuilder->expr()->exists($altText->getDQL()),
             ))
-            ->setParameter('search', '%' . addcslashes(mb_strtolower($search), '%_\\') . '%')
+            ->setParameter('search', SearchPattern::containing($search))
         ;
     }
 

@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
+use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
 
 /**
  * The entry resource's repository
@@ -129,9 +130,9 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
     {
         $inTree = $inDraft = [];
         foreach (array_values($strings) as $index => $string) {
-            $inTree[] = sprintf("o.blockTree LIKE :json_string_%d ESCAPE '!'", $index);
-            $inDraft[] = sprintf("cms_draft.content LIKE :json_string_%d ESCAPE '!'", $index);
-            $queryBuilder->setParameter('json_string_' . $index, '%' . strtr(CanonicalJson::encode($string), ['!' => '!!', '%' => '!%', '_' => '!_']) . '%');
+            $inTree[] = sprintf('o.blockTree LIKE :json_string_%d %s', $index, SearchPattern::ESCAPE);
+            $inDraft[] = sprintf('cms_draft.content LIKE :json_string_%d %s', $index, SearchPattern::ESCAPE);
+            $queryBuilder->setParameter('json_string_' . $index, SearchPattern::holding(CanonicalJson::encode($string)));
         }
 
         return [
