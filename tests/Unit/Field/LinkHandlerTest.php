@@ -17,9 +17,12 @@ use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Support\Violations;
+use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductBrand;
+use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductPage;
 use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\WithLinks;
 use Setono\SyliusCMSPlugin\Tests\Unit\Link\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Value\Link as LinkValue;
+use Sylius\Component\Core\Model\Product;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 final class LinkHandlerTest extends TestCase
@@ -380,6 +383,91 @@ final class LinkHandlerTest extends TestCase
     public function it_refuses_an_anchor_with_a_hash_or_a_space(): void
     {
         $this->expectLinkViolation('setono_sylius_cms.field.not_link_anchor', ['target' => 'url', 'ref' => ['en_US' => '/faq'], 'anchor' => '#delivery times']);
+    }
+
+    /**
+     * A bound link keeps its own label and anchor. See "Links" in docs/spec/content-model.md
+     *
+     * @test
+     */
+    public function it_hydrates_a_bound_ref_as_the_url_the_binding_resolves_to_with_its_own_label_and_anchor(): void
+    {
+        $link = Links::handler(properties: [new ProductPage()])->hydrate(new Link(label: 'Link'), self::boundLink(), $this->onProductPage());
+
+        self::assertInstanceOf(LinkValue::class, $link);
+        self::assertSame('url', $link->target);
+        self::assertSame('/en_US/products/t-shirt', $link->ref);
+        self::assertSame('View product', $link->label);
+        self::assertSame('/en_US/products/t-shirt#reviews', $link->resolved?->url);
+    }
+
+    /**
+     * @test
+     */
+    public function it_hydrates_a_bound_ref_whose_value_is_empty_as_its_fallback_in_the_current_locale(): void
+    {
+        $value = self::boundLink(['en_US' => '/en_US/products', 'da_DK' => '/da_DK/products']);
+
+        $link = Links::handler(properties: [new ProductPage('')])->hydrate(new Link(label: 'Link'), $value, $this->onProductPage('da_DK'));
+
+        self::assertSame('/da_DK/products', $link?->ref);
+    }
+
+    /**
+     * @test
+     */
+    public function it_hydrates_a_bound_ref_without_a_value_or_a_fallback_as_missing(): void
+    {
+        self::assertNull(Links::handler(properties: [new ProductPage()])->hydrate(new Link(label: 'Link'), self::boundLink(), $this->context('en_US')));
+    }
+
+    /**
+     * @test
+     */
+    public function it_fits_a_binding_only_in_the_ref_of_a_link_to_a_url(): void
+    {
+        $handler = Links::handler();
+
+        self::assertTrue($handler->fits(new Link(label: 'Link'), self::boundLink(['en_US' => '/products'])));
+        self::assertTrue($handler->fits(new Link(label: 'Link', translatable: false), ['target' => 'url', 'ref' => ['$bind' => 'product.page', '$params' => [], '$fallback' => '/products'], 'label' => 'View']));
+        self::assertFalse($handler->fits(new Link(label: 'Link'), ['target' => 'app_store', 'ref' => ['$bind' => 'product.page', '$params' => [], '$fallback' => null]]));
+        self::assertFalse($handler->fits(new Link(label: 'Link'), ['target' => 'url', 'ref' => ['$bind' => 'product.page']]));
+        self::assertFalse($handler->isEmpty(new Link(label: 'Link'), self::boundLink()));
+        self::assertSame([], [...$handler->references(new Link(label: 'Link'), self::boundLink())]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_bound_ref_of_a_property_that_is_no_url(): void
+    {
+        $value = self::boundLink();
+        $value['ref']['$bind'] = 'product.brand';
+
+        $this->expectViolation('setono_sylius_cms.field.binding_not_accepted', null, static fn (ExecutionContextInterface $context) => Links::handler(properties: [new ProductBrand()])->validate(new Link(label: 'Link'), $value, $context));
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_bound_ref_whose_fallback_is_a_url_a_link_cannot_lead_to(): void
+    {
+        $this->expectViolation('setono_sylius_cms.field.not_link_url', null, static fn (ExecutionContextInterface $context) => Links::handler(properties: [new ProductPage()])->validate(new Link(label: 'Link'), self::boundLink(['en_US' => 'javascript:alert(1)']), $context));
+    }
+
+    /**
+     * @param array<string, string>|null $fallback
+     *
+     * @return array{target: string, ref: array{'$bind': string, '$params': array<string, mixed>, '$fallback': array<string, string>|null}, anchor: string, label: array<string, string>}
+     */
+    private static function boundLink(?array $fallback = null): array
+    {
+        return ['target' => 'url', 'ref' => ['$bind' => 'product.page', '$params' => [], '$fallback' => $fallback], 'anchor' => 'reviews', 'label' => ['en_US' => 'View product']];
+    }
+
+    private function onProductPage(string $localeCode = 'en_US'): HydrationContext
+    {
+        return new HydrationContext(Rendering::context(localeCode: $localeCode, hostPageContext: ['product' => new Product()]));
     }
 
     /**

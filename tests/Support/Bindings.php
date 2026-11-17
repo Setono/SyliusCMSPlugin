@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Support;
 
 use Setono\SyliusCMSPlugin\Binding\BindablePropertyInterface;
 use Setono\SyliusCMSPlugin\Binding\BindingResolver;
+use Setono\SyliusCMSPlugin\Binding\BindingValidator;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
@@ -55,6 +56,14 @@ final class Bindings
     public static function resolver(array $properties = []): BindingResolver
     {
         return new BindingResolver(self::registry($properties), new ParamsHydrator(self::fieldHandlers(), self::fallbackValues()));
+    }
+
+    /**
+     * @param list<BindablePropertyInterface> $properties each carrying #[AsBindableProperty]
+     */
+    public static function validator(array $properties = []): BindingValidator
+    {
+        return new BindingValidator(self::registry($properties), self::fieldHandlers(), self::fallbackValues(), new IdentityTranslator());
     }
 
     /**
