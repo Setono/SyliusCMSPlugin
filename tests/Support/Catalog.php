@@ -8,6 +8,7 @@ use Doctrine\Persistence\ObjectManager;
 use Sylius\Bundle\CoreBundle\Fixture\Factory\ExampleFactoryInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductTranslationInterface;
+use Sylius\Component\Core\Model\TaxonImageInterface;
 use Sylius\Component\Core\Model\TaxonInterface;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -78,5 +79,23 @@ trait Catalog
         $manager->flush();
 
         return $taxon;
+    }
+
+    /**
+     * Adds an image to the taxon, at a path in Sylius's image storage. Its file needn't exist: Liip makes the
+     * thumbnail's URL without it
+     */
+    protected static function addTaxonImage(TaxonInterface $taxon, string $path, string $type = 'main'): void
+    {
+        /** @var FactoryInterface<TaxonImageInterface> $factory */
+        $factory = self::getContainer()->get('sylius.factory.taxon_image');
+        $image = $factory->createNew();
+        $image->setPath($path);
+        $image->setType($type);
+        $taxon->addImage($image);
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('sylius.manager.taxon');
+        $manager->flush();
     }
 }

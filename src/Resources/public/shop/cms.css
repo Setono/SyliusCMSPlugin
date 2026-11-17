@@ -179,4 +179,43 @@
         background: var(--cms-button-secondary-background);
         color: var(--cms-button-secondary-color);
     }
+
+    /* Products and Taxons: a grid of the shop's product cards or of taxon tiles, as many to a row as fit at
+       --cms-grid-item-min-width. A row that isn't full keeps its cards at the width of a full row's */
+    .cms-products--grid,
+    .cms-taxons {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(var(--cms-grid-item-min-width), 100%), 1fr));
+        gap: var(--cms-gap);
+    }
+
+    /* A product card fills its item, so the cards of a row are as tall as each other */
+    .cms-products__item {
+        display: flex;
+        min-width: 0;
+    }
+
+    .cms-products__item > * {
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* A taxon tile: its image, square, above its name */
+    .cms-taxons__item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        min-width: 0;
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .cms-taxons__image {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: var(--cms-radius);
+    }
 }

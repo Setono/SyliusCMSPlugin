@@ -40,4 +40,32 @@ export function useKnownRef(kind: string, ref: string | null): SearchResult | un
     return found ?? undefined;
 }
 
+/**
+ * What each of the refs of the kind refers to, which it looks up once, in one request for those not known yet: by ref,
+ * the result, or null when it wasn't found, such as a deleted product. A ref that's absent is being looked up. Without
+ * a search, nothing is known.
+ */
+export function useKnownRefs(kind: string, refs: readonly string[]): Readonly<Record<string, SearchResult | null>> {
+    const search = useSearch();
+    const known = search?.known ?? noneKnown;
+    const items = useStore(known, (state) => state.items);
+    const key = refs.filter((ref) => ref !== '').join('\u0000');
+
+    useEffect(() => {
+        if (key !== '') {
+            known.getState().request(kind, key.split('\u0000'));
+        }
+    }, [known, kind, key]);
+
+    const found: Record<string, SearchResult | null> = {};
+    for (const ref of refs) {
+        const item = items[knownKey(kind, ref)];
+        if (item !== undefined) {
+            found[ref] = item;
+        }
+    }
+
+    return found;
+}
+
 const noneKnown = createKnownRefs({ find: async () => [] });

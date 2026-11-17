@@ -1,0 +1,102 @@
+import type { ReactNode } from 'react';
+import { useTranslator } from '../i18n';
+import { useKnownRefs } from '../search/context';
+import { SearchPicker } from '../search/SearchPicker';
+import { ArrowDownIcon, ArrowUpIcon, TrashIcon } from '../shell/icons';
+import styles from './ItemControl.module.css';
+import { codesOf, itemKindOf, mostOf, type ItemKind } from './items';
+import { ItemSummary } from './ItemSummary';
+import type { FieldControlProps } from './types';
+
+/**
+ * A Products or Taxons field. Today a list is hand-picked; the sources that fill lists (#253) add a "Filled by" select
+ * above the hand-picked items here, which keeps the field's id. See "List fields" in docs/spec/sources.md
+ */
+export function ItemListControl({ id, value, onChange, schema, describedBy }: FieldControlProps) {
+    return <HandPickedItems id={id} codes={codesOf(value)} onChange={onChange} itemKind={itemKindOf(schema)} max={mostOf(schema)} label={schema['x-cms-label']} describedBy={describedBy} />;
+}
+
+export interface HandPickedItemsProps {
+    id: string;
+    /** The codes it holds, in the editor's order. */
+    codes: readonly string[];
+    onChange: (codes: string[]) => void;
+    itemKind: ItemKind;
+    /** The most it holds, or null for no most. */
+    max: number | null;
+    /** The field's label, which names the list. */
+    label: string;
+    describedBy?: string | undefined;
+}
+
+/**
+ * A hand-picked list of products or taxons: what it holds, in the editor's order, each by name, moved up or down or
+ * removed, and a button that searches the catalog and adds what's picked to the end, which the field's label names.
+ * What it holds already isn't added again, and it holds no more than its most. One that no longer exists stays in the
+ * list, flagged, until it's removed.
+ */
+export function HandPickedItems({ id, codes, onChange, itemKind, max, label, describedBy }: HandPickedItemsProps) {
+    const t = useTranslator();
+    const known = useKnownRefs(itemKind.kind, codes);
+    const full = max !== null && codes.length >= max;
+
+    const move = (index: number, by: -1 | 1): void => {
+        const next = [...codes];
+        const [moved] = next.splice(index, 1);
+        if (moved !== undefined) {
+            next.splice(index + by, 0, moved);
+            onChange(next);
+        }
+    };
+
+    return (
+        <div className={styles.control}>
+            {codes.length === 0 ? (
+                <p className={styles.nothing}>{t('setono_sylius_cms.builder.items.nothing_picked')}</p>
+            ) : (
+                <ul className={styles.list} aria-label={label}>
+                    {codes.map((code, index) => (
+                        <li key={`${code}-${String(index)}`} className={styles.listItem}>
+                            <ItemSummary code={code} item={known[code]} />
+                            <span className={styles.itemActions}>
+                                <IconButton label={t('setono_sylius_cms.builder.move_up')} disabled={index === 0} onClick={() => move(index, -1)}>
+                                    <ArrowUpIcon />
+                                </IconButton>
+                                <IconButton label={t('setono_sylius_cms.builder.move_down')} disabled={index === codes.length - 1} onClick={() => move(index, 1)}>
+                                    <ArrowDownIcon />
+                                </IconButton>
+                                <IconButton label={t('setono_sylius_cms.builder.items.remove')} onClick={() => onChange(codes.filter((_, at) => at !== index))}>
+                                    <TrashIcon />
+                                </IconButton>
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+            <div className={styles.actions}>
+                <SearchPicker
+                    id={id}
+                    kind={itemKind.kind}
+                    label={t(itemKind.add)}
+                    searchLabel={t(itemKind.search)}
+                    disabled={full}
+                    describedBy={describedBy}
+                    onPick={(result) => {
+                        if (!codes.includes(result.ref)) {
+                            onChange([...codes, result.ref]);
+                        }
+                    }}
+                />
+                {max !== null && <span className={styles.most}>{t('setono_sylius_cms.builder.items.at_most', { '%max%': String(max) })}</span>}
+            </div>
+        </div>
+    );
+}
+
+function IconButton({ label, disabled = false, onClick, children }: { label: string; disabled?: boolean; onClick: () => void; children: ReactNode }) {
+    return (
+        <button type="button" className={styles.iconButton} aria-label={label} title={label} disabled={disabled} onClick={onClick}>
+            {children}
+        </button>
+    );
+}

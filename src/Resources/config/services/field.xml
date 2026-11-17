@@ -46,6 +46,19 @@
             <tag name="setono_sylius_cms.field_handler"/>
         </service>
 
+        <!-- Product, Taxon and the list fields Products and Taxons hydrate their codes from the references loaded before rendering, which the visible-products and visible-taxons queries load -->
+        <service id="Setono\SyliusCMSPlugin\Field\ProductHandler" class="Setono\SyliusCMSPlugin\Field\ProductHandler">
+            <tag name="setono_sylius_cms.field_handler"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Field\TaxonHandler" class="Setono\SyliusCMSPlugin\Field\TaxonHandler">
+            <tag name="setono_sylius_cms.field_handler"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Field\ListFieldHandler" class="Setono\SyliusCMSPlugin\Field\ListFieldHandler">
+            <tag name="setono_sylius_cms.field_handler"/>
+        </service>
+
         <!-- Link resolves its link through its link target, a link to a record from the references loaded before rendering -->
         <service id="Setono\SyliusCMSPlugin\Field\LinkHandler" class="Setono\SyliusCMSPlugin\Field\LinkHandler">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface"/>
