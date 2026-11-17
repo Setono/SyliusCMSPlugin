@@ -101,7 +101,7 @@ final class Configuration implements ConfigurationInterface
                     ->end()
                 ->end()
                 ->booleanNode('assets')
-                    ->info('false stops loading the shipped stylesheet, for projects that bundle it into their own build')
+                    ->info('false stops loading the shipped stylesheet and carousel script, for projects that bundle them into their own build')
                     ->defaultTrue()
                 ->end()
             ->end()

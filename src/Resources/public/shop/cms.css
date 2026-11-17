@@ -231,4 +231,135 @@
         object-fit: cover;
         border-radius: var(--cms-radius);
     }
+
+    /* Carousel: --cms-carousel-per-view slides at once, from data-cms-per-view, but at most 2 below 48rem and 1 below
+       30rem. A theme overrides these on the element itself, such as .cms-carousel[data-cms-per-view="4"] */
+    .cms-carousel[data-cms-per-view="2"] {
+        --cms-carousel-per-view: 2;
+    }
+
+    .cms-carousel[data-cms-per-view="3"] {
+        --cms-carousel-per-view: 3;
+    }
+
+    .cms-carousel[data-cms-per-view="4"] {
+        --cms-carousel-per-view: 4;
+    }
+
+    @media (width < 48rem) {
+        .cms-carousel[data-cms-per-view="3"],
+        .cms-carousel[data-cms-per-view="4"] {
+            --cms-carousel-per-view: 2;
+        }
+    }
+
+    @media (width < 30rem) {
+        .cms-carousel[data-cms-per-view] {
+            --cms-carousel-per-view: 1;
+        }
+    }
+
+    /* The track scrolls with scroll-snap, so the carousel works without the script. The script's buttons sit over the
+       track's edges, in the same grid cell, and its dots below it */
+    .cms-carousel {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: 0.5rem;
+    }
+
+    .cms-carousel__track {
+        display: grid;
+        grid-area: 1 / 1;
+        grid-auto-flow: column;
+        grid-auto-columns: calc((100% - (var(--cms-carousel-per-view) - 1) * var(--cms-gap)) / var(--cms-carousel-per-view));
+        gap: var(--cms-gap);
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .cms-carousel__track {
+            scroll-behavior: smooth;
+        }
+    }
+
+    /* A slide's block fills it, so the product cards of a carousel are as tall as each other */
+    .cms-carousel__slide {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        min-width: 0;
+        scroll-snap-align: start;
+    }
+
+    /* With the script's buttons and dots, the track needs no scrollbar */
+    .cms-carousel:has(> .cms-carousel__dots) > .cms-carousel__track {
+        scrollbar-width: none;
+    }
+
+    .cms-carousel__prev,
+    .cms-carousel__next {
+        z-index: 1;
+        display: grid;
+        grid-area: 1 / 1;
+        place-items: center;
+        align-self: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        margin-inline: 0.5rem;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+        color: #1b1c1d;
+        cursor: pointer;
+    }
+
+    .cms-carousel__prev {
+        justify-self: start;
+    }
+
+    .cms-carousel__next {
+        justify-self: end;
+    }
+
+    .cms-carousel:dir(rtl) :is(.cms-carousel__prev, .cms-carousel__next) svg {
+        transform: scaleX(-1);
+    }
+
+    .cms-carousel__dots {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    /* A dot is a small circle on a button big enough to tap */
+    .cms-carousel__dot {
+        display: grid;
+        place-items: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        cursor: pointer;
+    }
+
+    .cms-carousel__dot::before {
+        content: "";
+        width: 0.625rem;
+        height: 0.625rem;
+        border-radius: 50%;
+        background: currentColor;
+        opacity: 0.3;
+    }
+
+    .cms-carousel__dot[aria-current="true"]::before {
+        opacity: 1;
+    }
 }

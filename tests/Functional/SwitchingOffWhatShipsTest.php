@@ -20,7 +20,7 @@ final class SwitchingOffWhatShipsTest extends WebTestCase
     /**
      * @test
      */
-    public function it_does_not_load_the_stylesheet_in_the_shop_when_assets_is_off(): void
+    public function it_does_not_load_the_stylesheet_or_the_carousel_script_in_the_shop_when_assets_is_off(): void
     {
         $client = self::createClient();
 
@@ -28,6 +28,7 @@ final class SwitchingOffWhatShipsTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorNotExists('link[href*="setonosyliuscmsplugin/shop/cms.css"]');
+        self::assertSelectorNotExists('script[src*="setonosyliuscmsplugin/shop/cms.js"]');
     }
 
     /**

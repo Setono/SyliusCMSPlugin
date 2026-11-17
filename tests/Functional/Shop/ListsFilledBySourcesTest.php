@@ -164,7 +164,9 @@ final class ListsFilledBySourcesTest extends WebTestCase
     }
 
     /**
-     * @return list<string>
+     * The product names. Typed loosely, since the lowest DomCrawler types each() as a bare array
+     *
+     * @return array<mixed>
      */
     private static function names(Crawler $crawler): array
     {
@@ -183,8 +185,11 @@ final class ListsFilledBySourcesTest extends WebTestCase
         $collector = $profile->getCollector('db');
         self::assertInstanceOf(DoctrineDataCollector::class, $collector);
 
+        $byConnection = $collector->getQueries();
+        self::assertIsArray($byConnection);
+
         $queries = [];
-        foreach ($collector->getQueries() as $connectionQueries) {
+        foreach ($byConnection as $connectionQueries) {
             self::assertIsArray($connectionQueries);
             foreach ($connectionQueries as $query) {
                 self::assertIsArray($query);

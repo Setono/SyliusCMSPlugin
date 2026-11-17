@@ -460,7 +460,7 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
-    public function it_lets_a_project_stop_loading_the_shipped_stylesheet(): void
+    public function it_lets_a_project_stop_loading_the_shipped_stylesheet_and_carousel_script(): void
     {
         $this->assertProcessedConfigurationEquals([['assets' => false]], ['assets' => false], 'assets');
     }

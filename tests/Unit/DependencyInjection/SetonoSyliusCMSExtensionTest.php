@@ -304,6 +304,32 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_loads_the_carousel_script_through_the_shop_layout_javascripts_template_event_after_sylius_own_scripts(): void
+    {
+        $this->load();
+
+        self::assertSame([
+            'blocks' => [
+                'setono_sylius_cms_javascript' => ['template' => '@SetonoSyliusCMSPlugin/shop/javascript.html.twig', 'priority' => 5],
+            ],
+        ], $this->templateEvents()['sylius.shop.layout.javascripts'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function it_does_not_load_the_carousel_script_when_assets_is_off(): void
+    {
+        $this->container->loadFromExtension('setono_sylius_cms', ['assets' => false]);
+
+        $this->load(['assets' => false]);
+
+        self::assertArrayNotHasKey('sylius.shop.layout.javascripts', $this->templateEvents());
+    }
+
+    /**
+     * @test
+     */
     public function it_builds_the_entry_overview_page_from_template_events_whose_blocks_are_its_header_actions_and_sections(): void
     {
         $this->load();

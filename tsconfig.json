@@ -18,5 +18,5 @@
         "skipLibCheck": true,
         "noEmit": true
     },
-    "include": ["assets/builder/src", "assets/builder/tests"]
+    "include": ["assets/builder/src", "assets/builder/tests", "assets/shop/src", "assets/shop/tests"]
 }

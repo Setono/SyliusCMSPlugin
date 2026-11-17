@@ -1,13 +1,13 @@
 {
     "name": "setono-sylius-cms-plugin-builder",
     "private": true,
-    "description": "The builder app of setono/sylius-cms-plugin. Its compiled assets are committed to src/Resources/public/builder.",
+    "description": "The builder app and the shop script of setono/sylius-cms-plugin. Their compiled assets are committed to src/Resources/public/builder and src/Resources/public/shop/cms.js.",
     "license": "UNLICENSED",
     "engines": {
         "node": ">=20"
     },
     "scripts": {
-        "build": "npm run typecheck && vite build && vite build --mode bridge",
+        "build": "npm run typecheck && vite build && vite build --mode bridge && vite build --mode shop",
         "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
         "test": "vitest run"
     },
