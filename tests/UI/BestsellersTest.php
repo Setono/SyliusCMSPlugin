@@ -7,13 +7,12 @@ namespace Setono\SyliusCMSPlugin\Tests\UI;
 use Playwright\Assertions\Expect;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Orders;
-use Sylius\Component\Core\OrderPaymentStates;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * A Products block filled by Bestsellers: once setono:cms:bestsellers:compute has scored the paid orders, the editor
+ * A Products block filled by Bestsellers: once setono:cms:bestsellers:compute has scored the orders, the editor
  * picks "Bestsellers" in "Filled by", and shoppers see the best seller first. See "Bestsellers" in docs/spec/sources.md
  */
 final class BestsellersTest extends UITestCase
@@ -34,8 +33,8 @@ final class BestsellersTest extends UITestCase
         self::createOrder([$mug, $cap]);
         self::createOrder([$mug]);
         self::createOrder([$cap]);
-        // Not paid, so it doesn't count
-        self::createOrder([$shirt], OrderPaymentStates::STATE_AWAITING_PAYMENT);
+        // Completed before the window, so it doesn't count
+        self::createOrder([$shirt], checkoutCompletedAt: new \DateTime('-31 days'));
         self::computeBestsellers();
         $this->signInAsAdmin();
         $entry = self::createPage('Bestsellers', 'bestsellers');

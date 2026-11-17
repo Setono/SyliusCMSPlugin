@@ -10,15 +10,14 @@ use Doctrine\ORM\QueryBuilder;
 use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Time\Duration;
 use Sylius\Component\Core\Model\ChannelInterface;
-use Sylius\Component\Core\OrderPaymentStates;
 
 /**
- * The default bestsellers calculator: a product's score in a channel is how many of the channel's paid orders
- * contained it, counting each order once, over a rolling window, bestsellers.window. An order counts when its checkout
- * completed inside the window and its payment state is paid. It counts in SQL, a row per product sold.
- * See "Bestsellers" in docs/spec/sources.md
+ * The default bestsellers calculator: a product's score in a channel is how many of the channel's orders contained it,
+ * counting each order once, over a rolling window, bestsellers.window. An order counts when its checkout completed
+ * inside the window, whatever its payment state. It counts in SQL, a row per product sold. A project that counts only
+ * some orders, such as the paid ones, builds on createQueryBuilder(). See "Bestsellers" in docs/spec/sources.md
  */
-final readonly class PaidOrdersCalculator implements BestsellersCalculatorInterface
+final readonly class CompletedOrdersCalculator implements BestsellersCalculatorInterface
 {
     private Duration $window;
 
@@ -49,9 +48,10 @@ final readonly class PaidOrdersCalculator implements BestsellersCalculatorInterf
     }
 
     /**
-     * The query calculate() runs: the code of each product the channel's paid orders inside the window contained, as
-     * productCode, and how many of them did, as orders. The order's alias is "o", and its item's, variant's and
-     * product's are "item", "variant" and "product", so a project's calculator can build on it
+     * The query calculate() runs: the code of each product that the channel's orders completed inside the window
+     * contained, as productCode, and how many of them did, as orders. The order's alias is "o", and its item's,
+     * variant's and product's are "item", "variant" and "product", so a project's calculator can build on it, such as
+     * by adding a condition on o.paymentState
      */
     public function createQueryBuilder(ChannelInterface $channel): QueryBuilder
     {
@@ -64,12 +64,10 @@ final readonly class PaidOrdersCalculator implements BestsellersCalculatorInterf
             ->innerJoin('item.variant', 'variant')
             ->innerJoin('variant.product', 'product')
             ->andWhere('o.channel = :channel')
-            ->andWhere('o.paymentState = :paymentState')
             ->andWhere('o.checkoutCompletedAt >= :since')
             ->andWhere('o.checkoutCompletedAt <= :until')
             ->groupBy('product.code')
             ->setParameter('channel', $channel)
-            ->setParameter('paymentState', OrderPaymentStates::STATE_PAID)
             ->setParameter('since', $this->window->before($until), Types::DATETIME_IMMUTABLE)
             ->setParameter('until', $until, Types::DATETIME_IMMUTABLE)
         ;

@@ -19,9 +19,9 @@ use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Helpers for functional and UI tests that need orders, which the test fixtures don't have, such as the paid orders the
- * default bestsellers calculator counts. An order is written as it is once its checkout completed, in the states the
- * test gives it, without going through Sylius's checkout
+ * Helpers for functional and UI tests that need orders, which the test fixtures don't have, such as the completed
+ * orders the default bestsellers calculator counts. An order is written as it is once its checkout completed, in the
+ * states the test gives it, without going through Sylius's checkout
  */
 trait Orders
 {

@@ -549,7 +549,7 @@ interface BestsellersCalculatorInterface
 }
 ```
 
-`setono:cms:bestsellers:compute` calls it per channel and stores the scores. The default counts paid orders over `bestsellers.window`. A project with analytics data aliases the interface to its own calculator ([Sources](sources.md#bestsellers)).
+`setono:cms:bestsellers:compute` calls it per channel and stores the scores. The default, `CompletedOrdersCalculator`, counts the orders whose checkout completed inside `bestsellers.window`, whatever their payment state. A project with analytics data aliases the interface to its own calculator, which can build on the default's public `createQueryBuilder(channel)` ([Sources](sources.md#bestsellers)).
 
 ## Rendering services
 
@@ -760,7 +760,7 @@ setono_sylius_cms:
         keep: 50             # per entry; older ones are pruned by setono:cms:revisions:prune
 
     bestsellers:
-        window: 'P30D'       # ISO 8601 duration the default calculator counts paid orders over
+        window: 'P30D'       # ISO 8601 duration the default calculator counts completed orders over
 
     resources:               # the shipped Sylius resources, registered as setono_sylius_cms.<name>
         page:

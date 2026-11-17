@@ -89,7 +89,7 @@ Every shipped source can be disabled with `setono_sylius_cms.disabled.sources`. 
 The Bestsellers source is swapped at its calculation, not at its lookup ([ADR 0022](../adr/0022-sources-return-a-pagerfanta-adapter.md)).
 
 - **A calculator** implements `BestsellersCalculatorInterface` and yields a score for each product code in a channel ([Extending](extending.md#bestsellers)).
-- **The default calculator** scores each product by how many paid orders contained it, in the channel, over a rolling window: `setono_sylius_cms.bestsellers.window`, 30 days (`P30D`) by default. An order counts when its checkout completed inside the window and its payment state is paid.
+- **The default calculator**, `CompletedOrdersCalculator`, scores each product by how many orders contained it, in the channel, over a rolling window: `setono_sylius_cms.bestsellers.window`, 30 days (`P30D`) by default. An order counts when its checkout completed inside the window, whatever its payment state. Its query is public, `createQueryBuilder(channel)`, so a project's calculator can narrow it, such as to paid orders.
 - **`setono:cms:bestsellers:compute [--channel=CODE]`** runs the calculator for every channel, or one, and replaces that channel's scores in the plugin's table. The project runs it from cron. When it finishes, it dispatches `BestsellersComputed` with the channel codes ([Extending](extending.md#events)).
 - **The source** joins the visible-products query against the scores for the current channel, with its taxon filter and its order in SQL, so a list of 8 never comes up short while there are 8 scored products. Products with no score are left out.
 - **Until the command first runs**, the table is empty, and so is every Bestsellers list.
