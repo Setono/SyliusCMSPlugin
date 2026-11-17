@@ -113,12 +113,15 @@ function PickerDialog({ api, config, mode, onClose }: PickerDialogProps) {
                 <Dialog.Overlay className={styles.overlay} />
                 <Dialog.Content className={styles.dialog} aria-describedby={undefined}>
                     <Dialog.Title className={styles.title}>{t('setono_sylius_cms.builder.media.picker_title')}</Dialog.Title>
-                    <MediaLibraryProvider value={library}>
-                        <div className={styles.library}>
-                            <MediaLibrary />
-                        </div>
-                        <PickerActions onClose={onClose} />
-                    </MediaLibraryProvider>
+                    {/* A picker of its own, so picking a video's poster in it opens another over it and leaves this pick open */}
+                    <MediaPickerProvider api={api} config={config}>
+                        <MediaLibraryProvider value={library}>
+                            <div className={styles.library}>
+                                <MediaLibrary />
+                            </div>
+                            <PickerActions onClose={onClose} />
+                        </MediaLibraryProvider>
+                    </MediaPickerProvider>
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>

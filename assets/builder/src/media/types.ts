@@ -114,4 +114,6 @@ export interface MediaItemChanges {
     /** The locales that change. An empty one removes the alt text. */
     altTexts?: Record<string, string>;
     focalPoint?: FocalPoint;
+    /** A video's poster: an image media item's UUID, or null for none. */
+    poster?: string | null;
 }

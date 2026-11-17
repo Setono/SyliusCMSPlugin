@@ -518,6 +518,8 @@ setono_sylius_cms:
             open_file: Open the file
             pick: Choose from the library
             picker_title: Choose from the media library
+            poster: Poster
+            poster_help: An image shown before the video plays. Video blocks show it unless they set one of their own.
             remove: Remove
             rename_folder: Rename folder
             replace: Replace

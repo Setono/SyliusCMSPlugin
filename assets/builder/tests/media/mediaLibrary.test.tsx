@@ -25,7 +25,8 @@ function fakeApi(
                     (filters.folder === 'all' || (filters.folder === 'unsorted' ? item.folder === null : item.folder === filters.folder)) &&
                     (!filters.missingAlt || item.missingAlt) &&
                     (filters.unused !== true || item.usageCount === 0) &&
-                    (filters.kind === null || item.kind === filters.kind),
+                    (filters.kind === null || item.kind === filters.kind) &&
+                    (filters.kinds === undefined || filters.kinds.includes(item.kind)),
             );
 
             return { items: shown, page: 1, pages: 1, total: shown.length };
@@ -49,6 +50,7 @@ function fakeApi(
                 ...(changes.name === undefined ? {} : { name: changes.name }),
                 ...(changes.folder === undefined ? {} : { folder: changes.folder }),
                 ...(changes.focalPoint === undefined ? {} : { focalPoint: changes.focalPoint }),
+                ...(changes.poster === undefined ? {} : { poster: changes.poster }),
                 altTexts,
                 missingAlt: libraryConfig.locales.some(({ code }) => altTexts[code] === undefined),
             };
@@ -219,6 +221,35 @@ describe('the media library', () => {
         });
         expect(grid().getByRole('button', { name: /Golden retriever/ })).not.toHaveTextContent('No alt text');
         expect(grid().getByRole('button', { name: /cat/ })).toHaveTextContent('No alt text');
+    });
+
+    it("should set a selected video's poster to an image picked in the library's own picker, and remove it, saved with the rest", async () => {
+        const api = fakeApi([mediaItem('clip', { kind: 'video', name: 'Launch film', missingAlt: false }), mediaItem('still', { name: 'Launch still' })]);
+        await openLibrary(api);
+        await waitFor(() => expect(grid().getAllByRole('listitem')).toHaveLength(2));
+
+        fireEvent.click(grid().getByRole('button', { name: /Launch film/ }));
+        const poster = within(within(screen.getByRole('complementary', { name: 'Launch film' })).getByRole('group', { name: 'Poster' }));
+        expect(poster.getByText('Nothing chosen')).toBeInTheDocument();
+        fireEvent.click(poster.getByRole('button', { name: 'Choose from the library' }));
+
+        const picker = within(await screen.findByRole('dialog', { name: 'Choose from the media library' }));
+        const pickerGrid = within(picker.getByTestId('media-drop-zone'));
+        await waitFor(() => expect(pickerGrid.getAllByRole('listitem')).toHaveLength(1));
+        fireEvent.click(pickerGrid.getByRole('button', { name: /Launch still/ }));
+        fireEvent.click(picker.getByRole('button', { name: 'Choose' }));
+        await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+        expect(poster.getByText('Launch still')).toBeInTheDocument();
+        const details = within(screen.getByRole('complementary', { name: 'Launch film' }));
+        fireEvent.click(details.getByRole('button', { name: 'Save' }));
+        await waitFor(() => expect(details.getByRole('status')).toHaveTextContent('Saved'));
+        expect(api.save).toHaveBeenCalledWith('clip', { name: 'Launch film', credit: null, poster: 'still' });
+
+        fireEvent.click(poster.getByRole('button', { name: 'Remove' }));
+        expect(poster.getByText('Nothing chosen')).toBeInTheDocument();
+        fireEvent.click(details.getByRole('button', { name: 'Save' }));
+        await waitFor(() => expect(api.save).toHaveBeenLastCalledWith('clip', { name: 'Launch film', credit: null, poster: null }));
     });
 
     it('should show only the images missing alt text when filtered', async () => {

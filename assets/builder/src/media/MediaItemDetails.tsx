@@ -4,6 +4,7 @@ import { useMediaLibrary, useMediaLibraryContext } from './context';
 import { DeleteMediaItemDialog } from './DeleteMediaItemDialog';
 import { Field } from './Field';
 import { FocalPointEditor } from './FocalPointEditor';
+import { PosterField } from './PosterField';
 import { flattenTree, folderTree } from './folders';
 import styles from './MediaLibrary.module.css';
 import { ReplaceFileDialog } from './ReplaceFileDialog';
@@ -12,8 +13,8 @@ import { formatSize } from './upload';
 import { UsedIn } from './UsedIn';
 
 /**
- * The selected media item: its focal point, name, credit and alt text per locale, saved together, which takes effect at
- * once wherever it's used, Move, which puts it in another folder, its Used in list, Replace file, and Delete, which is
+ * The selected media item: its focal point, name, credit, alt text per locale and a video's poster, saved together,
+ * which takes effect at once wherever it's used, Move, which puts it in another folder, its Used in list, Replace file, and Delete, which is
  * disabled while it's used. See "Media library" in docs/spec/admin.md.
  */
 export function MediaItemDetails({ item }: { item: MediaItem }) {
@@ -28,9 +29,11 @@ export function MediaItemDetails({ item }: { item: MediaItem }) {
     const [credit, setCredit] = useState(item.credit ?? '');
     const [altTexts, setAltTexts] = useState<Record<string, string>>(() => Object.fromEntries(config.locales.map(({ code }) => [code, item.altTexts[code] ?? ''])));
     const [focalPoint, setFocalPoint] = useState<FocalPoint>(item.focalPoint ?? { x: 0.5, y: 0.5 });
+    const [poster, setPoster] = useState(item.poster);
     const [moveTo, setMoveTo] = useState(item.folder ?? '');
     const [dialog, setDialog] = useState<'replace' | 'delete' | null>(null);
     const image = item.kind === 'image';
+    const video = item.kind === 'video';
     const usedInList = useMediaLibrary((state) => (state.uses?.uuid === item.uuid ? state.uses.list : null));
     // Delete stays disabled while it's used, or while what uses it is looked up
     const inUse = item.usageCount > 0 || usedInList === null || usedInList.length > 0;
@@ -45,6 +48,7 @@ export function MediaItemDetails({ item }: { item: MediaItem }) {
             name,
             credit: credit.trim() === '' ? null : credit,
             ...(image ? { altTexts, focalPoint } : {}),
+            ...(video ? { poster } : {}),
         });
     };
 
@@ -84,6 +88,8 @@ export function MediaItemDetails({ item }: { item: MediaItem }) {
                         ))}
                     </fieldset>
                 )}
+
+                {video && <PosterField value={poster} onChange={setPoster} />}
 
                 <p className={styles.help}>{t('setono_sylius_cms.builder.media.takes_effect')}</p>
                 <div className={styles.actions}>

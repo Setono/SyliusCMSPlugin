@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\UI;
 use Doctrine\Persistence\ObjectManager;
 use Playwright\Assertions\Expect;
 use Playwright\Locator\LocatorInterface;
+use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
 
@@ -79,6 +80,56 @@ final class MediaLibraryTest extends UITestCase
         self::assertSame('Waves on a sandy beach', $beach->getAltText('en_US'));
         self::assertEqualsWithDelta(0.25, $beach->getFocalPoint()->x, 0.02);
         self::assertEqualsWithDelta(0.75, $beach->getFocalPoint()->y, 0.02);
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_an_editor_give_a_video_a_poster_picked_in_the_library_and_remove_it_again(): void
+    {
+        $video = $this->uploadMediaItem('launch-film.mp4', self::mp4());
+        $still = $this->uploadMediaItem('launch-still.png', self::png(64, 36));
+        $this->uploadMediaItem('size-guide.pdf', self::pdf());
+        $this->signInAsAdmin();
+
+        $browser = $this->visit('/admin/cms/media');
+        $dropZone = $browser->getByTestId('media-drop-zone');
+        self::item($dropZone, 'launch-film')->click();
+        $details = $browser->getByRole('complementary', ['name' => 'launch-film']);
+        $poster = $details->getByRole('group', ['name' => 'Poster']);
+        Expect::locator($poster)->toContainText('Nothing chosen');
+
+        // The library's own picker offers only images
+        $poster->getByRole('button', ['name' => 'Choose from the library'])->click();
+        $picker = $browser->getByRole('dialog', ['name' => 'Choose from the media library']);
+        $pickerItems = $picker->getByTestId('media-drop-zone')->locator('[data-media-item]');
+        Expect::locator($pickerItems)->toHaveCount(1);
+        $pickerItems->filter(['hasText' => 'launch-still'])->click();
+        $picker->getByRole('button', ['name' => 'Choose', 'exact' => true])->click();
+        Expect::locator($picker)->toBeHidden();
+        Expect::locator($poster)->toContainText('launch-still');
+
+        $details->getByRole('button', ['name' => 'Save'])->click();
+        Expect::locator($details->getByRole('status'))->toHaveText('Saved');
+        self::assertSame($still->getUuid(), $this->reloaded($video->getUuid())->getPoster()?->getUuid());
+
+        // Removed again
+        $poster->getByRole('button', ['name' => 'Remove'])->click();
+        $details->getByRole('button', ['name' => 'Save'])->click();
+        Expect::locator($details->getByRole('status'))->toHaveText('Saved');
+        Expect::locator($poster)->toContainText('Nothing chosen');
+        self::assertNull($this->reloaded($video->getUuid())->getPoster());
+    }
+
+    private function reloaded(string $uuid): MediaItemInterface
+    {
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.media_item');
+        $manager->clear();
+        /** @var MediaItemRepositoryInterface $mediaItems */
+        $mediaItems = self::getContainer()->get(MediaItemRepositoryInterface::class);
+
+        return $mediaItems->findOneByUuid($uuid) ?? throw new \RuntimeException(sprintf('There is no media item %s', $uuid));
     }
 
     private static function item(LocatorInterface $dropZone, string $name): LocatorInterface

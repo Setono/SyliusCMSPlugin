@@ -254,6 +254,8 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.media.open_file'
     | 'setono_sylius_cms.builder.media.pick'
     | 'setono_sylius_cms.builder.media.picker_title'
+    | 'setono_sylius_cms.builder.media.poster'
+    | 'setono_sylius_cms.builder.media.poster_help'
     | 'setono_sylius_cms.builder.media.remove'
     | 'setono_sylius_cms.builder.media.rename_folder'
     | 'setono_sylius_cms.builder.media.replace'
