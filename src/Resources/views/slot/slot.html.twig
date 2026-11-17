@@ -13,7 +13,7 @@
     <div data-cms-slot-label style="position:absolute;top:0;left:0;padding:0.125rem 0.5rem;border-radius:4px 0 4px 0;background:#2563eb;color:#fff;font:600 12px/1.5 system-ui,sans-serif">{{ slot.label|trans }}</div>
 {%- endif -%}
 <div class="{{ slot.wrapperClass }}">
-    {%- for placed in snippets %}{% with { _cms_render_context: placed.context ?? _cms_render_context } %}{{ cms_blocks(placed.blocks) }}{% endwith %}{% endfor -%}
+    {%- for placed in snippets %}{% with { _cms_render_context: placed.context } %}{{ cms_blocks(placed.blocks) }}{% endwith %}{% endfor -%}
 </div>
 {%- if outlined -%}
 </div>

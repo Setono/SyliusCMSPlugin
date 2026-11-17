@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Rendering;
 
 use Setono\SyliusCMSPlugin\Context\HostPageContextResolverInterface;
-use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
 use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
@@ -79,16 +78,9 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
         $renderContext = $this->renderContextFactory->create($provided);
 
         // 3. Those whose page scope matches the page, and whose snippet is visible and needs no more context than the slot
-        // provides, in editor order, and 4. in a capped slot, the first `cap` of them
-        $winners = [];
-        foreach ($this->placementPicker->pick($slot, $placements, $renderContext) as $candidate) {
-            if ($candidate->wins()) {
-                $winners[] = [$candidate->placement, $candidate->snippet, $candidate->previewed];
-            }
-        }
-
-        // 5. Each winning snippet's tree with the slot's context
-        return $this->renderSnippets($slot, $winners, $renderContext);
+        // provides, in editor order, and 4. in a capped slot, the first `cap` of them, then 5. each winning snippet's tree
+        // with the slot's context
+        return $this->renderSnippets($slot, $this->placementPicker->pick($slot, $placements, $renderContext), $renderContext);
     }
 
     /**
@@ -128,24 +120,28 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
      * a snippet, its draft is marked for the builder, in the slot outlined and labelled, even when none of its blocks
      * show, so the editor sees where it goes
      *
-     * @param list<array{PlacementData, SnippetInterface, bool}> $winners each with whether it's the previewed draft
+     * @param list<CandidatePlacement> $candidates every placement in the slot, with whether it wins
      */
-    private function renderSnippets(SlotMetadata $slot, array $winners, RenderContext $context): string
+    private function renderSnippets(SlotMetadata $slot, array $candidates, RenderContext $context): string
     {
-        if ([] === $winners) {
+        $trees = [];
+        foreach ($candidates as $index => $candidate) {
+            if (!$candidate->wins()) {
+                continue;
+            }
+
+            try {
+                $trees[$index] = $this->upgrader->readBlockTree($candidate->snippet);
+            } catch (\Throwable $e) {
+                $this->failures->snippetFailed($candidate->placement, $e);
+            }
+        }
+
+        if ([] === $trees) {
             return '';
         }
 
         $shoppers = self::asShoppersSeeIt($context);
-
-        $trees = [];
-        foreach ($winners as $index => [$placement, $snippet]) {
-            try {
-                $trees[$index] = $this->upgrader->readBlockTree($snippet);
-            } catch (\Throwable $e) {
-                $this->failures->snippetFailed($placement, $e);
-            }
-        }
 
         $references = $this->referenceLoader->load((function () use ($trees): \Generator {
             foreach ($trees as $tree) {
@@ -155,14 +151,17 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
 
         $outlined = false;
         $snippets = [];
-        foreach ($trees as $index => $tree) {
-            [$placement, $snippet, $previewed] = $winners[$index];
+        foreach ($candidates as $index => $winner) {
+            // Each winner whose tree could be read
+            if (!$winner->wins() || !isset($trees[$index])) {
+                continue;
+            }
 
-            $marked = $previewed && RenderContext::PREVIEW_MODE_BUILDER === $context->previewMode;
+            $marked = $winner->previewed && RenderContext::PREVIEW_MODE_BUILDER === $context->previewMode;
             $snippetContext = $marked ? $context : $shoppers;
-            $blocks = $this->blockViewBuilder->build($tree->blocks, $snippetContext, $references, $snippet->getUuid());
+            $blocks = $this->blockViewBuilder->build($trees[$index]->blocks, $snippetContext, $references, $winner->snippet->getUuid());
             if ([] !== $blocks || $marked) {
-                $snippets[] = new PlacedSnippet($placement, $snippet, $blocks, $previewed, $snippetContext);
+                $snippets[] = new PlacedSnippet($winner->placement, $winner->snippet, $blocks, $winner->previewed, $snippetContext);
                 $outlined = $outlined || $marked;
             }
         }

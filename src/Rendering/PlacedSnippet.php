@@ -15,16 +15,16 @@ final readonly class PlacedSnippet
     /**
      * @param list<BlockView> $blocks
      * @param bool $previewed whether it's the draft of the snippet a snippet's preview or share link shows
-     * @param RenderContext|null $context the context its blocks render with, or null for the slot's. In the builder's
-     *                                    preview, only the previewed snippet's blocks get the builder's preview mode,
-     *                                    while the others show as shoppers see them
+     * @param RenderContext $context the context its blocks render with. In the builder's preview, only the previewed
+     *                               snippet's blocks get the builder's preview mode, while the others show as shoppers
+     *                               see them
      */
     public function __construct(
         public PlacementData $placement,
         public SnippetInterface $snippet,
         public array $blocks,
-        public bool $previewed = false,
-        public ?RenderContext $context = null,
+        public bool $previewed,
+        public RenderContext $context,
     ) {
     }
 }
