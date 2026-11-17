@@ -14,6 +14,7 @@ use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpKernel\Profiler\Profile;
 
 /**
@@ -134,7 +135,7 @@ final class ButtonTest extends WebTestCase
         $problems = $client->request('GET', sprintf('/admin/cms/entry/%s', $page->getUuid()))->filter('[data-section="problems"] [data-problem]');
         self::assertSame(
             [['broken_reference', 'error', self::BUTTON, 'Link in the Button block refers to a product that was deleted, so it isn\'t shown.']],
-            $problems->each(static fn ($problem): array => [$problem->attr('data-problem'), $problem->attr('data-severity'), $problem->attr('data-block'), $problem->filter('.description')->text()]),
+            $problems->each(static fn (Crawler $problem): array => [$problem->attr('data-problem'), $problem->attr('data-severity'), $problem->attr('data-block'), $problem->filter('.description')->text()]),
         );
     }
 
@@ -170,7 +171,7 @@ final class ButtonTest extends WebTestCase
         $crawler = $client->request('GET', '/en_US/start');
 
         self::assertResponseIsSuccessful();
-        self::assertSame([['About us', 'http://localhost/en_US/about']], $crawler->filter('.cms-tree .cms-button')->each(static fn ($button): array => [$button->text(), $button->attr('href')]));
+        self::assertSame([['About us', 'http://localhost/en_US/about']], $crawler->filter('.cms-tree .cms-button')->each(static fn (Crawler $button): array => [$button->text(), $button->attr('href')]));
     }
 
     /**
@@ -261,7 +262,7 @@ final class ButtonTest extends WebTestCase
         $client->enableProfiler();
         $crawler = $client->request('GET', '/en_US/start');
 
-        self::assertSame(['Red T-shirt', 'Mug'], $crawler->filter('.cms-tree .cms-button')->each(static fn ($button): string => $button->text()));
+        self::assertSame(['Red T-shirt', 'Mug'], $crawler->filter('.cms-tree .cms-button')->each(static fn (Crawler $button): string => $button->text()));
         self::assertCount(1, self::queriesOf($client, 'sylius_product '), 'One query loads the products');
     }
 
