@@ -13,8 +13,6 @@ use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
-use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
-use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Setono\SyliusCMSPlugin\Media\Video\VideoEmbed;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Uid\Uuid;
@@ -39,8 +37,8 @@ final readonly class VideoRuntime implements RuntimeExtensionInterface
         private MediaUrlGeneratorInterface $mediaUrlGenerator,
         private ImageProviderInterface $imageProvider,
         private ImageFormatsInterface $imageFormats,
-        private MediaItemRepositoryInterface $mediaItemRepository,
-        private RenderContextFactoryInterface $renderContextFactory,
+        private MediaItemArguments $mediaItems,
+        private RenderContexts $renderContexts,
     ) {
     }
 
@@ -74,9 +72,9 @@ final readonly class VideoRuntime implements RuntimeExtensionInterface
                 ]) . '</iframe>';
             }
         } else {
-            $mediaItem = $this->mediaItem($video, MediaKind::Video);
+            $mediaItem = $this->mediaItems->mediaItem($video, MediaKind::Video);
             if (null !== $mediaItem) {
-                $poster = $this->mediaItem($options['poster'], MediaKind::Image) ?? $this->mediaItem($mediaItem->getPoster(), MediaKind::Image);
+                $poster = $this->mediaItems->mediaItem($options['poster'], MediaKind::Image) ?? $this->mediaItems->mediaItem($mediaItem->getPoster(), MediaKind::Image);
 
                 return HtmlTag::open('video', [
                     'src' => $this->mediaUrlGenerator->generate($mediaItem),
@@ -91,11 +89,7 @@ final readonly class VideoRuntime implements RuntimeExtensionInterface
             }
         }
 
-        if (RenderContext::PREVIEW_MODE_BUILDER !== $this->renderContext($context)->previewMode) {
-            return '';
-        }
-
-        return HtmlTag::open('span', ['class' => trim('cms-image-placeholder ' . $options['class']), 'style' => 'aspect-ratio: 1.7778', 'aria-hidden' => 'true']) . '</span>';
+        return RenderContext::PREVIEW_MODE_BUILDER === $this->renderContexts->of($context)->previewMode ? ImagePlaceholder::html(self::ASPECT_RATIO, [$options['class']]) : '';
     }
 
     /**
@@ -114,27 +108,6 @@ final readonly class VideoRuntime implements RuntimeExtensionInterface
         $posterWidth = max(1, min(self::POSTER_WIDTH, $width, (int) floor($height * self::ASPECT_RATIO)));
 
         return $this->imageProvider->url($poster, new ImageTransform($posterWidth, self::ASPECT_RATIO, $format, $poster->getFocalPoint()));
-    }
-
-    private function mediaItem(MediaItemInterface|string|null $media, MediaKind $kind): ?MediaItemInterface
-    {
-        if (is_string($media)) {
-            $media = Uuid::isValid($media) ? $this->mediaItemRepository->findOneByUuid(strtolower($media)) : null;
-        }
-
-        return null !== $media && $kind === $media->getKind() ? $media : null;
-    }
-
-    /**
-     * The render context of a CMS template, or the shop's anywhere else
-     *
-     * @param array<string, mixed> $context
-     */
-    private function renderContext(array $context): RenderContext
-    {
-        $renderContext = $context[CMSRuntime::RENDER_CONTEXT] ?? null;
-
-        return $renderContext instanceof RenderContext ? $renderContext : $this->renderContextFactory->create();
     }
 
     private static function resolver(): OptionsResolver

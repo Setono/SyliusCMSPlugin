@@ -16,6 +16,8 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\ImageFixture\FakeImageProvider;
+use Setono\SyliusCMSPlugin\Twig\RenderContexts;
+use Setono\SyliusCMSPlugin\Twig\MediaItemArguments;
 use Setono\SyliusCMSPlugin\Twig\CMSExtension;
 use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Setono\SyliusCMSPlugin\Twig\MediaRuntime;
@@ -72,10 +74,10 @@ final class VideoExtensionTest extends IntegrationTestCase
                 $this->mediaUrls(),
                 new FakeImageProvider(false),
                 new FakeImageProvider(false),
-                $this->mediaItems(),
-                $this->shopRenderContext(),
+                new MediaItemArguments($this->mediaItems()),
+                new RenderContexts($this->shopRenderContext()),
             ),
-            MediaRuntime::class => fn (): MediaRuntime => new MediaRuntime($this->permanentUrls(), $this->mediaItems()),
+            MediaRuntime::class => fn (): MediaRuntime => new MediaRuntime($this->permanentUrls(), new MediaItemArguments($this->mediaItems())),
         ])];
     }
 

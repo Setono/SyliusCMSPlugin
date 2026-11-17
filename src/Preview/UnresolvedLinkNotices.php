@@ -9,7 +9,9 @@ use Setono\SyliusCMSPlugin\Field\RichText;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
+use Setono\SyliusCMSPlugin\Rendering\FieldValue;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Twig\HtmlTag;
 use Setono\SyliusCMSPlugin\Value\Link as LinkValue;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -43,20 +45,17 @@ final readonly class UnresolvedLinkNotices implements BlockRendererInterface
 
         foreach ($this->blockTypes->get($view->type)->fields as $name => $field) {
             $message = match (true) {
-                $field->field instanceof Link && self::linkDoesNotResolve(self::value($view->block, $name)) => 'setono_sylius_cms.preview.unresolved_link',
-                $field->field instanceof RichText && self::holdsUnresolvedLinks(self::value($view->block, $name)) => 'setono_sylius_cms.preview.unresolved_rich_text_link',
+                $field->field instanceof Link && self::linkDoesNotResolve(FieldValue::read($view->block, $name)) => 'setono_sylius_cms.preview.unresolved_link',
+                $field->field instanceof RichText && self::holdsUnresolvedLinks(FieldValue::read($view->block, $name)) => 'setono_sylius_cms.preview.unresolved_rich_text_link',
                 default => null,
             };
             if (null === $message) {
                 continue;
             }
 
-            $html .= sprintf(
-                '<div data-cms-unresolved-link="%s" role="note" style="%s">%s</div>',
-                htmlspecialchars($name, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8'),
-                self::STYLE,
-                htmlspecialchars($this->translator->trans($message, ['%field%' => $this->translator->trans($field->field->label)]), \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8'),
-            );
+            $html .= HtmlTag::open('div', ['data-cms-unresolved-link' => $name, 'role' => 'note', 'style' => self::STYLE])
+                . htmlspecialchars($this->translator->trans($message, ['%field%' => $this->translator->trans($field->field->label)]), \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8')
+                . '</div>';
         }
 
         return $html;
@@ -76,19 +75,5 @@ final readonly class UnresolvedLinkNotices implements BlockRendererInterface
     private static function holdsUnresolvedLinks(mixed $value): bool
     {
         return $value instanceof RichTextValue && $value->unresolvedLinks > 0;
-    }
-
-    /**
-     * The block's hydrated value of the field, or null when it has none
-     */
-    private static function value(object $block, string $name): mixed
-    {
-        if (!property_exists($block, $name)) {
-            return null;
-        }
-
-        $property = new \ReflectionProperty($block, $name);
-
-        return $property->isInitialized($block) ? $property->getValue($block) : null;
     }
 }

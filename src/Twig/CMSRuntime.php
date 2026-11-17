@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Preview\FieldMarker;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
+use Setono\SyliusCMSPlugin\Rendering\FieldValue;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Value\RichText;
 use Twig\Extension\RuntimeExtensionInterface;
@@ -58,7 +59,7 @@ final readonly class CMSRuntime implements RuntimeExtensionInterface
             return self::escape($subject, $name, $this->fallbackValues->entryValue($subject, $name, $renderContext->localeCode));
         }
 
-        $html = self::escape($subject, $name, self::read($subject, $name));
+        $html = self::escape($subject, $name, FieldValue::read($subject, $name));
 
         $view = self::viewOf($context['view'] ?? null, $subject);
         if (!$renderContext instanceof RenderContext || null === $view) {
@@ -79,7 +80,7 @@ final readonly class CMSRuntime implements RuntimeExtensionInterface
     public function value(array $context, object $subject, string $name): mixed
     {
         if (!$subject instanceof EntryInterface) {
-            return self::read($subject, $name);
+            return FieldValue::read($subject, $name);
         }
 
         $renderContext = $context[self::RENDER_CONTEXT] ?? null;
@@ -94,20 +95,6 @@ final readonly class CMSRuntime implements RuntimeExtensionInterface
      * The value of a field of a block or a layout: its public property, which holds the hydrated value. One that was
      * never set is missing
      */
-    private static function read(object $subject, string $name): mixed
-    {
-        if (!property_exists($subject, $name)) {
-            throw new \InvalidArgumentException(sprintf('%s has no field "%s"', $subject::class, $name));
-        }
-
-        $property = new \ReflectionProperty($subject, $name);
-        if (!$property->isPublic()) {
-            throw new \InvalidArgumentException(sprintf('The field "%s" of %s must be a public property', $name, $subject::class));
-        }
-
-        return $property->isInitialized($subject) ? $property->getValue($subject) : null;
-    }
-
     private static function escape(object $subject, string $name, mixed $value): string
     {
         if (null === $value) {

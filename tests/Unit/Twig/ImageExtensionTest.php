@@ -16,6 +16,8 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\ImageFixture\FakeImageProvider;
+use Setono\SyliusCMSPlugin\Twig\RenderContexts;
+use Setono\SyliusCMSPlugin\Twig\MediaItemArguments;
 use Setono\SyliusCMSPlugin\Twig\CMSExtension;
 use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Setono\SyliusCMSPlugin\Twig\ImageRuntime;
@@ -78,8 +80,8 @@ final class ImageExtensionTest extends IntegrationTestCase
                 new FakeImageProvider($this->avif),
                 // de_CH falls back to de_DE, and then to en_US
                 new AltTextResolver(new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'), ['de_CH' => ['de_DE']])),
-                $this->mediaItems(),
-                $this->shopRenderContext(),
+                new MediaItemArguments($this->mediaItems()),
+                new RenderContexts($this->shopRenderContext()),
                 [320, 640, 960, 1280, 1600, 1920, 2560],
             ),
         ])];

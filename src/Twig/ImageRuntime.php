@@ -14,9 +14,6 @@ use Setono\SyliusCMSPlugin\Media\ImageRendition;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
-use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
-use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
-use Symfony\Component\Uid\Uuid;
 use Twig\Extension\RuntimeExtensionInterface;
 
 /**
@@ -25,9 +22,6 @@ use Twig\Extension\RuntimeExtensionInterface;
  */
 final readonly class ImageRuntime implements RuntimeExtensionInterface
 {
-    /** The aspect ratio of the placeholder of an empty image the template gives none for */
-    private const PLACEHOLDER_ASPECT_RATIO = 16 / 9;
-
     /**
      * @param list<int<1, max>> $widths media.widths, in ascending order
      */
@@ -35,8 +29,8 @@ final readonly class ImageRuntime implements RuntimeExtensionInterface
         private ImageProviderInterface $imageProvider,
         private ImageFormatsInterface $imageFormats,
         private AltTextResolverInterface $altTextResolver,
-        private MediaItemRepositoryInterface $mediaItemRepository,
-        private RenderContextFactoryInterface $renderContextFactory,
+        private MediaItemArguments $mediaItems,
+        private RenderContexts $renderContexts,
         private array $widths,
     ) {
     }
@@ -54,9 +48,9 @@ final readonly class ImageRuntime implements RuntimeExtensionInterface
     {
         $options = ImageOptions::fromArray($options);
 
-        $mediaItem = $this->mediaItem($media);
+        $mediaItem = $this->mediaItems->mediaItem($media, MediaKind::Image);
         if (null === $mediaItem) {
-            return RenderContext::PREVIEW_MODE_BUILDER === $this->renderContext($context)->previewMode ? self::placeholder($options) : '';
+            return RenderContext::PREVIEW_MODE_BUILDER === $this->renderContexts->of($context)->previewMode ? self::placeholder($options) : '';
         }
 
         $format = match ($options->format) {
@@ -70,7 +64,7 @@ final readonly class ImageRuntime implements RuntimeExtensionInterface
         // The art-directed images come first, so the browser takes one where its media query matches
         $sources = '';
         foreach ($options->artDirection as $artDirectedImage) {
-            $artDirectedItem = $this->mediaItem($artDirectedImage->image);
+            $artDirectedItem = $this->mediaItems->mediaItem($artDirectedImage->image, MediaKind::Image);
             if (null !== $artDirectedItem) {
                 $sources .= self::sources($this->rendition($artDirectedItem, $options, $artDirectedImage->aspectRatio), $artDirectedImage->media, $format, $avif);
             }
@@ -78,10 +72,10 @@ final readonly class ImageRuntime implements RuntimeExtensionInterface
 
         $image = $this->rendition($mediaItem, $options, $options->aspectRatio);
         if ($avif && $image->hasVariants()) {
-            $sources .= self::tag('source', ['type' => ImageFormat::Avif->mimeType(), 'srcset' => $image->srcset(ImageFormat::Avif), 'sizes' => $image->sizes]);
+            $sources .= HtmlTag::open('source', ['type' => ImageFormat::Avif->mimeType(), 'srcset' => $image->srcset(ImageFormat::Avif), 'sizes' => $image->sizes]);
         }
 
-        $img = self::tag('img', [
+        $img = HtmlTag::open('img', [
             'src' => $image->src($format),
             'srcset' => $image->hasVariants() ? $image->srcset($format) : null,
             'sizes' => $image->sizes,
@@ -98,7 +92,7 @@ final readonly class ImageRuntime implements RuntimeExtensionInterface
             return $img;
         }
 
-        return self::tag('picture', ['class' => $options->pictureClass]) . $sources . $img . '</picture>';
+        return HtmlTag::open('picture', ['class' => $options->pictureClass]) . $sources . $img . '</picture>';
     }
 
     private function rendition(MediaItemInterface $mediaItem, ImageOptions $options, ?float $aspectRatio): ImageRendition
@@ -115,19 +109,10 @@ final readonly class ImageRuntime implements RuntimeExtensionInterface
         $size = ['sizes' => $image->sizes, 'width' => $image->width, 'height' => $image->height];
         $sources = '';
         if ($avif && $image->hasVariants()) {
-            $sources .= self::tag('source', ['media' => $media, 'type' => ImageFormat::Avif->mimeType(), 'srcset' => $image->srcset(ImageFormat::Avif)] + $size);
+            $sources .= HtmlTag::open('source', ['media' => $media, 'type' => ImageFormat::Avif->mimeType(), 'srcset' => $image->srcset(ImageFormat::Avif)] + $size);
         }
 
-        return $sources . self::tag('source', ['media' => $media, 'srcset' => $image->srcset($format)] + $size);
-    }
-
-    private function mediaItem(MediaItemInterface|string|null $media): ?MediaItemInterface
-    {
-        if (is_string($media)) {
-            $media = Uuid::isValid($media) ? $this->mediaItemRepository->findOneByUuid(strtolower($media)) : null;
-        }
-
-        return null !== $media && MediaKind::Image === $media->getKind() ? $media : null;
+        return $sources . HtmlTag::open('source', ['media' => $media, 'srcset' => $image->srcset($format)] + $size);
     }
 
     /**
@@ -142,19 +127,7 @@ final readonly class ImageRuntime implements RuntimeExtensionInterface
             return $options->alt;
         }
 
-        return $this->altTextResolver->resolve($mediaItem, $this->renderContext($context)->localeCode) ?? '';
-    }
-
-    /**
-     * The render context of a CMS template, or the shop's anywhere else
-     *
-     * @param array<string, mixed> $context
-     */
-    private function renderContext(array $context): RenderContext
-    {
-        $renderContext = $context[CMSRuntime::RENDER_CONTEXT] ?? null;
-
-        return $renderContext instanceof RenderContext ? $renderContext : $this->renderContextFactory->create();
+        return $this->altTextResolver->resolve($mediaItem, $this->renderContexts->of($context)->localeCode) ?? '';
     }
 
     /**
@@ -163,37 +136,12 @@ final readonly class ImageRuntime implements RuntimeExtensionInterface
      */
     private static function placeholder(ImageOptions $options): string
     {
-        $style = 'aspect-ratio: ' . self::number($options->aspectRatio ?? self::PLACEHOLDER_ASPECT_RATIO);
-        if (null !== $options->width) {
-            $style .= match ($options->layout) {
-                ImageLayout::Fixed => sprintf('; width: %dpx', $options->width),
-                ImageLayout::Constrained => sprintf('; max-width: %dpx', $options->width),
-                ImageLayout::FullWidth => '',
-            };
-        }
+        $size = null === $options->width ? '' : match ($options->layout) {
+            ImageLayout::Fixed => sprintf('; width: %dpx', $options->width),
+            ImageLayout::Constrained => sprintf('; max-width: %dpx', $options->width),
+            ImageLayout::FullWidth => '',
+        };
 
-        return self::tag('span', ['class' => implode(' ', array_filter(['cms-image-placeholder', $options->pictureClass, $options->class], static fn (?string $class): bool => null !== $class)), 'style' => $style, 'aria-hidden' => 'true']) . '</span>';
-    }
-
-    private static function number(float $number): string
-    {
-        return rtrim(rtrim(number_format($number, 4, '.', ''), '0'), '.');
-    }
-
-    /**
-     * An opening tag with the attributes that have a value, escaped
-     *
-     * @param array<string, string|int|null> $attributes
-     */
-    private static function tag(string $name, array $attributes): string
-    {
-        $html = '<' . $name;
-        foreach ($attributes as $attribute => $value) {
-            if (null !== $value) {
-                $html .= sprintf(' %s="%s"', $attribute, htmlspecialchars((string) $value, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8'));
-            }
-        }
-
-        return $html . '>';
+        return ImagePlaceholder::html($options->aspectRatio ?? ImagePlaceholder::ASPECT_RATIO, [$options->pictureClass, $options->class], $size);
     }
 }

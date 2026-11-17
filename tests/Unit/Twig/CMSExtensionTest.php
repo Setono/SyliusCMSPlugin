@@ -40,6 +40,7 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\Faq;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\NotABlock;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\Quote;
+use Setono\SyliusCMSPlugin\Twig\RenderContexts;
 use Setono\SyliusCMSPlugin\Twig\CMSExtension;
 use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Setono\SyliusCMSPlugin\Twig\HeadTagsRuntime;
@@ -155,7 +156,7 @@ final class CMSExtensionTest extends IntegrationTestCase
             ),
             LinkRuntime::class => fn (): LinkRuntime => new LinkRuntime(
                 new EntryLinkTarget($this->visibleEntries(), $canonicalUrls, $this->prophesize(SearchInterface::class)->reveal()),
-                $this->shopRenderContext(),
+                new RenderContexts($this->shopRenderContext()),
             ),
         ]);
         $blockTwig->addRuntimeLoader($runtimes);

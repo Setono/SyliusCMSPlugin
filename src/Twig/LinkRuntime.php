@@ -7,8 +7,6 @@ namespace Setono\SyliusCMSPlugin\Twig;
 use Setono\SyliusCMSPlugin\Link\LinkTargetInterface;
 use Setono\SyliusCMSPlugin\Link\ResolvedLink;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
-use Setono\SyliusCMSPlugin\Rendering\RenderContext;
-use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Setono\SyliusCMSPlugin\Value\Link;
 use Twig\Extension\RuntimeExtensionInterface;
 
@@ -22,7 +20,7 @@ final readonly class LinkRuntime implements RuntimeExtensionInterface
      */
     public function __construct(
         private LinkTargetInterface $entryLinkTarget,
-        private RenderContextFactoryInterface $renderContextFactory,
+        private RenderContexts $renderContexts,
     ) {
     }
 
@@ -48,11 +46,6 @@ final readonly class LinkRuntime implements RuntimeExtensionInterface
             return null;
         }
 
-        $renderContext = $context[CMSRuntime::RENDER_CONTEXT] ?? null;
-        if (!$renderContext instanceof RenderContext) {
-            $renderContext = $this->renderContextFactory->create();
-        }
-
-        return $this->entryLinkTarget->resolve($entry->getUuid(), $renderContext)?->url;
+        return $this->entryLinkTarget->resolve($entry->getUuid(), $this->renderContexts->of($context))?->url;
     }
 }

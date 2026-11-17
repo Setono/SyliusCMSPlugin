@@ -6,8 +6,6 @@ namespace Setono\SyliusCMSPlugin\Twig;
 
 use Setono\SyliusCMSPlugin\Media\PermanentUrlGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
-use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
-use Symfony\Component\Uid\Uuid;
 use Twig\Extension\RuntimeExtensionInterface;
 
 /**
@@ -18,7 +16,7 @@ final readonly class MediaRuntime implements RuntimeExtensionInterface
 {
     public function __construct(
         private PermanentUrlGeneratorInterface $permanentUrlGenerator,
-        private MediaItemRepositoryInterface $mediaItemRepository,
+        private MediaItemArguments $mediaItems,
     ) {
     }
 
@@ -29,10 +27,8 @@ final readonly class MediaRuntime implements RuntimeExtensionInterface
      */
     public function url(MediaItemInterface|string|null $media): ?string
     {
-        if (is_string($media)) {
-            $media = Uuid::isValid($media) ? $this->mediaItemRepository->findOneByUuid(strtolower($media)) : null;
-        }
+        $mediaItem = $this->mediaItems->mediaItem($media);
 
-        return null === $media ? null : $this->permanentUrlGenerator->generate($media);
+        return null === $mediaItem ? null : $this->permanentUrlGenerator->generate($mediaItem);
     }
 }
