@@ -122,6 +122,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\StartingValuesInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\MediaLibraryConfig"/>
+            <argument>%setono_sylius_cms.builder.scripts%</argument>
 
             <tag name="controller.service_arguments"/>
         </service>

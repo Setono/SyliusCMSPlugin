@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
 use Setono\SyliusCMSPlugin\Bestsellers\BestsellersCalculatorInterface;
 use Setono\SyliusCMSPlugin\Bestsellers\CompletedOrdersCalculator;
+use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
@@ -443,6 +444,17 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->load(['media' => ['grace_period' => 'PT6H']]);
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.media.grace_period', 'PT6H');
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_the_field_control_scripts_to_the_builder_page(): void
+    {
+        $this->load(['builder' => ['scripts' => ['/build/app/cms/controls.js']]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.builder.scripts', ['/build/app/cms/controls.js']);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BuilderAction::class, 12, '%setono_sylius_cms.builder.scripts%');
     }
 
     /**

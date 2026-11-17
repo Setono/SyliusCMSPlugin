@@ -103,6 +103,7 @@ final class ConfigurationTest extends TestCase
                 'widths' => [320, 640, 960, 1280, 1600, 1920, 2560],
             ],
             'bestsellers' => ['window' => 'P30D'],
+            'builder' => ['scripts' => []],
             'resources' => [
                 'entry' => [
                     'classes' => [
@@ -681,6 +682,38 @@ final class ConfigurationTest extends TestCase
     public function it_refuses_a_bestsellers_window_that_is_not_an_iso_8601_duration(): void
     {
         $this->assertConfigurationIsInvalid([['bestsellers' => ['window' => '30 days']]], '"30 days" isn\'t an ISO 8601 duration, such as P1D');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_list_the_scripts_of_its_field_controls_as_public_paths_or_absolute_urls(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['builder' => ['scripts' => ['/build/app/cms/opening-hours.js']]],
+            ['builder' => ['scripts' => ['https://cdn.example.com/cms/rating.js', '/build/app/cms/opening-hours.js']]],
+        ], ['builder' => ['scripts' => ['/build/app/cms/opening-hours.js', 'https://cdn.example.com/cms/rating.js']]], 'builder');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidScripts
+     */
+    public function it_refuses_a_script_that_is_neither_a_public_path_nor_an_absolute_url(string $script): void
+    {
+        $this->assertConfigurationIsInvalid([['builder' => ['scripts' => [$script]]]], sprintf('"%s" is neither a public path, such as /build/app/cms/controls.js, nor an absolute http(s) URL', $script));
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public function provideInvalidScripts(): iterable
+    {
+        yield 'a relative path' => ['build/app/cms/controls.js'];
+        yield 'empty' => [''];
+        yield 'another scheme' => ['javascript:alert(1)'];
+        yield 'a protocol-relative URL' => ['//cdn.example.com/controls.js'];
     }
 
     /**

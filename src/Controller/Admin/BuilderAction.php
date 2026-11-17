@@ -37,6 +37,8 @@ final readonly class BuilderAction
     /**
      * @param ChannelRepositoryInterface<ChannelInterface> $channelRepository
      * @param RepositoryInterface<CustomerGroupInterface> $customerGroupRepository
+     * @param list<string> $scripts the scripts of the field controls of projects' own field types, from
+     *                              setono_sylius_cms.builder.scripts
      */
     public function __construct(
         private AdminAccessChecker $adminAccessChecker,
@@ -51,6 +53,7 @@ final readonly class BuilderAction
         private FallbackChainInterface $fallbackChain,
         private StartingValuesInterface $startingValues,
         private MediaLibraryConfig $mediaLibraryConfig,
+        private array $scripts = [],
     ) {
     }
 
@@ -64,6 +67,7 @@ final readonly class BuilderAction
 
         return new Response($this->twig->render('@SetonoSyliusCMSPlugin/admin/builder.html.twig', [
             'entry' => $entry,
+            'scripts' => $this->scripts,
             'config' => [
                 'entryUuid' => $entry->getUuid(),
                 'locale' => $this->editedLocale($request, $entry, $locales),
