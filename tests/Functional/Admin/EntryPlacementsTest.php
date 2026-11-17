@@ -272,9 +272,9 @@ final class EntryPlacementsTest extends WebTestCase
     }
 
     /**
-     * Each placement the section lists: its slot's identifier, its slot's label and its position
+     * Each placement the section lists: its slot's identifier, its slot's label and its position. Typed loosely, since the lowest DomCrawler types each() as a bare array
      *
-     * @return list<array{string, string, string}>
+     * @return array<mixed>
      */
     private static function rows(Crawler $crawler): array
     {

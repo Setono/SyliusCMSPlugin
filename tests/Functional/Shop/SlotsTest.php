@@ -151,9 +151,9 @@ final class SlotsTest extends WebTestCase
     }
 
     /**
-     * The texts of the headings in the slot with this modifier
+     * The texts of the headings in the slot with this modifier. Typed loosely, since the lowest DomCrawler types each() as a bare array
      *
-     * @return list<string>
+     * @return array<mixed>
      */
     private static function headingsIn(Crawler $crawler, string $modifier): array
     {
