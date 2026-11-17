@@ -214,6 +214,9 @@ final class ShippedSourcesTest extends KernelTestCase
         self::assertSame(3, $adapter->getNbResults());
     }
 
+    /**
+     * @return AdapterInterface<mixed>
+     */
     private static function inTaxon(TaxonInterface $taxon, bool $includeChildren = false, string $sort = ProductsInTaxonParams::SORT_POSITION): AdapterInterface
     {
         $params = new ProductsInTaxonParams();

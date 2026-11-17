@@ -56,7 +56,7 @@ final class ListFieldSourcesTest extends TestCase
                 'additionalProperties' => false,
             ],
         ], $schema['anyOf']);
-        self::assertSame(['product_taxons'], $handler->schema(new Taxons(label: 'Taxons'))['x-cms-options']['sources'] ?? null);
+        self::assertSame(['product_taxons'], self::offered($handler->schema(new Taxons(label: 'Taxons'))));
     }
 
     /**
@@ -66,10 +66,10 @@ final class ListFieldSourcesTest extends TestCase
     {
         $handler = Sources::listFieldHandler(['on_sale' => new OnSale(), 'clearance' => new Clearance()]);
 
-        self::assertSame(['clearance'], $handler->schema(new Products(label: 'Products', sources: ['clearance', 'removed']))['x-cms-options']['sources'] ?? null);
+        self::assertSame(['clearance'], self::offered($handler->schema(new Products(label: 'Products', sources: ['clearance', 'removed']))));
 
         $handPickedOnly = $handler->schema(new Products(label: 'Products', sources: false));
-        self::assertSame([], $handPickedOnly['x-cms-options']['sources'] ?? null);
+        self::assertSame([], self::offered($handPickedOnly));
         self::assertSame('array', $handPickedOnly['type'] ?? null);
         self::assertArrayNotHasKey('anyOf', $handPickedOnly);
     }
@@ -271,6 +271,19 @@ final class ListFieldSourcesTest extends TestCase
     public function it_rejects_a_parameter_its_field_type_rejects(): void
     {
         $this->expectViolation('setono_sylius_cms.field.not_taxon', [], fn (ExecutionContextInterface $context) => Sources::listFieldHandler(['on_sale' => new OnSale()])->validate(new Products(label: 'Products'), self::stored('on_sale', ['taxon' => 7]), $context));
+    }
+
+    /**
+     * The codes of the sources a list field's schema says it offers
+     *
+     * @param array<string, mixed> $schema
+     */
+    private static function offered(array $schema): mixed
+    {
+        $options = $schema['x-cms-options'] ?? null;
+        self::assertIsArray($options);
+
+        return $options['sources'] ?? null;
     }
 
     /**

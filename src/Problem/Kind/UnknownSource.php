@@ -114,13 +114,31 @@ final readonly class UnknownSource implements ProblemKindInterface
             }
 
             $stored = $values[$name] ?? null;
-            $byLocale = $field->translatable && is_array($stored) && !array_is_list($stored) && !StoredSource::isSource($stored) ? $stored : [null => $stored];
-            foreach ($byLocale as $locale => $value) {
-                $source = StoredSource::fromValue($value);
-                if (null !== $source && !$this->sources->has($source->code)) {
-                    yield [$field, null === $locale || '' === $locale ? null : (string) $locale, $source->code];
+            if ($field->translatable && is_array($stored) && !array_is_list($stored) && !StoredSource::isSource($stored)) {
+                foreach ($stored as $locale => $value) {
+                    $code = $this->unknownCode($value);
+                    if (null !== $code) {
+                        yield [$field, (string) $locale, $code];
+                    }
                 }
+
+                continue;
+            }
+
+            $code = $this->unknownCode($stored);
+            if (null !== $code) {
+                yield [$field, null, $code];
             }
         }
+    }
+
+    /**
+     * The code of the source the value holds, when the code no longer has it
+     */
+    private function unknownCode(mixed $value): ?string
+    {
+        $source = StoredSource::fromValue($value);
+
+        return null === $source || $this->sources->has($source->code) ? null : $source->code;
     }
 }

@@ -22,7 +22,7 @@ use Sylius\Component\Core\Model\Taxon;
  */
 trait RecordsQueries
 {
-    /** @var list<Query> */
+    /** @var list<Query<mixed, mixed>> */
     private array $queries = [];
 
     /**
@@ -90,8 +90,10 @@ trait RecordsQueries
 
         $queries = &$this->queries;
         $entityManager->createQuery(Argument::type('string'))->will(static function (array $arguments) use ($entityManager, &$queries): Query {
+            $dql = $arguments[0] ?? null;
+            self::assertIsString($dql);
             $query = new Query($entityManager->reveal());
-            $query->setDQL((string) $arguments[0]);
+            $query->setDQL($dql);
             $queries[] = $query;
 
             return $query;

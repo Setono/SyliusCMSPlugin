@@ -66,7 +66,7 @@ final readonly class ListFieldHandler implements FitCheckingFieldHandlerInterfac
     }
 
     /**
-     * @return ItemList<object>|null
+     * @return ItemList<mixed>|null
      */
     public function hydrate(Field $field, mixed $value, HydrationContext $context): ?ItemList
     {
@@ -150,12 +150,13 @@ final readonly class ListFieldHandler implements FitCheckingFieldHandlerInterfac
      *
      * @param list<non-empty-string> $codes
      *
-     * @return ItemList<object>
+     * @return ItemList<mixed>
      */
     private static function handPicked(ListField $field, array $codes, ReferenceMap $references): ItemList
     {
         $class = $field->itemClass();
 
+        /** @var list<mixed> $items */
         $items = [];
         foreach ($codes as $code) {
             $item = $references->get($field->itemType(), $code);

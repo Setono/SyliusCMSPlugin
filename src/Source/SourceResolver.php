@@ -52,8 +52,12 @@ final readonly class SourceResolver
         $references = [];
         foreach ($this->sources->get($code)->fields as $name => $field) {
             $value = $params[$name] ?? null;
-            if (null !== $value) {
-                $references = [...$references, ...$this->fieldHandlers->get($field->field)->references($field->field, $value)];
+            if (null === $value) {
+                continue;
+            }
+
+            foreach ($this->fieldHandlers->get($field->field)->references($field->field, $value) as $reference) {
+                $references[] = $reference;
             }
         }
 
@@ -67,7 +71,7 @@ final readonly class SourceResolver
      * @param array<array-key, mixed> $params the stored parameter values, by field name
      * @param class-string|null $of what the list lists, such as ProductInterface::class, or null for anything
      *
-     * @return AdapterInterface<object>
+     * @return AdapterInterface<mixed>
      */
     public function resolve(string $code, array $params, ?string $of, HydrationContext $context): AdapterInterface
     {

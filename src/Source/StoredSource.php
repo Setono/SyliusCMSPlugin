@@ -20,7 +20,7 @@ final readonly class StoredSource
     public const LIMIT = '$limit';
 
     /**
-     * @param array<string, mixed> $params the stored parameter values, by field name
+     * @param array<array-key, mixed> $params the stored parameter values, by field name
      * @param int<1, max> $limit
      */
     public function __construct(
@@ -32,8 +32,6 @@ final readonly class StoredSource
 
     /**
      * Whether the value is meant as a source, as a map with a "$source" key, whether or not it fits the shape
-     *
-     * @phpstan-assert-if-true array<array-key, mixed> $value
      */
     public static function isSource(mixed $value): bool
     {
@@ -46,7 +44,7 @@ final readonly class StoredSource
      */
     public static function fromValue(mixed $value): ?self
     {
-        if (!self::isSource($value) || [self::LIMIT, self::PARAMS, self::SOURCE] !== self::sortedKeys($value)) {
+        if (!is_array($value) || !self::isSource($value) || [self::LIMIT, self::PARAMS, self::SOURCE] !== self::sortedKeys($value)) {
             return null;
         }
 
@@ -61,7 +59,6 @@ final readonly class StoredSource
             return null;
         }
 
-        /** @var array<string, mixed> $params */
         return new self($code, $params, $limit);
     }
 

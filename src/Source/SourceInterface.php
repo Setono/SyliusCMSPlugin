@@ -22,7 +22,7 @@ interface SourceInterface
     /**
      * @param object $params its parameters class, hydrated from what editors filled in, or a NoParams
      *
-     * @return AdapterInterface<object> what it lists, as its #[AsSource] "of" says
+     * @return AdapterInterface<mixed> what it lists, as its #[AsSource] "of" says
      */
     public function resolve(object $params, RenderContext $context): AdapterInterface;
 }

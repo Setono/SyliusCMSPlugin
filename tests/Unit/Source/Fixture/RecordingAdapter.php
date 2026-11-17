@@ -10,7 +10,6 @@ use Pagerfanta\Adapter\AdapterInterface;
  * An adapter over a list that records whether it was counted and which slices were taken
  *
  * @template T
- *
  * @implements AdapterInterface<T>
  */
 final class RecordingAdapter implements AdapterInterface
