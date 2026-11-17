@@ -55,6 +55,13 @@ final readonly class HubMenuBuilder
             ->setExtra('count', $this->entryRepository->countEntries('page'))
         ;
 
+        $entries
+            ->addChild('snippet', ['route' => 'setono_sylius_cms_admin_entry_index', 'routeParameters' => ['contentType' => 'snippet']])
+            ->setLabel('setono_sylius_cms.menu.admin.hub.snippets')
+            ->setLabelAttribute('icon', 'puzzle piece')
+            ->setExtra('count', $this->entryRepository->countEntries('snippet'))
+        ;
+
         $library = $menu->addChild('library')->setLabel('setono_sylius_cms.menu.admin.hub.library');
 
         // Presets and Transfer join with their tickets

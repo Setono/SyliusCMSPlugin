@@ -61,7 +61,7 @@ final class ContentHubTest extends WebTestCase
         $menu = $crawler->filter('[data-hub-menu]');
         self::assertSame(['Overview', 'Entries', 'Library'], $menu->filter('.header, a.item[href="/admin/cms"]')->each(static fn (Crawler $item): string => self::label($item)));
         self::assertSame(
-            [['All entries', '2', '/admin/cms/entries'], ['Pages', '2', '/admin/cms/entries/page'], ['Media', null, '/admin/cms/media']],
+            [['All entries', '2', '/admin/cms/entries'], ['Pages', '2', '/admin/cms/entries/page'], ['Snippets', '0', '/admin/cms/entries/snippet'], ['Media', null, '/admin/cms/media']],
             $menu->filter('.item > .menu > a.item')->each(static fn (Crawler $item): array => [self::label($item), 0 === $item->filter('.label')->count() ? null : $item->filter('.label')->text(), (string) $item->attr('href')]),
         );
         self::assertSame('Pages', self::label($menu->filter('a.item.active')));

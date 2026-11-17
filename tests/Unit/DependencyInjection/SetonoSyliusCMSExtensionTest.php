@@ -24,10 +24,14 @@ use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
+use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
@@ -543,6 +547,37 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasService('setono_sylius_cms.factory.page');
         $this->assertContainerBuilderHasService('setono_sylius_cms.repository.page');
         $this->assertContainerBuilderHasService('setono_sylius_cms.factory.page_translation');
+    }
+
+    /**
+     * @test
+     */
+    public function it_registers_snippet_as_a_sylius_resource_whose_translations_are_entry_translations(): void
+    {
+        $this->load();
+
+        $resources = $this->container->getParameter('sylius.resources');
+        self::assertIsArray($resources);
+        self::assertSame([
+            'driver' => 'doctrine/orm',
+            'classes' => [
+                'model' => Snippet::class,
+                'interface' => SnippetInterface::class,
+                'controller' => ResourceController::class,
+                'factory' => TranslatableFactory::class,
+            ],
+            'translation' => [
+                'classes' => [
+                    'model' => EntryTranslation::class,
+                    'interface' => EntryTranslationInterface::class,
+                    'controller' => ResourceController::class,
+                    'factory' => Factory::class,
+                ],
+            ],
+        ], $resources['setono_sylius_cms.snippet'] ?? null);
+
+        $this->assertContainerBuilderHasService('setono_sylius_cms.factory.snippet');
+        $this->assertContainerBuilderHasService('setono_sylius_cms.repository.snippet');
     }
 
     /**

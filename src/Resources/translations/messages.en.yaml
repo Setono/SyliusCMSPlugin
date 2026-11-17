@@ -60,9 +60,11 @@ setono_sylius_cms:
         locale: Locale
     content_type:
         page: Page
+        snippet: Snippet
     # A content type's list is named by its plural. One without a plural here is named by its label
     content_type_plural:
         page: Pages
+        snippet: Snippets
     field:
         accordion_item:
             content: Content
@@ -157,6 +159,7 @@ setono_sylius_cms:
                 media: Media
                 overview: Overview
                 pages: Pages
+                snippets: Snippets
             main:
                 content:
                     content: Content

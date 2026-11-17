@@ -21,6 +21,8 @@ use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
 use Setono\SyliusCMSPlugin\Model\EntryChannel;
 use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
+use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
 use Setono\SyliusCMSPlugin\Model\Homepage;
@@ -47,6 +49,8 @@ use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Model\ShareLink;
 use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
+use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
@@ -79,7 +83,7 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
-    public function it_declares_the_entry_page_the_draft_and_the_rows_beside_an_entry_as_resources_by_default(): void
+    public function it_declares_the_entry_page_snippet_the_draft_and_the_rows_beside_an_entry_as_resources_by_default(): void
     {
         $this->assertProcessedConfigurationEquals([
             [],
@@ -243,6 +247,22 @@ final class ConfigurationTest extends TestCase
                         'classes' => [
                             'model' => PageTranslation::class,
                             'interface' => PageTranslationInterface::class,
+                            'controller' => ResourceController::class,
+                            'factory' => Factory::class,
+                        ],
+                    ],
+                ],
+                'snippet' => [
+                    'classes' => [
+                        'model' => Snippet::class,
+                        'interface' => SnippetInterface::class,
+                        'controller' => ResourceController::class,
+                        'factory' => TranslatableFactory::class,
+                    ],
+                    'translation' => [
+                        'classes' => [
+                            'model' => EntryTranslation::class,
+                            'interface' => EntryTranslationInterface::class,
                             'controller' => ResourceController::class,
                             'factory' => Factory::class,
                         ],
