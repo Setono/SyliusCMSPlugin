@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Blocks;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\Html;
@@ -53,7 +54,7 @@ final class SnippetBlockTest extends WebTestCase
         $footer = self::createSnippet('Footer', [self::heading(self::FOOTER, 'Free shipping over $50')], published: true);
         // The draft isn't what shoppers see
         self::saveChanges($footer, [['op' => 'set_value', 'key' => self::FOOTER, 'field' => 'text', 'locale' => 'en_US', 'value' => 'Free shipping over $40']]);
-        self::createPageWithBlocks('About us', 'about-us', [self::heading(self::ABOUT, 'About us'), self::snippetBlock(self::REFERENCE, $footer)], published: true);
+        self::createPageWithBlocks('About us', 'about-us', [self::heading(self::ABOUT, 'About us'), Blocks::snippet(self::REFERENCE, $footer)], published: true);
 
         $crawler = $client->request('GET', '/en_US/about-us');
 
@@ -71,7 +72,7 @@ final class SnippetBlockTest extends WebTestCase
     {
         $client = self::createClient();
         $footer = self::createSnippet('Footer', [self::heading(self::FOOTER, 'Free shipping over $50')]);
-        self::createPageWithBlocks('About us', 'about-us', [self::heading(self::ABOUT, 'About us'), self::snippetBlock(self::REFERENCE, $footer)], published: true);
+        self::createPageWithBlocks('About us', 'about-us', [self::heading(self::ABOUT, 'About us'), Blocks::snippet(self::REFERENCE, $footer)], published: true);
 
         $crawler = $client->request('GET', '/en_US/about-us');
 
@@ -92,7 +93,7 @@ final class SnippetBlockTest extends WebTestCase
         $note = new StoredBlock(self::FOOTER, 'app_product_note', 1);
         $note->setValue('text', 'en_US', 'Size guide for');
         $sizeGuide = self::createSnippet('Size guide', [$note], published: true, context: ['product']);
-        self::place(self::createSnippet('Product sidebar', [self::snippetBlock(self::REFERENCE, $sizeGuide)], published: true, context: ['product']), 'product.after_price');
+        self::place(self::createSnippet('Product sidebar', [Blocks::snippet(self::REFERENCE, $sizeGuide)], published: true, context: ['product']), 'product.after_price');
 
         $crawler = $client->request('GET', '/en_US/products/t-shirt');
 
@@ -107,7 +108,7 @@ final class SnippetBlockTest extends WebTestCase
     {
         $client = self::createClient();
         [$a] = self::aInsideBInsideA();
-        self::createPageWithBlocks('About us', 'about-us', [self::snippetBlock(self::REFERENCE, $a)], published: true);
+        self::createPageWithBlocks('About us', 'about-us', [Blocks::snippet(self::REFERENCE, $a)], published: true);
         self::place($a, 'shop.footer');
 
         $crawler = $client->request('GET', '/en_US/about-us');
@@ -124,7 +125,7 @@ final class SnippetBlockTest extends WebTestCase
     {
         $client = self::createClient();
         $footer = self::createSnippet('Footer', [self::image(self::FOOTER, self::BADGE)], published: true);
-        self::createPageWithBlocks('About us', 'about-us', [self::image(self::ABOUT, self::LOGO), self::snippetBlock(self::REFERENCE, $footer)], published: true);
+        self::createPageWithBlocks('About us', 'about-us', [self::image(self::ABOUT, self::LOGO), Blocks::snippet(self::REFERENCE, $footer)], published: true);
         $client->request('GET', '/en_US/about-us');
 
         $client->enableProfiler();
@@ -143,16 +144,11 @@ final class SnippetBlockTest extends WebTestCase
     private static function aInsideBInsideA(): array
     {
         $a = self::createSnippet('A', [self::heading(self::A, 'A')], published: true);
-        $b = self::createSnippet('B', [self::heading(self::B, 'B'), self::snippetBlock(self::B_SHOWS_A, $a)], published: true);
-        $a->setBlockTree(new StoredTree(null, [self::heading(self::A, 'A'), self::snippetBlock(self::A_SHOWS_B, $b)]));
+        $b = self::createSnippet('B', [self::heading(self::B, 'B'), Blocks::snippet(self::B_SHOWS_A, $a)], published: true);
+        $a->setBlockTree(new StoredTree(null, [self::heading(self::A, 'A'), Blocks::snippet(self::A_SHOWS_B, $b)]));
         self::entityManager()->flush();
 
         return [$a, $b];
-    }
-
-    private static function snippetBlock(string $key, SnippetInterface $snippet): StoredBlock
-    {
-        return new StoredBlock($key, 'snippet', 1, fields: ['snippet' => $snippet->getUuid()]);
     }
 
     private static function image(string $key, string $mediaItem): StoredBlock

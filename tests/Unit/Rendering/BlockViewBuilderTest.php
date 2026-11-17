@@ -32,7 +32,6 @@ use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
-use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
 use Setono\SyliusCMSPlugin\Rendering\BlockReferences;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
@@ -41,10 +40,10 @@ use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
-use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
-use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Setono\SyliusCMSPlugin\Tests\Support\Blocks;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ProductAvailable;
 use Setono\SyliusCMSPlugin\Tests\Unit\Rendering\Fixture\Unbuildable;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
@@ -428,7 +427,7 @@ final class BlockViewBuilderTest extends TestCase
         $footer = self::snippet(self::heading(self::B, 'Opening hours'));
         $context = $this->context('en_US');
 
-        $views = $this->builder()->build([self::snippetBlock(self::A, $footer)], $context, self::snippetsMap($footer));
+        $views = $this->builder()->build([Blocks::snippet(self::A, $footer)], $context, self::snippetsMap($footer));
 
         self::assertSame([self::A], self::keys($views));
         self::assertSame('snippet', $views[0]->type);
@@ -446,7 +445,7 @@ final class BlockViewBuilderTest extends TestCase
     {
         $unpublished = self::snippet(self::heading(self::B, 'Opening hours'));
 
-        $views = $this->builder()->build([self::snippetBlock(self::A, $unpublished)], $this->context('en_US'), self::snippetsMap());
+        $views = $this->builder()->build([Blocks::snippet(self::A, $unpublished)], $this->context('en_US'), self::snippetsMap());
 
         self::assertSame([self::A], self::keys($views));
         self::assertInstanceOf(SnippetBlock::class, $views[0]->block);
@@ -461,11 +460,11 @@ final class BlockViewBuilderTest extends TestCase
     {
         $a = self::snippet(self::heading(self::B, 'A'));
         $b = self::snippet(self::heading(self::D, 'B'));
-        $a->setBlockTree(new StoredTree(null, [self::heading(self::B, 'A'), self::snippetBlock(self::C, $b)]));
-        $b->setBlockTree(new StoredTree(null, [self::heading(self::D, 'B'), self::snippetBlock(self::A, $a)]));
+        $a->setBlockTree(new StoredTree(null, [self::heading(self::B, 'A'), Blocks::snippet(self::C, $b)]));
+        $b->setBlockTree(new StoredTree(null, [self::heading(self::D, 'B'), Blocks::snippet(self::A, $a)]));
 
         // A page showing A shows A, B inside it, and A inside that no more
-        $views = $this->builder()->build([self::snippetBlock('page-a', $a)], $this->context('en_US'), self::snippetsMap($a, $b));
+        $views = $this->builder()->build([Blocks::snippet('page-a', $a)], $this->context('en_US'), self::snippetsMap($a, $b));
 
         $inA = $views[0]->children;
         self::assertSame([self::B, self::C], self::keys($inA));
@@ -481,8 +480,8 @@ final class BlockViewBuilderTest extends TestCase
     {
         $a = self::snippet();
         $b = self::snippet();
-        $a->setBlockTree(new StoredTree(null, [self::heading(self::B, 'A'), self::snippetBlock(self::C, $b), self::snippetBlock(self::D, $a)]));
-        $b->setBlockTree(new StoredTree(null, [self::snippetBlock(self::A, $a)]));
+        $a->setBlockTree(new StoredTree(null, [self::heading(self::B, 'A'), Blocks::snippet(self::C, $b), Blocks::snippet(self::D, $a)]));
+        $b->setBlockTree(new StoredTree(null, [Blocks::snippet(self::A, $a)]));
 
         // A in a slot: B inside it shows, but A doesn't show inside B, nor inside itself
         $views = $this->builder()->build($a->getBlockTree()->blocks, $this->context('en_US'), self::snippetsMap($a, $b), $a->getUuid());
@@ -503,7 +502,7 @@ final class BlockViewBuilderTest extends TestCase
         $footer = self::snippet(self::heading(self::C, 'Opening hours'));
         $page = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e40';
 
-        $views = $this->builder()->build([self::heading(self::A, 'About us'), self::snippetBlock(self::B, $footer)], $this->context('en_US'), self::snippetsMap($footer), $page);
+        $views = $this->builder()->build([self::heading(self::A, 'About us'), Blocks::snippet(self::B, $footer)], $this->context('en_US'), self::snippetsMap($footer), $page);
 
         self::assertSame([$page, $page], array_map(static fn (BlockView $view): ?string => $view->entry, $views));
         self::assertSame($footer->getUuid(), $views[1]->children[0]->entry);
@@ -583,11 +582,6 @@ final class BlockViewBuilderTest extends TestCase
         $snippet->setBlockTree(new StoredTree(null, array_values($blocks)));
 
         return $snippet;
-    }
-
-    private static function snippetBlock(string $key, SnippetInterface $snippet): StoredBlock
-    {
-        return new StoredBlock($key, 'snippet', 1, fields: ['snippet' => $snippet->getUuid()]);
     }
 
     private static function heading(string $key, string $text): StoredBlock

@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
-use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
+use Setono\SyliusCMSPlugin\Tests\Support\Blocks;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
-use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -38,12 +37,12 @@ final class SnippetReferencesTest extends WebTestCase
     {
         $client = self::signedInClient();
         $footer = self::createSnippet('Footer', [self::heading(self::HEADING, 'Free shipping')], published: true);
-        $about = self::createPageWithBlocks('About us', 'about-us', [self::snippetBlock(self::REFERENCE, $footer)], published: true);
+        $about = self::createPageWithBlocks('About us', 'about-us', [Blocks::snippet(self::REFERENCE, $footer)], published: true);
         $contact = self::createPage('Contact', 'contact', 'Write to us', published: true);
         self::saveChanges($contact, [['op' => 'add_block', 'parent' => null, 'index' => 1, 'block' => ['key' => self::REFERENCE, 'type' => 'snippet', 'version' => 1, 'fields' => ['snippet' => $footer->getUuid()]]]]);
-        $faq = self::createPageWithBlocks('FAQ', 'faq', [self::snippetBlock(self::REFERENCE, $footer)], published: true);
+        $faq = self::createPageWithBlocks('FAQ', 'faq', [Blocks::snippet(self::REFERENCE, $footer)], published: true);
         self::saveChanges($faq, [['op' => 'remove_block', 'key' => self::REFERENCE]]);
-        $promo = self::createSnippet('Promo', [self::snippetBlock(self::REFERENCE, $footer)]);
+        $promo = self::createSnippet('Promo', [Blocks::snippet(self::REFERENCE, $footer)]);
         self::createPage('Shipping', 'shipping', 'Free shipping', published: true);
 
         $crawler = $client->request('GET', self::overview($footer));
@@ -70,7 +69,7 @@ final class SnippetReferencesTest extends WebTestCase
     public function it_says_when_no_entry_shows_the_snippet(): void
     {
         $client = self::signedInClient();
-        $footer = self::createSnippet('Footer', [self::snippetBlock(self::REFERENCE, self::createSnippet('Other'))]);
+        $footer = self::createSnippet('Footer', [Blocks::snippet(self::REFERENCE, self::createSnippet('Other'))]);
 
         $crawler = $client->request('GET', self::overview($footer));
 
@@ -98,11 +97,11 @@ final class SnippetReferencesTest extends WebTestCase
     {
         $client = self::signedInClient();
         $a = self::createSnippet('A', [self::heading(self::HEADING, 'A')], published: true);
-        $b = self::createSnippet('B', [self::snippetBlock(self::B_SHOWS_A, $a)], published: true);
+        $b = self::createSnippet('B', [Blocks::snippet(self::B_SHOWS_A, $a)], published: true);
         self::assertEquals(new ProblemCount(), self::storedCount($b));
 
         // Publishing A showing B makes each show the other: B is counted again with A
-        $a->setBlockTree(new StoredTree(null, [self::heading(self::HEADING, 'A'), self::snippetBlock(self::A_SHOWS_B, $b)]));
+        $a->setBlockTree(new StoredTree(null, [self::heading(self::HEADING, 'A'), Blocks::snippet(self::A_SHOWS_B, $b)]));
         self::entityManager()->flush();
 
         self::assertEquals(new ProblemCount(1, 0), self::storedCount($a));
@@ -115,11 +114,6 @@ final class SnippetReferencesTest extends WebTestCase
         self::assertSame(['snippet_inside_itself', 'error', self::A_SHOWS_B], [$problem->attr('data-problem'), $problem->attr('data-severity'), $problem->attr('data-block')]);
         self::assertSame('The Snippet block shows this snippet inside itself, directly or through other snippets, so it\'s skipped there.', $problem->filter('.description')->text());
         self::assertSame(sprintf('/admin/cms/entry/%s/builder?block=%s', $a->getUuid(), self::A_SHOWS_B), $problem->selectLink('Fix in builder')->attr('href'));
-    }
-
-    private static function snippetBlock(string $key, SnippetInterface $snippet): StoredBlock
-    {
-        return new StoredBlock($key, 'snippet', 1, fields: ['snippet' => $snippet->getUuid()]);
     }
 
     private static function overview(EntryInterface $entry): string

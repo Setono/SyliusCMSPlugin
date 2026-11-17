@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Blocks;
 use Setono\SyliusCMSPlugin\Tests\Support\Placements;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
@@ -134,7 +135,7 @@ final class HostPageContextTest extends BuilderApiTestCase
     {
         $client = self::signedIn();
         $sizeGuide = self::createSnippet('Size guide', [self::note()], published: true, context: ['product']);
-        $page = self::createPageWithBlocks('About us', 'about-us', [self::snippetBlock($sizeGuide)]);
+        $page = self::createPageWithBlocks('About us', 'about-us', [Blocks::snippet(self::SHOWS_SNIPPET, $sizeGuide)]);
 
         $response = self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/validate', $page->getUuid()));
 
@@ -152,7 +153,7 @@ final class HostPageContextTest extends BuilderApiTestCase
     {
         $client = self::createClient();
         $snippet = self::createSnippet('Free shipping', published: true);
-        self::createPageWithBlocks('About us', 'about-us', [self::snippetBlock($snippet)], published: true);
+        self::createPageWithBlocks('About us', 'about-us', [Blocks::snippet(self::SHOWS_SNIPPET, $snippet)], published: true);
         $csrfToken = self::openBuilder($client, $snippet);
 
         $response = self::json($client, 'PATCH', '/admin/cms/api/entries/' . $snippet->getUuid(), ['lockToken' => 0, 'changes' => [
@@ -175,7 +176,7 @@ final class HostPageContextTest extends BuilderApiTestCase
     {
         $client = self::createClient();
         $sizeGuide = self::createSnippet('Size guide', [self::note()], published: true, context: ['product']);
-        $sidebar = self::createSnippet('Product sidebar', [self::snippetBlock($sizeGuide)], context: ['product']);
+        $sidebar = self::createSnippet('Product sidebar', [Blocks::snippet(self::SHOWS_SNIPPET, $sizeGuide)], context: ['product']);
         $csrfToken = self::openBuilder($client, $sidebar);
 
         $response = self::json($client, 'PATCH', '/admin/cms/api/entries/' . $sidebar->getUuid(), ['lockToken' => 0, 'changes' => [
@@ -186,11 +187,6 @@ final class HostPageContextTest extends BuilderApiTestCase
         self::assertSame([
             ['block' => null, 'field' => 'context', 'locale' => null, 'message' => 'The snippet "Size guide" needs the host-page context "Product page".'],
         ], $response['refused'] ?? null);
-    }
-
-    private static function snippetBlock(SnippetInterface $snippet): StoredBlock
-    {
-        return new StoredBlock(self::SHOWS_SNIPPET, 'snippet', 1, fields: ['snippet' => $snippet->getUuid()]);
     }
 
     private static function reloadSnippet(SnippetInterface $snippet): SnippetInterface

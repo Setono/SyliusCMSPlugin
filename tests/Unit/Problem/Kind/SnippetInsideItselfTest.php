@@ -25,6 +25,7 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Blocks;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -53,7 +54,7 @@ final class SnippetInsideItselfTest extends TestCase
     public function it_flags_a_snippet_block_that_shows_the_snippet_it_is_in(): void
     {
         $a = new Snippet();
-        $a->setBlockTree(new StoredTree(null, [self::heading(), self::snippetBlock(self::SHOWS_ITSELF, $a)]));
+        $a->setBlockTree(new StoredTree(null, [self::heading(), Blocks::snippet(self::SHOWS_ITSELF, $a)]));
 
         $entries = $this->prophesize(EntryRepositoryInterface::class);
         $entries->findByUuids(Argument::cetera())->shouldNotBeCalled();
@@ -69,9 +70,9 @@ final class SnippetInsideItselfTest extends TestCase
         $a = new Snippet();
         $b = new Snippet();
         $c = new Snippet();
-        $a->setBlockTree(new StoredTree(null, [self::heading(), self::snippetBlock(self::SHOWS_B, $b)]));
-        $b->setBlockTree(new StoredTree(null, [self::snippetBlock(self::SHOWS_C, $c)]));
-        $c->setBlockTree(new StoredTree(null, [self::snippetBlock(self::SHOWS_A, $a)]));
+        $a->setBlockTree(new StoredTree(null, [self::heading(), Blocks::snippet(self::SHOWS_B, $b)]));
+        $b->setBlockTree(new StoredTree(null, [Blocks::snippet(self::SHOWS_C, $c)]));
+        $c->setBlockTree(new StoredTree(null, [Blocks::snippet(self::SHOWS_A, $a)]));
 
         $entries = $this->prophesize(EntryRepositoryInterface::class);
         $entries->findByUuids([$b->getUuid()])->willReturn([$b])->shouldBeCalledOnce();
@@ -88,9 +89,9 @@ final class SnippetInsideItselfTest extends TestCase
         $a = new Snippet();
         $b = new Snippet();
         $c = new Snippet();
-        $a->setBlockTree(new StoredTree(null, [self::snippetBlock(self::SHOWS_B, $b)]));
-        $b->setBlockTree(new StoredTree(null, [self::snippetBlock(self::SHOWS_C, $c)]));
-        $c->setBlockTree(new StoredTree(null, [self::snippetBlock(self::SHOWS_B, $b)]));
+        $a->setBlockTree(new StoredTree(null, [Blocks::snippet(self::SHOWS_B, $b)]));
+        $b->setBlockTree(new StoredTree(null, [Blocks::snippet(self::SHOWS_C, $c)]));
+        $c->setBlockTree(new StoredTree(null, [Blocks::snippet(self::SHOWS_B, $b)]));
 
         $entries = $this->prophesize(EntryRepositoryInterface::class);
         $entries->findByUuids([$b->getUuid()])->willReturn([$b]);
@@ -106,7 +107,7 @@ final class SnippetInsideItselfTest extends TestCase
     {
         $a = new Snippet();
         $page = new Page();
-        $page->setBlockTree(new StoredTree(null, [self::snippetBlock(self::SHOWS_A, $a)]));
+        $page->setBlockTree(new StoredTree(null, [Blocks::snippet(self::SHOWS_A, $a)]));
 
         $entries = $this->prophesize(EntryRepositoryInterface::class);
         $entries->findByUuids(Argument::cetera())->shouldNotBeCalled();
@@ -163,11 +164,6 @@ final class SnippetInsideItselfTest extends TestCase
             $block,
             'snippet',
         );
-    }
-
-    private static function snippetBlock(string $key, SnippetInterface $snippet): StoredBlock
-    {
-        return new StoredBlock($key, 'snippet', 1, fields: ['snippet' => $snippet->getUuid()]);
     }
 
     private static function heading(): StoredBlock

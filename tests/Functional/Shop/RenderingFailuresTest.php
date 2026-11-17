@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
-use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\BrokenBlockKernel;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\Unbuildable;
+use Setono\SyliusCMSPlugin\Tests\Support\Blocks;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\Placements;
 use Setono\SyliusCMSPlugin\Tests\Support\RecordingLogger;
@@ -195,7 +195,7 @@ final class RenderingFailuresTest extends WebTestCase
     {
         $client = self::createClient(['debug' => false]);
         $snippet = self::createSnippet('Footer', self::brokenBetweenHeadings(), published: true);
-        self::createPageWithBlocks('About us', 'about-us', [self::snippetBlock($snippet)], published: true);
+        self::createPageWithBlocks('About us', 'about-us', [Blocks::snippet(self::REFERENCE, $snippet)], published: true);
 
         $crawler = $client->request('GET', '/en_US/about-us');
 
@@ -227,11 +227,6 @@ final class RenderingFailuresTest extends WebTestCase
     private static function brokenBetweenHeadings(): array
     {
         return [self::heading(self::BEFORE, 'Before'), new StoredBlock(self::BROKEN, 'broken', 1), self::heading(self::AFTER, 'After')];
-    }
-
-    private static function snippetBlock(SnippetInterface $snippet): StoredBlock
-    {
-        return new StoredBlock(self::REFERENCE, 'snippet', 1, fields: ['snippet' => $snippet->getUuid()]);
     }
 
     /**

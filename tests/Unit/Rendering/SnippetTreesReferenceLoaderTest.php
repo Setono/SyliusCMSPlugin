@@ -26,6 +26,7 @@ use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Rendering\SnippetTreesReferenceLoader;
+use Setono\SyliusCMSPlugin\Tests\Support\Blocks;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ProductAvailable;
@@ -57,7 +58,7 @@ final class SnippetTreesReferenceLoaderTest extends TestCase
     public function it_loads_the_references_of_the_trees_of_referenced_snippets_in_the_same_pass_as_the_tree_s_own(): void
     {
         $badge = $this->snippet(self::image(self::key(), self::BADGE), self::productNote(self::key(), 'MUG'));
-        $footer = $this->snippet(self::image(self::key(), self::LOGO), self::snippetBlock(self::key(), $badge));
+        $footer = $this->snippet(self::image(self::key(), self::LOGO), Blocks::snippet(self::key(), $badge));
         $this->records = [
             'entry' => [$footer->getUuid() => $footer, $badge->getUuid() => $badge],
             'media_item' => [self::LOGO => self::object(), self::BADGE => self::object()],
@@ -102,8 +103,8 @@ final class SnippetTreesReferenceLoaderTest extends TestCase
     public function it_loads_each_snippet_once_when_snippets_show_each_other(): void
     {
         $a = $this->snippet();
-        $b = $this->snippet(self::snippetBlock(self::key(), $a));
-        $a->setBlockTree(new StoredTree(null, [self::snippetBlock(self::key(), $b), self::snippetBlock(self::key(), $a)]));
+        $b = $this->snippet(Blocks::snippet(self::key(), $a));
+        $a->setBlockTree(new StoredTree(null, [Blocks::snippet(self::key(), $b), Blocks::snippet(self::key(), $a)]));
         $this->records = ['entry' => [$a->getUuid() => $a, $b->getUuid() => $b]];
 
         $references = $this->loader()->load([new Reference('entry', $a->getUuid(), true)], Rendering::context());
@@ -205,11 +206,6 @@ final class SnippetTreesReferenceLoaderTest extends TestCase
         $snippet->setBlockTree(new StoredTree(null, array_values($blocks)));
 
         return $snippet;
-    }
-
-    private static function snippetBlock(string $key, SnippetInterface $snippet): StoredBlock
-    {
-        return new StoredBlock($key, 'snippet', 1, fields: ['snippet' => $snippet->getUuid()]);
     }
 
     private static function image(string $key, string $mediaItem): StoredBlock
