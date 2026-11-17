@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { createUrlsApi, type BuilderApi, type UrlsApi } from './api';
 import styles from './App.module.css';
 import { createAutosave, type Autosave } from './autosave';
+import type { BindablePropertyDefinition } from './bindings';
+import { BuilderBindingsProvider } from './bindingsContext';
 import { withUuid, type BuilderConfig } from './config';
 import { BuilderProvider, type BuilderSession } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
@@ -58,7 +60,10 @@ function backHere(block: string, locale: string): string {
     return `${window.location.pathname}?${query.toString()}`;
 }
 
-type Phase = { name: 'loading' } | { name: 'failed' } | { name: 'ready'; session: BuilderSession; translate: Translate; media: MediaLimits | null; linkTargets: LinkTargetDefinition[]; sources: SourceDefinition[] };
+type Phase =
+    | { name: 'loading' }
+    | { name: 'failed' }
+    | { name: 'ready'; session: BuilderSession; translate: Translate; media: MediaLimits | null; linkTargets: LinkTargetDefinition[]; sources: SourceDefinition[]; bindableProperties: BindablePropertyDefinition[] };
 
 /** Loads the registry and the entry, then opens the entry in the builder. */
 export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, mediaApi, searchApi, sourcesApi }: AppProps) {
@@ -162,6 +167,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                     media: registry.media ?? null,
                     linkTargets: registry.linkTargets ?? [],
                     sources: registry.sources ?? [],
+                    bindableProperties: registry.bindableProperties ?? [],
                     session: {
                         store,
                         validation: validationStore,
@@ -239,7 +245,10 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
         <LinkTargetsProvider value={phase.linkTargets}>
             {/* List fields offer the sources, and count what they yield in the preview */}
             <PreviewSourcesProvider sources={phase.sources} api={sourcesEndpoint}>
-                <Shell />
+                {/* Bindable fields offer the properties that fit the context the entry provides or the snippet declares */}
+                <BuilderBindingsProvider properties={phase.bindableProperties}>
+                    <Shell />
+                </BuilderBindingsProvider>
             </PreviewSourcesProvider>
         </LinkTargetsProvider>
     );

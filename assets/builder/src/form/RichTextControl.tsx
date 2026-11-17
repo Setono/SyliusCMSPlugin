@@ -2,19 +2,22 @@ import type { Editor, JSONContent } from '@tiptap/core';
 import { Placeholder, UndoRedo } from '@tiptap/extensions';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { propertyOf, TOKEN_TYPES } from '../bindings';
+import { useBindableProperties, useOfferedProperties } from '../bindingsContext';
 import { useTranslator, type MessageKey } from '../i18n';
 import { useLinkTargets } from '../linkTargets';
 import { LinkIcon } from '../shell/icons';
-import { documentValue, headingLevels, richTextExtensions, type HeadingLevel } from '../richText/schema';
+import { CMSBinding, documentValue, headingLevels, richTextExtensions, type HeadingLevel } from '../richText/schema';
 import type { JsonValue } from '../types';
 import { isJsonObject, jsonEqual, plainText } from '../values';
 import styles from './Form.module.css';
+import { RichTextBindingPanel } from './RichTextBindingPanel';
 import { RichTextLinkPanel } from './RichTextLinkPanel';
 import type { FieldControlProps } from './types';
 
 /**
- * Rich text, edited with Tiptap and a toolbar for the schema's nodes and marks. An empty editor is no value, and shows
- * the text of its placeholder.
+ * Rich text, edited with Tiptap and a toolbar for the schema's nodes and marks, and binding tokens, which show their
+ * property's label. An empty editor is no value, and shows the text of its placeholder.
  */
 export function RichTextControl({ id, value, onChange, schema, describedBy, placeholder }: FieldControlProps) {
     const onChangeRef = useRef(onChange);
@@ -22,11 +25,19 @@ export function RichTextControl({ id, value, onChange, schema, describedBy, plac
     const placeholderText = placeholder === undefined || placeholder === null ? '' : plainText(placeholder);
     const placeholderRef = useRef(placeholderText);
     placeholderRef.current = placeholderText;
-    // Whether the panel that links the selected text is open
-    const [linking, setLinking] = useState(false);
+    // Whether the panel that links the selected text is open, or the one that inserts a binding token
+    const [panel, setPanel] = useState<'link' | 'binding' | null>(null);
+    const properties = useBindableProperties();
+    const propertiesRef = useRef(properties);
+    propertiesRef.current = properties;
 
     const editor = useEditor({
-        extensions: [...richTextExtensions, UndoRedo, Placeholder.configure({ placeholder: () => placeholderRef.current })],
+        extensions: [
+            ...richTextExtensions.filter((extension) => extension.name !== CMSBinding.name),
+            CMSBinding.configure({ label: (property) => propertyOf(propertiesRef.current, property)?.label ?? property }),
+            UndoRedo,
+            Placeholder.configure({ placeholder: () => placeholderRef.current }),
+        ],
         content: documentOf(value),
         editorProps: {
             attributes: {
@@ -57,8 +68,16 @@ export function RichTextControl({ id, value, onChange, schema, describedBy, plac
 
     return (
         <div className={styles.richText}>
-            <Toolbar editor={editor} controls={id} linking={linking} onLink={() => setLinking((open) => !open)} />
-            {linking && <RichTextLinkPanel id={id} editor={editor} onClose={() => setLinking(false)} />}
+            <Toolbar
+                editor={editor}
+                controls={id}
+                linking={panel === 'link'}
+                onLink={() => setPanel((open) => (open === 'link' ? null : 'link'))}
+                binding={panel === 'binding'}
+                onBinding={() => setPanel((open) => (open === 'binding' ? null : 'binding'))}
+            />
+            {panel === 'link' && <RichTextLinkPanel id={id} editor={editor} onClose={() => setPanel(null)} />}
+            {panel === 'binding' && <RichTextBindingPanel id={id} editor={editor} onClose={() => setPanel(null)} />}
             <EditorContent editor={editor} />
         </div>
     );
@@ -80,12 +99,17 @@ interface ToolbarProps {
     /** Whether the panel that links the selected text is open. */
     linking: boolean;
     onLink: () => void;
+    /** Whether the panel that inserts a binding token is open. */
+    binding: boolean;
+    onBinding: () => void;
 }
 
-function Toolbar({ editor, controls, linking, onLink }: ToolbarProps) {
+function Toolbar({ editor, controls, linking, onLink, binding, onBinding }: ToolbarProps) {
     const t = useTranslator();
     // Without link targets, such as outside the builder, there's nothing to link to
     const linkable = useLinkTargets().length > 0;
+    // Without properties that fit, such as outside the builder, there's nothing to bind
+    const bindable = useOfferedProperties(TOKEN_TYPES).length > 0;
     const active = useEditorState({
         editor,
         selector: ({ editor: current }) => ({
@@ -115,6 +139,12 @@ function Toolbar({ editor, controls, linking, onLink }: ToolbarProps) {
                 // Links the selected text, or changes the link the cursor is in
                 <ToolbarButton label={t('setono_sylius_cms.builder.rich_text.link')} pressed={active.link} expanded={linking} disabled={!active.selected && !active.link && !linking} onClick={onLink}>
                     <LinkIcon />
+                </ToolbarButton>
+            )}
+            {bindable && (
+                // Inserts a token that shows a property, such as the product's name
+                <ToolbarButton label={t('setono_sylius_cms.builder.rich_text.binding')} expanded={binding} onClick={onBinding}>
+                    ⚡
                 </ToolbarButton>
             )}
             <span className={styles.toolbarSeparator} aria-hidden="true" />

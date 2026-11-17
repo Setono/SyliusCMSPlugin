@@ -15,10 +15,15 @@ use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductBrand;
+use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductPage;
+use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\StockLevel;
 use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\WithRichText;
 use Setono\SyliusCMSPlugin\Tests\Unit\Link\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Sylius\Component\Core\Model\ChannelInterface;
+use Sylius\Component\Core\Model\Product;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
 
@@ -297,6 +302,87 @@ final class RichTextHandlerTest extends TestCase
             ['type' => 'text', 'text' => 'a script', 'marks' => [['type' => 'cmsLink', 'attrs' => ['target' => 'url', 'ref' => 'javascript:alert(1)', 'anchor' => null]]]],
             ['type' => 'text', 'text' => 'another script', 'marks' => [['type' => 'cmsLink', 'attrs' => ['target' => 'url', 'ref' => 'javascript:alert(2)', 'anchor' => null]]]],
         ), $context->reveal());
+    }
+
+    /**
+     * A token resolves like a bound field: see "Rich text" in docs/spec/content-model.md
+     *
+     * @test
+     */
+    public function it_renders_a_binding_token_as_what_it_resolves_to_from_the_host_page_s_object(): void
+    {
+        $handler = Links::richTextHandlerWith([new ProductBrand('Acme'), new StockLevel()]);
+        $context = new HydrationContext(Rendering::context(hostPageContext: ['product' => new Product()]));
+
+        $value = $handler->hydrate(new RichText(label: 'Content'), self::paragraph(
+            ['type' => 'text', 'text' => 'By '],
+            self::token('product.brand', 'us'),
+            ['type' => 'text', 'text' => ', '],
+            self::token('product.stock_level'),
+            ['type' => 'text', 'text' => ' left'],
+        ), $context);
+
+        self::assertSame('<p>By Acme, 7 left</p>', $value?->html);
+    }
+
+    /**
+     * @test
+     */
+    public function it_renders_a_binding_token_whose_value_is_empty_as_its_fallback_or_else_as_nothing(): void
+    {
+        $handler = Links::richTextHandlerWith([new ProductBrand()]);
+
+        $value = $handler->hydrate(new RichText(label: 'Content'), self::paragraph(
+            ['type' => 'text', 'text' => 'By '],
+            self::token('product.brand', 'us'),
+            self::token('product.colour', 'nobody'),
+            self::token('product.brand'),
+        ), new HydrationContext(Rendering::context()));
+
+        self::assertSame('<p>By usnobody</p>', $value?->html);
+    }
+
+    /**
+     * Bound values can't be typed in place: see "Working in the preview" in docs/spec/builder.md
+     *
+     * @test
+     */
+    public function it_renders_a_binding_token_with_its_attributes_in_the_builder_s_preview(): void
+    {
+        $handler = Links::richTextHandlerWith([new ProductBrand('Acme')]);
+        $context = new HydrationContext(Rendering::context(previewMode: RenderContext::PREVIEW_MODE_BUILDER, hostPageContext: ['product' => new Product()]));
+
+        $value = $handler->hydrate(new RichText(label: 'Content'), self::paragraph(self::token('product.brand', 'us')), $context);
+
+        self::assertSame('<p><span data-cms-binding="product.brand" data-cms-binding-params="{}" data-cms-binding-fallback="us" contenteditable="false">Acme</span></p>', $value?->html);
+    }
+
+    /**
+     * @test
+     */
+    public function it_rejects_a_binding_token_of_a_property_the_code_no_longer_has_or_of_a_type_that_is_no_text_or_number(): void
+    {
+        $builder = $this->prophesize(ConstraintViolationBuilderInterface::class);
+        $builder->setParameter(Argument::cetera())->willReturn($builder->reveal());
+        $builder->addViolation()->shouldBeCalledTimes(2);
+
+        $context = $this->prophesize(ExecutionContextInterface::class);
+        $context->buildViolation('setono_sylius_cms.field.unknown_binding')->willReturn($builder->reveal())->shouldBeCalledOnce();
+        $context->buildViolation('setono_sylius_cms.field.binding_not_accepted')->willReturn($builder->reveal())->shouldBeCalledOnce();
+
+        Links::richTextHandlerWith([new ProductBrand(), new ProductPage()])->validate(new RichText(label: 'Content'), self::paragraph(
+            self::token('product.brand'),
+            self::token('product.colour'),
+            self::token('product.page'),
+        ), $context->reveal());
+    }
+
+    /**
+     * @return array{type: 'cmsBinding', attrs: array{property: string, params: array<string, mixed>, fallback: string|null}}
+     */
+    private static function token(string $property, ?string $fallback = null): array
+    {
+        return ['type' => 'cmsBinding', 'attrs' => ['property' => $property, 'params' => [], 'fallback' => $fallback]];
     }
 
     private static function handler(): RichTextHandler

@@ -4,6 +4,7 @@
  * entry lists and its overview page count with. Pure functions, with no React and no I/O. See "Completeness and
  * outdated flags" in docs/spec/localization.md and "Translation state" in docs/spec/content-model.md
  */
+import { translatedValues } from './bindings';
 import { hiddenInPreview } from './conditions';
 import { isMissing } from './fallback';
 import { fingerprint } from './fingerprint';
@@ -195,9 +196,9 @@ export function localeCounts(entry: Entry, locale: string, schemaOf: FieldSchema
 }
 
 /**
- * A field's values by locale, as the translation state reads them: a translatable field's own, or the label and URL a
- * Link of the default shape keeps per locale inside its one value. Null for a shared field, or one the code doesn't have,
- * which has nothing to translate.
+ * A field's values by locale, as the translation state reads them: a translatable field's own, or a bound field's
+ * fallback, or the label and URL a Link of the default shape keeps per locale inside its one value. Null for a shared
+ * field, or one the code doesn't have, which has nothing to translate.
  */
 export function localeValues(schema: FieldSchema | undefined, stored: JsonValue | undefined): JsonValue | undefined | null {
     if (schema === undefined) {
@@ -208,7 +209,7 @@ export function localeValues(schema: FieldSchema | undefined, stored: JsonValue 
         return localeParts(stored);
     }
 
-    return schema['x-cms-translatable'] === true ? stored : null;
+    return schema['x-cms-translatable'] === true ? translatedValues(stored) : null;
 }
 
 function localeMap(values: JsonValue | undefined): JsonObject {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Support;
 
+use Setono\SyliusCMSPlugin\Binding\BindablePropertyInterface;
 use Setono\SyliusCMSPlugin\Field\LinkHandler;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Link\LinkResolver;
@@ -25,12 +26,19 @@ final class Links
 {
     /**
      * @param array<string, list<string>> $fallbackLocales locale code => the locales it falls back through, before en_US
+     * @param list<BindablePropertyInterface> $properties the bindable properties a ref can be bound to
      */
-    public static function handler(array $fallbackLocales = []): LinkHandler
+    public static function handler(array $fallbackLocales = [], array $properties = []): LinkHandler
     {
         $registry = self::registry();
 
-        return new LinkHandler($registry, new LinkResolver($registry), new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US', 'de_DE', 'da_DK'], 'en_US'), $fallbackLocales));
+        return new LinkHandler(
+            $registry,
+            new LinkResolver($registry),
+            new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US', 'de_DE', 'da_DK'], 'en_US'), $fallbackLocales),
+            Bindings::resolver($properties),
+            Bindings::validator($properties),
+        );
     }
 
     /**
@@ -38,7 +46,17 @@ final class Links
      */
     public static function richTextHandler(): RichTextHandler
     {
-        return new RichTextHandler(new RichTextSchema(), new LinkResolver(self::registry()));
+        return self::richTextHandlerWith([]);
+    }
+
+    /**
+     * The rich text field type, whose binding tokens can show these bindable properties
+     *
+     * @param list<BindablePropertyInterface> $properties
+     */
+    public static function richTextHandlerWith(array $properties): RichTextHandler
+    {
+        return new RichTextHandler(new RichTextSchema(), new LinkResolver(self::registry()), Bindings::resolver($properties), Bindings::validator($properties));
     }
 
     /**

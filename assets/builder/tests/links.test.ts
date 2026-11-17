@@ -55,7 +55,7 @@ describe('reading a link in the edited locale', () => {
     it('should read the label of the edited locale and what it falls back to', () => {
         const link = readLink({ target: 'product', ref: 'T_SHIRT', anchor: 'sizes', label: { en_US: 'Shop now' } }, 'per_locale', ['de_DE', 'en_US'], 'entry');
 
-        expect(link).toEqual({ target: 'product', ref: 'T_SHIRT', anchor: 'sizes', label: '', refFallback: undefined, labelFallback: 'Shop now' });
+        expect(link).toEqual({ target: 'product', ref: 'T_SHIRT', anchor: 'sizes', label: '', refFallback: undefined, labelFallback: 'Shop now', binding: null });
     });
 
     it('should read a URL of the edited locale and what it falls back to', () => {
@@ -67,11 +67,11 @@ describe('reading a link in the edited locale', () => {
     it('should read one label and ref for every locale', () => {
         const link = readLink({ target: 'url', ref: 'tel:+4512345678', anchor: null, label: 'Call us' }, 'shared', ['de_DE', 'en_US'], 'entry');
 
-        expect(link).toEqual({ target: 'url', ref: 'tel:+4512345678', anchor: '', label: 'Call us', refFallback: undefined, labelFallback: undefined });
+        expect(link).toEqual({ target: 'url', ref: 'tel:+4512345678', anchor: '', label: 'Call us', refFallback: undefined, labelFallback: undefined, binding: null });
     });
 
     it('should read no link as a link to the first target the field offers', () => {
-        expect(readLink(undefined, 'per_locale', ['en_US'], 'entry')).toEqual({ target: 'entry', ref: '', anchor: '', label: '', refFallback: undefined, labelFallback: undefined });
+        expect(readLink(undefined, 'per_locale', ['en_US'], 'entry')).toEqual({ target: 'entry', ref: '', anchor: '', label: '', refFallback: undefined, labelFallback: undefined, binding: null });
     });
 });
 
@@ -110,5 +110,47 @@ describe('changing a link in the edited locale', () => {
 
         expect(writeLink(link, 'per_locale', 'en_US', { anchor: '#sizes' }, linkTargets, 'entry').anchor).toBe('sizes');
         expect(writeLink(link, 'per_locale', 'en_US', { anchor: ' ' }, linkTargets, 'entry').anchor).toBeNull();
+    });
+});
+
+describe('binding a link to a URL', () => {
+    const binding = { $bind: 'product.url', $params: {}, $fallback: null };
+
+    it('should bind the ref, keeping the URLs typed as the fallback, and its own label and anchor', () => {
+        const link = { target: 'url', ref: { en_US: '/sale' }, anchor: 'top', label: { en_US: 'View product' } };
+
+        expect(writeLink(link, 'per_locale', 'en_US', { bind: binding }, linkTargets, 'entry')).toEqual({
+            target: 'url',
+            ref: { $bind: 'product.url', $params: {}, $fallback: { en_US: '/sale' } },
+            anchor: 'top',
+            label: { en_US: 'View product' },
+        });
+    });
+
+    it('should read a bound ref as its binding, with its fallback in the edited locale as the ref', () => {
+        const link = { target: 'url', ref: { $bind: 'product.url', $params: [], $fallback: { en_US: '/sale' } }, anchor: null, label: {} };
+
+        const read = readLink(link, 'per_locale', ['da_DK', 'en_US'], 'entry');
+
+        expect(read.binding).toEqual({ $bind: 'product.url', $params: {}, $fallback: { en_US: '/sale' } });
+        expect([read.ref, read.refFallback]).toEqual(['', '/sale']);
+    });
+
+    it("should set a bound ref's fallback in the edited locale", () => {
+        const link = { target: 'url', ref: { ...binding, $fallback: { en_US: '/sale' } }, anchor: null, label: {} };
+
+        expect(writeLink(link, 'per_locale', 'da_DK', { ref: '/udsalg' }, linkTargets, 'entry').ref).toEqual({ $bind: 'product.url', $params: {}, $fallback: { en_US: '/sale', da_DK: '/udsalg' } });
+        expect(writeLink({ ...link, ref: binding }, 'per_locale', 'en_US', { ref: '' }, linkTargets, 'entry').ref).toEqual(binding);
+    });
+
+    it('should unbind the ref back to its fallback', () => {
+        const link = { target: 'url', ref: { ...binding, $fallback: { en_US: '/sale' } }, anchor: null, label: {} };
+
+        expect(writeLink(link, 'per_locale', 'en_US', { bind: null }, linkTargets, 'entry').ref).toEqual({ en_US: '/sale' });
+        expect(writeLink({ ...link, ref: binding }, 'per_locale', 'en_US', { bind: null }, linkTargets, 'entry').ref).toEqual({});
+    });
+
+    it("should leave a bound ref's binding out of the parts a link keeps per locale", () => {
+        expect(localeParts({ target: 'url', ref: { ...binding, $fallback: { en_US: '/sale' } }, anchor: null, label: { en_US: 'View' } })).toEqual({ en_US: { label: 'View' } });
     });
 });

@@ -2,6 +2,7 @@
  * Links in the builder: the value a Link field stores, in the shape the field's translatable picks, read and written
  * for the locale being edited. Pure functions, with no React and no I/O. See "Links" in docs/spec/content-model.md
  */
+import { bindingOf, isBinding, type StoredBinding } from './bindings';
 import { fallbackValue } from './fallback';
 import type { FieldSchema, JsonObject, JsonValue } from './types';
 import { isJsonObject } from './values';
@@ -45,7 +46,8 @@ export function localeParts(value: JsonValue | undefined): JsonObject {
     const parts: Record<string, JsonObject> = {};
     for (const part of ['label', 'ref']) {
         const map = link[part];
-        if (!isJsonObject(map)) {
+        // A bound ref holds a binding, which isn't kept per locale
+        if (!isJsonObject(map) || isBinding(map)) {
             continue;
         }
 
@@ -79,6 +81,8 @@ export interface EditedLink {
     refFallback: string | undefined;
     /** What an empty label falls back to from another locale, for a label kept per locale. */
     labelFallback: string | undefined;
+    /** The binding a link to a URL shows in its ref, or null. Its ref is then the binding's fallback. */
+    binding: StoredBinding | null;
 }
 
 /**
@@ -88,7 +92,8 @@ export interface EditedLink {
  */
 export function readLink(value: JsonValue | undefined, shape: LinkShape, chain: readonly string[], firstTarget: string): EditedLink {
     const link = isJsonObject(value) ? value : {};
-    const [ref, refFallback] = localized(link.ref, shape, chain);
+    const binding = isBinding(link.ref) ? bindingOf(link.ref) : null;
+    const [ref, refFallback] = localized(binding === null ? link.ref : binding.$fallback, shape, chain);
     const [label, labelFallback] = localized(link.label, shape, chain);
 
     return {
@@ -98,11 +103,15 @@ export function readLink(value: JsonValue | undefined, shape: LinkShape, chain: 
         label,
         refFallback,
         labelFallback,
+        binding,
     };
 }
 
-/** A change the editor makes to a link in the edited locale. */
-export type LinkChange = { target: string } | { ref: string } | { anchor: string } | { label: string };
+/**
+ * A change the editor makes to a link in the edited locale. Binding its ref makes what it holds the binding's fallback,
+ * and unbinding it makes the fallback its ref again; while it's bound, a ref is the fallback's.
+ */
+export type LinkChange = { target: string } | { ref: string } | { anchor: string } | { label: string } | { bind: StoredBinding | null };
 
 /**
  * The value with the change made in the edited locale. Another target starts with an empty ref, kept per locale for a
@@ -130,8 +139,25 @@ export function writeLink(
         return { ...written, target: change.target, ref: refPerLocale(change.target) ? {} : '' };
     }
 
+    if ('bind' in change) {
+        if (change.bind !== null) {
+            const fallback: JsonValue = isBinding(written.ref) ? (written.ref.$fallback ?? null) : emptyRef(written.ref) ? null : (written.ref ?? null);
+
+            return { ...written, ref: { ...change.bind, $fallback: fallback } };
+        }
+
+        return { ...written, ref: isBinding(written.ref) ? (written.ref.$fallback ?? (refPerLocale(target) ? {} : '')) : (written.ref ?? '') };
+    }
+
     if ('ref' in change) {
-        return { ...written, ref: refPerLocale(target) ? inLocale(written.ref, locale, change.ref) : change.ref };
+        const set = (ref: JsonValue | undefined): JsonValue => (refPerLocale(target) ? inLocale(ref, locale, change.ref) : change.ref);
+        if (isBinding(written.ref)) {
+            const fallback = set(written.ref.$fallback ?? undefined);
+
+            return { ...written, ref: { ...bindingOf(written.ref), $fallback: emptyRef(fallback) ? null : fallback } };
+        }
+
+        return { ...written, ref: set(written.ref) };
     }
 
     if ('anchor' in change) {
@@ -157,6 +183,11 @@ function localized(value: JsonValue | undefined, shape: LinkShape, chain: readon
     const fallback = fallbackValue(value, chain)?.value;
 
     return [typeof own === 'string' ? own : '', typeof fallback === 'string' ? fallback : undefined];
+}
+
+/** Whether a ref holds nothing: an empty string, or a locale map without a value. */
+function emptyRef(ref: JsonValue | undefined): boolean {
+    return ref === undefined || ref === null || ref === '' || (isJsonObject(ref) && Object.keys(ref).length === 0);
 }
 
 /** The locale map with the locale's value set, or taken out when it's empty. */

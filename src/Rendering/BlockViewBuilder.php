@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Rendering;
 
+use Setono\SyliusCMSPlugin\Binding\BoundValue;
 use Setono\SyliusCMSPlugin\Block\FirstMatch;
 use Setono\SyliusCMSPlugin\Block\Snippet;
 use Setono\SyliusCMSPlugin\Condition\ConditionMatcher;
 use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 
@@ -93,6 +95,7 @@ final readonly class BlockViewBuilder
                 $hydrated instanceof Snippet
                     ? $this->snippetViews($hydrated->snippet, $context, $references, $inside)
                     : $this->views($block->children, $context, $references, is_a($blockType->class, FirstMatch::class, true), $inside),
+                array_keys(array_filter($blockType->fields, static fn (FieldMetadata $field): bool => BoundValue::isBound($field, $block->fields[$field->name] ?? null))),
             );
 
             if ($firstOnly) {

@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- The bindable properties by binding, "<context key>.<code>" -->
+        <service id="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistry" class="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistry">
+            <!-- Replaced by RegisterBindablePropertiesPass with the declarations by binding -->
+            <argument type="collection"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\FieldReader"/>
+            <!-- Replaced by RegisterBindablePropertiesPass with a locator of the properties by binding -->
+            <argument type="collection"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistry"/>
+
+        <service id="Setono\SyliusCMSPlugin\Binding\BindingResolver" class="Setono\SyliusCMSPlugin\Binding\BindingResolver">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ParamsHydrator"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Binding\BindingValidator" class="Setono\SyliusCMSPlugin\Binding\BindingValidator">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+            <argument type="service" id="translator"/>
+        </service>
+
+        <!-- What the Product attribute binding's attribute is picked from, and the product_attribute search searches -->
+        <service id="Setono\SyliusCMSPlugin\Binding\Product\ProductAttributeChoicesProvider" class="Setono\SyliusCMSPlugin\Binding\Product\ProductAttributeChoicesProvider">
+            <argument type="service" id="sylius.repository.product_attribute"/>
+
+            <tag name="setono_sylius_cms.choices_provider"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
+        <!--
+        The shipped bindable properties, in the order the picker lists them. Each is declared in its tag, and their
+        priority puts them before a project's. See "Shipped bindable properties" in docs/spec/slots.md
+        -->
+        <service id="setono_sylius_cms.bindable_property.product.name" class="Setono\SyliusCMSPlugin\Binding\TranslationProperty">
+            <argument>name</argument>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+            <tag name="setono_sylius_cms.bindable_property" context_key="product" code="name" label="setono_sylius_cms.bindable_property.product.name" type="text" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.product.short_description" class="Setono\SyliusCMSPlugin\Binding\TranslationProperty">
+            <argument>shortDescription</argument>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+            <tag name="setono_sylius_cms.bindable_property" context_key="product" code="short_description" label="setono_sylius_cms.bindable_property.product.short_description" type="text" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.product.description" class="Setono\SyliusCMSPlugin\Binding\TranslationProperty">
+            <argument>description</argument>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+            <tag name="setono_sylius_cms.bindable_property" context_key="product" code="description" label="setono_sylius_cms.bindable_property.product.description" type="text" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.product.price" class="Setono\SyliusCMSPlugin\Binding\Product\PriceProperty">
+            <argument type="service" id="sylius.product_variant_resolver.default"/>
+            <argument type="service" id="sylius.calculator.product_variant_price"/>
+            <argument type="service" id="sylius.currency_converter"/>
+            <argument type="service" id="sylius.money_formatter"/>
+            <argument>false</argument>
+            <tag name="setono_sylius_cms.bindable_property" context_key="product" code="price" label="setono_sylius_cms.bindable_property.product.price" type="text" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.product.original_price" class="Setono\SyliusCMSPlugin\Binding\Product\PriceProperty">
+            <argument type="service" id="sylius.product_variant_resolver.default"/>
+            <argument type="service" id="sylius.calculator.product_variant_price"/>
+            <argument type="service" id="sylius.currency_converter"/>
+            <argument type="service" id="sylius.money_formatter"/>
+            <argument>true</argument>
+            <tag name="setono_sylius_cms.bindable_property" context_key="product" code="original_price" label="setono_sylius_cms.bindable_property.product.original_price" type="text" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.product.code" class="Setono\SyliusCMSPlugin\Binding\PropertyPathProperty">
+            <argument>code</argument>
+            <tag name="setono_sylius_cms.bindable_property" context_key="product" code="code" label="setono_sylius_cms.bindable_property.product.code" type="text" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.product.url" class="Setono\SyliusCMSPlugin\Binding\LinkUrlProperty">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Link\Target\ProductLinkTarget"/>
+            <tag name="setono_sylius_cms.bindable_property" context_key="product" code="url" label="setono_sylius_cms.bindable_property.product.url" type="url" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.product.main_taxon_name" class="Setono\SyliusCMSPlugin\Binding\TranslationProperty">
+            <argument>name</argument>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+            <argument>mainTaxon</argument>
+            <tag name="setono_sylius_cms.bindable_property" context_key="product" code="main_taxon_name" label="setono_sylius_cms.bindable_property.product.main_taxon_name" type="text" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.product.attribute" class="Setono\SyliusCMSPlugin\Binding\Product\AttributeProperty">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+            <argument type="service" id="translator"/>
+            <tag name="setono_sylius_cms.bindable_property" context_key="product" code="attribute" label="setono_sylius_cms.bindable_property.product.attribute" type="text" params="Setono\SyliusCMSPlugin\Binding\Product\AttributeParams" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.taxon.name" class="Setono\SyliusCMSPlugin\Binding\TranslationProperty">
+            <argument>name</argument>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+            <tag name="setono_sylius_cms.bindable_property" context_key="taxon" code="name" label="setono_sylius_cms.bindable_property.taxon.name" type="text" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.taxon.description" class="Setono\SyliusCMSPlugin\Binding\TranslationProperty">
+            <argument>description</argument>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+            <tag name="setono_sylius_cms.bindable_property" context_key="taxon" code="description" label="setono_sylius_cms.bindable_property.taxon.description" type="text" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.taxon.url" class="Setono\SyliusCMSPlugin\Binding\LinkUrlProperty">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Link\Target\TaxonLinkTarget"/>
+            <tag name="setono_sylius_cms.bindable_property" context_key="taxon" code="url" label="setono_sylius_cms.bindable_property.taxon.url" type="url" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.entry.title" class="Setono\SyliusCMSPlugin\Binding\TranslationProperty">
+            <argument>title</argument>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+            <tag name="setono_sylius_cms.bindable_property" context_key="entry" code="title" label="setono_sylius_cms.bindable_property.entry.title" type="text" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.entry.url" class="Setono\SyliusCMSPlugin\Binding\LinkUrlProperty">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Link\Target\EntryLinkTarget"/>
+            <tag name="setono_sylius_cms.bindable_property" context_key="entry" code="url" label="setono_sylius_cms.bindable_property.entry.url" type="url" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.channel.name" class="Setono\SyliusCMSPlugin\Binding\PropertyPathProperty">
+            <argument>name</argument>
+            <tag name="setono_sylius_cms.bindable_property" context_key="channel" code="name" label="setono_sylius_cms.bindable_property.channel.name" type="text" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.channel.contact_email" class="Setono\SyliusCMSPlugin\Binding\PropertyPathProperty">
+            <argument>contactEmail</argument>
+            <tag name="setono_sylius_cms.bindable_property" context_key="channel" code="contact_email" label="setono_sylius_cms.bindable_property.channel.contact_email" type="text" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.channel.contact_phone" class="Setono\SyliusCMSPlugin\Binding\PropertyPathProperty">
+            <argument>contactPhoneNumber</argument>
+            <tag name="setono_sylius_cms.bindable_property" context_key="channel" code="contact_phone" label="setono_sylius_cms.bindable_property.channel.contact_phone" type="text" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.customer.first_name" class="Setono\SyliusCMSPlugin\Binding\PropertyPathProperty">
+            <argument>firstName</argument>
+            <tag name="setono_sylius_cms.bindable_property" context_key="customer" code="first_name" label="setono_sylius_cms.bindable_property.customer.first_name" type="text" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.customer.last_name" class="Setono\SyliusCMSPlugin\Binding\PropertyPathProperty">
+            <argument>lastName</argument>
+            <tag name="setono_sylius_cms.bindable_property" context_key="customer" code="last_name" label="setono_sylius_cms.bindable_property.customer.last_name" type="text" priority="100"/>
+        </service>
+
+        <service id="setono_sylius_cms.bindable_property.customer.full_name" class="Setono\SyliusCMSPlugin\Binding\PropertyPathProperty">
+            <argument>fullName</argument>
+            <tag name="setono_sylius_cms.bindable_property" context_key="customer" code="full_name" label="setono_sylius_cms.bindable_property.customer.full_name" type="text" priority="100"/>
+        </service>
+    </services>
+</container>

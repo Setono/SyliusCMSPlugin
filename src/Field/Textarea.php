@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Field;
 
 use Setono\SyliusCMSPlugin\Attribute\FieldType;
+use Setono\SyliusCMSPlugin\Binding\BindingType;
 
 /**
  * Text over several lines, stored as a string with its newlines kept and hydrated as ?string
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-#[FieldType(code: 'textarea', translatable: true)]
+#[FieldType(code: 'textarea', translatable: true, bindable: [BindingType::Text, BindingType::Number])]
 final class Textarea extends Field
 {
     public function __construct(

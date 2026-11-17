@@ -10,6 +10,7 @@ import { locks } from '../store';
 import { canShift, findBlock, pathTo, topmostBlocks } from '../tree';
 import type { BlockStyleDefinition, StoredBlock } from '../types';
 import { blockMessages, fieldMessages } from '../validation';
+import { translatedValues } from '../bindings';
 import { readFieldValue } from '../values';
 import { AddBlockButton } from './BlockPicker';
 import { blockHint, blockLabel } from './BlockTreePane';
@@ -71,7 +72,9 @@ export function SelectionPane() {
                         value={readFieldValue(block.fields, name, schema['x-cms-translatable'], locale)}
                         onChange={(value) => store.getState().setFieldValue(block.key, name, value)}
                         errors={fieldMessages(errors, block.key, name, locale)}
-                        fallback={schema['x-cms-translatable'] ? fieldFallback(locales, block.fields[name], locale) : undefined}
+                        // A bound field's fallback is translated like its value
+                        fallback={schema['x-cms-translatable'] ? fieldFallback(locales, translatedValues(block.fields[name]), locale) : undefined}
+                        binding={{ stored: block.fields[name], set: (value) => store.getState().setFieldBinding(block.key, name, value) }}
                         outdated={
                             schema['x-cms-translatable']
                                 ? outdatedValue(locales, block.fields[name], block.translated[name], locale, () => store.getState().markValueUpToDate(block.key, name))

@@ -49,6 +49,31 @@ describe('the rich text schema', () => {
         editor.destroy();
     });
 
+    it("should read a binding token back from the preview's HTML, whatever it shows", () => {
+        const editor = new Editor({
+            extensions: richTextExtensions,
+            content:
+                '<p>Buy <span data-cms-binding="product.attribute" data-cms-binding-params="{&quot;attribute&quot;:&quot;material&quot;}" data-cms-binding-fallback="it" contenteditable="false">Wool</span> ' +
+                '<span data-cms-binding="customer.first_name" data-cms-binding-params="{}" contenteditable="false"></span></p>',
+        });
+
+        expect(editor.getJSON()).toEqual({
+            type: 'doc',
+            content: [
+                {
+                    type: 'paragraph',
+                    content: [
+                        { type: 'text', text: 'Buy ' },
+                        { type: 'cmsBinding', attrs: { property: 'product.attribute', params: { attribute: 'material' }, fallback: 'it' } },
+                        { type: 'text', text: ' ' },
+                        { type: 'cmsBinding', attrs: { property: 'customer.first_name', params: {}, fallback: null } },
+                    ],
+                },
+            ],
+        });
+        editor.destroy();
+    });
+
     it('should have the heading levels of the PHP schema', () => {
         expect(schema.nodes.heading?.spec.parseDOM?.map((rule) => ('tag' in rule ? rule.tag : undefined))).toEqual(shared.headingLevels.map((level) => `h${level}`));
     });

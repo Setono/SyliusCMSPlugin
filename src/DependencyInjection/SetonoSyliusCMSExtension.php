@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\DependencyInjection;
 use Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter;
 use Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter;
 use Setono\SyliusCMSPlugin\Admin\Grid\TranslationFilter;
+use Setono\SyliusCMSPlugin\Attribute\AsBindableProperty;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
 use Setono\SyliusCMSPlugin\Attribute\AsContextResolver;
 use Setono\SyliusCMSPlugin\Attribute\AsLinkTarget;
@@ -14,7 +15,9 @@ use Setono\SyliusCMSPlugin\Attribute\AsSource;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
+use Setono\SyliusCMSPlugin\Binding\PropertyPathProperty;
 use Setono\SyliusCMSPlugin\Block\EmbedCode;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBindablePropertiesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBlockTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterConditionKindsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
@@ -37,6 +40,7 @@ use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 
@@ -68,7 +72,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>}, embed_code: bool, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, slots: array<string, array{label: string, provides: list<string>, cap: int|null, template_event?: array{name: string, priority: int}}>, context_keys: array<string, array{class: class-string, label: string}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, builder: array{scripts: list<string>}, resources: array<string, array<string, mixed>>} $config */
+        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>}, embed_code: bool, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, slots: array<string, array{label: string, provides: list<string>, cap: int|null, template_event?: array{name: string, priority: int}}>, context_keys: array<string, array{class: class-string, label: string}>, bindable_properties: array<string, array<string, array{label: string, type: string, path: string}>>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, builder: array{scripts: list<string>}, resources: array<string, array<string, mixed>>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         // The Embed code block is switched off like a disabled block type until a project opts in (ADR 0018)
@@ -100,6 +104,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.xml');
+
+        self::registerPropertyPaths($container, $config['bindable_properties']);
 
         // The Flysystem storage media items are stored in: the plugin's own local one, setono_sylius_cms.storage, which
         // prepend() defines, unless a project configures another, which then goes by that one name
@@ -141,6 +147,32 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $container->registerAttributeForAutoconfiguration(AsContextResolver::class, static function (ChildDefinition $definition): void {
             $definition->addTag(RegisterContextResolversPass::TAG);
         });
+        $container->registerAttributeForAutoconfiguration(AsBindableProperty::class, static function (ChildDefinition $definition): void {
+            $definition->addTag(RegisterBindablePropertiesPass::TAG);
+        });
+    }
+
+    /**
+     * One bindable property per property path setono_sylius_cms.bindable_properties declares, which carries its
+     * declaration in its tag, as there's no #[AsBindableProperty] to read
+     *
+     * @param array<string, array<string, array{label: string, type: string, path: string}>> $properties
+     */
+    private static function registerPropertyPaths(ContainerBuilder $container, array $properties): void
+    {
+        foreach ($properties as $contextKey => $byCode) {
+            foreach ($byCode as $code => $property) {
+                $container->setDefinition(
+                    sprintf('setono_sylius_cms.bindable_property.%s.%s', $contextKey, $code),
+                    (new Definition(PropertyPathProperty::class, [$property['path']]))->addTag(RegisterBindablePropertiesPass::TAG, [
+                        'context_key' => $contextKey,
+                        'code' => $code,
+                        'label' => $property['label'],
+                        'type' => $property['type'],
+                    ]),
+                );
+            }
+        }
     }
 
     /**

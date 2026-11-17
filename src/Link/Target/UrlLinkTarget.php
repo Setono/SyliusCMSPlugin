@@ -15,9 +15,11 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
  * it. Its name, which an empty label shows, is the URL, or the address or the number. See "Link targets" in
  * docs/spec/extending.md
  */
-#[AsLinkTarget(code: 'url', label: 'setono_sylius_cms.link_target.url', translatableRef: true)]
+#[AsLinkTarget(code: self::CODE, label: 'setono_sylius_cms.link_target.url', translatableRef: true)]
 final class UrlLinkTarget implements RefCheckingLinkTargetInterface
 {
+    public const CODE = 'url';
+
     /** A URL a link can lead to, with no whitespace in it */
     private const ALLOWED = '~^(?:https?://|mailto:|tel:|/|#|\?)\S*$~i';
 

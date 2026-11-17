@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection\Compiler;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractCompilerPassTestCase;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\CheckFieldTypesPass;
+use Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistry;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
@@ -41,6 +42,7 @@ final class CheckFieldTypesPassTest extends AbstractCompilerPassTestCase
         $this->setDefinition(ContentTypeRegistry::class, new Definition(ContentTypeRegistry::class, [[]]));
         $this->setDefinition(ConditionKindRegistry::class, new Definition(ConditionKindRegistry::class, [[]]));
         $this->setDefinition(SourceRegistry::class, new Definition(SourceRegistry::class, [[]]));
+        $this->setDefinition(BindablePropertyRegistry::class, new Definition(BindablePropertyRegistry::class, [[]]));
     }
 
     protected function registerCompilerPass(ContainerBuilder $container): void
@@ -88,6 +90,7 @@ final class CheckFieldTypesPassTest extends AbstractCompilerPassTestCase
         yield 'a content type\'s translation' => [ContentTypeRegistry::class, ['post' => ['model' => Heading::class, 'translation' => EntryWithTextAgain::class, 'resource' => 'app.post']]];
         yield 'a condition kind\'s parameters' => [ConditionKindRegistry::class, ['text_again' => ConditionKindWithTextAgain::class]];
         yield 'a source\'s parameters' => [SourceRegistry::class, ['text_again' => SourceWithTextAgain::class]];
+        yield 'a bindable property\'s parameters' => [BindablePropertyRegistry::class, ['product.text_again' => ['context_key' => 'product', 'code' => 'text_again', 'label' => 'app.text', 'type' => 'text', 'params' => WithTextAgain::class]]];
     }
 
     /**

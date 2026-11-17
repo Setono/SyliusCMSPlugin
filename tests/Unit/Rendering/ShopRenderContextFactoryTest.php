@@ -164,7 +164,21 @@ final class ShopRenderContextFactoryTest extends TestCase
 
         self::assertSame('wholesale', $context->customerGroup);
         self::assertEquals($date, $context->now);
-        self::assertSame($customer->reveal(), $context->customer);
+    }
+
+    /**
+     * A customer binding in preview shows its fallback. See "Bindings" in docs/spec/builder.md
+     *
+     * @test
+     */
+    public function it_has_no_customer_in_a_preview_whoever_signed_in(): void
+    {
+        $customer = $this->prophesize(CustomerInterface::class);
+        $customer->getGroup()->willReturn(null);
+        $this->customerContext->getCustomer()->willReturn($customer->reveal());
+        $this->previewing(new Preview(self::ENTRY, 'WEB', 'en_US'));
+
+        self::assertNull($this->factory()->create()->customer);
     }
 
     /**

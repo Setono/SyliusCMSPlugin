@@ -3,6 +3,7 @@
  * patches of each edit. Pure functions, with no React and no I/O.
  */
 import { produce, type Patch } from 'immer';
+import { isBinding } from './bindings';
 import { longestIncreasing } from './sequence';
 import { blockList, findBlock, insertBlock, removeBlockFrom } from './tree';
 import type { Entry, EntryTranslation, FieldValues, JsonValue, StoredBlock, StoredLayout, TranslationSource, TranslationState, VisibilityCondition } from './types';
@@ -889,10 +890,28 @@ function diffField(key: string, field: string, translatable: boolean, before: Js
     return valueDiffs(translatable, before, after).map(({ locale, value }) => ({ op: 'set_value', key, field, locale, value }));
 }
 
-/** A field's values that differ from before: its one value when it's shared, and otherwise by locale. */
+/**
+ * A field's values that differ from before: its one value when it's shared, and otherwise by locale. A binding is a
+ * translatable field's whole value, so it's set with no locale, and unbinding it removes it before the locales' values
+ * come back.
+ */
 function valueDiffs(translatable: boolean, before: JsonValue | undefined, after: JsonValue | undefined): Array<{ locale: string | null; value: JsonValue | null }> {
     if (!translatable) {
         return jsonEqual(before, after) ? [] : [{ locale: null, value: normalizeValue(after) }];
+    }
+
+    if (isBinding(before) || isBinding(after)) {
+        if (jsonEqual(before, after)) {
+            return [];
+        }
+
+        if (isBinding(after)) {
+            return [{ locale: null, value: after }];
+        }
+
+        const values = isJsonObject(after) ? after : {};
+
+        return [{ locale: null, value: null }, ...Object.keys(values).map((locale) => ({ locale, value: normalizeValue(values[locale]) }))];
     }
 
     const beforeValues = isJsonObject(before) ? before : {};

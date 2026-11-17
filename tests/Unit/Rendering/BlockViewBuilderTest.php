@@ -40,6 +40,7 @@ use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ProductAvailable;
@@ -72,6 +73,27 @@ final class BlockViewBuilderTest extends TestCase
     private const IMAGE = '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d02';
 
     private const DELETED = '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d03';
+
+    /**
+     * Bound values can't be typed in place, so the view says which fields show one. See "Working in the preview" in
+     * docs/spec/builder.md
+     *
+     * @test
+     */
+    public function it_names_the_fields_that_show_a_binding(): void
+    {
+        $bound = new StoredBlock(self::A, 'heading', 1);
+        $bound->fields = ['text' => ['$bind' => 'product.name', '$params' => [], '$fallback' => ['en_US' => 'this product']]];
+        $typed = new StoredBlock(self::B, 'heading', 1);
+        $typed->fields = ['text' => ['en_US' => 'Hello']];
+
+        $views = $this->builder()->build([$bound, $typed], $this->context('en_US'));
+
+        self::assertSame(['text'], $views[0]->bound);
+        self::assertInstanceOf(Heading::class, $views[0]->block);
+        self::assertSame('this product', $views[0]->block->text);
+        self::assertSame([], $views[1]->bound);
+    }
 
     /**
      * @test
@@ -574,7 +596,7 @@ final class BlockViewBuilderTest extends TestCase
 
         return new BlockViewBuilder(
             $blockTypes,
-            new BlockHydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal())),
+            new BlockHydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal()), Bindings::resolver()),
             $conditions = Conditions::matcher(['product_available' => new ProductAvailable()]),
             new BlockReferences($blockTypes, $conditions, new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())), $handlers)),
             $referenceLoader ?? new ReferenceLoader(new ServiceLocator([])),

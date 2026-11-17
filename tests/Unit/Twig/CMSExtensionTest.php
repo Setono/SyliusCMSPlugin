@@ -360,6 +360,17 @@ final class CMSExtensionTest extends IntegrationTestCase
     }
 
     /**
+     * A heading whose text shows a binding, which resolved to this text
+     */
+    public function boundHeading(string $text): BlockView
+    {
+        $heading = new Heading();
+        $heading->text = $text;
+
+        return new BlockView(self::KEY, 'heading', $heading, null, [], ['text']);
+    }
+
+    /**
      * A rich text block with this HTML, or an empty one
      */
     public function richText(?string $html): BlockView

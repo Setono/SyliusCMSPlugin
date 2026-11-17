@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Field;
 
+use Setono\SyliusCMSPlugin\Binding\BindingResolver;
+use Setono\SyliusCMSPlugin\Binding\BindingType;
+use Setono\SyliusCMSPlugin\Binding\BindingValidator;
 use Setono\SyliusCMSPlugin\Link\LinkResolver;
 use Setono\SyliusCMSPlugin\Link\ResolvedLink;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
@@ -14,13 +17,19 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 /**
  * Handles rich text: a ProseMirror document, sanitised against the one rich text schema and rendered to HTML when it's
  * hydrated. Its links resolve through their link targets, from the records loaded before rendering, and one that doesn't
- * resolve renders as plain text. See "Rich text" in docs/spec/content-model.md
+ * resolve renders as plain text. Its binding tokens, of type text or number, resolve like a bound field, and an empty
+ * one shows its fallback. See "Rich text" in docs/spec/content-model.md
  */
-final readonly class RichTextHandler implements SanitizingFieldHandlerInterface, EmptinessCheckingFieldHandlerInterface, FitCheckingFieldHandlerInterface
+final readonly class RichTextHandler implements SanitizingFieldHandlerInterface, EmptinessCheckingFieldHandlerInterface, FitCheckingFieldHandlerInterface, InnerBindingFieldHandlerInterface
 {
+    /** The binding types its tokens accept */
+    public const TOKEN_TYPES = [BindingType::Text, BindingType::Number];
+
     public function __construct(
         private RichTextSchema $schema,
         private LinkResolver $linkResolver,
+        private BindingResolver $bindings,
+        private BindingValidator $bindingValidator,
     ) {
     }
 
@@ -53,11 +62,32 @@ final readonly class RichTextHandler implements SanitizingFieldHandlerInterface,
 
             return $resolved[$key];
         };
+        /** @var array<string, string|null> $bound each token's property and parameters => what it shows */
+        $bound = [];
+        $resolveBinding = function (string $property, array $params) use (&$bound, $context): ?string {
+            $key = serialize([$property, $params]);
+            if (!array_key_exists($key, $bound)) {
+                $value = $this->bindings->resolve($property, $params, self::TOKEN_TYPES, $context);
+                $bound[$key] = null === $value ? null : (string) $value;
+            }
+
+            return $bound[$key];
+        };
         $inBuilder = RenderContext::PREVIEW_MODE_BUILDER === $context->renderContext->previewMode;
-        $html = $this->schema->render($document, $resolveLink, $inBuilder);
+        $html = $this->schema->render($document, $resolveLink, $inBuilder, $resolveBinding);
 
         // Rendering resolved every link
         return new RichTextValue($document, $html, count(array_filter($resolved, is_null(...))));
+    }
+
+    /**
+     * The binding tokens in the document
+     */
+    public function bindings(Field $field, mixed $value): iterable
+    {
+        $document = $this->schema->sanitize($value);
+
+        return null === $document ? [] : $this->schema->bindings($document);
     }
 
     /**
@@ -100,6 +130,11 @@ final readonly class RichTextHandler implements SanitizingFieldHandlerInterface,
             $context->buildViolation('setono_sylius_cms.field.not_rich_text')->addViolation();
 
             return;
+        }
+
+        // A binding token is refused as a bound field's binding is, each
+        foreach ($this->schema->bindings($document) as $binding) {
+            $this->bindingValidator->validate($binding->property, $binding->params, self::TOKEN_TYPES, $context);
         }
 
         // A link whose ref its target refuses, such as a javascript: URL, is refused as a Link field's is, once

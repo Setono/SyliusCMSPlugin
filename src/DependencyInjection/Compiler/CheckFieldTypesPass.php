@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\DependencyInjection\Compiler;
 use Setono\SyliusCMSPlugin\Attribute\FieldType;
 use Setono\SyliusCMSPlugin\Field\Field;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
+use Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistry;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistry;
@@ -135,7 +136,7 @@ final class CheckFieldTypesPass implements CompilerPassInterface
 
     /**
      * The block types, the layouts, the content types' entry and translation classes, and the parameter classes of the
-     * condition kinds and sources, as the passes that register them leave them in their registries
+     * condition kinds, sources and bindable properties, as the passes that register them leave them in their registries
      *
      * @return iterable<string>
      */
@@ -157,6 +158,10 @@ final class CheckFieldTypesPass implements CompilerPassInterface
 
         foreach (self::strings(self::registered($container, SourceRegistry::class)) as $class) {
             yield from self::strings([AttributeReader::source($class)?->params]);
+        }
+
+        foreach (self::registered($container, BindablePropertyRegistry::class) as $declaration) {
+            yield from self::strings([is_array($declaration) ? $declaration['params'] ?? null : null]);
         }
     }
 

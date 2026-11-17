@@ -7,6 +7,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
             <argument type="service" id="validator"/>
             <argument type="service" id="translator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Binding\BindingValidator"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Validation\BlockTreeValidator" class="Setono\SyliusCMSPlugin\Validation\BlockTreeValidator">

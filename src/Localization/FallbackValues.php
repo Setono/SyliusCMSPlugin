@@ -64,6 +64,16 @@ final readonly class FallbackValues
     }
 
     /**
+     * The locale and the locales it falls back through, in order
+     *
+     * @return list<string>
+     */
+    public function localesFor(string $localeCode): array
+    {
+        return $this->fallbackChain->localesFor($localeCode);
+    }
+
+    /**
      * The values of a translatable field that aren't missing, in the order the locale's fallback chain reaches them
      *
      * @param mixed $stored what the field stores: a map from locale code to value

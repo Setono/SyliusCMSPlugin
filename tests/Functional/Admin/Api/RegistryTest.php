@@ -48,6 +48,7 @@ final class RegistryTest extends BuilderApiTestCase
                     'x-cms-help' => null,
                     'x-cms-required' => true,
                     'x-cms-translatable' => true,
+                    'x-cms-bindable' => ['text', 'number'],
                 ],
             ],
             [
@@ -80,6 +81,7 @@ final class RegistryTest extends BuilderApiTestCase
                     'x-cms-help' => null,
                     'x-cms-required' => true,
                     'x-cms-translatable' => true,
+                    'x-cms-bindable' => ['text', 'number'],
                 ],
             ],
             [
@@ -93,6 +95,7 @@ final class RegistryTest extends BuilderApiTestCase
                     'x-cms-help' => null,
                     'x-cms-required' => false,
                     'x-cms-translatable' => true,
+                    'x-cms-bindable' => ['text', 'number'],
                 ],
             ],
         ], self::blockTypes($registry)['accordion_item']['fields']);
@@ -425,6 +428,7 @@ final class RegistryTest extends BuilderApiTestCase
                 'x-cms-required' => false,
                 'x-cms-translatable' => false,
                 'default' => 5,
+                'x-cms-bindable' => ['number'],
             ],
             $fields['interval'],
         );
