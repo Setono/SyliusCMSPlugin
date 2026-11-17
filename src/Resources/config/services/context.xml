@@ -47,6 +47,13 @@
             <tag name="setono_sylius_cms.context_dependency_finder" priority="30"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Context\ShownSnippetDependencies" class="Setono\SyliusCMSPlugin\Context\ShownSnippetDependencies">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <tag name="setono_sylius_cms.context_dependency_finder" priority="25"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Context\ConditionDependencies" class="Setono\SyliusCMSPlugin\Context\ConditionDependencies">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
@@ -57,6 +64,11 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
             <tag name="setono_sylius_cms.context_dependency_finder" priority="10"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Context\SnippetUseDependencies" class="Setono\SyliusCMSPlugin\Context\SnippetUseDependencies">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\SnippetUses"/>
+            <tag name="setono_sylius_cms.context_dependency_finder" priority="5"/>
         </service>
     </services>
 </container>

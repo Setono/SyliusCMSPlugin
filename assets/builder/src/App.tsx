@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createUrlsApi, type BuilderApi, type UrlsApi } from './api';
 import styles from './App.module.css';
 import { createAutosave, type Autosave } from './autosave';
-import type { BuilderConfig } from './config';
+import { withUuid, type BuilderConfig } from './config';
 import { BuilderProvider, type BuilderSession } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
 import type { LinkTargetDefinition } from './links';
@@ -45,6 +45,18 @@ export interface AppProps {
 }
 
 const goTo = (url: string): void => window.location.assign(url);
+
+/**
+ * The builder as it's open now, which another entry's builder comes back to: its path and query, with the block to
+ * select and the locale to edit on the way back.
+ */
+function backHere(block: string, locale: string): string {
+    const query = new URLSearchParams(window.location.search);
+    query.set('block', block);
+    query.set('locale', locale);
+
+    return `${window.location.pathname}?${query.toString()}`;
+}
 
 type Phase = { name: 'loading' } | { name: 'failed' } | { name: 'ready'; session: BuilderSession; translate: Translate; media: MediaLimits | null; linkTargets: LinkTargetDefinition[]; sources: SourceDefinition[] };
 
@@ -131,8 +143,10 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                     }
                 });
 
-                // Back and Esc leave once the unsaved changes are sent, and stay when they can't be
-                const leaving = createLeaving(store, autosave, () => navigate(config.backUrl));
+                // Back and Esc leave once the unsaved changes are sent, and stay when they can't be, and so does Edit snippet
+                const leaving = createLeaving(store, autosave, (to) => navigate(to ?? config.backUrl));
+                const builderEndpoint = config.endpoints.builder;
+                const snippetBlocks = api.snippetBlocks?.bind(api);
 
                 // A save refused because a colleague scheduled a publish loads the working copy again, read-only
                 const reload = createReload(store, () => api.fetchEntry());
@@ -156,6 +170,11 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                         leaving,
                         overviewUrl: config.overviewUrl,
                         placements: config.placements ?? null,
+                        editSnippet:
+                            builderEndpoint === undefined
+                                ? null
+                                : (snippet, block) => void leaving.getState().leave(`${withUuid(builderEndpoint, snippet)}?${new URLSearchParams({ back: backHere(block, store.getState().locale) }).toString()}`),
+                        snippetBlocks: snippetBlocks === undefined ? null : (snippet) => snippetBlocks(snippet),
                         publish: createPublish(store, autosave, () => api.publish(), validationStore),
                         discard: createDiscard(store, autosave, () => api.discard()),
                         schedule: createSchedule(store, autosave, (at) => api.schedule(at), validationStore),

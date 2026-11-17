@@ -40,4 +40,21 @@ final readonly class ReferenceMap
     {
         return $this->records[$type] ?? [];
     }
+
+    /**
+     * The map with the records of the type added, by id, such as those loaded in a pass of their own
+     *
+     * @param array<string, object> $records
+     */
+    public function with(string $type, array $records): self
+    {
+        if ([] === $records) {
+            return $this;
+        }
+
+        $all = $this->records;
+        $all[$type] = $records + ($all[$type] ?? []);
+
+        return new self($all);
+    }
 }

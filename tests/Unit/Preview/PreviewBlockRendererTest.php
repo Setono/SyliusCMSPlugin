@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Log\LoggerInterface;
+use Setono\SyliusCMSPlugin\Block\Snippet;
 use Setono\SyliusCMSPlugin\Preview\PreviewBlockRenderer;
 use Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
@@ -128,6 +129,29 @@ final class PreviewBlockRendererTest extends TestCase
         $this->expectExceptionObject($exception);
 
         $renderer->render($this->view(), $this->context(null));
+    }
+
+    /**
+     * The snippet's blocks are another entry's, which the builder neither selects nor types in, so only the Snippet
+     * block is marked
+     *
+     * @test
+     */
+    public function it_renders_what_a_snippet_block_shows_as_shoppers_see_it_inside_the_snippet_block_s_markers(): void
+    {
+        $view = new BlockView(self::KEY, 'snippet', new Snippet(), null, []);
+        $context = $this->context(RenderContext::PREVIEW_MODE_BUILDER);
+
+        $inner = $this->prophesize(BlockRendererInterface::class);
+        $inner->render($view, Argument::that(static fn (RenderContext $rendered): bool => null === $rendered->previewMode && $rendered->now === $context->now))
+            ->willReturn('<h2 class="cms-heading">Free shipping</h2>')
+            ->shouldBeCalledOnce()
+        ;
+
+        self::assertSame(
+            '<!--cms:block ' . self::KEY . ' snippet--><h2 class="cms-heading">Free shipping</h2><!--/cms:block ' . self::KEY . '-->',
+            (new PreviewBlockRenderer($inner->reveal()))->render($view, $context),
+        );
     }
 
     private function renderer(string $output): PreviewBlockRenderer

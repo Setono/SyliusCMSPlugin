@@ -138,7 +138,7 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
 
         $snippets = [];
         foreach ($winners as $index => [$placement, $snippet]) {
-            $blocks = $this->blockViewBuilder->build($trees[$index]->blocks, $context, $references);
+            $blocks = $this->blockViewBuilder->build($trees[$index]->blocks, $context, $references, $snippet->getUuid());
             if ([] !== $blocks) {
                 $snippets[] = new PlacedSnippet($placement, $snippet, $blocks);
             }

@@ -75,7 +75,7 @@ Every entry has one, between its list and the builder.
 - **Revisions:** who published each and when. Each can be previewed read-only, or restored into the draft.
 - **Share links:** each link's channel, locale, Shown to, Date and who made it, with copy and revoke, plus New ([Publishing](publishing.md)).
 - **URLs** (content types with their own URL): the URL per locale, the old slugs that redirect, and for a page "Homepage of" per channel, showing the page that's each channel's homepage now.
-- **Used in** (snippets): the entries whose block trees reference it.
+- **Used in** (snippets): the entries whose block trees reference it, each with where: in its published content, in its draft, or published but removed in the draft.
 - **Translations:** the chips. Translating happens in the builder.
 
 ### Placements
@@ -139,6 +139,7 @@ The admin flags problems on the entry, in the lists' problem marker, on the Over
 - a scheduled publish that's overdue
 - a scheduled publish that failed, with its reason
 - a broken reference: a deleted product, taxon, entry, snippet or media item in a field or link, a deleted customer group in a condition or an audience, or a deleted category ([Content model](content-model.md#references))
+- a Snippet block through which its snippet would render inside itself, directly or through other snippets ([Rendering](rendering.md#rendering-a-block-tree))
 
 **Warnings:**
 

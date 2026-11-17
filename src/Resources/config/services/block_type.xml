@@ -82,6 +82,11 @@
             <tag name="setono_sylius_cms.block_type"/>
         </service>
 
+        <!-- Reuse -->
+        <service id="Setono\SyliusCMSPlugin\Block\Snippet" class="Setono\SyliusCMSPlugin\Block\Snippet">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
+
         <!-- Opt-in: disabled until setono_sylius_cms.embed_code is true (ADR 0018) -->
         <service id="Setono\SyliusCMSPlugin\Block\EmbedCode" class="Setono\SyliusCMSPlugin\Block\EmbedCode">
             <tag name="setono_sylius_cms.block_type"/>

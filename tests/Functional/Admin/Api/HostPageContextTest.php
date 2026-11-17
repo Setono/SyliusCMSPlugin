@@ -19,6 +19,8 @@ final class HostPageContextTest extends BuilderApiTestCase
 
     private const NOTE = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f';
 
+    private const SHOWS_SNIPPET = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e50';
+
     /**
      * The test application's Product note needs the product, which a page doesn't provide
      *
@@ -121,6 +123,74 @@ final class HostPageContextTest extends BuilderApiTestCase
             ['block' => null, 'field' => 'context', 'locale' => null, 'message' => 'The block "Product note" needs the host-page context "Product page".'],
         ], $response['refused'] ?? null);
         self::assertSame(['product'], self::reloadSnippet($snippet)->getContext());
+    }
+
+    /**
+     * A Snippet block needs what its snippet declares, which a page doesn't provide
+     *
+     * @test
+     */
+    public function it_refuses_to_publish_a_page_with_a_snippet_block_whose_snippet_needs_the_product(): void
+    {
+        $client = self::signedIn();
+        $sizeGuide = self::createSnippet('Size guide', [self::note()], published: true, context: ['product']);
+        $page = self::createPageWithBlocks('About us', 'about-us', [self::snippetBlock($sizeGuide)]);
+
+        $response = self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/validate', $page->getUuid()));
+
+        self::assertSame(['errors' => [
+            ['block' => self::SHOWS_SNIPPET, 'field' => null, 'locale' => null, 'message' => 'The snippet "Size guide" needs the host-page context "Product page".'],
+        ]], $response);
+    }
+
+    /**
+     * A snippet shown by a Snippet block in a page can't need the product, which the page doesn't provide
+     *
+     * @test
+     */
+    public function it_refuses_to_add_a_key_to_a_snippet_s_context_while_a_page_shows_it(): void
+    {
+        $client = self::createClient();
+        $snippet = self::createSnippet('Free shipping', published: true);
+        self::createPageWithBlocks('About us', 'about-us', [self::snippetBlock($snippet)], published: true);
+        $csrfToken = self::openBuilder($client, $snippet);
+
+        $response = self::json($client, 'PATCH', '/admin/cms/api/entries/' . $snippet->getUuid(), ['lockToken' => 0, 'changes' => [
+            ['op' => 'set_entry_value', 'field' => 'context', 'locale' => null, 'value' => ['product']],
+        ]], $csrfToken);
+
+        self::assertIsArray($response);
+        self::assertSame([
+            ['block' => null, 'field' => 'context', 'locale' => null, 'message' => 'The Snippet block in "About us" doesn\'t provide the host-page context "Product page".'],
+        ], $response['refused'] ?? null);
+        self::assertSame([], self::reloadSnippet($snippet)->getContext());
+    }
+
+    /**
+     * A snippet can't stop declaring the product while it shows a snippet that needs it
+     *
+     * @test
+     */
+    public function it_refuses_to_remove_a_key_from_a_snippet_s_context_while_a_snippet_it_shows_needs_it(): void
+    {
+        $client = self::createClient();
+        $sizeGuide = self::createSnippet('Size guide', [self::note()], published: true, context: ['product']);
+        $sidebar = self::createSnippet('Product sidebar', [self::snippetBlock($sizeGuide)], context: ['product']);
+        $csrfToken = self::openBuilder($client, $sidebar);
+
+        $response = self::json($client, 'PATCH', '/admin/cms/api/entries/' . $sidebar->getUuid(), ['lockToken' => 0, 'changes' => [
+            ['op' => 'set_entry_value', 'field' => 'context', 'locale' => null, 'value' => null],
+        ]], $csrfToken);
+
+        self::assertIsArray($response);
+        self::assertSame([
+            ['block' => null, 'field' => 'context', 'locale' => null, 'message' => 'The snippet "Size guide" needs the host-page context "Product page".'],
+        ], $response['refused'] ?? null);
+    }
+
+    private static function snippetBlock(SnippetInterface $snippet): StoredBlock
+    {
+        return new StoredBlock(self::SHOWS_SNIPPET, 'snippet', 1, fields: ['snippet' => $snippet->getUuid()]);
     }
 
     private static function reloadSnippet(SnippetInterface $snippet): SnippetInterface

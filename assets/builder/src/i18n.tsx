@@ -216,6 +216,13 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.items.search_entries'
     | 'setono_sylius_cms.builder.items.search_products'
     | 'setono_sylius_cms.builder.items.search_taxons'
+    // A Snippet block, which shows a snippet that stays the same wherever it's used
+    | 'setono_sylius_cms.builder.snippet.detach'
+    | 'setono_sylius_cms.builder.snippet.detach_failed'
+    | 'setono_sylius_cms.builder.snippet.edit'
+    | 'setono_sylius_cms.builder.snippet.search'
+    | 'setono_sylius_cms.builder.snippet.shared'
+    | 'setono_sylius_cms.builder.snippet.shared_help'
     // Pickers' search
     | 'setono_sylius_cms.builder.search.failed'
     | 'setono_sylius_cms.builder.search.no_results'

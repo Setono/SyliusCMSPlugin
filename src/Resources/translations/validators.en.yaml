@@ -14,6 +14,8 @@ setono_sylius_cms:
         does_not_provide: '%what% doesn''t provide the host-page context %context%.'
         needs: '%what% needs the host-page context %context%.'
         placement: 'The placement in "%slot%"'
+        snippet: 'The snippet "%snippet%"'
+        used_in: 'The Snippet block in "%entry%"'
     field:
         invalid_choice: The value you selected is not a valid choice.
         link_target_not_allowed: 'This field can''t link to %target%.'
@@ -30,6 +32,7 @@ setono_sylius_cms:
         not_on_step: 'This value isn''t a valid step. The two nearest valid values are {{ lower }} and {{ upper }}.'
         not_product: This value should be a product's code.
         not_rich_text: This value should be formatted text.
+        not_snippet: This value should be a snippet.
         not_source: This value should be a source, with its parameters and how many items to show.
         not_taxon: This value should be a taxon's code.
         not_text: This value should be text.

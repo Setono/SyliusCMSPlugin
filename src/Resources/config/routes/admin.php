@@ -29,6 +29,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\SearchAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SlugAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\SnippetBlocksAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SourceCountAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaFolderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaItemAction;
@@ -234,6 +235,13 @@ return static function (RoutingConfigurator $routes): void {
 
     $routes->add('setono_sylius_cms_admin_api_entry_show', '/cms/api/entries/{uuid}')
         ->controller(ShowEntryAction::class)
+        ->methods(['GET'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    // The blocks a Snippet block shows, which "Detach to edit here" copies in its place
+    $routes->add('setono_sylius_cms_admin_api_snippet_blocks', '/cms/api/snippets/{uuid}/blocks')
+        ->controller(SnippetBlocksAction::class)
         ->methods(['GET'])
         ->requirements(['uuid' => Requirement::UUID])
     ;

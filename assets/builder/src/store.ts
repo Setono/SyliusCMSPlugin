@@ -7,7 +7,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla';
 import { applyChanges, changesFromPatches, mergeChanges, type Change, type LayoutTranslatableLookup, type TranslatableLookup } from './changeSet';
 import { emptyHistory, rebaseHistory, recordEdit, redoEdit, undoEdit, type History, type Step } from './history';
 import { providedContext } from './hostPageContext';
-import { canDuplicate, canMoveBlocks, createNestingRules, initialChildren, insertableIn, type NestingRules } from './nesting';
+import { canDuplicate, canMoveBlocks, canReplace, createNestingRules, initialChildren, insertableIn, type NestingRules } from './nesting';
 import { holdClashes, reconcile, splitValueClashes, withoutKeysIn, type HeldClash } from './pullIn';
 import { copyWithNewKeys, findBlock, generateBlockKey, insertBlock, listOf, locateBlock, moveBlocksTo, removeBlockFrom, shiftWithin, topmostBlocks } from './tree';
 import type { Locale } from './config';
@@ -145,6 +145,12 @@ export interface BuilderActions {
      * when the nesting rules have no room for one of them.
      */
     duplicateBlocks(keys: readonly string[]): string[] | null;
+    /**
+     * Detaches a Snippet block: puts a copy of the snippet's blocks in its place, with a new key for each and every
+     * block inside them, in one edit, and selects the first. Returns the copies' keys, or null when the block's spot
+     * can't hold them. See "Snippet references" in docs/spec/builder.md
+     */
+    detachSnippet(key: string, blocks: readonly StoredBlock[]): string[] | null;
     /** Selects only this block, or nothing when the key is null. */
     selectBlock(key: string | null): void;
     /** Adds a block to the selection, or takes it out when it's selected already, as ⌘-click does. */
@@ -515,6 +521,25 @@ export function createBuilderStore({
                     },
                     { selection: copied, selectedKey: copied.at(-1) ?? null },
                 );
+
+                return copied;
+            },
+
+            detachSnippet(key, blocks) {
+                const { schedule: locked, entry: working } = get();
+                if (locks(locked) || !canReplace(rules, working.tree.blocks, key, blocks)) {
+                    return null;
+                }
+
+                const copies = blocks.map((original) => copyWithNewKeys(original, generateKey));
+                const copied = copies.map((copy) => copy.key);
+
+                edit((draft) => {
+                    const spot = locateBlock(draft.tree.blocks, key);
+                    if (spot !== undefined) {
+                        listOf(draft.tree.blocks, spot.parent)?.splice(spot.index, 1, ...copies);
+                    }
+                }, only(copied[0] ?? null));
 
                 return copied;
             },

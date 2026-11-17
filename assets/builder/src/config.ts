@@ -74,6 +74,10 @@ export interface BuilderConfig {
         search?: string;
         /** How many items a source yields for a list field's parameters, under a preview token. Without it, no count shows. */
         sourceCount?: string;
+        /** The blocks a snippet shows, with UUID_PLACEHOLDER for its UUID, which Detach to edit here copies. Without it, there's no Detach. */
+        snippetBlocks?: string;
+        /** Another entry's builder, with UUID_PLACEHOLDER for its UUID, which Edit snippet opens. Without it, there's no Edit snippet. */
+        builder?: string;
     };
     /** The store's channels. The settings pick the entry's channels from them, and the preview picks from the entry's. */
     channels: Channel[];
@@ -92,6 +96,14 @@ export interface BuilderConfig {
      * the store's locales, which media items have alt text in. Without it, media fields can't be picked.
      */
     media?: Pick<MediaLibraryConfig, 'endpoints' | 'locales'>;
+}
+
+/** What the endpoints that name another entry hold in place of its UUID. */
+export const UUID_PLACEHOLDER = '00000000-0000-4000-8000-000000000000';
+
+/** An endpoint that names another entry, for the entry with the UUID. */
+export function withUuid(endpoint: string, uuid: string): string {
+    return endpoint.replace(UUID_PLACEHOLDER, encodeURIComponent(uuid));
 }
 
 export function readConfig(element: HTMLElement): BuilderConfig {

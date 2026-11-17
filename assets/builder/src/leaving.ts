@@ -16,27 +16,38 @@ export interface LeavingState {
      * leaves anyway. null while it didn't.
      */
     failedSave: FailedSave | null;
-    /** Sends the unsaved changes, then leaves, or stays when they can't be sent. */
-    leave(): Promise<void>;
-    /** Leaves without the changes that couldn't be sent. */
+    /**
+     * Sends the unsaved changes, then leaves, or stays when they can't be sent: for where the builder was opened from, or
+     * for another page, such as a snippet's builder.
+     */
+    leave(to?: string): Promise<void>;
+    /** Leaves without the changes that couldn't be sent, for where the last leave was for. */
     leaveAnyway(): void;
     stay(): void;
 }
 
 export type LeavingStore = StoreApi<LeavingState>;
 
-export function createLeaving(store: BuilderStore, autosave: Pick<Autosave, 'flush'>, go: () => void): LeavingStore {
+/**
+ * @param go goes to the page given, or where the builder was opened from without one
+ */
+export function createLeaving(store: BuilderStore, autosave: Pick<Autosave, 'flush'>, go: (to?: string) => void): LeavingStore {
+    // Where the last leave was for, which leaving anyway goes to
+    let target: string | undefined;
+    const goTo = (): void => (target === undefined ? go() : go(target));
+
     return createStore<LeavingState>()((set) => ({
         failedSave: null,
 
-        async leave() {
+        async leave(to) {
+            target = to;
             const saved = await autosave.flush().catch(() => false);
             const { unsaved, saveState } = store.getState();
 
             // A save that can't go through with nothing left to send, such as after colleagues' changes couldn't be
             // merged into a working copy without changes of its own, loses nothing
             if (saved || unsaved.length === 0) {
-                go();
+                goTo();
             } else {
                 set({ failedSave: saveState === 'stale' || saveState === 'locked' ? saveState : 'failed' });
             }
@@ -44,7 +55,7 @@ export function createLeaving(store: BuilderStore, autosave: Pick<Autosave, 'flu
 
         leaveAnyway() {
             set({ failedSave: null });
-            go();
+            goTo();
         },
 
         stay() {

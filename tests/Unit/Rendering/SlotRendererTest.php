@@ -22,6 +22,7 @@ use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Registry\UnknownSlotException;
 use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
+use Setono\SyliusCMSPlugin\Rendering\BlockReferences;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
 use Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher;
 use Setono\SyliusCMSPlugin\Rendering\PlacementData;
@@ -402,9 +403,10 @@ final class SlotRendererTest extends TestCase
             new BlockViewBuilder(
                 $blockTypes,
                 new BlockHydrator($handlers, new FallbackValues($handlers, new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US')))),
-                Conditions::matcher(),
-                new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())), $handlers),
+                $conditions = Conditions::matcher(),
+                new BlockReferences($blockTypes, $conditions, new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())), $handlers)),
                 $referenceLoader,
+                $this->upgrader->reveal(),
             ),
             $referenceLoader,
             new Environment(new ArrayLoader([SlotRenderer::TEMPLATE => $template])),

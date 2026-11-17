@@ -19,6 +19,10 @@
             <tag name="setono_sylius_cms.field_handler"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Field\SnippetHandler" class="Setono\SyliusCMSPlugin\Field\SnippetHandler">
+            <tag name="setono_sylius_cms.field_handler"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Field\NumberHandler" class="Setono\SyliusCMSPlugin\Field\NumberHandler">
             <tag name="setono_sylius_cms.field_handler"/>
         </service>

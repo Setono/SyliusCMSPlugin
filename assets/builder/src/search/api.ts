@@ -13,8 +13,11 @@ export interface SearchResult {
 }
 
 export interface SearchApi {
-    /** What of the kind matches the query, best first, at most a page of it. An empty query finds the first page. */
-    search(kind: string, query: string): Promise<SearchResult[]>;
+    /**
+     * What of the kind matches the query, best first, at most a page of it. An empty query finds the first page. The
+     * parameters narrow what a kind's search finds, such as the context keys the entry provides for snippets.
+     */
+    search(kind: string, query: string, parameters?: Readonly<Record<string, string>>): Promise<SearchResult[]>;
     /** Those of the refs of the kind that exist, so a picker can name what a field holds. A kind can't always look them up. */
     find(kind: string, refs: readonly string[]): Promise<SearchResult[]>;
 }
@@ -35,7 +38,7 @@ export function createSearchApi(endpoint: string, fetchFn: Fetch = defaultFetch)
     };
 
     return {
-        search: (kind, query) => get(kind, { q: query }),
+        search: (kind, query, parameters = {}) => get(kind, { ...parameters, q: query }),
         find: async (kind, refs) => (refs.length === 0 ? [] : get(kind, { refs: refs.join(',') })),
     };
 }

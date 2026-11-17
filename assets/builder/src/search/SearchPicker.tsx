@@ -17,6 +17,8 @@ export interface SearchPickerProps {
     describedBy?: string | undefined;
     /** The button's id, such as a field's, so the field's label names it. */
     id?: string | undefined;
+    /** What narrows the search, such as the context keys the entry provides for snippets. */
+    parameters?: Readonly<Record<string, string>> | undefined;
     onPick: (result: SearchResult) => void;
 }
 
@@ -25,7 +27,7 @@ export interface SearchPickerProps {
  * searches as the editor types, from the first page of everything, and the arrow keys and Enter pick too. Products
  * and taxons pickers reuse it. Without a search, it's disabled.
  */
-export function SearchPicker({ kind, label, searchLabel, disabled = false, describedBy, id, onPick }: SearchPickerProps) {
+export function SearchPicker({ kind, label, searchLabel, disabled = false, describedBy, id, parameters, onPick }: SearchPickerProps) {
     const search = useSearch();
     const [open, setOpen] = useState(false);
 
@@ -42,6 +44,7 @@ export function SearchPicker({ kind, label, searchLabel, disabled = false, descr
                         <SearchList
                             api={search.api}
                             kind={kind}
+                            parameters={parameters}
                             searchLabel={searchLabel}
                             onPick={(result) => {
                                 search.known.getState().remember({ [knownKey(kind, result.ref)]: result });
@@ -61,19 +64,29 @@ type Found = { state: 'searching' } | { state: 'found'; results: SearchResult[] 
 /** How long it waits after a key press before it searches. */
 const DELAY = 200;
 
-function SearchList({ api, kind, searchLabel, onPick }: { api: SearchApi; kind: string; searchLabel: string; onPick: (result: SearchResult) => void }) {
+interface SearchListProps {
+    api: SearchApi;
+    kind: string;
+    parameters: Readonly<Record<string, string>> | undefined;
+    searchLabel: string;
+    onPick: (result: SearchResult) => void;
+}
+
+function SearchList({ api, kind, parameters, searchLabel, onPick }: SearchListProps) {
     const t = useTranslator();
     const listId = useId();
     const [query, setQuery] = useState('');
     const [found, setFound] = useState<Found>({ state: 'searching' });
     const [active, setActive] = useState(0);
     const results = found.state === 'found' ? found.results : [];
+    // The parameters search again only when what they hold changes, not each time they're made
+    const narrowing = JSON.stringify(parameters ?? null);
 
     useEffect(() => {
         let current = true;
         const timer = setTimeout(
             () => {
-                api.search(kind, query).then(
+                api.search(kind, query, ...(parameters === undefined ? [] : [parameters])).then(
                     (answer) => {
                         if (current) {
                             setFound({ state: 'found', results: answer });
@@ -90,7 +103,7 @@ function SearchList({ api, kind, searchLabel, onPick }: { api: SearchApi; kind: 
             current = false;
             clearTimeout(timer);
         };
-    }, [api, kind, query]);
+    }, [api, kind, query, narrowing]);
 
     const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
