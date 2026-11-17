@@ -226,7 +226,7 @@ final class RegisterBindablePropertiesPassTest extends AbstractCompilerPassTestC
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<mixed>
      */
     private function declarations(): array
     {

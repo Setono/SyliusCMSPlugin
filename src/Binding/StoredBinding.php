@@ -66,8 +66,10 @@ final readonly class StoredBinding
             return null;
         }
 
-        /** @var array<string, mixed> $params */
-        return new self($property, $params, $fallback);
+        /** @var array<string, mixed> $map */
+        $map = $params;
+
+        return new self($property, $map, $fallback);
     }
 
     /**

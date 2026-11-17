@@ -23,18 +23,18 @@ final class BoundLinkLabel extends Constraint
 {
     public string $message = 'setono_sylius_cms.block.bound_link_label';
 
-    /** The name of the block type's Link field */
-    public string $field;
-
     /**
+     * @param string $field the name of the block type's Link field
      * @param list<string>|null $groups
      */
     #[HasNamedArguments]
-    public function __construct(string $field, ?string $message = null, ?array $groups = null, mixed $payload = null)
-    {
+    public function __construct(
+        public string $field,
+        ?string $message = null,
+        ?array $groups = null,
+        mixed $payload = null,
+    ) {
         parent::__construct(null, $groups, $payload);
-
-        $this->field = $field;
         $this->message = $message ?? $this->message;
     }
 

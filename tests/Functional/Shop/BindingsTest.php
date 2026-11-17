@@ -78,7 +78,7 @@ final class BindingsTest extends WebTestCase
         $customer = $user->getCustomer();
         self::assertInstanceOf(CustomerInterface::class, $customer);
         $customer->setFirstName('Ada');
-        self::getContainer()->get('sylius.manager.customer')->flush();
+        self::entityManager()->flush();
         $client->loginUser($user, 'shop');
 
         $crawler = $client->request('GET', '/en_US/');

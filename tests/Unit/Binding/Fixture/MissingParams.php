@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\Binding\BindablePropertyInterface;
 use Setono\SyliusCMSPlugin\Binding\BindingType;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 
+// @phpstan-ignore argument.type (the class doesn't exist, on purpose)
 #[AsBindableProperty(contextKey: 'product', code: 'colour', label: 'app.binding.colour', type: BindingType::Text, params: 'App\Binding\ColourParams')]
 final class MissingParams implements BindablePropertyInterface
 {

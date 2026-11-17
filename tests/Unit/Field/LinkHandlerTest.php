@@ -427,11 +427,12 @@ final class LinkHandlerTest extends TestCase
     public function it_fits_a_binding_only_in_the_ref_of_a_link_to_a_url(): void
     {
         $handler = Links::handler();
+        $fits = static fn (Link $field, mixed $value): bool => $handler->fits($field, $value);
 
-        self::assertTrue($handler->fits(new Link(label: 'Link'), self::boundLink(['en_US' => '/products'])));
-        self::assertTrue($handler->fits(new Link(label: 'Link', translatable: false), ['target' => 'url', 'ref' => ['$bind' => 'product.page', '$params' => [], '$fallback' => '/products'], 'label' => 'View']));
-        self::assertFalse($handler->fits(new Link(label: 'Link'), ['target' => 'app_store', 'ref' => ['$bind' => 'product.page', '$params' => [], '$fallback' => null]]));
-        self::assertFalse($handler->fits(new Link(label: 'Link'), ['target' => 'url', 'ref' => ['$bind' => 'product.page']]));
+        self::assertTrue($fits(new Link(label: 'Link'), self::boundLink(['en_US' => '/products'])));
+        self::assertTrue($fits(new Link(label: 'Link', translatable: false), ['target' => 'url', 'ref' => ['$bind' => 'product.page', '$params' => [], '$fallback' => '/products'], 'label' => 'View']));
+        self::assertFalse($fits(new Link(label: 'Link'), ['target' => 'app_store', 'ref' => ['$bind' => 'product.page', '$params' => [], '$fallback' => null]]));
+        self::assertFalse($fits(new Link(label: 'Link'), ['target' => 'url', 'ref' => ['$bind' => 'product.page']]));
         self::assertFalse($handler->isEmpty(new Link(label: 'Link'), self::boundLink()));
         self::assertSame([], [...$handler->references(new Link(label: 'Link'), self::boundLink())]);
     }

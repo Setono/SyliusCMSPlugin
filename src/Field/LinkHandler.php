@@ -185,7 +185,7 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
             $this->bindingValidator->validate($binding->property, $binding->params, [BindingType::Url], $context);
         }
 
-        foreach (self::refs($binding?->fallback ?? $value['ref']) as $ref) {
+        foreach (self::refs($binding->fallback ?? $value['ref']) as $ref) {
             $error = $this->linkResolver->refError($value['target'], $ref);
             if (null !== $error) {
                 $context->buildViolation($error)->addViolation();

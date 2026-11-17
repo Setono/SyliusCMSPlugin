@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Binding\Product;
 
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
+use Sylius\Component\Attribute\Model\AttributeTranslationInterface;
 use Sylius\Component\Product\Model\ProductAttributeInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Contracts\Service\ResetInterface;
@@ -40,8 +41,9 @@ final class ProductAttributeChoicesProvider implements ChoicesProviderInterface,
                 continue;
             }
 
+            // Read as it is, so a missing translation is never created
             $translation = $attribute->getTranslations()->get($localeCode);
-            $name = $translation?->getName();
+            $name = $translation instanceof AttributeTranslationInterface ? $translation->getName() : null;
             $choices[$code] = null === $name || '' === $name ? ($attribute->getName() ?? $code) : $name;
         }
 

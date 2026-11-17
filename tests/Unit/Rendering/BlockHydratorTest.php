@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Rendering;
 
 use PHPUnit\Framework\TestCase;
+use Setono\SyliusCMSPlugin\Binding\BindablePropertyInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\NumberHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
@@ -145,7 +146,7 @@ final class BlockHydratorTest extends TestCase
     /**
      * @param array<string, mixed> $fields
      */
-    private function hydrate(array $fields, object $property, RenderContext $context): StockNote
+    private function hydrate(array $fields, BindablePropertyInterface $property, RenderContext $context): StockNote
     {
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),

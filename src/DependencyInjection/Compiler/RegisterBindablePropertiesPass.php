@@ -76,17 +76,18 @@ final class RegisterBindablePropertiesPass implements CompilerPassInterface
      */
     private static function declaration(ContainerBuilder $container, string $id, string $class): array
     {
-        $tag = $container->getDefinition($id)->getTag(self::TAG)[0] ?? [];
+        $tags = $container->getDefinition($id)->getTag(self::TAG);
+        $tag = is_array($tags[0] ?? null) ? $tags[0] : [];
         if (isset($tag['code'])) {
-            $params = $tag['params'] ?? null;
-
             /** @var class-string|null $params */
+            $params = is_string($tag['params'] ?? null) ? $tag['params'] : null;
+
             return [[
                 'context_key' => self::string($tag['context_key'] ?? null),
                 'code' => self::string($tag['code']),
                 'label' => self::string($tag['label'] ?? null),
                 'type' => self::string($tag['type'] ?? null),
-                'params' => is_string($params) ? $params : null,
+                'params' => $params,
             ], true];
         }
 

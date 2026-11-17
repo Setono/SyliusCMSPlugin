@@ -22,7 +22,7 @@ final class ProductBrand implements BindablePropertyInterface
     {
     }
 
-    public function resolve(object $subject, object $params, RenderContext $context): string|int|float|null
+    public function resolve(object $subject, object $params, RenderContext $context): ?string
     {
         $this->resolvedFor[] = $subject;
 

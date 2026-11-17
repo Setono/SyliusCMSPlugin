@@ -33,13 +33,13 @@ use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
+use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
-use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\OpeningHoursHandler;
-use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductBrand;
 use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\StockLevel;
+use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\OpeningHoursHandler;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Store;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Titled;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\OnProductPage;
@@ -170,6 +170,7 @@ final class RegistryExporterTest extends TestCase
         self::assertIsArray($fields['quote']);
         self::assertSame(['text', 'number'], $fields['quote']['x-cms-bindable']);
 
+        self::assertIsArray($blockTypes['heading']['fields']);
         $headingFields = array_column($blockTypes['heading']['fields'], 'schema', 'name');
         self::assertIsArray($headingFields['level']);
         self::assertArrayNotHasKey('x-cms-bindable', $headingFields['level'], 'A field type that accepts no binding leaves it out');
@@ -193,6 +194,8 @@ final class RegistryExporterTest extends TestCase
         self::assertSame('number', $properties[1]['type']);
         self::assertIsArray($properties[1]['fields']);
         self::assertSame(['includeReserved', 'warehouse'], array_column($properties[1]['fields'], 'name'));
+        self::assertIsArray($properties[1]['fields'][0]);
+        self::assertIsArray($properties[1]['fields'][0]['schema']);
         self::assertFalse($properties[1]['fields'][0]['schema']['x-cms-translatable']);
     }
 

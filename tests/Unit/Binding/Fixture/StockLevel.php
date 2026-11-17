@@ -19,7 +19,7 @@ final class StockLevel implements BindablePropertyInterface
     /** @var list<object> */
     public array $resolvedWith = [];
 
-    public function resolve(object $subject, object $params, RenderContext $context): string|int|float|null
+    public function resolve(object $subject, object $params, RenderContext $context): int
     {
         $this->resolvedWith[] = $params;
 

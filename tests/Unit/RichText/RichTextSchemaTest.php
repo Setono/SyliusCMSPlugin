@@ -416,7 +416,7 @@ final class RichTextSchemaTest extends TestCase
             ['type' => 'cmsBinding', 'attrs' => ['property' => 'product.attribute', 'params' => ['attribute' => 'material'], 'fallback' => 'cotton']],
         ]]);
 
-        $html = (new RichTextSchema())->render($document, marked: true, resolveBinding: static fn (): ?string => 'Wool');
+        $html = (new RichTextSchema())->render($document, marked: true, resolveBinding: static fn (): string => 'Wool');
 
         self::assertSame('<p><span data-cms-binding="product.attribute" data-cms-binding-params="{&quot;attribute&quot;:&quot;material&quot;}" data-cms-binding-fallback="cotton" contenteditable="false">Wool</span></p>', $html);
     }
