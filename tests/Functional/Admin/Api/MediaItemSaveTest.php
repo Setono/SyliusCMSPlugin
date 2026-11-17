@@ -74,6 +74,33 @@ final class MediaItemSaveTest extends MediaApiTestCase
     }
 
     /**
+     * Alt text is for the locales of the store's channels. A locale no channel has, which Sylius still defines, takes
+     * none, and alt text a media item has in it, such as from a locale a channel no longer has, is kept as it is
+     *
+     * @test
+     */
+    public function it_takes_alt_text_in_the_locales_of_the_store_s_channels_only_and_keeps_what_it_has_in_another(): void
+    {
+        $client = self::createClient();
+        $config = self::openMediaLibrary($client);
+        self::createLocale('fr_FR');
+        $mediaItem = $this->uploadMediaItem('dog.png', self::png());
+        $mediaItem->setAltText('fr_FR', 'Un chien');
+        self::entityManager()->flush();
+        $uuid = $mediaItem->getUuid();
+
+        $answer = self::json($client, 'PATCH', '/admin/cms/api/media/' . $uuid, ['altTexts' => ['fr_FR' => 'Un chien sur la plage']], $config['csrfToken']);
+        self::assertResponseStatusCodeSame(400);
+        self::assertSame(['error' => 'The store has no locale fr_FR'], $answer);
+
+        $answer = self::json($client, 'PATCH', '/admin/cms/api/media/' . $uuid, ['altTexts' => ['en_US' => 'A dog']], $config['csrfToken']);
+        self::assertResponseIsSuccessful();
+        self::assertIsArray($answer);
+        self::assertSame(['en_US' => 'A dog', 'fr_FR' => 'Un chien'], $answer['altTexts']);
+        self::assertFalse($answer['missingAlt'], 'The image has alt text in every locale of the store\'s channels');
+    }
+
+    /**
      * @test
      */
     public function it_dispatches_media_item_saved_after_the_transaction_commits(): void

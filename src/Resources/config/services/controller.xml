@@ -385,7 +385,7 @@
 
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaItemAnswer" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaItemAnswer">
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface"/>
-            <argument type="service" id="sylius.translation_locale_provider"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaLocales"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaUsageRepositoryInterface"/>
 
             <tag name="kernel.reset" method="reset"/>
@@ -395,7 +395,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaLookup"/>
-            <argument type="service" id="sylius.translation_locale_provider"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaLocales"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaItemAnswer"/>
 
             <tag name="controller.service_arguments"/>

@@ -79,7 +79,8 @@ final class MediaLibraryTest extends MediaApiTestCase
     }
 
     /**
-     * Images without alt text in one or more of the store's locales are flagged, and the filter shows only them
+     * Images without alt text in one or more of the store's locales, the locales of its channels, are flagged, and the
+     * filter shows only them. A locale Sylius defines but no channel has isn't one of them
      *
      * @test
      */
@@ -87,6 +88,7 @@ final class MediaLibraryTest extends MediaApiTestCase
     {
         $client = self::createClient();
         self::addLocales('WEB', 'de_DE');
+        self::createLocale('fr_FR');
         self::openMediaLibrary($client);
         $complete = $this->uploadMediaItem('complete.png', self::png(10, 10));
         $complete->setAltText('en_US', 'A dog');
@@ -94,7 +96,7 @@ final class MediaLibraryTest extends MediaApiTestCase
         $partial = $this->uploadMediaItem('partial.png', self::png(11, 11));
         $partial->setAltText('en_US', 'A cat');
         $none = $this->uploadMediaItem('none.png', self::png(12, 12));
-        // Alt text in a locale the store doesn't have counts for nothing
+        // Alt text in a locale no channel has counts for nothing
         $none->setAltText('fr_FR', 'Un oiseau');
         $this->uploadMediaItem('prices.pdf', "%PDF-1.4\n%%EOF\n");
         self::flush();

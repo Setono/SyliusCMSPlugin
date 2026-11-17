@@ -49,4 +49,25 @@ final class MediaLibraryPageTest extends WebTestCase
         self::assertSelectorExists('script[type="module"][src$="/bundles/setonosyliuscmsplugin/builder/builder.js"]');
         self::assertSelectorExists('link[rel="stylesheet"][href$="/bundles/setonosyliuscmsplugin/builder/builder.css"]');
     }
+
+    /**
+     * @test
+     */
+    public function it_offers_alt_text_in_the_locales_of_every_channel_and_not_in_a_locale_no_channel_has(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        self::addLocales('WEB', 'de_DE');
+        self::createChannel('NORDIC');
+        self::addLocales('NORDIC', 'da_DK', 'de_DE');
+        self::createLocale('fr_FR');
+
+        $crawler = $client->request('GET', '/admin/cms/media');
+
+        self::assertResponseIsSuccessful();
+        /** @var array{locales: list<array{code: string}>} $config */
+        $config = json_decode((string) $crawler->filter('#cms-media-library')->attr('data-config'), true, 512, \JSON_THROW_ON_ERROR);
+        // The default first, then the others by code
+        self::assertSame(['en_US', 'da_DK', 'de_DE'], array_column($config['locales'], 'code'));
+    }
 }

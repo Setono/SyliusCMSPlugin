@@ -6,10 +6,10 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Media\MediaFilter;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
+use Setono\SyliusCMSPlugin\Media\MediaLocales;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
-use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Uid\Uuid;
@@ -32,7 +32,7 @@ final readonly class MediaIndexAction
         private AdminAccessChecker $adminAccessChecker,
         private MediaItemRepositoryInterface $mediaItemRepository,
         private MediaLookup $lookup,
-        private TranslationLocaleProviderInterface $translationLocaleProvider,
+        private MediaLocales $locales,
         private MediaItemAnswer $answer,
     ) {
     }
@@ -64,7 +64,7 @@ final readonly class MediaIndexAction
             unsorted: self::UNSORTED === $folder,
             search: is_string($query['q'] ?? null) ? $query['q'] : null,
             kinds: $kinds,
-            missingAltIn: $request->query->getBoolean('missingAlt') ? array_values($this->translationLocaleProvider->getDefinedLocalesCodes()) : null,
+            missingAltIn: $request->query->getBoolean('missingAlt') ? $this->locales->codes() : null,
             uuids: $uuids,
             unused: $request->query->getBoolean('unused'),
         );

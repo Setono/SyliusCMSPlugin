@@ -112,8 +112,12 @@
             <tag name="messenger.message_handler" handles="Setono\SyliusCMSPlugin\Media\DeleteReplacedFile"/>
         </service>
 
-        <!-- The locales media items have alt text in, which the library's screen and the builder's media picker list -->
+        <!--
+        The locales media items have alt text in, the locales of the store's channels, which the library's screen and the
+        builder's media picker list, and which an image misses alt text in
+        -->
         <service id="Setono\SyliusCMSPlugin\Media\MediaLocales" class="Setono\SyliusCMSPlugin\Media\MediaLocales">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\ChannelLocales"/>
             <argument type="service" id="sylius.translation_locale_provider"/>
             <argument type="service" id="sylius.repository.locale"/>
         </service>
@@ -134,7 +138,7 @@
             <argument type="service" id="doctrine"/>
             <argument type="service" id="clock"/>
             <argument type="service" id="event_dispatcher"/>
-            <argument type="service" id="sylius.translation_locale_provider"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaLocales"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Media\MediaItemSaverInterface" alias="Setono\SyliusCMSPlugin\Media\MediaItemSaver"/>
 

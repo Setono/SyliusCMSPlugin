@@ -9,12 +9,11 @@ use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Event\MediaItemSaved;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
-use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Checks the metadata against the media item's kind first: only an image has alt text and a focal point, and only a
- * video has a poster, which is an image. Alt text is per locale of the store
+ * video has a poster, which is an image. Alt text is per locale of the store, the locales of its channels
  */
 final readonly class MediaItemSaver implements MediaItemSaverInterface
 {
@@ -24,7 +23,7 @@ final readonly class MediaItemSaver implements MediaItemSaverInterface
         private ManagerRegistry $managerRegistry,
         private ClockInterface $clock,
         private EventDispatcherInterface $eventDispatcher,
-        private TranslationLocaleProviderInterface $translationLocaleProvider,
+        private MediaLocales $locales,
     ) {
     }
 
@@ -73,7 +72,10 @@ final readonly class MediaItemSaver implements MediaItemSaverInterface
             throw new InvalidMediaChangeException('Only an image has alt text and a focal point');
         }
 
-        $unknown = array_diff(array_keys($metadata->altTexts), $this->translationLocaleProvider->getDefinedLocalesCodes());
+        // Alt text changes only in the store's locales. What a media item has in another locale, such as one a channel no
+        // longer has, stays as it is
+        $changed = array_keys(array_diff_assoc($metadata->altTexts, $before->altTexts) + array_diff_assoc($before->altTexts, $metadata->altTexts));
+        $unknown = array_diff($changed, $this->locales->codes());
         if ([] !== $unknown) {
             throw new InvalidMediaChangeException(sprintf('The store has no locale %s', implode(', ', $unknown)));
         }

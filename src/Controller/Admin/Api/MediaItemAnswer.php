@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Media\MediaKind;
+use Setono\SyliusCMSPlugin\Media\MediaLocales;
 use Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaUsageRepositoryInterface;
-use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Contracts\Service\ResetInterface;
 
 /**
@@ -26,7 +26,7 @@ final class MediaItemAnswer implements ResetInterface
 
     public function __construct(
         private readonly MediaUrlGeneratorInterface $urlGenerator,
-        private readonly TranslationLocaleProviderInterface $translationLocaleProvider,
+        private readonly MediaLocales $locales,
         private readonly MediaUsageRepositoryInterface $usages,
     ) {
     }
@@ -92,6 +92,6 @@ final class MediaItemAnswer implements ResetInterface
      */
     private function storeLocales(): array
     {
-        return $this->storeLocales ??= array_values($this->translationLocaleProvider->getDefinedLocalesCodes());
+        return $this->storeLocales ??= $this->locales->codes();
     }
 }

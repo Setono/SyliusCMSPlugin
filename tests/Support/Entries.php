@@ -212,6 +212,22 @@ trait Entries
     }
 
     /**
+     * Creates a locale that no channel has, which Sylius still lists among its defined locales
+     */
+    protected static function createLocale(string $localeCode): void
+    {
+        /** @var FactoryInterface<LocaleInterface> $localeFactory */
+        $localeFactory = self::getContainer()->get('sylius.factory.locale');
+        $locale = $localeFactory->createNew();
+        $locale->setCode($localeCode);
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('sylius.manager.locale');
+        $manager->persist($locale);
+        $manager->flush();
+    }
+
+    /**
      * Adds locales to a channel, after the ones it has, creating those the store doesn't have yet
      */
     protected static function addLocales(string $channelCode, string ...$localeCodes): void

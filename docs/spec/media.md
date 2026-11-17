@@ -60,11 +60,11 @@ Stripping keeps the image data byte for byte: JPEG, PNG, WebP and GIF lose their
 | Dimensions | images, videos | Read on upload. |
 | MIME type and size | all | |
 | Credit | all | A free-text credit or copyright line. |
-| Alt text | images | Translatable, one value per locale. It falls back through the [fallback chain](../../GLOSSARY.md#entries) ([Localization](localization.md)). |
+| Alt text | images | Translatable, one value per locale of the store's channels (every channel's locales, not every locale Sylius defines). It falls back through the [fallback chain](../../GLOSSARY.md#entries) ([Localization](localization.md)). |
 | Focal point | images | One point, as `x` and `y` from 0 to 1, with 0.5 and 0.5 by default. Every crop keeps it in view. There's no per-use crop in v2.0. |
 | Poster | videos | Another image media item, shown before the video plays. |
 
-- **Missing alt text is flagged, not required**, so bulk uploads aren't blocked. The library grid and the media item show the flag, and the overview counts it as a flag, not as a problem ([Admin](admin.md#problems)). There's no "decorative" switch.
+- **Missing alt text is flagged, not required**, so bulk uploads aren't blocked. An image misses it when it has none in one or more of the locales of the store's channels. The library grid and the media item show the flag, and the overview counts it as a flag, not as a problem ([Admin](admin.md#problems)). There's no "decorative" switch.
 - **Alt text can be overridden for one use.** A block type that shows an image gives it a translatable Text field for the override, such as the Image block's alt override ([Blocks](blocks.md)). An empty override falls back to the media item's alt text.
 - **Captions are block fields**, because a caption depends on where the image is used.
 
