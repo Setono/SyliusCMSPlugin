@@ -111,6 +111,10 @@ A [snippet](../../GLOSSARY.md#entries) declares the host-page context it needs, 
 
 **The declared context can't change while something depends on it.** A block, a binding, a source, a condition, a placement or a reference that needs a key blocks removing it, and adding a key is blocked while a placement or reference sits where that key isn't provided. The admin lists what's in the way.
 
+- The builder's entry settings offer "Any page", each context key alone, named by its label such as "Product page", and the keys each slot provides together. A change something is in the way of isn't made, and the setting lists what's in the way.
+- An autosave holds the change against its working copy with the rest of the save in it. When something is in the way, as a placement added in another tab may be, the rest saves, the context keeps its last saved value, and the save lists what's in the way, as it does for a slug another route takes.
+- The context is drafted, but placements take effect on save, so a snippet is placed only in a slot that provides what both its published content and its working copy declare.
+
 ## Placements
 
 A [placement](../../GLOSSARY.md#shop-pages) shows one snippet in one slot. It has a UUID, the slot's identifier, a [page scope](#page-scopes) and a position in the slot. A snippet can have many placements, such as one in `shop.footer` with an empty scope and one in `product.sidebar` scoped to the Shoes taxon.
