@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Tests\Support\Placements;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * Slots a project declares: one rendered from its own template with cms_slot(), and one tied to a template event.
@@ -57,8 +58,8 @@ final class ProjectSlotsTest extends WebTestCase
         $crawler = $client->request('GET', '/en_US/');
 
         // Both on the shop layout's header event, the project's slot (40) before shop.top (30)
-        self::assertSame(['Winter sale', 'Free returns'], $crawler->filter('.cms-slot .cms-heading')->each(static fn ($heading): string => $heading->text()));
-        self::assertSame(['cms-slot cms-slot--app-announcements', 'cms-slot cms-slot--shop-top'], $crawler->filter('.cms-slot')->each(static fn ($slot): string => (string) $slot->attr('class')));
+        self::assertSame(['Winter sale', 'Free returns'], $crawler->filter('.cms-slot .cms-heading')->each(static fn (Crawler $heading): string => $heading->text()));
+        self::assertSame(['cms-slot cms-slot--app-announcements', 'cms-slot cms-slot--shop-top'], $crawler->filter('.cms-slot')->each(static fn (Crawler $slot): string => (string) $slot->attr('class')));
     }
 
     /**
