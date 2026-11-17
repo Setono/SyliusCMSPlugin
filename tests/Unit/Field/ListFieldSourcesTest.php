@@ -244,6 +244,37 @@ final class ListFieldSourcesTest extends TestCase
     /**
      * @test
      */
+    public function it_rejects_a_source_its_sources_option_does_not_name(): void
+    {
+        $this->expectViolation('setono_sylius_cms.field.source_not_allowed', ['{{ source }}' => 'app.source.on_sale'], fn (ExecutionContextInterface $context) => Sources::listFieldHandler(['on_sale' => new OnSale(), 'clearance' => new Clearance()])->validate(new Products(label: 'Products', sources: ['clearance']), self::stored('on_sale', ['taxon' => 'T_SHIRTS']), $context));
+    }
+
+    /**
+     * @test
+     */
+    public function it_rejects_every_source_when_its_sources_option_allows_only_hand_picking(): void
+    {
+        $this->expectViolation('setono_sylius_cms.field.source_not_allowed', ['{{ source }}' => 'app.source.on_sale'], fn (ExecutionContextInterface $context) => Sources::listFieldHandler(['on_sale' => new OnSale()], ['on_sale'])->validate(new Products(label: 'Products', sources: false), self::stored('on_sale', ['taxon' => 'T_SHIRTS']), $context));
+    }
+
+    /**
+     * A field narrowed in the code after content was made keeps showing what that content holds, as a disabled source
+     * does, until an editor changes it; publish refuses it
+     *
+     * @test
+     */
+    public function it_keeps_resolving_a_source_its_sources_option_no_longer_allows(): void
+    {
+        $products = [self::product('A')];
+        $list = Sources::listFieldHandler(['on_sale' => new OnSale($products)])->hydrate(new Products(label: 'Products', sources: false), self::stored('on_sale'), self::context());
+
+        self::assertInstanceOf(ItemList::class, $list);
+        self::assertSame($products, $list->toArray());
+    }
+
+    /**
+     * @test
+     */
     public function it_rejects_a_source_the_code_no_longer_has(): void
     {
         $this->expectViolation('setono_sylius_cms.field.unknown_source', ['{{ source }}' => 'removed'], fn (ExecutionContextInterface $context) => Sources::listFieldHandler()->validate(new Products(label: 'Products'), self::stored('removed'), $context));

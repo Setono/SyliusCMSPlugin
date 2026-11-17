@@ -16,7 +16,7 @@ A list field (Products, Taxons or Entries) is filled one of two ways, chosen in 
 
 Next to "Filled by", the builder shows how many items the list yields right now, in the preview's channel, locale, Shown to and Date.
 
-A field's `sources` option narrows which sources it offers, and `sources: false` allows only hand-picking. A source's own parameter fields are always hand-picked.
+A field's `sources` option narrows which sources it offers, and `sources: false` allows only hand-picking. Publish refuses a source the option doesn't allow, but a list that already holds one keeps resolving through it, as with a disabled source, so narrowing the option doesn't empty live lists. A source's own parameter fields are always hand-picked.
 
 ## The contract
 

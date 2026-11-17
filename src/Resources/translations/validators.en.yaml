@@ -28,6 +28,7 @@ setono_sylius_cms:
         not_video_embed_url: Enter the URL of a YouTube or Vimeo video.
         not_whole_number: This value should be a whole number.
         required: This field is required.
+        source_not_allowed: '{{ source }} can''t fill this list. Pick its items by hand, or another source.'
         source_of_another_kind: '{{ source }} lists something else than this field.'
         source_parameter_required: '{{ parameter }} is required.'
         too_large: This value should be {{ limit }} or less.

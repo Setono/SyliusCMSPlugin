@@ -62,7 +62,15 @@ abstract class ListField extends Field
             return false;
         }
 
-        return is_array($this->sources) ? in_array($source->code, $this->sources, true) : $this->sources;
+        return $this->allows($source->code);
+    }
+
+    /**
+     * Whether its sources option allows the source, whatever the source lists and whether it's disabled
+     */
+    public function allows(string $sourceCode): bool
+    {
+        return is_array($this->sources) ? in_array($sourceCode, $this->sources, true) : $this->sources;
     }
 
     public function handledBy(): string

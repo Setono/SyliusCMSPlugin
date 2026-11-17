@@ -8,6 +8,7 @@ use Pagerfanta\Adapter\AdapterInterface;
 use Pagerfanta\Adapter\ArrayAdapter;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\HydrationContext;
+use Setono\SyliusCMSPlugin\Field\ListField;
 use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Registry\SourceMetadata;
@@ -94,13 +95,13 @@ final readonly class SourceResolver
     }
 
     /**
-     * Adds a violation for a source the code no longer has, one that lists something else than $of, a required
-     * parameter that's missing, and a parameter its field type refuses. A disabled source is fine
+     * Adds a violation for a source the code no longer has, one the field's sources option doesn't allow, one that lists
+     * something else than the field, a required parameter that's missing, and a parameter its field type refuses. A
+     * disabled source is fine
      *
      * @param array<array-key, mixed> $params the stored parameter values, by field name
-     * @param class-string $of
      */
-    public function validate(string $code, array $params, string $of, ExecutionContextInterface $context): void
+    public function validate(string $code, array $params, ListField $field, ExecutionContextInterface $context): void
     {
         if (!$this->sources->has($code)) {
             $context->buildViolation('setono_sylius_cms.field.unknown_source')
@@ -112,7 +113,16 @@ final readonly class SourceResolver
         }
 
         $source = $this->sources->get($code);
-        if (!$source->lists($of)) {
+        if (!$field->allows($code)) {
+            $context->buildViolation('setono_sylius_cms.field.source_not_allowed')
+                ->setParameter('{{ source }}', $this->translator->trans($source->label))
+                ->addViolation()
+            ;
+
+            return;
+        }
+
+        if (!$source->lists($field->itemClass())) {
             $context->buildViolation('setono_sylius_cms.field.source_of_another_kind')
                 ->setParameter('{{ source }}', $this->translator->trans($source->label))
                 ->addViolation()

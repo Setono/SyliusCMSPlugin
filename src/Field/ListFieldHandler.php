@@ -22,7 +22,8 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
  *
  * A list a source fills is {"$source": code, "$params": {…}, "$limit": n}, hydrated as a list that resolves the source
  * when a template first reads it, and shows its first $limit items without counting them. Its parameters' references
- * load with the tree's before rendering. See "List fields" and "The contract" in docs/spec/sources.md
+ * load with the tree's before rendering. Publish refuses a source the field's sources option doesn't allow, but one it
+ * holds keeps resolving, as a disabled source does, so narrowing the option in the code doesn't empty what's live. See "List fields" and "The contract" in docs/spec/sources.md
  */
 final readonly class ListFieldHandler implements FitCheckingFieldHandlerInterface
 {
@@ -125,7 +126,7 @@ final readonly class ListFieldHandler implements FitCheckingFieldHandlerInterfac
                 return;
             }
 
-            $this->sourceResolver->validate($stored->code, $stored->params, $field->itemClass(), $context);
+            $this->sourceResolver->validate($stored->code, $stored->params, $field, $context);
 
             return;
         }
