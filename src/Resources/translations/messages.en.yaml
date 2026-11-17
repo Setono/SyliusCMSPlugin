@@ -100,6 +100,9 @@ setono_sylius_cms:
             over_limit: '%filename% is over the upload limit of %limit%.'
             too_big: '%filename% is %size%, over the upload limit of %limit%.'
             unreadable: '%filename% couldn''t be read as a %type% file.'
+    # What the builder's preview shows editors and shoppers don't see
+    preview:
+        unresolved_link: '%field% isn''t shown here: what it links to isn''t visible in this channel and locale, or was deleted.'
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
         broken_layout_reference: '%field% in the layout refers to %type% that was deleted, so it isn''t shown.'

@@ -176,6 +176,48 @@ final class ButtonTest extends WebTestCase
     /**
      * @test
      */
+    public function it_flags_a_link_to_an_entry_that_is_not_published_in_the_builder_s_preview_and_shows_shoppers_nothing(): void
+    {
+        $client = self::createClient();
+        $draft = self::createPage('Our team', 'team');
+        $page = self::createPageWithBlocks('Start', 'start', [self::button(self::BUTTON, ['target' => 'entry', 'ref' => $draft->getUuid(), 'label' => ['en_US' => 'Meet the team']])], published: true);
+
+        $preview = $client->request('GET', '/en_US/start?_cms_preview=' . self::previewToken($page));
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $preview->filter('.cms-button'));
+        $notice = $preview->filter('.cms-tree [data-cms-unresolved-link="link"]');
+        self::assertSame('Link isn\'t shown here: what it links to isn\'t visible in this channel and locale, or was deleted.', $notice->text());
+        self::assertStringContainsString(sprintf('<!--cms:block %s button--><div data-cms-unresolved-link="link"', self::BUTTON), (string) $client->getResponse()->getContent());
+
+        $shop = $client->request('GET', '/en_US/start');
+        self::assertCount(0, $shop->filter('.cms-button'));
+        self::assertCount(0, $shop->filter('[data-cms-unresolved-link]'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_shows_a_link_to_an_entry_in_the_preview_of_the_channel_and_locale_where_it_is_visible(): void
+    {
+        $client = self::createClient();
+        self::addLocales('WEB', 'de_DE');
+        $about = self::createPage('About us', 'about', published: true);
+        $page = self::createPageWithBlocks('Start', 'start', [self::button(self::BUTTON, ['target' => 'entry', 'ref' => $about->getUuid(), 'label' => []])], published: true);
+        self::addTranslation($page, 'de_DE', 'Start', 'start');
+
+        $english = $client->request('GET', '/en_US/start?_cms_preview=' . self::previewToken($page));
+        self::assertSame('About us', $english->filter('.cms-tree .cms-button')->text());
+        self::assertCount(0, $english->filter('[data-cms-unresolved-link]'));
+
+        $german = $client->request('GET', '/de_DE/start?_cms_preview=' . self::previewToken($page, locale: 'de_DE'));
+        self::assertCount(0, $german->filter('.cms-tree .cms-button'));
+        self::assertCount(1, $german->filter('.cms-tree [data-cms-unresolved-link="link"]'), 'About us isn\'t translated into German');
+    }
+
+    /**
+     * @test
+     */
     public function it_leads_a_link_to_a_channel_s_homepage_to_the_channel_s_root(): void
     {
         $client = self::createClient();
