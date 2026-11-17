@@ -8,6 +8,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Event\MediaItemSaved;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
+use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -17,11 +18,14 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
  */
 final class MediaItemSaveTest extends MediaApiTestCase
 {
+    use ClockSensitiveTrait;
+
     /**
      * @test
      */
     public function it_saves_the_name_credit_alt_text_and_focal_point_and_moves_it_into_a_folder(): void
     {
+        self::mockTime('2026-11-17 10:00:00');
         $client = self::createClient();
         $config = self::openMediaLibrary($client);
         self::addLocales('WEB', 'de_DE');
@@ -29,7 +33,7 @@ final class MediaItemSaveTest extends MediaApiTestCase
         $mediaItem = $this->uploadMediaItem('IMG_0042.jpg', self::jpeg());
         $uuid = $mediaItem->getUuid();
         $changedAt = $mediaItem->getChangedAt();
-        sleep(1);
+        self::mockTime('2026-11-17 10:05:00');
 
         $answer = self::json($client, 'PATCH', '/admin/cms/api/media/' . $uuid, [
             'name' => '  Golden retriever  ',
