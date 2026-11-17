@@ -90,6 +90,25 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Media\MediaItemSaverInterface" alias="Setono\SyliusCMSPlugin\Media\MediaItemSaver"/>
 
+        <!--
+        The media usage index: which media items each entry's draft and published content use, written in the flush that
+        writes the entry. See "Usage index" in docs/spec/media.md
+        -->
+        <service id="Setono\SyliusCMSPlugin\Media\MediaUsageIndexer" class="Setono\SyliusCMSPlugin\Media\MediaUsageIndexer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="setono_sylius_cms.factory.media_usage"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Media\MediaUsageListener" class="Setono\SyliusCMSPlugin\Media\MediaUsageListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaUsageIndexer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaUsageRepositoryInterface"/>
+
+            <tag name="doctrine.event_listener" event="onFlush"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Media\MediaFolderModifier" class="Setono\SyliusCMSPlugin\Media\MediaFolderModifier">
             <argument type="service" id="setono_sylius_cms.factory.media_folder"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>

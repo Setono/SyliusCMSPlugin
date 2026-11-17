@@ -28,6 +28,8 @@ use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemTranslation;
 use Setono\SyliusCMSPlugin\Model\MediaItemTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\MediaUsage;
+use Setono\SyliusCMSPlugin\Model\MediaUsageInterface;
 use Setono\SyliusCMSPlugin\Model\OldSlug;
 use Setono\SyliusCMSPlugin\Model\OldSlugInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -49,6 +51,7 @@ use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaFolderRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepository;
+use Setono\SyliusCMSPlugin\Repository\MediaUsageRepository;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
@@ -372,6 +375,7 @@ final class Configuration implements ConfigurationInterface
                     ->append(self::resourceWithoutController('homepage', Homepage::class, HomepageInterface::class, HomepageRepository::class, HomepageFactory::class))
                     ->append(self::mediaItemResource())
                     ->append(self::resourceWithoutController('media_folder', MediaFolder::class, MediaFolderInterface::class, MediaFolderRepository::class))
+                    ->append(self::resourceWithoutController('media_usage', MediaUsage::class, MediaUsageInterface::class, MediaUsageRepository::class))
                     ->children()
                         ->arrayNode('page')
                             ->addDefaultsIfNotSet()

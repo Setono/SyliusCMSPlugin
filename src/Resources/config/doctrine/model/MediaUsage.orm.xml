@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    The media usage index: which media items each entry's draft and published content use, one row per entry and media
+    item. Media items are named by UUID, as content names them, so the index is written without loading them, and a row
+    can name one that's gone. Deleting the entry deletes its rows
+    -->
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\MediaUsage" table="setono_sylius_cms__media_usage">
+        <unique-constraints>
+            <unique-constraint name="setono_sylius_cms__media_usage_uniq" columns="entry_id,media_item_uuid"/>
+        </unique-constraints>
+
+        <indexes>
+            <!-- The Used in list, the usage counts, the unused filter and the check before a delete -->
+            <index name="setono_sylius_cms__media_usage_media_item_idx" columns="media_item_uuid"/>
+        </indexes>
+
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="mediaItemUuid" column="media_item_uuid" type="guid"/>
+        <field name="inDraft" column="in_draft" type="boolean"/>
+        <field name="inPublished" column="in_published" type="boolean"/>
+
+        <many-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\EntryInterface">
+            <join-column name="entry_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
+        </many-to-one>
+    </mapped-superclass>
+</doctrine-mapping>
