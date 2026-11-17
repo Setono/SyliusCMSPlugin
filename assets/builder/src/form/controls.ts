@@ -2,6 +2,7 @@ import type { FieldSchema } from '../types';
 import { CatalogControl } from './CatalogControl';
 import { CatalogListControl } from './CatalogListControl';
 import { ChoiceControl } from './ChoiceControl';
+import { CodeControl } from './CodeControl';
 import { controlTag, CustomElementControl } from './CustomElementControl';
 import { DateControl } from './DateControl';
 import { DateTimeControl } from './DateTimeControl';
@@ -32,6 +33,7 @@ export const fieldControls: Readonly<Record<string, FieldControl>> = {
     products: CatalogListControl,
     taxon: CatalogControl,
     taxons: CatalogListControl,
+    code: CodeControl,
 };
 
 /** A field's control: the custom element a project's own field type names, or else its shipped field type's control. */

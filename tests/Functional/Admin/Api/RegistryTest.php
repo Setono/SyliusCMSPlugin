@@ -115,8 +115,9 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($registry);
         $blockTypes = self::blockTypes($registry);
 
-        // The test application's own Store hours comes first: an app's services are defined before a bundle's
-        self::assertSame(['app_store_hours', 'group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'video', 'button', 'banner', 'accordion', 'accordion_item', 'link_list', 'link', 'downloads', 'products', 'taxons', 'carousel', 'first_match'], array_keys($blockTypes));
+        // The test application's own Store hours comes first: an app's services are defined before a bundle's. Embed code
+        // comes last, opted in to in the test application's config
+        self::assertSame(['app_store_hours', 'group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'video', 'button', 'banner', 'accordion', 'accordion_item', 'link_list', 'link', 'downloads', 'products', 'taxons', 'carousel', 'first_match', 'embed_code'], array_keys($blockTypes));
 
         self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
         self::assertNull($blockTypes['columns']['parents']);
@@ -140,6 +141,7 @@ final class RegistryTest extends BuilderApiTestCase
             ['type' => 'taxons', 'min' => null, 'max' => null],
             ['type' => 'carousel', 'min' => null, 'max' => null],
             ['type' => 'first_match', 'min' => null, 'max' => null],
+            ['type' => 'embed_code', 'min' => null, 'max' => null],
         ];
         self::assertSame($all, $blockTypes['group']['children']);
         self::assertSame($all, $blockTypes['column']['children']);

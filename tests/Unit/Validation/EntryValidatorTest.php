@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Block\EmbedCode;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
@@ -20,11 +21,13 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Article;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\LandingTranslation;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Validation\BlockTreeValidator;
+use Setono\SyliusCMSPlugin\Validation\EmbedCodeValidator;
 use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
 use Setono\SyliusCMSPlugin\Validation\EntryValidator;
 use Setono\SyliusCMSPlugin\Validation\FieldValidator;
@@ -37,6 +40,10 @@ final class EntryValidatorTest extends TestCase
     use ProphecyTrait;
 
     private const KEY = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f';
+
+    private const EMBED_CODE = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e50';
+
+    private const EMBED_CODE_OFF = 'Embed code is switched off in this shop, so a new Embed code block can\'t be published. Remove it.';
 
     /** @var ObjectProphecy<EntryUrlValidatorInterface> */
     private ObjectProphecy $urlValidator;
@@ -72,7 +79,7 @@ final class EntryValidatorTest extends TestCase
                 new ValidationError(self::KEY, 'text', 'da_DK', 'This field is required.'),
                 new ValidationError(self::KEY, 'text', 'en_US', 'This field is required.'),
             ],
-            $this->validator()->validate($entry),
+            $this->validator()->validate($entry, $entry),
         );
     }
 
@@ -86,7 +93,7 @@ final class EntryValidatorTest extends TestCase
 
         self::assertEquals(
             [new ValidationError(null, 'subtitle', null, 'This value is too long. It should have 10 characters or less.')],
-            $this->validator()->validate($entry),
+            $this->validator()->validate($entry, $entry),
         );
     }
 
@@ -106,7 +113,7 @@ final class EntryValidatorTest extends TestCase
                 new ValidationError(null, 'headline', 'en_US', 'This value is too long. It should have 10 characters or less.'),
                 new ValidationError(null, 'tone', 'da_DK', 'The value you selected is not a valid choice.'),
             ],
-            $this->validator()->validate($entry),
+            $this->validator()->validate($entry, $entry),
         );
     }
 
@@ -119,7 +126,7 @@ final class EntryValidatorTest extends TestCase
         $entry->setCurrentLocale('en_US');
         $entry->setTitle('Pancakes');
 
-        self::assertSame([], $this->validator()->validate($entry));
+        self::assertSame([], $this->validator()->validate($entry, $entry));
     }
 
     /**
@@ -127,7 +134,9 @@ final class EntryValidatorTest extends TestCase
      */
     public function it_finds_no_errors_in_a_valid_entry(): void
     {
-        self::assertSame([], $this->validator()->validate(self::validEntry()));
+        $entry = self::validEntry();
+
+        self::assertSame([], $this->validator()->validate($entry, $entry));
     }
 
     /**
@@ -147,7 +156,7 @@ final class EntryValidatorTest extends TestCase
                 $slugError,
                 new ValidationError(self::KEY, 'text', 'en_US', 'This field is required.'),
             ],
-            $this->validator()->validate($entry),
+            $this->validator()->validate($entry, $entry),
         );
     }
 
@@ -162,7 +171,59 @@ final class EntryValidatorTest extends TestCase
         self::translation($entry, 'da_DK')->tone = 'shouty';
         $entry->setBlockTree(new StoredTree(null, [new StoredBlock(self::KEY, 'heading', 1, fields: ['text' => ['en_US' => 'Hello', 'da_DK' => 42]])]));
 
-        self::assertSame([], $this->validator()->validate($entry));
+        self::assertSame([], $this->validator()->validate($entry, $entry));
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_an_embed_code_block_that_is_not_in_the_entrys_published_tree_while_embed_code_is_off(): void
+    {
+        $entry = self::article(new StoredBlock(self::KEY, 'heading', 1, fields: ['text' => ['en_US' => 'Hello']]));
+        $entry->publish(new \DateTimeImmutable());
+        $workingCopy = clone $entry;
+        $workingCopy->setBlockTree(new StoredTree(null, [...$entry->getBlockTree()->blocks, new StoredBlock(self::EMBED_CODE, 'embed_code', 1)]));
+
+        self::assertEquals(
+            [new ValidationError(self::EMBED_CODE, null, null, self::EMBED_CODE_OFF)],
+            $this->validator()->validate($entry, $workingCopy),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_accepts_an_embed_code_block_the_entry_has_published_while_embed_code_is_off(): void
+    {
+        $entry = self::article(new StoredBlock(self::EMBED_CODE, 'embed_code', 1));
+        $entry->publish(new \DateTimeImmutable());
+
+        self::assertSame([], $this->validator()->validate($entry, clone $entry));
+    }
+
+    /**
+     * A never-published entry is its own working copy: its rows hold its draft, and nothing is published
+     *
+     * @test
+     */
+    public function it_refuses_an_embed_code_block_of_an_entry_never_published_while_embed_code_is_off(): void
+    {
+        $entry = self::article(new StoredBlock(self::EMBED_CODE, 'embed_code', 1));
+
+        self::assertEquals(
+            [new ValidationError(self::EMBED_CODE, null, null, self::EMBED_CODE_OFF)],
+            $this->validator()->validate($entry, $entry),
+        );
+    }
+
+    private static function article(StoredBlock ...$blocks): Article
+    {
+        $entry = new Article();
+        $entry->setCurrentLocale('en_US');
+        $entry->setTitle('Embeds');
+        $entry->setBlockTree(new StoredTree(null, array_values($blocks)));
+
+        return $entry;
     }
 
     private static function validEntry(): Landing
@@ -195,10 +256,11 @@ final class EntryValidatorTest extends TestCase
         $fallbackChain->localesFor('da_DK')->willReturn(['da_DK', 'en_US']);
 
         $translator = BlockTreeValidatorTest::translator();
-        $blockTypes = new BlockTypeRegistry(['heading' => Heading::class], new FieldReader());
+        $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'embed_code' => EmbedCode::class], new FieldReader(), ['embed_code']);
         $contentTypes = new ContentTypeRegistry([
             'landing' => ['model' => Landing::class, 'translation' => LandingTranslation::class, 'resource' => 'app.landing'],
             'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
+            'article' => ['model' => Article::class, 'translation' => null, 'resource' => 'app.article'],
         ]);
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
@@ -215,6 +277,7 @@ final class EntryValidatorTest extends TestCase
             $validator,
             $this->urlValidator->reveal(),
             new Availability(),
+            new EmbedCodeValidator(false, $translator),
         );
     }
 }
