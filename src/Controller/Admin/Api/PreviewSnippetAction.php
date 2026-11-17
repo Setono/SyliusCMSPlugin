@@ -8,10 +8,9 @@ use Psr\Container\ContainerInterface;
 use Setono\SyliusCMSPlugin\Builder\Search\SearchInterface;
 use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
-use Setono\SyliusCMSPlugin\Preview\PreviewContext;
-use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
 use Setono\SyliusCMSPlugin\Preview\PreviewedHostPageContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewedSlot;
+use Setono\SyliusCMSPlugin\Preview\PreviewedSnippetProvider;
 use Setono\SyliusCMSPlugin\Preview\SampleObject;
 use Setono\SyliusCMSPlugin\Preview\SampleObjects;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
@@ -20,7 +19,6 @@ use Setono\SyliusCMSPlugin\Rendering\PlacementPickerInterface;
 use Setono\SyliusCMSPlugin\Rendering\PlacementProviderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
-use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -40,11 +38,9 @@ final readonly class PreviewSnippetAction
      */
     public function __construct(
         private AdminAccessChecker $adminAccessChecker,
-        private PreviewContext $previewContext,
-        private PreviewedEntryProvider $previewedEntry,
+        private PreviewedSnippetProvider $previewedSnippet,
         private PreviewedHostPageContext $hostPageContext,
         private RenderContextFactoryInterface $renderContextFactory,
-        private PlacementRepositoryInterface $placements,
         private SlotRegistryInterface $slots,
         private SampleObjects $samples,
         private PlacementProviderInterface $placementProvider,
@@ -57,18 +53,17 @@ final readonly class PreviewSnippetAction
     {
         $this->adminAccessChecker->denyUnlessAdmin();
 
-        $preview = $this->previewContext->getPreview();
-        $snippet = null === $preview ? null : $this->previewedEntry->getPreviewedContent($preview->localeCode);
-        if (null === $preview || !$snippet instanceof SnippetInterface) {
+        $previewed = $this->previewedSnippet->get();
+        if (null === $previewed) {
             return BuilderRequest::badRequest('The request has no valid preview token of a snippet');
         }
 
-        $context = $this->renderContextFactory->create($this->hostPageContext->of($snippet));
-        $placement = null === $preview->placementUuid ? null : $this->placements->findOneByUuid($preview->placementUuid);
+        $context = $this->renderContextFactory->create($this->hostPageContext->of($previewed->snippet));
+        $sample = $previewed->preview->sample;
 
         return new JsonResponse([
-            'sample' => null === $preview->sample ? null : $this->sample($preview->sample, $placement, $context, $request->getLocale()),
-            'shownInstead' => null === $placement ? null : $this->shownInstead($placement, $context),
+            'sample' => null === $sample ? null : $this->sample($sample, $previewed->placement, $context, $request->getLocale()),
+            'shownInstead' => null === $previewed->placement ? null : $this->shownInstead($previewed->placement, $context),
         ]);
     }
 

@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Shop;
 
-use Setono\SyliusCMSPlugin\Model\SnippetInterface;
-use Setono\SyliusCMSPlugin\Preview\PreviewContext;
-use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
+use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Preview\PreviewedHostPageContext;
+use Setono\SyliusCMSPlugin\Preview\PreviewedSnippetProvider;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
-use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,27 +30,26 @@ final readonly class SnippetPreviewAction
     public const TEMPLATE = '@SetonoSyliusCMSPlugin/shop/snippet_preview.html.twig';
 
     public function __construct(
-        private PreviewedEntryProvider $previewedEntryProvider,
+        private PreviewedSnippetProvider $previewedSnippet,
         private RenderContextFactoryInterface $renderContextFactory,
         private StoredDataUpgraderInterface $upgrader,
         private BlockViewBuilder $blockViewBuilder,
         private Environment $twig,
         private PreviewedHostPageContext $hostPageContext,
-        private PreviewContext $previewContext,
         private SlotRegistryInterface $slots,
-        private PlacementRepositoryInterface $placements,
     ) {
     }
 
     public function __invoke(Request $request): Response
     {
-        $snippet = $this->previewedEntryProvider->getPreviewedContent($request->attributes->getString('_locale'));
-        if (!$snippet instanceof SnippetInterface) {
+        $previewed = $this->previewedSnippet->get($request->attributes->getString('_locale'));
+        if (null === $previewed) {
             throw new NotFoundHttpException('Only the preview of a snippet shows here');
         }
 
+        $snippet = $previewed->snippet;
         $context = $this->renderContextFactory->create($this->hostPageContext->of($snippet));
-        $slot = $this->slot(array_keys($context->getHostPageContext()));
+        $slot = $this->slot($previewed->placement, array_keys($context->getHostPageContext()));
 
         return new Response($this->twig->render(self::TEMPLATE, [
             'snippet' => $snippet,
@@ -69,10 +66,8 @@ final readonly class SnippetPreviewAction
      *
      * @param list<string> $provided the context keys of the sample object
      */
-    private function slot(array $provided): ?string
+    private function slot(?PlacementInterface $placement, array $provided): ?string
     {
-        $placementUuid = $this->previewContext->getPreview()?->placementUuid;
-        $placement = null === $placementUuid ? null : $this->placements->findOneByUuid($placementUuid);
         $slot = null === $placement ? null : $this->slots->find($placement->getSlot());
         if (null === $slot) {
             return null;

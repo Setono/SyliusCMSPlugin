@@ -16,6 +16,12 @@ interface PlacementRepositoryInterface
     public function findOneByUuid(string $uuid): ?PlacementInterface;
 
     /**
+     * The snippet's placement with the UUID, or null when it has none with it, such as another snippet's. The snippet is
+     * found by its UUID, so its working copy finds it too
+     */
+    public function findOneOfSnippet(EntryInterface $snippet, string $uuid): ?PlacementInterface;
+
+    /**
      * The snippet's placements, by slot and then in each slot's order. The snippet is found by its UUID, so its working
      * copy finds them too
      *

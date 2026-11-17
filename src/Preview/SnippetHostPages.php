@@ -40,12 +40,7 @@ final readonly class SnippetHostPages
      */
     public function placement(SnippetInterface $snippet, string $uuid): PlacementInterface
     {
-        $placement = $this->placements->findOneByUuid($uuid);
-        if (null === $placement || $placement->getSnippet()->getUuid() !== $snippet->getUuid()) {
-            throw new \InvalidArgumentException(sprintf('The snippet has no placement %s', $uuid));
-        }
-
-        return $placement;
+        return $this->placements->findOneOfSnippet($snippet, $uuid) ?? throw new \InvalidArgumentException(sprintf('The snippet has no placement %s', $uuid));
     }
 
     /**

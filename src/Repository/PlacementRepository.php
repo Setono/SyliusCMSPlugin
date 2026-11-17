@@ -22,6 +22,13 @@ class PlacementRepository extends EntityRepository implements PlacementRepositor
         return $placement instanceof PlacementInterface ? $placement : null;
     }
 
+    public function findOneOfSnippet(EntryInterface $snippet, string $uuid): ?PlacementInterface
+    {
+        $placement = $this->findOneByUuid($uuid);
+
+        return null !== $placement && $placement->getSnippet()->getUuid() === $snippet->getUuid() ? $placement : null;
+    }
+
     public function findBySnippet(EntryInterface $snippet): array
     {
         /** @var list<PlacementInterface> $placements */

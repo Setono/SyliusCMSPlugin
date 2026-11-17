@@ -14,6 +14,13 @@
             <argument type="service_closure" id="Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface"/>
         </service>
 
+        <!-- The snippet a preview token shows, with the placement it names, for the snippet preview's endpoints and plain page -->
+        <service id="Setono\SyliusCMSPlugin\Preview\PreviewedSnippetProvider" class="Setono\SyliusCMSPlugin\Preview\PreviewedSnippetProvider">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider" class="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider">
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>

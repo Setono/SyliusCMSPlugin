@@ -90,7 +90,7 @@ final class ShareLinkCreatorTest extends TestCase
         $this->tokenStorage = new TokenStorage();
 
         $this->placements = $this->prophesize(PlacementRepositoryInterface::class);
-        $this->placements->findOneByUuid(Argument::any())->willReturn(null);
+        $this->placements->findOneOfSnippet(Argument::cetera())->willReturn(null);
     }
 
     /**
@@ -103,7 +103,7 @@ final class ShareLinkCreatorTest extends TestCase
     {
         $snippet = self::snippet();
         $placement = new Placement($snippet, 'product.after_price', 0);
-        $this->placements->findOneByUuid($placement->getUuid())->willReturn($placement);
+        $this->placements->findOneOfSnippet($snippet, $placement->getUuid())->willReturn($placement);
 
         $shareLink = $this->creator()->create($snippet, 'WEB', 'en_US', $placement->getUuid());
 
@@ -119,7 +119,7 @@ final class ShareLinkCreatorTest extends TestCase
     {
         $snippet = self::snippet();
         $placement = new Placement($snippet, 'product.after_price', 0);
-        $this->placements->findOneByUuid($placement->getUuid())->willReturn($placement);
+        $this->placements->findOneOfSnippet($snippet, $placement->getUuid())->willReturn($placement);
 
         $shareLink = $this->creator()->create($snippet, 'WEB', 'en_US', $placement->getUuid(), 'T_SHIRT');
 
@@ -146,7 +146,6 @@ final class ShareLinkCreatorTest extends TestCase
     public function it_refuses_a_placement_of_another_snippet(): void
     {
         $placement = new Placement(self::snippet(), 'product.after_price', 0);
-        $this->placements->findOneByUuid($placement->getUuid())->willReturn($placement);
 
         $this->expectException(ShareLinkUnavailableException::class);
         $this->expectExceptionMessage(sprintf('The snippet has no placement %s', $placement->getUuid()));
