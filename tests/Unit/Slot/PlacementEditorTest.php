@@ -20,6 +20,8 @@ use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Publishing\EditRecorder;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
+use Setono\SyliusCMSPlugin\Slot\InvalidPageScopeException;
+use Setono\SyliusCMSPlugin\Slot\PageScopeValidatorInterface;
 use Setono\SyliusCMSPlugin\Slot\PlacementEditor;
 use Setono\SyliusCMSPlugin\Slot\SlotNotOfferedException;
 use Symfony\Component\Clock\MockClock;
@@ -27,6 +29,7 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\User\InMemoryUser;
+use Symfony\Component\Translation\TranslatableMessage;
 
 final class PlacementEditorTest extends TestCase
 {
@@ -42,6 +45,9 @@ final class PlacementEditorTest extends TestCase
 
     /** @var ObjectProphecy<DeclaredContextInterface> */
     private ObjectProphecy $declaredContext;
+
+    /** @var ObjectProphecy<PageScopeValidatorInterface> */
+    private ObjectProphecy $pageScopeValidator;
 
     private EventDispatcher $eventDispatcher;
 
@@ -79,6 +85,9 @@ final class PlacementEditorTest extends TestCase
         // What the snippet's rows declare, unless a test drafts more
         $this->declaredContext = $this->prophesize(DeclaredContextInterface::class);
         $this->declaredContext->toPlace(Argument::type(SnippetInterface::class))->will(static fn (array $arguments): array => $arguments[0] instanceof SnippetInterface ? $arguments[0]->getContext() : []);
+
+        $this->pageScopeValidator = $this->prophesize(PageScopeValidatorInterface::class);
+        $this->pageScopeValidator->validate(Argument::cetera())->willReturn([]);
 
         $this->eventDispatcher = new EventDispatcher();
         $this->eventDispatcher->addListener(PlacementsChanged::class, function (PlacementsChanged $event): void {
@@ -179,6 +188,73 @@ final class PlacementEditorTest extends TestCase
     }
 
     /**
+     * The scope is kept in the stored condition format, so an empty JSON object for parameters reads as none
+     *
+     * @test
+     */
+    public function it_scopes_a_placement_bumps_the_snippet_s_changed_at_and_dispatches_placements_changed_after_the_commit(): void
+    {
+        $snippet = new Snippet();
+        $placement = new Placement($snippet, 'product.after_price', 1);
+        $scope = [
+            ['kind' => 'product_in_taxon', 'negate' => false, 'params' => ['taxons' => ['SHOES'], 'includeChildren' => true]],
+            ['negate' => true, 'params' => new \stdClass(), 'kind' => 'on_sale'],
+        ];
+        $this->pageScopeValidator->validate('product.after_price', $scope)->willReturn([]);
+
+        $this->editor()->setPageScope($placement, $scope);
+
+        self::assertSame([
+            ['kind' => 'product_in_taxon', 'negate' => false, 'params' => ['taxons' => ['SHOES'], 'includeChildren' => true]],
+            ['kind' => 'on_sale', 'negate' => true, 'params' => []],
+        ], $placement->getPageScope());
+        self::assertSame([
+            'begin',
+            'flush',
+            'commit',
+            sprintf('placements changed: %s in product.after_price', $snippet->getUuid()),
+        ], $this->calls);
+        self::assertSame(self::NOW, $snippet->getChangedAt()->format('Y-m-d\TH:i:sP'));
+        self::assertSame('jane', $snippet->getLastEditedBy());
+    }
+
+    /**
+     * @test
+     */
+    public function it_scopes_a_placement_to_every_page_with_an_empty_scope(): void
+    {
+        $placement = new Placement(new Snippet(), 'product.after_price', 0);
+        $placement->setPageScope([['kind' => 'product', 'negate' => false, 'params' => ['products' => ['T_SHIRT']]]]);
+
+        $this->editor()->setPageScope($placement, []);
+
+        self::assertSame([], $placement->getPageScope());
+    }
+
+    /**
+     * @test
+     */
+    public function it_keeps_the_scope_the_validator_refuses_and_writes_nothing(): void
+    {
+        $snippet = new Snippet();
+        $changedAt = $snippet->getChangedAt();
+        $placement = new Placement($snippet, 'shop.footer', 0);
+        $error = new TranslatableMessage('setono_sylius_cms.page_scope.needs', [], 'validators');
+        $this->pageScopeValidator->validate('shop.footer', [['kind' => 'product', 'negate' => false, 'params' => []]])->willReturn([$error]);
+
+        try {
+            $this->editor()->setPageScope($placement, [['kind' => 'product', 'negate' => false, 'params' => []]]);
+            self::fail('The scope is refused');
+        } catch (InvalidPageScopeException $e) {
+            self::assertSame([$error], $e->errors);
+        }
+
+        self::assertSame([], $placement->getPageScope());
+        self::assertSame([], $this->calls);
+        self::assertSame($changedAt, $snippet->getChangedAt());
+    }
+
+    /**
      * @test
      */
     public function it_moves_a_placement_up_past_another_snippet_s_placement_numbering_the_slot_s_placements_in_their_new_order(): void
@@ -259,6 +335,7 @@ final class PlacementEditorTest extends TestCase
             new EditRecorder($tokenStorage, $clock),
             $this->eventDispatcher,
             $this->declaredContext->reveal(),
+            $this->pageScopeValidator->reveal(),
         );
     }
 }

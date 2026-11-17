@@ -117,6 +117,18 @@
     text-decoration: line-through;
 }
 
+/* A Snippet block's mark: what it shows is a snippet, shared wherever it's used */
+.shared {
+    flex: none;
+    padding: 0 var(--builder-space-2);
+    border-radius: var(--builder-radius-pill);
+    background: var(--builder-color-selected);
+    color: var(--builder-color-accent);
+    font-size: var(--builder-font-size-sm);
+    font-weight: var(--builder-font-weight-medium);
+    line-height: 1.5;
+}
+
 .hidden {
     display: grid;
     flex: none;

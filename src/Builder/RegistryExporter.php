@@ -81,7 +81,7 @@ final readonly class RegistryExporter
             // In the order the "Filled by" select offers them, after Hand-picked. Each list field's schema names those it offers
             'sources' => $this->sources(),
             // What a snippet's context is picked from: the keys, named by the pages that provide them, and the slots
-            'contextKeys' => array_map(fn (ContextKeyMetadata $key): array => ['key' => $key->key, 'label' => $this->translator->trans($key->label)], $this->contextKeys->all()),
+            'contextKeys' => $this->contextKeys(),
             'slots' => array_map(fn (SlotMetadata $slot): array => [
                 'identifier' => $slot->identifier,
                 'label' => $this->translator->trans($slot->label),
@@ -98,6 +98,32 @@ final readonly class RegistryExporter
             'media' => $this->mediaLimits->toArray(),
             'strings' => $this->uiStrings->withPrefix(self::STRINGS_PREFIX),
         ];
+    }
+
+    /**
+     * What the page scope editor on a snippet's overview page needs: the condition kinds a page scope can hold, those
+     * that read the host page, as export() has them, and the context keys they need. See "Page scopes" in
+     * docs/spec/slots.md
+     *
+     * @return array{conditionKinds: list<array<string, mixed>>, contextKeys: list<array{key: string, label: string}>}
+     */
+    public function exportForPageScopes(): array
+    {
+        return [
+            'conditionKinds' => array_values(array_map(
+                $this->conditionKind(...),
+                array_filter($this->conditionKinds->all(), static fn (ConditionKindMetadata $kind): bool => $kind->readsHostPage()),
+            )),
+            'contextKeys' => $this->contextKeys(),
+        ];
+    }
+
+    /**
+     * @return list<array{key: string, label: string}>
+     */
+    private function contextKeys(): array
+    {
+        return array_map(fn (ContextKeyMetadata $key): array => ['key' => $key->key, 'label' => $this->translator->trans($key->label)], $this->contextKeys->all());
     }
 
     /**

@@ -663,6 +663,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
                 'revisions' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_revisions.html.twig', 'priority' => 60],
                 'share_links' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_share_links.html.twig', 'priority' => 50],
                 'urls' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_urls.html.twig', 'priority' => 40],
+                'used_in' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_used_in.html.twig', 'priority' => 30],
                 'translations' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_translations.html.twig', 'priority' => 20],
             ],
         ], $events['setono_sylius_cms.admin.entry.show.sections'] ?? null);

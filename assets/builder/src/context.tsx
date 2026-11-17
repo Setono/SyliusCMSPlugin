@@ -7,6 +7,7 @@ import { localeOf } from './locales';
 import type { PresenceState, PresenceStore } from './presence';
 import type { PreviewState, PreviewStore } from './preview';
 import type { SettingsState, SettingsStore } from './settings';
+import type { StoredBlock } from './types';
 import type { BuilderState, BuilderStore } from './store';
 import type { UrlsState, UrlsStore } from './urls';
 import type { ValidationState, ValidationStore } from './validation';
@@ -34,6 +35,13 @@ export interface BuilderSession {
     overviewUrl: string;
     /** A snippet's placements, which are managed on its overview page, or null for an entry that isn't a snippet. */
     placements: SnippetPlacement[] | null;
+    /**
+     * Opens a snippet in the builder, once the unsaved changes are sent, with a way back to the Snippet block that shows
+     * it. Null when the builder page doesn't say where another entry's builder is.
+     */
+    editSnippet: ((snippet: string, block: string) => void) | null;
+    /** The blocks a snippet shows, which Detach to edit here copies. Null without the endpoint. */
+    snippetBlocks: ((snippet: string) => Promise<StoredBlock[]>) | null;
     preview: PreviewStore;
     /** Asks for a preview token, and answers with the URL of the preview it turns on. */
     createPreviewUrl: (preview: PreviewRequest) => Promise<string>;
@@ -62,6 +70,11 @@ export interface BuilderSession {
 const BuilderContext = createContext<BuilderSession | null>(null);
 
 export const BuilderProvider = BuilderContext.Provider;
+
+/** The open entry's session, or null outside the builder, such as a field control rendered on its own. */
+export function useBuilderSession(): BuilderSession | null {
+    return useContext(BuilderContext);
+}
 
 export function useBuilder(): BuilderSession {
     const session = useContext(BuilderContext);

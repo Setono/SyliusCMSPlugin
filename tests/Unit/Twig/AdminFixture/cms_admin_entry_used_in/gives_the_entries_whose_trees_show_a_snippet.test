@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_entry_used_in() gives the entries whose trees show a snippet, each with whether its published content shows it and its working copy when that does
+--TEMPLATE--
+{% for use in cms_admin_entry_used_in(snippet) %}{{ use.entry.title }}: {{ use.published ? 'published' : 'not published' }}, {{ use.workingCopy is null ? 'not in the working copy' : 'in the working copy' }}; {% endfor %}
+--DATA--
+return $this->aSnippetAPageShows('About us')
+--EXPECT--
+About us: published, in the working copy;

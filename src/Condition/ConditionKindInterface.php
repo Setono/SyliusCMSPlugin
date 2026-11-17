@@ -15,7 +15,8 @@ interface ConditionKindInterface
 {
     /**
      * Whether the shopper or the page is one of the condition's values. This answers "is one of": the plugin provides
-     * "is not one of" by negating it, so a kind never does
+     * "is not one of" by negating it, so a kind never does. It's asked only when the render context holds every
+     * context key the kind needs: without one, the condition never matches, negated or not
      *
      * @param object $params the kind's parameters class, hydrated from the condition's parameter values, or an instance
      *                       of Setono\SyliusCMSPlugin\Attribute\NoParams for a kind without parameters

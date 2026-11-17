@@ -270,3 +270,35 @@
     padding: 0;
     border: 0;
 }
+
+/* A Snippet block shows a snippet that stays the same wherever it's used */
+.shared {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+    padding: var(--builder-space-3);
+    border: 1px dashed var(--builder-color-selected-border);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-selected);
+}
+
+.sharedHelp {
+    margin: 0;
+    font-size: var(--builder-font-size-sm);
+}
+
+.sharedBadge {
+    composes: shared from './BlockTreePane.module.css';
+}
+
+.sharedActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--builder-space-2);
+}
+
+.sharedFailed {
+    margin: 0;
+    color: var(--builder-color-danger);
+    font-size: var(--builder-font-size-sm);
+}

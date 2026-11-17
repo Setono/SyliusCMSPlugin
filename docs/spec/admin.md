@@ -75,7 +75,7 @@ Every entry has one, between its list and the builder.
 - **Revisions:** who published each and when. Each can be previewed read-only, or restored into the draft.
 - **Share links:** each link's channel, locale, Shown to, Date and who made it, with copy and revoke, plus New ([Publishing](publishing.md)).
 - **URLs** (content types with their own URL): the URL per locale, the old slugs that redirect, and for a page "Homepage of" per channel, showing the page that's each channel's homepage now.
-- **Used in** (snippets): the entries whose block trees reference it.
+- **Used in** (snippets): the entries whose block trees reference it, each with where: in its published content, in its draft, or published but removed in the draft.
 - **Translations:** the chips. Translating happens in the builder.
 
 ### Placements
@@ -83,6 +83,7 @@ Every entry has one, between its list and the builder.
 A snippet's placements are managed here, not in the builder, and take effect on save ([ADR 0005](../adr/0005-placements-take-effect-on-save.md)).
 
 - **Each placement** shows its slot, its position, such as "1st of 3 · capped at 1", its page scope ([Slots](slots.md#page-scopes)) and who it wins for. Placements can be added, edited and removed.
+- **Edit page scope** opens a dialog that edits the scope's conditions as the builder edits visibility conditions, offering only the kinds that read `HostPage` and whose needs the slot provides. Save takes effect at once and comes back to the overview page. A scope that can't be saved is kept as it was, and the page says why.
 - **Adding a placement** offers only slots that provide at least the snippet's declared context ([Slots](slots.md#snippets-and-their-context)).
 - **For a capped slot**, **Order…** opens a dialog with all the slot's placements, from every snippet, to drag into order. It also shows the slot's warnings: no catch-all placement, or hidden by a CMS homepage.
 
@@ -138,6 +139,7 @@ The admin flags problems on the entry, in the lists' problem marker, on the Over
 - a scheduled publish that's overdue
 - a scheduled publish that failed, with its reason
 - a broken reference: a deleted product, taxon, entry, snippet or media item in a field or link, a deleted customer group in a condition or an audience, or a deleted category ([Content model](content-model.md#references))
+- a Snippet block through which its snippet would render inside itself, directly or through other snippets ([Rendering](rendering.md#rendering-a-block-tree))
 
 **Warnings:**
 

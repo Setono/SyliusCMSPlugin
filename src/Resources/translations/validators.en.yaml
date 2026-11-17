@@ -17,6 +17,8 @@ setono_sylius_cms:
         layout_binding: 'The binding "%binding%" in the layout'
         needs: '%what% needs the host-page context %context%.'
         placement: 'The placement in "%slot%"'
+        snippet: 'The snippet "%snippet%"'
+        used_in: 'The Snippet block in "%entry%"'
     field:
         binding_not_accepted: '{{ binding }} can''t be shown in this field.'
         binding_parameter_required: '{{ parameter }} is required.'
@@ -36,6 +38,7 @@ setono_sylius_cms:
         not_on_step: 'This value isn''t a valid step. The two nearest valid values are {{ lower }} and {{ upper }}.'
         not_product: This value should be a product's code.
         not_rich_text: This value should be formatted text.
+        not_snippet: This value should be a snippet.
         not_source: This value should be a source, with its parameters and how many items to show.
         not_taxon: This value should be a taxon's code.
         not_text: This value should be text.
@@ -53,6 +56,14 @@ setono_sylius_cms:
         too_small: This value should be {{ limit }} or more.
         unknown_binding: 'The bindable property "{{ binding }}" no longer exists, so its fallback shows.'
         unknown_source: 'The source "{{ source }}" no longer exists, so this list shows nothing.'
+    # What a placement's page scope may hold. See "Page scopes" in docs/spec/slots.md
+    page_scope:
+        field: 'Condition %number%, %kind%: %field%: %message%'
+        malformed: 'Condition %number% isn''t a condition.'
+        needs: 'Condition %number%, %kind%, needs the host-page context "%context%", which the slot doesn''t provide.'
+        not_host_page: 'Condition %number%, %kind%, doesn''t read the page, so it can''t limit a placement. Put it on the snippet''s blocks instead.'
+        removed_slot: 'The slot "%slot%" no longer exists, so its placement can''t be limited to some pages. Remove the placement.'
+        unknown_kind: 'Condition %number%: the condition kind "%kind%" no longer exists. Remove the condition.'
     slug:
         blank: A URL needs a slug.
         drafted_elsewhere: '"%title%" has the URL %url% in its draft too, in %channels%. Only one of them can be published there.'

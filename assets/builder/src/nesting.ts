@@ -193,6 +193,26 @@ export function initialChildren(rules: NestingRules, type: string, createBlock: 
     });
 }
 
+/**
+ * Whether blocks may take a block's place: its spot allows each one's block type, with room for all of them once the
+ * block is out of it. Detaching a Snippet block puts its snippet's blocks in its place.
+ */
+export function canReplace(rules: NestingRules, tree: readonly StoredBlock[], key: string, blocks: readonly StoredBlock[]): boolean {
+    if (findBlock(tree, key) === undefined) {
+        return false;
+    }
+
+    const parent = parentOf(tree, key);
+    const siblings = blocksIn(tree, parent).filter((sibling) => sibling.key !== key);
+    const allowed = allowedIn(rules, tree, parent);
+
+    return [...new Set(blocks.map((replacing) => replacing.type))].every((type) => {
+        const rule = allowed.find((candidate) => candidate.type === type);
+
+        return rule !== undefined && (rule.max === null || count(siblings, type) + count(blocks, type) <= rule.max);
+    });
+}
+
 /** The key of the block whose children hold the block, or null when it's at the top level or missing. */
 export function parentOf(tree: readonly StoredBlock[], key: string): string | null {
     return locateBlock(tree, key)?.parent ?? null;

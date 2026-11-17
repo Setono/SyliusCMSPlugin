@@ -120,7 +120,7 @@ final class RegistryTest extends BuilderApiTestCase
 
         // The test application's own Store hours and Product note come first: an app's services are defined before a
         // bundle's. Embed code comes last, opted in to in the test application's config
-        self::assertSame(['app_store_hours', 'app_product_note', 'group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'video', 'button', 'banner', 'accordion', 'accordion_item', 'link_list', 'link', 'downloads', 'products', 'taxons', 'carousel', 'first_match', 'embed_code'], array_keys($blockTypes));
+        self::assertSame(['app_store_hours', 'app_product_note', 'group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'video', 'button', 'banner', 'accordion', 'accordion_item', 'link_list', 'link', 'downloads', 'products', 'taxons', 'carousel', 'first_match', 'snippet', 'embed_code'], array_keys($blockTypes));
 
         self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
         self::assertNull($blockTypes['columns']['parents']);
@@ -145,6 +145,7 @@ final class RegistryTest extends BuilderApiTestCase
             ['type' => 'taxons', 'min' => null, 'max' => null],
             ['type' => 'carousel', 'min' => null, 'max' => null],
             ['type' => 'first_match', 'min' => null, 'max' => null],
+            ['type' => 'snippet', 'min' => null, 'max' => null],
             ['type' => 'embed_code', 'min' => null, 'max' => null],
         ];
         self::assertSame($all, $blockTypes['group']['children']);
@@ -171,6 +172,21 @@ final class RegistryTest extends BuilderApiTestCase
 
         self::assertSame('/bundles/setonosyliuscmsplugin/thumbnail/block/columns.svg', $blockTypes['columns']['thumbnail']);
         self::assertFalse($blockTypes['spacer']['disabled']);
+
+        // The Snippet block holds no blocks: it shows its snippet's
+        self::assertSame([], $blockTypes['snippet']['children']);
+        self::assertSame([[
+            'name' => 'snippet',
+            'schema' => [
+                'type' => 'string',
+                'format' => 'uuid',
+                'x-cms-type' => 'snippet',
+                'x-cms-label' => 'Snippet',
+                'x-cms-help' => null,
+                'x-cms-required' => true,
+                'x-cms-translatable' => false,
+            ],
+        ]], $blockTypes['snippet']['fields']);
 
         // The test application adds a content type of its own, without a URL and so without layouts, and a layout of its own to pages
         self::assertIsArray($registry['contentTypes']);

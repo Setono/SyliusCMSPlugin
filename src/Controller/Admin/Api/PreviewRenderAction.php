@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Context\EntryContext;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
 use Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface;
@@ -75,7 +76,8 @@ final readonly class PreviewRenderAction
             $html[$block->key] = '';
         }
 
-        foreach ($this->blockViewBuilder->build($blocks, $renderContext) as $view) {
+        // A snippet doesn't show inside its own blocks
+        foreach ($this->blockViewBuilder->build($blocks, $renderContext, snippet: $workingCopy instanceof SnippetInterface ? $workingCopy->getUuid() : null) as $view) {
             $html[$view->key] = $this->blockRenderer->render($view, $renderContext);
         }
 

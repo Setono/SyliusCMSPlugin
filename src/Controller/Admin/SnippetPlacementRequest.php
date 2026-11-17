@@ -26,7 +26,8 @@ final readonly class SnippetPlacementRequest
     }
 
     /**
-     * @param callable(PlacementInterface): array{'success'|'error', string} $change
+     * @param callable(PlacementInterface): array{'success'|'error', string|array{message: string, parameters: array<string, mixed>}} $change
+     *        returns the flash message's type and the message, a key of the flashes domain or a text, or a key with its parameters
      *
      * @throws NotFoundHttpException when the snippet has no such placement
      */

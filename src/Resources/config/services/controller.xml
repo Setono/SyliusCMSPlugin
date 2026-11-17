@@ -108,6 +108,14 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\SetPlacementPageScopeAction" class="Setono\SyliusCMSPlugin\Controller\Admin\SetPlacementPageScopeAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\SnippetPlacementRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Slot\PlacementEditorInterface"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface"/>
@@ -206,6 +214,14 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
             <argument type="service" id="clock"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\SnippetBlocksAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\SnippetBlocksAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+
+            <tag name="controller.service_arguments"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction">

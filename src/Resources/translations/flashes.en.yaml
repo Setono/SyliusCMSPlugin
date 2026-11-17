@@ -9,6 +9,9 @@ setono_sylius_cms:
     entry_schedule_in_the_past: Pick a time in the future.
     entry_schedule_invalid: '{1} It wasn''t scheduled: one error needs fixing.|]1,Inf[ It wasn''t scheduled: %count% errors need fixing.'
     entry_schedule_time_missing: Pick when to publish.
+    page_scope_invalid: 'The page scope wasn''t saved: %errors%'
+    page_scope_not_a_list: The page scope wasn't saved. It should be a list of conditions.
+    page_scope_saved: The page scope has been saved. The placement shows on the pages it matches at once.
     placement_added: The placement has been added. It shows in the shop at once.
     placement_moved: The placement has been moved. The slot shows its placements in the new order at once.
     placement_not_moved: The placement is at the end of its slot already.

@@ -11,6 +11,7 @@ import { MediaControl } from './MediaControl';
 import { MediaListControl } from './MediaListControl';
 import { NumberControl } from './NumberControl';
 import { RichTextControl } from './RichTextControl';
+import { SnippetControl } from './SnippetControl';
 import { TextareaControl } from './TextareaControl';
 import { TextControl } from './TextControl';
 import { ToggleControl } from './ToggleControl';
@@ -33,7 +34,9 @@ export const fieldControls: Readonly<Record<string, FieldControl>> = {
     products: CatalogListControl,
     taxon: CatalogControl,
     taxons: CatalogListControl,
+    entries: CatalogListControl,
     code: CodeControl,
+    snippet: SnippetControl,
 };
 
 /** A field's control: the custom element a project's own field type names, or else its shipped field type's control. */

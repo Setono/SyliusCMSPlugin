@@ -36,6 +36,7 @@
     "sylius/money-bundle": "~1.14.0",
     "sylius/product": "~1.14.0",
     "sylius/resource-bundle": "^1.12",
+    "sylius/taxonomy": "~1.14.0",
     "sylius/ui-bundle": "~1.14.0",
     "symfony/clock": "^6.4 || ^7.0",
     "symfony/config": "^6.4",

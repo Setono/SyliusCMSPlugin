@@ -108,6 +108,19 @@
             <tag name="setono_sylius_cms.problem_kind"/>
         </service>
 
+        <!--
+        A page-scope condition of a kind a project removed, or that needs context its slot no longer provides: a warning
+        in the admin, so lint leaves it out
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\PageScopeMismatch" class="Setono\SyliusCMSPlugin\Problem\Kind\PageScopeMismatch">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
         <!-- A snippet that needs a context key a project removed: a warning in the admin, so lint leaves it out -->
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\RemovedContextKey" class="Setono\SyliusCMSPlugin\Problem\Kind\RemovedContextKey">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
@@ -140,6 +153,15 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="tagged_locator" tag="setono_sylius_cms.reference_type_loader" index-by="type"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+        </service>
+
+        <!-- A snippet that would render inside itself, which setono:cms:lint reports -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\SnippetInsideItself" class="Setono\SyliusCMSPlugin\Problem\Kind\SnippetInsideItself">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
 
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>

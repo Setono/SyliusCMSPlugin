@@ -22,8 +22,8 @@ use Twig\Environment;
  *    context resolvers. A key that can't be resolved, such as the product on a page that isn't a product page, makes it
  *    print nothing
  * 2. the channel's placements in it, which load once a request, when the first slot renders
- * 3. those whose snippet is visible and needs no more context than the slot provides, in editor order (page scopes
- *    join with #258)
+ * 3. those whose page scope matches the page, then of those, the ones whose snippet is visible and needs no more context
+ *    than the slot provides, in editor order
  * 4. its cap (#259)
  * 5. each shown snippet's tree, rendered with the slot's context in the slot template, inside the slot's wrapper
  *
@@ -49,6 +49,7 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
         private readonly BlockViewBuilder $blockViewBuilder,
         private readonly ReferenceLoaderInterface $referenceLoader,
         private readonly Environment $twig,
+        private readonly PageScopeMatcherInterface $pageScopes,
     ) {
     }
 
@@ -70,8 +71,9 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
 
         $renderContext = $this->renderContextFactory->create($provided);
 
-        // 3. Those whose snippet is visible and needs no more context than the slot provides, in editor order
-        $shown = $this->withVisibleSnippets($slot, $placements, $renderContext);
+        // 3. Those whose page scope matches the page, and whose snippet is visible and needs no more context than the slot
+        // provides, in editor order
+        $shown = $this->withVisibleSnippets($slot, $this->pageScopes->matching($placements, $renderContext), $renderContext);
 
         // 4. The cap joins here with #259
 
@@ -114,12 +116,16 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
      * The placements whose snippet is visible, each with its snippet, in the order given. A snippet whose published
      * content needs a context key the slot doesn't provide, such as one the code no longer declares, isn't shown
      *
-     * @param non-empty-list<PlacementData> $placements
+     * @param list<PlacementData> $placements
      *
      * @return list<array{PlacementData, SnippetInterface}>
      */
     private function withVisibleSnippets(SlotMetadata $slot, array $placements, RenderContext $context): array
     {
+        if ([] === $placements) {
+            return [];
+        }
+
         $snippets = $this->visibleSnippets->get(
             array_values(array_unique(array_map(static fn (PlacementData $placement): string => $placement->snippetUuid, $placements))),
             $context,
@@ -159,7 +165,7 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
 
         $snippets = [];
         foreach ($shown as $index => [$placement, $snippet]) {
-            $blocks = $this->blockViewBuilder->build($trees[$index]->blocks, $context, $references);
+            $blocks = $this->blockViewBuilder->build($trees[$index]->blocks, $context, $references, $snippet->getUuid());
             if ([] !== $blocks) {
                 $snippets[] = new PlacedSnippet($placement, $snippet, $blocks);
             }

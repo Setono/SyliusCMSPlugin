@@ -1,13 +1,18 @@
 {#
  # The overview page's Placements section, a block of setono_sylius_cms.admin.entry.show.sections, for a snippet: its
- # placements, each with its slot and its place among the slot's placements of every snippet, with Move up, Move down and
- # Remove, plus Add placement, which offers the slots that provide at least the context the snippet needs. Each form
- # comes back to the overview page, and takes effect at once (ADR 0005). A placement in a slot the code no longer
- # declares is listed with the slot's identifier, to remove. See "Placements" in docs/spec/admin.md
+ # placements, each with its slot, its page scope and its place among the slot's placements of every snippet, with Move
+ # up, Move down and Remove, plus Add placement, which offers the slots that provide at least the context the snippet
+ # needs. Each form comes back to the overview page, and takes effect at once (ADR 0005). A placement in a slot the code
+ # no longer declares is listed with the slot's identifier, to remove.
+ #
+ # Edit page scope is the page scope editor, part of the prebuilt builder app, mounted on each [data-cms-page-scope]
+ # with the placement's config and the config the section's [data-cms-page-scopes] shares. It posts the scope's
+ # conditions as JSON. See "Placements" in docs/spec/admin.md and "Page scopes" in docs/spec/slots.md
  #}
 {% set placements = cms_admin_entry_placements(entry) %}
 {% if placements is not null %}
-    <section class="ui segment" data-section="placements" aria-labelledby="cms-section-placements">
+    <link rel="stylesheet" href="{{ asset('bundles/setonosyliuscmsplugin/builder/builder.css') }}">
+    <section class="ui segment" data-section="placements" aria-labelledby="cms-section-placements" data-cms-page-scopes data-config="{{ cms_admin_page_scope_editor(app.request.locale)|json_encode }}">
         <h2 class="ui dividing header" id="cms-section-placements">{{ 'setono_sylius_cms.ui.placements'|trans }}</h2>
 
         {% if placements.placements is empty %}
@@ -18,6 +23,7 @@
                 <thead>
                     <tr>
                         <th>{{ 'setono_sylius_cms.ui.slot'|trans }}</th>
+                        <th>{{ 'setono_sylius_cms.ui.page_scope'|trans }}</th>
                         <th>{{ 'setono_sylius_cms.ui.position'|trans }}</th>
                         <th></th>
                     </tr>
@@ -32,6 +38,32 @@
                                     <div data-slot-removed><small>{{ 'setono_sylius_cms.ui.slot_removed'|trans }}</small></div>
                                 {% else %}
                                     <div><small><code>{{ placement.slot }}</code></small></div>
+                                {% endif %}
+                            </td>
+                            <td data-page-scope>
+                                {% if placed.pageScope is empty %}
+                                    <span data-every-page>{{ 'setono_sylius_cms.ui.every_page_the_slot_appears_on'|trans }}</span>
+                                {% else %}
+                                    <div class="ui list">
+                                        {% for condition in placed.pageScope %}
+                                            <div class="item" data-page-scope-condition="{{ condition.kind }}">
+                                                {%- if condition.label is null -%}
+                                                    {{ 'setono_sylius_cms.ui.page_scope_removed_kind'|trans({'%kind%': condition.kind}) }}
+                                                {%- else -%}
+                                                    {{ condition.label }} {{ condition.matches }}{% if condition.values is not empty %}: {{ condition.values|join(', ') }}{% endif %}
+                                                {%- endif -%}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                {% if placed.slot is not null and (placed.scopeKinds is not empty or placed.pageScope is not empty) %}
+                                    <div data-cms-page-scope data-config="{{ {
+                                        'action': path('setono_sylius_cms_admin_entry_placement_page_scope', {'uuid': entry.uuid, 'placement': placement.uuid}),
+                                        'csrfToken': csrf_token(entry.id),
+                                        'slot': placed.slot.label|trans,
+                                        'scope': placement.pageScope,
+                                        'kinds': placed.scopeKinds,
+                                    }|json_encode }}"></div>
                                 {% endif %}
                             </td>
                             <td data-position>{{ 'setono_sylius_cms.ui.position_in_slot'|trans({'%position%': placed.position, '%count%': placed.count}) }}</td>
@@ -73,4 +105,5 @@
             </form>
         {% endif %}
     </section>
+    <script type="module" src="{{ asset('bundles/setonosyliuscmsplugin/builder/builder.js') }}"></script>
 {% endif %}

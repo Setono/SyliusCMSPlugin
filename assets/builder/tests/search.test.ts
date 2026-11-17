@@ -17,6 +17,14 @@ describe('the search endpoint', () => {
         expect(fetchFn).toHaveBeenCalledWith('/admin/cms/api/search/product?q=red+shirt', expect.objectContaining({ credentials: 'same-origin' }));
     });
 
+    it('should narrow the search with the parameters given, such as the context keys the entry provides for snippets', async () => {
+        const fetchFn = answering(200, []);
+
+        await createSearchApi('/admin/cms/api/search/__kind__', fetchFn).search('snippet', 'foot', { provides: 'product,taxon', entry: 'abc' });
+
+        expect(fetchFn).toHaveBeenCalledWith('/admin/cms/api/search/snippet?provides=product%2Ctaxon&entry=abc&q=foot', expect.anything());
+    });
+
     it('should look refs up in one request, and none for no refs', async () => {
         const fetchFn = answering(200, []);
         const api = createSearchApi('/admin/cms/api/search/__kind__', fetchFn);

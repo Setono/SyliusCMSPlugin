@@ -12,15 +12,19 @@ use Setono\SyliusCMSPlugin\Admin\EntryPlacements;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\EntryShareLinks;
 use Setono\SyliusCMSPlugin\Admin\EntryUrls;
+use Setono\SyliusCMSPlugin\Admin\PageScopeSummaries;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
 use Setono\SyliusCMSPlugin\Admin\TranslationChips;
 use Setono\SyliusCMSPlugin\Admin\WhereItShows;
+use Setono\SyliusCMSPlugin\Block\Snippet as SnippetBlock;
 use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\SnippetHandler;
 use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -40,6 +44,7 @@ use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
@@ -49,11 +54,15 @@ use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
 use Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface;
 use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
+use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Translation\TranslatableValues;
+use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
+use Setono\SyliusCMSPlugin\Tree\SnippetUses;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Setono\SyliusCMSPlugin\Twig\AdminExtension;
 use Setono\SyliusCMSPlugin\Twig\AdminRuntime;
 use Setono\SyliusCMSPlugin\Twig\EntryOverviewRuntime;
@@ -74,6 +83,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
+use Symfony\Component\Translation\IdentityTranslator;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\Test\IntegrationTestCase;
 
@@ -90,6 +100,9 @@ final class AdminExtensionTest extends IntegrationTestCase
 
     /** @var list<Placement> the store's placements */
     private array $placements = [];
+
+    /** @var list<EntryInterface> the entries whose trees may show a snippet */
+    private array $showingSnippets = [];
 
     /** @var ObjectProphecy<RepositoryInterface<CustomerGroupInterface>> */
     private ObjectProphecy $customerGroups;
@@ -179,6 +192,24 @@ final class AdminExtensionTest extends IntegrationTestCase
     {
         $snippet = new Snippet();
         $this->placements = [new Placement($snippet, 'shop.footer', 0)];
+
+        return ['snippet' => $snippet];
+    }
+
+    /**
+     * A snippet that a published page with the title shows
+     *
+     * @return array{snippet: Snippet}
+     */
+    public function aSnippetAPageShows(string $title): array
+    {
+        $snippet = new Snippet();
+        $page = new Page();
+        $page->setCurrentLocale('en_US');
+        $page->setTitle($title);
+        $page->setBlockTree(new StoredTree(null, [new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4a', 'snippet', 1, fields: ['snippet' => $snippet->getUuid()])]));
+        $page->publish(new \DateTimeImmutable());
+        $this->showingSnippets = [$page];
 
         return ['snippet' => $snippet];
     }
@@ -273,9 +304,31 @@ final class AdminExtensionTest extends IntegrationTestCase
         });
         $declaredContext = $this->prophesize(DeclaredContextInterface::class);
         $declaredContext->toPlace(Argument::type(SnippetInterface::class))->will(static fn (array $arguments): array => $arguments[0] instanceof SnippetInterface ? $arguments[0]->getContext() : []);
-        $entryPlacements = new EntryPlacements($placements->reveal(), new SlotRegistry(['shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null]]), $declaredContext->reveal());
+        $conditionKinds = Conditions::registry();
+        $entryPlacements = new EntryPlacements(
+            $placements->reveal(),
+            new SlotRegistry(['shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null]]),
+            $declaredContext->reveal(),
+            $conditionKinds,
+            new PageScopeSummaries($conditionKinds, Conditions::fieldHandlers(), new ServiceLocator([]), new IdentityTranslator()),
+        );
 
-        $overview = new EntryOverviewRuntime($entryUrls, $channelHomepages, $problemFinder, $revisions->reveal(), $entryShareLinks, $whereItShows, $entryPlacements);
+        $entries = $this->prophesize(EntryRepositoryInterface::class);
+        $showing = &$this->showingSnippets;
+        $entries->findReferencing(Argument::any())->will(static function () use (&$showing): array {
+            return $showing;
+        });
+        $snippetBlocks = new BlockTypeRegistry(['snippet' => SnippetBlock::class], new FieldReader());
+        $snippetUses = new SnippetUses(
+            $entries->reveal(),
+            $workingCopies->reveal(),
+            new ReferenceFinder(new TreeValues($snippetBlocks, new LayoutRegistry([], new FieldReader())), new FieldHandlerLocator(new ServiceLocator([
+                SnippetHandler::class => static fn (): SnippetHandler => new SnippetHandler(),
+            ]))),
+            self::contentTypes(),
+        );
+
+        $overview = new EntryOverviewRuntime($entryUrls, $channelHomepages, $problemFinder, $revisions->reveal(), $entryShareLinks, $whereItShows, $entryPlacements, $snippetUses);
 
         return [new FactoryRuntimeLoader([
             AdminRuntime::class => static fn (): AdminRuntime => $runtime,
