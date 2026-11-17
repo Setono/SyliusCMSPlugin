@@ -12,7 +12,7 @@ use Setono\SyliusCMSPlugin\Field\Text;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Value\ItemList;
 
-#[BlockType(code: 'gallery', label: 'Gallery', template: 'gallery.html.twig', children: [new Allow('*')])]
+#[BlockType(code: 'gallery', label: 'app.cms.block_type.gallery', template: 'gallery.html.twig', children: [new Allow('*')])]
 final class Gallery
 {
     #[Text(label: 'Heading')]

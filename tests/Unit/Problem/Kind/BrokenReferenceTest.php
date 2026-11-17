@@ -67,7 +67,7 @@ final class BrokenReferenceTest extends TestCase
                 'broken_reference',
                 Severity::Error,
                 $page,
-                new TranslatableMessage('setono_sylius_cms.problem.broken_layout_reference', ['%field%' => new TranslatableMessage('Image'), '%type%' => new TranslatableMessage('setono_sylius_cms.reference_type.media_item')]),
+                new TranslatableMessage('setono_sylius_cms.problem.broken_layout_reference', ['%field%' => new TranslatableMessage('app.cms.field.image'), '%type%' => new TranslatableMessage('setono_sylius_cms.reference_type.media_item')]),
                 Fix::inBuilder($page),
                 null,
                 'image',
@@ -139,7 +139,7 @@ final class BrokenReferenceTest extends TestCase
             $page,
             new TranslatableMessage('setono_sylius_cms.problem.broken_reference', [
                 '%field%' => new TranslatableMessage($label),
-                '%block%' => new TranslatableMessage('Gallery'),
+                '%block%' => new TranslatableMessage('app.cms.block_type.gallery'),
                 '%type%' => new TranslatableMessage('setono_sylius_cms.reference_type.media_item'),
             ]),
             Fix::inBuilder($page, $key, $locale),
