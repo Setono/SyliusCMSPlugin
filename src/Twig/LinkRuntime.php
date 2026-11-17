@@ -38,7 +38,7 @@ final readonly class LinkRuntime implements RuntimeExtensionInterface
     }
 
     /**
-     * An entry's URL in the current channel and locale, the channel's root for its homepage, or a taxon's product
+     * An entry's path in the current channel and locale, the channel's root for its homepage, or a taxon's product
      * listing, as their link targets build them. Null when it has none, or the shopper may not see it there, such as a
      * taxon without a translation in the locale. The channel and locale are the render context's in a CMS template, and
      * the shop's anywhere else

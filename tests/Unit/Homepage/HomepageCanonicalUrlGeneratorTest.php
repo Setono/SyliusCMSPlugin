@@ -16,6 +16,7 @@ use Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement;
 use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
 use Sylius\Component\Core\Model\Channel;
 use Symfony\Component\Routing\Generator\UrlGenerator;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
@@ -51,6 +52,19 @@ final class HomepageCanonicalUrlGeneratorTest extends TestCase
     }
 
     /**
+     * Links to a homepage lead to its channel's root as a path, as Sylius's path() gives
+     *
+     * @test
+     */
+    public function it_puts_a_channels_homepage_at_the_channels_root_as_a_path_when_asked_for_a_path(): void
+    {
+        $page = new Page();
+        Homepages::modifier($this->prophesize(HomepageRepositoryInterface::class)->reveal())->setHomepageOf($page, ['WEB']);
+
+        self::assertSame('/en_US/', $this->generator()->generate($page, self::channel('WEB'), 'en_US', UrlGeneratorInterface::ABSOLUTE_PATH));
+    }
+
+    /**
      * @test
      */
     public function it_leaves_a_page_at_its_own_url_in_a_channel_it_is_not_the_homepage_of(): void
@@ -60,7 +74,19 @@ final class HomepageCanonicalUrlGeneratorTest extends TestCase
         $web = self::channel('WEB');
 
         self::assertSame('https://shop.example/en_US/welcome', $this->generator()->generate($page, $web, 'en_US'));
-        $this->decorated->generate($page, $web, 'en_US')->shouldHaveBeenCalledOnce();
+        $this->decorated->generate($page, $web, 'en_US', UrlGeneratorInterface::ABSOLUTE_URL)->shouldHaveBeenCalledOnce();
+    }
+
+    /**
+     * @test
+     */
+    public function it_asks_for_a_path_of_a_page_it_is_not_the_homepage_of_when_asked_for_a_path(): void
+    {
+        $page = new Page();
+        $web = self::channel('WEB');
+        $this->decorated->generate($page, $web, 'en_US', UrlGeneratorInterface::ABSOLUTE_PATH)->willReturn('/en_US/welcome');
+
+        self::assertSame('/en_US/welcome', $this->generator()->generate($page, $web, 'en_US', UrlGeneratorInterface::ABSOLUTE_PATH));
     }
 
     /**

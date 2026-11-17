@@ -16,8 +16,8 @@ use Sylius\Component\Core\Model\ProductInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
- * A product, by its code. It leads to the product's page in the shop, named by the product's name, while the shopper
- * may see the product: enabled, in the channel and translated into the locale ("Visible queries" in
+ * A product, by its code. It leads to the path of the product's page in the shop, named by the product's name, while
+ * the shopper may see the product: enabled, in the channel and translated into the locale ("Visible queries" in
  * docs/spec/sources.md). See "Link targets" in docs/spec/extending.md
  */
 #[AsLinkTarget(code: 'product', label: 'setono_sylius_cms.link_target.product')]
@@ -67,7 +67,7 @@ final readonly class ProductLinkTarget implements ReferencingLinkTargetInterface
         return new ResolvedLink(
             'product',
             $ref,
-            $this->urlGenerator->generate('sylius_shop_product_show', ['_locale' => $context->localeCode, 'slug' => $slug], UrlGeneratorInterface::ABSOLUTE_URL),
+            $this->urlGenerator->generate('sylius_shop_product_show', ['_locale' => $context->localeCode, 'slug' => $slug]),
             (string) $translation->getName(),
         );
     }

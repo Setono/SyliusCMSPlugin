@@ -5,7 +5,7 @@ cms_url() is the URL of a taxon's product listing, the one its link target gives
 --DATA--
 return $this->rendering(['taxon' => $this->taxon(['en_US' => ['T-shirts', 't-shirts'], 'de_DE' => ['T-Shirts', 'kleidung/t-shirts']])], locale: 'de_DE')
 --EXPECT--
-https://shop.example/de_DE/taxons/kleidung/t-shirts|
+/de_DE/taxons/kleidung/t-shirts|
 --DATA--
 return $this->rendering(['taxon' => $this->taxon(['en_US' => ['T-shirts', 't-shirts']])], locale: 'de_DE')
 --EXPECT--

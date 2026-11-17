@@ -43,7 +43,7 @@ final class RichTextLinksTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame(
-            '<div class="cms-rich-text"><p>Read <a href="http://localhost/en_US/about#history">about us</a> or meet <strong>the team</strong>.</p></div>',
+            '<div class="cms-rich-text"><p>Read <a href="/en_US/about#history">about us</a> or meet <strong>the team</strong>.</p></div>',
             $crawler->filter('.cms-tree > .cms-rich-text')->outerHtml(),
         );
     }
@@ -65,7 +65,7 @@ final class RichTextLinksTest extends WebTestCase
         $crawler = $client->request('GET', '/en_US/start');
 
         self::assertSame(
-            [['Red shirts', 'http://localhost/en_US/products/red-t-shirt'], ['mugs', 'http://localhost/en_US/taxons/mugs']],
+            [['Red shirts', '/en_US/products/red-t-shirt'], ['mugs', '/en_US/taxons/mugs']],
             $crawler->filter('.cms-tree > .cms-rich-text a')->each(static fn (Crawler $link): array => [$link->text(), $link->attr('href')]),
         );
     }

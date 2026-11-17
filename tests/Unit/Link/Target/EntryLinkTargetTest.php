@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Sylius\Component\Core\Model\ChannelInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final class EntryLinkTargetTest extends TestCase
 {
@@ -62,10 +63,10 @@ final class EntryLinkTargetTest extends TestCase
         $page = self::page();
         $context = $this->context();
         $this->entries->load([$page->getUuid()], $context)->willReturn([$page->getUuid() => $page]);
-        $this->urlGenerator->generate($page, $this->channel, 'en_US')->willReturn('https://localhost/en_US/about');
+        $this->urlGenerator->generate($page, $this->channel, 'en_US', UrlGeneratorInterface::ABSOLUTE_PATH)->willReturn('/en_US/about');
 
         self::assertEquals(
-            new ResolvedLink('entry', $page->getUuid(), 'https://localhost/en_US/about', 'About us'),
+            new ResolvedLink('entry', $page->getUuid(), '/en_US/about', 'About us'),
             $this->target()->resolve($page->getUuid(), $context),
         );
     }
@@ -78,7 +79,7 @@ final class EntryLinkTargetTest extends TestCase
         $page = self::page();
         $context = $this->context();
         $this->entries->load([$page->getUuid()], $context)->willReturn([$page->getUuid() => $page]);
-        $this->urlGenerator->generate($page, $this->channel, 'en_US')->willReturn('https://localhost/en_US/about');
+        $this->urlGenerator->generate($page, $this->channel, 'en_US', UrlGeneratorInterface::ABSOLUTE_PATH)->willReturn('/en_US/about');
 
         self::assertSame(strtoupper($page->getUuid()), $this->target()->resolve(strtoupper($page->getUuid()), $context)?->ref);
     }
@@ -101,7 +102,7 @@ final class EntryLinkTargetTest extends TestCase
     public function it_leads_nowhere_for_an_entry_without_a_url_of_its_own(): void
     {
         $page = self::page();
-        $this->urlGenerator->generate($page, $this->channel, 'en_US')->willReturn(null);
+        $this->urlGenerator->generate($page, $this->channel, 'en_US', UrlGeneratorInterface::ABSOLUTE_PATH)->willReturn(null);
 
         self::assertNull($this->target()->link($page, $page->getUuid(), $this->context()));
     }

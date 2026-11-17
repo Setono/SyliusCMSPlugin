@@ -41,7 +41,7 @@ final class LinkListTest extends WebTestCase
             . '<h2 class="cms-link-list__heading">Customer service</h2>'
             . '<ul class="cms-link-list__links">'
             . '<li class="cms-link"><a href="/en_US/faq#returns">Returns</a></li>'
-            . '<li class="cms-link"><a href="http://localhost/en_US/products/red-t-shirt">Red T-shirt</a></li>'
+            . '<li class="cms-link"><a href="/en_US/products/red-t-shirt">Red T-shirt</a></li>'
             . '</ul>'
             . '</nav>',
             Html::withoutWhitespaceBetweenTags($crawler->filter('.cms-tree > .cms-link-list')->outerHtml()),
@@ -85,7 +85,7 @@ final class LinkListTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame(
-            '<ul class="cms-link-list__links"><li class="cms-link"><a href="http://localhost/en_US/taxons/mugs">Mugs</a></li></ul>',
+            '<ul class="cms-link-list__links"><li class="cms-link"><a href="/en_US/taxons/mugs">Mugs</a></li></ul>',
             Html::withoutWhitespaceBetweenTags($crawler->filter('.cms-tree > .cms-link-list > .cms-link-list__links')->outerHtml()),
         );
     }
