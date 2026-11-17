@@ -81,8 +81,10 @@ setono_sylius_cms:
             slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team.'
             slug_rules: A slug can't start or end with a slash, or have two slashes in a row.
             title: Title
-    # Why the media library refused a file. See "Uploading" in docs/spec/media.md
     media:
+        # Why a media item can't be deleted. See "Deleting" in docs/spec/media.md
+        in_use: '{1} It''s used in an entry, so it can''t be deleted.|]1,Inf[ It''s used in %count% entries, so it can''t be deleted.'
+        # Why the media library refused a file. See "Uploading" in docs/spec/media.md
         refused:
             not_allowed: '%filename% is a %type% file, which the media library doesn''t take. It takes %types%, up to %limit% each.'
             # A file that would replace the file of a media item of another kind

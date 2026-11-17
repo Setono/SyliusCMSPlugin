@@ -416,6 +416,26 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\DeleteMediaItemAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\DeleteMediaItemAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaItemDeleterInterface"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaUsesAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaUsesAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaUsageRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryRows"/>
+            <argument type="service" id="router"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaFolderRequest" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaFolderRequest">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>
         </service>
