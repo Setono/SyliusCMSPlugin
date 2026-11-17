@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 use Doctrine\Bundle\DoctrineBundle\DataCollector\DoctrineDataCollector;
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\ListSourcesKernel;
+use Setono\SyliusCMSPlugin\Tests\Support\Bestsellers;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -18,10 +19,12 @@ use Symfony\Component\HttpKernel\Profiler\Profile;
 /**
  * Products and Taxons blocks filled by a source: the first $limit items the source lists, in its order, resolved only
  * when the template reads the list. A disabled source keeps resolving, and one the code no longer has yields nothing
- * and is flagged. See "List fields", "The contract" and "Paging and rendering" in docs/spec/sources.md
+ * and is flagged, as does one set to a taxon the shopper may no longer see. See "List fields", "The contract" and
+ * "Paging and rendering" in docs/spec/sources.md
  */
 final class ListsFilledBySourcesTest extends WebTestCase
 {
+    use Bestsellers;
     use Catalog;
     use Entries;
 
@@ -122,6 +125,44 @@ final class ListsFilledBySourcesTest extends WebTestCase
         self::assertSame(
             [['unknown_source', self::PRODUCTS, 'Products in the Products block is filled by the source "retired", which the code no longer has, so it lists nothing.']],
             $problems->each(static fn (Crawler $problem): array => [$problem->attr('data-problem'), $problem->attr('data-block'), $problem->filter('.description')->text()]),
+        );
+    }
+
+    /**
+     * A taxon set as a parameter that the shopper may no longer see, disabled or deleted, makes the source list nothing
+     * rather than every taxon's bestsellers, and the admin flags a deleted one. A taxon left empty lists them all
+     *
+     * @test
+     */
+    public function it_shows_nothing_for_bestsellers_in_a_taxon_that_was_disabled_or_deleted_and_flags_a_deleted_one(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        $shirts = self::createTaxon('T_SHIRTS', 'T-shirts');
+        $mugs = self::createTaxon('MUGS', 'Mugs');
+        self::placeInTaxon(self::createProduct('BASIC', 'Basic'), $shirts);
+        self::placeInTaxon(self::createProduct('MUG', 'Mug'), $mugs);
+        self::scoreProducts(['BASIC' => 2, 'MUG' => 1]);
+        $bestsellers = static fn (?string $taxon): array => ['$source' => 'bestsellers', '$params' => ['taxon' => $taxon, 'includeChildren' => false], '$limit' => 8];
+        $page = self::createPageWithBlocks('Bestsellers', 'bestsellers', [
+            self::products(self::PRODUCTS, $bestsellers('T_SHIRTS')),
+            self::products(self::OTHER, $bestsellers('MUGS')),
+        ], published: true);
+        self::createPageWithBlocks('All bestsellers', 'all-bestsellers', [self::products(self::PRODUCTS, $bestsellers(null))], published: true);
+        self::assertSame(['Basic', 'Mug'], self::names($client->request('GET', '/en_US/bestsellers')));
+
+        $shirts->setEnabled(false);
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('sylius.manager.taxon');
+        $manager->remove($mugs);
+        $manager->flush();
+
+        self::assertCount(0, $client->request('GET', '/en_US/bestsellers')->filter('.cms-products'));
+        self::assertSame(['Basic', 'Mug'], self::names($client->request('GET', '/en_US/all-bestsellers')));
+        $problems = $client->request('GET', sprintf('/admin/cms/entry/%s', $page->getUuid()))->filter('[data-section="problems"] [data-problem]');
+        self::assertSame(
+            [['broken_reference', self::OTHER]],
+            $problems->each(static fn (Crawler $problem): array => [$problem->attr('data-problem'), $problem->attr('data-block')]),
         );
     }
 
