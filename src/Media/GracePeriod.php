@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Media;
 
+use Setono\SyliusCMSPlugin\Time\Duration;
+
 /**
  * How long a replaced file and its variants are kept before they're deleted, media.grace_period, so pages cached before
  * the replace don't show broken images in the meantime. See "Replacing a file" in docs/spec/media.md
@@ -12,7 +14,7 @@ final readonly class GracePeriod
 {
     public const DEFAULT = 'P1D';
 
-    public \DateInterval $duration;
+    public Duration $duration;
 
     /**
      * @param string $duration an ISO 8601 duration, such as P1D
@@ -21,11 +23,7 @@ final readonly class GracePeriod
      */
     public function __construct(string $duration = self::DEFAULT)
     {
-        try {
-            $this->duration = new \DateInterval($duration);
-        } catch (\Exception $e) {
-            throw new \InvalidArgumentException(sprintf('"%s" isn\'t an ISO 8601 duration, such as P1D', $duration), previous: $e);
-        }
+        $this->duration = Duration::fromIso8601($duration);
     }
 
     /**
@@ -36,6 +34,6 @@ final readonly class GracePeriod
     {
         $from = $from->setTimezone(new \DateTimeZone('UTC'));
 
-        return ($from->add($this->duration)->getTimestamp() - $from->getTimestamp()) * 1000;
+        return ($this->duration->after($from)->getTimestamp() - $from->getTimestamp()) * 1000;
     }
 }

@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Factory\HomepageFactory;
 use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
 use Setono\SyliusCMSPlugin\Media\FileSize;
 use Setono\SyliusCMSPlugin\Media\GracePeriod;
+use Setono\SyliusCMSPlugin\Time\Duration;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Model\BestsellerScore;
 use Setono\SyliusCMSPlugin\Model\BestsellerScoreInterface;
@@ -338,7 +339,7 @@ final class Configuration implements ConfigurationInterface
     private static function assertDuration(mixed $duration): string
     {
         $duration = is_scalar($duration) ? (string) $duration : get_debug_type($duration);
-        new GracePeriod($duration);
+        Duration::fromIso8601($duration);
 
         return $duration;
     }

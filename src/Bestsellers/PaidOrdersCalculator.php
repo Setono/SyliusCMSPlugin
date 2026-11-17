@@ -10,6 +10,7 @@ use Doctrine\ORM\QueryBuilder;
 use Psr\Clock\ClockInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\OrderPaymentStates;
+use Setono\SyliusCMSPlugin\Time\Duration;
 
 /**
  * The default bestsellers calculator: a product's score in a channel is how many of the channel's paid orders
@@ -19,7 +20,7 @@ use Sylius\Component\Core\OrderPaymentStates;
  */
 final readonly class PaidOrdersCalculator implements BestsellersCalculatorInterface
 {
-    private \DateInterval $window;
+    private Duration $window;
 
     /**
      * @param EntityManagerInterface $orderManager the manager of orders
@@ -34,11 +35,7 @@ final readonly class PaidOrdersCalculator implements BestsellersCalculatorInterf
         private ClockInterface $clock,
         string $window,
     ) {
-        try {
-            $this->window = new \DateInterval($window);
-        } catch (\Exception $e) {
-            throw new \InvalidArgumentException(sprintf('"%s" isn\'t an ISO 8601 duration, such as P30D', $window), previous: $e);
-        }
+        $this->window = Duration::fromIso8601($window);
     }
 
     public function calculate(ChannelInterface $channel): iterable
@@ -73,7 +70,7 @@ final readonly class PaidOrdersCalculator implements BestsellersCalculatorInterf
             ->groupBy('product.code')
             ->setParameter('channel', $channel)
             ->setParameter('paymentState', OrderPaymentStates::STATE_PAID)
-            ->setParameter('since', $until->sub($this->window), Types::DATETIME_IMMUTABLE)
+            ->setParameter('since', $this->window->before($until), Types::DATETIME_IMMUTABLE)
             ->setParameter('until', $until, Types::DATETIME_IMMUTABLE)
         ;
     }

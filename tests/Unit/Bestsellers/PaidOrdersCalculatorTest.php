@@ -75,7 +75,7 @@ final class PaidOrdersCalculatorTest extends TestCase
     public function it_refuses_a_window_that_is_not_an_iso_8601_duration(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('"30 days" isn\'t an ISO 8601 duration, such as P30D');
+        $this->expectExceptionMessage('"30 days" isn\'t an ISO 8601 duration, such as P1D');
 
         $this->calculator('30 days');
     }
