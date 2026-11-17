@@ -15,12 +15,12 @@ use Setono\SyliusCMSPlugin\Source\Taxon\TaxonChildrenParams;
 use Setono\SyliusCMSPlugin\Tests\Support\Bestsellers;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\TaxonInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * The shipped sources against a real database: what each lists, in its order, ending in the ID, paged in SQL.

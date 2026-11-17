@@ -11,10 +11,10 @@ use Setono\SyliusCMSPlugin\Attribute\NoParams;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Source\Product\NewestProductsSource;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\RecordsQueries;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\ProductInterface;
-use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * "Newest": the visible products, newest first, then by ID. See "Product sources" in docs/spec/sources.md

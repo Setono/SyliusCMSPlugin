@@ -20,8 +20,8 @@ use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
-use Symfony\Component\DependencyInjection\ServiceLocator;
 use Setono\SyliusCMSPlugin\Tree\TreeValues;
+use Symfony\Component\DependencyInjection\ServiceLocator;
 
 final class ReferenceFinderTest extends TestCase
 {

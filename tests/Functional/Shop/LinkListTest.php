@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\Html;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Setono\SyliusCMSPlugin\Tests\Support\Html;
 
 /**
  * The Link list block and its Link children: simple navigation, such as footer links, as a <nav> with a list item per

@@ -4,24 +4,18 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
-use Doctrine\Bundle\DoctrineBundle\DataCollector\DoctrineDataCollector;
-use Doctrine\ORM\EntityManagerInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
-use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
-use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\MediaFieldsKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
-use Setono\SyliusCMSPlugin\Tests\Support\ProfiledQueries;
 use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
+use Setono\SyliusCMSPlugin\Tests\Support\ProfiledQueries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\DomCrawler\Crawler;
-use Symfony\Component\HttpKernel\Profiler\Profile;
 
 /**
  * A block type's Media and Media list fields store media item UUIDs, which load in one pass before the tree renders,

@@ -10,7 +10,6 @@ use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprintInterface;
-use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface;

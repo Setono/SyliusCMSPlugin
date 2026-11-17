@@ -13,13 +13,13 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Source\Product\ProductsInTaxonParams;
 use Setono\SyliusCMSPlugin\Source\Product\ProductsInTaxonSource;
 use Setono\SyliusCMSPlugin\Source\Product\TaxonFilter;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\RecordsQueries;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\ChannelPricing;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductTaxon;
 use Sylius\Component\Core\Model\Taxon;
-use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * "In taxon": the products in a taxon, or in it or below it, in the order editors pick, each order ending in the ID so

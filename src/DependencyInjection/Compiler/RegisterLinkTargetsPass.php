@@ -66,5 +66,4 @@ final class RegisterLinkTargetsPass implements CompilerPassInterface
             }
         }
     }
-
 }

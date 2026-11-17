@@ -12,11 +12,11 @@ use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Source\Taxon\TaxonChildrenParams;
 use Setono\SyliusCMSPlugin\Source\Taxon\TaxonChildrenSource;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\RecordsQueries;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\Taxon;
 use Sylius\Component\Core\Model\TaxonInterface;
-use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * "Children of a taxon": the visible taxons right below a taxon, by their position, then by ID. See "Taxon sources" in

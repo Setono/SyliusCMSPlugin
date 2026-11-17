@@ -14,13 +14,13 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Source\Product\BestsellersParams;
 use Setono\SyliusCMSPlugin\Source\Product\BestsellersSource;
 use Setono\SyliusCMSPlugin\Source\Product\TaxonFilter;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\RecordsQueries;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\Product;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductTaxon;
 use Sylius\Component\Core\Model\Taxon;
-use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * "Bestsellers": the visible products with a score in the channel, highest first, then by ID, optionally only those in a

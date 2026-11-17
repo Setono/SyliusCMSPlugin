@@ -17,11 +17,10 @@ use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Value\Link;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
-use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 final class UnresolvedLinkNoticesTest extends TestCase
 {

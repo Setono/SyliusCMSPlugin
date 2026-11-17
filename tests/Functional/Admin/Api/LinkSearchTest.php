@@ -8,7 +8,6 @@ use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Sylius\Resource\Factory\FactoryInterface;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
 /**
  * What the link control's search picker finds: products, taxons and entries, and what each link target finds under

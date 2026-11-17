@@ -16,11 +16,10 @@ use Setono\SyliusCMSPlugin\Link\Target\TaxonLinkTarget;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
-use Sylius\Component\Core\Model\ChannelInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Sylius\Component\Core\Model\Taxon;
 use Sylius\Component\Taxonomy\Model\TaxonTranslation;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 final class TaxonLinkTargetTest extends TestCase
 {

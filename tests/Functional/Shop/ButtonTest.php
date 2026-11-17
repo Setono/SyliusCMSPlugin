@@ -4,19 +4,13 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
-use Doctrine\Bundle\DoctrineBundle\DataCollector\DoctrineDataCollector;
-use Doctrine\ORM\EntityManagerInterface;
-use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
-use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\ProfiledQueries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
-use Symfony\Component\HttpKernel\Profiler\Profile;
 
 /**
  * The Button block: a Link field shown as a button, labelled with the link's label or the name of what it leads to.

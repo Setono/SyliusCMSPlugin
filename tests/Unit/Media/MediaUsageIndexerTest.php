@@ -32,9 +32,9 @@ use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
-use Setono\SyliusCMSPlugin\Tree\TreeValues;
 
 final class MediaUsageIndexerTest extends TestCase
 {

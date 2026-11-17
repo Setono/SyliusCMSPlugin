@@ -8,9 +8,9 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Psr\Clock\ClockInterface;
+use Setono\SyliusCMSPlugin\Time\Duration;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\OrderPaymentStates;
-use Setono\SyliusCMSPlugin\Time\Duration;
 
 /**
  * The default bestsellers calculator: a product's score in a channel is how many of the channel's paid orders

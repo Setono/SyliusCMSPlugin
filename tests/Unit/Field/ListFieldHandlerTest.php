@@ -14,22 +14,20 @@ use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Field\Taxons;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
-use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
+use Setono\SyliusCMSPlugin\Tests\Support\Violations;
 use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\WithCatalog;
+use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\Clearance;
+use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
+use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\ProductTaxons;
 use Setono\SyliusCMSPlugin\Value\ItemList;
-use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\Product;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\Taxon;
 use Sylius\Component\Core\Model\TaxonInterface;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
-use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
-use Setono\SyliusCMSPlugin\Tests\Support\Violations;
-use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\ProductTaxons;
-use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
-use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\Clearance;
 
 /**
  * The Products and Taxons field types: hand-picked lists of codes, hydrated from the references loaded before rendering,

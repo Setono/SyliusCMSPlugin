@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\UI;
 
 use Playwright\Assertions\Expect;
-use Playwright\Locator\LocatorInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Orders;
 use Sylius\Component\Core\OrderPaymentStates;

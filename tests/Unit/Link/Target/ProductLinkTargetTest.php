@@ -16,11 +16,10 @@ use Setono\SyliusCMSPlugin\Link\Target\ProductLinkTarget;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
-use Sylius\Component\Core\Model\ChannelInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Sylius\Component\Core\Model\Product;
 use Sylius\Component\Core\Model\ProductTranslation;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 final class ProductLinkTargetTest extends TestCase
 {

@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Repository;
 
 use Doctrine\ORM\QueryBuilder;
+use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
-use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
 
 /**
  * The entry resource's repository

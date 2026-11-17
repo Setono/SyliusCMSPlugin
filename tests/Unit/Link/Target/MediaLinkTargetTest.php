@@ -20,7 +20,6 @@ use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
-use Sylius\Component\Core\Model\Channel;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 final class MediaLinkTargetTest extends TestCase

@@ -6,7 +6,6 @@ namespace Setono\SyliusCMSPlugin\Tests\UI;
 
 use Playwright\Assertions\Expect;
 use Playwright\Frame\FrameLocatorInterface;
-use Playwright\Locator\LocatorInterface;
 use Playwright\Page\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface as CMSPageInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\Html;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Setono\SyliusCMSPlugin\Tests\Support\Html;
 
 /**
  * Rich text, and the Accordion with its items. See "Rich text" and "Accordion and Accordion item" in docs/spec/blocks.md

@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\Html;
 use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
-use Setono\SyliusCMSPlugin\Tests\Support\Html;
 
 /**
  * The Banner block: an image with an optional mobile image for narrow screens, in a <picture>, and a heading, text and

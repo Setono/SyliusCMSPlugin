@@ -25,8 +25,8 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
-use Symfony\Component\Translation\TranslatableMessage;
 use Setono\SyliusCMSPlugin\Tree\TreeValues;
+use Symfony\Component\Translation\TranslatableMessage;
 
 /**
  * A list filled by a source the code no longer has yields nothing, and the admin flags it. See "The contract" in

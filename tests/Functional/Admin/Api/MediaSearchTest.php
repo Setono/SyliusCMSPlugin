@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-
 /**
  * What the link control's search picker finds for the media target: the documents and videos of the media library,
  * which have permanent URLs. See "JSON endpoints" in docs/spec/builder.md and "Link targets" in docs/spec/extending.md

@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional;
 
-use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Problem\Kind\UrlTakenByRoute;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
-use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface;
 use Setono\SyliusCMSPlugin\Tests\Application\Kernel;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\AddedRouteKernel;

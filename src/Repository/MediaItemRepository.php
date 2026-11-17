@@ -7,12 +7,12 @@ namespace Setono\SyliusCMSPlugin\Repository;
 use Doctrine\ORM\QueryBuilder;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
+use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
 use Setono\SyliusCMSPlugin\Media\MediaFilter;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Model\MediaUsageInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
-use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
 
 /**
  * The media item resource's repository. Its queries work on MySQL and PostgreSQL alike

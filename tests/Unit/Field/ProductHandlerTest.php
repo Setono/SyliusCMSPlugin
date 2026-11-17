@@ -13,14 +13,12 @@ use Setono\SyliusCMSPlugin\Field\ProductHandler;
 use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
-use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\WithCatalog;
-use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\Product as ProductModel;
 use Sylius\Component\Core\Model\Taxon as TaxonModel;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
-use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * The Product field type: a product's code, hydrated as the product while the shopper may see it

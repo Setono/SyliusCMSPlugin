@@ -14,16 +14,13 @@ use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Link\ResolvedLink;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
-use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Setono\SyliusCMSPlugin\Tests\Support\Violations;
 use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\WithLinks;
 use Setono\SyliusCMSPlugin\Tests\Unit\Link\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Value\Link as LinkValue;
-use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
-use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
-use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
-use Setono\SyliusCMSPlugin\Tests\Support\Violations;
 
 final class LinkHandlerTest extends TestCase
 {

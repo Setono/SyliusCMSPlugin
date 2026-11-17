@@ -15,17 +15,16 @@ use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\ImageFixture\FakeImageProvider;
-use Setono\SyliusCMSPlugin\Twig\RenderContexts;
-use Setono\SyliusCMSPlugin\Twig\MediaItemArguments;
 use Setono\SyliusCMSPlugin\Twig\CMSExtension;
 use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
+use Setono\SyliusCMSPlugin\Twig\MediaItemArguments;
 use Setono\SyliusCMSPlugin\Twig\MediaRuntime;
+use Setono\SyliusCMSPlugin\Twig\RenderContexts;
 use Setono\SyliusCMSPlugin\Twig\VideoRuntime;
-use Sylius\Component\Core\Model\Channel;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\Test\IntegrationTestCase;
-use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * Runs the .test files in VideoFixture: cms_video() and cms_media_url(). Their --DATA-- sections build the media items

@@ -16,13 +16,11 @@ use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
-use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\WithMedia;
 use Setono\SyliusCMSPlugin\Value\ItemList;
-use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
-use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 final class MediaListHandlerTest extends TestCase
 {

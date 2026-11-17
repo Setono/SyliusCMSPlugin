@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\AnalyticsBestsellersKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Bestsellers;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Orders;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\ProductInterface;
@@ -19,7 +20,6 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
-use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * A project with analytics data aliases BestsellersCalculatorInterface to its own calculator, and the command, the table

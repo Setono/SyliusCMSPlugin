@@ -39,11 +39,11 @@ use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use Setono\SyliusCMSPlugin\Tree\TreeValues;
 
 final class BlockViewBuilderTest extends TestCase
 {

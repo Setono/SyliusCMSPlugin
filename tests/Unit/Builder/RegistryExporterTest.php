@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Block\Column;
 use Setono\SyliusCMSPlugin\Block\Columns;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Builder\RegistryExporter;
+use Setono\SyliusCMSPlugin\Builder\UiStrings;
 use Setono\SyliusCMSPlugin\Condition\ConditionKindInterface;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\DateTimeHandler;
@@ -18,6 +19,7 @@ use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TaxonHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
+use Setono\SyliusCMSPlugin\Media\MediaLimits;
 use Setono\SyliusCMSPlugin\Media\MediaTypes;
 use Setono\SyliusCMSPlugin\Media\UploadLimit;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -44,8 +46,6 @@ use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Component\Translation\TranslatorBagInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use Setono\SyliusCMSPlugin\Media\MediaLimits;
-use Setono\SyliusCMSPlugin\Builder\UiStrings;
 
 final class RegistryExporterTest extends TestCase
 {

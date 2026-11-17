@@ -11,13 +11,10 @@ use Setono\SyliusCMSPlugin\Field\HydrationContext;
 use Setono\SyliusCMSPlugin\Field\Number;
 use Setono\SyliusCMSPlugin\Field\NumberHandler;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
-use Setono\SyliusCMSPlugin\Rendering\RenderContext;
-use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\WithNumber;
-use Sylius\Component\Core\Model\ChannelInterface;
-use Symfony\Component\Validator\Context\ExecutionContextInterface;
-use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Support\Violations;
+use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\WithNumber;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 final class NumberHandlerTest extends TestCase
 {

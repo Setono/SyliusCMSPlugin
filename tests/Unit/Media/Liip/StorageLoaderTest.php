@@ -7,9 +7,9 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Media\Liip;
 use Liip\ImagineBundle\Exception\Binary\Loader\NotLoadableException;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Media\Liip\StorageLoader;
-use Symfony\Component\Mime\MimeTypes;
 use Setono\SyliusCMSPlugin\Tests\Support\Images;
 use Setono\SyliusCMSPlugin\Tests\Support\StorageDirectory;
+use Symfony\Component\Mime\MimeTypes;
 
 final class StorageLoaderTest extends TestCase
 {

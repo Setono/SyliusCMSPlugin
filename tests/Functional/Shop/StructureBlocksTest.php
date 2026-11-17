@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\Html;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Setono\SyliusCMSPlugin\Tests\Support\Html;
 
 final class StructureBlocksTest extends WebTestCase
 {

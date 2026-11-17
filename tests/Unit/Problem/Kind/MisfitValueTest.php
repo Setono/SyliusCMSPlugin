@@ -34,10 +34,10 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Testimonial;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Component\Translation\Translator;
-use Setono\SyliusCMSPlugin\Tree\TreeValues;
 
 final class MisfitValueTest extends TestCase
 {

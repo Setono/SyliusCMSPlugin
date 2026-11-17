@@ -6,9 +6,9 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Media;
 
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Media\MimeTypeDetector;
-use Symfony\Component\Mime\MimeTypes;
 use Setono\SyliusCMSPlugin\Tests\Support\Images;
 use Setono\SyliusCMSPlugin\Tests\Support\TemporaryDirectory;
+use Symfony\Component\Mime\MimeTypes;
 
 /**
  * Nothing is trusted from a file's name. See "Uploading" in docs/spec/media.md

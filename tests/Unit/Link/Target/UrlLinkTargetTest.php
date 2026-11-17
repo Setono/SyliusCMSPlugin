@@ -9,7 +9,6 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Link\Target\UrlLinkTarget;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
-use Sylius\Component\Core\Model\ChannelInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 final class UrlLinkTargetTest extends TestCase

@@ -11,9 +11,8 @@ use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
-use Sylius\Component\Core\Model\ChannelInterface;
-use Symfony\Component\DependencyInjection\ServiceLocator;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Symfony\Component\DependencyInjection\ServiceLocator;
 
 final class ReferenceLoaderTest extends TestCase
 {
