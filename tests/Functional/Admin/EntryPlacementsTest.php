@@ -165,8 +165,10 @@ final class EntryPlacementsTest extends WebTestCase
         self::place($snippet, 'shop.footer');
         self::place($snippet, 'shop.top');
         $crawler = $client->request('GET', self::overview($snippet));
+        $remove = $crawler->filter('[data-placement][data-slot="shop.top"] form[data-remove]');
+        self::assertSame('Remove', trim($remove->filter('button')->text()));
 
-        $client->submit($crawler->filter('[data-placement][data-slot="shop.top"] form[data-remove]')->form());
+        $client->submit($remove->form());
 
         self::assertResponseRedirects(self::overview($snippet));
         $crawler = $client->followRedirect();

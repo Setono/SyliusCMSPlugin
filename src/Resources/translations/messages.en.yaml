@@ -332,6 +332,7 @@ setono_sylius_cms:
             never_published: Shoppers don't see it until it's published.
             published: Shoppers see what was published, and there are no changes since.
             unpublished_changes: The draft has changes that shoppers don't see yet. Publish them, or discard them to go back to what's published.
+        remove: Remove
         restore: Restore
         revisions: Revisions
         revisions_help: Every publish stores a revision. Preview one as it was, or restore it into the draft to review and publish it.
