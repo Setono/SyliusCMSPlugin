@@ -278,6 +278,39 @@ describe('the bridge', () => {
         });
     });
 
+    describe('with links that do not resolve in the preview', () => {
+        const notice = '<div data-cms-unresolved-link="link" role="note">Link isn\'t shown here</div>';
+
+        it('should tell the builder which blocks hold a link that does not resolve once it has set it up', () => {
+            document.querySelector('main')?.insertAdjacentHTML('beforeend', marked('e', `<a class="cms-button" href="/">Shop</a>`, 'button') + marked('f', notice, 'button'));
+            const nested = document.querySelector('.cms-section');
+            nested?.insertAdjacentHTML('beforeend', marked('g', notice, 'button'));
+            posted = [];
+
+            bridge.receive({ type: 'init', strings });
+
+            expect(posted).toEqual([{ type: 'unresolved_links', keys: ['g', 'f'] }]);
+        });
+
+        it('should tell the builder again when a patch, an insert or a removal changes them, and not otherwise', () => {
+            bridge.receive({ type: 'init', strings });
+            posted = [];
+
+            bridge.receive({ type: 'patch', blocks: [{ key: 'a', html: marked('a', notice, 'button') }] });
+            bridge.receive({ type: 'patch', blocks: [{ key: 'a', html: marked('a', notice, 'button') }] });
+            bridge.receive({ type: 'insert', block: { key: 'e', html: marked('e', notice, 'button') }, previous: ['d'], next: [] });
+            bridge.receive({ type: 'remove', key: 'a' });
+            bridge.receive({ type: 'patch', blocks: [{ key: 'e', html: marked('e', '<a class="cms-button" href="/">Shop</a>', 'button') }] });
+
+            expect(posted).toEqual([
+                { type: 'unresolved_links', keys: ['a'] },
+                { type: 'unresolved_links', keys: ['a', 'e'] },
+                { type: 'unresolved_links', keys: ['e'] },
+                { type: 'unresolved_links', keys: [] },
+            ]);
+        });
+    });
+
     it('should leave the page alone until the builder has set it up', () => {
         posted = [];
         const click = new MouseEvent('click', { bubbles: true, cancelable: true });

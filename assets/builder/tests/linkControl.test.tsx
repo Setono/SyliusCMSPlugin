@@ -71,14 +71,15 @@ function Field({ schema, initial, locale, onChange }: { schema: FieldSchema; ini
     );
 }
 
-function renderField({ initial, schema = linkSchema, locale = 'en_US', search = fakeSearch() }: { initial?: JsonValue; schema?: FieldSchema; locale?: string; search?: SearchApi | null } = {}) {
+function renderField({ initial, schema = linkSchema, locale = 'en_US', searched = true }: { initial?: JsonValue; schema?: FieldSchema; locale?: string; searched?: boolean } = {}) {
     const onChange = vi.fn();
+    const search = fakeSearch();
     const field = (
         <LinkTargetsProvider value={linkTargets}>
             <Field schema={schema} initial={initial} locale={locale} onChange={onChange} />
         </LinkTargetsProvider>
     );
-    render(<TranslatorProvider value={createTranslator(strings)}>{search === null ? field : <SearchProvider api={search}>{field}</SearchProvider>}</TranslatorProvider>);
+    render(<TranslatorProvider value={createTranslator(strings)}>{searched ? <SearchProvider api={search}>{field}</SearchProvider> : field}</TranslatorProvider>);
 
     return { onChange, search };
 }
@@ -186,7 +187,7 @@ describe('a link field', () => {
     });
 
     it('should not let anything be chosen without a search', () => {
-        renderField({ initial: { target: 'product', ref: '', anchor: null, label: {} }, search: null });
+        renderField({ initial: { target: 'product', ref: '', anchor: null, label: {} }, searched: false });
 
         expect(screen.getByRole('button', { name: 'Choose…' })).toBeDisabled();
     });

@@ -17,12 +17,15 @@ export interface PreviewState {
     shownTo: string;
     /** When the preview shows the page: a UTC date and time, or null for now. */
     date: string | null;
+    /** The keys of the blocks with a link that doesn't resolve in the page the preview shows, which the tree flags. */
+    unresolvedLinks: string[];
     setChannel(code: string): void;
     /** Follows the entry's channels as they change, keeping the channel shown while the entry is still in it. */
     setChannels(channels: Channel[]): void;
     setWidth(width: PreviewWidth): void;
     setShownTo(shownTo: string): void;
     setDate(date: string | null): void;
+    setUnresolvedLinks(keys: string[]): void;
 }
 
 export type PreviewStore = StoreApi<PreviewState>;
@@ -35,6 +38,7 @@ export function createPreviewStore(channels: Channel[], start: ShownToAndDate = 
         width: 'desktop',
         shownTo: start.shownTo,
         date: start.date,
+        unresolvedLinks: [],
 
         setChannel(channel) {
             set({ channel });
@@ -57,6 +61,10 @@ export function createPreviewStore(channels: Channel[], start: ShownToAndDate = 
 
         setDate(date) {
             set({ date });
+        },
+
+        setUnresolvedLinks(unresolvedLinks) {
+            set({ unresolvedLinks });
         },
     }));
 }

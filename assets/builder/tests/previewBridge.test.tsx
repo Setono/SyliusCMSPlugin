@@ -158,6 +158,31 @@ describe('the bridge in the preview', () => {
         expect(screen.getByLabelText('Text')).toHaveValue('Goodbye');
     });
 
+    it('should flag in the tree the blocks the bridge says have a link that does not resolve in the page, until it says otherwise', async () => {
+        await openWithBridge(fakeApi());
+        const flag = { name: "A link here isn't shown in the preview's channel and locale" };
+
+        fromBridge({ type: 'unresolved_links', keys: ['b'] });
+
+        expect(within(treeRow('Goodbye').parentElement as HTMLElement).getByRole('img', flag)).toBeInTheDocument();
+        expect(within(treeRow('Welcome').parentElement as HTMLElement).queryByRole('img', flag)).not.toBeInTheDocument();
+
+        fromBridge({ type: 'unresolved_links', keys: [] });
+
+        expect(within(treeRow('Goodbye').parentElement as HTMLElement).queryByRole('img', flag)).not.toBeInTheDocument();
+    });
+
+    it('should drop the flags of links that do not resolve when the preview loads another page', async () => {
+        const api = fakeApi();
+        await openWithBridge(api);
+        fromBridge({ type: 'unresolved_links', keys: ['a'] });
+
+        fireEvent.change(screen.getByRole('combobox', { name: 'Shown to' }), { target: { value: '@no_group' } });
+
+        await waitFor(() => expect(api.createPreviewUrl).toHaveBeenCalledTimes(2));
+        expect(within(treeRow('Welcome').parentElement as HTMLElement).queryByRole('img', { name: "A link here isn't shown in the preview's channel and locale" })).not.toBeInTheDocument();
+    });
+
     it('should outline in the preview the block selected in the tree', async () => {
         const { sent } = await openWithBridge(fakeApi());
 

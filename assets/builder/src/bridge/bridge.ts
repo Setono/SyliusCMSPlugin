@@ -5,7 +5,7 @@
  */
 import type { Editor } from '@tiptap/core';
 import { caretAt, fieldAt, startTyping, type Caret, type TypingInPlace } from './inPlace';
-import { blockContaining, blockElements, blockHolds, blockNodes, findBlock, rootElement, type BlockRange, type FieldRange } from './markers';
+import { blockContaining, blockElements, blockHolds, blockNodes, blocksWithUnresolvedLinks, findBlock, rootElement, type BlockRange, type FieldRange } from './markers';
 import { morphBlock, parseHtml } from './morph';
 import { leavesOn, shortcutOf } from '../shortcuts';
 import type { BridgeStrings, FromBridge, RenderedBlock, ToBridge } from './protocol';
@@ -64,11 +64,22 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
     let typing: TypingInPlace | null = null;
     // The patches of the block being typed in, held back until the typing ends, so they don't move the caret
     const held = new Map<string, string>();
+    // The blocks with a link that doesn't resolve, as last told to the builder
+    let unresolvedLinks: string | null = null;
 
     post({ type: 'ready' });
 
     const refresh = (): void => {
         controls?.draw(selected === null ? null : findBlock(document, selected), hovered === null || hovered === selected ? null : findBlock(document, hovered), !readOnly);
+    };
+
+    // Tells the builder which blocks have a link that doesn't resolve, when that changed, so its tree flags them
+    const reportUnresolvedLinks = (): void => {
+        const keys = blocksWithUnresolvedLinks(document);
+        if (strings !== null && keys.join(' ') !== unresolvedLinks) {
+            unresolvedLinks = keys.join(' ');
+            post({ type: 'unresolved_links', keys });
+        }
     };
 
     const typeInPlace = (field: FieldRange, caret: Caret | null, at: { x: number; y: number }): void => {
@@ -88,6 +99,7 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
                 held.clear();
                 patches.forEach(([key, html]) => patch({ key, html }));
                 refresh();
+                reportUnresolvedLinks();
             },
         });
         typing = started;
@@ -249,6 +261,7 @@ export function createBridge(document: Document, post: (message: FromBridge) => 
             }
 
             refresh();
+            reportUnresolvedLinks();
         },
 
         dispose() {

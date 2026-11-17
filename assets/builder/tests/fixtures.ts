@@ -294,6 +294,7 @@ export const strings: Record<string, string> = {
     'setono_sylius_cms.builder.deleted': 'deleted',
     'setono_sylius_cms.builder.unsupported_field_type': "This field type isn't supported yet",
     'setono_sylius_cms.builder.has_errors': 'Has errors',
+    'setono_sylius_cms.builder.unresolved_link': "A link here isn't shown in the preview's channel and locale",
     'setono_sylius_cms.builder.unknown_block_type': 'Unknown block type: %type%',
     'setono_sylius_cms.builder.unknown_block_type_help': "The code no longer has this block type. The block is kept as it is, but the shop doesn't show it.",
     'setono_sylius_cms.builder.preview': 'Preview',

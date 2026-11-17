@@ -10,7 +10,7 @@ import { blockHasErrors } from '../validation';
 import { readFieldValue } from '../values';
 import { AddBlockButton } from './BlockPicker';
 import styles from './BlockTreePane.module.css';
-import { AlertIcon, EyeSlashIcon, GripIcon, PlusIcon, TrashIcon } from './icons';
+import { AlertIcon, EyeSlashIcon, GripIcon, LinkOffIcon, PlusIcon, TrashIcon } from './icons';
 
 /** Where the dragged block would land, and whether the nesting rules let it. */
 interface DropTarget {
@@ -162,6 +162,7 @@ function BlockRow({ block, hidden }: { block: StoredBlock; hidden: boolean }) {
     const blockType = useBuilderState((state) => state.rules.blockTypes.get(block.type));
     const locale = useBuilderState((state) => state.locale);
     const invalid = useValidationState((state) => blockHasErrors(state.errors, block.key));
+    const unresolvedLink = usePreviewState((state) => state.unresolvedLinks.includes(block.key));
     const label = blockLabel(block, blockType, t);
     const hint = blockHint(block, blockType, locale);
     const holdsBlocks = (blockType?.children.length ?? 0) > 0;
@@ -242,6 +243,7 @@ function BlockRow({ block, hidden }: { block: StoredBlock; hidden: boolean }) {
                 {hint !== '' && <span className={styles.hint}>{hint}</span>}
             </button>
             {hidden && <HiddenFlag />}
+            {unresolvedLink && <UnresolvedLinkFlag />}
             {invalid && <InvalidFlag />}
             {holdsBlocks && !locked && (
                 <AddBlockButton parent={block.key} className={styles.action} label={t('setono_sylius_cms.builder.add_block_inside', { '%block%': label })}>
@@ -295,6 +297,21 @@ function HiddenFlag() {
     return (
         <span role="img" className={styles.hidden} aria-label={label} title={label}>
             <EyeSlashIcon />
+        </span>
+    );
+}
+
+/**
+ * Flags a row whose block has a link that doesn't resolve in the preview's channel and locale, such as to an entry that
+ * isn't published or translated there, so shoppers don't see it. The preview says why.
+ */
+function UnresolvedLinkFlag() {
+    const t = useTranslator();
+    const label = t('setono_sylius_cms.builder.unresolved_link');
+
+    return (
+        <span role="img" className={styles.unresolvedLink} aria-label={label} title={label}>
+            <LinkOffIcon />
         </span>
     );
 }

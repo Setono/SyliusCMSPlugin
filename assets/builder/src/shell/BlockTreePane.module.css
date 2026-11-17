@@ -133,6 +133,14 @@
     color: var(--builder-color-danger);
 }
 
+.unresolvedLink {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: var(--builder-space-5);
+    color: var(--builder-color-warning);
+}
+
 .unknown .label {
     color: var(--builder-color-text-muted);
     font-style: italic;
