@@ -27,5 +27,22 @@
         <service id="Setono\SyliusCMSPlugin\Condition\Kind\CustomerGroupKind" class="Setono\SyliusCMSPlugin\Condition\Kind\CustomerGroupKind">
             <tag name="setono_sylius_cms.condition_kind"/>
         </service>
+
+        <!-- The kinds that read the host-page context, which page scopes take too -->
+        <service id="Setono\SyliusCMSPlugin\Condition\Kind\ProductKind" class="Setono\SyliusCMSPlugin\Condition\Kind\ProductKind">
+            <tag name="setono_sylius_cms.condition_kind"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Condition\Kind\ProductInTaxonKind" class="Setono\SyliusCMSPlugin\Condition\Kind\ProductInTaxonKind">
+            <tag name="setono_sylius_cms.condition_kind"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Condition\Kind\TaxonKind" class="Setono\SyliusCMSPlugin\Condition\Kind\TaxonKind">
+            <tag name="setono_sylius_cms.condition_kind"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Condition\Kind\EntryKind" class="Setono\SyliusCMSPlugin\Condition\Kind\EntryKind">
+            <tag name="setono_sylius_cms.condition_kind"/>
+        </service>
     </services>
 </container>

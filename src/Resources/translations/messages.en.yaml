@@ -58,7 +58,11 @@ setono_sylius_cms:
         channel: Channel
         customer_group: Customer group
         date_window: Date window
+        entry: Entry
         locale: Locale
+        product: Product
+        product_in_taxon: Product in taxon
+        taxon: Taxon
     content_type:
         page: Page
         snippet: Snippet
@@ -106,6 +110,8 @@ setono_sylius_cms:
         downloads:
             documents: Documents
             heading: Heading
+        entry_condition:
+            entries: Entries
         embed_code:
             code: Code
             code_help: 'HTML, scripts included, such as a review widget or a newsletter form. It runs in the shop as it is, but not in the builder''s preview.'
@@ -126,6 +132,11 @@ setono_sylius_cms:
             heading: Heading
         locale_condition:
             locales: Locales
+        product_condition:
+            products: Products
+        product_in_taxon_condition:
+            include_children: Include the taxons below them
+            taxons: Taxons
         products:
             display: Display
             products: Products
@@ -141,6 +152,8 @@ setono_sylius_cms:
             show_title: Show title
         taxon_children_source:
             taxon: Taxon
+        taxon_condition:
+            taxons: Taxons
         taxons:
             taxons: Taxons
         video:
