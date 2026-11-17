@@ -164,6 +164,20 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.leave_unsaved_description'
     | 'setono_sylius_cms.builder.leave_anyway'
     | 'setono_sylius_cms.builder.stay'
+    | 'setono_sylius_cms.builder.unresolved_link'
+    // The Link field's control
+    | 'setono_sylius_cms.builder.link.anchor'
+    | 'setono_sylius_cms.builder.link.change'
+    | 'setono_sylius_cms.builder.link.choose'
+    | 'setono_sylius_cms.builder.link.label'
+    | 'setono_sylius_cms.builder.link.label_help'
+    | 'setono_sylius_cms.builder.link.nothing_picked'
+    | 'setono_sylius_cms.builder.link.search'
+    | 'setono_sylius_cms.builder.link.url'
+    // Pickers' search
+    | 'setono_sylius_cms.builder.search.failed'
+    | 'setono_sylius_cms.builder.search.no_results'
+    | 'setono_sylius_cms.builder.search.searching'
     // The media library, on its own screen and as the media picker
     | 'setono_sylius_cms.builder.media.add'
     | 'setono_sylius_cms.builder.media.all_media'

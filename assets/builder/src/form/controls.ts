@@ -1,6 +1,7 @@
 import { ChoiceControl } from './ChoiceControl';
 import { DateControl } from './DateControl';
 import { DateTimeControl } from './DateTimeControl';
+import { LinkControl } from './LinkControl';
 import { MediaControl } from './MediaControl';
 import { MediaListControl } from './MediaListControl';
 import { RichTextControl } from './RichTextControl';
@@ -20,6 +21,7 @@ export const fieldControls: Readonly<Record<string, FieldControl>> = {
     date_time: DateTimeControl,
     media: MediaControl,
     media_list: MediaListControl,
+    link: LinkControl,
 };
 
 export function controlFor(fieldType: string): FieldControl | undefined {

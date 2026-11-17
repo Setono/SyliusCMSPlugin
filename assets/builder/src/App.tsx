@@ -5,12 +5,16 @@ import { createAutosave, type Autosave } from './autosave';
 import type { BuilderConfig } from './config';
 import { BuilderProvider, type BuilderSession } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
+import type { LinkTargetDefinition } from './links';
+import { LinkTargetsProvider } from './linkTargets';
 import { createLeaving } from './leaving';
 import { createMediaApi, type MediaApi } from './media/api';
 import type { MediaLimits } from './media/config';
 import { MediaPickerProvider } from './media/picker';
 import { createPresence, type Presence } from './presence';
 import { createPreviewStore } from './preview';
+import { createSearchApi, type SearchApi } from './search/api';
+import { SearchProvider } from './search/context';
 import { createCancelSchedule, createDiscard, createPublish, createReload, createSchedule } from './publishing';
 import { createSettingsStore } from './settings';
 import { createSlugFollower, type SlugFollower } from './slugs';
@@ -31,20 +35,26 @@ export interface AppProps {
     navigate?: (url: string) => void;
     /** The media library's endpoints, which the media picker uses, made from the config's when left out. */
     mediaApi?: MediaApi;
+    /** The search endpoint pickers search with, made from the config's when left out. */
+    searchApi?: SearchApi;
 }
 
 const goTo = (url: string): void => window.location.assign(url);
 
-type Phase = { name: 'loading' } | { name: 'failed' } | { name: 'ready'; session: BuilderSession; translate: Translate; media: MediaLimits | null };
+type Phase = { name: 'loading' } | { name: 'failed' } | { name: 'ready'; session: BuilderSession; translate: Translate; media: MediaLimits | null; linkTargets: LinkTargetDefinition[] };
 
 /** Loads the registry and the entry, then opens the entry in the builder. */
-export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, mediaApi }: AppProps) {
+export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, mediaApi, searchApi }: AppProps) {
     const [phase, setPhase] = useState<Phase>({ name: 'loading' });
     const initialTranslate = useMemo(() => createTranslator(config.strings ?? {}), [config]);
     const urlsEndpoints = useMemo(() => (urlsApi === undefined ? createUrlsApi(config) : urlsApi), [config, urlsApi]);
     const mediaEndpoints = useMemo(
         () => mediaApi ?? (config.media === undefined ? null : createMediaApi({ csrfToken: config.csrfToken, endpoints: config.media.endpoints })),
         [config, mediaApi],
+    );
+    const searchEndpoint = useMemo(
+        () => searchApi ?? (config.endpoints.search === undefined ? null : createSearchApi(config.endpoints.search)),
+        [config, searchApi],
     );
 
     useEffect(() => {
@@ -125,6 +135,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                     name: 'ready',
                     translate: createTranslator({ ...config.strings, ...registry.strings }),
                     media: registry.media ?? null,
+                    linkTargets: registry.linkTargets ?? [],
                     session: {
                         store,
                         validation: validationStore,
@@ -192,15 +203,22 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
 
     // Media fields pick from the media library, which needs its endpoints from the config and the upload limit from the registry
     const media = config.media;
+    const shell = (
+        <LinkTargetsProvider value={phase.linkTargets}>
+            <Shell />
+        </LinkTargetsProvider>
+    );
+    // Link fields pick what they link to with the search
+    const searched = searchEndpoint === null ? shell : <SearchProvider api={searchEndpoint}>{shell}</SearchProvider>;
 
     return (
         <TranslatorProvider value={phase.translate}>
             <BuilderProvider value={phase.session}>
                 {media === undefined || mediaEndpoints === null || phase.media === null ? (
-                    <Shell />
+                    searched
                 ) : (
                     <MediaPickerProvider api={mediaEndpoints} config={{ locales: media.locales, media: phase.media }}>
-                        <Shell />
+                        {searched}
                     </MediaPickerProvider>
                 )}
             </BuilderProvider>

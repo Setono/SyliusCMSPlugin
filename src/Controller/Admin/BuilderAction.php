@@ -85,6 +85,8 @@ final readonly class BuilderAction
                     'presence' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_presence', ['uuid' => $entry->getUuid()]),
                     'slug' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_slug'),
                     'urls' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_entry_urls', ['uuid' => $entry->getUuid()]),
+                    // What pickers search, with __kind__ for the kind, such as product or a link target's code
+                    'search' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_search', ['kind' => '__kind__']),
                 ],
                 'channels' => array_map(static fn (array $channel): array => [
                     'code' => $channel['channel']->getCode(),

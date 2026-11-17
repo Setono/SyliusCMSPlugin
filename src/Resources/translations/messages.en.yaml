@@ -226,6 +226,7 @@ setono_sylius_cms:
             never_published: Never published
             scheduled: Scheduled
             unpublished_changes: Unpublished changes
+        unresolved_link: A link here isn't shown in the preview's channel and locale
         store_homepage: The store's own homepage
         status_label:
             date_window: 'Shows %from%–%until%'
@@ -341,6 +342,16 @@ setono_sylius_cms:
         leave_anyway: Leave anyway
         leave_unsaved: Your changes aren't saved
         leave_unsaved_description: '%reason%. If you leave now, they''re lost.'
+        # The Link field's control. See "Links" in docs/spec/content-model.md
+        link:
+            anchor: Anchor
+            change: Change…
+            choose: Choose…
+            label: Label
+            label_help: In this language. Leave it empty to show the name of what it links to.
+            nothing_picked: Nothing chosen
+            search: 'Search: %target%'
+            url: URL
         load_failed: Couldn't load the entry
         loading: Loading…
         locale: Language
@@ -474,6 +485,11 @@ setono_sylius_cms:
         scheduled_publish_failed: Scheduled publish failed
         scheduled_publish_overdue: Scheduled publish overdue
         scheduling: Scheduling…
+        # What pickers search, such as products to link to
+        search:
+            failed: The search failed. Try again.
+            no_results: Nothing found
+            searching: Searching…
         search_block_types: Search block types
         select_parent: Select parent
         settings: Settings

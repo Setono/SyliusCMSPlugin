@@ -59,6 +59,8 @@ export interface BuilderConfig {
         slug?: string;
         /** The entry's URL warnings and old URLs, which the URL & SEO tab shows. */
         urls?: string;
+        /** What pickers search, with __kind__ for the kind, such as product. Without it, nothing can be searched. */
+        search?: string;
     };
     /** The store's channels. The settings pick the entry's channels from them, and the preview picks from the entry's. */
     channels: Channel[];
