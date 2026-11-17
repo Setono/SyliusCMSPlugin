@@ -19,6 +19,11 @@ setono_sylius_cms:
         rich_text: Rich text
         spacer: Spacer
         taxons: Taxons
+    # The buttons the carousel script adds in the shop. %number% is the slide's number, which the script fills in
+    carousel:
+        next: Next slide
+        previous: Previous slide
+        slide: Slide %number%
     choice:
         carousel_per_view:
             1: '1'
