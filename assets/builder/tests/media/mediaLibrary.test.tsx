@@ -2,11 +2,19 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { describe, expect, it, vi } from 'vitest';
 import type { MediaApi } from '../../src/media/api';
 import { MediaLibraryApp } from '../../src/media/MediaLibraryApp';
-import type { MediaFilters, MediaFolder, MediaItem, MediaItemChanges, UploadAnswer } from '../../src/media/types';
+import type { MediaFilters, MediaFolder, MediaItem, MediaItemChanges, MediaUse, UploadAnswer } from '../../src/media/types';
 import { file, libraryConfig, mediaItem } from './fixtures';
 
-/** A library on the server: it lists what it has, newest first, and saves what it's sent. */
-function fakeApi(initial: MediaItem[] = [], uploaded: (files: readonly File[], copy: boolean) => UploadAnswer = () => ({ created: [], duplicates: [], refused: [] })) {
+/**
+ * A library on the server: it lists what it has, newest first, and saves what it's sent. The uses are by media item,
+ * and a delete fails with the veto when there is one.
+ */
+function fakeApi(
+    initial: MediaItem[] = [],
+    uploaded: (files: readonly File[], copy: boolean) => UploadAnswer = () => ({ created: [], duplicates: [], refused: [] }),
+    uses: Record<string, MediaUse[]> = {},
+    veto: string | null = null,
+) {
     let items = [...initial];
     let folders: MediaFolder[] = [];
 
@@ -16,6 +24,7 @@ function fakeApi(initial: MediaItem[] = [], uploaded: (files: readonly File[], c
                 (item) =>
                     (filters.folder === 'all' || (filters.folder === 'unsorted' ? item.folder === null : item.folder === filters.folder)) &&
                     (!filters.missingAlt || item.missingAlt) &&
+                    (filters.unused !== true || item.usageCount === 0) &&
                     (filters.kind === null || item.kind === filters.kind),
             );
 
@@ -46,6 +55,25 @@ function fakeApi(initial: MediaItem[] = [], uploaded: (files: readonly File[], c
             items = items.map((item) => (item.uuid === uuid ? updated : item));
 
             return updated;
+        }),
+        uses: vi.fn(async (uuid: string) => uses[uuid] ?? []),
+        replace: vi.fn(async (uuid: string, replacement: File) => {
+            if (replacement.type !== 'image/png') {
+                throw new Error(`${replacement.name} isn't an image. Only an image can replace an image.`);
+            }
+
+            const replaced = items.find((item) => item.uuid === uuid) as MediaItem;
+            const updated = { ...replaced, originalFilename: replacement.name, url: `/media/cms/${uuid}/new/${replacement.name}` };
+            items = items.map((item) => (item.uuid === uuid ? updated : item));
+
+            return updated;
+        }),
+        remove: vi.fn(async (uuid: string) => {
+            if (veto !== null) {
+                throw new Error(veto);
+            }
+
+            items = items.filter((item) => item.uuid !== uuid);
         }),
         folders: vi.fn(async () => folders),
         createFolder: vi.fn(async (name: string, parent: string | null) => {
@@ -220,5 +248,114 @@ describe('the media library', () => {
         await waitFor(() => expect(grid().queryAllByRole('listitem')).toHaveLength(0));
         expect(api.save).toHaveBeenCalledWith('dog', { folder: 'folder-1' });
         expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+    });
+
+    it('should show how many entries use each media item, and only those nothing uses when filtered', async () => {
+        const api = fakeApi([mediaItem('dog', { usageCount: 2 }), mediaItem('cat', { usageCount: 1 }), mediaItem('bird')]);
+        await openLibrary(api);
+        await waitFor(() => expect(grid().getAllByRole('listitem')).toHaveLength(3));
+
+        expect(grid().getByRole('button', { name: /dog/ })).toHaveTextContent('2 uses');
+        expect(grid().getByRole('button', { name: /cat/ })).toHaveTextContent('1 use');
+        expect(grid().getByRole('button', { name: /bird/ })).toHaveTextContent('Not used');
+
+        fireEvent.click(screen.getByRole('checkbox', { name: 'Not used' }));
+
+        await waitFor(() => expect(grid().getAllByRole('listitem')).toHaveLength(1));
+        expect(api.list).toHaveBeenLastCalledWith({ folder: 'all', search: '', kind: null, missingAlt: false, unused: true }, 1);
+        expect(grid().getByRole('button', { name: /bird/ })).toBeInTheDocument();
+    });
+
+    it('should list the entries that use the selected media item with links, and keep Delete disabled while any do', async () => {
+        const api = fakeApi([mediaItem('logo', { usageCount: 2 })], undefined, {
+            logo: [
+                { entry: 'e1', title: 'Summer sale', contentType: 'Page', url: '/admin/cms/entry/e1', draft: true, published: true },
+                { entry: 'e2', title: null, contentType: 'Blog post', url: '/admin/cms/entry/e2', draft: true, published: false },
+            ],
+        });
+        await openLibrary(api);
+        await waitFor(() => expect(grid().getAllByRole('listitem')).toHaveLength(1));
+
+        fireEvent.click(grid().getByRole('button', { name: /logo/ }));
+        const details = within(screen.getByRole('complementary', { name: 'logo' }));
+        const usedIn = within(await details.findByRole('list', { name: 'Used in' }));
+
+        expect(usedIn.getByRole('link', { name: 'Summer sale' })).toHaveAttribute('href', '/admin/cms/entry/e1');
+        expect(usedIn.getAllByRole('listitem')[0]).toHaveTextContent('Page · Published');
+        expect(usedIn.getByRole('link', { name: 'Untitled' })).toHaveAttribute('href', '/admin/cms/entry/e2');
+        expect(usedIn.getAllByRole('listitem')[1]).toHaveTextContent('Blog post · Draft');
+        expect(details.getByRole('button', { name: 'Delete' })).toBeDisabled();
+        expect(details.getByText("It can't be deleted while it's used.")).toBeInTheDocument();
+    });
+
+    it("should replace the selected media item's file after showing where it's used, and show why one is refused", async () => {
+        const api = fakeApi([mediaItem('logo', { usageCount: 1 })], undefined, {
+            logo: [{ entry: 'e1', title: 'Summer sale', contentType: 'Page', url: '/admin/cms/entry/e1', draft: true, published: true }],
+        });
+        await openLibrary(api);
+        await waitFor(() => expect(grid().getAllByRole('listitem')).toHaveLength(1));
+        fireEvent.click(grid().getByRole('button', { name: /logo/ }));
+        const details = within(screen.getByRole('complementary', { name: 'logo' }));
+        await details.findByRole('list', { name: 'Used in' });
+
+        fireEvent.click(details.getByRole('button', { name: 'Replace file' }));
+        const dialog = within(screen.getByRole('dialog', { name: 'Replace file' }));
+        expect(dialog.getByText(/takes effect at once wherever it's used/)).toBeInTheDocument();
+        expect(dialog.getByRole('link', { name: 'Summer sale' })).toHaveAttribute('href', '/admin/cms/entry/e1');
+        expect(dialog.getByRole('button', { name: 'Replace' })).toBeDisabled();
+        expect(dialog.getByLabelText('New file')).toHaveAttribute('accept', 'image/jpeg,image/png,image/svg+xml');
+
+        // One of another kind is refused
+        fireEvent.change(dialog.getByLabelText('New file'), { target: { files: [file('prices.pdf', 'application/pdf')] } });
+        fireEvent.click(dialog.getByRole('button', { name: 'Replace' }));
+        expect(await dialog.findByRole('alert')).toHaveTextContent("prices.pdf isn't an image. Only an image can replace an image.");
+
+        // One that's too big isn't sent
+        fireEvent.change(dialog.getByLabelText('New file'), { target: { files: [file('huge.png', 'image/png', 3 * 1024 * 1024)] } });
+        fireEvent.click(dialog.getByRole('button', { name: 'Replace' }));
+        await waitFor(() => expect(dialog.getByRole('alert')).toHaveTextContent('huge.png is 3 MB, over the upload limit of 2 MB.'));
+        expect(api.replace).toHaveBeenCalledTimes(1);
+
+        fireEvent.change(dialog.getByLabelText('New file'), { target: { files: [file('logo-2027.png', 'image/png')] } });
+        fireEvent.click(dialog.getByRole('button', { name: 'Replace' }));
+
+        await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+        expect(api.replace).toHaveBeenLastCalledWith('logo', expect.objectContaining({ name: 'logo-2027.png' }));
+        expect(details.getByRole('link', { name: 'logo-2027.png' })).toHaveAttribute('href', '/media/cms/logo/new/logo-2027.png');
+    });
+
+    it('should delete a media item nothing uses once the editor confirms', async () => {
+        const api = fakeApi([mediaItem('dog'), mediaItem('cat')]);
+        await openLibrary(api);
+        await waitFor(() => expect(grid().getAllByRole('listitem')).toHaveLength(2));
+        fireEvent.click(grid().getByRole('button', { name: /dog/ }));
+        const details = within(screen.getByRole('complementary', { name: 'dog' }));
+        expect(await details.findByText("It isn't used anywhere.")).toBeInTheDocument();
+
+        fireEvent.click(details.getByRole('button', { name: 'Delete' }));
+        const dialog = within(screen.getByRole('dialog', { name: 'Delete dog?' }));
+        fireEvent.click(dialog.getByRole('button', { name: 'Delete' }));
+
+        await waitFor(() => expect(grid().getAllByRole('listitem')).toHaveLength(1));
+        expect(api.remove).toHaveBeenCalledWith('dog');
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+    });
+
+    it('should keep a media item whose delete a listener vetoes, and show its message', async () => {
+        const api = fakeApi([mediaItem('logo')], undefined, {}, 'The logo stays until the rebrand');
+        await openLibrary(api);
+        await waitFor(() => expect(grid().getAllByRole('listitem')).toHaveLength(1));
+        fireEvent.click(grid().getByRole('button', { name: /logo/ }));
+        const details = within(screen.getByRole('complementary', { name: 'logo' }));
+        await details.findByText("It isn't used anywhere.");
+
+        fireEvent.click(details.getByRole('button', { name: 'Delete' }));
+        const dialog = within(screen.getByRole('dialog', { name: 'Delete logo?' }));
+        fireEvent.click(dialog.getByRole('button', { name: 'Delete' }));
+
+        expect(await dialog.findByRole('alert')).toHaveTextContent('The logo stays until the rebrand');
+        // Behind the dialog, still in the library
+        expect(grid().getAllByRole('listitem', { hidden: true })).toHaveLength(1);
     });
 });

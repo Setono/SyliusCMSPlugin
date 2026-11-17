@@ -53,7 +53,7 @@ final readonly class UploadMediaAction
             $filename = $file->getClientOriginalName();
 
             try {
-                $result = $this->uploader->upload($this->uploaded($file), $filename, $folder, $copy);
+                $result = $this->uploader->upload(ReceivedFile::of($file, $this->uploadLimit->bytes()), $filename, $folder, $copy);
             } catch (RefusedFileException $e) {
                 $answer['refused'][] = ['filename' => $filename, 'error' => $e->reason->trans($this->translator)];
 
@@ -68,20 +68,6 @@ final readonly class UploadMediaAction
         }
 
         return new JsonResponse($answer);
-    }
-
-    /**
-     * The file, when PHP received all of it
-     *
-     * @throws RefusedFileException
-     */
-    private function uploaded(UploadedFile $file): UploadedFile
-    {
-        return match ($file->getError()) {
-            \UPLOAD_ERR_OK => $file->isValid() ? $file : throw RefusedFileException::notUploaded($file->getClientOriginalName()),
-            \UPLOAD_ERR_INI_SIZE, \UPLOAD_ERR_FORM_SIZE => throw RefusedFileException::tooBig($file->getClientOriginalName(), null, $this->uploadLimit->bytes()),
-            default => throw RefusedFileException::notUploaded($file->getClientOriginalName()),
-        };
     }
 
     /**

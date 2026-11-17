@@ -24,6 +24,9 @@ trait MediaItems
     /** @var list<string> */
     private array $temporaryUploads = [];
 
+    /** @var list<string> the directories of the files fileToUpload() wrote */
+    private array $uploadDirectories = [];
+
     abstract protected static function getContainer(): ContainerInterface;
 
     /**
@@ -50,6 +53,25 @@ trait MediaItems
         }
 
         $this->temporaryUploads = [];
+
+        foreach ($this->uploadDirectories as $directory) {
+            self::removeDirectory($directory);
+        }
+
+        $this->uploadDirectories = [];
+    }
+
+    /**
+     * A file with this name on disk, as an editor picks it in the browser's file dialog in a UI test
+     */
+    protected function fileToUpload(string $filename, string $content): string
+    {
+        $directory = sys_get_temp_dir() . '/setono_sylius_cms_ui_' . bin2hex(random_bytes(4));
+        mkdir($directory);
+        file_put_contents($directory . '/' . $filename, $content);
+        $this->uploadDirectories[] = $directory;
+
+        return $directory . '/' . $filename;
     }
 
     /**

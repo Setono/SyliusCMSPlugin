@@ -205,8 +205,30 @@
     background: var(--builder-color-hover);
 }
 
+.danger {
+    min-height: var(--builder-control-height);
+    padding: var(--builder-space-1) var(--builder-space-3);
+    border: 1px solid var(--builder-color-danger);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-surface);
+    color: var(--builder-color-danger);
+    font: inherit;
+    font-weight: var(--builder-font-weight-medium);
+    cursor: pointer;
+}
+
+.danger:hover:not(:disabled) {
+    background: var(--builder-color-danger-subtle);
+}
+
+.danger:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}
+
 .primary:disabled,
-.secondary:disabled {
+.secondary:disabled,
+.danger:disabled {
     cursor: default;
     opacity: 0.6;
 }
@@ -335,6 +357,11 @@
     font-size: var(--builder-font-size-sm);
 }
 
+.usageCount {
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}
+
 /* The selected media item */
 
 .details {
@@ -420,4 +447,36 @@
 .file dd {
     margin: 0;
     overflow-wrap: anywhere;
+}
+
+/* Where it's used */
+
+.usedIn {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+}
+
+.usedIn > h3 {
+    margin: 0;
+    font-size: inherit;
+}
+
+.uses {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.uses li {
+    display: flex;
+    flex-direction: column;
+    overflow-wrap: anywhere;
+}
+
+.uses a {
+    color: var(--builder-color-accent);
 }

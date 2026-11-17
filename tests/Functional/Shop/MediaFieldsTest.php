@@ -19,6 +19,7 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpKernel\Profiler\Profile;
 
 /**
@@ -56,7 +57,7 @@ final class MediaFieldsTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame('summer', $crawler->filter('.cms-tree .app-media-names__image')->text());
-        self::assertSame(['winter', 'beach'], $crawler->filter('.cms-tree .app-media-names__gallery li')->each(static fn ($item): string => $item->text()));
+        self::assertSame(['winter', 'beach'], $crawler->filter('.cms-tree .app-media-names__gallery li')->each(static fn (Crawler $item): string => $item->text()));
         self::assertSame('2', $crawler->filter('.cms-tree .app-media-names__gallery')->attr('data-count'));
     }
 
@@ -99,7 +100,7 @@ final class MediaFieldsTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame('No image', $crawler->filter('.cms-tree .app-media-names__image')->text());
-        self::assertSame(['winter'], $crawler->filter('.cms-tree .app-media-names__gallery li')->each(static fn ($item): string => $item->text()));
+        self::assertSame(['winter'], $crawler->filter('.cms-tree .app-media-names__gallery li')->each(static fn (Crawler $item): string => $item->text()));
     }
 
     /**
@@ -126,7 +127,7 @@ final class MediaFieldsTest extends WebTestCase
                 ['broken_reference', 'error', self::BLOCK, 'Image in the Media names block refers to a media item that was deleted, so it isn\'t shown.'],
                 ['broken_reference', 'error', self::BLOCK, 'Gallery in the Media names block refers to a media item that was deleted, so it isn\'t shown.'],
             ],
-            $problems->each(static fn ($problem): array => [
+            $problems->each(static fn (Crawler $problem): array => [
                 $problem->attr('data-problem'),
                 $problem->attr('data-severity'),
                 $problem->attr('data-block'),

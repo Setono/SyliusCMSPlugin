@@ -7,12 +7,13 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
+use Setono\SyliusCMSPlugin\Repository\MediaUsageRepositoryInterface;
 use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * A media item as the media endpoints answer with it: what was read from its file, its metadata, whether an image misses
- * alt text in one or more of the store's locales, and its current file's URL. Times are in UTC
+ * alt text in one or more of the store's locales, its current file's URL and how many entries use it. Times are in UTC
  *
  * @internal
  */
@@ -26,13 +27,30 @@ final class MediaItemAnswer implements ResetInterface
     public function __construct(
         private readonly MediaUrlGeneratorInterface $urlGenerator,
         private readonly TranslationLocaleProviderInterface $translationLocaleProvider,
+        private readonly MediaUsageRepositoryInterface $usages,
     ) {
     }
 
     /**
+     * Several media items, with their usage counts read in one query
+     *
+     * @param list<MediaItemInterface> $mediaItems
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function list(array $mediaItems): array
+    {
+        $usageCounts = $this->usages->countByMediaItems(array_map(static fn (MediaItemInterface $mediaItem): string => $mediaItem->getUuid(), $mediaItems));
+
+        return array_map(fn (MediaItemInterface $mediaItem): array => $this($mediaItem, $usageCounts[$mediaItem->getUuid()] ?? 0), $mediaItems);
+    }
+
+    /**
+     * @param int|null $usageCount how many entries use it, as the usage index has it, or null to read it
+     *
      * @return array<string, mixed>
      */
-    public function __invoke(MediaItemInterface $mediaItem): array
+    public function __invoke(MediaItemInterface $mediaItem, ?int $usageCount = null): array
     {
         $image = MediaKind::Image === $mediaItem->getKind();
         $altTexts = $mediaItem->getAltTexts();
@@ -55,6 +73,8 @@ final class MediaItemAnswer implements ResetInterface
             'poster' => $mediaItem->getPoster()?->getUuid(),
             'folder' => $mediaItem->getFolder()?->getUuid(),
             'url' => $this->urlGenerator->generate($mediaItem),
+            // How many entries use it, which the library shows, and which must be none for it to be deleted
+            'usageCount' => $usageCount ?? $this->usages->countByMediaItems([$mediaItem->getUuid()])[$mediaItem->getUuid()] ?? 0,
             'createdAt' => $mediaItem->getCreatedAt()->format(self::DATE_FORMAT),
             'changedAt' => $mediaItem->getChangedAt()->format(self::DATE_FORMAT),
         ];

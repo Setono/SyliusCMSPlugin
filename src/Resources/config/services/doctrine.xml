@@ -21,5 +21,6 @@
         <service id="Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface" alias="setono_sylius_cms.repository.homepage"/>
         <service id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface" alias="setono_sylius_cms.repository.media_item"/>
         <service id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface" alias="setono_sylius_cms.repository.media_folder"/>
+        <service id="Setono\SyliusCMSPlugin\Repository\MediaUsageRepositoryInterface" alias="setono_sylius_cms.repository.media_usage"/>
     </services>
 </container>

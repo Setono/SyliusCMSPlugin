@@ -92,11 +92,17 @@ setono_sylius_cms:
             slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team.'
             slug_rules: A slug can't start or end with a slash, or have two slashes in a row.
             title: Title
-    # Why the media library refused a file. See "Uploading" in docs/spec/media.md
     media:
+        # Why a media item can't be deleted. See "Deleting" in docs/spec/media.md
+        in_use: '{1} It''s used in an entry, so it can''t be deleted.|]1,Inf[ It''s used in %count% entries, so it can''t be deleted.'
+        # Why the media library refused a file. See "Uploading" in docs/spec/media.md
         refused:
             not_allowed: '%filename% is a %type% file, which the media library doesn''t take. It takes %types%, up to %limit% each.'
+            # A file that would replace the file of a media item of another kind
+            not_document: '%filename% isn''t a document. Only a document can replace a document.'
+            not_image: '%filename% isn''t an image. Only an image can replace an image.'
             not_uploaded: '%filename% didn''t arrive in full. Try uploading it again.'
+            not_video: '%filename% isn''t a video. Only a video can replace a video.'
             over_limit: '%filename% is over the upload limit of %limit%.'
             too_big: '%filename% is %size%, over the upload limit of %limit%.'
             unreadable: '%filename% couldn''t be read as a %type% file.'
@@ -374,7 +380,12 @@ setono_sylius_cms:
             create_folder: Create
             credit: Credit
             credit_help: A credit or copyright line, such as the photographer's name.
+            delete: Delete
+            delete_description: The media item and its file are deleted. This can't be undone.
+            delete_in_use: It can't be deleted while it's used.
+            delete_title: 'Delete %name%?'
             deleted_media_item: This media item was deleted, so it isn't shown.
+            deleting: Deleting…
             dimensions: '%width% × %height% px'
             drop_here: 'Drop files to upload them into %folder%'
             duplicate: '%filename% is already in the library as %name%.'
@@ -395,10 +406,12 @@ setono_sylius_cms:
             move_folder: Move folder
             move_to: Move to
             name: Name
+            new_file: New file
             new_folder: New folder
             no_matches: No media items match.
             no_media: Nothing here yet. Drop files here, or upload them, to add them.
             not_allowed: '%filename% is a type of file the media library doesn''t take. It takes %types%, up to %limit% each.'
+            not_used: Not used
             nothing_picked: Nothing chosen
             open_file: Open the file
             pick: Choose from the library
@@ -406,6 +419,9 @@ setono_sylius_cms:
             remove: Remove
             rename_folder: Rename folder
             replace: Replace
+            replace_description: The new file takes effect at once wherever it's used, without publishing again. The media item keeps its name, alt text and focal point.
+            replace_file: Replace file
+            replacing: Replacing…
             save: Save
             save_failed: Couldn't save
             saved: Saved
@@ -416,10 +432,19 @@ setono_sylius_cms:
             too_big: '%filename% is %size%, over the upload limit of %limit%.'
             top_level: At the top
             unsorted: Unsorted
+            untitled: Untitled
             upload: Upload
             upload_copy: Upload a copy
             uploading: Uploading…
+            use_count: '%count% uses'
+            use_count_one: 1 use
+            use_draft: Draft
             use_existing: Use the existing one
+            use_published: Published
+            use_removed_in_draft: Published, removed in the draft
+            used_in: Used in
+            used_nowhere: It isn't used anywhere.
+            uses_load_failed: Couldn't load where it's used
         meta_description: Meta description
         meta_description_help: Search engines may show it under the title in their results.
         meta_title: Meta title

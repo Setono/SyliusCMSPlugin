@@ -20,6 +20,7 @@ use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterProblemKindsPass
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterUpgradersPass;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
+use Setono\SyliusCMSPlugin\Media\DeleteReplacedFile;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
@@ -46,7 +47,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, types: array<string, list<string>>, max_upload_size: int|null}, resources: array<string, array<string, mixed>>} $config */
+        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string}, resources: array<string, array<string, mixed>>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         $container->setParameter('setono_sylius_cms.disabled.block_types', $config['disabled']['block_types']);
@@ -62,6 +63,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $container->setParameter('setono_sylius_cms.revisions.keep', $config['revisions']['keep']);
         $container->setParameter('setono_sylius_cms.media.types', $config['media']['types']);
         $container->setParameter('setono_sylius_cms.media.max_upload_size', $config['media']['max_upload_size']);
+        $container->setParameter('setono_sylius_cms.media.grace_period', $config['media']['grace_period']);
 
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.xml');
@@ -132,6 +134,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
             'messenger' => [
                 'routing' => [
                     ScheduledPublishDue::class => 'main',
+                    DeleteReplacedFile::class => 'main',
                 ],
             ],
         ]);

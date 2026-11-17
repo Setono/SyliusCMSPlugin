@@ -3,6 +3,8 @@
 {% set gallery = cms_value(block, 'gallery') %}
 <div class="app-media-names">
     <p class="app-media-names__image">{{ image is null ? 'No image' : image.name }}</p>
+    {#- The current file, at its path in the test application's default storage, which public/media/cms serves #}
+    {% if image is not null %}<img class="app-media-names__file" src="/media/cms/{{ image.path }}" alt="">{% endif %}
     <ul class="app-media-names__gallery" data-count="{{ gallery|length }}">
         {%- for mediaItem in gallery %}<li>{{ mediaItem.name }}</li>{% endfor -%}
     </ul>

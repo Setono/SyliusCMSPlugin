@@ -74,6 +74,13 @@ function fakeApi(initial: MediaItem[] = [beach, forest, prices, trailer], upload
         save: vi.fn(async () => {
             throw new Error('Not saved here');
         }),
+        uses: vi.fn(async () => []),
+        replace: vi.fn(async () => {
+            throw new Error('Not replaced here');
+        }),
+        remove: vi.fn(async () => {
+            throw new Error('Not deleted here');
+        }),
         folders: vi.fn(async () => []),
         createFolder: vi.fn(async () => {
             throw new Error('No folders here');

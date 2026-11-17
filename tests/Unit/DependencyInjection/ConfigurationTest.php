@@ -29,6 +29,8 @@ use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemTranslation;
 use Setono\SyliusCMSPlugin\Model\MediaItemTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\MediaUsage;
+use Setono\SyliusCMSPlugin\Model\MediaUsageInterface;
 use Setono\SyliusCMSPlugin\Model\OldSlug;
 use Setono\SyliusCMSPlugin\Model\OldSlugInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -49,6 +51,7 @@ use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaFolderRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepository;
+use Setono\SyliusCMSPlugin\Repository\MediaUsageRepository;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
@@ -93,6 +96,7 @@ final class ConfigurationTest extends TestCase
                     'document' => ['application/pdf'],
                 ],
                 'max_upload_size' => null,
+                'grace_period' => 'P1D',
             ],
             'resources' => [
                 'entry' => [
@@ -207,6 +211,14 @@ final class ConfigurationTest extends TestCase
                         'factory' => Factory::class,
                     ],
                 ],
+                'media_usage' => [
+                    'classes' => [
+                        'model' => MediaUsage::class,
+                        'interface' => MediaUsageInterface::class,
+                        'repository' => MediaUsageRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
                 'page' => [
                     'classes' => [
                         'model' => Page::class,
@@ -242,7 +254,26 @@ final class ConfigurationTest extends TestCase
                 'document' => ['application/pdf', 'application/zip'],
             ],
             'max_upload_size' => 20 * 1024 * 1024,
+            'grace_period' => 'P1D',
         ]], 'media');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_set_the_grace_period_before_a_replaced_file_is_deleted(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['media' => ['grace_period' => 'PT12H']],
+        ], ['media' => ['grace_period' => 'PT12H']], 'media.grace_period');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_grace_period_that_is_not_an_iso_8601_duration(): void
+    {
+        $this->assertConfigurationIsInvalid([['media' => ['grace_period' => '1 day']]], '"1 day" isn\'t an ISO 8601 duration, such as P1D');
     }
 
     /**

@@ -14,7 +14,7 @@ use Symfony\Component\Messenger\Transport\TransportInterface;
  * The test application's Messenger transports in the test env, with the DSN "kept-in-memory://": in memory, like
  * Symfony's in-memory transport, but kept when the kernel resets its services between requests. A UI test's builder
  * sends several requests after the one that schedules a publish, which would empty Symfony's own. A delayed message
- * becomes available by the clock, which tests mock. Tests read and clear them through ScheduledPublishes
+ * becomes available by the clock, which tests mock. Tests read and clear them through SentMessages
  *
  * @implements TransportFactoryInterface<InMemoryTransport>
  */

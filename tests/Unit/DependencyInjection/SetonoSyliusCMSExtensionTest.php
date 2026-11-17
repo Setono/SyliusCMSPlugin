@@ -14,6 +14,7 @@ use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
+use Setono\SyliusCMSPlugin\Media\DeleteReplacedFile;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
@@ -297,12 +298,22 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
-    public function it_routes_the_message_that_runs_a_scheduled_publish_to_sylius_main_transport(): void
+    public function it_routes_the_messages_that_run_a_scheduled_publish_and_delete_a_replaced_file_to_sylius_main_transport(): void
     {
         $this->load();
 
         $framework = $this->container->getExtensionConfig('framework');
-        self::assertSame([['messenger' => ['routing' => [ScheduledPublishDue::class => 'main']]]], $framework);
+        self::assertSame([['messenger' => ['routing' => [ScheduledPublishDue::class => 'main', DeleteReplacedFile::class => 'main']]]], $framework);
+    }
+
+    /**
+     * @test
+     */
+    public function it_makes_the_grace_period_a_parameter(): void
+    {
+        $this->load(['media' => ['grace_period' => 'PT6H']]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.media.grace_period', 'PT6H');
     }
 
     /**

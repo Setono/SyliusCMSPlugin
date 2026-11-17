@@ -7,7 +7,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla';
 import type { MediaApi } from './api';
 import type { MediaLimits } from './config';
 import { checkFile, type ClientRefusal } from './upload';
-import { ALL_MEDIA, UNSORTED, type MediaFilters, type MediaFolder, type MediaItem, type MediaItemChanges, type MediaKind, type Refused } from './types';
+import { ALL_MEDIA, UNSORTED, type MediaFilters, type MediaFolder, type MediaItem, type MediaItemChanges, type MediaKind, type MediaUse, type Refused } from './types';
 
 /** A file whose content matches an existing media item's current file, kept so a copy can still be uploaded. */
 export interface PendingDuplicate {
@@ -19,6 +19,13 @@ export interface PendingDuplicate {
 export type RefusedUpload = (Refused & { client?: undefined }) | { filename: string; client: ClientRefusal };
 
 export type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
+
+/** The Used in list of a media item: the entries that use it, or null while they load or when they couldn't be loaded. */
+export interface MediaUses {
+    uuid: string;
+    list: MediaUse[] | null;
+    failed: boolean;
+}
 
 /** The library opened as the builder's media picker: the kinds of media item it offers, and whether several are picked. */
 export interface PickMode {
@@ -46,6 +53,8 @@ export interface MediaLibraryState {
     saveState: SaveState;
     /** Why the last save, upload or folder change failed. */
     error: string | null;
+    /** The Used in list of the media item it was last loaded for. */
+    uses: MediaUses | null;
 
     /** Loads the folders and the first page of what's shown. */
     load(): Promise<void>;
@@ -66,6 +75,12 @@ export interface MediaLibraryState {
     dismissUploadMessages(): void;
     /** Saves a media item's metadata. A move takes it out of a folder that's shown. */
     save(uuid: string, changes: MediaItemChanges): Promise<boolean>;
+    /** Loads the entries that use a media item, its Used in list. */
+    loadUses(uuid: string): Promise<void>;
+    /** Replaces a media item's file, which takes effect at once wherever it's used, and shows the new file. Rejects with why it couldn't. */
+    replace(uuid: string, file: File): Promise<void>;
+    /** Deletes a media item nothing uses, and takes it out of what's shown. Rejects with why it couldn't, such as a listener's veto. */
+    remove(uuid: string): Promise<void>;
     /** Creates a folder inside the open folder, or at the top, and opens it. */
     createFolder(name: string): Promise<boolean>;
     renameFolder(uuid: string, name: string): Promise<boolean>;
@@ -179,6 +194,7 @@ export function createMediaLibraryStore(api: MediaApi, limits: MediaLimits, pick
             duplicates: [],
             saveState: 'idle',
             error: null,
+            uses: null,
 
             async load() {
                 const [folders] = await Promise.all([
@@ -278,6 +294,41 @@ export function createMediaLibraryStore(api: MediaApi, limits: MediaLimits, pick
 
                     return false;
                 }
+            },
+
+            async loadUses(uuid) {
+                set({ uses: { uuid, list: null, failed: false } });
+
+                try {
+                    const list = await api.uses(uuid);
+                    // Only the media item it was last loaded for
+                    if (get().uses?.uuid === uuid) {
+                        set({ uses: { uuid, list, failed: false } });
+                    }
+                } catch {
+                    if (get().uses?.uuid === uuid) {
+                        set({ uses: { uuid, list: null, failed: true } });
+                    }
+                }
+            },
+
+            async replace(uuid, file) {
+                const replaced = await api.replace(uuid, file);
+                set((state) => ({
+                    items: state.items.map((item) => (item.uuid === uuid ? replaced : item)),
+                    picked: state.picked.map((item) => (item.uuid === uuid ? replaced : item)),
+                }));
+            },
+
+            async remove(uuid) {
+                await api.remove(uuid);
+                set((state) => ({
+                    items: state.items.filter((item) => item.uuid !== uuid),
+                    picked: state.picked.filter((item) => item.uuid !== uuid),
+                    total: Math.max(0, state.total - 1),
+                    selected: state.selected === uuid ? null : state.selected,
+                    uses: state.uses?.uuid === uuid ? null : state.uses,
+                }));
             },
 
             async createFolder(name) {

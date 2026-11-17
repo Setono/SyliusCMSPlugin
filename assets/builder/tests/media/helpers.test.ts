@@ -119,4 +119,46 @@ describe('the media endpoints', () => {
 
         await expect(createMediaApi(libraryConfig, fetch).createFolder('Campaigns', null)).resolves.toEqual({ uuid: 'f', name: 'Campaigns', parent: null });
     });
+
+    it('should ask only for the media items nothing uses', () => {
+        expect(listQuery({ folder: ALL_MEDIA, search: '', kind: 'image', missingAlt: false, unused: true }, 1)).toBe('kind=image&unused=1&page=1');
+    });
+
+    it("should read a media item's uses", async () => {
+        const uses = [{ entry: 'e', title: 'Summer sale', contentType: 'Page', url: '/admin/cms/entry/e', draft: true, published: true }];
+        const fetch = vi.fn(async (_url: string) => new Response(JSON.stringify({ uses }), { status: 200 }));
+
+        await expect(createMediaApi(libraryConfig, fetch).uses('a')).resolves.toEqual(uses);
+        expect(fetch.mock.calls[0]?.[0]).toBe('/admin/cms/api/media/a/uses');
+    });
+
+    it("should replace a media item's file with the file in a form, with the CSRF token, and fail with the server's reason", async () => {
+        const replaced = mediaItem('a', { originalFilename: 'summer-2027.png' });
+        const fetch = vi.fn(async () => new Response(JSON.stringify(replaced), { status: 200 }));
+
+        await expect(createMediaApi(libraryConfig, fetch).replace('a', file('summer-2027.png', 'image/png'))).resolves.toEqual(replaced);
+
+        const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+        expect(url).toBe('/admin/cms/api/media/a/file');
+        expect(init.method).toBe('POST');
+        expect(init.headers).toEqual({ Accept: 'application/json', 'X-CSRF-Token': 'abc123' });
+        expect(((init.body as FormData).get('file') as File).name).toBe('summer-2027.png');
+
+        const refusing = vi.fn(async () => new Response(JSON.stringify({ error: "prices.pdf isn't an image." }), { status: 400 }));
+        await expect(createMediaApi(libraryConfig, refusing).replace('a', file('prices.pdf', 'application/pdf'))).rejects.toThrow("prices.pdf isn't an image.");
+    });
+
+    it("should delete a media item, which answers 204 without a body, and fail with the server's reason", async () => {
+        const fetch = vi.fn(async () => new Response(null, { status: 204 }));
+
+        await expect(createMediaApi(libraryConfig, fetch).remove('a')).resolves.toBeUndefined();
+        expect(fetch).toHaveBeenCalledWith('/admin/cms/api/media/a', {
+            credentials: 'same-origin',
+            method: 'DELETE',
+            headers: { Accept: 'application/json', 'X-CSRF-Token': 'abc123' },
+        });
+
+        const vetoing = vi.fn(async () => new Response(JSON.stringify({ error: 'The logo stays' }), { status: 422 }));
+        await expect(createMediaApi(libraryConfig, vetoing).remove('a')).rejects.toThrow('The logo stays');
+    });
 });

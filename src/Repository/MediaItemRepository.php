@@ -10,6 +10,7 @@ use Pagerfanta\Pagerfanta;
 use Setono\SyliusCMSPlugin\Media\MediaFilter;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
+use Setono\SyliusCMSPlugin\Model\MediaUsageInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
 /**
@@ -73,6 +74,13 @@ class MediaItemRepository extends EntityRepository implements MediaItemRepositor
         return $mediaItem instanceof MediaItemInterface ? $mediaItem : null;
     }
 
+    public function findOneByPath(string $path): ?MediaItemInterface
+    {
+        $mediaItem = $this->findOneBy(['path' => $path]);
+
+        return $mediaItem instanceof MediaItemInterface ? $mediaItem : null;
+    }
+
     public function createLibraryPaginator(MediaFilter $filter): Pagerfanta
     {
         $queryBuilder = $this->createQueryBuilder('o')
@@ -103,6 +111,10 @@ class MediaItemRepository extends EntityRepository implements MediaItemRepositor
             $this->missingAlt($queryBuilder, $filter->missingAltIn);
         }
 
+        if ($filter->unused) {
+            $this->unused($queryBuilder);
+        }
+
         /** @var Pagerfanta<MediaItemInterface> $paginator */
         $paginator = new Pagerfanta(new QueryAdapter($queryBuilder, false, false));
 
@@ -129,6 +141,20 @@ class MediaItemRepository extends EntityRepository implements MediaItemRepositor
             ))
             ->setParameter('search', '%' . addcslashes(mb_strtolower($search), '%_\\') . '%')
         ;
+    }
+
+    /**
+     * No use in the usage index, which names media items by UUID
+     */
+    private function unused(QueryBuilder $queryBuilder): void
+    {
+        $use = $this->getEntityManager()->createQueryBuilder()
+            ->select('1')
+            ->from(MediaUsageInterface::class, 'mediaUsage')
+            ->andWhere('mediaUsage.mediaItemUuid = o.uuid')
+        ;
+
+        $queryBuilder->andWhere($queryBuilder->expr()->not($queryBuilder->expr()->exists($use->getDQL())));
     }
 
     /**

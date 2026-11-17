@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Factory\HomepageFactory;
 use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
 use Setono\SyliusCMSPlugin\Media\FileSize;
+use Setono\SyliusCMSPlugin\Media\GracePeriod;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
@@ -28,6 +29,8 @@ use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemTranslation;
 use Setono\SyliusCMSPlugin\Model\MediaItemTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\MediaUsage;
+use Setono\SyliusCMSPlugin\Model\MediaUsageInterface;
 use Setono\SyliusCMSPlugin\Model\OldSlug;
 use Setono\SyliusCMSPlugin\Model\OldSlugInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -49,6 +52,7 @@ use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaFolderRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepository;
+use Setono\SyliusCMSPlugin\Repository\MediaUsageRepository;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
@@ -214,8 +218,8 @@ final class Configuration implements ConfigurationInterface
     }
 
     /**
-     * The media library's storage, the MIME types each kind of media item allows, and the upload limit. See
-     * "What the library holds" and "Image processing" in docs/spec/media.md
+     * The media library's storage, the MIME types each kind of media item allows, the upload limit, and how long a
+     * replaced file is kept. See "What the library holds", "Replacing a file" and "Image processing" in docs/spec/media.md
      */
     private function addMediaSection(ArrayNodeDefinition $node): void
     {
@@ -245,10 +249,27 @@ final class Configuration implements ConfigurationInterface
                                 ->then(static fn (mixed $size): int => FileSize::parse(is_int($size) || is_string($size) ? $size : ''))
                             ->end()
                         ->end()
+                        ->scalarNode('grace_period')
+                            ->info('An ISO 8601 duration before a replaced file and its variants are deleted, so pages cached before the replace don\'t show broken images')
+                            ->defaultValue(GracePeriod::DEFAULT)
+                            ->cannotBeEmpty()
+                            ->validate()->always(self::assertDuration(...))->end()
+                        ->end()
                     ->end()
                 ->end()
             ->end()
         ;
+    }
+
+    /**
+     * @throws \InvalidArgumentException when it isn't an ISO 8601 duration
+     */
+    private static function assertDuration(mixed $duration): string
+    {
+        $duration = is_scalar($duration) ? (string) $duration : get_debug_type($duration);
+        new GracePeriod($duration);
+
+        return $duration;
     }
 
     /**
@@ -372,6 +393,7 @@ final class Configuration implements ConfigurationInterface
                     ->append(self::resourceWithoutController('homepage', Homepage::class, HomepageInterface::class, HomepageRepository::class, HomepageFactory::class))
                     ->append(self::mediaItemResource())
                     ->append(self::resourceWithoutController('media_folder', MediaFolder::class, MediaFolderInterface::class, MediaFolderRepository::class))
+                    ->append(self::resourceWithoutController('media_usage', MediaUsage::class, MediaUsageInterface::class, MediaUsageRepository::class))
                     ->children()
                         ->arrayNode('page')
                             ->addDefaultsIfNotSet()

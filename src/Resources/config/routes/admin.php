@@ -5,16 +5,19 @@ declare(strict_types=1);
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CancelScheduleAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateMediaFolderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateShareLinkAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\DeleteMediaItemAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DiscardEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaFolderIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaIndexAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaUsesAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PresenceAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRenderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRevisionAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewTokenAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PublishEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RegistryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\ReplaceMediaFileAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RestoreRevisionAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RevisionIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RevokeShareLinkAction;
@@ -311,6 +314,24 @@ return static function (RoutingConfigurator $routes): void {
     $routes->add('setono_sylius_cms_admin_api_media_update', '/cms/api/media/{uuid}')
         ->controller(UpdateMediaItemAction::class)
         ->methods(['PATCH'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_media_delete', '/cms/api/media/{uuid}')
+        ->controller(DeleteMediaItemAction::class)
+        ->methods(['DELETE'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_media_uses', '/cms/api/media/{uuid}/uses')
+        ->controller(MediaUsesAction::class)
+        ->methods(['GET'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_media_replace', '/cms/api/media/{uuid}/file')
+        ->controller(ReplaceMediaFileAction::class)
+        ->methods(['POST'])
         ->requirements(['uuid' => Requirement::UUID])
     ;
 
