@@ -34,8 +34,9 @@ final class SourcesInTheRegistryTest extends BuilderApiTestCase
         /** @var array<string, array{code: string, label: string, needs: list<string>, fields: list<array{name: string, schema: array<string, mixed>}>}> $sources */
         $sources = array_column($registry['sources'], null, 'code');
 
-        self::assertSame(['products_in_taxon', 'taxon_children', 'featured'], array_keys($sources));
+        self::assertSame(['products_in_taxon', 'bestsellers', 'taxon_children', 'featured'], array_keys($sources));
         self::assertSame('In taxon', $sources['products_in_taxon']['label']);
+        self::assertSame('Bestsellers', $sources['bestsellers']['label']);
         self::assertSame('Children of a taxon', $sources['taxon_children']['label']);
         self::assertSame([], $sources['products_in_taxon']['needs']);
         self::assertSame(['taxon', 'includeChildren', 'sort'], array_column($sources['products_in_taxon']['fields'], 'name'));
@@ -48,6 +49,12 @@ final class SourcesInTheRegistryTest extends BuilderApiTestCase
             ['position' => 'Position in the taxon', 'newest' => 'Newest first', 'price' => 'Price, lowest first', 'name' => 'Name, A to Z'],
             is_array($sort['x-cms-options'] ?? null) ? $sort['x-cms-options']['choices'] ?? null : null,
         );
+
+        // Bestsellers' taxon is optional
+        [$taxon, $includeChildren] = array_column($sources['bestsellers']['fields'], 'schema');
+        self::assertSame(['taxon', 'includeChildren'], array_column($sources['bestsellers']['fields'], 'name'));
+        self::assertSame(['taxon', 'Taxon', false], [$taxon['x-cms-type'], $taxon['x-cms-label'], $taxon['x-cms-required']]);
+        self::assertSame(['toggle', 'Include the taxons below it', false], [$includeChildren['x-cms-type'], $includeChildren['x-cms-label'], $includeChildren['default'] ?? null]);
     }
 
     /**
@@ -64,7 +71,7 @@ final class SourcesInTheRegistryTest extends BuilderApiTestCase
         /** @var array<string, array{fields: list<array{name: string, schema: array<string, mixed>}>}> $blockTypes */
         $blockTypes = array_column($registry['blockTypes'], null, 'code');
 
-        self::assertSame(['max' => null, 'sources' => ['products_in_taxon', 'featured'], 'limit' => 8], $blockTypes['products']['fields'][0]['schema']['x-cms-options'] ?? null);
+        self::assertSame(['max' => null, 'sources' => ['products_in_taxon', 'bestsellers', 'featured'], 'limit' => 8], $blockTypes['products']['fields'][0]['schema']['x-cms-options'] ?? null);
         self::assertSame(['max' => null, 'sources' => ['taxon_children'], 'limit' => 8], $blockTypes['taxons']['fields'][0]['schema']['x-cms-options'] ?? null);
     }
 }

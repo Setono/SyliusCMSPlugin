@@ -114,13 +114,13 @@ final class ListsFilledBySourcesTest extends WebTestCase
         $client = self::createClient();
         $client->loginUser(self::admin(), 'admin');
         self::createProduct('MUG', 'Mug');
-        $page = self::createPageWithBlocks('Shop now', 'shop-now', [self::products(self::PRODUCTS, ['$source' => 'bestsellers', '$params' => [], '$limit' => 8])], published: true);
+        $page = self::createPageWithBlocks('Shop now', 'shop-now', [self::products(self::PRODUCTS, ['$source' => 'retired', '$params' => [], '$limit' => 8])], published: true);
 
         self::assertCount(0, $client->request('GET', '/en_US/shop-now')->filter('.cms-products'));
 
         $problems = $client->request('GET', sprintf('/admin/cms/entry/%s', $page->getUuid()))->filter('[data-section="problems"] [data-problem]');
         self::assertSame(
-            [['unknown_source', self::PRODUCTS, 'Products in the Products block is filled by the source "bestsellers", which the code no longer has, so it lists nothing.']],
+            [['unknown_source', self::PRODUCTS, 'Products in the Products block is filled by the source "retired", which the code no longer has, so it lists nothing.']],
             $problems->each(static fn (Crawler $problem): array => [$problem->attr('data-problem'), $problem->attr('data-block'), $problem->filter('.description')->text()]),
         );
     }

@@ -68,7 +68,7 @@ final class SourceCountTest extends BuilderApiTestCase
 
         self::assertSame(['count' => 0], self::json($client, 'POST', self::uri($page), ['source' => 'products_in_taxon', 'params' => new \stdClass()]));
         self::assertSame(['count' => 0], self::json($client, 'POST', self::uri($page), ['source' => 'products_in_taxon', 'params' => ['taxon' => 'REMOVED']]));
-        self::assertSame(['count' => 0], self::json($client, 'POST', self::uri($page), ['source' => 'bestsellers', 'params' => []]));
+        self::assertSame(['count' => 0], self::json($client, 'POST', self::uri($page), ['source' => 'retired', 'params' => []]));
     }
 
     /**
