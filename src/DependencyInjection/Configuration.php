@@ -237,7 +237,7 @@ final class Configuration implements ConfigurationInterface
                     ->children()
                         ->scalarNode('storage')
                             ->info('A Flysystem storage service. The default writes to %kernel.project_dir%/public/media/cms, served at /media/cms')
-                            ->defaultValue('setono_sylius_cms.storage')
+                            ->defaultValue(SetonoSyliusCMSExtension::STORAGE)
                             ->cannotBeEmpty()
                         ->end()
                         ->arrayNode('types')

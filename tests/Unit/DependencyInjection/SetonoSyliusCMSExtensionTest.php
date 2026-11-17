@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection;
 
+use League\Flysystem\Filesystem;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
 use Setono\SyliusCMSPlugin\Attribute\AsSource;
@@ -241,6 +242,27 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.block_styles', $blockStyles);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(BlockTypeRegistry::class, 3, '%setono_sylius_cms.block_styles%');
+    }
+
+    /**
+     * @test
+     */
+    public function it_stores_media_in_the_plugin_s_own_local_storage_by_default(): void
+    {
+        $this->load();
+
+        $this->assertContainerBuilderHasService('setono_sylius_cms.storage', Filesystem::class);
+        self::assertFalse($this->container->hasDefinition('setono_sylius_cms.media.storage') || $this->container->hasAlias('setono_sylius_cms.media.storage'), 'The storage goes by one name');
+    }
+
+    /**
+     * @test
+     */
+    public function it_stores_media_in_the_storage_a_project_configures_under_the_one_name(): void
+    {
+        $this->load(['media' => ['storage' => 'app.s3_storage']]);
+
+        $this->assertContainerBuilderHasAlias('setono_sylius_cms.storage', 'app.s3_storage');
     }
 
     /**

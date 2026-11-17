@@ -3,16 +3,19 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <!--
-        The plugin's default Flysystem storage, media.storage unless a project configures another: a local public
-        directory beside Sylius's own public/media/image, whose public URLs Flysystem builds from public_url. It holds the
-        only copy of every file, so a project keeps it across deploys. See "Image processing" in docs/spec/media.md
+        The Flysystem storage media items are stored in, by the id the spec fixes as media.storage's default (an exception to
+        FQCN service ids, since the plugin and a project may both have a League\Flysystem\Filesystem). By default it's the
+        plugin's own: a local public directory beside Sylius's own public/media/image, whose public URLs Flysystem builds
+        from public_url. It holds the only copy of every file, so a project keeps it across deploys. When a project
+        configures another, SetonoSyliusCMSExtension makes this id an alias of it. See "Image processing" in
+        docs/spec/media.md and "Configuration" in docs/spec/extending.md
         -->
-        <service id="setono_sylius_cms.storage.adapter" class="League\Flysystem\Local\LocalFilesystemAdapter">
-            <argument>%kernel.project_dir%/public/media/cms</argument>
-        </service>
-
         <service id="setono_sylius_cms.storage" class="League\Flysystem\Filesystem">
-            <argument type="service" id="setono_sylius_cms.storage.adapter"/>
+            <argument type="service">
+                <service class="League\Flysystem\Local\LocalFilesystemAdapter">
+                    <argument>%kernel.project_dir%/public/media/cms</argument>
+                </service>
+            </argument>
             <argument type="collection">
                 <argument key="visibility">public</argument>
                 <argument key="directory_visibility">public</argument>
@@ -55,12 +58,12 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaFileCheckerInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
             <argument type="service" id="setono_sylius_cms.factory.media_item"/>
-            <argument type="service" id="setono_sylius_cms.media.storage"/>
+            <argument type="service" id="setono_sylius_cms.storage"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Media\MediaUploaderInterface" alias="Setono\SyliusCMSPlugin\Media\MediaUploader"/>
 
         <service id="Setono\SyliusCMSPlugin\Media\MediaUrlGenerator" class="Setono\SyliusCMSPlugin\Media\MediaUrlGenerator">
-            <argument type="service" id="setono_sylius_cms.media.storage"/>
+            <argument type="service" id="setono_sylius_cms.storage"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface" alias="Setono\SyliusCMSPlugin\Media\MediaUrlGenerator"/>
 
@@ -80,7 +83,7 @@
 
         <service id="Setono\SyliusCMSPlugin\Media\MediaFileReplacer" class="Setono\SyliusCMSPlugin\Media\MediaFileReplacer">
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaFileCheckerInterface"/>
-            <argument type="service" id="setono_sylius_cms.media.storage"/>
+            <argument type="service" id="setono_sylius_cms.storage"/>
             <argument type="service" id="doctrine"/>
             <argument type="service" id="sylius.event_bus"/>
             <argument type="service" id="event_dispatcher"/>
@@ -93,7 +96,7 @@
         Deletes a file and the variants generated from it. Image variants are deleted by a decorator of this service
         -->
         <service id="Setono\SyliusCMSPlugin\Media\MediaFileRemover" class="Setono\SyliusCMSPlugin\Media\MediaFileRemover">
-            <argument type="service" id="setono_sylius_cms.media.storage"/>
+            <argument type="service" id="setono_sylius_cms.storage"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Media\MediaFileRemoverInterface" alias="Setono\SyliusCMSPlugin\Media\MediaFileRemover"/>
 
@@ -177,14 +180,14 @@
         <service id="Setono\SyliusCMSPlugin\Media\ImageFormatsInterface" alias="Setono\SyliusCMSPlugin\Media\Liip\LiipImageFormats"/>
 
         <service id="Setono\SyliusCMSPlugin\Media\Liip\StorageLoader" class="Setono\SyliusCMSPlugin\Media\Liip\StorageLoader">
-            <argument type="service" id="setono_sylius_cms.media.storage"/>
+            <argument type="service" id="setono_sylius_cms.storage"/>
             <argument type="service" id="mime_types"/>
 
             <tag name="liip_imagine.binary.loader" loader="setono_sylius_cms"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Media\Liip\StorageResolver" class="Setono\SyliusCMSPlugin\Media\Liip\StorageResolver">
-            <argument type="service" id="setono_sylius_cms.media.storage"/>
+            <argument type="service" id="setono_sylius_cms.storage"/>
             <argument type="service" id="liip_imagine.filter.configuration"/>
 
             <tag name="liip_imagine.cache.resolver" resolver="setono_sylius_cms"/>

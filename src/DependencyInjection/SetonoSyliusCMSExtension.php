@@ -41,6 +41,9 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     public const CHOICES_PROVIDER_TAG = 'setono_sylius_cms.choices_provider';
 
     /** The entry lists show the entries edited last first */
+    /** The service id of the storage media items are stored in, which media.storage defaults to */
+    public const STORAGE = 'setono_sylius_cms.storage';
+
     private const GRID_SORTING = ['lastEdited' => 'desc'];
 
     private const GRID_LIMITS = [25, 50, 100];
@@ -74,8 +77,12 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.xml');
 
-        // The Flysystem storage media items are stored in: the plugin's own local one unless a project configures another
-        $container->setAlias('setono_sylius_cms.media.storage', $config['media']['storage']);
+        // The Flysystem storage media items are stored in: the plugin's own local one, setono_sylius_cms.storage, unless a
+        // project configures another, which then goes by that one name
+        if (self::STORAGE !== $config['media']['storage']) {
+            $container->removeDefinition(self::STORAGE);
+            $container->setAlias(self::STORAGE, $config['media']['storage']);
+        }
 
         // Registers the shipped resources, and turns on the Doctrine mapping of the Model namespace
         $this->registerResources('setono_sylius_cms', SyliusResourceBundle::DRIVER_DOCTRINE_ORM, $config['resources'], $container);

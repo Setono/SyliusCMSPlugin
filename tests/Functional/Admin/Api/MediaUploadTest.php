@@ -94,7 +94,7 @@ final class MediaUploadTest extends MediaApiTestCase
         self::assertNull($answer['created'][0]['folder']);
 
         /** @var FilesystemOperator $storage */
-        $storage = self::getContainer()->get('setono_sylius_cms.media.storage');
+        $storage = self::getContainer()->get('setono_sylius_cms.storage');
         self::assertTrue($storage->fileExists($mediaItem->getPath()));
     }
 
