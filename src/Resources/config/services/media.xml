@@ -152,6 +152,43 @@
             <tag name="doctrine.event_listener" event="onFlush"/>
         </service>
 
+        <!--
+        Images: cms_image() asks the image provider for each variant's URL. The default builds LiipImagine's resolve URLs,
+        and Liip makes a variant on its first request with the plugin's loader and resolver, both named setono_sylius_cms
+        by default (media.liip), and its filter sets, which SetonoSyliusCMSExtension prepends. See "Image processing" in
+        docs/spec/media.md
+        -->
+        <service id="Setono\SyliusCMSPlugin\Media\Liip\LiipImageProvider" class="Setono\SyliusCMSPlugin\Media\Liip\LiipImageProvider">
+            <argument type="service" id="liip_imagine.cache.manager"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface"/>
+            <argument type="service" id="liip_imagine"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Media\ImageProviderInterface" alias="Setono\SyliusCMSPlugin\Media\Liip\LiipImageProvider"/>
+
+        <service id="Setono\SyliusCMSPlugin\Media\Liip\StorageLoader" class="Setono\SyliusCMSPlugin\Media\Liip\StorageLoader">
+            <argument type="service" id="setono_sylius_cms.media.storage"/>
+            <argument type="service" id="mime_types"/>
+
+            <tag name="liip_imagine.binary.loader" loader="setono_sylius_cms"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Media\Liip\StorageResolver" class="Setono\SyliusCMSPlugin\Media\Liip\StorageResolver">
+            <argument type="service" id="setono_sylius_cms.media.storage"/>
+            <argument type="service" id="liip_imagine.filter.configuration"/>
+
+            <tag name="liip_imagine.cache.resolver" resolver="setono_sylius_cms"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Media\Liip\TransformFilterLoader" class="Setono\SyliusCMSPlugin\Media\Liip\TransformFilterLoader">
+            <tag name="liip_imagine.filter.loader" loader="setono_sylius_cms_transform"/>
+        </service>
+
+        <!-- A replaced or deleted file's image variants are removed with it -->
+        <service id="Setono\SyliusCMSPlugin\Media\Liip\VariantRemovingFileRemover" class="Setono\SyliusCMSPlugin\Media\Liip\VariantRemovingFileRemover" decorates="Setono\SyliusCMSPlugin\Media\MediaFileRemover">
+            <argument type="service" id=".inner"/>
+            <argument type="service" id="liip_imagine.cache.manager"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Media\MediaFolderModifier" class="Setono\SyliusCMSPlugin\Media\MediaFolderModifier">
             <argument type="service" id="setono_sylius_cms.factory.media_folder"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>
