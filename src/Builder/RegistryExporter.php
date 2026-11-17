@@ -9,6 +9,8 @@ use Setono\SyliusCMSPlugin\Binding\BindingType;
 use Setono\SyliusCMSPlugin\Context\EntryContext;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Media\MediaLimits;
+use Setono\SyliusCMSPlugin\Registry\BindablePropertyMetadata;
+use Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Registry\AllowedBlockType;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
@@ -34,7 +36,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * What the builder's registry endpoint answers: the block types with their field schemas, nesting rules and block styles,
  * what the top level of each content type may hold, the layouts editors can pick for it with their field schemas, the
- * condition kinds with their parameters' field schemas, the link targets, the sources editors may pick with their parameters' field schemas, the context keys and the slots, what each block type and
+ * condition kinds with their parameters' field schemas, the link targets, the sources editors may pick with their parameters' field schemas, the context keys and the slots, the bindable properties with their parameters' field schemas, what each block type and
  * condition kind needs and what each content type provides, the effective upload limit with the MIME types
  * of each kind of media item, and the UI strings, translated in the current locale, which in the admin is the admin user's locale. The
  * shape is internal to the builder
@@ -57,11 +59,12 @@ final readonly class RegistryExporter
         private SourceRegistryInterface $sources,
         private ContextKeyRegistryInterface $contextKeys,
         private SlotRegistryInterface $slots,
+        private BindablePropertyRegistryInterface $bindableProperties,
     ) {
     }
 
     /**
-     * @return array{blockTypes: list<array<string, mixed>>, contentTypes: list<array<string, mixed>>, conditionKinds: list<array<string, mixed>>, linkTargets: list<array{code: string, label: string, translatableRef: bool}>, sources: list<array<string, mixed>>, contextKeys: list<array{key: string, label: string}>, slots: list<array{identifier: string, label: string, provides: list<string>}>, media: array{maxUploadSize: int, types: array<string, list<string>>}, strings: array<string, string>}
+     * @return array{blockTypes: list<array<string, mixed>>, contentTypes: list<array<string, mixed>>, conditionKinds: list<array<string, mixed>>, linkTargets: list<array{code: string, label: string, translatableRef: bool}>, sources: list<array<string, mixed>>, contextKeys: list<array{key: string, label: string}>, slots: list<array{identifier: string, label: string, provides: list<string>}>, bindableProperties: list<array<string, mixed>>, media: array{maxUploadSize: int, types: array<string, list<string>>}, strings: array<string, string>}
      */
     public function export(): array
     {
@@ -84,6 +87,14 @@ final readonly class RegistryExporter
                 'label' => $this->translator->trans($slot->label),
                 'provides' => $slot->provides,
             ], $this->slots->all()),
+            // What the binding picker lists, in this order, for a field that accepts the type where the entry provides the needs
+            'bindableProperties' => array_map(fn (BindablePropertyMetadata $property): array => [
+                'binding' => $property->binding(),
+                'label' => $this->translator->trans($property->label),
+                'type' => $property->type->value,
+                'needs' => $property->needs(),
+                'fields' => $this->sharedFields($property->fields),
+            ], $this->bindableProperties->all()),
             'media' => $this->mediaLimits->toArray(),
             'strings' => $this->uiStrings->withPrefix(self::STRINGS_PREFIX),
         ];
@@ -178,10 +189,7 @@ final readonly class RegistryExporter
             'matchesNot' => $this->translator->trans($conditionKind->matchesNot),
             // Offered only where the entry provides these context keys or the snippet declares them
             'needs' => $conditionKind->needs,
-            'fields' => array_values(array_map(
-                fn (FieldMetadata $field): array => ['name' => $field->name, 'schema' => array_replace($this->schema($field), ['x-cms-translatable' => false])],
-                $conditionKind->fields,
-            )),
+            'fields' => $this->sharedFields($conditionKind->fields),
         ];
     }
 
@@ -204,7 +212,7 @@ final readonly class RegistryExporter
     }
 
     /**
-     * Parameter fields, shared by all translations whatever their field type's default
+     * Parameter fields, shared by all translations whatever their field type's default, and never bound
      *
      * @param array<string, FieldMetadata> $fields
      *
@@ -213,7 +221,7 @@ final readonly class RegistryExporter
     private function sharedFields(array $fields): array
     {
         return array_values(array_map(
-            fn (FieldMetadata $field): array => ['name' => $field->name, 'schema' => array_replace($this->schema($field), ['x-cms-translatable' => false])],
+            fn (FieldMetadata $field): array => ['name' => $field->name, 'schema' => array_diff_key(array_replace($this->schema($field), ['x-cms-translatable' => false]), ['x-cms-bindable' => true])],
             $fields,
         ));
     }

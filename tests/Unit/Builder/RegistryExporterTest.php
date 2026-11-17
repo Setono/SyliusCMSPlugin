@@ -37,6 +37,9 @@ use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\OpeningHoursHandler;
+use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
+use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductBrand;
+use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\StockLevel;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Store;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Titled;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\OnProductPage;
@@ -89,6 +92,7 @@ final class RegistryExporterTest extends TestCase
                             'x-cms-help' => null,
                             'x-cms-required' => true,
                             'x-cms-translatable' => true,
+                            'x-cms-bindable' => ['text', 'number'],
                         ],
                     ],
                     [
@@ -164,7 +168,32 @@ final class RegistryExporterTest extends TestCase
             'x-cms-bindable' => ['number'],
         ], $fields['rating']);
         self::assertIsArray($fields['quote']);
-        self::assertArrayNotHasKey('x-cms-bindable', $fields['quote'], 'A field type that accepts no binding leaves it out');
+        self::assertSame(['text', 'number'], $fields['quote']['x-cms-bindable']);
+
+        $headingFields = array_column($blockTypes['heading']['fields'], 'schema', 'name');
+        self::assertIsArray($headingFields['level']);
+        self::assertArrayNotHasKey('x-cms-bindable', $headingFields['level'], 'A field type that accepts no binding leaves it out');
+    }
+
+    /**
+     * @test
+     */
+    public function it_exports_the_bindable_properties_with_their_types_needs_and_parameter_fields_which_are_never_bound(): void
+    {
+        $properties = $this->exporter()->export()['bindableProperties'];
+
+        self::assertSame(['product.brand', 'product.stock_level'], array_column($properties, 'binding'));
+        self::assertSame([
+            'binding' => 'product.brand',
+            'label' => '[app.binding.brand]',
+            'type' => 'text',
+            'needs' => ['product'],
+            'fields' => [],
+        ], $properties[0]);
+        self::assertSame('number', $properties[1]['type']);
+        self::assertIsArray($properties[1]['fields']);
+        self::assertSame(['includeReserved', 'warehouse'], array_column($properties[1]['fields'], 'name'));
+        self::assertFalse($properties[1]['fields'][0]['schema']['x-cms-translatable']);
     }
 
     /**
@@ -543,6 +572,7 @@ final class RegistryExporterTest extends TestCase
                 'shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null],
                 'product.after_price' => ['label' => 'setono_sylius_cms.slot.product.after_price', 'provides' => ['product'], 'cap' => null],
             ]),
+            Bindings::registry([new ProductBrand(), new StockLevel()]),
         );
     }
 }

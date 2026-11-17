@@ -16,6 +16,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface"/>
         </service>
 
         <!-- What the media library app needs to reach the library, on its own screen and as the builder's media picker -->
