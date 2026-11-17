@@ -29,10 +29,7 @@ final class SlotRegistryTest extends TestCase
      */
     public function it_lists_every_slot_in_the_order_the_config_declares_them(): void
     {
-        self::assertSame(['shop.footer', 'product.after_price', 'app.store_locator.top'], array_map(
-            static fn (SlotMetadata $slot): string => $slot->identifier,
-            self::registry()->all(),
-        ));
+        self::assertSame(['shop.footer', 'product.after_price', 'app.store_locator.top'], self::identifiers(self::registry()->all()));
     }
 
     /**
@@ -41,11 +38,10 @@ final class SlotRegistryTest extends TestCase
     public function it_offers_the_slots_that_provide_at_least_the_context_keys_a_snippet_needs(): void
     {
         $registry = self::registry();
-        $identifiers = static fn (array $slots): array => array_map(static fn (SlotMetadata $slot): string => $slot->identifier, $slots);
 
-        self::assertSame(['shop.footer', 'product.after_price', 'app.store_locator.top'], $identifiers($registry->providing([])));
-        self::assertSame(['product.after_price'], $identifiers($registry->providing(['product'])));
-        self::assertSame([], $identifiers($registry->providing(['product', 'store_location'])));
+        self::assertSame(['shop.footer', 'product.after_price', 'app.store_locator.top'], self::identifiers($registry->providing([])));
+        self::assertSame(['product.after_price'], self::identifiers($registry->providing(['product'])));
+        self::assertSame([], self::identifiers($registry->providing(['product', 'store_location'])));
     }
 
     /**
@@ -57,6 +53,16 @@ final class SlotRegistryTest extends TestCase
         $this->expectExceptionMessage('There is no slot "shop.gone". Declare it under setono_sylius_cms.slots');
 
         self::registry()->get('shop.gone');
+    }
+
+    /**
+     * @param list<SlotMetadata> $slots
+     *
+     * @return list<string>
+     */
+    private static function identifiers(array $slots): array
+    {
+        return array_map(static fn (SlotMetadata $slot): string => $slot->identifier, $slots);
     }
 
     private static function registry(): SlotRegistry

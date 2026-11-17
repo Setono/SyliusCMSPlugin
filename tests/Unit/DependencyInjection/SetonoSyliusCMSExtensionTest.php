@@ -43,11 +43,11 @@ use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
-use Setono\SyliusCMSPlugin\Repository\PlacementRepository;
-use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\PlacementRepository;
+use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 use Setono\SyliusCMSPlugin\Revision\RevisionPruner;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\SignedIn;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
@@ -229,6 +229,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     {
         $this->load();
 
+        /** @var array<string, array{label: string, provides: list<string>, template_event: array{name: string, priority: int}}>|null $slots */
         $slots = $this->container->getExtensionConfig('setono_sylius_cms')[0]['slots'] ?? null;
         self::assertIsArray($slots);
         self::assertSame([
@@ -301,6 +302,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         // The 19 stock slots and the project's slot tied to a template event, but not the one rendered with cms_slot()
         $blocks = [];
         foreach ($events as $event) {
+            self::assertIsArray($event);
             self::assertIsArray($event['blocks'] ?? null);
             $blocks = [...$blocks, ...array_filter(array_keys($event['blocks']), static fn (int|string $name): bool => str_starts_with((string) $name, 'setono_sylius_cms.slot.'))];
         }

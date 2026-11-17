@@ -14,7 +14,7 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\DomCrawler\Crawler;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * The Placements section of a snippet's overview page, where its placements are added, reordered and removed. They
@@ -183,7 +183,8 @@ final class EntryPlacementsTest extends WebTestCase
         $snippet = self::createSnippet('Size guide', context: ['product']);
         $crawler = $client->request('GET', self::overview($snippet));
         $form = $crawler->selectButton('Add placement')->form();
-        $form['slot']->disableValidation()->setValue('shop.footer');
+        $form->disableValidation();
+        $form->setValues(['slot' => 'shop.footer']);
 
         $client->submit($form);
 

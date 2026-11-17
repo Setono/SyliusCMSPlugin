@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Setono\SyliusCMSPlugin\Controller\Admin\AddPlacementAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CancelScheduleAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateMediaFolderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateShareLinkAction;
@@ -33,7 +34,6 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaFolderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaItemAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UploadMediaAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ValidateEntryAction;
-use Setono\SyliusCMSPlugin\Controller\Admin\AddPlacementAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CancelScheduleAction as CancelSchedulePageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;

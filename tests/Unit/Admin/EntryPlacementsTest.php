@@ -82,10 +82,9 @@ final class EntryPlacementsTest extends TestCase
         $this->placements->findBySnippet($anyPage)->willReturn([]);
         $this->placements->findBySnippet($productPages)->willReturn([]);
         $this->placements->findBySlots([])->willReturn([]);
-        $identifiers = static fn (array $slots): array => array_map(static fn (SlotMetadata $slot): string => $slot->identifier, $slots);
 
-        self::assertSame(['shop.top', 'shop.footer', 'product.after_price'], $identifiers($this->entryPlacements()->of($anyPage)?->offeredSlots ?? []));
-        self::assertSame(['product.after_price'], $identifiers($this->entryPlacements()->of($productPages)?->offeredSlots ?? []));
+        self::assertSame(['shop.top', 'shop.footer', 'product.after_price'], self::identifiers($this->entryPlacements()->of($anyPage)->offeredSlots ?? []));
+        self::assertSame(['product.after_price'], self::identifiers($this->entryPlacements()->of($productPages)->offeredSlots ?? []));
     }
 
     /**
@@ -94,6 +93,16 @@ final class EntryPlacementsTest extends TestCase
     public function it_has_no_placements_section_for_an_entry_that_is_not_a_snippet(): void
     {
         self::assertNull($this->entryPlacements()->of(new Page()));
+    }
+
+    /**
+     * @param list<SlotMetadata> $slots
+     *
+     * @return list<string>
+     */
+    private static function identifiers(array $slots): array
+    {
+        return array_map(static fn (SlotMetadata $slot): string => $slot->identifier, $slots);
     }
 
     private function entryPlacements(): EntryPlacements
