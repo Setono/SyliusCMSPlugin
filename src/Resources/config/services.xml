@@ -4,6 +4,7 @@
     <imports>
         <import resource="services/admin.xml"/>
         <import resource="services/bestsellers.xml"/>
+        <import resource="services/binding.xml"/>
         <import resource="services/block_type.xml"/>
         <import resource="services/builder.xml"/>
         <import resource="services/command.xml"/>

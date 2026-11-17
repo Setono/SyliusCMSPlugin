@@ -16,6 +16,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface"/>
         </service>
 
         <!-- What the media library app needs to reach the library, on its own screen and as the builder's media picker -->
@@ -43,6 +44,13 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Targeting\CustomerGroupChoicesProvider"/>
 
             <tag name="setono_sylius_cms.search" kind="customer_group"/>
+        </service>
+
+        <!-- The store's product attributes, which the Product attribute binding shows one of -->
+        <service id="setono_sylius_cms.search.product_attribute" class="Setono\SyliusCMSPlugin\Builder\Search\ChoicesSearch">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Binding\Product\ProductAttributeChoicesProvider"/>
+
+            <tag name="setono_sylius_cms.search" kind="product_attribute"/>
         </service>
 
         <!-- Products, taxons and entries are searched by these, which their link targets search with too. A link target without a search of its kind is searched under its code (RegisterLinkTargetsPass) -->

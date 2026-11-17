@@ -60,6 +60,14 @@
             <tag name="setono_sylius_cms.context_dependency_finder" priority="20"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Context\BindingDependencies" class="Setono\SyliusCMSPlugin\Context\BindingDependencies">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\TreeValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface"/>
+            <tag name="setono_sylius_cms.context_dependency_finder" priority="15"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Context\PlacementDependencies" class="Setono\SyliusCMSPlugin\Context\PlacementDependencies">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>

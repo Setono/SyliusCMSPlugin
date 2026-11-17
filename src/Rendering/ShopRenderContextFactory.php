@@ -20,7 +20,7 @@ use Sylius\Component\Locale\Context\LocaleContextInterface;
  * through Sylius's channel context, and its locale from the token, which also holds when the builder renders blocks
  * through its own endpoint, outside the shop's URLs. The preview's Shown to and Date, or the ones a share link fixed,
  * set the customer group value and the time here and nowhere else, so every condition, audience and visible-entries
- * query on the page follows them.
+ * query on the page follows them. A preview has no customer, so a customer binding shows its fallback there.
  * See "Shown to and Date" in docs/spec/targeting.md
  */
 final readonly class ShopRenderContextFactory implements RenderContextFactoryInterface
@@ -48,12 +48,14 @@ final readonly class ShopRenderContextFactory implements RenderContextFactoryInt
         }
 
         $preview = $this->previewContext->getPreview();
+        // A preview shows no one's own data: customer bindings show their fallback
+        $shownToCustomer = null === $this->previewContext->getMode() ? $customer : null;
 
         return new RenderContext(
             $channel,
             $preview->localeCode ?? $this->localeContext->getLocaleCode(),
             $this->currencyContext->getCurrencyCode(),
-            $customer,
+            $shownToCustomer,
             $preview->shownTo ?? CustomerGroupValue::of($customer),
             $preview->date ?? $this->clock->now(),
             $hostPageContext,

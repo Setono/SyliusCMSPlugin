@@ -14,6 +14,7 @@ final readonly class BlockView
      * @param object $block the hydrated block type object
      * @param string|null $styleClass the chosen block style's class
      * @param list<BlockView> $children only the children that show
+     * @param list<string> $bound the names of the fields that show a binding, which can't be typed in place
      */
     public function __construct(
         public string $key,
@@ -21,6 +22,7 @@ final readonly class BlockView
         public object $block,
         public ?string $styleClass,
         public array $children,
+        public array $bound = [],
     ) {
     }
 }

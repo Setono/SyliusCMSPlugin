@@ -31,6 +31,9 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\RichText\RichTextSchema"/>
             <!-- Rich text's links resolve through their link targets, like Link fields -->
             <argument type="service" id="Setono\SyliusCMSPlugin\Link\LinkResolver"/>
+            <!-- Its binding tokens resolve like bound fields -->
+            <argument type="service" id="Setono\SyliusCMSPlugin\Binding\BindingResolver"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Binding\BindingValidator"/>
 
             <tag name="setono_sylius_cms.field_handler"/>
         </service>
@@ -82,6 +85,9 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Link\LinkResolver"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+            <!-- A link to a URL can show a binding of type url in its ref -->
+            <argument type="service" id="Setono\SyliusCMSPlugin\Binding\BindingResolver"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Binding\BindingValidator"/>
 
             <tag name="setono_sylius_cms.field_handler"/>
         </service>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\RichText;
 
+use Setono\SyliusCMSPlugin\Binding\StoredBinding;
 use Setono\SyliusCMSPlugin\Link\ResolvedLink;
 use Tiptap\Core\DOMSerializer;
 use Tiptap\Core\Extension;
@@ -20,7 +21,10 @@ final readonly class RichTextSchema
     /** The heading levels rich text has. A page's own headings are Heading blocks */
     public const HEADING_LEVELS = [2, 3, 4];
 
-    /** @var list<Extension> the nodes and the marks but the link, which each render adds with how its links resolve */
+    /**
+     * @var list<Extension> the nodes and the marks but the binding and the link, which each render adds with how its
+     *                      bindings and links resolve
+     */
     private array $extensions;
 
     /** @var list<string> */
@@ -53,7 +57,7 @@ final readonly class RichTextSchema
         ];
 
         $this->extensions = [...$nodes, ...$marks];
-        $this->nodes = array_map(self::name(...), $nodes);
+        $this->nodes = [...array_map(self::name(...), $nodes), CMSBinding::NAME];
         $this->marks = [...array_map(self::name(...), $marks), CMSLink::NAME];
     }
 
@@ -78,7 +82,7 @@ final readonly class RichTextSchema
      */
     public function attributes(): array
     {
-        return array_map(array_keys(...), self::attributeRules());
+        return [...array_map(array_keys(...), self::attributeRules()), CMSBinding::NAME => ['property', 'params', 'fallback']];
     }
 
     /**
@@ -118,7 +122,7 @@ final readonly class RichTextSchema
         // A line break holds nothing, so it counts as empty like an empty paragraph does
         return match ($document['type'] ?? null) {
             'text' => 1 !== preg_match('/(*UCP)\S/u', is_string($document['text'] ?? null) ? $document['text'] : ''),
-            'horizontalRule' => false,
+            'horizontalRule', CMSBinding::NAME => false,
             default => $this->hasOnlyEmptyContent($document),
         };
     }
@@ -131,12 +135,16 @@ final readonly class RichTextSchema
      * @param (\Closure(string, string, ?string): ?ResolvedLink)|null $resolveLink where a link's target, ref and anchor
      *                                                                            lead for the shopper. Without it, no
      *                                                                            link resolves
-     * @param bool $markLinks whether each link carries its attributes, and one that doesn't resolve renders as a <span>,
-     *                        so typing in place in the builder's preview reads every link back
+     * @param bool $marked whether each link and binding token carries its attributes, and a link that doesn't resolve
+     *                     renders as a <span>, so typing in place in the builder's preview reads every link and token back
+     * @param (\Closure(string, array<string, mixed>): ?string)|null $resolveBinding what a binding token's property and
+     *                                                                              parameters resolve to for the shopper.
+     *                                                                              Without it, every token shows its
+     *                                                                              fallback
      */
-    public function render(array $document, ?\Closure $resolveLink = null, bool $markLinks = false): string
+    public function render(array $document, ?\Closure $resolveLink = null, bool $marked = false, ?\Closure $resolveBinding = null): string
     {
-        return (new DOMSerializer(new Schema([...$this->extensions, new CMSLink($resolveLink, $markLinks)])))->process($document);
+        return (new DOMSerializer(new Schema([...$this->extensions, new CMSBinding($resolveBinding, $marked), new CMSLink($resolveLink, $marked)])))->process($document);
     }
 
     /**
@@ -163,6 +171,31 @@ final readonly class RichTextSchema
         }
 
         return $links;
+    }
+
+    /**
+     * The binding tokens in a sanitised document, in document order
+     *
+     * @param array<array-key, mixed> $node
+     *
+     * @return list<StoredBinding> each token's property, parameters and fallback
+     */
+    public function bindings(array $node): array
+    {
+        if (CMSBinding::NAME === ($node['type'] ?? null)) {
+            $binding = self::binding($node);
+
+            return null === $binding ? [] : [$binding];
+        }
+
+        $bindings = [];
+        foreach (is_array($node['content'] ?? null) ? $node['content'] : [] as $child) {
+            if (is_array($child)) {
+                $bindings = [...$bindings, ...$this->bindings($child)];
+            }
+        }
+
+        return $bindings;
     }
 
     /**
@@ -209,6 +242,10 @@ final readonly class RichTextSchema
         $type = $node['type'] ?? null;
         if (!is_string($type) || 'doc' === $type || !in_array($type, $this->nodes, true)) {
             return null;
+        }
+
+        if (CMSBinding::NAME === $type) {
+            return self::bindingNode($node);
         }
 
         $given = is_array($node['attrs'] ?? null) ? $node['attrs'] : [];
@@ -298,6 +335,60 @@ final readonly class RichTextSchema
         }
 
         return $marks;
+    }
+
+    /**
+     * A binding token as the schema keeps it, {property, params, fallback}, with its marks, or null when it doesn't name
+     * a bindable property the way a binding does, and it's dropped. Parameters that aren't a map are none, and an empty
+     * fallback is null
+     *
+     * @param array<array-key, mixed> $node
+     *
+     * @return array<string, mixed>|null
+     */
+    private function bindingNode(array $node): ?array
+    {
+        $binding = self::binding($node);
+        if (null === $binding) {
+            return null;
+        }
+
+        $sanitized = ['type' => CMSBinding::NAME, 'attrs' => [
+            'property' => $binding->property,
+            // An empty map stays a map in JSON
+            'params' => [] === $binding->params ? new \stdClass() : $binding->params,
+            'fallback' => $binding->fallback,
+        ]];
+
+        $marks = $this->marksOf($node);
+        if ([] !== $marks) {
+            $sanitized['marks'] = $marks;
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * A cmsBinding node's binding, or null when its property isn't one. Its fallback is a string or null
+     *
+     * @param array<array-key, mixed> $node
+     */
+    private static function binding(array $node): ?StoredBinding
+    {
+        $attributes = is_array($node['attrs'] ?? null) ? $node['attrs'] : [];
+        $property = $attributes['property'] ?? null;
+        if (!is_string($property) || !StoredBinding::isProperty($property)) {
+            return null;
+        }
+
+        $params = $attributes['params'] ?? null;
+        $params = $params instanceof \stdClass ? get_object_vars($params) : $params;
+        $fallback = $attributes['fallback'] ?? null;
+
+        /** @var array<string, mixed> $params */
+        $params = is_array($params) && ([] === $params || !array_is_list($params)) ? $params : [];
+
+        return new StoredBinding($property, $params, is_string($fallback) && '' !== $fallback ? $fallback : null);
     }
 
     /**

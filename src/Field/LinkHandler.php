@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Field;
 
+use Setono\SyliusCMSPlugin\Binding\BindingResolver;
+use Setono\SyliusCMSPlugin\Binding\BindingType;
+use Setono\SyliusCMSPlugin\Binding\BindingValidator;
+use Setono\SyliusCMSPlugin\Binding\StoredBinding;
 use Setono\SyliusCMSPlugin\Link\LinkResolver;
+use Setono\SyliusCMSPlugin\Link\Target\UrlLinkTarget;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Registry\LinkTargetMetadata;
 use Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface;
@@ -15,14 +20,18 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
  * Handles Link fields: {target, ref, anchor, label} in one of three shapes, which the field's own translatable picks
  * (null, false or true). Hydration picks the current locale's ref and label along the fallback chain, so a link
  * target's resolve() always gets one string, and resolves the link. A link to a record, such as a product, refers to
- * it, so it's loaded before rendering with the tree's other references. See "Links" in docs/spec/content-model.md
+ * it, so it's loaded before rendering with the tree's other references. A link to a URL can hold a binding of type url
+ * in its ref, such as the host page's product's URL, and keeps its own label and anchor: its fallback is what the ref
+ * would otherwise store. See "Links" in docs/spec/content-model.md
  */
-final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, EmptinessCheckingFieldHandlerInterface
+final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, EmptinessCheckingFieldHandlerInterface, InnerBindingFieldHandlerInterface
 {
     public function __construct(
         private LinkTargetRegistryInterface $linkTargets,
         private LinkResolver $linkResolver,
         private FallbackChainInterface $fallbackChain,
+        private BindingResolver $bindings,
+        private BindingValidator $bindingValidator,
     ) {
     }
 
@@ -55,7 +64,8 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
         }
 
         $locale = $context->renderContext->localeCode;
-        $ref = $this->localized($value['ref'], $locale);
+        $binding = StoredBinding::fromValue($value['ref']);
+        $ref = null === $binding ? $this->localized($value['ref'], $locale) : $this->bound($binding, $context);
         if (null === $ref) {
             return null;
         }
@@ -73,7 +83,7 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
     }
 
     /**
-     * @phpstan-assert-if-true array{target: string, ref: string|array<string, string>, anchor?: string|null, label?: string|array<string, string>|null} $value
+     * @phpstan-assert-if-true array{target: string, ref: string|array<string, mixed>, anchor?: string|null, label?: string|array<string, string>|null} $value
      */
     public function fits(Field $field, mixed $value): bool
     {
@@ -88,11 +98,22 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
         }
 
         $label = $value['label'] ?? null;
-        if (!LinkLocaleParts::areKeptBy($field)) {
-            return is_string($value['ref']) && (null === $label || is_string($label));
+        $ref = $value['ref'];
+        if (StoredBinding::isBinding($ref)) {
+            // A binding is only a URL's, and its fallback is what the ref would otherwise store
+            $binding = StoredBinding::fromValue($ref);
+            if (null === $binding || UrlLinkTarget::CODE !== $value['target']) {
+                return false;
+            }
+
+            $ref = $binding->fallback ?? '';
         }
 
-        return (is_string($value['ref']) || LinkLocaleParts::isLocaleMap($value['ref'])) && (null === $label || LinkLocaleParts::isLocaleMap($label));
+        if (!LinkLocaleParts::areKeptBy($field)) {
+            return is_string($ref) && (null === $label || is_string($label));
+        }
+
+        return (is_string($ref) || LinkLocaleParts::isLocaleMap($ref)) && (null === $label || LinkLocaleParts::isLocaleMap($label));
     }
 
     public function isEmpty(Field $field, mixed $value): bool
@@ -105,6 +126,17 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
         $ref = $value['ref'] ?? null;
 
         return is_array($ref) ? LinkLocaleParts::isLocaleMap($ref) && [] === self::refs($ref) : null === $ref || '' === $ref;
+    }
+
+    /**
+     * The binding a link to a URL holds in its ref
+     */
+    public function bindings(Field $field, mixed $value): iterable
+    {
+        $value = LinkLocaleParts::normalized($value);
+        $binding = is_array($value) ? StoredBinding::fromValue($value['ref'] ?? null) : null;
+
+        return null === $binding ? [] : [$binding];
     }
 
     public function references(Field $field, mixed $value): iterable
@@ -148,7 +180,12 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
             return;
         }
 
-        foreach (self::refs($value['ref']) as $ref) {
+        $binding = StoredBinding::fromValue($value['ref']);
+        if (null !== $binding) {
+            $this->bindingValidator->validate($binding->property, $binding->params, [BindingType::Url], $context);
+        }
+
+        foreach (self::refs($binding->fallback ?? $value['ref']) as $ref) {
             $error = $this->linkResolver->refError($value['target'], $ref);
             if (null !== $error) {
                 $context->buildViolation($error)->addViolation();
@@ -173,6 +210,16 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
         $all = array_map(static fn (LinkTargetMetadata $target): string => $target->code, $this->linkTargets->all());
 
         return null === $field->targets ? $all : array_values(array_filter($field->targets, $this->linkTargets->has(...)));
+    }
+
+    /**
+     * The URL a bound ref resolves to, or else its fallback in the current locale, or null when both are empty
+     */
+    private function bound(StoredBinding $binding, HydrationContext $context): ?string
+    {
+        $url = $this->bindings->resolve($binding->property, $binding->params, [BindingType::Url], $context);
+
+        return is_string($url) ? $url : $this->localized($binding->fallback, $context->renderContext->localeCode);
     }
 
     /**

@@ -1,4 +1,31 @@
 setono_sylius_cms:
+    # The shipped bindable properties, by context key. See "Shipped bindable properties" in docs/spec/slots.md
+    bindable_property:
+        channel:
+            contact_email: Channel contact email
+            contact_phone: Channel contact phone
+            name: Channel name
+        customer:
+            first_name: Customer first name
+            full_name: Customer full name
+            last_name: Customer last name
+        entry:
+            title: Entry title
+            url: Entry URL
+        product:
+            attribute: Product attribute
+            code: Product code
+            description: Product description
+            main_taxon_name: Product main taxon
+            name: Product name
+            original_price: Product original price
+            price: Product price
+            short_description: Product short description
+            url: Product URL
+        taxon:
+            description: Taxon description
+            name: Taxon name
+            url: Taxon URL
     block_style:
         dark: Dark
         muted: Muted
@@ -133,6 +160,8 @@ setono_sylius_cms:
             heading: Heading
         locale_condition:
             locales: Locales
+        product_attribute_binding:
+            attribute: Attribute
         product_condition:
             products: Products
         product_in_taxon_condition:
@@ -523,6 +552,16 @@ setono_sylius_cms:
         audience_except: Everyone except these
         audience_only: Only these
         back: Back
+        # A field that shows a property of the host page, the channel or the customer. See "Bindings" in docs/spec/builder.md
+        binding:
+            bind: Bind to a property
+            bound: 'Shows %property%'
+            fallback: Fallback
+            fallback_help: Shown when the property is empty, such as a guest''s first name. Without one, nothing shows.
+            none: Nothing can be shown in this field here.
+            pick: Show instead
+            removed: This property no longer exists, so the fallback shows.
+            unbind: 'Stop showing %property%'
         block_settings: Settings
         block_style: Style
         blocks: Blocks
@@ -752,6 +791,10 @@ setono_sylius_cms:
         reload: Reload
         remove_condition: Remove condition
         rich_text:
+            binding: Binding
+            binding_cancel: Cancel
+            binding_insert: Insert
+            binding_property: Shows
             blockquote: Quote
             bold: Bold
             bullet_list: Bulleted list

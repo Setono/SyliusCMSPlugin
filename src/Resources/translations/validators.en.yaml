@@ -1,5 +1,6 @@
 setono_sylius_cms:
     block:
+        bound_link_label: 'A button that shows a binding, such as the product''s URL, needs a label.'
         embed_code_off: 'Embed code is switched off in this shop, so a new Embed code block can''t be published. Remove it.'
         exactly_one_of: 'Fill in one of these, but only one: %fields%.'
         not_allowed: '%block% can''t go here.'
@@ -9,16 +10,21 @@ setono_sylius_cms:
         video_or_embed_url: Choose a video, or enter a YouTube or Vimeo URL, but not both.
     # What depends on host-page context, and why it doesn't fit. See "Snippets and their context" in docs/spec/slots.md
     context:
+        binding: 'The binding "%binding%" in the block "%block%"'
         block: 'The block "%block%"'
         condition: 'The condition "%kind%" on the block "%block%"'
         does_not_provide: '%what% doesn''t provide the host-page context %context%.'
+        layout_binding: 'The binding "%binding%" in the layout'
         needs: '%what% needs the host-page context %context%.'
         placement: 'The placement in "%slot%"'
         snippet: 'The snippet "%snippet%"'
         used_in: 'The Snippet block in "%entry%"'
     field:
+        binding_not_accepted: '{{ binding }} can''t be shown in this field.'
+        binding_parameter_required: '{{ parameter }} is required.'
         invalid_choice: The value you selected is not a valid choice.
         link_target_not_allowed: 'This field can''t link to %target%.'
+        not_binding: This value should be a binding, with its parameters and fallback.
         not_code: This value should be HTML code.
         not_date: This value should be a date.
         not_date_time: This value should be a date and time.
@@ -48,6 +54,7 @@ setono_sylius_cms:
         too_many_items: 'This list has too many items. It should have {{ limit }} item or less.|This list has too many items. It should have {{ limit }} items or less.'
         too_many_media_items: 'This list has too many media items. It should have {{ limit }} media item or less.|This list has too many media items. It should have {{ limit }} media items or less.'
         too_small: This value should be {{ limit }} or more.
+        unknown_binding: 'The bindable property "{{ binding }}" no longer exists, so its fallback shows.'
         unknown_source: 'The source "{{ source }}" no longer exists, so this list shows nothing.'
     # What a placement's page scope may hold. See "Page scopes" in docs/spec/slots.md
     page_scope:

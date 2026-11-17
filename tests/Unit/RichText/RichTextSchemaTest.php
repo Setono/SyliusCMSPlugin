@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\RichText;
 
 use PHPUnit\Framework\TestCase;
+use Setono\SyliusCMSPlugin\Binding\StoredBinding;
+use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
 
 /**
@@ -329,6 +331,109 @@ final class RichTextSchemaTest extends TestCase
         yield 'text after an empty paragraph' => [self::doc(['type' => 'paragraph'], ['type' => 'paragraph', 'content' => [self::text(' '), self::text('a')]])];
         yield 'text deep in a list' => [self::doc(['type' => 'orderedList', 'content' => [['type' => 'listItem', 'content' => [['type' => 'paragraph', 'content' => [self::text('1')]]]]]])];
         yield 'a horizontal rule' => [self::doc(['type' => 'horizontalRule'])];
+    }
+
+    /**
+     * @test
+     */
+    public function it_keeps_a_binding_token_with_its_property_parameters_fallback_and_marks_when_sanitising(): void
+    {
+        $sanitized = (new RichTextSchema())->sanitize(self::doc(['type' => 'paragraph', 'content' => [
+            self::text('Made of '),
+            ['type' => 'cmsBinding', 'attrs' => ['property' => 'product.attribute', 'params' => ['attribute' => 'material'], 'fallback' => 'cotton', 'colour' => 'red'], 'marks' => [['type' => 'bold']], 'content' => [self::text('x')]],
+        ]]));
+
+        self::assertSame(self::doc(['type' => 'paragraph', 'content' => [
+            self::text('Made of '),
+            ['type' => 'cmsBinding', 'attrs' => ['property' => 'product.attribute', 'params' => ['attribute' => 'material'], 'fallback' => 'cotton'], 'marks' => [['type' => 'bold']]],
+        ]]), $sanitized);
+    }
+
+    /**
+     * @test
+     */
+    public function it_gives_a_binding_token_empty_parameters_as_a_map_and_an_empty_fallback_as_none_when_sanitising(): void
+    {
+        $sanitized = (new RichTextSchema())->sanitize(self::doc(['type' => 'paragraph', 'content' => [
+            ['type' => 'cmsBinding', 'attrs' => ['property' => 'product.name', 'params' => ['material'], 'fallback' => '']],
+        ]]));
+
+        self::assertEquals(self::doc(['type' => 'paragraph', 'content' => [
+            ['type' => 'cmsBinding', 'attrs' => ['property' => 'product.name', 'params' => new \stdClass(), 'fallback' => null]],
+        ]]), $sanitized);
+        self::assertSame('{"content":[{"content":[{"attrs":{"fallback":null,"params":{},"property":"product.name"},"type":"cmsBinding"}],"type":"paragraph"}],"type":"doc"}', CanonicalJson::encode($sanitized));
+    }
+
+    /**
+     * @test
+     */
+    public function it_drops_a_binding_token_that_names_no_bindable_property_when_sanitising(): void
+    {
+        $sanitized = (new RichTextSchema())->sanitize(self::doc(['type' => 'paragraph', 'content' => [
+            self::text('Hi'),
+            ['type' => 'cmsBinding', 'attrs' => ['property' => 'name', 'params' => [], 'fallback' => 'there']],
+            ['type' => 'cmsBinding'],
+        ]]));
+
+        self::assertSame(self::doc(['type' => 'paragraph', 'content' => [self::text('Hi')]]), $sanitized);
+    }
+
+    /**
+     * @test
+     */
+    public function it_counts_a_document_with_only_a_binding_token_as_not_empty(): void
+    {
+        $schema = new RichTextSchema();
+
+        self::assertFalse($schema->isEmpty(self::doc(['type' => 'paragraph', 'content' => [['type' => 'cmsBinding', 'attrs' => ['property' => 'product.name', 'params' => [], 'fallback' => null]]]])));
+    }
+
+    /**
+     * @test
+     */
+    public function it_renders_a_binding_token_as_the_text_it_resolves_to_or_else_its_fallback(): void
+    {
+        $document = self::doc(['type' => 'paragraph', 'content' => [
+            self::text('Buy '),
+            ['type' => 'cmsBinding', 'attrs' => ['property' => 'product.name', 'params' => [], 'fallback' => 'this product'], 'marks' => [['type' => 'bold']]],
+            self::text(' for '),
+            ['type' => 'cmsBinding', 'attrs' => ['property' => 'product.price', 'params' => [], 'fallback' => 'a good price']],
+            ['type' => 'cmsBinding', 'attrs' => ['property' => 'customer.first_name', 'params' => [], 'fallback' => null]],
+        ]]);
+        $resolved = ['product.name' => 'Fish & Chips', 'product.price' => null, 'customer.first_name' => null];
+
+        $html = (new RichTextSchema())->render($document, resolveBinding: static fn (string $property, array $params): ?string => $resolved[$property]);
+
+        self::assertSame('<p>Buy <strong>Fish &amp; Chips</strong> for a good price</p>', $html);
+    }
+
+    /**
+     * @test
+     */
+    public function it_renders_a_binding_token_with_its_attributes_and_not_editable_when_marked(): void
+    {
+        $document = self::doc(['type' => 'paragraph', 'content' => [
+            ['type' => 'cmsBinding', 'attrs' => ['property' => 'product.attribute', 'params' => ['attribute' => 'material'], 'fallback' => 'cotton']],
+        ]]);
+
+        $html = (new RichTextSchema())->render($document, marked: true, resolveBinding: static fn (): string => 'Wool');
+
+        self::assertSame('<p><span data-cms-binding="product.attribute" data-cms-binding-params="{&quot;attribute&quot;:&quot;material&quot;}" data-cms-binding-fallback="cotton" contenteditable="false">Wool</span></p>', $html);
+    }
+
+    /**
+     * @test
+     */
+    public function it_lists_the_binding_tokens_of_a_document_in_document_order(): void
+    {
+        $bindings = (new RichTextSchema())->bindings(self::doc(
+            ['type' => 'paragraph', 'content' => [['type' => 'cmsBinding', 'attrs' => ['property' => 'product.name', 'params' => [], 'fallback' => null]]]],
+            ['type' => 'bulletList', 'content' => [['type' => 'listItem', 'content' => [['type' => 'paragraph', 'content' => [
+                ['type' => 'cmsBinding', 'attrs' => ['property' => 'product.attribute', 'params' => ['attribute' => 'fit'], 'fallback' => 'regular']],
+            ]]]]]],
+        ));
+
+        self::assertEquals([new StoredBinding('product.name'), new StoredBinding('product.attribute', ['attribute' => 'fit'], 'regular')], $bindings);
     }
 
     /**

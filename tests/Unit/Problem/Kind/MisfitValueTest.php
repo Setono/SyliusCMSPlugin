@@ -180,6 +180,28 @@ final class MisfitValueTest extends TestCase
         self::assertSame([], [...$this->kind()->findIn($page)]);
     }
 
+    /**
+     * A binding is a bound field's whole value, also a translatable field's. See "Field values" in
+     * docs/spec/content-model.md
+     *
+     * @test
+     */
+    public function it_finds_a_binding_that_fits_a_field_that_can_be_bound_in_its_shape_and_any_other_binding(): void
+    {
+        $page = self::page(
+            new StoredBlock(self::A, 'heading', 1, fields: ['text' => ['$bind' => 'product.name', '$params' => [], '$fallback' => ['en_US' => 'this product']]]),
+            new StoredBlock(self::B, 'heading', 1, fields: ['text' => ['$bind' => 'product.name']]),
+            new StoredBlock(self::C, 'group', 1, fields: ['fullWidth' => ['$bind' => 'product.name', '$params' => [], '$fallback' => null]]),
+            new StoredBlock(self::D, 'rich_text', 1, fields: ['content' => ['$bind' => 'product.name', '$params' => [], '$fallback' => null]]),
+        );
+
+        self::assertEquals([
+            self::problem($page, self::B, 'heading', 'text', 'setono_sylius_cms.field.heading.text', null),
+            self::problem($page, self::C, 'group', 'fullWidth', 'setono_sylius_cms.field.group.full_width', null),
+            self::problem($page, self::D, 'rich_text', 'content', 'setono_sylius_cms.field.rich_text.content', null),
+        ], [...$this->kind()->findIn($page)]);
+    }
+
     private static function problem(Page $page, string $block, string $type, string $field, string $label, ?string $locale): Problem
     {
         $blockLabels = ['heading' => 'setono_sylius_cms.block_type.heading', 'group' => 'setono_sylius_cms.block_type.group', 'rich_text' => 'setono_sylius_cms.block_type.rich_text', 'store' => 'app.store', 'testimonial' => 'app.testimonial'];

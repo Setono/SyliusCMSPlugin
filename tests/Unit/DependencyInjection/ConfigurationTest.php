@@ -98,6 +98,7 @@ final class ConfigurationTest extends TestCase
             'content_types' => [],
             'slots' => [],
             'context_keys' => [],
+            'bindable_properties' => [],
             'block_styles' => [],
             'fallback_locales' => [],
             'revisions' => ['keep' => 50],
@@ -797,6 +798,47 @@ final class ConfigurationTest extends TestCase
         yield 'no class' => [['brand' => ['label' => 'a']], 'The child config "class" under "setono_sylius_cms.context_keys.brand" must be configured'];
         yield 'a class that does not exist' => [['brand' => ['class' => 'App\\Entity\\Gone', 'label' => 'a']], 'The class "App\\Entity\\Gone" of a context key is no class or interface'];
         yield 'no label' => [['brand' => ['class' => \stdClass::class]], 'The child config "label" under "setono_sylius_cms.context_keys.brand" must be configured'];
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_declare_bindable_properties_that_are_property_paths_by_context_key_and_code(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['bindable_properties' => ['product' => ['brand' => ['label' => 'app.cms.binding.brand', 'type' => 'text', 'path' => 'brand.name']]]],
+            ['bindable_properties' => ['product' => ['weight' => ['label' => 'app.cms.binding.weight', 'type' => 'number', 'path' => 'variants[0].weight']], 'channel' => ['slogan' => ['label' => 'app.cms.binding.slogan', 'type' => 'text', 'path' => 'slogan']]]],
+        ], ['bindable_properties' => [
+            'product' => [
+                'brand' => ['label' => 'app.cms.binding.brand', 'type' => 'text', 'path' => 'brand.name'],
+                'weight' => ['label' => 'app.cms.binding.weight', 'type' => 'number', 'path' => 'variants[0].weight'],
+            ],
+            'channel' => ['slogan' => ['label' => 'app.cms.binding.slogan', 'type' => 'text', 'path' => 'slogan']],
+        ]], 'bindable_properties');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidBindableProperties
+     *
+     * @param array<array-key, mixed> $properties
+     */
+    public function it_refuses_an_invalid_bindable_property(array $properties, string $message): void
+    {
+        $this->assertConfigurationIsInvalid([['bindable_properties' => $properties]], $message);
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>, string}>
+     */
+    public function provideInvalidBindableProperties(): iterable
+    {
+        yield 'a context key that is no code' => [['Product' => ['brand' => ['label' => 'a', 'type' => 'text', 'path' => 'brand']]], 'The context key code "Product" must match'];
+        yield 'a code that is no code' => [['product' => ['Brand' => ['label' => 'a', 'type' => 'text', 'path' => 'brand']]], 'The bindable property code "Brand" must match'];
+        yield 'a type that is no binding type' => [['product' => ['brand' => ['label' => 'a', 'type' => 'image', 'path' => 'brand']]], 'The value "image" is not allowed for path "setono_sylius_cms.bindable_properties.product.brand.type"'];
+        yield 'no label' => [['product' => ['brand' => ['type' => 'text', 'path' => 'brand']]], 'The child config "label" under "setono_sylius_cms.bindable_properties.product.brand" must be configured'];
+        yield 'no path' => [['product' => ['brand' => ['label' => 'a', 'type' => 'text']]], 'The child config "path" under "setono_sylius_cms.bindable_properties.product.brand" must be configured'];
     }
 
     /**
