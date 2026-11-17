@@ -20,7 +20,7 @@ A slot renders where its template event fires, or where a template calls `cms_sl
 3. **Filters them**, in editor order, keeping a placement when:
    - its page scope matches the host-page context ([Slots](slots.md#page-scopes))
    - its snippet is [visible](content-model.md#when-an-entry-shows): published, enabled, inside its date window, in the channel, translated and not held back, and in the shopper's audience
-4. **Applies its cap**, keeping the first matching placements up to the cap. This needs no rendering: a snippet whose blocks are all hidden still wins and shows nothing ([Targeting](targeting.md)).
+4. **Applies its cap**, keeping the first matching placements up to the cap. This needs no rendering: a snippet whose blocks are all hidden still wins and shows nothing ([Targeting](targeting.md)). Steps 3 and 4 are `PlacementPickerInterface`'s, which answers every placement with whether it wins and, if not, the first reason why, for the preview and the profiler panel.
 5. **Renders the winners in order**, each snippet's block tree with the slot's context.
 
 A slot with nothing to show prints nothing, not even a wrapper. A placement whose slot or context key was removed from code is kept, not rendered, and flagged ([Slots](slots.md)).
