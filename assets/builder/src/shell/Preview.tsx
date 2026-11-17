@@ -74,7 +74,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
             reload: () => setReloads((count) => count + 1),
             openBlockPicker: (spot, at) => {
                 const { rules, entry } = store.getState();
-                const only = soleBlockType(rules, entry.tree.blocks, spot.parent);
+                const only = soleBlockType(rules, entry, spot.parent);
                 if (only !== undefined) {
                     store.getState().addBlock(only.code, spot.parent, spot.index);
 

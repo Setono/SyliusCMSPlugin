@@ -1,10 +1,11 @@
 import * as Popover from '@radix-ui/react-popover';
 import { useId, useState, type ReactNode } from 'react';
 import { useBuilder, useBuilderState } from '../context';
+import { contextNames, providedContext } from '../hostPageContext';
 import { useTranslator } from '../i18n';
-import { allowedIn, insertableIn, type NestingRules } from '../nesting';
+import { allowedIn, insertableIn, leftOutIn, type NestingRules } from '../nesting';
 import type { BlockSpot } from '../tree';
-import type { BlockTypeDefinition, StoredBlock } from '../types';
+import type { BlockTypeDefinition, Entry, StoredBlock } from '../types';
 import styles from './BlockPicker.module.css';
 
 export interface AddBlockButtonProps {
@@ -24,10 +25,10 @@ export function AddBlockButton({ parent, className, label, children }: AddBlockB
     const t = useTranslator();
     const { store } = useBuilder();
     const rules = useBuilderState((state) => state.rules);
-    const tree = useBuilderState((state) => state.entry.tree.blocks);
+    const entry = useBuilderState((state) => state.entry);
     const [open, setOpen] = useState(false);
-    const insertable = insertableIn(rules, tree, parent);
-    const only = soleBlockType(rules, tree, parent);
+    const insertable = insertableIn(rules, entry.tree.blocks, parent, providedContext(rules.provides, entry));
+    const only = soleBlockType(rules, entry, parent);
 
     const onOpenChange = (next: boolean): void => {
         if (next && only !== undefined) {
@@ -61,9 +62,14 @@ export function AddBlockButton({ parent, className, label, children }: AddBlockB
     );
 }
 
-/** The one block type a spot allows, such as Column in Columns, which is added straight away instead of picked. */
-export function soleBlockType(rules: NestingRules, tree: readonly StoredBlock[], parent: string | null): BlockTypeDefinition | undefined {
-    return allowedIn(rules, tree, parent).length === 1 ? insertableIn(rules, tree, parent)[0] : undefined;
+/**
+ * The one block type a spot allows, such as Column in Columns, which is added straight away instead of picked, as long as
+ * the entry provides what it needs.
+ */
+export function soleBlockType(rules: NestingRules, entry: Entry, parent: string | null): BlockTypeDefinition | undefined {
+    const tree: readonly StoredBlock[] = entry.tree.blocks;
+
+    return allowedIn(rules, tree, parent).length === 1 ? insertableIn(rules, tree, parent, providedContext(rules.provides, entry))[0] : undefined;
 }
 
 export interface BlockPickerAtProps {
@@ -102,15 +108,24 @@ export function BlockPickerAt({ spot, onClose, children }: BlockPickerAtProps) {
     );
 }
 
-/** The block types that fit a spot, each with its thumbnail, and a search. */
+/**
+ * The block types that fit a spot, each with its thumbnail, and a search. Those the spot would take but for the
+ * host-page context they need, which the entry doesn't provide or the snippet doesn't declare, are named below with
+ * what they need. See "Block picker" in docs/spec/builder.md
+ */
 function BlockPicker({ parent, onPick }: { parent: string | null; onPick: (code: string) => void }) {
     const t = useTranslator();
     const searchId = useId();
+    const leftOutId = useId();
     const rules = useBuilderState((state) => state.rules);
-    const tree = useBuilderState((state) => state.entry.tree.blocks);
+    const entry = useBuilderState((state) => state.entry);
+    const contextKeys = useBuilderState((state) => state.contextKeys);
     const [query, setQuery] = useState('');
     const search = query.trim().toLocaleLowerCase();
-    const blockTypes = insertableIn(rules, tree, parent).filter((blockType) => blockType.label.toLocaleLowerCase().includes(search));
+    const matches = (blockType: BlockTypeDefinition): boolean => blockType.label.toLocaleLowerCase().includes(search);
+    const provided = providedContext(rules.provides, entry);
+    const blockTypes = insertableIn(rules, entry.tree.blocks, parent, provided).filter(matches);
+    const leftOut = leftOutIn(rules, entry.tree.blocks, parent, provided).filter(({ blockType }) => matches(blockType));
 
     return (
         <div className={styles.body}>
@@ -142,6 +157,21 @@ function BlockPicker({ parent, onPick }: { parent: string | null; onPick: (code:
                         </li>
                     ))}
                 </ul>
+            )}
+            {leftOut.length > 0 && (
+                <>
+                    <h3 id={leftOutId} className={styles.leftOutHeading}>
+                        {t('setono_sylius_cms.builder.not_available_here')}
+                    </h3>
+                    <ul className={styles.leftOut} aria-labelledby={leftOutId}>
+                        {leftOut.map(({ blockType, missing }) => (
+                            <li key={blockType.code} className={styles.leftOutItem}>
+                                <span className={styles.label}>{blockType.label}</span>
+                                <span className={styles.reason}>{t('setono_sylius_cms.builder.needs_context', { '%context%': contextNames(missing, contextKeys, t).join(', ') })}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </>
             )}
         </div>
     );

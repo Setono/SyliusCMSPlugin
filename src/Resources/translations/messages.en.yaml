@@ -489,10 +489,9 @@ setono_sylius_cms:
         context_any_page: Any page
         context_help: The pages it can be placed on. Blocks and conditions that need a product or a taxon are offered only where it has one.
         context_in_the_way: 'This can''t change while these need it:'
-        context_block_needs: 'The block "%block%" needs %context%.'
-        context_condition_needs: 'A condition on the block "%block%" needs %context%.'
-        context_placement_needs: 'The placement in "%slot%" needs %context%.'
-        context_placement_does_not_provide: 'The placement in "%slot%" doesn''t provide %context%.'
+        context_block_needs: 'The block "%block%" needs the host-page context %context%.'
+        context_condition_needs: 'The condition "%kind%" on the block "%block%" needs the host-page context %context%.'
+        context_placement_does_not_provide: 'The placement in "%slot%" doesn''t provide the host-page context %context%.'
         context_removed_key: '%key%, which the code no longer declares'
         needs_context: 'Needs: %context%'
         not_available_here: Not available here

@@ -6,6 +6,7 @@ import { enablePatches, produceWithPatches, type Patch } from 'immer';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { applyChanges, changesFromPatches, mergeChanges, type Change, type LayoutTranslatableLookup, type TranslatableLookup } from './changeSet';
 import { emptyHistory, rebaseHistory, recordEdit, redoEdit, undoEdit, type History, type Step } from './history';
+import { providedContext } from './hostPageContext';
 import { canDuplicate, canMoveBlocks, createNestingRules, initialChildren, insertableIn, type NestingRules } from './nesting';
 import { holdClashes, reconcile, splitValueClashes, withoutKeysIn, type HeldClash } from './pullIn';
 import { copyWithNewKeys, findBlock, generateBlockKey, insertBlock, listOf, locateBlock, moveBlocksTo, removeBlockFrom, shiftWithin, topmostBlocks } from './tree';
@@ -18,12 +19,14 @@ import type {
     Clash,
     ConditionKindDefinition,
     ContentTypeDefinition,
+    ContextKeyDefinition,
     Entry,
     EntryStatus,
     FieldValues,
     JsonValue,
     LayoutDefinition,
     Schedule,
+    SlotDefinition,
     StoredBlock,
     TranslationSource,
     VisibilityCondition,
@@ -61,6 +64,10 @@ export interface BuilderData {
     blockTypes: BlockTypeDefinition[];
     /** The kinds of visibility conditions a block can carry. */
     conditionKinds: ConditionKindDefinition[];
+    /** The context keys, which a snippet's context is picked from and named by. */
+    contextKeys: ContextKeyDefinition[];
+    /** The slots, with the context keys each provides, which a snippet's placements are in. */
+    slots: SlotDefinition[];
     /** What each spot in the tree may hold. */
     rules: NestingRules;
     /** The entry's content type's layouts, the default first, disabled ones too, or none for a content type without its own URL. */
@@ -95,6 +102,11 @@ export interface BuilderData {
      * the server, and the refusal stands until a save of another slug in the locale goes through.
      */
     refusedSlugs: Record<string, string>;
+    /**
+     * What was in the way, as the server said, of the last change of a snippet's declared context it didn't save, which
+     * took the change back. It stands until a save of another change of it goes through.
+     */
+    refusedContext: string[];
     discardState: DiscardState;
     /** The entry's scheduled publish, or null. While it waits, the working copy is read-only: edits are refused. */
     schedule: Schedule | null;
@@ -228,6 +240,8 @@ export interface BuilderStoreOptions {
     blockTypes: BlockTypeDefinition[];
     contentTypes: ContentTypeDefinition[];
     conditionKinds?: ConditionKindDefinition[];
+    contextKeys?: ContextKeyDefinition[];
+    slots?: SlotDefinition[];
     entry: Entry;
     status: EntryStatus;
     lockToken?: number;
@@ -242,6 +256,8 @@ export function createBuilderStore({
     blockTypes,
     contentTypes,
     conditionKinds = [],
+    contextKeys = [],
+    slots = [],
     entry,
     status,
     lockToken = 0,
@@ -251,7 +267,7 @@ export function createBuilderStore({
     const chainOf = (code: string): string[] => localeOf(locales, code).fallbackChain;
     const blockTypesByCode = new Map(blockTypes.map((blockType) => [blockType.code, blockType]));
     const contentType = contentTypes.find((candidate) => candidate.code === entry.contentType);
-    const rules = createNestingRules(blockTypes, contentType?.blocks ?? null);
+    const rules = createNestingRules(blockTypes, contentType?.blocks ?? null, contentType?.provides);
     const layouts = contentType?.layouts ?? [];
     const createBlock = (type: string): StoredBlock => ({
         key: generateKey(),
@@ -333,6 +349,8 @@ export function createBuilderStore({
             locale,
             blockTypes,
             conditionKinds,
+            contextKeys,
+            slots,
             rules,
             layouts,
             entry,
@@ -349,6 +367,7 @@ export function createBuilderStore({
             publishState: 'idle',
             publishRefusal: null,
             refusedSlugs: {},
+            refusedContext: [],
             discardState: 'idle',
             schedule,
             scheduleState: 'idle',
@@ -356,7 +375,8 @@ export function createBuilderStore({
             cancelScheduleState: 'idle',
 
             addBlock(code, parent = null, index) {
-                if (locks(get().schedule) || !insertableIn(rules, get().entry.tree.blocks, parent).some((blockType) => blockType.code === code)) {
+                const { schedule: locked, entry: working } = get();
+                if (locks(locked) || !insertableIn(rules, working.tree.blocks, parent, providedContext(rules.provides, working)).some((blockType) => blockType.code === code)) {
                     return null;
                 }
 
@@ -528,8 +548,9 @@ export function createBuilderStore({
                     unsaved: [],
                     clashes: [],
                     resolvedClashes: 0,
-                    // The slugs shown are the server's now
+                    // The slugs and the context shown are the server's now
                     refusedSlugs: {},
+                    refusedContext: [],
                 });
             },
 

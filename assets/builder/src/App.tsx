@@ -88,6 +88,8 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                     blockTypes: registry.blockTypes,
                     contentTypes: registry.contentTypes,
                     conditionKinds: registry.conditionKinds,
+                    contextKeys: registry.contextKeys ?? [],
+                    slots: registry.slots ?? [],
                     entry,
                     status,
                     lockToken,

@@ -2,6 +2,7 @@
  * What each spot in the block tree may hold. The registry resolves the rules ('*', parents) per block type
  * and per content type; these functions apply them to the working copy. Pure functions, with no React.
  */
+import { missingContext } from './hostPageContext';
 import { findBlock, listOf, locateBlock, topmostBlocks } from './tree';
 import type { AllowedBlockType, BlockTypeDefinition, StoredBlock } from './types';
 
@@ -9,6 +10,17 @@ export interface NestingRules {
     blockTypes: ReadonlyMap<string, BlockTypeDefinition>;
     /** What the top level of the entry's tree may hold. */
     topLevel: readonly AllowedBlockType[];
+    /**
+     * The context keys the entry's content type provides its tree, or null for a snippet, which declares them, or
+     * undefined for the entry itself.
+     */
+    provides?: readonly string[] | null | undefined;
+}
+
+/** A block type a spot allows that the picker leaves out, because the entry doesn't provide these context keys. */
+export interface LeftOut {
+    blockType: BlockTypeDefinition;
+    missing: string[];
 }
 
 /** Where a dragged block is dropped, relative to the block under the pointer. */
@@ -21,8 +33,8 @@ export interface Placement {
     index: number;
 }
 
-export function createNestingRules(blockTypes: readonly BlockTypeDefinition[], topLevel: readonly AllowedBlockType[] | null): NestingRules {
-    return { blockTypes: new Map(blockTypes.map((blockType) => [blockType.code, blockType])), topLevel: topLevel ?? [] };
+export function createNestingRules(blockTypes: readonly BlockTypeDefinition[], topLevel: readonly AllowedBlockType[] | null, provides?: readonly string[] | null): NestingRules {
+    return { blockTypes: new Map(blockTypes.map((blockType) => [blockType.code, blockType])), topLevel: topLevel ?? [], provides };
 }
 
 /** What a spot allows: the top level when parent is null, and otherwise what the parent's block type allows. */
@@ -36,8 +48,25 @@ export function allowedIn(rules: NestingRules, tree: readonly StoredBlock[], par
     return (type === undefined ? undefined : rules.blockTypes.get(type)?.children) ?? [];
 }
 
-/** The block types the picker offers at a spot: allowed there, not disabled, and not yet at their max. */
-export function insertableIn(rules: NestingRules, tree: readonly StoredBlock[], parent: string | null): BlockTypeDefinition[] {
+/**
+ * The block types the picker offers at a spot: allowed there, not disabled, not yet at their max, and, when the context
+ * keys the entry provides are given, needing no others.
+ */
+export function insertableIn(rules: NestingRules, tree: readonly StoredBlock[], parent: string | null, provided?: readonly string[]): BlockTypeDefinition[] {
+    return fittingIn(rules, tree, parent).filter((blockType) => provided === undefined || missingContext(blockType.needs, provided).length === 0);
+}
+
+/** The block types the picker would offer at a spot but for the context keys they need that the entry doesn't provide. */
+export function leftOutIn(rules: NestingRules, tree: readonly StoredBlock[], parent: string | null, provided: readonly string[]): LeftOut[] {
+    return fittingIn(rules, tree, parent).flatMap((blockType) => {
+        const missing = missingContext(blockType.needs, provided);
+
+        return missing.length === 0 ? [] : [{ blockType, missing }];
+    });
+}
+
+/** The block types a spot allows that aren't disabled and aren't yet at their max. */
+function fittingIn(rules: NestingRules, tree: readonly StoredBlock[], parent: string | null): BlockTypeDefinition[] {
     const list = blocksIn(tree, parent);
 
     return allowedIn(rules, tree, parent).flatMap((allowed) => {
