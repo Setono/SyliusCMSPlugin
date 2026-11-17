@@ -8,7 +8,6 @@ use Setono\SyliusCMSPlugin\Context\HostPageContextResolver;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
-use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -27,6 +26,9 @@ use Twig\Environment;
  * 4. of those, in a capped slot, the first `cap`. Steps 3 and 4 are PlacementPickerInterface's, which decides without
  *    rendering, so a snippet whose blocks are all hidden still wins and shows nothing
  * 5. each winning snippet's tree, rendered with the slot's context in the slot template, inside the slot's wrapper
+ *
+ * A winning snippet that throws before its blocks render, such as when its tree can't be upgraded, goes to the failure
+ * handler, and in production the others still show. A block that throws is the block renderer's (FailSafeBlockRenderer)
  *
  * It takes the placements before it resolves its context, so a slot without placements resolves nothing: a page
  * doesn't look up its product for an empty product.top. A slot with nothing to show prints nothing, not even its
@@ -50,6 +52,7 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
         private readonly BlockViewBuilder $blockViewBuilder,
         private readonly ReferenceLoaderInterface $referenceLoader,
         private readonly Environment $twig,
+        private readonly FailureHandlerInterface $failures,
     ) {
     }
 
@@ -129,7 +132,15 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
 
         $context = self::asShoppersSeeIt($context);
 
-        $trees = array_map(fn (array $winner): StoredTree => $this->upgrader->readBlockTree($winner[1]), $winners);
+        $trees = [];
+        foreach ($winners as $index => [$placement, $snippet]) {
+            try {
+                $trees[$index] = $this->upgrader->readBlockTree($snippet);
+            } catch (\Throwable $e) {
+                $this->failures->snippetFailed($placement, $e);
+            }
+        }
+
         $references = $this->referenceLoader->load((function () use ($trees): \Generator {
             foreach ($trees as $tree) {
                 yield from $this->blockViewBuilder->references($tree->blocks);
@@ -137,8 +148,17 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
         })(), $context);
 
         $snippets = [];
-        foreach ($winners as $index => [$placement, $snippet]) {
-            $blocks = $this->blockViewBuilder->build($trees[$index]->blocks, $context, $references, $snippet->getUuid());
+        foreach ($trees as $index => $tree) {
+            [$placement, $snippet] = $winners[$index];
+
+            try {
+                $blocks = $this->blockViewBuilder->build($tree->blocks, $context, $references, $snippet->getUuid());
+            } catch (\Throwable $e) {
+                $this->failures->snippetFailed($placement, $e);
+
+                continue;
+            }
+
             if ([] !== $blocks) {
                 $snippets[] = new PlacedSnippet($placement, $snippet, $blocks);
             }

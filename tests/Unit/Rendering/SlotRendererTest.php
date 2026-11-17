@@ -24,6 +24,7 @@ use Setono\SyliusCMSPlugin\Registry\UnknownSlotException;
 use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
 use Setono\SyliusCMSPlugin\Rendering\BlockReferences;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
+use Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface;
 use Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher;
 use Setono\SyliusCMSPlugin\Rendering\PlacementData;
 use Setono\SyliusCMSPlugin\Rendering\PlacementPicker;
@@ -37,6 +38,7 @@ use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\OnProductPage;
+use Setono\SyliusCMSPlugin\Tests\Unit\Rendering\Fixture\Unbuildable;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -72,6 +74,9 @@ final class SlotRendererTest extends TestCase
     /** @var ObjectProphecy<ContextResolverInterface> */
     private ObjectProphecy $productResolver;
 
+    /** @var ObjectProphecy<FailureHandlerInterface> */
+    private ObjectProphecy $failures;
+
     private RenderContext $context;
 
     protected function setUp(): void
@@ -86,6 +91,7 @@ final class SlotRendererTest extends TestCase
         $this->visibleSnippets = $this->prophesize(VisibleSnippetsInterface::class);
         $this->upgrader = $this->prophesize(StoredDataUpgraderInterface::class);
         $this->productResolver = $this->prophesize(ContextResolverInterface::class);
+        $this->failures = $this->prophesize(FailureHandlerInterface::class);
     }
 
     /**
@@ -364,6 +370,59 @@ final class SlotRendererTest extends TestCase
     }
 
     /**
+     * Such as one whose stored tree no upgrader can bring up to date. The failure handler logs it in production
+     *
+     * @test
+     */
+    public function it_hands_a_snippet_that_throws_before_its_blocks_render_to_the_failure_handler_and_shows_the_others(): void
+    {
+        $broken = new Snippet();
+        $exception = new \RuntimeException('No upgrader for version 7');
+        $this->upgrader->readBlockTree($broken)->willThrow($exception);
+        $hours = $this->snippet('Opening hours');
+        $this->placementProvider->getPlacements($this->context->channel)->willReturn([
+            $brokenPlacement = self::placement('shop.footer', $broken, 0),
+            self::placement('shop.footer', $hours, 1),
+        ]);
+        $this->visibleSnippets->get(Argument::any(), $this->context)->willReturn([$broken->getUuid() => $broken, $hours->getUuid() => $hours]);
+        $this->failures->snippetFailed($brokenPlacement, $exception)->shouldBeCalledOnce();
+
+        self::assertSame('<div class="cms-slot cms-slot--shop-footer">[Opening hours]</div>', $this->renderer()->render('shop.footer'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_a_snippet_whose_blocks_can_t_be_built_to_the_failure_handler(): void
+    {
+        $broken = $this->snippet('Broken', new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e50', 'unbuildable', 1));
+        $this->placementProvider->getPlacements($this->context->channel)->willReturn([$brokenPlacement = self::placement('shop.footer', $broken, 0)]);
+        $this->visibleSnippets->get(Argument::any(), $this->context)->willReturn([$broken->getUuid() => $broken]);
+        $this->failures->snippetFailed($brokenPlacement, Argument::which('getMessage', Unbuildable::MESSAGE))->shouldBeCalledOnce();
+
+        self::assertSame('', $this->renderer()->render('shop.footer'));
+    }
+
+    /**
+     * In dev, the handler throws it on
+     *
+     * @test
+     */
+    public function it_lets_what_the_failure_handler_throws_for_a_snippet_through(): void
+    {
+        $broken = new Snippet();
+        $exception = new \RuntimeException('No upgrader for version 7');
+        $this->upgrader->readBlockTree($broken)->willThrow($exception);
+        $this->placementProvider->getPlacements($this->context->channel)->willReturn([self::placement('shop.footer', $broken, 0)]);
+        $this->visibleSnippets->get(Argument::any(), $this->context)->willReturn([$broken->getUuid() => $broken]);
+        $this->failures->snippetFailed(Argument::cetera())->willThrow($exception);
+
+        $this->expectExceptionObject($exception);
+
+        $this->renderer()->render('shop.footer');
+    }
+
+    /**
      * @test
      */
     public function it_throws_for_a_slot_the_code_does_not_declare(): void
@@ -376,7 +435,7 @@ final class SlotRendererTest extends TestCase
     private function renderer(string $template = '<div class="{{ slot.wrapperClass }}">{% for placed in snippets %}{% for view in placed.blocks %}[{{ view.block.text }}]{% endfor %}{% endfor %}</div>'): SlotRenderer
     {
         $handlers = Conditions::fieldHandlers();
-        $blockTypes = new BlockTypeRegistry(['heading' => Heading::class], new FieldReader());
+        $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'unbuildable' => Unbuildable::class], new FieldReader());
         $referenceLoader = new ReferenceLoader(new ServiceLocator([]));
         $requestStack = new RequestStack();
         $requestStack->push(Request::create('/en_US/products/t-shirt'));
@@ -411,6 +470,7 @@ final class SlotRendererTest extends TestCase
             ),
             $referenceLoader,
             new Environment(new ArrayLoader([SlotRenderer::TEMPLATE => $template])),
+            $this->failures->reveal(),
         );
     }
 

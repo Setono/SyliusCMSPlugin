@@ -150,6 +150,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
             <argument type="service" id="twig"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface"/>
 
             <tag name="kernel.reset" method="reset"/>
         </service>
