@@ -44,7 +44,12 @@ final class PageScopesTest extends UITestCase
         $dialog = $browser->getByRole('dialog', ['name' => 'Page scope']);
         $dialog->getByRole('button', ['name' => 'Add condition'])->click();
         $condition = $dialog->getByRole('group', ['name' => 'Condition 1']);
-        Expect::locator($condition->getByLabel('Kind')->locator('option:not([disabled])'))->toHaveCount(2);
+        $kind = $condition->getByRole('combobox', ['name' => 'Kind']);
+        Expect::locator($kind)->toHaveValue('product');
+        Expect::locator($kind->locator('option[value="taxon"]'))->toHaveAttribute('disabled', '');
+        Expect::locator($kind->locator('option[value="entry"]'))->toHaveAttribute('disabled', '');
+        Expect::locator($kind->locator('option[value="product_in_taxon"]'))->not()->toHaveAttribute('disabled', '');
+        Expect::locator($kind)->toContainText('Taxon (Needs: Taxon page)');
         $condition->getByLabel('Kind')->selectOption('Product in taxon');
         $condition->getByRole('button', ['name' => 'Taxons'])->click();
         $browser->getByRole('combobox', ['name' => 'Search taxons'])->fill('Shoes');
