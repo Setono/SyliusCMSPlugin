@@ -115,13 +115,15 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($registry);
         $blockTypes = self::blockTypes($registry);
 
-        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'video', 'button', 'banner', 'accordion', 'accordion_item', 'link_list', 'link', 'downloads', 'products', 'taxons', 'carousel', 'first_match'], array_keys($blockTypes));
+        // The test application's own Store hours comes first: an app's services are defined before a bundle's
+        self::assertSame(['app_store_hours', 'group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'video', 'button', 'banner', 'accordion', 'accordion_item', 'link_list', 'link', 'downloads', 'products', 'taxons', 'carousel', 'first_match'], array_keys($blockTypes));
 
         self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
         self::assertNull($blockTypes['columns']['parents']);
         self::assertSame(['columns'], $blockTypes['column']['parents']);
 
         $all = [
+            ['type' => 'app_store_hours', 'min' => null, 'max' => null],
             ['type' => 'group', 'min' => null, 'max' => null],
             ['type' => 'columns', 'min' => null, 'max' => null],
             ['type' => 'spacer', 'min' => null, 'max' => null],
