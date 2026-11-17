@@ -18,7 +18,7 @@
                         <div class="right floated content">
                             <time datetime="{{ event.at|date('c') }}">{{ event.at|date('Y-m-d H:i') }}</time>
                         </div>
-                        <i class="{{ event.kind.value == 'publishes' ? 'clock outline' : (event.kind.value == 'starts' ? 'eye' : 'eye slash') }} icon" aria-hidden="true"></i>
+                        <i class="{{ event.kind.icon }} icon" aria-hidden="true"></i>
                         <div class="content">
                             <a class="header" href="{{ path('setono_sylius_cms_admin_entry_show', {'uuid': event.entry.uuid}) }}">{{ row.title|default('setono_sylius_cms.ui.untitled'|trans) }}</a>
                             <div class="description">{{ ('setono_sylius_cms.ui.coming_up_event.' ~ event.kind.value)|trans }} · {{ row.contentType.label|trans }}</div>

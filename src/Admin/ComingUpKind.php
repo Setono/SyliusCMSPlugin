@@ -18,4 +18,16 @@ enum ComingUpKind: string
 
     /** Its date window ends */
     case Ends = 'ends';
+
+    /**
+     * The Semantic UI icon the panel shows it with, as the classes before "icon"
+     */
+    public function icon(): string
+    {
+        return match ($this) {
+            self::Publishes => 'clock outline',
+            self::Starts => 'eye',
+            self::Ends => 'eye slash',
+        };
+    }
 }
