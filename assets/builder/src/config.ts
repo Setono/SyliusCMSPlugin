@@ -61,6 +61,8 @@ export interface BuilderConfig {
         urls?: string;
         /** What pickers search, with __kind__ for the kind, such as product. Without it, nothing can be searched. */
         search?: string;
+        /** How many items a source yields for a list field's parameters, under a preview token. Without it, no count shows. */
+        sourceCount?: string;
     };
     /** The store's channels. The settings pick the entry's channels from them, and the preview picks from the entry's. */
     channels: Channel[];

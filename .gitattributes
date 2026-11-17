@@ -25,3 +25,6 @@
 
 # Built from assets/builder by "npm run build"
 /src/Resources/public/builder/**    linguist-generated
+
+# Built from assets/shop by "npm run build"
+/src/Resources/public/shop/cms.js   linguist-generated

@@ -8,6 +8,7 @@ use Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter;
 use Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
 use Setono\SyliusCMSPlugin\Attribute\AsLinkTarget;
+use Setono\SyliusCMSPlugin\Attribute\AsSource;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
@@ -17,6 +18,7 @@ use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLayoutsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLinkTargetsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterProblemKindsPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterSourcesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterUpgradersPass;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
@@ -48,12 +50,13 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, resources: array<string, array<string, mixed>>} $config */
+        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, resources: array<string, array<string, mixed>>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         $container->setParameter('setono_sylius_cms.disabled.block_types', $config['disabled']['block_types']);
         // RegisterLayoutsPass checks them against the layouts the code has
         $container->setParameter('setono_sylius_cms.disabled.layouts', $config['disabled']['layouts']);
+        $container->setParameter('setono_sylius_cms.disabled.sources', $config['disabled']['sources']);
         $container->setParameter('setono_sylius_cms.default_layouts', array_filter(array_map(
             static fn (array $contentType): ?string => $contentType['default_layout'] ?? null,
             $config['content_types'],
@@ -94,11 +97,15 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $container->registerAttributeForAutoconfiguration(AsLinkTarget::class, static function (ChildDefinition $definition): void {
             $definition->addTag(RegisterLinkTargetsPass::TAG);
         });
+        $container->registerAttributeForAutoconfiguration(AsSource::class, static function (ChildDefinition $definition): void {
+            $definition->addTag(RegisterSourcesPass::TAG);
+        });
     }
 
     /**
      * Loads the shipped stylesheet on every shop page, at priority 20: above Sylius's own styles (10),
-     * so it declares the cms cascade layer before the theme's CSS. See "Loading the stylesheet and script" in docs/spec/blocks.md
+     * so it declares the cms cascade layer before the theme's CSS. The carousel script loads at the end of the body.
+     * See "Loading the stylesheet and script" in docs/spec/blocks.md
      */
     public function prepend(ContainerBuilder $container): void
     {
@@ -121,6 +128,12 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 'sylius.shop.layout.stylesheets' => [
                     'blocks' => [
                         'setono_sylius_cms_stylesheet' => ['template' => '@SetonoSyliusCMSPlugin/shop/stylesheet.html.twig', 'priority' => 20],
+                    ],
+                ],
+                // The carousel script, after Sylius's own scripts (10)
+                'sylius.shop.layout.javascripts' => [
+                    'blocks' => [
+                        'setono_sylius_cms_javascript' => ['template' => '@SetonoSyliusCMSPlugin/shop/javascript.html.twig', 'priority' => 5],
                     ],
                 ],
             ],

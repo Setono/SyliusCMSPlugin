@@ -71,6 +71,7 @@ final class BuilderTest extends WebTestCase
             'slug' => '/admin/cms/api/slug',
             'urls' => sprintf('/admin/cms/api/entries/%s/urls', $uuid),
             'search' => '/admin/cms/api/search/__kind__',
+            'sourceCount' => '/admin/cms/api/sources/count',
         ], $config['endpoints']);
         self::assertSame([['code' => 'WEB', 'name' => 'Setono CMS Test Store', 'locales' => ['en_US']]], $config['channels'], "The store's channels, for the settings' channel picker and the preview's");
         self::assertSame([['code' => 'en_US', 'name' => 'English (United States)', 'fallbackChain' => ['en_US']]], $config['locales']);

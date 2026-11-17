@@ -10,13 +10,15 @@ use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\SourceMetadata;
+use Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface;
 use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * A hash of the problem kinds whose problems are stored and of the registries they read: the block types, content
- * types, layouts and condition kinds, each with its fields, and so the field types. A deploy that adds or removes any
- * of them, or switches one off, changes it. The routes aren't in it: setono:cms:check-routes counts again the entries
- * it checks. It's read once a request
+ * types, layouts, condition kinds and sources, each with its fields, and so the field types. A deploy that adds or
+ * removes any of them, or switches one off, changes it. The routes aren't in it: setono:cms:check-routes counts again
+ * the entries it checks. It's read once a request
  */
 final class ProblemCountFingerprint implements ProblemCountFingerprintInterface, ResetInterface
 {
@@ -32,6 +34,7 @@ final class ProblemCountFingerprint implements ProblemCountFingerprintInterface,
         private readonly ContentTypeRegistryInterface $contentTypes,
         private readonly LayoutRegistryInterface $layouts,
         private readonly ConditionKindRegistryInterface $conditionKinds,
+        private readonly ?SourceRegistryInterface $sources = null,
     ) {
     }
 
@@ -44,6 +47,8 @@ final class ProblemCountFingerprint implements ProblemCountFingerprintInterface,
             array_map(fn (ContentTypeMetadata $contentType): array => $this->layouts->all($contentType->code), $contentTypes),
             // What a condition kind declares, without its service
             array_map(static fn (ConditionKindMetadata $kind): array => [$kind->code, $kind->needs, $kind->reads, $kind->params, $kind->fields], $this->conditionKinds->all()),
+            // What a source declares, without its service, and whether it's switched off
+            array_map(static fn (SourceMetadata $source): array => [$source->code, $source->of, $source->needs, $source->params, $source->fields, $source->disabled], $this->sources?->all() ?? []),
         ]));
     }
 

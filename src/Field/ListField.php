@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Field;
 
+use Setono\SyliusCMSPlugin\Registry\SourceMetadata;
+
 /**
- * A list field of products or taxons, hydrated as an ItemList. It's hand-picked, stored as an array of codes, or, from
- * #253, filled by a source of the same kind, stored as {"$source": …, "$params": …, "$limit": …}. Every list field is
+ * A list field of products or taxons, hydrated as an ItemList. It's hand-picked, stored as an array of codes, or
+ * filled by a source of the same kind, stored as {"$source": …, "$params": …, "$limit": …}. Every list field is
  * handled by ListFieldHandler. See "List fields" in docs/spec/sources.md and "Shipped field types" in
  * docs/spec/extending.md
  */
@@ -49,6 +51,19 @@ abstract class ListField extends Field
      * @return class-string
      */
     abstract public function itemClass(): string;
+
+    /**
+     * Whether editors may fill it with the source: one that lists what it lists and isn't disabled, and that its sources
+     * option allows
+     */
+    public function offers(SourceMetadata $source): bool
+    {
+        if ($source->disabled || !$source->lists($this->itemClass())) {
+            return false;
+        }
+
+        return is_array($this->sources) ? in_array($source->code, $this->sources, true) : $this->sources;
+    }
 
     public function handledBy(): string
     {

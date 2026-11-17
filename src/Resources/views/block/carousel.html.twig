@@ -1,0 +1,8 @@
+{# Each visible child is a slide. The stylesheet shows data-cms-per-view slides at once, and the script autoplays every data-cms-autoplay milliseconds #}
+<div class="cms-carousel{{ view.styleClass ? ' ' ~ view.styleClass }}" data-cms-per-view="{{ block.perView }}"{% if block.autoplay %} data-cms-autoplay="{{ block.interval * 1000 }}"{% endif %}>
+    <div class="cms-carousel__track">
+        {%- for slide in children -%}
+            <div class="cms-carousel__slide">{{ cms_block(slide) }}</div>
+        {%- endfor -%}
+    </div>
+</div>

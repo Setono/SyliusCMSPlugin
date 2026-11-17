@@ -129,6 +129,12 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
         };
     }, [createPreviewUrl, channel, locale, shownTo, date, translated, homepage, reloads]);
 
+    // Sources count what they yield under the token of the page shown, so in its channel, locale, Shown to and Date
+    useEffect(() => {
+        const token = frame.state === 'loaded' ? new URL(frame.url, window.location.href).searchParams.get('_cms_preview') : null;
+        preview.getState().setToken(token === '' ? null : token);
+    }, [preview, frame]);
+
     useEffect(() => {
         if (frame.state !== 'loaded') {
             return undefined;

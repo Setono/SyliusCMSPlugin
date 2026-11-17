@@ -19,6 +19,8 @@ export interface PreviewState {
     date: string | null;
     /** The keys of the blocks with a link that doesn't resolve in the page the preview shows, which the tree flags. */
     unresolvedLinks: string[];
+    /** The token of the page the preview shows, which counts what sources yield there, or null while none is shown. */
+    token: string | null;
     setChannel(code: string): void;
     /** Follows the entry's channels as they change, keeping the channel shown while the entry is still in it. */
     setChannels(channels: Channel[]): void;
@@ -26,6 +28,7 @@ export interface PreviewState {
     setShownTo(shownTo: string): void;
     setDate(date: string | null): void;
     setUnresolvedLinks(keys: string[]): void;
+    setToken(token: string | null): void;
 }
 
 export type PreviewStore = StoreApi<PreviewState>;
@@ -39,6 +42,7 @@ export function createPreviewStore(channels: Channel[], start: ShownToAndDate = 
         shownTo: start.shownTo,
         date: start.date,
         unresolvedLinks: [],
+        token: null,
 
         setChannel(channel) {
             set({ channel });
@@ -65,6 +69,10 @@ export function createPreviewStore(channels: Channel[], start: ShownToAndDate = 
 
         setUnresolvedLinks(unresolvedLinks) {
             set({ unresolvedLinks });
+        },
+
+        setToken(token) {
+            set({ token });
         },
     }));
 }

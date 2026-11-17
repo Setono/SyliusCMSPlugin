@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- Resolves what list fields store when a source fills them: the references of its parameters, its adapter and what publish checks -->
+        <service id="Setono\SyliusCMSPlugin\Source\SourceResolver" class="Setono\SyliusCMSPlugin\Source\SourceResolver">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ParamsHydrator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+            <argument type="service" id="translator"/>
+        </service>
+
+        <!-- Narrows a visible-products query to the products in a taxon, or in it or below it, for the product sources with a taxon parameter -->
+        <service id="Setono\SyliusCMSPlugin\Source\Product\TaxonFilter" class="Setono\SyliusCMSPlugin\Source\Product\TaxonFilter">
+            <argument>%sylius.model.product_taxon.class%</argument>
+        </service>
+
+        <!--
+        The shipped sources. A source is a service carrying #[AsSource], which autoconfiguration tags
+        setono_sylius_cms.source, and RegisterSourcesPass hands to the registry by code. The builder offers them by their
+        tag's priority, so the shipped ones come first, in this order, and then a project's. The gaps leave room for the
+        shipped sources still to come: Bestsellers (50), Associations (30) and Same taxon (20)
+        -->
+        <service id="Setono\SyliusCMSPlugin\Source\Product\ProductsInTaxonSource" class="Setono\SyliusCMSPlugin\Source\Product\ProductsInTaxonSource">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Source\Product\TaxonFilter"/>
+            <argument>%sylius.model.channel_pricing.class%</argument>
+
+            <tag name="setono_sylius_cms.source" priority="60"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Source\Product\NewestProductsSource" class="Setono\SyliusCMSPlugin\Source\Product\NewestProductsSource">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface"/>
+
+            <tag name="setono_sylius_cms.source" priority="40"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Source\Taxon\TaxonChildrenSource" class="Setono\SyliusCMSPlugin\Source\Taxon\TaxonChildrenSource">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleTaxonsQueryInterface"/>
+
+            <tag name="setono_sylius_cms.source" priority="10"/>
+        </service>
+    </services>
+</container>

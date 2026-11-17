@@ -28,6 +28,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\SearchAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SlugAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\SourceCountAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaFolderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaItemAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UploadMediaAction;
@@ -261,6 +262,12 @@ return static function (RoutingConfigurator $routes): void {
 
     $routes->add('setono_sylius_cms_admin_api_preview_render', '/cms/api/preview/render')
         ->controller(PreviewRenderAction::class)
+        ->methods(['POST'])
+    ;
+
+    // How many items a source yields for the builder's parameters, under a preview token
+    $routes->add('setono_sylius_cms_admin_api_source_count', '/cms/api/sources/count')
+        ->controller(SourceCountAction::class)
         ->methods(['POST'])
     ;
 

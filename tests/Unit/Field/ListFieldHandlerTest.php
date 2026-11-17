@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Field\Taxons;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Tests\Support\Sources;
 use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\WithCatalog;
 use Setono\SyliusCMSPlugin\Value\ItemList;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -96,24 +97,24 @@ final class ListFieldHandlerTest extends TestCase
     /**
      * @test
      */
-    public function it_describes_a_list_of_codes_with_its_most_sources_and_limit_in_its_schema(): void
+    public function it_describes_a_list_of_codes_with_its_most_and_limit_in_its_schema_when_no_source_fits(): void
     {
         self::assertSame(
             [
                 'type' => 'array',
                 'items' => ['type' => 'string', 'minLength' => 1],
                 'maxItems' => 12,
-                'x-cms-options' => ['max' => 12, 'sources' => ['bestsellers'], 'limit' => 4],
+                'x-cms-options' => ['max' => 12, 'sources' => [], 'limit' => 4],
             ],
-            (new ListFieldHandler())->schema(new Products(label: 'Products', max: 12, sources: ['bestsellers'], limit: 4)),
+            Sources::listFieldHandler()->schema(new Products(label: 'Products', max: 12, sources: ['bestsellers'], limit: 4)),
         );
         self::assertSame(
             [
                 'type' => 'array',
                 'items' => ['type' => 'string', 'minLength' => 1],
-                'x-cms-options' => ['max' => null, 'sources' => true, 'limit' => 8],
+                'x-cms-options' => ['max' => null, 'sources' => [], 'limit' => 8],
             ],
-            (new ListFieldHandler())->schema(new Taxons(label: 'Taxons')),
+            Sources::listFieldHandler()->schema(new Taxons(label: 'Taxons')),
         );
     }
 
@@ -126,7 +127,7 @@ final class ListFieldHandlerTest extends TestCase
         $cap = self::product('CAP');
 
         // The references loaded before rendering hold only the products the shopper may see: T_SHIRT is disabled
-        $list = (new ListFieldHandler())->hydrate(
+        $list = Sources::listFieldHandler()->hydrate(
             new Products(label: 'Products'),
             ['MUG', 'T_SHIRT', 'CAP'],
             $this->hydrationContext(['product' => ['CAP' => $cap, 'MUG' => $mug]]),
@@ -144,7 +145,7 @@ final class ListFieldHandlerTest extends TestCase
     {
         $products = ['A' => self::product('A'), 'B' => self::product('B'), 'C' => self::product('C')];
 
-        $list = (new ListFieldHandler())->hydrate(new Products(label: 'Products', limit: 2), ['C', 'A', 'B'], $this->hydrationContext(['product' => $products]));
+        $list = Sources::listFieldHandler()->hydrate(new Products(label: 'Products', limit: 2), ['C', 'A', 'B'], $this->hydrationContext(['product' => $products]));
 
         self::assertInstanceOf(ItemList::class, $list);
         self::assertSame([$products['C'], $products['A'], $products['B']], $list->toArray());
@@ -157,7 +158,7 @@ final class ListFieldHandlerTest extends TestCase
     {
         $shirts = self::taxon('T_SHIRTS');
 
-        $list = (new ListFieldHandler())->hydrate(
+        $list = Sources::listFieldHandler()->hydrate(
             new Taxons(label: 'Taxons'),
             ['MUG', 'T_SHIRTS'],
             $this->hydrationContext(['product' => ['MUG' => self::product('MUG')], 'taxon' => ['T_SHIRTS' => $shirts]]),
@@ -172,7 +173,7 @@ final class ListFieldHandlerTest extends TestCase
      */
     public function it_hydrates_a_list_whose_items_shoppers_cannot_see_as_an_empty_list(): void
     {
-        $list = (new ListFieldHandler())->hydrate(new Products(label: 'Products'), ['T_SHIRT'], $this->hydrationContext([]));
+        $list = Sources::listFieldHandler()->hydrate(new Products(label: 'Products'), ['T_SHIRT'], $this->hydrationContext([]));
 
         self::assertInstanceOf(ItemList::class, $list);
         self::assertTrue($list->isEmpty());
@@ -183,7 +184,7 @@ final class ListFieldHandlerTest extends TestCase
      */
     public function it_hydrates_a_value_that_does_not_fit_as_missing(): void
     {
-        $handler = new ListFieldHandler();
+        $handler = Sources::listFieldHandler();
         $field = new Products(label: 'Products');
         $context = $this->hydrationContext(['product' => ['MUG' => self::product('MUG')]]);
 
@@ -198,7 +199,7 @@ final class ListFieldHandlerTest extends TestCase
      */
     public function it_fits_a_list_of_codes_even_one_longer_than_its_most(): void
     {
-        $handler = new ListFieldHandler();
+        $handler = Sources::listFieldHandler();
         $field = new Products(label: 'Products', max: 1);
 
         self::assertTrue($handler->fits($field, ['MUG', 'CAP']));
@@ -215,11 +216,11 @@ final class ListFieldHandlerTest extends TestCase
     {
         self::assertEquals(
             [new Reference('product', 'MUG', false), new Reference('product', 'CAP', false)],
-            [...(new ListFieldHandler())->references(new Products(label: 'Products'), ['MUG', 'CAP', 'MUG', 7, ''])],
+            [...Sources::listFieldHandler()->references(new Products(label: 'Products'), ['MUG', 'CAP', 'MUG', 7, ''])],
         );
         self::assertEquals(
             [new Reference('taxon', 'T_SHIRTS', false)],
-            [...(new ListFieldHandler())->references(new Taxons(label: 'Taxons'), ['T_SHIRTS'])],
+            [...Sources::listFieldHandler()->references(new Taxons(label: 'Taxons'), ['T_SHIRTS'])],
         );
     }
 
@@ -228,8 +229,8 @@ final class ListFieldHandlerTest extends TestCase
      */
     public function it_refers_to_nothing_when_the_value_is_not_a_list(): void
     {
-        self::assertSame([], [...(new ListFieldHandler())->references(new Products(label: 'Products'), 'MUG')]);
-        self::assertSame([], [...(new ListFieldHandler())->references(new Products(label: 'Products'), ['a' => 'MUG'])]);
+        self::assertSame([], [...Sources::listFieldHandler()->references(new Products(label: 'Products'), 'MUG')]);
+        self::assertSame([], [...Sources::listFieldHandler()->references(new Products(label: 'Products'), ['a' => 'MUG'])]);
     }
 
     /**
@@ -240,7 +241,7 @@ final class ListFieldHandlerTest extends TestCase
         $context = $this->prophesize(ExecutionContextInterface::class);
         $context->buildViolation(Argument::cetera())->shouldNotBeCalled();
 
-        $handler = new ListFieldHandler();
+        $handler = Sources::listFieldHandler();
         $field = new Products(label: 'Products', max: 2);
         $handler->validate($field, ['MUG', 'CAP'], $context->reveal());
         $handler->validate($field, [], $context->reveal());
@@ -258,7 +259,7 @@ final class ListFieldHandlerTest extends TestCase
         $context = $this->prophesize(ExecutionContextInterface::class);
         $context->buildViolation('setono_sylius_cms.field.not_list')->willReturn($builder->reveal())->shouldBeCalledOnce();
 
-        (new ListFieldHandler())->validate(new Taxons(label: 'Taxons'), ['T_SHIRTS', 7], $context->reveal());
+        Sources::listFieldHandler()->validate(new Taxons(label: 'Taxons'), ['T_SHIRTS', 7], $context->reveal());
     }
 
     /**
@@ -274,7 +275,7 @@ final class ListFieldHandlerTest extends TestCase
         $context = $this->prophesize(ExecutionContextInterface::class);
         $context->buildViolation('setono_sylius_cms.field.too_many_items')->willReturn($builder->reveal())->shouldBeCalledOnce();
 
-        (new ListFieldHandler())->validate(new Products(label: 'Products', max: 1), ['MUG', 'CAP'], $context->reveal());
+        Sources::listFieldHandler()->validate(new Products(label: 'Products', max: 1), ['MUG', 'CAP'], $context->reveal());
     }
 
     private static function product(string $code): ProductInterface

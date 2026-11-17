@@ -28,10 +28,13 @@ final class Products
     #[ProductsField(label: 'setono_sylius_cms.field.products.products', limit: 8)]
     public ?ItemList $products = null;
 
-    /** How the products show: the block's root gets the class cms-products--<display> */
+    /** How the products show: the block's root gets the class cms-products--<display>. A carousel shows 4 at once */
     #[Choice(
         label: 'setono_sylius_cms.field.products.display',
-        choices: ['grid' => 'setono_sylius_cms.choice.products_display.grid'],
+        choices: [
+            'grid' => 'setono_sylius_cms.choice.products_display.grid',
+            'carousel' => 'setono_sylius_cms.choice.products_display.carousel',
+        ],
     )]
     public string $display = 'grid';
 }

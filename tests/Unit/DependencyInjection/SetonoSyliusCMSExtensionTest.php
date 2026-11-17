@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection;
 
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
+use Setono\SyliusCMSPlugin\Attribute\AsSource;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
@@ -26,6 +27,7 @@ use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\SourceRegistry;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
@@ -34,8 +36,10 @@ use Setono\SyliusCMSPlugin\Revision\RevisionPruner;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\SignedIn;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
+use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\LandingFromOne;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
+use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Resource\Factory\Factory;
 use Sylius\Resource\Factory\TranslatableFactory;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
@@ -176,6 +180,33 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_autoconfigures_sources_by_their_attribute(): void
+    {
+        $this->load();
+
+        $configurators = $this->container->getAutoconfiguredAttributes();
+        self::assertArrayHasKey(AsSource::class, $configurators);
+
+        $definition = new ChildDefinition('');
+        $configurators[AsSource::class]($definition, new AsSource('on_sale', 'app.on_sale', ProductInterface::class), new \ReflectionClass(OnSale::class));
+
+        self::assertSame(['setono_sylius_cms.source' => [[]]], $definition->getTags());
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_the_disabled_sources_to_the_source_registry(): void
+    {
+        $this->load(['disabled' => ['sources' => ['newest_products']]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.sources', ['newest_products']);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(SourceRegistry::class, 3, '%setono_sylius_cms.disabled.sources%');
+    }
+
+    /**
+     * @test
+     */
     public function it_hands_the_disabled_block_types_to_the_block_type_registry(): void
     {
         $this->load(['disabled' => ['block_types' => ['spacer']]]);
@@ -266,6 +297,32 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->load(['assets' => false]);
 
         self::assertArrayNotHasKey('sylius.shop.layout.stylesheets', $this->templateEvents());
+    }
+
+    /**
+     * @test
+     */
+    public function it_loads_the_carousel_script_through_the_shop_layout_javascripts_template_event_after_sylius_own_scripts(): void
+    {
+        $this->load();
+
+        self::assertSame([
+            'blocks' => [
+                'setono_sylius_cms_javascript' => ['template' => '@SetonoSyliusCMSPlugin/shop/javascript.html.twig', 'priority' => 5],
+            ],
+        ], $this->templateEvents()['sylius.shop.layout.javascripts'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function it_does_not_load_the_carousel_script_when_assets_is_off(): void
+    {
+        $this->container->loadFromExtension('setono_sylius_cms', ['assets' => false]);
+
+        $this->load(['assets' => false]);
+
+        self::assertArrayNotHasKey('sylius.shop.layout.javascripts', $this->templateEvents());
     }
 
     /**

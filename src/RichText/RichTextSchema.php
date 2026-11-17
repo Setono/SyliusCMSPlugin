@@ -276,7 +276,11 @@ final readonly class RichTextSchema
     {
         $marks = [];
         foreach (is_array($node['marks'] ?? null) ? $node['marks'] : [] as $mark) {
-            $type = is_array($mark) ? ($mark['type'] ?? null) : null;
+            if (!is_array($mark)) {
+                continue;
+            }
+
+            $type = $mark['type'] ?? null;
             if (!is_string($type) || !in_array($type, $this->marks, true)) {
                 continue;
             }

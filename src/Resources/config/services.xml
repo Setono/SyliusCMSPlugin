@@ -28,6 +28,7 @@
         <import resource="services/security.xml"/>
         <import resource="services/seo.xml"/>
         <import resource="services/share_link.xml"/>
+        <import resource="services/source.xml"/>
         <import resource="services/targeting.xml"/>
         <import resource="services/translation.xml"/>
         <import resource="services/twig.xml"/>
