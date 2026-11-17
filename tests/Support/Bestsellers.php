@@ -43,7 +43,7 @@ trait Bestsellers
     /**
      * The channel's scores, highest first
      *
-     * @return array<string, float> product code => score
+     * @return array<array-key, float> product code => score, a numeric code being an integer key, as PHP makes it
      */
     protected static function scoresOf(string $channelCode): array
     {
