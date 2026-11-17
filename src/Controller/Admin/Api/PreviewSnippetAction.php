@@ -98,12 +98,8 @@ final readonly class PreviewSnippetAction
      */
     private function shownInstead(PlacementInterface $placement, RenderContext $context): ?array
     {
-        if (!$this->slots->has($placement->getSlot())) {
-            return null;
-        }
-
-        $slot = $this->slots->get($placement->getSlot());
-        if (null === $slot->cap) {
+        $slot = $this->slots->find($placement->getSlot());
+        if (null === $slot?->cap) {
             return null;
         }
 

@@ -55,7 +55,7 @@ final readonly class PageScopeSummaries
                     continue;
                 }
 
-                $kind = $this->conditionKinds->has($condition['kind']) ? $this->conditionKinds->get($condition['kind']) : null;
+                $kind = $this->conditionKinds->find($condition['kind']);
                 $values = null === $kind ? [] : $this->values($kind, $condition['params']);
                 foreach ($values as $named) {
                     if (is_array($named)) {

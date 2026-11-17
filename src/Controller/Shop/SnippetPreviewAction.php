@@ -73,11 +73,10 @@ final readonly class SnippetPreviewAction
     {
         $placementUuid = $this->previewContext->getPreview()?->placementUuid;
         $placement = null === $placementUuid ? null : $this->placements->findOneByUuid($placementUuid);
-        if (null === $placement || !$this->slots->has($placement->getSlot())) {
+        $slot = null === $placement ? null : $this->slots->find($placement->getSlot());
+        if (null === $slot) {
             return null;
         }
-
-        $slot = $this->slots->get($placement->getSlot());
 
         return [] === array_diff($slot->provides, $provided) ? $slot->identifier : null;
     }

@@ -25,6 +25,11 @@ final class SlotRegistry implements SlotRegistryInterface
         return isset($this->slots()[$identifier]);
     }
 
+    public function find(string $identifier): ?SlotMetadata
+    {
+        return $this->slots()[$identifier] ?? null;
+    }
+
     public function get(string $identifier): SlotMetadata
     {
         return $this->slots()[$identifier] ?? throw new UnknownSlotException($identifier);

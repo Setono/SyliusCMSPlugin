@@ -72,7 +72,7 @@ final readonly class PlacementHiddenByHomepage implements ReferenceProblemKindIn
 
         $onStoreHomepage = array_values(array_filter(
             $this->placements->findBySnippet($entry),
-            fn (PlacementInterface $placement): bool => $this->slots->has($placement->getSlot()) && $this->slots->get($placement->getSlot())->isOnStoreHomepage(),
+            fn (PlacementInterface $placement): bool => true === $this->slots->find($placement->getSlot())?->isOnStoreHomepage(),
         ));
         if ([] === $onStoreHomepage) {
             return;

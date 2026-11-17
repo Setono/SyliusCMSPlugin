@@ -13,6 +13,12 @@ interface SlotRegistryInterface
     public function has(string $identifier): bool;
 
     /**
+     * The slot with the identifier, or null for one the code doesn't declare, such as a placement's slot a deploy
+     * removed
+     */
+    public function find(string $identifier): ?SlotMetadata;
+
+    /**
      * @throws UnknownSlotException
      */
     public function get(string $identifier): SlotMetadata;

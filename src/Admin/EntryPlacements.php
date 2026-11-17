@@ -97,7 +97,7 @@ final readonly class EntryPlacements
             }
         }
 
-        $slot = $this->slots->has($placement->getSlot()) ? $this->slots->get($placement->getSlot()) : null;
+        $slot = $this->slots->find($placement->getSlot());
 
         return new EntryPlacement(
             $placement,

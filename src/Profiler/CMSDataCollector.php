@@ -122,7 +122,7 @@ final class CMSDataCollector extends DataCollector
      */
     private function slot(SlotTrace $trace): array
     {
-        $metadata = $this->slotRegistry->has($trace->identifier) ? $this->slotRegistry->get($trace->identifier) : null;
+        $metadata = $this->slotRegistry->find($trace->identifier);
 
         return [
             'identifier' => $trace->identifier,

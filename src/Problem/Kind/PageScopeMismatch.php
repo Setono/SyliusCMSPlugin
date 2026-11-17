@@ -45,11 +45,11 @@ final readonly class PageScopeMismatch implements ProblemKindInterface
         }
 
         foreach ($this->placements->findBySnippet($entry) as $placement) {
-            if (!$this->slots->has($placement->getSlot())) {
+            $slot = $this->slots->find($placement->getSlot());
+            if (null === $slot) {
                 continue;
             }
 
-            $slot = $this->slots->get($placement->getSlot());
             foreach ($placement->getPageScope() as $value) {
                 $condition = StoredCondition::fromValue($value);
                 if (null !== $condition) {

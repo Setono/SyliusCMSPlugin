@@ -55,11 +55,7 @@ final readonly class SnippetHostPages
      */
     public function sampleKey(SnippetInterface $snippet, ?PlacementInterface $placement): ?string
     {
-        if (null !== $placement && $this->slots->has($placement->getSlot())) {
-            return SampleObjects::keyOf($this->slots->get($placement->getSlot())->provides);
-        }
-
-        return SampleObjects::keyOf($snippet->getContext());
+        return SampleObjects::keyOf($this->slotOf($placement)?->provides ?? $snippet->getContext());
     }
 
     /**
@@ -104,6 +100,6 @@ final readonly class SnippetHostPages
      */
     private function slotOf(?PlacementInterface $placement): ?SlotMetadata
     {
-        return null !== $placement && $this->slots->has($placement->getSlot()) ? $this->slots->get($placement->getSlot()) : null;
+        return null === $placement ? null : $this->slots->find($placement->getSlot());
     }
 }

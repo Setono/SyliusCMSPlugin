@@ -22,6 +22,8 @@ final class SlotRegistryTest extends TestCase
         self::assertFalse($registry->has('shop.gone'));
         self::assertEquals(new SlotMetadata('product.after_price', 'setono_sylius_cms.slot.product.after_price', ['product'], 1, 'sylius.shop.product.show.right_sidebar', 28), $registry->get('product.after_price'));
         self::assertEquals(new SlotMetadata('app.store_locator.top', 'app.cms.slot.store_locator_top', ['store_location']), $registry->get('app.store_locator.top'));
+        self::assertSame($registry->get('shop.footer'), $registry->find('shop.footer'));
+        self::assertNull($registry->find('shop.gone'), 'Such as the slot of a placement a deploy removed');
     }
 
     /**

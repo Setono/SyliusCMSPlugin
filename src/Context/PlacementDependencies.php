@@ -34,7 +34,7 @@ final readonly class PlacementDependencies implements ContextDependencyFinderInt
         }
 
         foreach ($this->placements->findBySnippet($workingCopy) as $placement) {
-            $slot = $this->slots->has($placement->getSlot()) ? $this->slots->get($placement->getSlot()) : null;
+            $slot = $this->slots->find($placement->getSlot());
 
             yield new ContextDependency(
                 new TranslatableMessage('setono_sylius_cms.context.placement', ['%slot%' => null === $slot ? $placement->getSlot() : new TranslatableMessage($slot->label)], 'validators'),

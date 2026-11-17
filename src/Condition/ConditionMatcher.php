@@ -104,7 +104,7 @@ final readonly class ConditionMatcher
     {
         $code = $condition['kind'] ?? null;
 
-        return is_string($code) && $this->kinds->has($code) ? $this->kinds->get($code) : null;
+        return is_string($code) ? $this->kinds->find($code) : null;
     }
 
     /**
