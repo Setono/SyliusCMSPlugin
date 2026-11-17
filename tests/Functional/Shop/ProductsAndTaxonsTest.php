@@ -127,6 +127,34 @@ final class ProductsAndTaxonsTest extends WebTestCase
     }
 
     /**
+     * A tile reads its taxon's slug, name and images, which load with the taxons, so the tiles run no query of their own
+     *
+     * @test
+     */
+    public function it_runs_one_query_for_a_taxons_block_whose_tiles_show_each_taxon_s_name_and_image(): void
+    {
+        $client = self::createClient();
+        foreach (['MUGS' => 'Mugs', 'T_SHIRTS' => 'T-shirts', 'CAPS' => 'Caps'] as $code => $name) {
+            self::addTaxonImage(self::createTaxon($code, $name), sprintf('%s.jpg', strtolower($code)));
+        }
+        self::createPageWithBlocks('Empty', 'empty', [], published: true);
+        self::createPageWithBlocks('Shop now', 'shop-now', [self::taxons(self::TAXONS, ['MUGS', 'T_SHIRTS', 'CAPS'])], published: true);
+        // The queries of a request are profiled from a kernel that's booted afresh, which comes after the first request
+        $client->request('GET', '/');
+
+        $client->enableProfiler();
+        $client->request('GET', '/en_US/empty');
+        $withoutTheBlock = count(self::queries($client));
+
+        $client->enableProfiler();
+        $crawler = $client->request('GET', '/en_US/shop-now');
+
+        self::assertSame(['Mugs', 'T-shirts', 'Caps'], $crawler->filter('.cms-taxons__name')->each(static fn (Crawler $name): string => $name->text()));
+        self::assertCount(3, $crawler->filter('.cms-taxons__item > img.cms-taxons__image'));
+        self::assertCount($withoutTheBlock + 1, self::queries($client), 'One query loads the taxons with what their tiles show');
+    }
+
+    /**
      * @test
      */
     public function it_flags_a_hand_picked_taxon_that_was_deleted_as_a_broken_reference_on_the_overview_page(): void
@@ -174,6 +202,16 @@ final class ProductsAndTaxonsTest extends WebTestCase
      */
     private static function queriesByCode(KernelBrowser $client, string $table): array
     {
+        return array_values(array_filter(self::queries($client), static fn (string $sql): bool => 1 === preg_match(sprintf('/FROM %s \w+ .*\bcode IN \(/', $table), $sql)));
+    }
+
+    /**
+     * Every query the profiled request ran
+     *
+     * @return list<string>
+     */
+    private static function queries(KernelBrowser $client): array
+    {
         $profile = $client->getProfile();
         self::assertInstanceOf(Profile::class, $profile, 'The request was profiled');
         $collector = $profile->getCollector('db');
@@ -188,9 +226,7 @@ final class ProductsAndTaxonsTest extends WebTestCase
             foreach ($connectionQueries as $query) {
                 self::assertIsArray($query);
                 self::assertIsString($query['sql']);
-                if (1 === preg_match(sprintf('/FROM %s \w+ .*\bcode IN \(/', $table), $query['sql'])) {
-                    $queries[] = $query['sql'];
-                }
+                $queries[] = $query['sql'];
             }
         }
 

@@ -11,7 +11,7 @@ use Sylius\Component\Core\Model\TaxonInterface;
 
 /**
  * Loads the taxons references name, by code: those the shopper may see, through the visible taxons query, so a link to
- * a disabled taxon isn't rendered. See "Visible queries" in docs/spec/sources.md
+ * a disabled taxon isn't rendered, with their translations and images, which their tiles and links read. See "Visible queries" in docs/spec/sources.md
  *
  * @internal
  */
@@ -31,6 +31,11 @@ final readonly class TaxonReferenceLoader implements ReferenceTypeLoaderInterfac
     {
         /** @var list<TaxonInterface> $taxons */
         $taxons = $this->visibleTaxons->createQueryBuilder($context)
+            // What a taxon's tile and link show, so a Taxons block runs no query per taxon
+            ->leftJoin('taxon.translations', 'cms_taxon_translation')
+            ->addSelect('cms_taxon_translation')
+            ->leftJoin('taxon.images', 'cms_taxon_image')
+            ->addSelect('cms_taxon_image')
             ->andWhere('taxon.code IN (:cms_codes)')
             ->setParameter('cms_codes', $ids)
             ->getQuery()
