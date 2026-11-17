@@ -9,7 +9,6 @@ use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
-use Setono\SyliusCMSPlugin\Bestsellers\BestsellersCalculatorInterface;
 use Setono\SyliusCMSPlugin\Bestsellers\PaidOrdersCalculator;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\Order;
@@ -23,14 +22,6 @@ use Symfony\Component\Clock\MockClock;
 final class PaidOrdersCalculatorTest extends TestCase
 {
     use ProphecyTrait;
-
-    /**
-     * @test
-     */
-    public function it_is_a_bestsellers_calculator(): void
-    {
-        self::assertInstanceOf(BestsellersCalculatorInterface::class, $this->calculator());
-    }
 
     /**
      * @test

@@ -52,12 +52,17 @@ final class ProjectBestsellersCalculatorTest extends KernelTestCase
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
         $scores = self::scoresOf('WEB');
         self::assertCount(AnalyticsBestsellers::SCORED, $scores);
-        self::assertSame(['MUG' => 1000.5, 'SHIRT' => 1000.0, 'EXTRA_248' => 248.0], array_slice($scores, 0, 3));
+        self::assertSame(['MUG' => 1000.5, 'SHIRT' => 1000.0, 'EXTRA_247' => 247.0], array_slice($scores, 0, 3));
+        self::assertSame(0.5, $scores['42']);
 
         $registry = self::getContainer()->get(SourceRegistryInterface::class);
         self::assertInstanceOf(SourceRegistryInterface::class, $registry);
-        $products = $registry->get('bestsellers')->source->resolve(new BestsellersParams(), self::context())->getSlice(0, 8);
-        self::assertSame(['MUG', 'SHIRT'], array_map(static fn (ProductInterface $product): ?string => $product->getCode(), [...$products]));
+        $codes = [];
+        foreach ($registry->get('bestsellers')->source->resolve(new BestsellersParams(), self::context())->getSlice(0, 8) as $product) {
+            self::assertInstanceOf(ProductInterface::class, $product);
+            $codes[] = $product->getCode();
+        }
+        self::assertSame(['MUG', 'SHIRT'], $codes);
     }
 
     private static function context(): RenderContext

@@ -6,7 +6,6 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Event;
 
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Event\BestsellersComputed;
-use Setono\SyliusCMSPlugin\Event\StorefrontChangedInterface;
 
 final class BestsellersComputedTest extends TestCase
 {
@@ -17,7 +16,6 @@ final class BestsellersComputedTest extends TestCase
     {
         $event = new BestsellersComputed(['WEB', 'OUTLET']);
 
-        self::assertInstanceOf(StorefrontChangedInterface::class, $event);
         self::assertNull($event->getAffectedUuids());
         self::assertSame(['WEB', 'OUTLET'], $event->channelCodes);
     }

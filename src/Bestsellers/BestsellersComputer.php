@@ -42,10 +42,11 @@ final readonly class BestsellersComputer
     {
         $channelCode = (string) $channel->getCode();
 
-        // A product the calculator yields twice keeps its last score
+        // A product the calculator yields twice keeps its last score. PHP turns a numeric code into an integer key, so
+        // each score keeps its code beside it
         $scores = [];
         foreach ($this->calculator->calculate($channel) as $productCode => $score) {
-            $scores[(string) $productCode] = (float) $score;
+            $scores[$productCode] = [(string) $productCode, (float) $score];
         }
 
         $manager = EntityManagers::of($this->managerRegistry, $this->scoreClass);
@@ -59,10 +60,10 @@ final readonly class BestsellersComputer
             ;
 
             $batch = [];
-            foreach ($scores as $productCode => $score) {
+            foreach ($scores as [$productCode, $score]) {
                 $row = $this->scoreFactory->createNew();
                 $row->setChannelCode($channelCode);
-                $row->setProductCode((string) $productCode);
+                $row->setProductCode($productCode);
                 $row->setScore($score);
                 $manager->persist($row);
                 $batch[] = $row;
