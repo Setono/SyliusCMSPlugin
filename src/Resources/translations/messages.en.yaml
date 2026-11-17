@@ -219,6 +219,7 @@ setono_sylius_cms:
         broken_layout_rich_text_reference: 'A link in %field% in the layout leads to %type% that was deleted, so it shows as plain text.'
         broken_reference: '%field% in the %block% block refers to %type% that was deleted, so it isn''t shown.'
         broken_rich_text_reference: 'A link in %field% in the %block% block leads to %type% that was deleted, so it shows as plain text.'
+        capped_slot_without_catch_all: '"%slot%" is capped at %cap% and has no catch-all placement, with no page scope and a snippet for everyone, so some pages or shoppers may see nothing there.'
         deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
         deleted_customer_group_negated: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer excludes anyone through it.'
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
@@ -226,6 +227,7 @@ setono_sylius_cms:
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
         page_scope_removed_kind: 'The page scope of the placement in "%slot%" has a condition of the kind "%kind%", which the code no longer has, so the placement shows nothing.'
         page_scope_unprovided: 'The page scope of the placement in "%slot%" has a condition, %kind%, that needs the host-page context "%context%", which the slot no longer provides, so the placement shows nothing.'
+        placement_hidden_by_homepage: 'The placement in "%slot%" doesn''t show in %channels%, whose homepage is a CMS page, as Sylius''s own homepage doesn''t render there.'
         removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
         removed_context_key: 'It needs the context key "%key%", which the code no longer has, so none of its placements shows it.'
         removed_slot: 'A placement in the slot "%slot%", which the code no longer has, shows nothing.'
@@ -239,9 +241,11 @@ setono_sylius_cms:
     # Each kind of problem, by its code, as the Overview's Needs attention groups them. A project names its own kinds here
     problem_kind:
         broken_reference: Broken references
+        capped_slot_without_catch_all: Capped slots without a catch-all placement
         deleted_customer_group: Deleted customer groups
         misfit_value: Values that don't fit their field
         page_scope_mismatch: Page scopes that don't fit their slots
+        placement_hidden_by_homepage: Placements a CMS homepage hides
         removed_context_key: Removed context keys
         removed_layout: Removed layouts
         scheduled_publish_failed: Failed scheduled publishes

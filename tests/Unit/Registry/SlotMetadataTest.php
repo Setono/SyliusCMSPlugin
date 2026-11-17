@@ -44,6 +44,20 @@ final class SlotMetadataTest extends TestCase
     }
 
     /**
+     * A channel with a CMS homepage doesn't render Sylius's own homepage, nor the slots tied to its template event. See
+     * "Rendering the homepage" in docs/spec/urls-and-seo.md
+     *
+     * @test
+     */
+    public function it_is_on_sylius_s_own_homepage_when_it_is_tied_to_the_homepage_s_template_event(): void
+    {
+        self::assertTrue((new SlotMetadata('store_homepage', 'app.label', templateEvent: 'sylius.shop.homepage', templateEventPriority: 100))->isOnStoreHomepage());
+        self::assertTrue((new SlotMetadata('app.homepage_promo', 'app.label', templateEvent: 'sylius.shop.homepage'))->isOnStoreHomepage());
+        self::assertFalse((new SlotMetadata('shop.top', 'app.label', templateEvent: 'sylius.shop.layout.header'))->isOnStoreHomepage());
+        self::assertFalse((new SlotMetadata('app.store_locator.top', 'app.label'))->isOnStoreHomepage());
+    }
+
+    /**
      * @test
      *
      * @dataProvider provideIdentifiers

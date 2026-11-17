@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
+use Setono\SyliusCMSPlugin\Targeting\AudienceMode;
 use Symfony\Component\Uid\Uuid;
 
 class Placement implements PlacementInterface
@@ -61,5 +62,10 @@ class Placement implements PlacementInterface
     public function setPosition(int $position): void
     {
         $this->position = $position;
+    }
+
+    public function isCatchAll(): bool
+    {
+        return [] === $this->pageScope && AudienceMode::Everyone === $this->snippet->getAudience()->mode;
     }
 }
