@@ -1,11 +1,8 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
-import { FieldRow } from '../src/form/FieldRow';
-import { createTranslator, TranslatorProvider } from '../src/i18n';
-import type { SearchApi, SearchResult } from '../src/search/api';
-import { SearchProvider } from '../src/search/context';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import type { SearchResult } from '../src/search/api';
 import type { FieldSchema, JsonObject, JsonValue } from '../src/types';
+import { fakeSearch, renderField } from './fixtures';
 
 const strings = {
     'setono_sylius_cms.builder.items.add_product': 'Add product',
@@ -51,44 +48,10 @@ const catalog: Record<string, SearchResult[]> = {
     ],
 };
 
-/** The store's products and taxons, searched by name and looked up by code. */
-function fakeSearch(): SearchApi & { search: ReturnType<typeof vi.fn>; find: ReturnType<typeof vi.fn> } {
-    return {
-        search: vi.fn(async (kind: string, query: string) => (catalog[kind] ?? []).filter(({ name }) => name.toLowerCase().includes(query.toLowerCase()))),
-        find: vi.fn(async (kind: string, refs: readonly string[]) => (catalog[kind] ?? []).filter(({ ref }) => refs.includes(ref))),
-    };
-}
+function renderCatalogField(schema: FieldSchema, initial?: JsonValue) {
+    const search = fakeSearch(catalog);
 
-/** A field whose value lives in the test, as the builder's store keeps it, with every change recorded. */
-function Field({ fieldSchema, initial, onChange }: { fieldSchema: FieldSchema; initial?: JsonValue; onChange: (value: JsonValue | null) => void }) {
-    const [value, setValue] = useState<JsonValue | undefined>(initial);
-
-    return (
-        <FieldRow
-            id="field"
-            schema={fieldSchema}
-            value={value}
-            locale="en_US"
-            onChange={(next) => {
-                onChange(next);
-                setValue(next ?? undefined);
-            }}
-        />
-    );
-}
-
-function renderField(fieldSchema: FieldSchema, initial?: JsonValue) {
-    const onChange = vi.fn();
-    const search = fakeSearch();
-    render(
-        <TranslatorProvider value={createTranslator(strings)}>
-            <SearchProvider api={search}>
-                <Field fieldSchema={fieldSchema} initial={initial} onChange={onChange} />
-            </SearchProvider>
-        </TranslatorProvider>,
-    );
-
-    return { onChange, search };
+    return { ...renderField(schema, { initial, strings, search }), search };
 }
 
 /** Picks what the search finds by its name, through the field's add or choose button, named by the field's label. */
@@ -104,7 +67,7 @@ function listed(name: string): (string | null)[] {
 
 describe('a products field', () => {
     it('should say nothing is chosen, and search products from its add button, named by its label', async () => {
-        const { search } = renderField(productsSchema);
+        const { search } = renderCatalogField(productsSchema);
 
         expect(screen.getByText('Nothing chosen')).toBeInTheDocument();
         const add = screen.getByRole('button', { name: 'Products' });
@@ -117,7 +80,7 @@ describe('a products field', () => {
     });
 
     it('should add what is picked to the end of the list, in the order it was picked, by code', async () => {
-        const { onChange } = renderField(productsSchema);
+        const { onChange } = renderCatalogField(productsSchema);
 
         await pick('Products', 'Mug');
         expect(onChange).toHaveBeenLastCalledWith(['MUG']);
@@ -130,7 +93,7 @@ describe('a products field', () => {
     });
 
     it('should name what it holds, looked up in one request', async () => {
-        const { search } = renderField(productsSchema, ['CAP', 'MUG']);
+        const { search } = renderCatalogField(productsSchema, ['CAP', 'MUG']);
 
         await screen.findByText('Cap');
         expect(listed('Products')).toEqual([expect.stringContaining('Cap'), expect.stringContaining('Mug')]);
@@ -139,7 +102,7 @@ describe('a products field', () => {
     });
 
     it('should not add what it holds already', async () => {
-        const { onChange } = renderField(productsSchema, ['MUG']);
+        const { onChange } = renderCatalogField(productsSchema, ['MUG']);
         await screen.findByText('Mug');
 
         await pick('Products', 'Mug');
@@ -149,7 +112,7 @@ describe('a products field', () => {
     });
 
     it('should move a product up and down, and remove it', async () => {
-        const { onChange } = renderField(productsSchema, ['MUG', 'T_SHIRT', 'CAP']);
+        const { onChange } = renderCatalogField(productsSchema, ['MUG', 'T_SHIRT', 'CAP']);
         const list = within(await screen.findByRole('list', { name: 'Products' }));
         await screen.findByText('Cap');
 
@@ -165,7 +128,7 @@ describe('a products field', () => {
     });
 
     it('should hold no more than its most, and say how many it holds at most', async () => {
-        renderField(schema('products', 'Products', { max: 2, sources: true, limit: 8 }), ['MUG', 'CAP']);
+        renderCatalogField(schema('products', 'Products', { max: 2, sources: true, limit: 8 }), ['MUG', 'CAP']);
 
         await screen.findByText('Cap');
         expect(screen.getByRole('button', { name: 'Products' })).toBeDisabled();
@@ -173,7 +136,7 @@ describe('a products field', () => {
     });
 
     it('should keep a product that no longer exists in the list, flagged by its code, so it can be removed', async () => {
-        renderField(productsSchema, ['GONE', 'MUG']);
+        renderCatalogField(productsSchema, ['GONE', 'MUG']);
 
         expect(await screen.findByText('GONE no longer exists, so it isn’t shown.')).toBeInTheDocument();
         expect(listed('Products')).toHaveLength(2);
@@ -182,7 +145,7 @@ describe('a products field', () => {
 
 describe('a taxons field', () => {
     it('should search taxons and add what is picked by code', async () => {
-        const { onChange, search } = renderField(schema('taxons', 'Categories', { max: null, sources: true, limit: 8 }));
+        const { onChange, search } = renderCatalogField(schema('taxons', 'Categories', { max: null, sources: true, limit: 8 }));
 
         expect(screen.getByRole('button', { name: 'Categories' })).toHaveTextContent('Add taxon');
         await pick('Categories', 'Category / Mugs');
@@ -194,7 +157,7 @@ describe('a taxons field', () => {
 
 describe('a product field', () => {
     it('should choose one product, show its name, change it and remove it', async () => {
-        const { onChange } = renderField(schema('product', 'Featured product'));
+        const { onChange } = renderCatalogField(schema('product', 'Featured product'));
 
         expect(screen.getByText('Nothing chosen')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Featured product' })).toHaveTextContent('Choose…');
@@ -212,7 +175,7 @@ describe('a product field', () => {
     });
 
     it('should name the product it holds, and flag one that no longer exists', async () => {
-        renderField(schema('product', 'Featured product'), 'GONE');
+        renderCatalogField(schema('product', 'Featured product'), 'GONE');
 
         expect(await screen.findByText('GONE no longer exists, so it isn’t shown.')).toBeInTheDocument();
     });
@@ -220,7 +183,7 @@ describe('a product field', () => {
 
 describe('a taxon field', () => {
     it('should search taxons and name the one it holds', async () => {
-        const { search } = renderField(schema('taxon', 'Category'), 'T_SHIRTS');
+        const { search } = renderCatalogField(schema('taxon', 'Category'), 'T_SHIRTS');
 
         expect(await screen.findByText('Category / T-shirts')).toBeInTheDocument();
         await pick('Category', 'Category / Mugs');

@@ -1,12 +1,10 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { useState } from 'react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { FieldRow } from '../../src/form/FieldRow';
-import { createTranslator, TranslatorProvider } from '../../src/i18n';
 import type { MediaApi } from '../../src/media/api';
 import { MediaPickerProvider } from '../../src/media/picker';
 import type { MediaFilters, MediaItem, UploadAnswer } from '../../src/media/types';
 import type { FieldSchema, JsonValue } from '../../src/types';
+import { renderField } from '../fixtures';
 import { file, libraryConfig, mediaItem } from './fixtures';
 
 const strings = {
@@ -91,33 +89,16 @@ function fakeApi(initial: MediaItem[] = [beach, forest, prices, trailer], upload
     } satisfies MediaApi;
 }
 
-/** A field whose value lives in the test, as the builder's store keeps it, with every change recorded. */
-function Field({ schema, initial, onChange }: { schema: FieldSchema; initial?: JsonValue; onChange: (value: JsonValue | null) => void }) {
-    const [value, setValue] = useState<JsonValue | undefined>(initial);
-
-    return (
-        <FieldRow
-            id="field"
-            schema={schema}
-            value={value}
-            locale="en_US"
-            onChange={(next) => {
-                onChange(next);
-                setValue(next ?? undefined);
-            }}
-        />
-    );
-}
-
-function renderField(schema: FieldSchema, initial?: JsonValue, api: MediaApi = fakeApi()) {
-    const onChange = vi.fn();
-    render(
-        <TranslatorProvider value={createTranslator(strings)}>
+function renderMediaField(schema: FieldSchema, initial?: JsonValue, api: MediaApi = fakeApi()) {
+    const { onChange } = renderField(schema, {
+        initial,
+        strings,
+        providers: (field) => (
             <MediaPickerProvider api={api} config={{ locales: libraryConfig.locales, media: libraryConfig.media }}>
-                <Field schema={schema} initial={initial} onChange={onChange} />
+                {field}
             </MediaPickerProvider>
-        </TranslatorProvider>,
-    );
+        ),
+    });
 
     return { onChange, api };
 }
@@ -132,14 +113,14 @@ async function gridItem(name: string): Promise<HTMLElement> {
 
 describe('a media field', () => {
     it('should say nothing is chosen, with a button the field label names to choose from the library', () => {
-        renderField(mediaSchema);
+        renderMediaField(mediaSchema);
 
         expect(screen.getByText('Nothing chosen')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Image' })).toHaveTextContent('Choose from the library');
     });
 
     it('should open the library as a picker of the kinds the field takes, and store the UUID of the media item picked', async () => {
-        const { onChange, api } = renderField(mediaSchema);
+        const { onChange, api } = renderMediaField(mediaSchema);
 
         fireEvent.click(screen.getByRole('button', { name: 'Image' }));
 
@@ -159,20 +140,20 @@ describe('a media field', () => {
     });
 
     it('should show the name of the media item it holds, which it looks up by UUID', async () => {
-        const { api } = renderField(mediaSchema, beach.uuid);
+        const { api } = renderMediaField(mediaSchema, beach.uuid);
 
         expect(await screen.findByText('Beach')).toBeInTheDocument();
         expect(api.find).toHaveBeenCalledWith([beach.uuid]);
     });
 
     it('should flag a media item that was deleted', async () => {
-        renderField(mediaSchema, deleted);
+        renderMediaField(mediaSchema, deleted);
 
         expect(await screen.findByText('This media item was deleted, so it isn’t shown.')).toBeInTheDocument();
     });
 
     it('should remove the media item', async () => {
-        const { onChange } = renderField(mediaSchema, beach.uuid);
+        const { onChange } = renderMediaField(mediaSchema, beach.uuid);
         await screen.findByText('Beach');
 
         fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
@@ -182,7 +163,7 @@ describe('a media field', () => {
     });
 
     it('should leave the field as it is when the picker is cancelled', async () => {
-        const { onChange } = renderField(mediaSchema, beach.uuid);
+        const { onChange } = renderMediaField(mediaSchema, beach.uuid);
         await screen.findByText('Beach');
 
         fireEvent.click(screen.getByRole('button', { name: 'Image' }));
@@ -196,7 +177,7 @@ describe('a media field', () => {
 
     it('should pick an image uploaded from inside the picker', async () => {
         const dog = mediaItem('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d05', { name: 'dog' });
-        const { onChange } = renderField(mediaSchema, undefined, fakeApi([beach], () => ({ created: [dog], duplicates: [], refused: [] })));
+        const { onChange } = renderMediaField(mediaSchema, undefined, fakeApi([beach], () => ({ created: [dog], duplicates: [], refused: [] })));
 
         fireEvent.click(screen.getByRole('button', { name: 'Image' }));
         await gridItem('Beach');
@@ -212,7 +193,7 @@ describe('a media field', () => {
 
 describe('a media list field', () => {
     it('should add the media items picked in the picker, in the order they were picked, skipping those it holds', async () => {
-        const { onChange, api } = renderField(mediaListSchema, [prices.uuid]);
+        const { onChange, api } = renderMediaField(mediaListSchema, [prices.uuid]);
         await screen.findByText('Prices');
 
         fireEvent.click(screen.getByRole('button', { name: 'Gallery' }));
@@ -236,7 +217,7 @@ describe('a media list field', () => {
     });
 
     it('should hold no more than its most, and say how many it holds at most', async () => {
-        renderField(mediaListSchema, [prices.uuid, beach.uuid, forest.uuid]);
+        renderMediaField(mediaListSchema, [prices.uuid, beach.uuid, forest.uuid]);
 
         await screen.findByText('Forest');
         expect(screen.getByRole('button', { name: 'Gallery' })).toBeDisabled();
@@ -245,7 +226,7 @@ describe('a media list field', () => {
 
     it('should leave out what is picked beyond its most', async () => {
         const lake = mediaItem('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d06', { name: 'Lake' });
-        const { onChange } = renderField(mediaListSchema, [prices.uuid, beach.uuid], fakeApi([beach, forest, prices, lake]));
+        const { onChange } = renderMediaField(mediaListSchema, [prices.uuid, beach.uuid], fakeApi([beach, forest, prices, lake]));
         await screen.findByText('Beach');
 
         fireEvent.click(screen.getByRole('button', { name: 'Gallery' }));
@@ -257,7 +238,7 @@ describe('a media list field', () => {
     });
 
     it('should move a media item up and down, and remove it', async () => {
-        const { onChange } = renderField(mediaListSchema, [prices.uuid, beach.uuid]);
+        const { onChange } = renderMediaField(mediaListSchema, [prices.uuid, beach.uuid]);
         const list = within(await screen.findByRole('list', { name: 'Gallery' }));
         await screen.findByText('Beach');
 
@@ -269,7 +250,7 @@ describe('a media list field', () => {
     });
 
     it('should keep a media item that was deleted in the list, flagged, so it can be removed', async () => {
-        renderField(mediaListSchema, [deleted, beach.uuid]);
+        renderMediaField(mediaListSchema, [deleted, beach.uuid]);
 
         expect(await screen.findByText('This media item was deleted, so it isn’t shown.')).toBeInTheDocument();
         expect(within(screen.getByRole('list', { name: 'Gallery' })).getAllByRole('listitem')).toHaveLength(2);

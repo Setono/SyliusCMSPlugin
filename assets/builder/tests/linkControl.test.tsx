@@ -1,13 +1,10 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
-import { FieldRow } from '../src/form/FieldRow';
-import { createTranslator, TranslatorProvider } from '../src/i18n';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import type { LinkTargetDefinition } from '../src/links';
 import { LinkTargetsProvider } from '../src/linkTargets';
-import type { SearchApi, SearchResult } from '../src/search/api';
-import { SearchProvider } from '../src/search/context';
+import type { SearchResult } from '../src/search/api';
 import type { FieldSchema, JsonValue } from '../src/types';
+import { fakeSearch, renderField } from './fixtures';
 
 const strings = {
     'setono_sylius_cms.builder.all_languages': 'All languages',
@@ -46,48 +43,22 @@ const products: SearchResult[] = [
     { ref: 'MUG', name: 'Mug', thumbnail: null },
 ];
 
-/** The store's products, searched by name and looked up by code. */
-function fakeSearch(): SearchApi & { search: ReturnType<typeof vi.fn>; find: ReturnType<typeof vi.fn> } {
-    return {
-        search: vi.fn(async (kind: string, query: string) => (kind === 'product' ? products.filter(({ name }) => name.toLowerCase().includes(query.toLowerCase())) : [])),
-        find: vi.fn(async (kind: string, refs: readonly string[]) => (kind === 'product' ? products.filter(({ ref }) => refs.includes(ref)) : [])),
-    };
-}
-
-/** A field whose value lives in the test, as the builder's store keeps it, with every change recorded. */
-function Field({ schema, initial, locale, onChange }: { schema: FieldSchema; initial?: JsonValue; locale: string; onChange: (value: JsonValue | null) => void }) {
-    const [value, setValue] = useState<JsonValue | undefined>(initial);
-
-    return (
-        <FieldRow
-            id="field"
-            schema={schema}
-            value={value}
-            locale={locale}
-            onChange={(next) => {
-                onChange(next);
-                setValue(next ?? undefined);
-            }}
-        />
-    );
-}
-
-function renderField({ initial, schema = linkSchema, locale = 'en_US', searched = true }: { initial?: JsonValue; schema?: FieldSchema; locale?: string; searched?: boolean } = {}) {
-    const onChange = vi.fn();
-    const search = fakeSearch();
-    const field = (
-        <LinkTargetsProvider value={linkTargets}>
-            <Field schema={schema} initial={initial} locale={locale} onChange={onChange} />
-        </LinkTargetsProvider>
-    );
-    render(<TranslatorProvider value={createTranslator(strings)}>{searched ? <SearchProvider api={search}>{field}</SearchProvider> : field}</TranslatorProvider>);
+function renderLinkField({ initial, schema = linkSchema, locale = 'en_US', searched = true }: { initial?: JsonValue; schema?: FieldSchema; locale?: string; searched?: boolean } = {}) {
+    const search = fakeSearch({ product: products });
+    const { onChange } = renderField(schema, {
+        initial,
+        locale,
+        strings,
+        search: searched ? search : null,
+        providers: (field) => <LinkTargetsProvider value={linkTargets}>{field}</LinkTargetsProvider>,
+    });
 
     return { onChange, search };
 }
 
 describe('a link field', () => {
     it('should offer the targets the field links to under its label, the first one picked, with nothing chosen', () => {
-        renderField();
+        renderLinkField();
 
         const target = screen.getByRole('combobox', { name: 'Link' });
         expect(target).toHaveValue('entry');
@@ -96,7 +67,7 @@ describe('a link field', () => {
     });
 
     it('should search what the target links to and store the ref of what is picked, leaving the label empty', async () => {
-        const { onChange, search } = renderField();
+        const { onChange, search } = renderLinkField();
 
         fireEvent.change(screen.getByRole('combobox', { name: 'Link' }), { target: { value: 'product' } });
         expect(onChange).toHaveBeenLastCalledWith({ target: 'product', ref: '', anchor: null, label: {} });
@@ -119,7 +90,7 @@ describe('a link field', () => {
     });
 
     it('should pick what the arrow keys reach with Enter', async () => {
-        const { onChange } = renderField({ initial: { target: 'product', ref: '', anchor: null, label: {} } });
+        const { onChange } = renderLinkField({ initial: { target: 'product', ref: '', anchor: null, label: {} } });
 
         fireEvent.click(screen.getByRole('button', { name: 'Choose…' }));
         const box = await screen.findByRole('combobox', { name: 'Search: Product' });
@@ -133,7 +104,7 @@ describe('a link field', () => {
     });
 
     it('should name what a link holds by looking it up', async () => {
-        const { search } = renderField({ initial: { target: 'product', ref: 'MUG', anchor: null, label: {} } });
+        const { search } = renderLinkField({ initial: { target: 'product', ref: 'MUG', anchor: null, label: {} } });
 
         expect(await screen.findByText('Mug')).toBeInTheDocument();
         expect(search.find).toHaveBeenCalledWith('product', ['MUG']);
@@ -141,13 +112,13 @@ describe('a link field', () => {
     });
 
     it('should show the ref of what a link holds when it can not be looked up', async () => {
-        renderField({ initial: { target: 'entry', ref: '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', anchor: null, label: {} } });
+        renderLinkField({ initial: { target: 'entry', ref: '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e', anchor: null, label: {} } });
 
         expect(await screen.findByText('0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e')).toBeInTheDocument();
     });
 
     it('should keep the label of the edited locale, and show what it falls back to', () => {
-        const { onChange } = renderField({ initial: { target: 'product', ref: 'MUG', anchor: null, label: { en_US: 'Buy a mug' } }, locale: 'de_DE' });
+        const { onChange } = renderLinkField({ initial: { target: 'product', ref: 'MUG', anchor: null, label: { en_US: 'Buy a mug' } }, locale: 'de_DE' });
 
         const label = screen.getByRole('textbox', { name: 'Label' });
         expect(label).toHaveValue('');
@@ -159,7 +130,7 @@ describe('a link field', () => {
     });
 
     it('should type a URL in each locale', () => {
-        const { onChange } = renderField({ initial: { target: 'url', ref: { en_US: 'https://example.com/en' }, anchor: null, label: {} } });
+        const { onChange } = renderLinkField({ initial: { target: 'url', ref: { en_US: 'https://example.com/en' }, anchor: null, label: {} } });
 
         expect(screen.queryByRole('button', { name: 'Choose…' })).not.toBeInTheDocument();
         const url = screen.getByRole('textbox', { name: 'URL' });
@@ -171,7 +142,7 @@ describe('a link field', () => {
     });
 
     it('should keep the anchor without its hash', () => {
-        const { onChange } = renderField({ initial: { target: 'product', ref: 'MUG', anchor: null, label: {} } });
+        const { onChange } = renderLinkField({ initial: { target: 'product', ref: 'MUG', anchor: null, label: {} } });
 
         fireEvent.change(screen.getByRole('textbox', { name: 'Anchor' }), { target: { value: '#reviews' } });
 
@@ -179,7 +150,7 @@ describe('a link field', () => {
     });
 
     it('should keep one label for every locale when the field keeps one link for every locale', () => {
-        const { onChange } = renderField({ initial: { target: 'url', ref: 'tel:+4512345678', anchor: null, label: null }, schema: { ...linkSchema, 'x-cms-options': { targets: null, translatable: false } }, locale: 'de_DE' });
+        const { onChange } = renderLinkField({ initial: { target: 'url', ref: 'tel:+4512345678', anchor: null, label: null }, schema: { ...linkSchema, 'x-cms-options': { targets: null, translatable: false } }, locale: 'de_DE' });
 
         expect(screen.getByRole('textbox', { name: 'URL' })).toHaveValue('tel:+4512345678');
         fireEvent.change(screen.getByRole('textbox', { name: 'Label' }), { target: { value: 'Ring an' } });
@@ -188,17 +159,17 @@ describe('a link field', () => {
     });
 
     it('should carry no All languages badge while it keeps its label and URL per locale', () => {
-        renderField({ initial: { target: 'product', ref: 'MUG', anchor: null, label: { en_US: 'Mugs' } } });
+        renderLinkField({ initial: { target: 'product', ref: 'MUG', anchor: null, label: { en_US: 'Mugs' } } });
         expect(screen.queryByText('All languages')).not.toBeInTheDocument();
     });
 
     it('should carry the All languages badge when it keeps one link for every locale', () => {
-        renderField({ initial: { target: 'product', ref: 'MUG', anchor: null, label: null }, schema: { ...linkSchema, 'x-cms-options': { targets: null, translatable: false } } });
+        renderLinkField({ initial: { target: 'product', ref: 'MUG', anchor: null, label: null }, schema: { ...linkSchema, 'x-cms-options': { targets: null, translatable: false } } });
         expect(screen.getByText('All languages')).toBeInTheDocument();
     });
 
     it('should not let anything be chosen without a search', () => {
-        renderField({ initial: { target: 'product', ref: '', anchor: null, label: {} }, searched: false });
+        renderLinkField({ initial: { target: 'product', ref: '', anchor: null, label: {} }, searched: false });
 
         expect(screen.getByRole('button', { name: 'Choose…' })).toBeDisabled();
     });

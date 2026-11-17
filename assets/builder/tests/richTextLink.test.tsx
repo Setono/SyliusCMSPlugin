@@ -1,15 +1,11 @@
 import type { Editor } from '@tiptap/core';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
-import { FieldRow } from '../src/form/FieldRow';
-import { createTranslator, TranslatorProvider } from '../src/i18n';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import type { LinkTargetDefinition } from '../src/links';
 import { LinkTargetsProvider } from '../src/linkTargets';
-import type { SearchApi, SearchResult } from '../src/search/api';
-import { SearchProvider } from '../src/search/context';
+import type { SearchResult } from '../src/search/api';
 import type { JsonObject, JsonValue } from '../src/types';
-import { richTextSchema, strings as builderStrings } from './fixtures';
+import { fakeSearch, renderField, richTextSchema, strings as builderStrings } from './fixtures';
 
 const strings = {
     ...builderStrings,
@@ -42,43 +38,13 @@ const entries: SearchResult[] = [
     { ref: '0193a5be-0000-7000-8000-000000000002', name: 'Our team', thumbnail: null },
 ];
 
-/** The store's entries, searched by title and looked up by UUID. */
-function fakeSearch(): SearchApi {
-    return {
-        search: vi.fn(async (kind: string, query: string) => (kind === 'entry' ? entries.filter(({ name }) => name.toLowerCase().includes(query.toLowerCase())) : [])),
-        find: vi.fn(async (kind: string, refs: readonly string[]) => (kind === 'entry' ? entries.filter(({ ref }) => refs.includes(ref)) : [])),
-    };
-}
-
-/** A rich text field whose value lives in the test, as the builder's store keeps it, with every change recorded. */
-function Field({ initial, onChange }: { initial: JsonValue; onChange: (value: JsonValue | null) => void }) {
-    const [value, setValue] = useState<JsonValue | undefined>(initial);
-
-    return (
-        <FieldRow
-            id="field"
-            schema={richTextSchema}
-            value={value}
-            locale="en_US"
-            onChange={(next) => {
-                onChange(next);
-                setValue(next ?? undefined);
-            }}
-        />
-    );
-}
-
 function renderRichText(initial: JsonValue) {
-    const onChange = vi.fn();
-    render(
-        <TranslatorProvider value={createTranslator(strings)}>
-            <SearchProvider api={fakeSearch()}>
-                <LinkTargetsProvider value={linkTargets}>
-                    <Field initial={initial} onChange={onChange} />
-                </LinkTargetsProvider>
-            </SearchProvider>
-        </TranslatorProvider>,
-    );
+    const { onChange } = renderField(richTextSchema, {
+        initial,
+        strings,
+        search: fakeSearch({ entry: entries }),
+        providers: (field) => <LinkTargetsProvider value={linkTargets}>{field}</LinkTargetsProvider>,
+    });
 
     return { onChange, editor: screen.getByRole('textbox', { name: 'Content' }) };
 }
