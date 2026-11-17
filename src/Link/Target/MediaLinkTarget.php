@@ -14,6 +14,7 @@ use Setono\SyliusCMSPlugin\Media\PermanentUrlGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * A document or a video from the media library, by its UUID. It leads to the media item's permanent URL, which follows
@@ -53,7 +54,7 @@ final readonly class MediaLinkTarget implements ReferencingLinkTargetInterface
 
     public function reference(string $ref): ?Reference
     {
-        return MediaItemReferences::isUuid($ref) ? MediaItemReferences::reference($ref) : null;
+        return Uuid::isValid($ref) ? MediaItemReferences::reference($ref) : null;
     }
 
     public function link(object $record, string $ref, RenderContext $context): ?ResolvedLink
