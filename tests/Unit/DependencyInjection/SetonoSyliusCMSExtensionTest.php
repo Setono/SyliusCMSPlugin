@@ -40,6 +40,8 @@ use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistry;
@@ -57,6 +59,7 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\LandingFromOne;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Component\Core\Model\ProductInterface;
+use Sylius\Component\Core\Model\TaxonInterface;
 use Sylius\Resource\Factory\Factory;
 use Sylius\Resource\Factory\TranslatableFactory;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
@@ -268,11 +271,50 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     {
         $slots = ['app.store_locator.top' => ['label' => 'app.cms.slot.store_locator_top', 'provides' => ['store_location'], 'cap' => 1]];
 
-        $this->load(['slots' => $slots]);
+        $this->load(['slots' => $slots, 'context_keys' => ['store_location' => ['class' => \stdClass::class, 'label' => 'app.cms.context_key.store_location']]]);
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.slots', $slots);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(SlotRegistry::class, 0, '%setono_sylius_cms.slots%');
         $this->assertContainerBuilderHasAlias(SlotRegistryInterface::class, SlotRegistry::class);
+    }
+
+    /**
+     * @test
+     */
+    public function it_prepends_the_product_taxon_and_entry_context_keys_to_the_context_keys_config(): void
+    {
+        $this->load();
+
+        self::assertSame([
+            'product' => ['class' => ProductInterface::class, 'label' => 'setono_sylius_cms.context_key.product'],
+            'taxon' => ['class' => TaxonInterface::class, 'label' => 'setono_sylius_cms.context_key.taxon'],
+            'entry' => ['class' => EntryInterface::class, 'label' => 'setono_sylius_cms.context_key.entry'],
+        ], $this->container->getExtensionConfig('setono_sylius_cms')[0]['context_keys'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_the_context_keys_to_the_context_key_registry(): void
+    {
+        $contextKeys = ['store_location' => ['class' => \stdClass::class, 'label' => 'app.cms.context_key.store_location']];
+
+        $this->load(['context_keys' => $contextKeys]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.context_keys', $contextKeys);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ContextKeyRegistry::class, 0, '%setono_sylius_cms.context_keys%');
+        $this->assertContainerBuilderHasAlias(ContextKeyRegistryInterface::class, ContextKeyRegistry::class);
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_slot_that_provides_a_context_key_the_code_does_not_declare(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('The slot "app.store_locator.top" provides the context key "store_location", which isn\'t declared under setono_sylius_cms.context_keys');
+
+        $this->load(['slots' => ['app.store_locator.top' => ['label' => 'app.cms.slot.store_locator_top', 'provides' => ['store_location']]]]);
     }
 
     /**

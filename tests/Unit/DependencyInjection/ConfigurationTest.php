@@ -97,6 +97,7 @@ final class ConfigurationTest extends TestCase
             'assets' => true,
             'content_types' => [],
             'slots' => [],
+            'context_keys' => [],
             'block_styles' => [],
             'fallback_locales' => [],
             'revisions' => ['keep' => 50],
@@ -759,6 +760,43 @@ final class ConfigurationTest extends TestCase
         yield 'a cap of none' => [['shop.top' => ['label' => 'a', 'cap' => 0]], 'The value 0 is too small for path "setono_sylius_cms.slots.shop.top.cap"'];
         yield 'a context key that is no code' => [['shop.top' => ['label' => 'a', 'provides' => ['Product']]], 'The context key code "Product" must match'];
         yield 'a template event without a name' => [['shop.top' => ['label' => 'a', 'template_event' => ['priority' => 1]]], 'The child config "name" under "setono_sylius_cms.slots.shop.top.template_event" must be configured'];
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_declare_context_keys_with_the_class_of_their_object_and_a_label(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['context_keys' => ['store_location' => ['class' => \stdClass::class, 'label' => 'app.cms.context_key.store_location']]],
+            ['context_keys' => ['brand' => ['class' => \Countable::class, 'label' => 'app.cms.context_key.brand']]],
+        ], ['context_keys' => [
+            'store_location' => ['class' => \stdClass::class, 'label' => 'app.cms.context_key.store_location'],
+            'brand' => ['class' => \Countable::class, 'label' => 'app.cms.context_key.brand'],
+        ]], 'context_keys');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidContextKeys
+     *
+     * @param array<array-key, mixed> $contextKeys
+     */
+    public function it_refuses_an_invalid_context_key(array $contextKeys, string $message): void
+    {
+        $this->assertConfigurationIsInvalid([['context_keys' => $contextKeys]], $message);
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>, string}>
+     */
+    public function provideInvalidContextKeys(): iterable
+    {
+        yield 'a key that is no code' => [['Brand' => ['class' => \stdClass::class, 'label' => 'a']], 'The context key code "Brand" must match'];
+        yield 'no class' => [['brand' => ['label' => 'a']], 'The child config "class" under "setono_sylius_cms.context_keys.brand" must be configured'];
+        yield 'a class that does not exist' => [['brand' => ['class' => 'App\\Entity\\Gone', 'label' => 'a']], 'The class "App\\Entity\\Gone" of a context key is no class or interface'];
+        yield 'no label' => [['brand' => ['class' => \stdClass::class]], 'The child config "label" under "setono_sylius_cms.context_keys.brand" must be configured'];
     }
 
     /**

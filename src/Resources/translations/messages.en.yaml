@@ -62,6 +62,11 @@ setono_sylius_cms:
     content_type:
         page: Page
         snippet: Snippet
+    # The context keys' labels, naming the pages that provide them. See "Context keys" in docs/spec/slots.md
+    context_key:
+        entry: Entry page
+        product: Product page
+        taxon: Taxon page
     # A content type's list is named by its plural. One without a plural here is named by its label
     content_type_plural:
         page: Pages

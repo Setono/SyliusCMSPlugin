@@ -31,6 +31,7 @@ use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -65,7 +66,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>}, embed_code: bool, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, slots: array<string, array{label: string, provides: list<string>, cap: int|null, template_event?: array{name: string, priority: int}}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, builder: array{scripts: list<string>}, resources: array<string, array<string, mixed>>} $config */
+        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>}, embed_code: bool, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, slots: array<string, array{label: string, provides: list<string>, cap: int|null, template_event?: array{name: string, priority: int}}>, context_keys: array<string, array{class: class-string, label: string}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, builder: array{scripts: list<string>}, resources: array<string, array<string, mixed>>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         // The Embed code block is switched off like a disabled block type until a project opts in (ADR 0018)
@@ -82,8 +83,10 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         ), static fn (?string $layout): bool => null !== $layout));
         $container->setParameter('setono_sylius_cms.block_styles', $config['block_styles']);
         $container->setParameter(RegisterContentTypesPass::CONFIG_PARAMETER, $config['content_types']);
-        // The slots, the stock slots that prepend() prepends first
+        // The slots and the context keys, the stock ones that prepend() prepends first
+        self::assertSlotsProvideDeclaredContextKeys($config['slots'], $config['context_keys']);
         $container->setParameter('setono_sylius_cms.slots', $config['slots']);
+        $container->setParameter('setono_sylius_cms.context_keys', $config['context_keys']);
         $container->setParameter('setono_sylius_cms.fallback_locales', $config['fallback_locales']);
         $container->setParameter('setono_sylius_cms.revisions.keep', $config['revisions']['keep']);
         $container->setParameter('setono_sylius_cms.media.types', $config['media']['types']);
@@ -148,7 +151,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $this->prependProblems($container);
         $this->prependMessenger($container);
         // Before the config is read, so the slots it reads hold them
-        $container->prependExtensionConfig($this->getAlias(), ['slots' => StockSlots::config()]);
+        $container->prependExtensionConfig($this->getAlias(), ['context_keys' => StockContextKeys::config(), 'slots' => StockSlots::config()]);
 
         /** @var array{assets: bool, media: array{storage: string, liip: array{loader: string, resolver: string}}, slots: array<string, array{template_event?: array{name: string, priority: int}}>} $config */
         $config = $this->processConfiguration(new Configuration(), $container->getExtensionConfig($this->getAlias()));
@@ -180,6 +183,23 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 ],
             ],
         ]);
+    }
+
+    /**
+     * A slot provides only context keys the code declares, so whatever needs a key finds it declared
+     *
+     * @param array<string, array{provides: list<string>}> $slots
+     * @param array<string, mixed> $contextKeys
+     */
+    private static function assertSlotsProvideDeclaredContextKeys(array $slots, array $contextKeys): void
+    {
+        foreach ($slots as $identifier => $slot) {
+            foreach ($slot['provides'] as $key) {
+                if (!isset($contextKeys[$key])) {
+                    throw new InvalidConfigurationException(sprintf('The slot "%s" provides the context key "%s", which isn\'t declared under setono_sylius_cms.context_keys', $identifier, $key));
+                }
+            }
+        }
     }
 
     /**

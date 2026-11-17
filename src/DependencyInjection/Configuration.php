@@ -124,6 +124,7 @@ final class Configuration implements ConfigurationInterface
         $this->addBlockStylesSection($rootNode);
         $this->addContentTypesSection($rootNode);
         $this->addSlotsSection($rootNode);
+        $this->addContextKeysSection($rootNode);
         $this->addFallbackLocalesSection($rootNode);
         $this->addRevisionsSection($rootNode);
         $this->addMediaSection($rootNode);
@@ -237,6 +238,36 @@ final class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                     ->validate()->always(self::assertSlotIdentifiers(...))->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * The context keys of host-page context, by key, with product, taxon and entry prepended (see
+     * SetonoSyliusCMSExtension). Slots provide them, and block types, sources, condition kinds and bindable properties
+     * need them. See "Context keys" in docs/spec/slots.md
+     */
+    private function addContextKeysSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('context_keys')
+                    ->info('The keys of host-page context, which slots provide and block types, sources and condition kinds need: key, such as brand => {class, label}')
+                    ->useAttributeAsKey('key')
+                    ->normalizeKeys(false)
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('class')
+                                ->info('The class or interface of the object the key holds')
+                                ->isRequired()
+                                ->cannotBeEmpty()
+                                ->validate()->always(self::assertContextKeyClass(...))->end()
+                            ->end()
+                            ->scalarNode('label')->info('A translation key, naming the pages that provide it, such as "Product page"')->isRequired()->cannotBeEmpty()->end()
+                        ->end()
+                    ->end()
+                    ->validate()->always(self::assertContextKeyCodes(...))->end()
                 ->end()
             ->end()
         ;
@@ -535,6 +566,29 @@ final class Configuration implements ConfigurationInterface
         }
 
         return $slots;
+    }
+
+    /**
+     * @param array<array-key, array<string, mixed>> $contextKeys
+     *
+     * @return array<array-key, array<string, mixed>>
+     */
+    private static function assertContextKeyCodes(array $contextKeys): array
+    {
+        foreach (array_keys($contextKeys) as $key) {
+            self::assertCode('context key', (string) $key);
+        }
+
+        return $contextKeys;
+    }
+
+    private static function assertContextKeyClass(mixed $class): string
+    {
+        if (!is_string($class) || (!class_exists($class) && !interface_exists($class))) {
+            throw new \InvalidArgumentException(sprintf('The class "%s" of a context key is no class or interface', is_scalar($class) ? (string) $class : get_debug_type($class)));
+        }
+
+        return $class;
     }
 
     private static function assertDisabledLayout(mixed $layout): string
