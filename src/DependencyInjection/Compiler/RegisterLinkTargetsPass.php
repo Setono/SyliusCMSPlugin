@@ -68,7 +68,7 @@ final class RegisterLinkTargetsPass implements CompilerPassInterface
         $searched = [];
         foreach ($container->findTaggedServiceIds(self::SEARCH_TAG) as $tags) {
             foreach ($tags as $tag) {
-                if (is_string($tag['kind'] ?? null)) {
+                if (is_array($tag) && is_string($tag['kind'] ?? null)) {
                     $searched[$tag['kind']] = true;
                 }
             }
@@ -92,7 +92,8 @@ final class RegisterLinkTargetsPass implements CompilerPassInterface
     {
         $priorities = [];
         foreach ($container->findTaggedServiceIds(self::TAG) as $id => $tags) {
-            $priority = $tags[0]['priority'] ?? 0;
+            $tag = $tags[0] ?? null;
+            $priority = is_array($tag) ? $tag['priority'] ?? 0 : 0;
             $priorities[$id] = is_numeric($priority) ? (int) $priority : 0;
         }
 

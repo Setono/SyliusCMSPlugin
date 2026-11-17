@@ -56,15 +56,17 @@ final class LinkHandlerTest extends TestCase
      */
     public function its_schema_keeps_the_label_and_a_translatable_ref_per_locale_by_default(): void
     {
-        $schema = Links::handler()->schema(new Link(label: 'Link'));
-
-        self::assertSame('object', $schema['type']);
-        self::assertSame(['target', 'ref'], $schema['required']);
-        self::assertSame(['type' => 'string', 'enum' => ['url', 'app_store', 'recipe']], $schema['properties']['target']);
-        self::assertSame(['oneOf' => [['type' => 'string'], ['type' => 'object', 'additionalProperties' => ['type' => 'string']]]], $schema['properties']['ref']);
-        self::assertSame(['type' => ['string', 'null']], $schema['properties']['anchor']);
-        self::assertSame(['type' => 'object', 'additionalProperties' => ['type' => 'string']], $schema['properties']['label']);
-        self::assertSame(['targets' => ['url', 'app_store', 'recipe'], 'translatable' => null], $schema['x-cms-options']);
+        self::assertSame([
+            'type' => 'object',
+            'properties' => [
+                'target' => ['type' => 'string', 'enum' => ['url', 'app_store', 'recipe']],
+                'ref' => ['oneOf' => [['type' => 'string'], ['type' => 'object', 'additionalProperties' => ['type' => 'string']]]],
+                'anchor' => ['type' => ['string', 'null']],
+                'label' => ['type' => 'object', 'additionalProperties' => ['type' => 'string']],
+            ],
+            'required' => ['target', 'ref'],
+            'x-cms-options' => ['targets' => ['url', 'app_store', 'recipe'], 'translatable' => null],
+        ], Links::handler()->schema(new Link(label: 'Link')));
     }
 
     /**
@@ -73,12 +75,17 @@ final class LinkHandlerTest extends TestCase
     public function its_schema_keeps_one_label_and_one_ref_when_it_is_one_link_for_every_locale_or_a_link_per_locale(): void
     {
         foreach ([false, true] as $translatable) {
-            $schema = Links::handler()->schema(new Link(label: 'Link', targets: ['app_store', 'url'], translatable: $translatable));
-
-            self::assertSame(['type' => 'string', 'enum' => ['app_store', 'url']], $schema['properties']['target']);
-            self::assertSame(['type' => 'string'], $schema['properties']['ref']);
-            self::assertSame(['type' => ['string', 'null']], $schema['properties']['label']);
-            self::assertSame(['targets' => ['app_store', 'url'], 'translatable' => $translatable], $schema['x-cms-options']);
+            self::assertSame([
+                'type' => 'object',
+                'properties' => [
+                    'target' => ['type' => 'string', 'enum' => ['app_store', 'url']],
+                    'ref' => ['type' => 'string'],
+                    'anchor' => ['type' => ['string', 'null']],
+                    'label' => ['type' => ['string', 'null']],
+                ],
+                'required' => ['target', 'ref'],
+                'x-cms-options' => ['targets' => ['app_store', 'url'], 'translatable' => $translatable],
+            ], Links::handler()->schema(new Link(label: 'Link', targets: ['app_store', 'url'], translatable: $translatable)));
         }
     }
 
@@ -87,9 +94,7 @@ final class LinkHandlerTest extends TestCase
      */
     public function its_schema_offers_only_the_targets_that_exist(): void
     {
-        $schema = Links::handler()->schema(new Link(label: 'Link', targets: ['media', 'url']));
-
-        self::assertSame(['url'], $schema['x-cms-options']['targets']);
+        self::assertSame(['targets' => ['url'], 'translatable' => null], Links::handler()->schema(new Link(label: 'Link', targets: ['media', 'url']))['x-cms-options']);
     }
 
     /**
@@ -149,8 +154,9 @@ final class LinkHandlerTest extends TestCase
 
         $link = Links::handler()->hydrate(new Link(label: 'Link', translatable: false), $value, $this->context('de_DE'));
 
-        self::assertSame('Our store', $link?->label);
-        self::assertSame('/de_DE/stores/aarhus', $link?->resolved?->url);
+        self::assertNotNull($link);
+        self::assertSame('Our store', $link->label);
+        self::assertSame('/de_DE/stores/aarhus', $link->resolved?->url);
     }
 
     /**
@@ -160,10 +166,11 @@ final class LinkHandlerTest extends TestCase
     {
         $value = ['target' => 'url', 'ref' => 'mailto:shop@example.com', 'anchor' => null, 'label' => null];
 
-        $link = Links::handler()->hydrate(new Link(label: 'Link', translatable: true), $value, $this->context('en_US'));
+        $resolved = Links::handler()->hydrate(new Link(label: 'Link', translatable: true), $value, $this->context('en_US'))?->resolved;
 
-        self::assertSame('mailto:shop@example.com', $link?->resolved?->url);
-        self::assertSame('shop@example.com', $link?->resolved?->name);
+        self::assertNotNull($resolved);
+        self::assertSame('mailto:shop@example.com', $resolved->url);
+        self::assertSame('shop@example.com', $resolved->name);
     }
 
     /**
@@ -175,8 +182,9 @@ final class LinkHandlerTest extends TestCase
 
         $link = Links::handler()->hydrate(new Link(label: 'Link'), $value, $this->context('en_US'));
 
-        self::assertSame('opening-hours', $link?->anchor);
-        self::assertSame('/en_US/stores/aarhus#opening-hours', $link?->resolved?->url);
+        self::assertNotNull($link);
+        self::assertSame('opening-hours', $link->anchor);
+        self::assertSame('/en_US/stores/aarhus#opening-hours', $link->resolved?->url);
     }
 
     /**
@@ -235,19 +243,46 @@ final class LinkHandlerTest extends TestCase
 
     /**
      * @test
+     *
+     * @dataProvider fitting
      */
-    public function it_fits_a_link_in_its_shape(): void
+    public function it_fits_a_link_in_its_shape(?bool $translatable, mixed $value): void
     {
-        $handler = Links::handler();
+        self::assertTrue(Links::handler()->fits(new Link(label: 'Link', translatable: $translatable), $value));
+    }
 
-        self::assertTrue($handler->fits(new Link(label: 'Link'), self::storeLink(['en_US' => 'Visit us'])));
-        self::assertTrue($handler->fits(new Link(label: 'Link'), ['target' => 'url', 'ref' => ['en_US' => 'https://example.com']]));
-        self::assertTrue($handler->fits(new Link(label: 'Link', translatable: false), ['target' => 'url', 'ref' => 'https://example.com', 'anchor' => 'top', 'label' => 'Example']));
-        self::assertFalse($handler->fits(new Link(label: 'Link', translatable: false), self::storeLink(['en_US' => 'Visit us'])));
-        self::assertFalse($handler->fits(new Link(label: 'Link'), ['target' => 'url', 'ref' => 'https://example.com', 'label' => 'Example']));
-        self::assertFalse($handler->fits(new Link(label: 'Link'), ['ref' => 'https://example.com']));
-        self::assertFalse($handler->fits(new Link(label: 'Link'), ['target' => 'url', 'ref' => 'https://example.com', 'anchor' => 7]));
-        self::assertFalse($handler->fits(new Link(label: 'Link'), ['https://example.com']));
+    /**
+     * @return iterable<string, array{bool|null, mixed}>
+     */
+    public static function fitting(): iterable
+    {
+        yield 'a label per locale' => [null, self::storeLink(['en_US' => 'Visit us'])];
+        yield 'a ref per locale' => [null, ['target' => 'url', 'ref' => ['en_US' => 'https://example.com']]];
+        yield 'one link for every locale' => [false, ['target' => 'url', 'ref' => 'https://example.com', 'anchor' => 'top', 'label' => 'Example']];
+        yield 'one locale\'s link' => [true, ['target' => 'url', 'ref' => 'https://example.com', 'anchor' => null, 'label' => null]];
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider notFitting
+     */
+    public function it_does_not_fit_anything_else(?bool $translatable, mixed $value): void
+    {
+        self::assertFalse(Links::handler()->fits(new Link(label: 'Link', translatable: $translatable), $value));
+    }
+
+    /**
+     * @return iterable<string, array{bool|null, mixed}>
+     */
+    public static function notFitting(): iterable
+    {
+        yield 'a label per locale in one link for every locale' => [false, self::storeLink(['en_US' => 'Visit us'])];
+        yield 'one label in a link with a label per locale' => [null, ['target' => 'url', 'ref' => 'https://example.com', 'label' => 'Example']];
+        yield 'no target' => [null, ['ref' => 'https://example.com']];
+        yield 'an anchor that is not text' => [null, ['target' => 'url', 'ref' => 'https://example.com', 'anchor' => 7]];
+        yield 'a list' => [null, ['https://example.com']];
+        yield 'a URL' => [null, 'https://example.com'];
     }
 
     /**

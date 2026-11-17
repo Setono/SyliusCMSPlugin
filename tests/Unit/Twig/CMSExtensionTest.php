@@ -266,7 +266,10 @@ final class CMSExtensionTest extends IntegrationTestCase
         $visiblePages = &$this->visiblePages;
         $loader = $this->prophesize(ReferenceTypeLoaderInterface::class);
         $loader->load(Argument::type('array'), Argument::type(RenderContext::class))->will(static function (array $arguments) use (&$visiblePages): array {
-            return array_intersect_key($visiblePages, array_flip($arguments[0]));
+            /** @var list<string> $uuids */
+            $uuids = $arguments[0];
+
+            return array_intersect_key($visiblePages, array_flip($uuids));
         });
 
         return $loader->reveal();

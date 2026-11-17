@@ -40,7 +40,12 @@ final class TaxonLinkTargetTest extends TestCase
         $this->urlGenerator = $this->prophesize(UrlGeneratorInterface::class);
         $this->urlGenerator
             ->generate('sylius_shop_product_index', Argument::type('array'), UrlGeneratorInterface::ABSOLUTE_URL)
-            ->will(static fn (array $arguments): string => sprintf('https://localhost/%s/taxons/%s', $arguments[1]['_locale'], $arguments[1]['slug']))
+            ->will(static function (array $arguments): string {
+                $parameters = $arguments[1];
+                \assert(is_array($parameters) && is_string($parameters['_locale']) && is_string($parameters['slug']));
+
+                return sprintf('https://localhost/%s/taxons/%s', $parameters['_locale'], $parameters['slug']);
+            })
         ;
         $this->search = $this->prophesize(SearchInterface::class);
     }

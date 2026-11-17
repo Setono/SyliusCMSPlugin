@@ -92,7 +92,9 @@ final class VisibleProductsAndTaxonsQueryTest extends KernelTestCase
 
         $queryBuilder = self::productsQuery()->createQueryBuilder(self::context())->andWhere('product.code = :code')->setParameter('code', 'T_SHIRT');
 
-        self::assertCount(1, $queryBuilder->getQuery()->getResult());
+        /** @var list<ProductInterface> $products */
+        $products = $queryBuilder->getQuery()->getResult();
+        self::assertCount(1, $products);
     }
 
     /**

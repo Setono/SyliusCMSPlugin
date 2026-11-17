@@ -301,9 +301,15 @@ final class ButtonTest extends WebTestCase
         $collector = $profile->getCollector('db');
         self::assertInstanceOf(DoctrineDataCollector::class, $collector);
 
+        $byConnection = $collector->getQueries();
+        self::assertIsArray($byConnection);
+
         $queries = [];
-        foreach ($collector->getQueries() as $connectionQueries) {
+        foreach ($byConnection as $connectionQueries) {
+            self::assertIsArray($connectionQueries);
             foreach ($connectionQueries as $query) {
+                self::assertIsArray($query);
+                self::assertIsString($query['sql']);
                 if (str_contains($query['sql'], 'FROM ' . $table)) {
                     $queries[] = $query['sql'];
                 }

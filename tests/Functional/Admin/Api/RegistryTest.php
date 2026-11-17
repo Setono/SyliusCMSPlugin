@@ -209,12 +209,13 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertSame('Button', $button['label']);
         self::assertSame([['code' => 'primary', 'label' => 'Primary'], ['code' => 'secondary', 'label' => 'Secondary']], $button['styles']);
         self::assertIsArray($button['fields']);
-        self::assertSame('link', $button['fields'][0]['name']);
-        self::assertSame('link', $button['fields'][0]['schema']['x-cms-type']);
-        self::assertSame('Link', $button['fields'][0]['schema']['x-cms-label']);
-        self::assertTrue($button['fields'][0]['schema']['x-cms-required']);
-        self::assertFalse($button['fields'][0]['schema']['x-cms-translatable']);
-        self::assertSame(['targets' => ['entry', 'product', 'taxon', 'url', 'app_store'], 'translatable' => null], $button['fields'][0]['schema']['x-cms-options']);
+        $link = $button['fields'][0] ?? null;
+        self::assertIsArray($link);
+        self::assertSame('link', $link['name']);
+        $schema = $link['schema'];
+        self::assertIsArray($schema);
+        self::assertSame(['link', 'Link', true, false], [$schema['x-cms-type'], $schema['x-cms-label'], $schema['x-cms-required'], $schema['x-cms-translatable']]);
+        self::assertSame(['targets' => ['entry', 'product', 'taxon', 'url', 'app_store'], 'translatable' => null], $schema['x-cms-options']);
     }
 
     /**
