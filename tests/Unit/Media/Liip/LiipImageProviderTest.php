@@ -19,7 +19,7 @@ use Setono\SyliusCMSPlugin\Media\Liip\FilterSets;
 use Setono\SyliusCMSPlugin\Media\Liip\LiipImageProvider;
 use Setono\SyliusCMSPlugin\Media\Liip\TransformFilterLoader;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
-use Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface;
+use Setono\SyliusCMSPlugin\Media\MediaUrlGenerator;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -40,9 +40,6 @@ final class LiipImageProviderTest extends TestCase
     /** @var ObjectProphecy<ResolverInterface> */
     private ObjectProphecy $resolver;
 
-    /** @var ObjectProphecy<MediaUrlGeneratorInterface> */
-    private ObjectProphecy $mediaUrls;
-
     private LiipImageProvider $provider;
 
     protected function setUp(): void
@@ -56,15 +53,7 @@ final class LiipImageProviderTest extends TestCase
         $cacheManager = new CacheManager(new FilterConfiguration(FilterSets::config('setono_sylius_cms', 'setono_sylius_cms')), $this->router(), new Signer(self::SECRET), new EventDispatcher());
         $cacheManager->addResolver('setono_sylius_cms', $this->resolver->reveal());
 
-        $this->mediaUrls = $this->prophesize(MediaUrlGeneratorInterface::class);
-        $this->mediaUrls->generate(Argument::type(MediaItemInterface::class))->will(static function (array $arguments): string {
-            $mediaItem = $arguments[0];
-            \assert($mediaItem instanceof MediaItemInterface);
-
-            return '/media/cms/' . $mediaItem->getPath();
-        });
-
-        $this->provider = new LiipImageProvider($cacheManager, $this->mediaUrls->reveal());
+        $this->provider = new LiipImageProvider($cacheManager, new MediaUrlGenerator());
     }
 
     /**

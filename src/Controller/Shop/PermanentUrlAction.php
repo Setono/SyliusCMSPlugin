@@ -29,6 +29,6 @@ final readonly class PermanentUrlAction
             throw new NotFoundHttpException(sprintf('No document or video has the UUID %s', $uuid));
         }
 
-        return new RedirectResponse($this->mediaUrlGenerator->generate($mediaItem), RedirectResponse::HTTP_FOUND);
+        return new RedirectResponse($this->mediaUrlGenerator->generate($mediaItem->getPath()), RedirectResponse::HTTP_FOUND);
     }
 }

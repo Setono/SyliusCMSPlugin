@@ -3,25 +3,13 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <!--
-        The Flysystem storage media items are stored in, by the id the spec fixes as media.storage's default (an exception to
-        FQCN service ids, since the plugin and a project may both have a League\Flysystem\Filesystem). By default it's the
-        plugin's own: a local public directory beside Sylius's own public/media/image, whose public URLs Flysystem builds
-        from public_url. It holds the only copy of every file, so a project keeps it across deploys. When a project
-        configures another, SetonoSyliusCMSExtension makes this id an alias of it. See "Image processing" in
-        docs/spec/media.md and "Configuration" in docs/spec/extending.md
+        The Flysystem storage media items are stored in goes by the id the spec fixes as media.storage's default,
+        setono_sylius_cms.storage (an exception to FQCN service ids, since the plugin and a project may both have a
+        League\Flysystem\Filesystem). By default it's the plugin's own local storage, which SetonoSyliusCMSExtension
+        defines in flysystem-bundle's config, as Sylius defines sylius.storage. When a project configures another, the
+        extension makes this id an alias of it. See "Image processing" in docs/spec/media.md and "Configuration" in
+        docs/spec/extending.md
         -->
-        <service id="setono_sylius_cms.storage" class="League\Flysystem\Filesystem">
-            <argument type="service">
-                <service class="League\Flysystem\Local\LocalFilesystemAdapter">
-                    <argument>%kernel.project_dir%/public/media/cms</argument>
-                </service>
-            </argument>
-            <argument type="collection">
-                <argument key="visibility">public</argument>
-                <argument key="directory_visibility">public</argument>
-                <argument key="public_url">/media/cms</argument>
-            </argument>
-        </service>
 
         <!-- The effective upload limit, read from the PHP that runs -->
         <service id="Setono\SyliusCMSPlugin\Media\UploadLimit" class="Setono\SyliusCMSPlugin\Media\UploadLimit">
@@ -68,9 +56,11 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Media\MediaUploaderInterface" alias="Setono\SyliusCMSPlugin\Media\MediaUploader"/>
 
-        <service id="Setono\SyliusCMSPlugin\Media\MediaUrlGenerator" class="Setono\SyliusCMSPlugin\Media\MediaUrlGenerator">
-            <argument type="service" id="setono_sylius_cms.storage"/>
-        </service>
+        <!--
+        The public URLs of the files in the media storage, built without calling it: under /media/cms, where the default
+        storage is served. A project whose storage is elsewhere, such as on S3, aliases the interface to its own service
+        -->
+        <service id="Setono\SyliusCMSPlugin\Media\MediaUrlGenerator" class="Setono\SyliusCMSPlugin\Media\MediaUrlGenerator"/>
         <service id="Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface" alias="Setono\SyliusCMSPlugin\Media\MediaUrlGenerator"/>
 
         <!-- The permanent URLs of documents and videos, which the setono_sylius_cms_media route redirects to their current file -->
@@ -195,6 +185,7 @@
         <service id="Setono\SyliusCMSPlugin\Media\Liip\StorageResolver" class="Setono\SyliusCMSPlugin\Media\Liip\StorageResolver">
             <argument type="service" id="setono_sylius_cms.storage"/>
             <argument type="service" id="liip_imagine.filter.configuration"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface"/>
 
             <tag name="liip_imagine.cache.resolver" resolver="setono_sylius_cms"/>
         </service>

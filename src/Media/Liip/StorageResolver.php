@@ -6,16 +6,17 @@ namespace Setono\SyliusCMSPlugin\Media\Liip;
 
 use League\Flysystem\FilesystemOperator;
 use Liip\ImagineBundle\Binary\BinaryInterface;
-use Liip\ImagineBundle\Exception\Imagine\Cache\Resolver\NotResolvableException;
 use Liip\ImagineBundle\Exception\Imagine\Cache\Resolver\NotStorableException;
 use Liip\ImagineBundle\Imagine\Cache\Resolver\ResolverInterface;
 use Liip\ImagineBundle\Imagine\Filter\FilterConfiguration;
+use Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface;
 
 /**
  * The LiipImagine resolver named setono_sylius_cms by default (media.liip.resolver): it caches image variants in the
  * plugin's media storage, under cache/{filter set}/{source path}/{hash}/{name}.{extension of the format}, and resolves
- * them to the storage's public URLs. All variants of a source sit under one directory, so a replaced or deleted file's
- * variants are removed together. See "Image processing" in docs/spec/media.md
+ * them to their public URLs, which MediaUrlGeneratorInterface builds as it does for media items' files. All variants of
+ * a source sit under one directory, so a replaced or deleted file's variants are removed together. See "Image
+ * processing" in docs/spec/media.md
  *
  * @internal
  */
@@ -30,6 +31,7 @@ final readonly class StorageResolver implements ResolverInterface
     public function __construct(
         private FilesystemOperator $storage,
         private FilterConfiguration $filterConfiguration,
+        private MediaUrlGeneratorInterface $mediaUrlGenerator,
     ) {
     }
 
@@ -40,16 +42,7 @@ final readonly class StorageResolver implements ResolverInterface
 
     public function resolve($path, $filter): string
     {
-        // FilesystemOperator only declares publicUrl() in a @method tag, so a storage of a project's own may not have it
-        // @phpstan-ignore function.alreadyNarrowedType
-        if (!method_exists($this->storage, 'publicUrl')) {
-            throw new NotResolvableException(sprintf('The media storage, a %s, has no public URLs. Give it a public_url option, or configure another resolver in setono_sylius_cms.media.liip.resolver', get_debug_type($this->storage)));
-        }
-
-        $url = $this->storage->publicUrl($this->variantPath($path, $filter));
-        \assert(is_string($url));
-
-        return $url;
+        return $this->mediaUrlGenerator->generate($this->variantPath($path, $filter));
     }
 
     /**

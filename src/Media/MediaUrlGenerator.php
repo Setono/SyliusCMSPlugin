@@ -4,31 +4,26 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Media;
 
-use League\Flysystem\FilesystemOperator;
-use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
-
 /**
- * Asks the storage for the file's public URL, without a call to it: Flysystem builds it from its public_url option, as
- * the default storage sets it to /media/cms, or the adapter does, as the S3 adapter does
+ * Builds a file's public URL from its storage path, without a call to the storage: under /media/cms, where the web
+ * server serves the default storage's directory, %kernel.project_dir%/public/media/cms. A project whose storage is
+ * elsewhere, such as on S3, aliases MediaUrlGeneratorInterface to its own service. See "Image processing" in
+ * docs/spec/media.md
  */
 final readonly class MediaUrlGenerator implements MediaUrlGeneratorInterface
 {
-    public function __construct(private FilesystemOperator $storage)
+    /** The URL the default storage's directory is served at */
+    public const BASE_URL = '/media/cms';
+
+    private string $baseUrl;
+
+    public function __construct(string $baseUrl = self::BASE_URL)
     {
+        $this->baseUrl = rtrim($baseUrl, '/');
     }
 
-    public function generate(MediaItemInterface $mediaItem): string
+    public function generate(string $path): string
     {
-        // FilesystemOperator only declares publicUrl() in a @method tag, so a storage of a project's own may not have it.
-        // Older PHPStan 2.1 releases take that tag as certain and call the check always true
-        // @phpstan-ignore function.alreadyNarrowedType
-        if (!method_exists($this->storage, 'publicUrl')) {
-            throw new \LogicException(sprintf('The media storage, a %s, has no public URLs. Give it a public_url option, or alias %s to a service of your own', get_debug_type($this->storage), MediaUrlGeneratorInterface::class));
-        }
-
-        $url = $this->storage->publicUrl($mediaItem->getPath());
-        \assert(is_string($url));
-
-        return $url;
+        return $this->baseUrl . '/' . ltrim($path, '/');
     }
 }

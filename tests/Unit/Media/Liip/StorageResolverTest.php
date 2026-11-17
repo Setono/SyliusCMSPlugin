@@ -10,6 +10,7 @@ use Liip\ImagineBundle\Model\Binary;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Media\Liip\FilterSets;
 use Setono\SyliusCMSPlugin\Media\Liip\StorageResolver;
+use Setono\SyliusCMSPlugin\Media\MediaUrlGenerator;
 use Setono\SyliusCMSPlugin\Tests\Support\StorageDirectory;
 
 final class StorageResolverTest extends TestCase
@@ -27,7 +28,7 @@ final class StorageResolverTest extends TestCase
     protected function setUp(): void
     {
         $this->storage = $this->storage();
-        $this->resolver = new StorageResolver($this->storage, new FilterConfiguration(FilterSets::config('setono_sylius_cms', 'setono_sylius_cms')));
+        $this->resolver = new StorageResolver($this->storage, new FilterConfiguration(FilterSets::config('setono_sylius_cms', 'setono_sylius_cms')), new MediaUrlGenerator());
     }
 
     /**

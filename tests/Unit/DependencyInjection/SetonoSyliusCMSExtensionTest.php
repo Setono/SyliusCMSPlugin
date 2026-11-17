@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection;
 
-use League\Flysystem\Filesystem;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
 use Setono\SyliusCMSPlugin\Attribute\AsSource;
@@ -247,11 +246,19 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
-    public function it_stores_media_in_the_plugin_s_own_local_storage_by_default(): void
+    public function it_stores_media_in_the_plugin_s_own_local_storage_by_default_which_flysystem_bundle_defines_as_sylius_defines_its_own(): void
     {
         $this->load();
 
-        $this->assertContainerBuilderHasService('setono_sylius_cms.storage', Filesystem::class);
+        self::assertSame([['storages' => [
+            'setono_sylius_cms.storage' => [
+                'adapter' => 'local',
+                'options' => ['directory' => '%kernel.project_dir%/public/media/cms'],
+                'visibility' => 'public',
+                'directory_visibility' => 'public',
+            ],
+        ]]], $this->container->getExtensionConfig('flysystem'));
+        self::assertFalse($this->container->has('setono_sylius_cms.storage'), 'The plugin defines no storage of its own');
         self::assertFalse($this->container->hasDefinition('setono_sylius_cms.media.storage') || $this->container->hasAlias('setono_sylius_cms.media.storage'), 'The storage goes by one name');
     }
 
@@ -260,9 +267,12 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
      */
     public function it_stores_media_in_the_storage_a_project_configures_under_the_one_name(): void
     {
+        $this->container->loadFromExtension('setono_sylius_cms', ['media' => ['storage' => 'app.s3_storage']]);
+
         $this->load(['media' => ['storage' => 'app.s3_storage']]);
 
         $this->assertContainerBuilderHasAlias('setono_sylius_cms.storage', 'app.s3_storage');
+        self::assertSame([], $this->container->getExtensionConfig('flysystem'), 'No local storage is defined');
     }
 
     /**

@@ -8,7 +8,7 @@ use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Media\FocalPoint;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
-use Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface;
+use Setono\SyliusCMSPlugin\Media\MediaUrlGenerator;
 use Setono\SyliusCMSPlugin\Media\PermanentUrlGeneratorInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
@@ -71,7 +71,7 @@ final class VideoExtensionTest extends IntegrationTestCase
     {
         return [new FactoryRuntimeLoader([
             VideoRuntime::class => fn (): VideoRuntime => new VideoRuntime(
-                $this->mediaUrls(),
+                new MediaUrlGenerator(),
                 new FakeImageProvider(false),
                 new FakeImageProvider(false),
                 new MediaItemArguments($this->mediaItems()),
@@ -165,19 +165,6 @@ final class VideoExtensionTest extends IntegrationTestCase
         });
 
         return $mediaItems->reveal();
-    }
-
-    private function mediaUrls(): MediaUrlGeneratorInterface
-    {
-        $mediaUrls = $this->prophesize(MediaUrlGeneratorInterface::class);
-        $mediaUrls->generate(Argument::type(MediaItemInterface::class))->will(static function (array $arguments): string {
-            $mediaItem = $arguments[0];
-            \assert($mediaItem instanceof MediaItemInterface);
-
-            return '/media/cms/' . $mediaItem->getPath();
-        });
-
-        return $mediaUrls->reveal();
     }
 
     private function permanentUrls(): PermanentUrlGeneratorInterface

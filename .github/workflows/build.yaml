@@ -106,12 +106,6 @@ jobs:
             -   name: "Add shipmonk/composer-dependency-analyser to composer.json"
                 run: "composer require --dev --no-install --no-update --no-plugins --no-scripts shipmonk/composer-dependency-analyser"
 
-            # Without require-dev, Composer installs Sylius's split packages, and Sylius 1.14's split sylius/core caps
-            # league/flysystem at ^2.4. Apps install sylius/sylius, which replaces it and allows Flysystem 3, so alias
-            # the lowest Flysystem composer.json allows to a 2.x version. Keep it in step with the league/flysystem requirement
-            -   name: "Alias Flysystem 3 as 2.x for Sylius's split sylius/core"
-                run: "composer require --no-update --no-install --no-plugins --no-scripts \"league/flysystem:3.15.0 as 2.5.0\""
-
             -   name: "Install composer dependencies"
                 uses: "ramsey/composer-install@v3"
                 env:

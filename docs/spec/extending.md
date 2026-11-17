@@ -535,6 +535,18 @@ interface ImageProviderInterface
 
 `cms_image()` offers a format, such as AVIF, only where `Setono\SyliusCMSPlugin\Media\ImageFormatsInterface::supports(ImageFormat $format): bool` says the images are served in it. The default answers WebP and the original format always, and AVIF where LiipImagine's image library writes it, so a project with an image CDN aliases this interface too.
 
+```php
+namespace Setono\SyliusCMSPlugin\Media;
+
+interface MediaUrlGeneratorInterface
+{
+    /** The public URL of a file in the media storage, by its storage path. Builds it without calling the storage. */
+    public function generate(string $path): string;
+}
+```
+
+It gives the URLs of media items' files, which the permanent URLs redirect to and `<video>` plays, and of the image variants cached beside them, which the default image provider and Liip's resolve step hand out ([Media](media.md#image-processing)). The default builds `/media/cms/{path}`, where the default local storage is served. A project whose storage is elsewhere, such as on S3, aliases the interface to its own service.
+
 ## Bestsellers
 
 ```php
@@ -742,7 +754,7 @@ setono_sylius_cms:
         paths: []            # directories of code preset files; bundles prepend theirs
 
     media:
-        storage: 'setono_sylius_cms.storage'     # a Flysystem storage service; the default writes to %kernel.project_dir%/public/media/cms
+        storage: 'setono_sylius_cms.storage'     # a Flysystem storage service; the default writes to %kernel.project_dir%/public/media/cms, served at /media/cms; another needs MediaUrlGeneratorInterface aliased (Images)
         liip:
             loader: 'setono_sylius_cms'
             resolver: 'setono_sylius_cms'

@@ -77,7 +77,7 @@ final readonly class VideoRuntime implements RuntimeExtensionInterface
                 $poster = $this->mediaItems->mediaItem($options['poster'], MediaKind::Image) ?? $this->mediaItems->mediaItem($mediaItem->getPoster(), MediaKind::Image);
 
                 return HtmlTag::open('video', [
-                    'src' => $this->mediaUrlGenerator->generate($mediaItem),
+                    'src' => $this->mediaUrlGenerator->generate($mediaItem->getPath()),
                     'poster' => null === $poster ? null : $this->posterUrl($poster),
                     'width' => $mediaItem->getWidth(),
                     'height' => $mediaItem->getHeight(),

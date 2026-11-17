@@ -126,11 +126,13 @@ The index drives:
 ## Image processing
 
 - **Storage.** Media items are stored in the plugin's own Flysystem storage, `media.storage`, which is a local public directory by default: `%kernel.project_dir%/public/media/cms`. Like Sylius's own `public/media/image`, it holds the only copy of every file, so a project must keep it across deploys, such as on a shared or persistent volume. Gaufrette isn't supported, and Sylius's `sylius.storage` isn't reused ([ADR 0014](../adr/0014-images-are-processed-by-liip-behind-an-image-provider.md)).
+- **The default storage** is the Flysystem storage `setono_sylius_cms.storage`, which the plugin defines in flysystem-bundle's config the way Sylius defines `sylius.storage`: the `local` adapter, public visibility. Its code uses only what Flysystem 2 and 3 both have, so a shop on either major installs the plugin.
+- **File URLs** are built by the plugin, never asked of the storage: `Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface::generate(string $path)` turns a storage path into a public URL, for media items' files and the image variants cached beside them. The default gives `/media/cms/{path}`, where the default storage is served, without a storage call.
 - **LiipImagine** generates image variants on first request, with the plugin's own loader and resolver, both named `setono_sylius_cms` by default (`media.liip.loader` and `media.liip.resolver`). It caches them in the plugin's storage.
 - **Cropping.** A variant with an aspect ratio that differs from the source is cropped around the media item's focal point.
 - **Formats.** Variants are output as WebP, and as AVIF where the server's image library supports it. SVG and animated GIF are served as uploaded, at every width.
 - **No storage calls when building URLs.** The default image provider builds variant URLs itself and lets Liip's resolve step generate what's missing, so rendering a `srcset` never costs a remote call per entry, even on S3.
-- **Moving to S3** or similar means configuring both the plugin's Flysystem storage and its Liip loader and resolver.
+- **Moving to S3** or similar means configuring the plugin's Flysystem storage, either the storage `setono_sylius_cms.storage` in the project's own flysystem config or another one named in `media.storage`, and aliasing `MediaUrlGeneratorInterface` to a service that builds the storage's URLs, such as the bucket's or its CDN's. The plugin's Liip loader and resolver read and write through the storage, so they follow it; a project can name its own in `media.liip` instead.
 - **The image provider.** Templates never call Liip. The [image helper](#the-image-helper) asks `ImageProviderInterface` for each variant's URL ([Extending](extending.md#images)). A project can swap in an image CDN by aliasing the interface, and the Sylius 2 port can add a Symfony UX Image adapter.
 
 The first visitor to each variant waits for it to be generated.

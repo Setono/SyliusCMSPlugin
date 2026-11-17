@@ -40,10 +40,13 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public const CHOICES_PROVIDER_TAG = 'setono_sylius_cms.choices_provider';
 
-    /** The entry lists show the entries edited last first */
     /** The service id of the storage media items are stored in, which media.storage defaults to */
     public const STORAGE = 'setono_sylius_cms.storage';
 
+    /** The directory the default storage writes to, which the web server serves at MediaUrlGenerator::BASE_URL */
+    public const STORAGE_DIRECTORY = '%kernel.project_dir%/public/media/cms';
+
+    /** The entry lists show the entries edited last first */
     private const GRID_SORTING = ['lastEdited' => 'desc'];
 
     private const GRID_LIMITS = [25, 50, 100];
@@ -77,10 +80,9 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.xml');
 
-        // The Flysystem storage media items are stored in: the plugin's own local one, setono_sylius_cms.storage, unless a
-        // project configures another, which then goes by that one name
+        // The Flysystem storage media items are stored in: the plugin's own local one, setono_sylius_cms.storage, which
+        // prepend() defines, unless a project configures another, which then goes by that one name
         if (self::STORAGE !== $config['media']['storage']) {
-            $container->removeDefinition(self::STORAGE);
             $container->setAlias(self::STORAGE, $config['media']['storage']);
         }
 
@@ -122,8 +124,12 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $this->prependProblems($container);
         $this->prependMessenger($container);
 
-        /** @var array{assets: bool, media: array{liip: array{loader: string, resolver: string}}} $config */
+        /** @var array{assets: bool, media: array{storage: string, liip: array{loader: string, resolver: string}}} $config */
         $config = $this->processConfiguration(new Configuration(), $container->getExtensionConfig($this->getAlias()));
+
+        if (self::STORAGE === $config['media']['storage']) {
+            $this->prependStorage($container);
+        }
 
         $this->prependImageFilterSets($container, $config['media']['liip']['loader'], $config['media']['liip']['resolver']);
 
@@ -143,6 +149,28 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                     'blocks' => [
                         'setono_sylius_cms_javascript' => ['template' => '@SetonoSyliusCMSPlugin/shop/javascript.html.twig', 'priority' => 5],
                     ],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * The plugin's own media storage, setono_sylius_cms.storage, defined in flysystem-bundle's config as Sylius defines
+     * sylius.storage: a local public directory beside Sylius's own public/media/image, which the web server serves at
+     * /media/cms, where MediaUrlGenerator builds its URLs. It holds the only copy of every file, so a project keeps it
+     * across deploys. A project moves it by configuring the storage of that name in its own flysystem config, or by
+     * naming another storage in media.storage, and then aliases MediaUrlGeneratorInterface. See "Image processing" in
+     * docs/spec/media.md
+     */
+    private function prependStorage(ContainerBuilder $container): void
+    {
+        $container->prependExtensionConfig('flysystem', [
+            'storages' => [
+                self::STORAGE => [
+                    'adapter' => 'local',
+                    'options' => ['directory' => self::STORAGE_DIRECTORY],
+                    'visibility' => 'public',
+                    'directory_visibility' => 'public',
                 ],
             ],
         ]);

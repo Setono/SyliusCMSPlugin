@@ -30,7 +30,7 @@ final readonly class LiipImageProvider implements ImageProviderInterface
     public function url(MediaItemInterface $mediaItem, ImageTransform $transform): string
     {
         if (!ImageVariants::areMadeFor($mediaItem)) {
-            return $this->mediaUrlGenerator->generate($mediaItem);
+            return $this->mediaUrlGenerator->generate($mediaItem->getPath());
         }
 
         $options = ['width' => $transform->width];

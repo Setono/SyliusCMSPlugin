@@ -72,7 +72,7 @@ final class MediaItemAnswer implements ResetInterface
             'focalPoint' => $image ? ['x' => $focalPoint->x, 'y' => $focalPoint->y] : null,
             'poster' => $mediaItem->getPoster()?->getUuid(),
             'folder' => $mediaItem->getFolder()?->getUuid(),
-            'url' => $this->urlGenerator->generate($mediaItem),
+            'url' => $this->urlGenerator->generate($mediaItem->getPath()),
             // How many entries use it, which the library shows, and which must be none for it to be deleted
             'usageCount' => $usageCount ?? $this->usages->countByMediaItems([$mediaItem->getUuid()])[$mediaItem->getUuid()] ?? 0,
             'createdAt' => $mediaItem->getCreatedAt()->format(self::DATE_FORMAT),
