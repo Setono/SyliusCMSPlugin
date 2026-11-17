@@ -44,6 +44,23 @@ final class ProductInTaxonKindTest extends TestCase
     }
 
     /**
+     * Sylius doesn't require the main taxon to be one of the product's taxons
+     *
+     * @test
+     */
+    public function it_matches_through_the_product_s_main_taxon_when_it_is_not_one_of_its_taxons(): void
+    {
+        $shoes = self::taxon('SHOES');
+        $sneakers = self::taxon('SNEAKERS', parent: $shoes);
+        $product = self::product(self::taxon('NEW'));
+        $product->setMainTaxon($sneakers);
+
+        self::assertTrue((new ProductInTaxonKind())->matches(self::params([$sneakers]), self::onProductPage($product)));
+        self::assertFalse((new ProductInTaxonKind())->matches(self::params([$shoes]), self::onProductPage($product)), 'A parent, without children');
+        self::assertTrue((new ProductInTaxonKind())->matches(self::params([$shoes], includeChildren: true), self::onProductPage($product)), 'A parent, with children');
+    }
+
+    /**
      * @test
      */
     public function it_matches_a_product_in_a_child_taxon_only_when_it_includes_children(): void

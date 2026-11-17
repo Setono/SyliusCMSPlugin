@@ -12,7 +12,8 @@ use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Taxonomy\Model\TaxonInterface;
 
 /**
- * Matches when the page's product is in one of the taxons, through any of its taxons, not only its main one. With
+ * Matches when the page's product is in one of the taxons, through any of its taxons, not only its main one, and
+ * through its main taxon too when that isn't one of its taxons. With
  * includeChildren, a product in a taxon below one of them matches too. A deleted taxon, or one the shopper may not see,
  * matches nothing. See "Condition kinds" in docs/spec/targeting.md
  */
@@ -37,13 +38,28 @@ final class ProductInTaxonKind implements ConditionKindInterface
             $picked[(string) $taxon->getCode()] = true;
         }
 
-        foreach ($product->getTaxons() as $taxon) {
+        foreach (self::taxonsOf($product) as $taxon) {
             if (self::isIn($taxon, $picked, $params->includeChildren)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * The product's taxons, and its main taxon, which Sylius doesn't require to be one of them
+     *
+     * @return iterable<TaxonInterface>
+     */
+    private static function taxonsOf(ProductInterface $product): iterable
+    {
+        yield from $product->getTaxons();
+
+        $mainTaxon = $product->getMainTaxon();
+        if (null !== $mainTaxon) {
+            yield $mainTaxon;
+        }
     }
 
     /**
