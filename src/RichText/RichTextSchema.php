@@ -54,7 +54,7 @@ final readonly class RichTextSchema
 
         $this->extensions = [...$nodes, ...$marks];
         $this->nodes = array_map(self::name(...), $nodes);
-        $this->marks = [...array_map(self::name(...), $marks), CMSLink::$name];
+        $this->marks = [...array_map(self::name(...), $marks), CMSLink::NAME];
     }
 
     /**
@@ -86,7 +86,7 @@ final readonly class RichTextSchema
      */
     public function markAttributes(): array
     {
-        return [CMSLink::$name => ['target', 'ref', 'anchor']];
+        return [CMSLink::NAME => ['target', 'ref', 'anchor']];
     }
 
     /**
@@ -150,7 +150,7 @@ final readonly class RichTextSchema
     {
         $links = [];
         foreach (is_array($node['marks'] ?? null) ? $node['marks'] : [] as $mark) {
-            $link = is_array($mark) && CMSLink::$name === ($mark['type'] ?? null) ? self::link($mark) : null;
+            $link = is_array($mark) && CMSLink::NAME === ($mark['type'] ?? null) ? self::link($mark) : null;
             if (null !== $link) {
                 $links[] = $link;
             }
@@ -281,7 +281,7 @@ final readonly class RichTextSchema
                 continue;
             }
 
-            if (CMSLink::$name !== $type) {
+            if (CMSLink::NAME !== $type) {
                 $marks[] = ['type' => $type];
 
                 continue;

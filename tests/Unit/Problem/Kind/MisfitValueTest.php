@@ -211,7 +211,7 @@ final class MisfitValueTest extends TestCase
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
-            RichTextHandler::class => static fn (): RichTextHandler => Links::richTextHandler(),
+            RichTextHandler::class => Links::richTextHandler(...),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new Translator('en')),
             OpeningHoursHandler::class => static fn (): OpeningHoursHandler => new OpeningHoursHandler(),
         ]));

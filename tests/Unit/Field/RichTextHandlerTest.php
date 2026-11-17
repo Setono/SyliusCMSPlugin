@@ -314,6 +314,9 @@ final class RichTextHandlerTest extends TestCase
         return ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => array_values($content)]]];
     }
 
+    /**
+     * @param RenderContext::PREVIEW_MODE_*|null $previewMode
+     */
     private function hydrationContext(?string $previewMode = null, ReferenceMap $references = new ReferenceMap()): HydrationContext
     {
         return new HydrationContext(new RenderContext(

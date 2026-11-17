@@ -313,7 +313,7 @@ final class BlockTreeValidatorTest extends TestCase
         ], new FieldReader());
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
-            RichTextHandler::class => static fn (): RichTextHandler => Links::richTextHandler(),
+            RichTextHandler::class => Links::richTextHandler(...),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator),
         ]));
 

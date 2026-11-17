@@ -399,7 +399,7 @@ final class TranslatableValuesTest extends TestCase
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
-            RichTextHandler::class => static fn (): RichTextHandler => Links::richTextHandler(),
+            RichTextHandler::class => Links::richTextHandler(...),
         ]));
 
         return new TranslatableValues(

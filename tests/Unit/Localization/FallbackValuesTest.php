@@ -183,7 +183,7 @@ final class FallbackValuesTest extends TestCase
         return new FallbackValues(
             new FieldHandlerLocator(new ServiceLocator([
                 TextHandler::class => static fn (): TextHandler => new TextHandler(),
-                RichTextHandler::class => static fn (): RichTextHandler => Links::richTextHandler(),
+                RichTextHandler::class => Links::richTextHandler(...),
             ])),
             $fallbackChain->reveal(),
         );

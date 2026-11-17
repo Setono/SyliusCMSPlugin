@@ -18,8 +18,10 @@ use Tiptap\Core\Mark;
  */
 final class CMSLink extends Mark
 {
-    /** @var string */
-    public static $name = 'cmsLink';
+    public const NAME = 'cmsLink';
+
+    /** @var mixed as tiptap-php types it: the name, which the schema matches nodes and marks by */
+    public static $name = self::NAME;
 
     /**
      * @param (\Closure(string, string, ?string): ?ResolvedLink)|null $resolve where a link's target, ref and anchor lead
@@ -36,14 +38,14 @@ final class CMSLink extends Mark
     /**
      * tiptap-php calls it with the mark to open its tag, and again to close it
      *
-     * @param object $mark
+     * @param mixed $mark tiptap-php's mark, an object with its attrs
      * @param array<string, mixed> $HTMLAttributes
      *
      * @return array{0: string, 1: array<string, string|null>, 2: 0}|null
      */
     public function renderHTML($mark, $HTMLAttributes = []): ?array
     {
-        $attributes = property_exists($mark, 'attrs') && is_object($mark->attrs) ? get_object_vars($mark->attrs) : [];
+        $attributes = is_object($mark) && property_exists($mark, 'attrs') && is_object($mark->attrs) ? get_object_vars($mark->attrs) : [];
         $target = $attributes['target'] ?? null;
         $ref = $attributes['ref'] ?? null;
         $anchor = $attributes['anchor'] ?? null;
