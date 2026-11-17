@@ -16,6 +16,17 @@ abstract class BuilderApiTestCase extends WebTestCase
     use Entries;
 
     /**
+     * A client signed in as the admin user
+     */
+    protected static function signedIn(): KernelBrowser
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+
+        return $client;
+    }
+
+    /**
      * Signs the admin user in, "sylius" unless another is given, and opens the builder, which is where the builder app
      * gets its CSRF token from. Signing in starts a new session, so the CSRF token of an earlier one no longer works
      *

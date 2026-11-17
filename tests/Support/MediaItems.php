@@ -83,12 +83,7 @@ trait MediaItems
      */
     protected static function png(int $width = 40, int $height = 20, array $rgb = [200, 30, 30]): string
     {
-        $image = imagecreatetruecolor($width, $height);
-        imagefill($image, 0, 0, (int) imagecolorallocate($image, ...$rgb));
-        ob_start();
-        imagepng($image);
-
-        return (string) ob_get_clean();
+        return Images::png($width, $height, $rgb);
     }
 
     /**
@@ -100,12 +95,7 @@ trait MediaItems
      */
     protected static function jpeg(int $width = 40, int $height = 20, array $rgb = [30, 30, 200]): string
     {
-        $image = imagecreatetruecolor($width, $height);
-        imagefill($image, 0, 0, (int) imagecolorallocate($image, ...$rgb));
-        ob_start();
-        imagejpeg($image);
-
-        return (string) ob_get_clean();
+        return Images::jpeg($width, $height, $rgb);
     }
 
     /**

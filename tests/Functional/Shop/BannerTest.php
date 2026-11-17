@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
+use Setono\SyliusCMSPlugin\Tests\Support\Html;
 
 /**
  * The Banner block: an image with an optional mobile image for narrow screens, in a <picture>, and a heading, text and
@@ -72,7 +73,7 @@ final class BannerTest extends WebTestCase
             . '<div class="cms-banner__text"><p>Up to <strong>50%</strong> off.</p></div>'
             . '<div class="cms-banner__buttons"><a class="cms-button cms-button--primary" href="/en_US/sale">Shop now</a></div>'
             . '</div>',
-            self::withoutWhitespaceBetweenTags($banner->filter('.cms-banner__content')->outerHtml()),
+            Html::withoutWhitespaceBetweenTags($banner->filter('.cms-banner__content')->outerHtml()),
         );
     }
 
@@ -126,7 +127,7 @@ final class BannerTest extends WebTestCase
         $banners = $crawler->filter('.cms-tree > .cms-banner');
         self::assertSame(
             '<div class="cms-banner"><div class="cms-banner__content"><h2 class="cms-banner__heading">Summer sale</h2></div></div>',
-            self::withoutWhitespaceBetweenTags($banners->eq(0)->outerHtml()),
+            Html::withoutWhitespaceBetweenTags($banners->eq(0)->outerHtml()),
             'Without an image, the shop gets no media, and without text or buttons, no text or buttons',
         );
         self::assertSame(['picture'], $banners->eq(1)->children()->each(static fn (Crawler $part): string => $part->nodeName()), 'Without a heading, text or buttons, there is no content over the image');
@@ -175,10 +176,5 @@ final class BannerTest extends WebTestCase
             ['type' => 'text', 'text' => $bold, 'marks' => [['type' => 'bold']]],
             ['type' => 'text', 'text' => $after],
         ]]]];
-    }
-
-    private static function withoutWhitespaceBetweenTags(string $html): string
-    {
-        return (string) preg_replace('/>\s+</', '><', trim($html));
     }
 }

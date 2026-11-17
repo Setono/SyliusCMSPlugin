@@ -23,10 +23,12 @@ use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Setono\SyliusCMSPlugin\Tests\Support\Violations;
 
 final class LinkHandlerTest extends TestCase
 {
     use ProphecyTrait;
+    use Violations;
 
     /**
      * @test
@@ -356,7 +358,7 @@ final class LinkHandlerTest extends TestCase
      */
     public function it_refuses_a_value_that_is_not_a_link(): void
     {
-        $this->expectViolation('setono_sylius_cms.field.not_link', ['https://example.com']);
+        $this->expectLinkViolation('setono_sylius_cms.field.not_link', ['https://example.com']);
     }
 
     /**
@@ -364,7 +366,7 @@ final class LinkHandlerTest extends TestCase
      */
     public function it_refuses_a_link_to_a_target_the_field_does_not_link_to(): void
     {
-        $this->expectViolation('setono_sylius_cms.field.link_target_not_allowed', ['target' => 'app_store', 'ref' => 'aarhus'], new Link(label: 'Link', targets: ['url']));
+        $this->expectLinkViolation('setono_sylius_cms.field.link_target_not_allowed', ['target' => 'app_store', 'ref' => 'aarhus'], new Link(label: 'Link', targets: ['url']));
     }
 
     /**
@@ -372,7 +374,7 @@ final class LinkHandlerTest extends TestCase
      */
     public function it_refuses_a_url_a_link_cannot_lead_to_in_any_locale(): void
     {
-        $this->expectViolation('setono_sylius_cms.field.not_link_url', ['target' => 'url', 'ref' => ['en_US' => 'https://example.com', 'de_DE' => 'javascript:alert(1)']]);
+        $this->expectLinkViolation('setono_sylius_cms.field.not_link_url', ['target' => 'url', 'ref' => ['en_US' => 'https://example.com', 'de_DE' => 'javascript:alert(1)']]);
     }
 
     /**
@@ -380,23 +382,7 @@ final class LinkHandlerTest extends TestCase
      */
     public function it_refuses_an_anchor_with_a_hash_or_a_space(): void
     {
-        $this->expectViolation('setono_sylius_cms.field.not_link_anchor', ['target' => 'url', 'ref' => ['en_US' => '/faq'], 'anchor' => '#delivery times']);
-    }
-
-    /**
-     * @param mixed $value
-     */
-    private function expectViolation(string $message, $value, ?Link $field = null): void
-    {
-        $builder = $this->prophesize(ConstraintViolationBuilderInterface::class);
-        $builder->setParameter(Argument::cetera())->willReturn($builder->reveal());
-        $builder->addViolation()->shouldBeCalledOnce();
-
-        $context = $this->prophesize(ExecutionContextInterface::class);
-        $context->buildViolation($message)->willReturn($builder->reveal())->shouldBeCalledOnce();
-        $context->buildViolation(Argument::not($message))->shouldNotBeCalled();
-
-        Links::handler()->validate($field ?? new Link(label: 'Link'), $value, $context->reveal());
+        $this->expectLinkViolation('setono_sylius_cms.field.not_link_anchor', ['target' => 'url', 'ref' => ['en_US' => '/faq'], 'anchor' => '#delivery times']);
     }
 
     /**
@@ -415,5 +401,10 @@ final class LinkHandlerTest extends TestCase
             Rendering::context(localeCode: $localeCode),
             $references,
         );
+    }
+
+    private function expectLinkViolation(string $message, mixed $value, ?Link $field = null): void
+    {
+        $this->expectViolation($message, null, static fn (ExecutionContextInterface $context) => Links::handler()->validate($field ?? new Link(label: 'Link'), $value, $context));
     }
 }

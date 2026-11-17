@@ -8,6 +8,7 @@ use Doctrine\Bundle\DoctrineBundle\DataCollector\DoctrineDataCollector;
 use Doctrine\ORM\EntityManagerInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\ProfiledQueries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -23,6 +24,7 @@ final class ProductsAndTaxonsTest extends WebTestCase
 {
     use Catalog;
     use Entries;
+    use ProfiledQueries;
 
     private const PRODUCTS = '0193a5be-0000-7000-8000-0000000000c1';
 
@@ -203,33 +205,5 @@ final class ProductsAndTaxonsTest extends WebTestCase
     private static function queriesByCode(KernelBrowser $client, string $table): array
     {
         return array_values(array_filter(self::queries($client), static fn (string $sql): bool => 1 === preg_match(sprintf('/FROM %s \w+ .*\bcode IN \(/', $table), $sql)));
-    }
-
-    /**
-     * Every query the profiled request ran
-     *
-     * @return list<string>
-     */
-    private static function queries(KernelBrowser $client): array
-    {
-        $profile = $client->getProfile();
-        self::assertInstanceOf(Profile::class, $profile, 'The request was profiled');
-        $collector = $profile->getCollector('db');
-        self::assertInstanceOf(DoctrineDataCollector::class, $collector);
-
-        $byConnection = $collector->getQueries();
-        self::assertIsArray($byConnection);
-
-        $queries = [];
-        foreach ($byConnection as $connectionQueries) {
-            self::assertIsArray($connectionQueries);
-            foreach ($connectionQueries as $query) {
-                self::assertIsArray($query);
-                self::assertIsString($query['sql']);
-                $queries[] = $query['sql'];
-            }
-        }
-
-        return $queries;
     }
 }

@@ -182,14 +182,6 @@ final class ProblemCountsTest extends WebTestCase
         $manager->flush();
     }
 
-    private static function storedCount(EntryInterface $entry): ProblemCount
-    {
-        /** @var ProblemCountProviderInterface $provider */
-        $provider = self::getContainer()->get(ProblemCountProviderInterface::class);
-
-        return $provider->getCounts([$entry])[$entry->getUuid()];
-    }
-
     private static function query(): ProblemCountsQueryInterface
     {
         /** @var ProblemCountsQueryInterface $query */

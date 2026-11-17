@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Problem\ProblemCount;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\ProfiledQueries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -27,6 +28,7 @@ final class ButtonTest extends WebTestCase
 {
     use Catalog;
     use Entries;
+    use ProfiledQueries;
 
     private const BUTTON = '0193a5be-0000-7000-8000-0000000000b1';
 
@@ -272,51 +274,5 @@ final class ButtonTest extends WebTestCase
     private static function button(string $key, array $link, ?string $style = null): StoredBlock
     {
         return new StoredBlock($key, 'button', 1, $style, ['link' => $link]);
-    }
-
-    private static function storedCount(PageInterface $page): ProblemCount
-    {
-        /** @var ProblemCountProviderInterface $provider */
-        $provider = self::getContainer()->get(ProblemCountProviderInterface::class);
-
-        return $provider->getCounts([$page])[$page->getUuid()];
-    }
-
-    private static function entityManager(): EntityManagerInterface
-    {
-        /** @var EntityManagerInterface $manager */
-        $manager = self::getContainer()->get('doctrine.orm.entity_manager');
-
-        return $manager;
-    }
-
-    /**
-     * The SQL of the queries the request ran that read from the table
-     *
-     * @return list<string>
-     */
-    private static function queriesOf(KernelBrowser $client, string $table): array
-    {
-        $profile = $client->getProfile();
-        self::assertInstanceOf(Profile::class, $profile, 'The request was profiled');
-        $collector = $profile->getCollector('db');
-        self::assertInstanceOf(DoctrineDataCollector::class, $collector);
-
-        $byConnection = $collector->getQueries();
-        self::assertIsArray($byConnection);
-
-        $queries = [];
-        foreach ($byConnection as $connectionQueries) {
-            self::assertIsArray($connectionQueries);
-            foreach ($connectionQueries as $query) {
-                self::assertIsArray($query);
-                self::assertIsString($query['sql']);
-                if (str_contains($query['sql'], 'FROM ' . $table)) {
-                    $queries[] = $query['sql'];
-                }
-            }
-        }
-
-        return $queries;
     }
 }

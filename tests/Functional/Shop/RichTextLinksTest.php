@@ -143,20 +143,4 @@ final class RichTextLinksTest extends WebTestCase
     {
         return ['type' => 'cmsLink', 'attrs' => ['target' => $target, 'ref' => $ref, 'anchor' => $anchor]];
     }
-
-    private static function storedCount(PageInterface $page): ProblemCount
-    {
-        /** @var ProblemCountProviderInterface $provider */
-        $provider = self::getContainer()->get(ProblemCountProviderInterface::class);
-
-        return $provider->getCounts([$page])[$page->getUuid()];
-    }
-
-    private static function entityManager(): EntityManagerInterface
-    {
-        /** @var EntityManagerInterface $manager */
-        $manager = self::getContainer()->get('doctrine.orm.entity_manager');
-
-        return $manager;
-    }
 }

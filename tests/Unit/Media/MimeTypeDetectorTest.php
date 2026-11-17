@@ -7,13 +7,15 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Media;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Media\MimeTypeDetector;
 use Symfony\Component\Mime\MimeTypes;
+use Setono\SyliusCMSPlugin\Tests\Support\Images;
+use Setono\SyliusCMSPlugin\Tests\Support\TemporaryDirectory;
 
 /**
  * Nothing is trusted from a file's name. See "Uploading" in docs/spec/media.md
  */
 final class MimeTypeDetectorTest extends TestCase
 {
-    use TemporaryFiles;
+    use TemporaryDirectory;
 
     /**
      * @test
@@ -22,7 +24,7 @@ final class MimeTypeDetectorTest extends TestCase
     {
         $detector = new MimeTypeDetector(new MimeTypes());
 
-        self::assertSame('image/png', $detector->detect($this->temporaryFile('photo.pdf', self::png())));
+        self::assertSame('image/png', $detector->detect($this->temporaryFile('photo.pdf', Images::png(4, 3))));
         self::assertSame('application/pdf', $detector->detect($this->temporaryFile('logo.png', "%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n")));
         self::assertSame('text/plain', $detector->detect($this->temporaryFile('holiday.jpg', "Just some words, not a picture at all.\n")));
     }
@@ -69,14 +71,5 @@ final class MimeTypeDetectorTest extends TestCase
         self::assertSame('pdf', $detector->extension('application/pdf'));
         self::assertSame('mp4', $detector->extension('video/mp4'));
         self::assertSame('bin', $detector->extension('application/x-made-up'));
-    }
-
-    private static function png(): string
-    {
-        $image = imagecreatetruecolor(4, 3);
-        ob_start();
-        imagepng($image);
-
-        return (string) ob_get_clean();
     }
 }

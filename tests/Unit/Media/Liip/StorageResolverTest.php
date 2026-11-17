@@ -10,6 +10,7 @@ use Liip\ImagineBundle\Model\Binary;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Media\Liip\FilterSets;
 use Setono\SyliusCMSPlugin\Media\Liip\StorageResolver;
+use Setono\SyliusCMSPlugin\Tests\Support\StorageDirectory;
 
 final class StorageResolverTest extends TestCase
 {

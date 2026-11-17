@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Setono\SyliusCMSPlugin\Tests\Support\Html;
 
 /**
  * Rich text, and the Accordion with its items. See "Rich text" and "Accordion and Accordion item" in docs/spec/blocks.md
@@ -57,7 +58,7 @@ final class ContentBlocksTest extends WebTestCase
             . '<details class="cms-accordion-item"><summary class="cms-accordion-item__title"></summary>'
             . '<div class="cms-accordion-item__content"></div></details>'
             . '</div>',
-            self::withoutWhitespaceBetweenTags($crawler->filter('.cms-tree > .cms-accordion')->outerHtml()),
+            Html::withoutWhitespaceBetweenTags($crawler->filter('.cms-tree > .cms-accordion')->outerHtml()),
         );
     }
 
@@ -79,10 +80,5 @@ final class ContentBlocksTest extends WebTestCase
             ['type' => 'text', 'text' => $bold, 'marks' => [['type' => 'bold']]],
             ['type' => 'text', 'text' => $after],
         ]]]];
-    }
-
-    private static function withoutWhitespaceBetweenTags(string $html): string
-    {
-        return (string) preg_replace('/>\s+</', '><', trim($html));
     }
 }

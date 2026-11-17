@@ -6,14 +6,14 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Media\Video;
 
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Media\Video\VideoDimensions;
-use Setono\SyliusCMSPlugin\Tests\Unit\Media\TemporaryFiles;
+use Setono\SyliusCMSPlugin\Tests\Support\TemporaryDirectory;
 
 /**
  * A video's dimensions are read on upload, from the file itself. See "Metadata" in docs/spec/media.md
  */
 final class VideoDimensionsTest extends TestCase
 {
-    use TemporaryFiles;
+    use TemporaryDirectory;
 
     /** The identity matrix of a track header */
     private const UPRIGHT = [0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000];

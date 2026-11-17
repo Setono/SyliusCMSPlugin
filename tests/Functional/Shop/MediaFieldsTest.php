@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Problem\ProblemCount;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\MediaFieldsKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\ProfiledQueries;
 use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -31,6 +32,7 @@ use Symfony\Component\HttpKernel\Profiler\Profile;
 final class MediaFieldsTest extends WebTestCase
 {
     use Entries;
+    use ProfiledQueries;
     use MediaItems;
 
     private const BLOCK = '0193a5be-0000-7000-8000-000000000001';
@@ -177,51 +179,5 @@ final class MediaFieldsTest extends WebTestCase
         $manager = self::entityManager();
         $manager->remove($mediaItem);
         $manager->flush();
-    }
-
-    private static function entityManager(): EntityManagerInterface
-    {
-        /** @var EntityManagerInterface $manager */
-        $manager = self::getContainer()->get('doctrine.orm.entity_manager');
-
-        return $manager;
-    }
-
-    private static function storedCount(PageInterface $page): ProblemCount
-    {
-        /** @var ProblemCountProviderInterface $provider */
-        $provider = self::getContainer()->get(ProblemCountProviderInterface::class);
-
-        return $provider->getCounts([$page])[$page->getUuid()];
-    }
-
-    /**
-     * The SQL of the queries the request ran that read from the table
-     *
-     * @return list<string>
-     */
-    private static function queriesOf(KernelBrowser $client, string $table): array
-    {
-        $profile = $client->getProfile();
-        self::assertInstanceOf(Profile::class, $profile, 'The request was profiled');
-        $collector = $profile->getCollector('db');
-        self::assertInstanceOf(DoctrineDataCollector::class, $collector);
-
-        $byConnection = $collector->getQueries();
-        self::assertIsArray($byConnection);
-
-        $queries = [];
-        foreach ($byConnection as $connectionQueries) {
-            self::assertIsArray($connectionQueries);
-            foreach ($connectionQueries as $query) {
-                self::assertIsArray($query);
-                self::assertIsString($query['sql']);
-                if (str_contains($query['sql'], 'FROM ' . $table)) {
-                    $queries[] = $query['sql'];
-                }
-            }
-        }
-
-        return $queries;
     }
 }

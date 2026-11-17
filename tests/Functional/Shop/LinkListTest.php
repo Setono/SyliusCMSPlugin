@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Setono\SyliusCMSPlugin\Tests\Support\Html;
 
 /**
  * The Link list block and its Link children: simple navigation, such as footer links, as a <nav> with a list item per
@@ -44,7 +45,7 @@ final class LinkListTest extends WebTestCase
             . '<li class="cms-link"><a href="http://localhost/en_US/products/red-t-shirt">Red T-shirt</a></li>'
             . '</ul>'
             . '</nav>',
-            self::withoutWhitespaceBetweenTags($crawler->filter('.cms-tree > .cms-link-list')->outerHtml()),
+            Html::withoutWhitespaceBetweenTags($crawler->filter('.cms-tree > .cms-link-list')->outerHtml()),
         );
     }
 
@@ -62,7 +63,7 @@ final class LinkListTest extends WebTestCase
 
         self::assertSame(
             '<nav class="cms-link-list"><ul class="cms-link-list__links"><li class="cms-link"><a href="mailto:help@example.com">help@example.com</a></li></ul></nav>',
-            self::withoutWhitespaceBetweenTags($crawler->filter('.cms-tree > .cms-link-list')->outerHtml()),
+            Html::withoutWhitespaceBetweenTags($crawler->filter('.cms-tree > .cms-link-list')->outerHtml()),
         );
     }
 
@@ -86,7 +87,7 @@ final class LinkListTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSame(
             '<ul class="cms-link-list__links"><li class="cms-link"><a href="http://localhost/en_US/taxons/mugs">Mugs</a></li></ul>',
-            self::withoutWhitespaceBetweenTags($crawler->filter('.cms-tree > .cms-link-list > .cms-link-list__links')->outerHtml()),
+            Html::withoutWhitespaceBetweenTags($crawler->filter('.cms-tree > .cms-link-list > .cms-link-list__links')->outerHtml()),
         );
     }
 
@@ -102,18 +103,5 @@ final class LinkListTest extends WebTestCase
         }
 
         return new StoredBlock(self::LINK_LIST, 'link_list', 1, fields: [] === $heading ? [] : ['heading' => $heading], children: $children);
-    }
-
-    private static function entityManager(): EntityManagerInterface
-    {
-        /** @var EntityManagerInterface $manager */
-        $manager = self::getContainer()->get('doctrine.orm.entity_manager');
-
-        return $manager;
-    }
-
-    private static function withoutWhitespaceBetweenTags(string $html): string
-    {
-        return (string) preg_replace('/>\s+</', '><', trim($html));
     }
 }

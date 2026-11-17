@@ -17,10 +17,12 @@ use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Setono\SyliusCMSPlugin\Tests\Support\Violations;
 
 final class NumberHandlerTest extends TestCase
 {
     use ProphecyTrait;
+    use Violations;
 
     /**
      * @test
@@ -148,8 +150,8 @@ final class NumberHandlerTest extends TestCase
      */
     public function it_rejects_a_value_that_is_not_a_number(): void
     {
-        $this->expectViolation('setono_sylius_cms.field.not_number', [], '5');
-        $this->expectViolation('setono_sylius_cms.field.not_number', [], true);
+        $this->expectNumberViolation('setono_sylius_cms.field.not_number', [], '5');
+        $this->expectNumberViolation('setono_sylius_cms.field.not_number', [], true);
     }
 
     /**
@@ -157,7 +159,7 @@ final class NumberHandlerTest extends TestCase
      */
     public function it_rejects_a_fraction_when_the_field_takes_whole_numbers(): void
     {
-        $this->expectViolation('setono_sylius_cms.field.not_whole_number', [], 4.5, new Number(label: 'Interval', integer: true));
+        $this->expectNumberViolation('setono_sylius_cms.field.not_whole_number', [], 4.5, new Number(label: 'Interval', integer: true));
     }
 
     /**
@@ -165,7 +167,7 @@ final class NumberHandlerTest extends TestCase
      */
     public function it_rejects_a_number_below_the_lowest(): void
     {
-        $this->expectViolation('setono_sylius_cms.field.too_small', ['{{ limit }}' => '2'], 1, new Number(label: 'Interval', min: 2, max: 30));
+        $this->expectNumberViolation('setono_sylius_cms.field.too_small', ['{{ limit }}' => '2'], 1, new Number(label: 'Interval', min: 2, max: 30));
     }
 
     /**
@@ -173,7 +175,7 @@ final class NumberHandlerTest extends TestCase
      */
     public function it_rejects_a_number_above_the_highest(): void
     {
-        $this->expectViolation('setono_sylius_cms.field.too_large', ['{{ limit }}' => '30'], 31, new Number(label: 'Interval', min: 2, max: 30));
+        $this->expectNumberViolation('setono_sylius_cms.field.too_large', ['{{ limit }}' => '30'], 31, new Number(label: 'Interval', min: 2, max: 30));
     }
 
     /**
@@ -181,9 +183,9 @@ final class NumberHandlerTest extends TestCase
      */
     public function it_rejects_a_number_off_the_steps_and_names_the_two_nearest_that_are_on_them(): void
     {
-        $this->expectViolation('setono_sylius_cms.field.not_on_step', ['{{ lower }}' => '4', '{{ upper }}' => '6'], 5, new Number(label: 'Even', step: 2));
-        $this->expectViolation('setono_sylius_cms.field.not_on_step', ['{{ lower }}' => '0.3', '{{ upper }}' => '0.4'], 0.35, new Number(label: 'Price', min: 0.1, step: 0.1));
-        $this->expectViolation('setono_sylius_cms.field.not_on_step', ['{{ lower }}' => '5', '{{ upper }}' => '7'], 6, new Number(label: 'Odd', min: 1, step: 2));
+        $this->expectNumberViolation('setono_sylius_cms.field.not_on_step', ['{{ lower }}' => '4', '{{ upper }}' => '6'], 5, new Number(label: 'Even', step: 2));
+        $this->expectNumberViolation('setono_sylius_cms.field.not_on_step', ['{{ lower }}' => '0.3', '{{ upper }}' => '0.4'], 0.35, new Number(label: 'Price', min: 0.1, step: 0.1));
+        $this->expectNumberViolation('setono_sylius_cms.field.not_on_step', ['{{ lower }}' => '5', '{{ upper }}' => '7'], 6, new Number(label: 'Odd', min: 1, step: 2));
     }
 
     /**
@@ -206,25 +208,16 @@ final class NumberHandlerTest extends TestCase
         new Number(label: 'Interval', min: 30, max: 2);
     }
 
-    /**
-     * @param array<string, string> $parameters
-     */
-    private function expectViolation(string $message, array $parameters, mixed $value, ?Number $field = null): void
-    {
-        $builder = $this->prophesize(ConstraintViolationBuilderInterface::class);
-        foreach ($parameters as $name => $parameter) {
-            $builder->setParameter($name, $parameter)->willReturn($builder->reveal())->shouldBeCalledOnce();
-        }
-        $builder->addViolation()->shouldBeCalledOnce();
-
-        $context = $this->prophesize(ExecutionContextInterface::class);
-        $context->buildViolation($message)->willReturn($builder->reveal())->shouldBeCalledOnce();
-
-        (new NumberHandler())->validate($field ?? new Number(label: 'Rating'), $value, $context->reveal());
-    }
-
     private function hydrationContext(): HydrationContext
     {
         return new HydrationContext(Rendering::context());
+    }
+
+    /**
+     * @param array<string, string> $parameters
+     */
+    private function expectNumberViolation(string $message, array $parameters, mixed $value, ?Number $field = null): void
+    {
+        $this->expectViolation($message, $parameters, static fn (ExecutionContextInterface $context) => (new NumberHandler())->validate($field ?? new Number(label: 'Rating'), $value, $context));
     }
 }

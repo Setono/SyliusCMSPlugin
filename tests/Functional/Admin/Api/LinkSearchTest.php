@@ -97,14 +97,6 @@ final class LinkSearchTest extends BuilderApiTestCase
         self::assertSame([], self::json($client, 'GET', '/admin/cms/api/search/url?q=https'));
     }
 
-    private static function signedIn(): KernelBrowser
-    {
-        $client = self::createClient();
-        $client->loginUser(self::admin(), 'admin');
-
-        return $client;
-    }
-
     private static function announcement(string $title): void
     {
         /** @var FactoryInterface<Announcement> $factory */

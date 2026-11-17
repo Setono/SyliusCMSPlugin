@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Support;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSet;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
@@ -12,6 +13,8 @@ use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
+use Setono\SyliusCMSPlugin\Problem\ProblemCount;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Publishing\AutosaveInterface;
 use Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettings;
@@ -276,5 +279,24 @@ trait Entries
         self::assertInstanceOf(UserInterface::class, $admin);
 
         return $admin;
+    }
+
+    /**
+     * The entry's problem count as it's stored
+     */
+    protected static function storedCount(EntryInterface $entry): ProblemCount
+    {
+        /** @var ProblemCountProviderInterface $provider */
+        $provider = self::getContainer()->get(ProblemCountProviderInterface::class);
+
+        return $provider->getCounts([$entry])[$entry->getUuid()];
+    }
+
+    protected static function entityManager(): EntityManagerInterface
+    {
+        /** @var EntityManagerInterface $manager */
+        $manager = self::getContainer()->get('doctrine.orm.entity_manager');
+
+        return $manager;
     }
 }

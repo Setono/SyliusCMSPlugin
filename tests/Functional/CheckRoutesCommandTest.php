@@ -178,14 +178,6 @@ final class CheckRoutesCommandTest extends KernelTestCase
         return $urls;
     }
 
-    private static function storedCount(EntryInterface $entry): ProblemCount
-    {
-        /** @var ProblemCountProviderInterface $provider */
-        $provider = self::getContainer()->get(ProblemCountProviderInterface::class);
-
-        return $provider->getCounts([$entry])[$entry->getUuid()];
-    }
-
     private static function checkRoutes(): CommandTester
     {
         $tester = new CommandTester((new Application(self::$kernel))->find('setono:cms:check-routes'));

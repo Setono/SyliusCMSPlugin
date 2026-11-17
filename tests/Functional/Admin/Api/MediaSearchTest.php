@@ -45,12 +45,4 @@ final class MediaSearchTest extends MediaApiTestCase
             self::json($client, 'GET', sprintf('/admin/cms/api/search/media?refs=%s,%s,0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f,size-guide', strtoupper($sizeGuide->getUuid()), $image->getUuid())),
         );
     }
-
-    private static function signedIn(): KernelBrowser
-    {
-        $client = self::createClient();
-        $client->loginUser(self::admin(), 'admin');
-
-        return $client;
-    }
 }
