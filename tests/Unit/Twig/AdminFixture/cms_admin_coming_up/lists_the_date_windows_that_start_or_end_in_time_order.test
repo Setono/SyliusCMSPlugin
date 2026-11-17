@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_coming_up() lists the date windows that start or end after now, in time order, each with its entry
+--TEMPLATE--
+{% for event in cms_admin_coming_up() %}{{ event.kind.value }} {{ event.at|date('Y-m-d H:i', 'UTC') }} {{ cms_admin_entry_row(event.entry).title }}; {% endfor %}
+--DATA--
+return $this->aPageShown('Winter sale', '2026-12-01 08:00', '2027-01-10 23:00') + $this->aPageShown('Black Friday', '2026-11-01 00:00', '2026-11-30 23:00') + $this->aPageShown('Gone', '2026-01-01 00:00', '2026-02-01 00:00')
+--EXPECT--
+ends 2026-11-30 23:00 Black Friday; starts 2026-12-01 08:00 Winter sale; ends 2027-01-10 23:00 Winter sale;

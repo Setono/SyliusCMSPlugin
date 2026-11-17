@@ -1,0 +1,9 @@
+--TEST--
+cms_admin_needs_attention() groups the problems of the entries that need attention by kind, with how many entries need attention
+--TEMPLATE--
+{% set found = cms_admin_needs_attention() %}
+{{ found.total }}: {% for group in found.groups %}{{ group.kind }} {{ group.severity.value }} {{ group.problems|length }}; {% endfor %}| {% for entry in found.entries %}{{ cms_admin_entry_row(entry).title }}; {% endfor %}
+--DATA--
+return $this->anEntryNeedingAttention('About us')
+--EXPECT--
+1: unknown_block_type warning 1; | About us;

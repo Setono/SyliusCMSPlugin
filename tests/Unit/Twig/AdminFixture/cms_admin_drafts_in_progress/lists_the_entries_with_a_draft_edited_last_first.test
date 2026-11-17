@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_drafts_in_progress() lists the entries with a draft, the one edited last first
+--TEMPLATE--
+{% for entry in cms_admin_drafts_in_progress() %}{{ cms_admin_entry_row(entry).title }}; {% endfor %}
+--DATA--
+return $this->pagesWithADraft('Contact', 'About us')
+--EXPECT--
+Contact; About us;
