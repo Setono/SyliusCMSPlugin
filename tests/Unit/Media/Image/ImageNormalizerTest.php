@@ -22,6 +22,12 @@ final class ImageNormalizerTest extends TestCase
     private const ROTATED_WITH_LOCATION = __DIR__ . '/../../../Fixture/media/rotated-with-location.jpg';
 
     /**
+     * The JPEG fixture encoded by libavif's avifenc, which turned its EXIF orientation into an irot property and kept its
+     * Exif (the camera's make, GPS coordinates) as an Exif item of 120 bytes and its XMP packet as an XMP item of 213
+     */
+    private const AVIF_WITH_LOCATION = __DIR__ . '/../../../Fixture/media/rotated-with-location.avif';
+
+    /**
      * @test
      */
     public function it_applies_the_exif_orientation_of_a_jpeg_and_strips_its_metadata(): void
@@ -137,6 +143,52 @@ final class ImageNormalizerTest extends TestCase
     }
 
     /**
+     * An AVIF's metadata are items its boxes point at by offset, so they're emptied in place: the Exif item becomes an
+     * Exif without tags (a zeroed one makes libavif, and so GD, refuse the whole image) and the XMP item an empty XMP
+     * packet, each padded to its length. Every other byte is kept
+     *
+     * @test
+     */
+    public function it_empties_the_exif_and_xmp_items_of_an_avif_in_place_and_keeps_every_other_byte(): void
+    {
+        $avif = (string) file_get_contents(self::AVIF_WITH_LOCATION);
+        $exif = strpos($avif, "\0\0\0\0MM\0*");
+        $xmp = strpos($avif, '<x:xmpmeta');
+        self::assertIsInt($exif);
+        self::assertIsInt($xmp);
+        $expected = substr_replace($avif, "\0\0\0\0MM\0*\0\0\0\x08\0\0\0\0\0\0" . str_repeat("\0", 120 - 18), $exif, 120);
+        $expected = substr_replace($expected, str_pad('<x:xmpmeta xmlns:x="adobe:ns:meta/"/>', 213), $xmp, 213);
+
+        $stripped = self::normalizer()->normalize($avif, 'image/avif');
+
+        self::assertSame($expected, $stripped);
+        self::assertStringNotContainsString('Acme Phone', $stripped);
+        self::assertStringNotContainsString('GPSLatitude', $stripped);
+        $size = getimagesizefromstring($stripped);
+        self::assertIsArray($size);
+        self::assertSame([40, 20], [$size[0], $size[1]]);
+        if (true === (gd_info()['AVIF Support'] ?? false)) {
+            self::assertInstanceOf(\GdImage::class, imagecreatefromstring($stripped), 'GD still reads it, as LiipImagine does to make its variants');
+        }
+
+        self::assertSame($stripped, self::normalizer()->normalize($stripped, 'image/avif'), 'Stripping it again gives the same file');
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_an_avif_without_metadata_as_it_is(): void
+    {
+        if (true !== (gd_info()['AVIF Support'] ?? false)) {
+            self::markTestSkipped('GD writes no AVIF here');
+        }
+
+        $avif = self::gd(static fn (\GdImage $image): bool => imageavif($image));
+
+        self::assertSame($avif, self::normalizer()->normalize($avif, 'image/avif'));
+    }
+
+    /**
      * @test
      */
     public function it_leaves_the_other_kinds_of_files_as_they_are(): void
@@ -167,6 +219,8 @@ final class ImageNormalizerTest extends TestCase
         yield 'a PNG chunk longer than the file' => ["\x89PNG\r\n\x1A\n" . pack('N', 1000) . 'IHDR', 'image/png'];
         yield 'a WebP without its RIFF header' => ['not a webp', 'image/webp'];
         yield 'a GIF without its header' => ['not a gif', 'image/gif'];
+        yield 'an AVIF without its ftyp box' => [pack('N', 8) . 'free', 'image/avif'];
+        yield 'an AVIF box longer than the file' => [pack('N', 16) . 'ftypavif' . pack('N', 1000) . 'meta', 'image/avif'];
     }
 
     private static function normalizer(): ImageNormalizer

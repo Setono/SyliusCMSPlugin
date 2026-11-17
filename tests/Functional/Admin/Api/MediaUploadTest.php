@@ -190,6 +190,27 @@ final class MediaUploadTest extends MediaApiTestCase
     /**
      * @test
      */
+    public function it_strips_an_avif_s_metadata_before_storing_it(): void
+    {
+        $client = self::createClient();
+        $config = self::openMediaLibrary($client);
+        $avif = (string) file_get_contents(dirname(__DIR__, 3) . '/Fixture/media/rotated-with-location.avif');
+
+        $answer = self::upload($client, $config['csrfToken'], [$this->uploadedFile('home.avif', $avif)]);
+
+        $created = $answer['created'][0] ?? null;
+        self::assertIsArray($created);
+        self::assertSame('image/avif', $created['mimeType']);
+        self::assertIsString($created['url']);
+        $stored = (string) file_get_contents(self::mediaDirectory() . substr($created['url'], strlen('/media/cms')));
+        self::assertSame(strlen($avif), strlen($stored));
+        self::assertStringNotContainsString('Acme Phone', $stored);
+        self::assertStringNotContainsString('GPSLatitude', $stored);
+    }
+
+    /**
+     * @test
+     */
     public function it_sanitises_an_svg(): void
     {
         $client = self::createClient();

@@ -78,6 +78,7 @@ final readonly class ImageNormalizer
             'image/png' => PngStripper::strip($content),
             'image/webp' => WebpStripper::strip($content),
             'image/gif' => GifStripper::strip($content),
+            'image/avif' => AvifStripper::strip($content),
             default => null,
         };
     }

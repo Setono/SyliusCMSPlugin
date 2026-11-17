@@ -49,6 +49,8 @@ On upload, the plugin:
 2. reads its dimensions
 3. strips embedded metadata from the stored original, so location and device data never leak
 
+Stripping keeps the image data byte for byte: JPEG, PNG, WebP and GIF lose their metadata segments or chunks, and an AVIF's Exif and XMP items are emptied in place, since its boxes point at them by offset. Only an image whose EXIF orientation isn't upright is encoded again. An AVIF's orientation is its `irot` and `imir` properties, which it keeps.
+
 ## Metadata
 
 | What | Kinds | Notes |

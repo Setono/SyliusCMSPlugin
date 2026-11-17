@@ -52,6 +52,22 @@ final class Bytes
     }
 
     /**
+     * A big-endian unsigned 64-bit integer
+     *
+     * @throws UnreadableFileException when it's larger than PHP's integers
+     */
+    public static function uint64(string $data, int $offset, string $format): int
+    {
+        /** @var array{1: int} $value */
+        $value = unpack('J', self::read($data, $offset, 8, $format));
+        if ($value[1] < 0) {
+            throw new UnreadableFileException(sprintf('The %s has a size larger than any file', $format));
+        }
+
+        return $value[1];
+    }
+
+    /**
      * A little-endian unsigned 32-bit integer
      */
     public static function uint32le(string $data, int $offset, string $format): int
