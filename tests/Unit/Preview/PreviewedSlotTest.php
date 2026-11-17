@@ -32,7 +32,7 @@ final class PreviewedSlotTest extends TestCase
         $previewed = self::candidate(self::PREVIEWED, PlacementOutcome::CapReached, self::snippet('Summer sale'));
         $hidden = self::candidate('0193a5be-0000-7000-8000-0000000000c3', PlacementOutcome::SnippetNotVisible);
 
-        $candidates = PreviewedSlot::asIfItWon(self::slot(cap: 1), [$winter, $previewed, $hidden], self::PREVIEWED, $draft);
+        $candidates = PreviewedSlot::asIfItWon(self::slot(cap: 1), [$winter, $previewed, $hidden], $previewed, $draft);
 
         self::assertEquals([
             new CandidatePlacement($winter->placement, PlacementOutcome::CapReached, $winter->snippet),
@@ -52,7 +52,7 @@ final class PreviewedSlotTest extends TestCase
         $spring = self::candidate('0193a5be-0000-7000-8000-0000000000c3', PlacementOutcome::Wins, self::snippet('Spring sale'));
         $autumn = self::candidate('0193a5be-0000-7000-8000-0000000000c4', PlacementOutcome::CapReached, self::snippet('Autumn sale'));
 
-        $candidates = PreviewedSlot::asIfItWon(self::slot(cap: 2), [$winter, $previewed, $spring, $autumn], self::PREVIEWED, $draft);
+        $candidates = PreviewedSlot::asIfItWon(self::slot(cap: 2), [$winter, $previewed, $spring, $autumn], $previewed, $draft);
 
         self::assertSame(
             [PlacementOutcome::Wins, PlacementOutcome::Wins, PlacementOutcome::CapReached, PlacementOutcome::CapReached],
@@ -74,17 +74,19 @@ final class PreviewedSlotTest extends TestCase
         self::assertEquals([
             new CandidatePlacement($previewed->placement, PlacementOutcome::Wins, $draft, previewed: true),
             $other,
-        ], PreviewedSlot::asIfItWon(self::slot(), [$previewed, $other], self::PREVIEWED, $draft));
+        ], PreviewedSlot::asIfItWon(self::slot(), [$previewed, $other], $previewed, $draft));
     }
 
     /**
      * @test
      */
-    public function it_leaves_a_slot_without_the_previewed_placement_as_it_is(): void
+    public function it_finds_the_previewed_placement_among_the_candidates_of_its_slot_and_none_in_another(): void
     {
-        $candidates = [self::candidate('0193a5be-0000-7000-8000-0000000000c1', PlacementOutcome::Wins, self::snippet('Winter sale'))];
+        $winter = self::candidate('0193a5be-0000-7000-8000-0000000000c1', PlacementOutcome::Wins, self::snippet('Winter sale'));
+        $previewed = self::candidate(self::PREVIEWED, PlacementOutcome::CapReached, self::snippet('Summer sale'));
 
-        self::assertSame($candidates, PreviewedSlot::asIfItWon(self::slot(cap: 1), $candidates, self::PREVIEWED, self::snippet('Draft')));
+        self::assertSame($previewed, PreviewedSlot::previewedIn([$winter, $previewed], self::PREVIEWED));
+        self::assertNull(PreviewedSlot::previewedIn([$winter], self::PREVIEWED));
     }
 
     /**

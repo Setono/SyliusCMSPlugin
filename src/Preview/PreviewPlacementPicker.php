@@ -6,7 +6,6 @@ namespace Setono\SyliusCMSPlugin\Preview;
 
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
-use Setono\SyliusCMSPlugin\Rendering\PlacementData;
 use Setono\SyliusCMSPlugin\Rendering\PlacementPickerInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 
@@ -29,12 +28,13 @@ final readonly class PreviewPlacementPicker implements PlacementPickerInterface
         $candidates = $this->picker->pick($slot, $placements, $context);
 
         $placementUuid = $this->previewContext->getPreview()?->placementUuid;
-        if (null === $placementUuid || [] === array_filter($placements, static fn (PlacementData $placement): bool => $placement->uuid === $placementUuid)) {
+        $previewed = null === $placementUuid ? null : PreviewedSlot::previewedIn($candidates, $placementUuid);
+        if (null === $previewed) {
             return $candidates;
         }
 
         $draft = $this->previewedEntry->getPreviewedContent($context->localeCode);
 
-        return $draft instanceof SnippetInterface ? PreviewedSlot::asIfItWon($slot, $candidates, $placementUuid, $draft) : $candidates;
+        return $draft instanceof SnippetInterface ? PreviewedSlot::asIfItWon($slot, $candidates, $previewed, $draft) : $candidates;
     }
 }

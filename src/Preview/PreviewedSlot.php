@@ -25,23 +25,37 @@ final class PreviewedSlot
     }
 
     /**
-     * The candidates as the preview shows the slot: the placement with the UUID wins with the draft, and the others that
-     * match keep the seats of the cap that are left. A slot without the placement stays as it is
+     * The candidate of the placement with the UUID, or null when the slot doesn't hold it
+     *
+     * @param list<CandidatePlacement> $candidates every placement in the slot
+     */
+    public static function previewedIn(array $candidates, string $placementUuid): ?CandidatePlacement
+    {
+        foreach ($candidates as $candidate) {
+            if ($candidate->placement->uuid === $placementUuid) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The candidates as the preview shows the slot: the previewed placement wins with the draft, and the others that
+     * match keep the seats of the cap that are left
      *
      * @param list<CandidatePlacement> $candidates every placement in the slot, in editor order, as shoppers get them
+     * @param CandidatePlacement $previewed the previewed placement's, one of the candidates (previewedIn())
      *
      * @return list<CandidatePlacement>
      */
-    public static function asIfItWon(SlotMetadata $slot, array $candidates, string $placementUuid, SnippetInterface $draft): array
+    public static function asIfItWon(SlotMetadata $slot, array $candidates, CandidatePlacement $previewed, SnippetInterface $draft): array
     {
-        if (null === self::find($candidates, $placementUuid)) {
-            return $candidates;
-        }
-
-        $seats = 1;
+        // The previewed placement takes one seat wherever it is
+        $won = 1;
         $shown = [];
         foreach ($candidates as $candidate) {
-            if ($candidate->placement->uuid === $placementUuid) {
+            if ($candidate === $previewed) {
                 $shown[] = new CandidatePlacement($candidate->placement, PlacementOutcome::Wins, $draft, true);
 
                 continue;
@@ -53,9 +67,9 @@ final class PreviewedSlot
                 continue;
             }
 
-            $wins = null === $slot->cap || $seats < $slot->cap;
+            $wins = $slot->hasSeatFor($won);
             if ($wins) {
-                ++$seats;
+                ++$won;
             }
 
             $shown[] = new CandidatePlacement($candidate->placement, $wins ? PlacementOutcome::Wins : PlacementOutcome::CapReached, $candidate->snippet);
@@ -75,7 +89,7 @@ final class PreviewedSlot
      */
     public static function shownInstead(SlotMetadata $slot, array $candidates, string $placementUuid): ?array
     {
-        $previewed = self::find($candidates, $placementUuid);
+        $previewed = self::previewedIn($candidates, $placementUuid);
         if (null === $previewed || null === $slot->cap || !in_array($previewed->outcome, [PlacementOutcome::CapReached, PlacementOutcome::SnippetNotVisible], true)) {
             return null;
         }
@@ -91,7 +105,7 @@ final class PreviewedSlot
             }
         }
 
-        if ($matchingAbove < $slot->cap) {
+        if ($slot->hasSeatFor($matchingAbove)) {
             return null;
         }
 
@@ -111,19 +125,5 @@ final class PreviewedSlot
     private static function matches(CandidatePlacement $candidate): bool
     {
         return PlacementOutcome::Wins === $candidate->outcome || PlacementOutcome::CapReached === $candidate->outcome;
-    }
-
-    /**
-     * @param list<CandidatePlacement> $candidates
-     */
-    private static function find(array $candidates, string $placementUuid): ?CandidatePlacement
-    {
-        foreach ($candidates as $candidate) {
-            if ($candidate->placement->uuid === $placementUuid) {
-                return $candidate;
-            }
-        }
-
-        return null;
     }
 }

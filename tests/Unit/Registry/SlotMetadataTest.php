@@ -48,6 +48,19 @@ final class SlotMetadataTest extends TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_has_a_seat_for_another_winner_while_fewer_than_its_cap_won(): void
+    {
+        $cappedAt2 = new SlotMetadata('shop.top', 'app.label', [], 2);
+
+        self::assertTrue($cappedAt2->hasSeatFor(0));
+        self::assertTrue($cappedAt2->hasSeatFor(1));
+        self::assertFalse($cappedAt2->hasSeatFor(2));
+        self::assertTrue((new SlotMetadata('shop.footer', 'app.label'))->hasSeatFor(100), 'An uncapped slot always has one');
+    }
+
+    /**
      * See "Page scopes" in docs/spec/slots.md
      *
      * @test

@@ -58,6 +58,14 @@ final readonly class SlotMetadata
     }
 
     /**
+     * Whether a placement that matches still wins when this many above it already won: always in a slot without a cap
+     */
+    public function hasSeatFor(int $won): bool
+    {
+        return null === $this->cap || $won < $this->cap;
+    }
+
+    /**
      * Whether it provides every one of these context keys, which a snippet that needs them must find where it's placed
      *
      * @param list<string> $keys

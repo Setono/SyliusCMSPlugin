@@ -37,7 +37,7 @@ final readonly class PlacementPicker implements PlacementPickerInterface
                 !isset($inScope[$placement->uuid]) => PlacementOutcome::ScopeDoesNotMatch,
                 null === $snippet => PlacementOutcome::SnippetNotVisible,
                 !$slot->providesAll($snippet->getContext()) => PlacementOutcome::ContextNotProvided,
-                null !== $slot->cap && $wins >= $slot->cap => PlacementOutcome::CapReached,
+                !$slot->hasSeatFor($wins) => PlacementOutcome::CapReached,
                 default => PlacementOutcome::Wins,
             };
 
