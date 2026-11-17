@@ -75,6 +75,8 @@ setono_sylius_cms:
             image: Image
             mobile_image: Mobile image
             mobile_image_help: Shown instead of the image on narrow screens, such as phones. Leave it empty to show the image there too.
+            priority: Load first
+            priority_help: Loads the image before the rest of the page. Turn it on for a banner at the top of the page, and leave it off for banners further down.
             text: Text
         bestsellers_source:
             include_children: Include the taxons below it

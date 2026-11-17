@@ -204,8 +204,11 @@ An image with an optional mobile image, a heading, text and buttons. Its buttons
 | `heading` | Text, bindable | yes |
 | `text` | Rich text | yes |
 | `fullWidth` | Toggle, off by default | no |
+| `priority` | Toggle "Load first", off by default: passes `priority` to `cms_image()`, so a hero banner's image loads eagerly with `fetchpriority="high"` | no |
 
 Markup: `cms-banner`, with `cms-banner__media` (a `<picture>` with the mobile image as a narrow source), `cms-banner__content`, `cms-banner__heading`, `cms-banner__text` and `cms-banner__buttons`.
+
+The images are full width (`sizes="100vw"`) and load lazily unless `priority` is on. Turn it on for a banner at the top of a page, and leave it off for banners further down and the slides of a banner carousel.
 
 ### Accordion and Accordion item
 

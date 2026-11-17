@@ -111,6 +111,28 @@ final class BannerTest extends WebTestCase
     }
 
     /**
+     * A banner's image loads lazily, unless the banner is set to load first, as a hero banner at the top of a page is
+     *
+     * @test
+     */
+    public function it_loads_a_banner_s_image_first_only_when_it_is_set_to_load_first(): void
+    {
+        $client = self::createClient();
+        $image = $this->uploadMediaItem('summer-sale.jpg', self::jpeg(1600, 800));
+        self::createPageWithBlocks('Summer', 'summer', [
+            self::banner(['image' => $image->getUuid(), 'priority' => true]),
+            self::banner(['image' => $image->getUuid()], uuid: '0193a5be-0000-7000-8000-0000000000d3'),
+        ], published: true);
+
+        $crawler = $client->request('GET', '/en_US/summer');
+
+        $images = $crawler->filter('.cms-tree > .cms-banner > picture.cms-banner__media > img');
+        self::assertCount(2, $images);
+        self::assertSame(['high', null, null], [$images->eq(0)->attr('fetchpriority'), $images->eq(0)->attr('loading'), $images->eq(0)->attr('decoding')]);
+        self::assertSame([null, 'lazy', 'async'], [$images->eq(1)->attr('fetchpriority'), $images->eq(1)->attr('loading'), $images->eq(1)->attr('decoding')]);
+    }
+
+    /**
      * @test
      */
     public function it_leaves_out_the_parts_a_banner_has_nothing_for(): void
@@ -152,9 +174,9 @@ final class BannerTest extends WebTestCase
      * @param array<string, mixed> $fields
      * @param list<StoredBlock> $buttons
      */
-    private static function banner(array $fields, array $buttons = []): StoredBlock
+    private static function banner(array $fields, array $buttons = [], string $uuid = self::BANNER): StoredBlock
     {
-        return new StoredBlock(self::BANNER, 'banner', 1, fields: $fields, children: $buttons);
+        return new StoredBlock($uuid, 'banner', 1, fields: $fields, children: $buttons);
     }
 
     private static function button(string $label, string $url): StoredBlock

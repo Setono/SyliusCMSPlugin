@@ -5,6 +5,7 @@
 {%- set media -%}
     {{ cms_image(block.image, {
         layout: 'full_width',
+        priority: block.priority,
         alt: block.alt,
         picture_class: 'cms-banner__media',
         art_direction: [{media: '(max-width: 47.99rem)', image: block.mobileImage}],

@@ -47,4 +47,11 @@ final class Banner
 
     #[Toggle(label: 'setono_sylius_cms.field.banner.full_width')]
     public bool $fullWidth = false;
+
+    /**
+     * Loads the image eagerly with a high fetch priority, for a hero banner at the top of a page. Off, it loads lazily,
+     * as a banner further down or in a carousel's later slides should
+     */
+    #[Toggle(label: 'setono_sylius_cms.field.banner.priority', help: 'setono_sylius_cms.field.banner.priority_help')]
+    public bool $priority = false;
 }

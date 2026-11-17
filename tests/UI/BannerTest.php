@@ -53,6 +53,11 @@ final class BannerTest extends UITestCase
         Expect::locator($preview->locator('.cms-tree > .cms-banner.cms-full-width > picture.cms-banner__media img'))->toBeVisible();
         Expect::locator($preview->locator('.cms-tree > .cms-banner .cms-banner__heading'))->toHaveText('Summer sale');
 
+        // A hero banner at the top of the page loads its image first, not lazily
+        Expect::locator($preview->locator('.cms-tree > .cms-banner picture.cms-banner__media img'))->toHaveAttribute('loading', 'lazy');
+        $page->getByLabel('Load first', ['exact' => true])->check();
+        Expect::locator($preview->locator('.cms-tree > .cms-banner picture.cms-banner__media img'))->toHaveAttribute('fetchpriority', 'high');
+
         $tree->getByRole('button', ['name' => 'Button', 'exact' => true])->click();
         $page->getByRole('combobox', ['name' => 'Link'])->selectOption('url');
         $page->getByRole('textbox', ['name' => 'URL'])->fill('/en_US/sale');
@@ -68,6 +73,8 @@ final class BannerTest extends UITestCase
         $banner = $shop->locator('.cms-tree > .cms-banner.cms-full-width');
         Expect::locator($banner->locator('.cms-banner__content .cms-banner__heading'))->toHaveText('Summer sale');
         Expect::locator($banner->locator('.cms-banner__buttons > a.cms-button'))->toHaveAttribute('href', '/en_US/sale');
+        Expect::locator($banner->locator('picture.cms-banner__media img'))->toHaveAttribute('fetchpriority', 'high');
+        Expect::locator($banner->locator('picture.cms-banner__media img'))->not()->toHaveAttribute('loading', 'lazy');
 
         // The banner breaks out of the shop's container, which is narrower than the viewport, to both its edges
         $viewportWidth = $shop->evaluate('() => document.documentElement.clientWidth');
