@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Registry;
 
+use Setono\SyliusCMSPlugin\Attribute\AsBindableProperty;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
 use Setono\SyliusCMSPlugin\Attribute\AsContextResolver;
 use Setono\SyliusCMSPlugin\Attribute\AsLinkTarget;
@@ -61,6 +62,18 @@ final class AttributeReader
     public static function contextResolver(string $class): ?AsContextResolver
     {
         foreach ((new \ReflectionClass($class))->getAttributes(AsContextResolver::class) as $attribute) {
+            return $attribute->newInstance();
+        }
+
+        return null;
+    }
+
+    /**
+     * @param class-string $class
+     */
+    public static function bindableProperty(string $class): ?AsBindableProperty
+    {
+        foreach ((new \ReflectionClass($class))->getAttributes(AsBindableProperty::class) as $attribute) {
             return $attribute->newInstance();
         }
 
