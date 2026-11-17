@@ -14,6 +14,8 @@ setono_sylius_cms:
         does_not_provide: '%what% doesn''t provide the host-page context %context%.'
         needs: '%what% needs the host-page context %context%.'
         placement: 'The placement in "%slot%"'
+        snippet: 'The snippet "%snippet%"'
+        used_in: 'The Snippet block in "%entry%"'
     field:
         invalid_choice: The value you selected is not a valid choice.
         link_target_not_allowed: 'This field can''t link to %target%.'
