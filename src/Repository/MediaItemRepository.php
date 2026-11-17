@@ -73,6 +73,13 @@ class MediaItemRepository extends EntityRepository implements MediaItemRepositor
         return $mediaItem instanceof MediaItemInterface ? $mediaItem : null;
     }
 
+    public function findOneByPath(string $path): ?MediaItemInterface
+    {
+        $mediaItem = $this->findOneBy(['path' => $path]);
+
+        return $mediaItem instanceof MediaItemInterface ? $mediaItem : null;
+    }
+
     public function createLibraryPaginator(MediaFilter $filter): Pagerfanta
     {
         $queryBuilder = $this->createQueryBuilder('o')

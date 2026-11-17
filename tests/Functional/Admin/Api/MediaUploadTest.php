@@ -36,7 +36,8 @@ final class MediaUploadTest extends MediaApiTestCase
         self::assertCount(3, $answer['created']);
         [$sale, $team, $prices] = $answer['created'];
 
-        self::assertSame(['uuid', 'kind', 'name', 'originalFilename', 'mimeType', 'size', 'width', 'height', 'credit', 'altTexts', 'missingAlt', 'focalPoint', 'poster', 'folder', 'url', 'createdAt', 'changedAt'], array_keys($sale));
+        self::assertSame(['uuid', 'kind', 'name', 'originalFilename', 'mimeType', 'size', 'width', 'height', 'credit', 'altTexts', 'missingAlt', 'focalPoint', 'poster', 'folder', 'url', 'usageCount', 'createdAt', 'changedAt'], array_keys($sale));
+        self::assertSame(0, $sale['usageCount']);
         self::assertSame('image', $sale['kind']);
         self::assertSame('Summer Sale', $sale['name']);
         self::assertSame('Summer Sale.png', $sale['originalFilename']);

@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRevisionAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewTokenAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PublishEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RegistryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\ReplaceMediaFileAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RestoreRevisionAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RevisionIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RevokeShareLinkAction;
@@ -311,6 +312,12 @@ return static function (RoutingConfigurator $routes): void {
     $routes->add('setono_sylius_cms_admin_api_media_update', '/cms/api/media/{uuid}')
         ->controller(UpdateMediaItemAction::class)
         ->methods(['PATCH'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_media_replace', '/cms/api/media/{uuid}/file')
+        ->controller(ReplaceMediaFileAction::class)
+        ->methods(['POST'])
         ->requirements(['uuid' => Requirement::UUID])
     ;
 

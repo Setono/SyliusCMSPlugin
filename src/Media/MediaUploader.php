@@ -16,8 +16,6 @@ use Sylius\Resource\Factory\FactoryInterface;
  */
 final readonly class MediaUploader implements MediaUploaderInterface
 {
-    private const MAX_FILENAME_LENGTH = 255;
-
     /**
      * @param FactoryInterface<MediaItemInterface> $mediaItemFactory
      */
@@ -31,7 +29,7 @@ final readonly class MediaUploader implements MediaUploaderInterface
 
     public function upload(\SplFileInfo $file, string $originalFilename, ?MediaFolderInterface $folder, bool $copy = false): UploadResult
     {
-        $originalFilename = self::filename($originalFilename);
+        $originalFilename = UploadedFilename::clean($originalFilename);
         $checked = $this->checker->check($file, $originalFilename);
 
         try {
@@ -51,7 +49,7 @@ final readonly class MediaUploader implements MediaUploaderInterface
             $mediaItem->setChecksum($checked->checksum);
             $mediaItem->setPath(StoragePath::for($mediaItem->getUuid(), $originalFilename, $checked->extension));
 
-            $this->store($checked, $mediaItem->getPath());
+            $checked->store($this->storage, $mediaItem->getPath());
 
             try {
                 $this->mediaItemRepository->add($mediaItem);
@@ -65,32 +63,6 @@ final readonly class MediaUploader implements MediaUploaderInterface
         } finally {
             $checked->cleanUp();
         }
-    }
-
-    private function store(CheckedFile $checked, string $path): void
-    {
-        $stream = fopen($checked->path, 'rb');
-        if (false === $stream) {
-            throw new \RuntimeException(sprintf('The checked file %s couldn\'t be read', $checked->path));
-        }
-
-        try {
-            $this->storage->writeStream($path, $stream);
-        } finally {
-            if (is_resource($stream)) {
-                fclose($stream);
-            }
-        }
-    }
-
-    /**
-     * The name a browser sent, without a path, and short enough for the column
-     */
-    private static function filename(string $filename): string
-    {
-        $filename = trim(basename(str_replace('\\', '/', $filename)));
-
-        return mb_substr('' === $filename ? 'file' : $filename, -self::MAX_FILENAME_LENGTH);
     }
 
     /**

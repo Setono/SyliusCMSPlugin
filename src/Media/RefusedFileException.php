@@ -42,6 +42,14 @@ final class RefusedFileException extends \RuntimeException
         return new self(new TranslatableMessage('setono_sylius_cms.media.refused.unreadable', ['%filename%' => $filename, '%type%' => $type]), $previous);
     }
 
+    /**
+     * A file that would replace the file of a media item of another kind
+     */
+    public static function otherKind(string $filename, MediaKind $kind): self
+    {
+        return new self(new TranslatableMessage(sprintf('setono_sylius_cms.media.refused.not_%s', $kind->value), ['%filename%' => $filename]));
+    }
+
     public static function notUploaded(string $filename): self
     {
         return new self(new TranslatableMessage('setono_sylius_cms.media.refused.not_uploaded', ['%filename%' => $filename]));

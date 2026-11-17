@@ -44,6 +44,11 @@ interface MediaItemRepositoryInterface
     public function findOneByChecksum(string $checksum): ?MediaItemInterface;
 
     /**
+     * The media item whose current file sits at this path in the plugin's storage
+     */
+    public function findOneByPath(string $path): ?MediaItemInterface;
+
+    /**
      * The media items the library shows, newest first
      *
      * @return Pagerfanta<MediaItemInterface>

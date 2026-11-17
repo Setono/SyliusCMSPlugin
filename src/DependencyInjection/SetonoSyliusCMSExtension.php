@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterUpgradersPass;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
+use Setono\SyliusCMSPlugin\Media\DeleteReplacedFile;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
@@ -128,6 +129,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
             'messenger' => [
                 'routing' => [
                     ScheduledPublishDue::class => 'main',
+                    DeleteReplacedFile::class => 'main',
                 ],
             ],
         ]);

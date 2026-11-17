@@ -77,7 +77,7 @@ final readonly class MediaIndexAction
         $mediaItems = iterator_to_array($paginator->getCurrentPageResults(), false);
 
         return new JsonResponse([
-            'items' => array_map($this->answer, $mediaItems),
+            'items' => $this->answer->list($mediaItems),
             'page' => $paginator->getCurrentPage(),
             'pages' => $paginator->getNbPages(),
             'total' => $paginator->getNbResults(),

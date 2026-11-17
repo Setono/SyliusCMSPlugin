@@ -85,7 +85,11 @@ setono_sylius_cms:
     media:
         refused:
             not_allowed: '%filename% is a %type% file, which the media library doesn''t take. It takes %types%, up to %limit% each.'
+            # A file that would replace the file of a media item of another kind
+            not_document: '%filename% isn''t a document. Only a document can replace a document.'
+            not_image: '%filename% isn''t an image. Only an image can replace an image.'
             not_uploaded: '%filename% didn''t arrive in full. Try uploading it again.'
+            not_video: '%filename% isn''t a video. Only a video can replace a video.'
             over_limit: '%filename% is over the upload limit of %limit%.'
             too_big: '%filename% is %size%, over the upload limit of %limit%.'
             unreadable: '%filename% couldn''t be read as a %type% file.'
