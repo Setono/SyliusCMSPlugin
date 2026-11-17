@@ -2,11 +2,11 @@ import { useEffect, useId, useState, type FormEvent } from 'react';
 import { useTranslator } from '../i18n';
 import { useMediaLibrary, useMediaLibraryContext } from './context';
 import { DeleteMediaItemDialog } from './DeleteMediaItemDialog';
-import { Field } from './Field';
 import { FocalPointEditor } from './FocalPointEditor';
-import { PosterField } from './PosterField';
 import { flattenTree, folderTree } from './folders';
+import { LabelledControl } from './LabelledControl';
 import styles from './MediaLibrary.module.css';
+import { PosterControl } from './PosterControl';
 import { ReplaceFileDialog } from './ReplaceFileDialog';
 import type { FocalPoint, MediaItem } from './types';
 import { formatSize } from './upload';
@@ -62,20 +62,20 @@ export function MediaItemDetails({ item }: { item: MediaItem }) {
             {image && <FocalPointEditor src={item.url} value={focalPoint} onChange={setFocalPoint} />}
 
             <form className={styles.form} onSubmit={save}>
-                <Field label={t('setono_sylius_cms.builder.media.name')}>
+                <LabelledControl label={t('setono_sylius_cms.builder.media.name')}>
                     {(fieldId) => <input id={fieldId} className={styles.input} value={name} required onChange={(event) => setName(event.target.value)} />}
-                </Field>
+                </LabelledControl>
 
-                <Field label={t('setono_sylius_cms.builder.media.credit')} help={t('setono_sylius_cms.builder.media.credit_help')}>
+                <LabelledControl label={t('setono_sylius_cms.builder.media.credit')} help={t('setono_sylius_cms.builder.media.credit_help')}>
                     {(fieldId) => <input id={fieldId} className={styles.input} value={credit} onChange={(event) => setCredit(event.target.value)} />}
-                </Field>
+                </LabelledControl>
 
                 {image && (
                     <fieldset className={styles.fieldset}>
                         <legend className={styles.label}>{t('setono_sylius_cms.builder.media.alt_text')}</legend>
                         <span className={styles.help}>{t('setono_sylius_cms.builder.media.alt_text_help')}</span>
                         {config.locales.map(({ code, name: localeName }) => (
-                            <Field key={code} label={localeName} variant="locale">
+                            <LabelledControl key={code} label={localeName} variant="locale">
                                 {(fieldId) => (
                                     <textarea
                                         id={fieldId}
@@ -85,12 +85,12 @@ export function MediaItemDetails({ item }: { item: MediaItem }) {
                                         onChange={(event) => setAltTexts((current) => ({ ...current, [code]: event.target.value }))}
                                     />
                                 )}
-                            </Field>
+                            </LabelledControl>
                         ))}
                     </fieldset>
                 )}
 
-                {video && <PosterField value={poster} onChange={setPoster} />}
+                {video && <PosterControl value={poster} onChange={setPoster} />}
 
                 <p className={styles.help}>{t('setono_sylius_cms.builder.media.takes_effect')}</p>
                 <div className={styles.actions}>
@@ -106,7 +106,7 @@ export function MediaItemDetails({ item }: { item: MediaItem }) {
             </form>
 
             <div className={styles.move}>
-                <Field label={t('setono_sylius_cms.builder.media.move_to')}>
+                <LabelledControl label={t('setono_sylius_cms.builder.media.move_to')}>
                     {(fieldId) => (
                         <select id={fieldId} className={styles.select} value={moveTo} onChange={(event) => setMoveTo(event.target.value)}>
                             <option value="">{t('setono_sylius_cms.builder.media.unsorted')}</option>
@@ -117,7 +117,7 @@ export function MediaItemDetails({ item }: { item: MediaItem }) {
                             ))}
                         </select>
                     )}
-                </Field>
+                </LabelledControl>
                 <button
                     type="button"
                     className={styles.secondary}

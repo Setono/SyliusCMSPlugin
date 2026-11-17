@@ -37,7 +37,7 @@ final class MediaLinkTest extends UITestCase
         $found = $page->getByRole('listbox')->getByRole('option');
         Expect::locator($found)->toHaveText('size-guide');
         $found->click();
-        Expect::locator($page->getByRole('textbox', ['name' => 'Label']))->toHaveAttribute('placeholder', 'size-guide');
+        Expect::locator($page->getByRole('textbox', ['name' => 'Label', 'exact' => true]))->toHaveAttribute('placeholder', 'size-guide');
 
         $permanentUrl = sprintf('http://localhost/media/%s/size-guide.pdf', $sizeGuide->getUuid());
         Expect::locator($page->frameLocator('iframe')->locator('.cms-tree > a.cms-button'))->toHaveAttribute('href', $permanentUrl);

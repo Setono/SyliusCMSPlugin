@@ -1,8 +1,7 @@
 import { useFallbackChain } from '../context';
 import { useTranslator } from '../i18n';
-import { useLinkTargets } from '../linkTargets';
+import { useLinkRef, useLinkTargets } from '../linkTargets';
 import { linkShape, offeredTargets, readLink, writeLink, type LinkChange } from '../links';
-import { useKnownRef } from '../search/context';
 import formStyles from './Form.module.css';
 import styles from './LinkControl.module.css';
 import { LinkTargetFields } from './LinkTargetFields';
@@ -21,8 +20,7 @@ export function LinkControl({ id, value, onChange, schema, locale, describedBy }
     const offered = offeredTargets(schema, linkTargets);
     const first = offered[0]?.code ?? '';
     const link = readLink(value, shape, chain, first);
-    const typed = linkTargets.find(({ code }) => code === link.target)?.translatableRef ?? false;
-    const known = useKnownRef(link.target, typed || link.ref === '' ? null : link.ref);
+    const { found } = useLinkRef(link);
     const change = (made: LinkChange): void => onChange(writeLink(value, shape, locale, made, linkTargets, first));
 
     return (
@@ -37,7 +35,7 @@ export function LinkControl({ id, value, onChange, schema, locale, describedBy }
                     type="text"
                     className={formStyles.input}
                     value={link.label}
-                    placeholder={link.labelFallback ?? known?.name}
+                    placeholder={link.labelFallback ?? found?.name}
                     aria-describedby={`${id}-label-help`}
                     onChange={(event) => change({ label: event.currentTarget.value })}
                 />

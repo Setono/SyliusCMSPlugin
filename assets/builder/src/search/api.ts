@@ -3,7 +3,7 @@
  * to, by kind. It's internal, but what field controls reach through `.builder.search()` keeps its shape
  * (docs/spec/extending.md#field-controls).
  */
-import { ApiError } from '../api';
+import { ApiError, defaultFetch, send, type Fetch } from '../api';
 
 /** One thing a search found: what a field stores to refer to it, its name in the admin user's locale and its thumbnail. */
 export interface SearchResult {
@@ -22,18 +22,13 @@ export interface SearchApi {
 /** The placeholder for the kind in the endpoint's URL, which the builder page gives. */
 export const KIND = '__kind__';
 
-type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
-
-const defaultFetch: Fetch = (input, init) => fetch(input, init);
-
 /** The search endpoint at the URL, whose kind is KIND. */
 export function createSearchApi(endpoint: string, fetchFn: Fetch = defaultFetch): SearchApi {
     const get = async (kind: string, parameters: Record<string, string>): Promise<SearchResult[]> => {
         const url = `${endpoint.replace(KIND, encodeURIComponent(kind))}?${new URLSearchParams(parameters).toString()}`;
-        const response = await fetchFn(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
-        const body: unknown = await response.json().catch(() => undefined);
-        if (response.status !== 200 || !Array.isArray(body) || !body.every(isResult)) {
-            throw new ApiError(`${url} answered ${response.status}.`, response.status);
+        const body = await send(fetchFn, url);
+        if (!Array.isArray(body) || !body.every(isResult)) {
+            throw new ApiError(`${url} didn't answer with search results.`, 200);
         }
 
         return body;

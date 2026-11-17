@@ -1,13 +1,15 @@
-/* The Media and Media list fields' controls */
+/* The controls of the fields that hold what's picked: Product, Products, Taxon, Taxons, Media and Media list */
 .control {
     display: flex;
     flex-direction: column;
     gap: var(--builder-space-2);
 }
 
-.nothing {
-    margin: 0;
-    color: var(--builder-color-text-muted);
+.picked {
+    display: flex;
+    gap: var(--builder-space-2);
+    align-items: center;
+    min-height: var(--builder-control-height);
 }
 
 .summary {
@@ -16,21 +18,14 @@
     gap: var(--builder-space-2);
     align-items: center;
     min-width: 0;
-    min-height: 2.5rem;
-}
-
-.deleted {
-    padding: var(--builder-space-1) var(--builder-space-2);
-    border-radius: var(--builder-radius-sm);
-    background: var(--builder-color-danger-subtle);
-    color: var(--builder-color-danger);
+    min-height: var(--builder-thumbnail-size);
 }
 
 .thumbnail,
 .fileThumbnail {
     flex: none;
-    width: 2.5rem;
-    height: 2.5rem;
+    width: var(--builder-thumbnail-size);
+    height: var(--builder-thumbnail-size);
     border-radius: var(--builder-radius-sm);
     background: var(--builder-color-neutral-subtle);
 }
@@ -47,10 +42,24 @@
     font-weight: var(--builder-font-weight-bold);
 }
 
-.name {
+.name,
+.nothing {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.nothing {
+    margin: 0;
+    color: var(--builder-color-text-muted);
+}
+
+/* What a field holds that no longer exists, such as a deleted product or media item */
+.gone {
+    padding: var(--builder-space-1) var(--builder-space-2);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-danger-subtle);
+    color: var(--builder-color-danger);
 }
 
 .list {
@@ -81,43 +90,12 @@
     align-items: center;
 }
 
-.button,
-.iconButton {
-    min-height: var(--builder-control-height);
-    border: 1px solid var(--builder-color-border-strong);
-    border-radius: var(--builder-radius-sm);
-    background: var(--builder-color-surface);
-    color: var(--builder-color-text);
-    font: inherit;
-    cursor: pointer;
-}
-
 .button {
-    padding: 0 var(--builder-space-3);
+    composes: button from '../ui/Buttons.module.css';
 }
 
 .iconButton {
-    display: grid;
-    place-items: center;
-    width: var(--builder-control-height);
-    padding: 0;
-}
-
-.button:hover:not(:disabled),
-.iconButton:hover:not(:disabled) {
-    background: var(--builder-color-hover);
-}
-
-.button:disabled,
-.iconButton:disabled {
-    cursor: default;
-    opacity: 0.5;
-}
-
-.button:focus-visible,
-.iconButton:focus-visible {
-    outline: 2px solid var(--builder-color-focus);
-    outline-offset: 2px;
+    composes: iconButton from '../ui/Buttons.module.css';
 }
 
 .most {

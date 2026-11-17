@@ -1,18 +1,14 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { BuilderApi, PreviewRequest } from '../src/api';
 import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
-import { FieldRow } from '../src/form/FieldRow';
-import { createTranslator, TranslatorProvider } from '../src/i18n';
-import type { SearchApi, SearchResult } from '../src/search/api';
-import { SearchProvider } from '../src/search/context';
+import type { SearchResult } from '../src/search/api';
 import { createSourcesApi } from '../src/sources/api';
 import { SourcesProvider, type CountSource } from '../src/sources/context';
 import type { SourceDefinition } from '../src/sources/sources';
 import type { BlockTypeDefinition, EntryResponse, EntryStatus, FieldSchema, JsonObject, JsonValue, PresenceResponse, SaveResponse, ValidationError } from '../src/types';
-import { blockOf, entry, page, registry, settings } from './fixtures';
+import { blockOf, entry, fakeSearch, page, registry, renderField, settings } from './fixtures';
 
 const strings = {
     'setono_sylius_cms.builder.items.add_product': 'Add product',
@@ -71,44 +67,8 @@ const catalog: Record<string, SearchResult[]> = {
     taxon: [{ ref: 'T_SHIRTS', name: 'Category / T-shirts', thumbnail: null }],
 };
 
-function fakeSearch(): SearchApi {
-    return {
-        search: vi.fn(async (kind: string, query: string) => (catalog[kind] ?? []).filter(({ name }) => name.toLowerCase().includes(query.toLowerCase()))),
-        find: vi.fn(async (kind: string, refs: readonly string[]) => (catalog[kind] ?? []).filter(({ ref }) => refs.includes(ref))),
-    };
-}
-
-/** A field whose value lives in the test, as the builder's store keeps it, with every change recorded. */
-function Field({ fieldSchema, initial, onChange }: { fieldSchema: FieldSchema; initial?: JsonValue; onChange: (value: JsonValue | null) => void }) {
-    const [value, setValue] = useState<JsonValue | undefined>(initial);
-
-    return (
-        <FieldRow
-            id="field"
-            schema={fieldSchema}
-            value={value}
-            locale="en_US"
-            onChange={(next) => {
-                onChange(next);
-                setValue(next === null || (Array.isArray(next) && next.length === 0) ? undefined : next);
-            }}
-        />
-    );
-}
-
-function renderField(fieldSchema: FieldSchema, initial?: JsonValue, count: CountSource | null = null) {
-    const onChange = vi.fn();
-    render(
-        <TranslatorProvider value={createTranslator(strings)}>
-            <SearchProvider api={fakeSearch()}>
-                <SourcesProvider value={{ sources, count }}>
-                    <Field fieldSchema={fieldSchema} initial={initial} onChange={onChange} />
-                </SourcesProvider>
-            </SearchProvider>
-        </TranslatorProvider>,
-    );
-
-    return { onChange };
+function renderListField(schema: FieldSchema, initial?: JsonValue, count: CountSource | null = null) {
+    return renderField(schema, { initial, strings, search: fakeSearch(catalog), providers: (field) => <SourcesProvider value={{ sources, count }}>{field}</SourcesProvider> });
 }
 
 function filledBy(): HTMLSelectElement {
@@ -123,7 +83,7 @@ function optionLabels(select: HTMLSelectElement): string[] {
 
 describe('a list field that sources can fill', () => {
     it('should offer hand-picking first, then the sources the field offers, and start hand-picked', () => {
-        renderField(productsSchema(['products_in_taxon', 'newest_products']));
+        renderListField(productsSchema(['products_in_taxon', 'newest_products']));
 
         expect(optionLabels(filledBy())).toEqual(['Hand-picked', 'In taxon', 'Newest']);
         expect(filledBy()).toHaveValue('');
@@ -135,7 +95,7 @@ describe('a list field that sources can fill', () => {
     });
 
     it('should fill the list with a picked source, showing as many items as the field starts with, and its parameters inline', () => {
-        const { onChange } = renderField(productsSchema(['products_in_taxon', 'newest_products'], 4));
+        const { onChange } = renderListField(productsSchema(['products_in_taxon', 'newest_products'], 4));
 
         fireEvent.change(filledBy(), { target: { value: 'products_in_taxon' } });
 
@@ -148,7 +108,7 @@ describe('a list field that sources can fill', () => {
     });
 
     it('should store each parameter as it is filled in, and the number of items to show', async () => {
-        const { onChange } = renderField(productsSchema(['products_in_taxon']), { $source: 'products_in_taxon', $params: {}, $limit: 8 });
+        const { onChange } = renderListField(productsSchema(['products_in_taxon']), { $source: 'products_in_taxon', $params: {}, $limit: 8 });
 
         fireEvent.click(screen.getByRole('button', { name: 'Taxon' }));
         fireEvent.click(await screen.findByRole('option', { name: 'Category / T-shirts' }));
@@ -163,7 +123,7 @@ describe('a list field that sources can fill', () => {
     });
 
     it('should not store a number of items below one', () => {
-        const { onChange } = renderField(productsSchema(['newest_products']), { $source: 'newest_products', $params: {}, $limit: 8 });
+        const { onChange } = renderListField(productsSchema(['newest_products']), { $source: 'newest_products', $params: {}, $limit: 8 });
         const limit = screen.getByRole('spinbutton', { name: 'Items to show' });
 
         fireEvent.change(limit, { target: { value: '' } });
@@ -175,7 +135,7 @@ describe('a list field that sources can fill', () => {
     });
 
     it('should start a picked source afresh, keeping the number of items to show', () => {
-        const { onChange } = renderField(productsSchema(['products_in_taxon', 'newest_products']), { $source: 'products_in_taxon', $params: { taxon: 'T_SHIRTS' }, $limit: 3 });
+        const { onChange } = renderListField(productsSchema(['products_in_taxon', 'newest_products']), { $source: 'products_in_taxon', $params: { taxon: 'T_SHIRTS' }, $limit: 3 });
 
         fireEvent.change(filledBy(), { target: { value: 'newest_products' } });
 
@@ -183,7 +143,7 @@ describe('a list field that sources can fill', () => {
     });
 
     it('should go back to hand-picking with an empty list', () => {
-        const { onChange } = renderField(productsSchema(['newest_products']), { $source: 'newest_products', $params: {}, $limit: 8 });
+        const { onChange } = renderListField(productsSchema(['newest_products']), { $source: 'newest_products', $params: {}, $limit: 8 });
 
         fireEvent.change(filledBy(), { target: { value: '' } });
 
@@ -193,7 +153,7 @@ describe('a list field that sources can fill', () => {
 
     it('should show how many items the source yields right now next to Filled by, counted again as its parameters change', async () => {
         const count = vi.fn<CountSource>(async (_source, params) => (params.taxon === 'T_SHIRTS' ? 1 : 12));
-        renderField(productsSchema(['products_in_taxon']), { $source: 'products_in_taxon', $params: {}, $limit: 8 }, count);
+        renderListField(productsSchema(['products_in_taxon']), { $source: 'products_in_taxon', $params: {}, $limit: 8 }, count);
 
         expect(await screen.findByText('12 items now')).toBeInTheDocument();
         expect(count).toHaveBeenLastCalledWith('products_in_taxon', {});
@@ -211,13 +171,13 @@ describe('a list field that sources can fill', () => {
 
     it('should show no count while it is hand-picked or there is no preview to count in', () => {
         const count = vi.fn<CountSource>(async () => 3);
-        renderField(productsSchema(['newest_products']), undefined, count);
+        renderListField(productsSchema(['newest_products']), undefined, count);
         expect(count).not.toHaveBeenCalled();
         expect(screen.queryByText(/items? now/)).not.toBeInTheDocument();
     });
 
     it('should keep a source the registry no longer gives, flagged, until another way is picked', () => {
-        const { onChange } = renderField(productsSchema(['newest_products']), { $source: 'bestsellers', $params: { taxon: 'T_SHIRTS' }, $limit: 8 });
+        const { onChange } = renderListField(productsSchema(['newest_products']), { $source: 'bestsellers', $params: { taxon: 'T_SHIRTS' }, $limit: 8 });
 
         expect(optionLabels(filledBy())).toEqual(['Hand-picked', 'Unavailable: bestsellers', 'Newest']);
         expect(filledBy()).toHaveValue('bestsellers');
@@ -226,7 +186,7 @@ describe('a list field that sources can fill', () => {
     });
 
     it('should only hand-pick when the field offers no source, with the add button named by its label', () => {
-        renderField(productsSchema([]));
+        renderListField(productsSchema([]));
 
         expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Products' })).toHaveTextContent('Add product');

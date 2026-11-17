@@ -42,10 +42,21 @@ const link: BlockTypeDefinition = {
     fields: [{ name: 'link', schema: linkSchema }],
 };
 
+/** A block type that holds nothing but a Link, as the Button does */
+const button: BlockTypeDefinition = { ...link, code: 'button', label: 'Button', parents: null };
+
+/** A block type with a Link and another field */
+const promo: BlockTypeDefinition = { ...button, code: 'promo', label: 'Promo', fields: [...linkList.fields, ...link.fields] };
+
 const registry: Registry = {
     ...baseRegistry,
-    blockTypes: [...baseRegistry.blockTypes, linkList, link],
-    contentTypes: [{ ...page, blocks: [...(page.blocks ?? []), { type: 'link_list', min: null, max: null }] }],
+    blockTypes: [...baseRegistry.blockTypes, linkList, link, button, promo],
+    contentTypes: [
+        {
+            ...page,
+            blocks: [...(page.blocks ?? []), { type: 'link_list', min: null, max: null }, { type: 'button', min: null, max: null }, { type: 'promo', min: null, max: null }],
+        },
+    ],
     linkTargets: [
         { code: 'product', label: 'Product', translatableRef: false },
         { code: 'url', label: 'URL', translatableRef: true },
@@ -149,8 +160,14 @@ describe('a Link list in the tree', () => {
         expect(within(tree()).getByRole('textbox', { name: 'Link label' })).toHaveValue('');
     });
 
-    it('should give no row but a Link a label box', async () => {
-        await openBuilder(blockOf('link_list', 'l'));
+    it('should give the row of a block that holds nothing but a Link, such as a Button, a label box too', async () => {
+        await openBuilder(blockOf('button', 'b', [], { link: { target: 'url', ref: { en_US: '/en_US/sale' }, anchor: null, label: { en_US: 'Shop now' } } }));
+
+        expect(within(tree()).getByRole('textbox', { name: 'Link label' })).toHaveValue('Shop now');
+    });
+
+    it('should give no row but one whose block holds nothing but a Link a label box', async () => {
+        await openBuilder(blockOf('link_list', 'l'), blockOf('promo', 'p', [], { link: { target: 'url', ref: { en_US: '/en_US/sale' }, anchor: null, label: { en_US: 'Shop now' } } }));
 
         expect(within(tree()).queryByRole('textbox')).not.toBeInTheDocument();
     });

@@ -1,11 +1,11 @@
 import * as Dialog from '@radix-ui/react-dialog';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useStore } from 'zustand';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useTranslator } from '../i18n';
+import { useLookup } from '../lookup';
 import type { MediaApi } from './api';
 import type { MediaLibraryConfig } from './config';
 import { MediaLibraryProvider, useMediaLibrary } from './context';
-import { createKnownMediaItems, type KnownMediaItemsStore } from './known';
+import { byUuid, createKnownMediaItems, type KnownMediaItemsStore } from './known';
 import { MediaLibrary } from './MediaLibrary';
 import styles from './MediaPicker.module.css';
 import { createMediaLibraryStore, type PickMode } from './store';
@@ -38,18 +38,7 @@ export function useMediaPicker(): MediaPicker | null {
  * deleted, or undefined while it's looked up. Without a media picker, nothing is known.
  */
 export function useKnownMediaItems(uuids: readonly string[]): Readonly<Record<string, MediaItem | null>> {
-    const picker = useMediaPicker();
-    const known = picker?.known ?? noneKnown;
-    const items = useStore(known, (state) => state.items);
-    const key = uuids.join(',');
-
-    useEffect(() => {
-        if (key !== '') {
-            known.getState().request(key.split(','));
-        }
-    }, [known, key]);
-
-    return items;
+    return useLookup(useMediaPicker()?.known ?? noneKnown, uuids);
 }
 
 const noneKnown = createKnownMediaItems({ find: async () => [] });
@@ -80,7 +69,7 @@ export function MediaPickerProvider({ api, config, children }: MediaPickerProvid
 
     const close = (picked: MediaItem[] | null): void => {
         if (picked !== null) {
-            known.getState().remember(picked);
+            known.getState().remember(byUuid(picked));
         }
 
         request?.resolve(picked);

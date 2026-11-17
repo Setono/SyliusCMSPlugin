@@ -8,7 +8,7 @@ import { useKnownMediaItems, useMediaPicker } from './picker';
  * A video's poster in its details: the image it holds, by its thumbnail and name, picked through the library's own
  * picker, or removed. The details save it with the rest. See "Metadata" in docs/spec/media.md
  */
-export function PosterField({ value, onChange }: { value: string | null; onChange: (poster: string | null) => void }) {
+export function PosterControl({ value, onChange }: { value: string | null; onChange: (poster: string | null) => void }) {
     const t = useTranslator();
     const id = useId();
     const picker = useMediaPicker();

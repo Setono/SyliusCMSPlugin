@@ -39,8 +39,10 @@ final class ButtonTest extends UITestCase
         Expect::locator($page->getByText('Red T-shirt', ['exact' => true]))->toBeVisible();
 
         // The label stays empty, so the button shows the product's name
-        Expect::locator($page->getByRole('textbox', ['name' => 'Label']))->toHaveValue('');
-        Expect::locator($page->getByRole('textbox', ['name' => 'Label']))->toHaveAttribute('placeholder', 'Red T-shirt');
+        Expect::locator($page->getByRole('textbox', ['name' => 'Label', 'exact' => true]))->toHaveValue('');
+        Expect::locator($page->getByRole('textbox', ['name' => 'Label', 'exact' => true]))->toHaveAttribute('placeholder', 'Red T-shirt');
+        // A Button holds nothing but its link, so its row has a box for the label too
+        Expect::locator($page->getByRole('navigation', ['name' => 'Blocks'])->getByRole('textbox', ['name' => 'Link label']))->toHaveAttribute('placeholder', 'Red T-shirt');
 
         $page->getByRole('combobox', ['name' => 'Style'])->selectOption('secondary');
 
@@ -86,7 +88,7 @@ final class ButtonTest extends UITestCase
         // Once the entry is published, the link resolves: the preview shows the button, and the flag goes
         self::publishEntry(self::reloadPage($team));
         $page->getByRole('navigation', ['name' => 'Blocks'])->getByRole('button', ['name' => 'Button', 'exact' => true])->click();
-        $page->getByRole('textbox', ['name' => 'Label'])->fill('Meet our team');
+        $page->getByRole('textbox', ['name' => 'Label', 'exact' => true])->fill('Meet our team');
 
         Expect::locator($preview->locator('.cms-tree a.cms-button'))->toHaveText('Meet our team');
         Expect::locator($row)->toHaveCount(0);

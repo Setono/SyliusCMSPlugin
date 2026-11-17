@@ -203,7 +203,7 @@
 
 .action:disabled {
     cursor: not-allowed;
-    opacity: 0.4;
+    opacity: var(--builder-disabled-opacity);
 }
 
 .delete:hover:not(:disabled) {

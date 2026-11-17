@@ -1,10 +1,8 @@
-import type { ReactNode } from 'react';
 import { useTranslator } from '../i18n';
 import { useKnownMediaItems, useMediaPicker } from '../media/picker';
-import { ArrowDownIcon, ArrowUpIcon, TrashIcon } from '../shell/icons';
-import type { JsonValue } from '../types';
-import styles from './MediaControl.module.css';
 import { MediaItemSummary, mediaOptions } from './MediaItemSummary';
+import styles from './Picked.module.css';
+import { PickList, refsOf } from './PickList';
 import type { FieldControlProps } from './types';
 
 /**
@@ -16,11 +14,9 @@ import type { FieldControlProps } from './types';
 export function MediaListControl({ id, value, onChange, schema, describedBy }: FieldControlProps) {
     const t = useTranslator();
     const picker = useMediaPicker();
-    const uuids = uuidsOf(value);
+    const uuids = refsOf(value);
     const known = useKnownMediaItems(uuids);
     const { kinds, max } = mediaOptions(schema);
-    const full = max !== null && uuids.length >= max;
-    const label = schema['x-cms-label'];
 
     const pick = async (): Promise<void> => {
         const picked = await picker?.pickMedia({ kinds, multiple: true });
@@ -33,57 +29,27 @@ export function MediaListControl({ id, value, onChange, schema, describedBy }: F
         onChange(max === null ? next : next.slice(0, max));
     };
 
-    const move = (index: number, by: -1 | 1): void => {
-        const next = [...uuids];
-        const [moved] = next.splice(index, 1);
-        if (moved !== undefined) {
-            next.splice(index + by, 0, moved);
-            onChange(next);
-        }
-    };
-
     return (
-        <div className={styles.control}>
-            {uuids.length === 0 ? (
-                <p className={styles.nothing}>{t('setono_sylius_cms.builder.media.nothing_picked')}</p>
-            ) : (
-                <ul className={styles.list} aria-label={label}>
-                    {uuids.map((uuid, index) => (
-                        <li key={`${uuid}-${String(index)}`} className={styles.listItem}>
-                            <MediaItemSummary item={known[uuid]} />
-                            <span className={styles.itemActions}>
-                                <IconButton label={t('setono_sylius_cms.builder.move_up')} disabled={index === 0} onClick={() => move(index, -1)}>
-                                    <ArrowUpIcon />
-                                </IconButton>
-                                <IconButton label={t('setono_sylius_cms.builder.move_down')} disabled={index === uuids.length - 1} onClick={() => move(index, 1)}>
-                                    <ArrowDownIcon />
-                                </IconButton>
-                                <IconButton label={t('setono_sylius_cms.builder.media.remove')} onClick={() => onChange(uuids.filter((_, at) => at !== index))}>
-                                    <TrashIcon />
-                                </IconButton>
-                            </span>
-                        </li>
-                    ))}
-                </ul>
-            )}
-            <div className={styles.actions}>
-                <button id={id} type="button" className={styles.button} aria-describedby={describedBy} disabled={picker === null || full} onClick={() => void pick()}>
+        <PickList
+            refs={uuids}
+            onChange={onChange}
+            label={schema['x-cms-label']}
+            nothing={t('setono_sylius_cms.builder.media.nothing_picked')}
+            removeLabel={t('setono_sylius_cms.builder.media.remove')}
+            summary={(uuid) => <MediaItemSummary item={known[uuid]} />}
+            most={max === null ? null : t('setono_sylius_cms.builder.media.at_most', { '%max%': String(max) })}
+            add={
+                <button
+                    id={id}
+                    type="button"
+                    className={styles.button}
+                    aria-describedby={describedBy}
+                    disabled={picker === null || (max !== null && uuids.length >= max)}
+                    onClick={() => void pick()}
+                >
                     {t('setono_sylius_cms.builder.media.add')}
                 </button>
-                {max !== null && <span className={styles.most}>{t('setono_sylius_cms.builder.media.at_most', { '%max%': String(max) })}</span>}
-            </div>
-        </div>
+            }
+        />
     );
-}
-
-function IconButton({ label, disabled = false, onClick, children }: { label: string; disabled?: boolean; onClick: () => void; children: ReactNode }) {
-    return (
-        <button type="button" className={styles.iconButton} aria-label={label} title={label} disabled={disabled} onClick={onClick}>
-            {children}
-        </button>
-    );
-}
-
-function uuidsOf(value: JsonValue | undefined): string[] {
-    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 }

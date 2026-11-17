@@ -2,7 +2,8 @@ import { useTranslator } from '../i18n';
 import { MEDIA_KINDS, type MediaItem, type MediaKind } from '../media/types';
 import type { FieldSchema } from '../types';
 import { isJsonObject } from '../values';
-import styles from './MediaControl.module.css';
+import styles from './Picked.module.css';
+import { mostOf } from './PickList';
 
 /** The kinds of media item a Media or Media list field takes, and the most a media list holds, from its schema. */
 export function mediaOptions(schema: FieldSchema): { kinds: MediaKind[]; max: number | null } {
@@ -10,7 +11,7 @@ export function mediaOptions(schema: FieldSchema): { kinds: MediaKind[]; max: nu
     const listed = Array.isArray(options.kinds) ? options.kinds : [];
     const kinds = MEDIA_KINDS.filter((kind) => listed.includes(kind));
 
-    return { kinds: kinds.length > 0 ? kinds : ['image'], max: typeof options.max === 'number' ? options.max : null };
+    return { kinds: kinds.length > 0 ? kinds : ['image'], max: mostOf(schema) };
 }
 
 /**
@@ -25,7 +26,7 @@ export function MediaItemSummary({ item }: { item: MediaItem | null | undefined 
     }
 
     if (item === null) {
-        return <span className={`${styles.summary} ${styles.deleted}`}>{t('setono_sylius_cms.builder.media.deleted_media_item')}</span>;
+        return <span className={`${styles.summary} ${styles.gone}`}>{t('setono_sylius_cms.builder.media.deleted_media_item')}</span>;
     }
 
     return (

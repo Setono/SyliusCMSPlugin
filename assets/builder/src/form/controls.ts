@@ -1,8 +1,8 @@
+import { CatalogControl } from './CatalogControl';
+import { CatalogListControl } from './CatalogListControl';
 import { ChoiceControl } from './ChoiceControl';
 import { DateControl } from './DateControl';
 import { DateTimeControl } from './DateTimeControl';
-import { ItemControl } from './ItemControl';
-import { ItemListControl } from './ItemListControl';
 import { LinkControl } from './LinkControl';
 import { MediaControl } from './MediaControl';
 import { MediaListControl } from './MediaListControl';
@@ -26,10 +26,10 @@ export const fieldControls: Readonly<Record<string, FieldControl>> = {
     media: MediaControl,
     media_list: MediaListControl,
     link: LinkControl,
-    product: ItemControl,
-    products: ItemListControl,
-    taxon: ItemControl,
-    taxons: ItemListControl,
+    product: CatalogControl,
+    products: CatalogListControl,
+    taxon: CatalogControl,
+    taxons: CatalogListControl,
 };
 
 export function controlFor(fieldType: string): FieldControl | undefined {

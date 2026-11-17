@@ -67,8 +67,6 @@
 
 .folder:focus-visible,
 .item:focus-visible,
-.primary:focus-visible,
-.secondary:focus-visible,
 .focalPointMarker:focus-visible {
     outline: 2px solid var(--builder-color-focus);
     outline-offset: 1px;
@@ -112,10 +110,9 @@
     gap: var(--builder-space-1);
 }
 
+/* The library's fields and buttons are the builder's own */
 .field {
-    display: flex;
-    flex-direction: column;
-    gap: var(--builder-space-1);
+    composes: field from '../form/Form.module.css';
     min-width: 0;
 }
 
@@ -128,7 +125,7 @@
 }
 
 .label {
-    font-weight: var(--builder-font-weight-medium);
+    composes: label from '../form/Form.module.css';
 }
 
 .locale {
@@ -137,33 +134,19 @@
 }
 
 .help {
-    margin: 0;
-    color: var(--builder-color-text-muted);
-    font-size: var(--builder-font-size-sm);
+    composes: help from '../form/Form.module.css';
 }
 
-.input,
-.textarea,
-.select {
-    width: 100%;
-    min-height: var(--builder-control-height);
-    padding: var(--builder-space-1) var(--builder-space-2);
-    border: 1px solid var(--builder-color-border-strong);
-    border-radius: var(--builder-radius-sm);
-    background: var(--builder-color-surface);
-    color: inherit;
-    font: inherit;
-}
-
-.input:focus-visible,
-.textarea:focus-visible,
-.select:focus-visible {
-    outline: 2px solid var(--builder-color-focus);
-    outline-offset: -1px;
+.input {
+    composes: input from '../form/Form.module.css';
 }
 
 .textarea {
-    resize: vertical;
+    composes: textarea from '../form/Form.module.css';
+}
+
+.select {
+    composes: select from '../form/Form.module.css';
 }
 
 .fieldset {
@@ -175,62 +158,16 @@
     border: 0;
 }
 
-.primary,
-.secondary {
-    min-height: var(--builder-control-height);
-    padding: var(--builder-space-1) var(--builder-space-3);
-    border: 1px solid transparent;
-    border-radius: var(--builder-radius-sm);
-    font: inherit;
-    font-weight: var(--builder-font-weight-medium);
-    cursor: pointer;
-}
-
 .primary {
-    background: var(--builder-color-accent);
-    color: var(--builder-color-accent-text);
-}
-
-.primary:hover:not(:disabled) {
-    background: var(--builder-color-accent-hover);
+    composes: primary from '../ui/Buttons.module.css';
 }
 
 .secondary {
-    border-color: var(--builder-color-border-strong);
-    background: var(--builder-color-surface);
-    color: inherit;
-}
-
-.secondary:hover:not(:disabled) {
-    background: var(--builder-color-hover);
+    composes: secondary from '../ui/Buttons.module.css';
 }
 
 .danger {
-    min-height: var(--builder-control-height);
-    padding: var(--builder-space-1) var(--builder-space-3);
-    border: 1px solid var(--builder-color-danger);
-    border-radius: var(--builder-radius-sm);
-    background: var(--builder-color-surface);
-    color: var(--builder-color-danger);
-    font: inherit;
-    font-weight: var(--builder-font-weight-medium);
-    cursor: pointer;
-}
-
-.danger:hover:not(:disabled) {
-    background: var(--builder-color-danger-subtle);
-}
-
-.danger:focus-visible {
-    outline: 2px solid var(--builder-color-focus);
-    outline-offset: 2px;
-}
-
-.primary:disabled,
-.secondary:disabled,
-.danger:disabled {
-    cursor: default;
-    opacity: 0.6;
+    composes: danger from '../ui/Buttons.module.css';
 }
 
 /* What became of an upload */

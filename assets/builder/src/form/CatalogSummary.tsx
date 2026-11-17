@@ -1,13 +1,13 @@
 import { useTranslator } from '../i18n';
 import type { SearchResult } from '../search/api';
-import styles from './ItemControl.module.css';
+import styles from './Picked.module.css';
 
 /**
  * A product or taxon a field holds, by its thumbnail and name as the search names it: undefined while it's looked up,
  * and null for one the search doesn't find, such as a deleted product, which the shop doesn't show. That one is flagged
  * by its code.
  */
-export function ItemSummary({ code, item }: { code: string; item: SearchResult | null | undefined }) {
+export function CatalogSummary({ code, item }: { code: string; item: SearchResult | null | undefined }) {
     const t = useTranslator();
 
     if (item === undefined) {
@@ -15,7 +15,7 @@ export function ItemSummary({ code, item }: { code: string; item: SearchResult |
     }
 
     if (item === null) {
-        return <span className={`${styles.summary} ${styles.notFound}`}>{t('setono_sylius_cms.builder.items.not_found', { '%code%': code })}</span>;
+        return <span className={`${styles.summary} ${styles.gone}`}>{t('setono_sylius_cms.builder.items.not_found', { '%code%': code })}</span>;
     }
 
     return (
