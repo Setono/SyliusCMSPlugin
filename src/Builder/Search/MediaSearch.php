@@ -22,15 +22,13 @@ final readonly class MediaSearch implements SearchInterface
     /** The most results it answers */
     public const LIMIT = 20;
 
-    private const KINDS = [MediaKind::Document, MediaKind::Video];
-
     public function __construct(private MediaItemRepositoryInterface $mediaItemRepository)
     {
     }
 
     public function search(string $query, string $localeCode): array
     {
-        $paginator = $this->mediaItemRepository->createLibraryPaginator(new MediaFilter(search: $query, kinds: self::KINDS));
+        $paginator = $this->mediaItemRepository->createLibraryPaginator(new MediaFilter(search: $query, kinds: MediaKind::withPermanentUrl()));
         $paginator->setMaxPerPage(self::LIMIT);
 
         $results = [];
@@ -50,7 +48,7 @@ final readonly class MediaSearch implements SearchInterface
 
         return array_values(array_map(
             self::result(...),
-            array_filter($this->mediaItemRepository->findByUuids($uuids), static fn (MediaItemInterface $mediaItem): bool => in_array($mediaItem->getKind(), self::KINDS, true)),
+            array_filter($this->mediaItemRepository->findByUuids($uuids), static fn (MediaItemInterface $mediaItem): bool => $mediaItem->getKind()->hasPermanentUrl()),
         ));
     }
 

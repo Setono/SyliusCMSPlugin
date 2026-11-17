@@ -21,7 +21,7 @@ final readonly class PermanentUrlGenerator implements PermanentUrlGeneratorInter
 
     public function generate(MediaItemInterface $mediaItem): ?string
     {
-        if (MediaKind::Image === $mediaItem->getKind()) {
+        if (!$mediaItem->getKind()->hasPermanentUrl()) {
             return null;
         }
 

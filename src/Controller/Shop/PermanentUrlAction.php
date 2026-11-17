@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Shop;
 
-use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -26,7 +25,7 @@ final readonly class PermanentUrlAction
     public function __invoke(string $uuid): RedirectResponse
     {
         $mediaItem = $this->mediaItemRepository->findOneByUuid(strtolower($uuid));
-        if (null === $mediaItem || MediaKind::Image === $mediaItem->getKind()) {
+        if (null === $mediaItem || !$mediaItem->getKind()->hasPermanentUrl()) {
             throw new NotFoundHttpException(sprintf('No document or video has the UUID %s', $uuid));
         }
 
