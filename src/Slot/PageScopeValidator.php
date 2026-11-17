@@ -60,11 +60,11 @@ final readonly class PageScopeValidator implements PageScopeValidatorInterface
             return [new TranslatableMessage('setono_sylius_cms.page_scope.malformed', ['%number%' => $number], self::DOMAIN)];
         }
 
-        if (!$this->conditionKinds->has($condition['kind'])) {
-            return [new TranslatableMessage('setono_sylius_cms.page_scope.unknown_kind', ['%number%' => $number, '%kind%' => $condition['kind']], self::DOMAIN)];
+        if (!$this->conditionKinds->has($condition->kind)) {
+            return [new TranslatableMessage('setono_sylius_cms.page_scope.unknown_kind', ['%number%' => $number, '%kind%' => $condition->kind], self::DOMAIN)];
         }
 
-        $kind = $this->conditionKinds->get($condition['kind']);
+        $kind = $this->conditionKinds->get($condition->kind);
         $label = new TranslatableMessage($kind->label);
         if (!$kind->readsHostPage()) {
             return [new TranslatableMessage('setono_sylius_cms.page_scope.not_host_page', ['%number%' => $number, '%kind%' => $label], self::DOMAIN)];
@@ -79,7 +79,7 @@ final readonly class PageScopeValidator implements PageScopeValidatorInterface
             ], self::DOMAIN), $unprovided);
         }
 
-        return $this->validateParams($kind, $number, $label, $condition['params']);
+        return $this->validateParams($kind, $number, $label, $condition->params);
     }
 
     /**

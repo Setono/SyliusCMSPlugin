@@ -83,7 +83,7 @@ final readonly class PlacementEditor implements PlacementEditorInterface
             // The validator refuses what isn't a condition
             $condition = StoredCondition::fromValue($value);
             if (null !== $condition) {
-                $conditions[] = $condition;
+                $conditions[] = $condition->toArray();
             }
         }
 

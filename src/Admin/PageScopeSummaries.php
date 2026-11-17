@@ -42,7 +42,7 @@ final readonly class PageScopeSummaries
      */
     public function of(array $placements): array
     {
-        /** @var array<string, list<array{string, ConditionKindMetadata|null, bool, list<array{string, string}|string>}>> $read by placement UUID */
+        /** @var array<string, list<array{condition: StoredCondition, kind: ConditionKindMetadata|null, values: list<array{string, string}|string>}>> $read by placement UUID */
         $read = [];
         /** @var array<string, array<string, true>> $refs type => id => true */
         $refs = [];
@@ -55,25 +55,25 @@ final readonly class PageScopeSummaries
                     continue;
                 }
 
-                $kind = $this->conditionKinds->find($condition['kind']);
-                $values = null === $kind ? [] : $this->values($kind, $condition['params']);
+                $kind = $this->conditionKinds->find($condition->kind);
+                $values = null === $kind ? [] : $this->values($kind, $condition->params);
                 foreach ($values as $named) {
                     if (is_array($named)) {
                         $refs[$named[0]][$named[1]] = true;
                     }
                 }
 
-                $read[$placement->getUuid()][] = [$condition['kind'], $kind, $condition['negate'], $values];
+                $read[$placement->getUuid()][] = ['condition' => $condition, 'kind' => $kind, 'values' => $values];
             }
         }
 
         $names = $this->names($refs);
 
-        return array_map(fn (array $conditions): array => array_map(fn (array $condition): PageScopeCondition => new PageScopeCondition(
-            $condition[0],
-            null === $condition[1] ? null : $this->translator->trans($condition[1]->label),
-            null === $condition[1] ? null : $this->translator->trans($condition[2] ? $condition[1]->matchesNot : $condition[1]->matches),
-            array_map(static fn (array|string $named): string => is_array($named) ? ($names[$named[0]][$named[1]] ?? $named[1]) : $named, $condition[3]),
+        return array_map(fn (array $conditions): array => array_map(fn (array $scoped): PageScopeCondition => new PageScopeCondition(
+            $scoped['condition']->kind,
+            null === $scoped['kind'] ? null : $this->translator->trans($scoped['kind']->label),
+            null === $scoped['kind'] ? null : $this->translator->trans($scoped['condition']->negate ? $scoped['kind']->matchesNot : $scoped['kind']->matches),
+            array_map(static fn (array|string $named): string => is_array($named) ? ($names[$named[0]][$named[1]] ?? $named[1]) : $named, $scoped['values']),
         ), $conditions), $read);
     }
 

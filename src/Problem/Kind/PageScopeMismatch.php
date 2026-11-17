@@ -53,7 +53,7 @@ final readonly class PageScopeMismatch implements ProblemKindInterface
             foreach ($placement->getPageScope() as $value) {
                 $condition = StoredCondition::fromValue($value);
                 if (null !== $condition) {
-                    yield from $this->mismatches($entry, $slot, $condition['kind']);
+                    yield from $this->mismatches($entry, $slot, $condition->kind);
                 }
             }
         }

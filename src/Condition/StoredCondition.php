@@ -7,24 +7,30 @@ namespace Setono\SyliusCMSPlugin\Condition;
 use Setono\SyliusCMSPlugin\Registry\Code;
 
 /**
- * Reads a condition in the stored condition format: {"kind": a condition kind's code, "negate": true or false,
+ * A condition in the stored condition format: {"kind": a condition kind's code, "negate": true or false,
  * "params": a map of parameter values}. See "Visibility conditions" in docs/spec/content-model.md
  *
  * @internal
  */
-final class StoredCondition
+final readonly class StoredCondition
 {
-    private function __construct()
-    {
+    /**
+     * @param string $kind the code of its condition kind
+     * @param bool $negate whether it's "is not one of" rather than "is one of"
+     * @param array<string, mixed> $params the parameter values by name
+     */
+    public function __construct(
+        public string $kind,
+        public bool $negate,
+        public array $params,
+    ) {
     }
 
     /**
      * The condition, or null when the value isn't one. An empty JSON object, as CanonicalJson::decode() reads it, is
      * empty parameters
-     *
-     * @return array{kind: string, negate: bool, params: array<string, mixed>}|null
      */
-    public static function fromValue(mixed $value): ?array
+    public static function fromValue(mixed $value): ?self
     {
         if (!is_array($value)) {
             return null;
@@ -44,6 +50,16 @@ final class StoredCondition
         /** @var array<string, mixed> $map */
         $map = $params;
 
-        return ['kind' => $kind, 'negate' => $negate, 'params' => $map];
+        return new self($kind, $negate, $map);
+    }
+
+    /**
+     * In the stored condition format
+     *
+     * @return array{kind: string, negate: bool, params: array<string, mixed>}
+     */
+    public function toArray(): array
+    {
+        return ['kind' => $this->kind, 'negate' => $this->negate, 'params' => $this->params];
     }
 }
