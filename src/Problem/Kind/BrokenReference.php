@@ -18,13 +18,16 @@ use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tree\FoundReference;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
+use Sylius\Component\Core\Model\ProductInterface;
+use Sylius\Component\Core\Model\TaxonInterface;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
- * A reference in a field of a block or of the layout to a record that was deleted, such as a media item: a broken
- * reference, an error. Rendering skips it, so the field is empty or the list leaves it out (ADR 0002). It's fixed in the
- * builder, at the block and in the locale of the value it's in. Each reference type with a loader is checked with one
- * query per entry. A media item written, such as one deleted, has the entries that may refer to it counted again.
+ * A reference in a field of a block or of the layout to a record that was deleted, such as a media item, or the
+ * product a link leads to: a broken reference, an error. Rendering skips it, so the field is empty, the list leaves it
+ * out or the link isn't rendered (ADR 0002). It's fixed in the builder, at the block and in the locale of the value it's
+ * in. Each reference type with a loader is checked with one query per entry. A media item, entry, product or taxon
+ * written, such as one deleted, has the entries that may refer to it counted again.
  * See "References" in docs/spec/content-model.md and "Problems" in docs/spec/admin.md
  */
 final readonly class BrokenReference implements ReferenceProblemKindInterface
@@ -46,15 +49,21 @@ final readonly class BrokenReference implements ReferenceProblemKindInterface
 
     public static function getReferencedClasses(): array
     {
-        return [MediaItemInterface::class];
+        return [MediaItemInterface::class, EntryInterface::class, ProductInterface::class, TaxonInterface::class];
     }
 
     public function findEntriesReferencing(array $referenced): iterable
     {
         $ids = [];
         foreach ($referenced as $record) {
-            if ($record instanceof MediaItemInterface) {
-                $ids[] = $record->getUuid();
+            $id = match (true) {
+                $record instanceof MediaItemInterface, $record instanceof EntryInterface => $record->getUuid(),
+                $record instanceof ProductInterface, $record instanceof TaxonInterface => $record->getCode(),
+                default => null,
+            };
+
+            if (null !== $id) {
+                $ids[] = $id;
             }
         }
 

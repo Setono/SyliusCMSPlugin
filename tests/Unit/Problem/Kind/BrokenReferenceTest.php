@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\MediaHandler;
 use Setono\SyliusCMSPlugin\Field\MediaListHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -31,6 +32,10 @@ use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
+use Sylius\Component\Core\Model\Product;
+use Sylius\Component\Core\Model\ProductInterface;
+use Sylius\Component\Core\Model\Taxon;
+use Sylius\Component\Core\Model\TaxonInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\TranslatableMessage;
 
@@ -112,12 +117,32 @@ final class BrokenReferenceTest extends TestCase
         $entries = $this->prophesize(EntryRepositoryInterface::class);
         $entries->findReferencing([self::KEPT, self::DELETED])->willReturn([$page]);
 
-        self::assertSame([MediaItemInterface::class], BrokenReference::getReferencedClasses());
+        self::assertContains(MediaItemInterface::class, BrokenReference::getReferencedClasses());
         self::assertSame([$page], [...$this->kind($this->prophesize(ReferenceTypeLoaderInterface::class)->reveal(), $entries->reveal())->findEntriesReferencing([
             self::mediaItem(self::KEPT),
             new \stdClass(),
             self::mediaItem(self::DELETED),
         ])]);
+    }
+
+    /**
+     * An entry, product or taxon written, such as one deleted, has the entries whose links may lead to it counted again
+     *
+     * @test
+     */
+    public function it_reads_the_records_links_lead_to_and_finds_the_entries_that_may_refer_to_those_written(): void
+    {
+        $linked = new Page();
+        $page = new Page();
+        $product = new Product();
+        $product->setCode('T_SHIRT');
+        $taxon = new Taxon();
+        $taxon->setCode('SHIRTS');
+        $entries = $this->prophesize(EntryRepositoryInterface::class);
+        $entries->findReferencing([$linked->getUuid(), 'T_SHIRT', 'SHIRTS'])->willReturn([$page]);
+
+        self::assertSame([MediaItemInterface::class, EntryInterface::class, ProductInterface::class, TaxonInterface::class], BrokenReference::getReferencedClasses());
+        self::assertSame([$page], [...$this->kind($this->prophesize(ReferenceTypeLoaderInterface::class)->reveal(), $entries->reveal())->findEntriesReferencing([$linked, $product, $taxon])]);
     }
 
     /**

@@ -102,8 +102,8 @@ setono_sylius_cms:
             unreadable: '%filename% couldn''t be read as a %type% file.'
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
-        broken_layout_reference: '%field% in the layout refers to a %type% that was deleted, so it isn''t shown.'
-        broken_reference: '%field% in the %block% block refers to a %type% that was deleted, so it isn''t shown.'
+        broken_layout_reference: '%field% in the layout refers to %type% that was deleted, so it isn''t shown.'
+        broken_reference: '%field% in the %block% block refers to %type% that was deleted, so it isn''t shown.'
         deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
         deleted_customer_group_negated: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer excludes anyone through it.'
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
@@ -117,12 +117,12 @@ setono_sylius_cms:
         url_taken_by_route: 'URL taken by a Sylius route: shoppers get the page of the route %route% at %url%.'
     publish:
         invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'
-    # What a reference refers to, by its type, as a broken reference names it. See "References" in docs/spec/content-model.md
+    # What a reference refers to, by its type, with its article, as a broken reference names it. See "References" in docs/spec/content-model.md
     reference_type:
-        entry: entry
-        media_item: media item
-        product: product
-        taxon: taxon
+        entry: an entry
+        media_item: a media item
+        product: a product
+        taxon: a taxon
     # Why a scheduled publish was stopped when it ran, which the overview page shows and EntryPublishFailed carries
     scheduled_publish:
         invalid: '{1} Validation found an error to fix: %errors%|]1,Inf[ Validation found %count% errors to fix: %errors%'

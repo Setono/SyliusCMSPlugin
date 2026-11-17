@@ -6,6 +6,9 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
 use Doctrine\Bundle\DoctrineBundle\DataCollector\DoctrineDataCollector;
 use Doctrine\ORM\EntityManagerInterface;
+use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Problem\ProblemCount;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -115,6 +118,45 @@ final class ButtonTest extends WebTestCase
     /**
      * @test
      */
+    public function it_flags_a_link_to_a_product_that_was_deleted_as_a_broken_reference_on_the_overview_page(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        $product = self::createProduct('T_SHIRT_RED', 'Red T-shirt');
+        $page = self::createPageWithBlocks('Shop now', 'shop-now', [self::button(self::BUTTON, ['target' => 'product', 'ref' => 'T_SHIRT_RED', 'label' => []])], published: true);
+        self::assertEquals(new ProblemCount(), self::storedCount($page));
+
+        self::entityManager()->remove($product);
+        self::entityManager()->flush();
+
+        self::assertEquals(new ProblemCount(1, 0), self::storedCount($page), 'Deleting the product counts the entries that link to it again');
+
+        $problems = $client->request('GET', sprintf('/admin/cms/entry/%s', $page->getUuid()))->filter('[data-section="problems"] [data-problem]');
+        self::assertSame(
+            [['broken_reference', 'error', self::BUTTON, 'Link in the Button block refers to a product that was deleted, so it isn\'t shown.']],
+            $problems->each(static fn ($problem): array => [$problem->attr('data-problem'), $problem->attr('data-severity'), $problem->attr('data-block'), $problem->filter('.description')->text()]),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_does_not_flag_a_link_to_a_disabled_product_or_an_unpublished_entry_as_a_broken_reference(): void
+    {
+        self::createClient();
+        self::createProduct('T_SHIRT_RED', 'Red T-shirt', enabled: false);
+        $draft = self::createPage('Our team', 'team');
+        $page = self::createPageWithBlocks('Shop now', 'shop-now', [
+            self::button(self::BUTTON, ['target' => 'product', 'ref' => 'T_SHIRT_RED', 'label' => []]),
+            self::button(self::OTHER_BUTTON, ['target' => 'entry', 'ref' => $draft->getUuid(), 'label' => []]),
+        ], published: true);
+
+        self::assertEquals(new ProblemCount(), self::storedCount($page));
+    }
+
+    /**
+     * @test
+     */
     public function it_leads_a_link_to_an_entry_to_its_url_and_shows_no_button_for_one_that_is_not_published(): void
     {
         $client = self::createClient();
@@ -187,6 +229,14 @@ final class ButtonTest extends WebTestCase
     private static function button(string $key, array $link, ?string $style = null): StoredBlock
     {
         return new StoredBlock($key, 'button', 1, $style, ['link' => $link]);
+    }
+
+    private static function storedCount(PageInterface $page): ProblemCount
+    {
+        /** @var ProblemCountProviderInterface $provider */
+        $provider = self::getContainer()->get(ProblemCountProviderInterface::class);
+
+        return $provider->getCounts([$page])[$page->getUuid()];
     }
 
     private static function entityManager(): EntityManagerInterface
