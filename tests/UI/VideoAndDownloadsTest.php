@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\UI;
 use Playwright\Assertions\Expect;
 use Playwright\Exception\PlaywrightException;
 use Playwright\Network\ResponseInterface;
+use Playwright\Page\PageInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
 
 /**
@@ -63,8 +64,12 @@ final class VideoAndDownloadsTest extends UITestCase
             self::assertStringContainsString('Download is starting', $exception->getMessage());
         }
 
-        self::assertArrayHasKey(sprintf('http://localhost/media/%s/size-guide.pdf', $sizeGuide->getUuid()), $responses, 'The link leads to the permanent URL');
-        $pdf = $responses['http://localhost/media/cms/' . $sizeGuide->getPath()] ?? null;
+        $permanentUrl = sprintf('http://localhost/media/%s/size-guide.pdf', $sizeGuide->getUuid());
+        $fileUrl = 'http://localhost/media/cms/' . $sizeGuide->getPath();
+        self::awaitResponses($shop, $responses, $permanentUrl, $fileUrl);
+
+        self::assertArrayHasKey($permanentUrl, $responses, 'The link leads to the permanent URL');
+        $pdf = $responses[$fileUrl] ?? null;
         self::assertNotNull($pdf, 'The permanent URL redirects to the current file');
         self::assertSame(200, $pdf->status());
         self::assertStringStartsWith('application/pdf', (string) $pdf->headerValue('content-type'));
@@ -108,5 +113,21 @@ final class VideoAndDownloadsTest extends UITestCase
         self::assertIsInt($height);
         self::assertEqualsWithDelta($width * 9 / 16, $height, 1);
         self::assertSame($height, $embedHeight);
+    }
+
+    /**
+     * Lets the page's events in until the responses of these URLs have come in, or 10 seconds have passed.
+     * playwright-php hands the test a page's events only while it waits for the answer to a command, and a click that
+     * leads to a download leaves no page to wait for, so its responses can come in after the click's answer
+     *
+     * @param array<string, ResponseInterface> $responses by URL, which the page's response listener fills
+     */
+    private static function awaitResponses(PageInterface $page, array &$responses, string ...$urls): void
+    {
+        $until = microtime(true) + 10;
+        while ([] !== array_diff($urls, array_keys($responses)) && microtime(true) < $until) {
+            $page->evaluate('() => true');
+            usleep(50_000);
+        }
     }
 }
