@@ -11,6 +11,8 @@ use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Factory\HomepageFactory;
 use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
+use Setono\SyliusCMSPlugin\Model\BestsellerScore;
+use Setono\SyliusCMSPlugin\Model\BestsellerScoreInterface;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
@@ -100,6 +102,7 @@ final class ConfigurationTest extends TestCase
                 'liip' => ['loader' => 'setono_sylius_cms', 'resolver' => 'setono_sylius_cms'],
                 'widths' => [320, 640, 960, 1280, 1600, 1920, 2560],
             ],
+            'bestsellers' => ['window' => 'P30D'],
             'resources' => [
                 'entry' => [
                     'classes' => [
@@ -218,6 +221,14 @@ final class ConfigurationTest extends TestCase
                         'model' => MediaUsage::class,
                         'interface' => MediaUsageInterface::class,
                         'repository' => MediaUsageRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
+                'bestseller_score' => [
+                    'classes' => [
+                        'model' => BestsellerScore::class,
+                        'interface' => BestsellerScoreInterface::class,
+                        'repository' => EntityRepository::class,
                         'factory' => Factory::class,
                     ],
                 ],
@@ -652,6 +663,24 @@ final class ConfigurationTest extends TestCase
     {
         yield 'none' => [0, 'Should be greater than or equal to 1'];
         yield 'not a number' => ['all', 'Invalid type for path "setono_sylius_cms.revisions.keep"'];
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_set_the_window_the_default_bestsellers_calculator_counts_paid_orders_over(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['bestsellers' => ['window' => 'P7D']],
+        ], ['bestsellers' => ['window' => 'P7D']], 'bestsellers');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_bestsellers_window_that_is_not_an_iso_8601_duration(): void
+    {
+        $this->assertConfigurationIsInvalid([['bestsellers' => ['window' => '30 days']]], '"30 days" isn\'t an ISO 8601 duration, such as P1D');
     }
 
     /**

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    The bestseller scores: one row per channel and product that the bestsellers calculator scored, which
+    setono:cms:bestsellers:compute replaces a channel at a time. Channels and products are named by code, as the
+    calculator names them, so the Bestsellers source joins a product to its score in the channel by code, and a row of a
+    product that's gone joins nothing
+    -->
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\BestsellerScore" table="setono_sylius_cms__bestseller_score">
+        <unique-constraints>
+            <!-- A product's score in the channel, which the Bestsellers source joins on -->
+            <unique-constraint name="setono_sylius_cms__bestseller_score_uniq" columns="channel_code,product_code"/>
+        </unique-constraints>
+
+        <indexes>
+            <!-- The channel's products, highest score first -->
+            <index name="setono_sylius_cms__bestseller_score_channel_score_idx" columns="channel_code,score"/>
+        </indexes>
+
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="channelCode" column="channel_code" type="string"/>
+        <field name="productCode" column="product_code" type="string"/>
+        <field name="score" column="score" type="float"/>
+    </mapped-superclass>
+</doctrine-mapping>

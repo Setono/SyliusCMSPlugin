@@ -10,6 +10,8 @@ use Setono\SyliusCMSPlugin\Attribute\AsSource;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
+use Setono\SyliusCMSPlugin\Bestsellers\BestsellersCalculatorInterface;
+use Setono\SyliusCMSPlugin\Bestsellers\PaidOrdersCalculator;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
@@ -345,6 +347,18 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->load(['media' => ['grace_period' => 'PT6H']]);
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.media.grace_period', 'PT6H');
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_the_bestsellers_window_to_the_default_calculator_which_the_calculator_interface_aliases(): void
+    {
+        $this->load(['bestsellers' => ['window' => 'P7D']]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.bestsellers.window', 'P7D');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(PaidOrdersCalculator::class, 3, '%setono_sylius_cms.bestsellers.window%');
+        $this->assertContainerBuilderHasAlias(BestsellersCalculatorInterface::class, PaidOrdersCalculator::class);
     }
 
     /**

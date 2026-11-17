@@ -11,6 +11,8 @@ use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
 use Setono\SyliusCMSPlugin\Media\FileSize;
 use Setono\SyliusCMSPlugin\Media\GracePeriod;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
+use Setono\SyliusCMSPlugin\Model\BestsellerScore;
+use Setono\SyliusCMSPlugin\Model\BestsellerScoreInterface;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
@@ -110,6 +112,7 @@ final class Configuration implements ConfigurationInterface
         $this->addFallbackLocalesSection($rootNode);
         $this->addRevisionsSection($rootNode);
         $this->addMediaSection($rootNode);
+        $this->addBestsellersSection($rootNode);
         $this->addResourcesSection($rootNode);
 
         return $treeBuilder;
@@ -283,6 +286,28 @@ final class Configuration implements ConfigurationInterface
     }
 
     /**
+     * The window the default bestsellers calculator counts paid orders over. See "Bestsellers" in docs/spec/sources.md
+     */
+    private function addBestsellersSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('bestsellers')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('window')
+                            ->info('An ISO 8601 duration: the default bestsellers calculator counts the paid orders whose checkout completed this long ago or later')
+                            ->defaultValue('P30D')
+                            ->cannotBeEmpty()
+                            ->validate()->always(self::assertDuration(...))->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
      * @param list<int> $widths
      *
      * @return list<int> in ascending order, each once
@@ -414,7 +439,7 @@ final class Configuration implements ConfigurationInterface
     /**
      * The shipped Sylius resources. The draft and the rows beside an entry (its channels, its audience groups, who has
      * it open, its saves, its revisions, its old slugs, its scheduled publish, its share links and the channels a
-     * page is the homepage of) have no admin screens of their own, so they have no controller.
+     * page is the homepage of), and the bestseller scores, have no admin screens of their own, so they have no controller.
      * A project extends a shipped content type the way it extends any Sylius model:
      * by overriding classes.model, and translation.classes.model, with its own subclasses.
      * The channel and audience group rows always belong to an entry, and the homepage rows to a page, so their
@@ -440,6 +465,7 @@ final class Configuration implements ConfigurationInterface
                     ->append(self::mediaItemResource())
                     ->append(self::resourceWithoutController('media_folder', MediaFolder::class, MediaFolderInterface::class, MediaFolderRepository::class))
                     ->append(self::resourceWithoutController('media_usage', MediaUsage::class, MediaUsageInterface::class, MediaUsageRepository::class))
+                    ->append(self::resourceWithoutController('bestseller_score', BestsellerScore::class, BestsellerScoreInterface::class))
                     ->children()
                         ->arrayNode('page')
                             ->addDefaultsIfNotSet()

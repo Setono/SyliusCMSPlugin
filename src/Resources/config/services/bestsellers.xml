@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- The default bestsellers calculator, which counts paid orders over bestsellers.window -->
+        <service id="Setono\SyliusCMSPlugin\Bestsellers\PaidOrdersCalculator" class="Setono\SyliusCMSPlugin\Bestsellers\PaidOrdersCalculator">
+            <argument type="service" id="sylius.manager.order"/>
+            <argument>%sylius.model.order.class%</argument>
+            <argument type="service" id="clock"/>
+            <argument>%setono_sylius_cms.bestsellers.window%</argument>
+        </service>
+        <!-- A project with analytics data aliases this to its own calculator -->
+        <service id="Setono\SyliusCMSPlugin\Bestsellers\BestsellersCalculatorInterface" alias="Setono\SyliusCMSPlugin\Bestsellers\PaidOrdersCalculator"/>
+    </services>
+</container>
