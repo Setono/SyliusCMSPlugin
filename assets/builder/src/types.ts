@@ -219,6 +219,8 @@ export interface FieldSchema {
     'x-cms-options'?: JsonObject;
     /** The binding types a field of its field type accepts: text, number or url. Absent when it can't be bound. */
     'x-cms-bindable'?: string[];
+    /** Set when its field type holds its bindings inside its values, as a Link's ref and rich text's tokens do, rather than as the whole value. */
+    'x-cms-binds-inside'?: boolean;
     default?: JsonValue;
     [keyword: string]: JsonValue | undefined;
 }

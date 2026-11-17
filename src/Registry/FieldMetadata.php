@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Registry;
 
 use Setono\SyliusCMSPlugin\Attribute\FieldType;
 use Setono\SyliusCMSPlugin\Field\Field;
+use Setono\SyliusCMSPlugin\Field\InnerBindingFieldHandlerInterface;
 
 /**
  * One field of a block type, a layout or a content type: a typed property with a field attribute
@@ -32,5 +33,24 @@ final readonly class FieldMetadata
     public function handler(): string
     {
         return $this->field->handledBy();
+    }
+
+    /**
+     * Whether a binding can be its whole value: its field type accepts binding types, such as Text, Textarea and
+     * Number, and its handler doesn't hold its bindings inside its values. Such a field's binding takes the place of its
+     * value, or of its locale map when it's translatable. See "Fields" in docs/spec/content-model.md
+     */
+    public function bindsWholeValue(): bool
+    {
+        return [] !== $this->type->bindable && !$this->bindsInside();
+    }
+
+    /**
+     * Whether its handler holds its bindings inside its values, as a Link's ref and rich text's tokens do, so a binding
+     * is never its whole value
+     */
+    public function bindsInside(): bool
+    {
+        return [] !== $this->type->bindable && is_a($this->handler(), InnerBindingFieldHandlerInterface::class, true);
     }
 }

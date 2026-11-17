@@ -11,7 +11,7 @@ const properties: BindablePropertyDefinition[] = [
     { binding: 'customer.first_name', label: 'Customer first name', type: 'text', needs: [], fields: [] },
 ];
 
-function schema(type: string, bindable?: string[]): FieldSchema {
+function schema(type: string, bindable?: string[], bindsInside = false): FieldSchema {
     return {
         'x-cms-type': type,
         'x-cms-label': 'Field',
@@ -19,6 +19,7 @@ function schema(type: string, bindable?: string[]): FieldSchema {
         'x-cms-required': false,
         'x-cms-translatable': true,
         ...(bindable === undefined ? {} : { 'x-cms-bindable': bindable }),
+        ...(bindsInside ? { 'x-cms-binds-inside': true } : {}),
     };
 }
 
@@ -29,11 +30,12 @@ describe('what a field can be bound to', () => {
         expect(offeredProperties(properties, ['url'], ['product', 'taxon']).map(({ binding }) => binding)).toEqual(['product.url']);
     });
 
-    it('should bind Text, Textarea, Number and a project field type whole, but not a Link or rich text, which hold their bindings inside', () => {
+    it('should bind Text, Textarea, Number and a project field type whole, but not one that holds its bindings inside, as a Link and rich text do', () => {
         expect(bindsWholeValue(schema('text', ['text', 'number']))).toBe(true);
         expect(bindsWholeValue(schema('app_rating', ['number']))).toBe(true);
-        expect(bindsWholeValue(schema('link', ['url']))).toBe(false);
-        expect(bindsWholeValue(schema('rich_text', ['text', 'number']))).toBe(false);
+        expect(bindsWholeValue(schema('link', ['url'], true))).toBe(false);
+        expect(bindsWholeValue(schema('rich_text', ['text', 'number'], true))).toBe(false);
+        expect(bindsWholeValue(schema('app_rich_quote', ['text'], true))).toBe(false);
         expect(bindsWholeValue(schema('toggle'))).toBe(false);
         expect(acceptedTypes(schema('text', ['text', 'number', 'image']))).toEqual(['text', 'number']);
     });

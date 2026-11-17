@@ -30,9 +30,6 @@ export type StoredBinding = JsonObject & { $bind: string; $params: JsonObject; $
 /** The binding types rich text's tokens accept. */
 export const TOKEN_TYPES: readonly BindingType[] = ['text', 'number'];
 
-/** The field types that hold their bindings inside their values, rather than as the whole value. */
-const INNER = ['link', 'rich_text'];
-
 /** Whether a stored value is a binding: a map with a "$bind" property. */
 export function isBinding(value: JsonValue | undefined): value is StoredBinding {
     return isJsonObject(value) && typeof value.$bind === 'string';
@@ -53,9 +50,12 @@ export function acceptedTypes(schema: FieldSchema): BindingType[] {
     return (schema['x-cms-bindable'] ?? []).filter((type): type is BindingType => type === 'text' || type === 'number' || type === 'url');
 }
 
-/** Whether a field can show a binding as its whole value, as Text, Textarea and Number fields can. Link and rich text hold theirs inside. */
+/**
+ * Whether a field can show a binding as its whole value, as Text, Textarea and Number fields can. A field type whose
+ * handler holds them inside its values, as Link and rich text do, says so in x-cms-binds-inside.
+ */
 export function bindsWholeValue(schema: FieldSchema): boolean {
-    return acceptedTypes(schema).length > 0 && !INNER.includes(schema['x-cms-type']);
+    return acceptedTypes(schema).length > 0 && schema['x-cms-binds-inside'] !== true;
 }
 
 /**

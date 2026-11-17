@@ -96,6 +96,7 @@ final class RegistryTest extends BuilderApiTestCase
                     'x-cms-required' => false,
                     'x-cms-translatable' => true,
                     'x-cms-bindable' => ['text', 'number'],
+                    'x-cms-binds-inside' => true,
                 ],
             ],
         ], self::blockTypes($registry)['accordion_item']['fields']);
@@ -291,6 +292,7 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($schema);
         self::assertSame(['link', 'Link', true, false], [$schema['x-cms-type'], $schema['x-cms-label'], $schema['x-cms-required'], $schema['x-cms-translatable']]);
         self::assertSame(['targets' => ['entry', 'product', 'taxon', 'media', 'url', 'app_store'], 'translatable' => null], $schema['x-cms-options']);
+        self::assertSame([['url'], true], [$schema['x-cms-bindable'] ?? null, $schema['x-cms-binds-inside'] ?? null], 'A Link holds its binding in its ref');
     }
 
     /**

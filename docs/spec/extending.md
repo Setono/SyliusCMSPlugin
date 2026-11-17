@@ -335,6 +335,7 @@ The schema's `x-cms-*` keywords. The plugin adds most of them around what the ha
 | `x-cms-required` | `true` or `false`. | the plugin, from the field's `required` |
 | `x-cms-translatable` | `true` or `false`. | the plugin, from the field's `translatable`, or the field type's default |
 | `x-cms-bindable` | The binding types the field accepts (`text`, `number`, `url`), or absent. | the plugin, from `#[FieldType(bindable:)]` |
+| `x-cms-binds-inside` | `true` when the field holds its bindings inside its values, as a Link's `ref` and rich text's tokens do, rather than as its whole value; absent otherwise. | the plugin, when the handler implements `InnerBindingFieldHandlerInterface` |
 | `x-cms-options` | The field type's own options, as JSON. | the handler |
 
 Everything else in the schema, the JSON Schema for one value, is the handler's.

@@ -289,6 +289,10 @@ final readonly class RegistryExporter
             $schema['x-cms-bindable'] = array_map(static fn (BindingType $type): string => $type->value, $field->type->bindable);
         }
 
+        if ($field->bindsInside()) {
+            $schema['x-cms-binds-inside'] = true;
+        }
+
         return $schema;
     }
 }

@@ -169,6 +169,7 @@ final class RegistryExporterTest extends TestCase
         ], $fields['rating']);
         self::assertIsArray($fields['quote']);
         self::assertSame(['text', 'number'], $fields['quote']['x-cms-bindable']);
+        self::assertArrayNotHasKey('x-cms-binds-inside', $fields['quote'], 'A binding is its whole value');
 
         self::assertIsArray($blockTypes['heading']['fields']);
         $headingFields = array_column($blockTypes['heading']['fields'], 'schema', 'name');

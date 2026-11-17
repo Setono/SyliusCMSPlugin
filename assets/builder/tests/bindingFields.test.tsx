@@ -121,6 +121,7 @@ describe('binding a link to a URL', () => {
         'x-cms-required': true,
         'x-cms-translatable': false,
         'x-cms-bindable': ['url'],
+        'x-cms-binds-inside': true,
         'x-cms-options': { targets: ['product', 'url'], translatable: null },
     };
 
@@ -179,6 +180,7 @@ describe('binding tokens in rich text', () => {
         'x-cms-required': false,
         'x-cms-translatable': true,
         'x-cms-bindable': ['text', 'number'],
+        'x-cms-binds-inside': true,
     };
 
     it("should insert a token from the toolbar's Binding button, with its fallback, and show it by its property's label", async () => {

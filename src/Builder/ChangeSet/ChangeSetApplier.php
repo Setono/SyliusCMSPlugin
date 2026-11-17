@@ -445,7 +445,7 @@ final readonly class ChangeSetApplier
         }
 
         // A binding is the whole value of a field that can be bound, which takes it, or null to unbind it, with no locale
-        if (null === $locale && BoundValue::isBindable($field) && (null === $value || StoredBinding::isBinding($value))) {
+        if (null === $locale && $field->bindsWholeValue() && (null === $value || StoredBinding::isBinding($value))) {
             return [null, null === $value ? null : $this->sanitizeBinding($field, $value)];
         }
 
