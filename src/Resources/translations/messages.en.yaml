@@ -362,6 +362,7 @@ setono_sylius_cms:
             label: Label
             label_help: In this language. Leave it empty to show the name of what it links to.
             nothing_picked: Nothing chosen
+            row_label: Link label
             search: 'Search: %target%'
             url: URL
         load_failed: Couldn't load the entry
@@ -498,6 +499,11 @@ setono_sylius_cms:
             heading: 'Heading %level%'
             horizontal_rule: Horizontal line
             italic: Italic
+            link: Link
+            link_apply: Apply
+            link_cancel: Cancel
+            link_remove: Remove link
+            link_target: Links to
             ordered_list: Numbered list
             strike: Strikethrough
             toolbar: Formatting

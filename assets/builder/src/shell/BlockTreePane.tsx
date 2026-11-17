@@ -1,11 +1,14 @@
 import { createContext, useContext, useRef, useState, type DragEvent } from 'react';
 import { hiddenInPreview } from '../conditions';
-import { useBuilder, useBuilderState, usePreviewState, useValidationState } from '../context';
+import { useBuilder, useBuilderState, useFallbackChain, usePreviewState, useValidationState } from '../context';
 import { useTranslator, type Translate } from '../i18n';
+import { linkShape, offeredTargets, readLink, writeLink } from '../links';
+import { useLinkTargets } from '../linkTargets';
 import { canMove, canMoveBlocks, placement, type DropZone } from '../nesting';
+import { useKnownRef } from '../search/context';
 import { actedOn, locks } from '../store';
 import { findBlock } from '../tree';
-import type { BlockTypeDefinition, StoredBlock } from '../types';
+import type { BlockTypeDefinition, FieldDefinition, StoredBlock } from '../types';
 import { blockHasErrors } from '../validation';
 import { readFieldValue } from '../values';
 import { AddBlockButton } from './BlockPicker';
@@ -164,11 +167,14 @@ function BlockRow({ block, hidden }: { block: StoredBlock; hidden: boolean }) {
     const invalid = useValidationState((state) => blockHasErrors(state.errors, block.key));
     const unresolvedLink = usePreviewState((state) => state.unresolvedLinks.includes(block.key));
     const label = blockLabel(block, blockType, t);
-    const hint = blockHint(block, blockType, locale);
+    const labelField = linkLabelField(blockType);
+    const hint = labelField === undefined ? blockHint(block, blockType, locale) : '';
     const holdsBlocks = (blockType?.children.length ?? 0) > 0;
     const target = dragging?.target?.key === block.key ? dragging.target : null;
     // While a scheduled publish locks the working copy, blocks are only selected
     const locked = useBuilderState((state) => locks(state.schedule));
+    // A row isn't dragged while its label box is edited, so the mouse selects text in it
+    const [editingLabel, setEditingLabel] = useState(false);
 
     const onDragOver = (event: DragEvent<HTMLDivElement>): void => {
         const { dragged, target: previous } = dragging?.now() ?? { dragged: null, target: null };
@@ -201,7 +207,7 @@ function BlockRow({ block, hidden }: { block: StoredBlock; hidden: boolean }) {
             data-dragged={moving || undefined}
             data-drop={target?.zone}
             data-refused={(target !== null && !target.allowed) || undefined}
-            draggable={!locked}
+            draggable={!locked && !editingLabel}
             onDragStart={(event) => {
                 event.stopPropagation();
                 event.dataTransfer.effectAllowed = 'move';
@@ -242,6 +248,7 @@ function BlockRow({ block, hidden }: { block: StoredBlock; hidden: boolean }) {
                 <span className={styles.label}>{label}</span>
                 {hint !== '' && <span className={styles.hint}>{hint}</span>}
             </button>
+            {labelField !== undefined && <LinkLabelBox block={block} field={labelField} readOnly={locked} onEditing={setEditingLabel} />}
             {hidden && <HiddenFlag />}
             {unresolvedLink && <UnresolvedLinkFlag />}
             {invalid && <InvalidFlag />}
@@ -287,6 +294,54 @@ function zoneOf(event: DragEvent<HTMLElement>, holdsBlocks: boolean): DropZone {
     }
 
     return holdsBlocks ? 'inside' : 'after';
+}
+
+/**
+ * The Link field whose label a block's row edits: a Link block's, as a Link list holds them. See "Link list and Link"
+ * in docs/spec/blocks.md
+ */
+function linkLabelField(blockType: BlockTypeDefinition | undefined): FieldDefinition | undefined {
+    return blockType?.code === 'link' ? blockType.fields.find(({ schema }) => schema['x-cms-type'] === 'link') : undefined;
+}
+
+interface LinkLabelBoxProps {
+    block: StoredBlock;
+    field: FieldDefinition;
+    readOnly: boolean;
+    onEditing: (editing: boolean) => void;
+}
+
+/**
+ * A link's label in the edited locale, typed right in its block's row. When it's empty, it shows the label it falls
+ * back to, or the name of what the link leads to, which the shop shows then.
+ */
+function LinkLabelBox({ block, field, readOnly, onEditing }: LinkLabelBoxProps) {
+    const t = useTranslator();
+    const { store } = useBuilder();
+    const locale = useBuilderState((state) => state.locale);
+    const chain = useFallbackChain(locale);
+    const linkTargets = useLinkTargets();
+    const { schema } = field;
+    const shape = linkShape(schema);
+    const first = offeredTargets(schema, linkTargets)[0]?.code ?? '';
+    const value = readFieldValue(block.fields, field.name, schema['x-cms-translatable'], locale);
+    const link = readLink(value, shape, chain, first);
+    const typed = linkTargets.find(({ code }) => code === link.target)?.translatableRef ?? false;
+    const known = useKnownRef(link.target, typed || link.ref === '' ? null : link.ref);
+
+    return (
+        <input
+            type="text"
+            className={styles.labelBox}
+            aria-label={t('setono_sylius_cms.builder.link.row_label')}
+            value={link.label}
+            placeholder={link.labelFallback ?? known?.name ?? (typed && link.ref !== '' ? link.ref : undefined)}
+            readOnly={readOnly}
+            onFocus={() => onEditing(true)}
+            onBlur={() => onEditing(false)}
+            onChange={(event) => store.getState().setFieldValue(block.key, field.name, writeLink(value, shape, locale, { label: event.currentTarget.value }, linkTargets, first))}
+        />
+    );
 }
 
 /** Flags a row whose block doesn't show in the preview's channel and locale. */

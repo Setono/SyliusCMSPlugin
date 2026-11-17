@@ -116,6 +116,12 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.rich_text.ordered_list'
     | 'setono_sylius_cms.builder.rich_text.blockquote'
     | 'setono_sylius_cms.builder.rich_text.horizontal_rule'
+    // Links in rich text
+    | 'setono_sylius_cms.builder.rich_text.link'
+    | 'setono_sylius_cms.builder.rich_text.link_apply'
+    | 'setono_sylius_cms.builder.rich_text.link_cancel'
+    | 'setono_sylius_cms.builder.rich_text.link_remove'
+    | 'setono_sylius_cms.builder.rich_text.link_target'
     | 'setono_sylius_cms.builder.locale'
     | 'setono_sylius_cms.builder.all_languages'
     | 'setono_sylius_cms.builder.all_languages_help'
@@ -172,6 +178,8 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.link.label'
     | 'setono_sylius_cms.builder.link.label_help'
     | 'setono_sylius_cms.builder.link.nothing_picked'
+    // A Link block's label, edited in its row in the tree
+    | 'setono_sylius_cms.builder.link.row_label'
     | 'setono_sylius_cms.builder.link.search'
     | 'setono_sylius_cms.builder.link.url'
     // Pickers' search

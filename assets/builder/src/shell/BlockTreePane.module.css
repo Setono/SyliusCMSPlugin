@@ -243,3 +243,24 @@
     outline: 2px solid var(--builder-color-focus);
     outline-offset: 2px;
 }
+
+/* A Link's label, typed in its row */
+.labelBox {
+    flex: 1 1 8rem;
+    align-self: center;
+    min-width: 0;
+    height: calc(var(--builder-control-height) - 6px);
+    margin: 0 var(--builder-space-1);
+    padding: 0 var(--builder-space-2);
+    border: 1px solid var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-surface);
+    color: var(--builder-color-text);
+    font: inherit;
+    font-size: var(--builder-font-size-sm);
+}
+
+.labelBox:focus-visible {
+    border-color: var(--builder-color-focus);
+    outline: 1px solid var(--builder-color-focus);
+}
