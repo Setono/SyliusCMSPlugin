@@ -29,12 +29,4 @@ final readonly class Link
         public ?ResolvedLink $resolved,
     ) {
     }
-
-    /**
-     * What the link shows: its label, or else the target's current name, or null when it doesn't resolve
-     */
-    public function text(): ?string
-    {
-        return null === $this->resolved ? null : $this->label ?? $this->resolved->name;
-    }
 }

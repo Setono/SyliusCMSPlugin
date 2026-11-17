@@ -114,4 +114,41 @@
     .cms-spacer--large {
         height: var(--cms-spacer-large);
     }
+
+    /* Button: as wide as its label. Directly inside the tree, it starts where the contained blocks start */
+    .cms-button {
+        display: inline-block;
+        box-sizing: border-box;
+        padding: 0.75em 1.5em;
+        border: 1px solid currentColor;
+        border-radius: var(--cms-radius);
+        color: inherit;
+        line-height: 1.2;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .cms-button:hover,
+    .cms-button:focus-visible {
+        opacity: 0.85;
+    }
+
+    .cms-tree > .cms-button {
+        justify-self: start;
+        width: auto;
+        margin-inline-start: max(0px, (100% - var(--cms-content-width)) / 2);
+    }
+
+    /* Button's block styles */
+    .cms-button--primary {
+        border-color: var(--cms-button-primary-background);
+        background: var(--cms-button-primary-background);
+        color: var(--cms-button-primary-color);
+    }
+
+    .cms-button--secondary {
+        background: var(--cms-button-secondary-background);
+        color: var(--cms-button-secondary-color);
+    }
 }

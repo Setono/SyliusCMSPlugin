@@ -125,7 +125,7 @@ final class LinkHandlerTest extends TestCase
         $link = Links::handler()->hydrate(new Link(label: 'Link'), self::storeLink([]), $this->context('de_DE'));
 
         self::assertNull($link?->label);
-        self::assertSame('Copenhagen', $link?->text());
+        self::assertSame('Copenhagen', $link?->resolved?->name);
     }
 
     /**
@@ -163,7 +163,7 @@ final class LinkHandlerTest extends TestCase
         $link = Links::handler()->hydrate(new Link(label: 'Link', translatable: true), $value, $this->context('en_US'));
 
         self::assertSame('mailto:shop@example.com', $link?->resolved?->url);
-        self::assertSame('shop@example.com', $link?->text());
+        self::assertSame('shop@example.com', $link?->resolved?->name);
     }
 
     /**
@@ -189,7 +189,6 @@ final class LinkHandlerTest extends TestCase
         self::assertInstanceOf(LinkValue::class, $link);
         self::assertSame('Odense', $link->label);
         self::assertNull($link->resolved);
-        self::assertNull($link->text());
     }
 
     /**

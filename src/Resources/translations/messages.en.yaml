@@ -2,9 +2,12 @@ setono_sylius_cms:
     block_style:
         dark: Dark
         muted: Muted
+        primary: Primary
+        secondary: Secondary
     block_type:
         accordion: Accordion
         accordion_item: Accordion item
+        button: Button
         column: Column
         columns: Columns
         first_match: First match
@@ -37,6 +40,8 @@ setono_sylius_cms:
         accordion_item:
             content: Content
             title: Title
+        button:
+            link: Link
         channel_condition:
             channels: Channels
         customer_group_condition:
@@ -60,6 +65,12 @@ setono_sylius_cms:
     layout:
         page:
             standard: Standard
+    # The link targets' labels. See "Link targets" in docs/spec/extending.md
+    link_target:
+        entry: Entry
+        product: Product
+        taxon: Taxon
+        url: URL
     menu:
         admin:
             hub:
@@ -108,7 +119,10 @@ setono_sylius_cms:
         invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'
     # What a reference refers to, by its type, as a broken reference names it. See "References" in docs/spec/content-model.md
     reference_type:
+        entry: entry
         media_item: media item
+        product: product
+        taxon: taxon
     # Why a scheduled publish was stopped when it ran, which the overview page shows and EntryPublishFailed carries
     scheduled_publish:
         invalid: '{1} Validation found an error to fix: %errors%|]1,Inf[ Validation found %count% errors to fix: %errors%'

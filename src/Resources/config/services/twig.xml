@@ -15,6 +15,13 @@
             <tag name="twig.runtime"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Twig\LinkRuntime" class="Setono\SyliusCMSPlugin\Twig\LinkRuntime">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Link\Target\EntryLinkTarget"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Twig\HeadTagsRuntime" class="Setono\SyliusCMSPlugin\Twig\HeadTagsRuntime">
             <argument type="service" id="Setono\SyliusCMSPlugin\Seo\MetaValuesInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface"/>

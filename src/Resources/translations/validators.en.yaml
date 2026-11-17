@@ -6,8 +6,12 @@ setono_sylius_cms:
         unknown_type: 'Its block type "%type%" no longer exists, so it isn''t shown.'
     field:
         invalid_choice: The value you selected is not a valid choice.
+        link_target_not_allowed: 'This field can''t link to %target%.'
         not_date: This value should be a date.
         not_date_time: This value should be a date and time.
+        not_link: This value should be a link.
+        not_link_anchor: 'An anchor is the part after the #, without spaces.'
+        not_link_url: 'A link can''t lead to this URL. Start it with https://, http://, mailto:, tel: or /.'
         not_media_item: This value should be a media item from the media library.
         not_media_list: This value should be a list of media items from the media library.
         not_rich_text: This value should be formatted text.
