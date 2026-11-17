@@ -6,9 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tree;
 
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\Reference;
-use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
-use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 
 /**
  * Finds the references a stored block tree holds, through the field type handlers' references(): in each field of each
@@ -22,8 +20,7 @@ use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 final readonly class ReferenceFinder
 {
     public function __construct(
-        private BlockTypeRegistryInterface $blockTypes,
-        private LayoutRegistryInterface $layouts,
+        private TreeValues $treeValues,
         private FieldHandlerLocator $fieldHandlers,
     ) {
     }
@@ -37,15 +34,7 @@ final readonly class ReferenceFinder
      */
     public function inTree(StoredTree $tree, string $contentType): \Generator
     {
-        $layout = $tree->layout;
-        if (null !== $layout && $this->layouts->has($contentType, $layout->code)) {
-            $metadata = $this->layouts->get($contentType, $layout->code);
-            if (!$metadata->disabled) {
-                yield from $this->inValues($metadata->fields, $layout->fields);
-            }
-        }
-
-        yield from $this->inBlocks($tree->blocks);
+        yield from $this->in($this->treeValues->inTree($tree, $contentType));
     }
 
     /**
@@ -57,14 +46,7 @@ final readonly class ReferenceFinder
      */
     public function inBlocks(array $blocks): \Generator
     {
-        foreach ($blocks as $block) {
-            if (!$this->blockTypes->has($block->type)) {
-                continue;
-            }
-
-            yield from $this->inValues($this->blockTypes->get($block->type)->fields, $block->fields, $block->key);
-            yield from $this->inBlocks($block->children);
-        }
+        yield from $this->in($this->treeValues->inBlocks($blocks));
     }
 
     /**
@@ -77,31 +59,8 @@ final readonly class ReferenceFinder
      */
     public function inValues(array $fields, array $values, ?string $block = null): \Generator
     {
-        foreach ($fields as $name => $field) {
-            $value = $values[$name] ?? null;
-            if (null === $value) {
-                continue;
-            }
-
-            $handler = $this->fieldHandlers->get($field->field);
-            if (!$field->translatable) {
-                foreach ($handler->references($field->field, $value) as $reference) {
-                    yield new FoundReference($reference, $block, $name, null);
-                }
-
-                continue;
-            }
-
-            // A translatable value that isn't a locale map doesn't fit, and holds nothing
-            if (!is_array($value) || array_is_list($value)) {
-                continue;
-            }
-
-            foreach ($value as $locale => $localized) {
-                foreach ($handler->references($field->field, $localized) as $reference) {
-                    yield new FoundReference($reference, $block, $name, (string) $locale);
-                }
-            }
+        foreach ($this->in(TreeValues::inValues($fields, $values)) as $found) {
+            yield new FoundReference($found->reference, $block, $found->field, $found->locale);
         }
     }
 
@@ -116,6 +75,25 @@ final readonly class ReferenceFinder
     {
         foreach ($found as $reference) {
             yield $reference->reference;
+        }
+    }
+
+    /**
+     * @param iterable<StoredValue> $values
+     *
+     * @return \Generator<FoundReference>
+     */
+    private function in(iterable $values): \Generator
+    {
+        foreach ($values as $value) {
+            // A translatable value that isn't a locale map doesn't fit, and holds nothing
+            if ($value->isNotByLocale()) {
+                continue;
+            }
+
+            foreach ($this->fieldHandlers->get($value->field->field)->references($value->field->field, $value->value) as $reference) {
+                yield new FoundReference($reference, $value->block?->key, $value->field->name, $value->locale);
+            }
         }
     }
 }

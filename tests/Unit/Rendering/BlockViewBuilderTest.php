@@ -43,6 +43,7 @@ use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 
 final class BlockViewBuilderTest extends TestCase
 {
@@ -420,7 +421,7 @@ final class BlockViewBuilderTest extends TestCase
             $blockTypes,
             new BlockHydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal())),
             Conditions::matcher(),
-            new ReferenceFinder($blockTypes, new LayoutRegistry([], new FieldReader()), $handlers),
+            new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())), $handlers),
             $referenceLoader ?? new ReferenceLoader(new ServiceLocator([])),
         );
     }

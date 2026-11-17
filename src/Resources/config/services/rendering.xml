@@ -23,9 +23,14 @@
         </service>
 
         <!-- The references a stored tree holds, through the field type handlers: for rendering, the admin's broken references and the usage index -->
-        <service id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder" class="Setono\SyliusCMSPlugin\Tree\ReferenceFinder">
+        <!-- Walks the values of a block tree the way it renders, for the reference finder and the problem kinds -->
+        <service id="Setono\SyliusCMSPlugin\Tree\TreeValues" class="Setono\SyliusCMSPlugin\Tree\TreeValues">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder" class="Setono\SyliusCMSPlugin\Tree\ReferenceFinder">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\TreeValues"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
         </service>
 

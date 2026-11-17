@@ -49,6 +49,7 @@ use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 
 final class LayoutRendererTest extends TestCase
 {
@@ -185,7 +186,7 @@ final class LayoutRendererTest extends TestCase
         $hydrator = new BlockHydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal()));
         $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'gallery' => Gallery::class], new FieldReader());
         $layouts = new LayoutRegistry(['page' => ['standard' => Standard::class, 'landing' => Landing::class, 'hero' => Hero::class]], new FieldReader(), disabled: $disabled);
-        $referenceFinder = new ReferenceFinder($blockTypes, $layouts, $handlers);
+        $referenceFinder = new ReferenceFinder(new TreeValues($blockTypes, $layouts), $handlers);
         $referenceLoader ??= new ReferenceLoader(new ServiceLocator([]));
 
         return new LayoutRenderer(

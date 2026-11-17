@@ -21,6 +21,7 @@ use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Component\DependencyInjection\ServiceLocator;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 
 final class ReferenceFinderTest extends TestCase
 {
@@ -115,8 +116,10 @@ final class ReferenceFinderTest extends TestCase
     private function finder(): ReferenceFinder
     {
         return new ReferenceFinder(
-            new BlockTypeRegistry(['gallery' => Gallery::class], new FieldReader()),
-            new LayoutRegistry(['page' => ['hero' => Hero::class]], new FieldReader()),
+            new TreeValues(
+                new BlockTypeRegistry(['gallery' => Gallery::class], new FieldReader()),
+                new LayoutRegistry(['page' => ['hero' => Hero::class]], new FieldReader()),
+            ),
             new FieldHandlerLocator(new ServiceLocator([
                 TextHandler::class => static fn (): TextHandler => new TextHandler(),
                 MediaHandler::class => static fn (): MediaHandler => new MediaHandler(),

@@ -34,6 +34,7 @@ use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 
 final class MediaUsageIndexerTest extends TestCase
 {
@@ -205,8 +206,10 @@ final class MediaUsageIndexerTest extends TestCase
         return new MediaUsageIndexer(
             $this->workingCopies->reveal(),
             new ReferenceFinder(
-                new BlockTypeRegistry(['article' => Article::class], new FieldReader()),
-                new LayoutRegistry(['page' => ['hero' => Hero::class]], new FieldReader()),
+                new TreeValues(
+                    new BlockTypeRegistry(['article' => Article::class], new FieldReader()),
+                    new LayoutRegistry(['page' => ['hero' => Hero::class]], new FieldReader()),
+                ),
                 new FieldHandlerLocator(new ServiceLocator([
                     MediaHandler::class => static fn (): MediaHandler => new MediaHandler(),
                     MediaListHandler::class => static fn (): MediaListHandler => new MediaListHandler(),

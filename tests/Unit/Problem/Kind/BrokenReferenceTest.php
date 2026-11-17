@@ -41,6 +41,7 @@ use Sylius\Component\Core\Model\Taxon;
 use Sylius\Component\Core\Model\TaxonInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\TranslatableMessage;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 
 final class BrokenReferenceTest extends TestCase
 {
@@ -235,7 +236,7 @@ final class BrokenReferenceTest extends TestCase
         $products ??= $this->prophesize(ReferenceTypeLoaderInterface::class)->reveal();
 
         return new BrokenReference(
-            new ReferenceFinder($blockTypes, new LayoutRegistry(['page' => ['hero' => Hero::class]], new FieldReader()), $handlers),
+            new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry(['page' => ['hero' => Hero::class]], new FieldReader())), $handlers),
             new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
             $blockTypes,
             new LayoutRegistry(['page' => ['hero' => Hero::class]], new FieldReader()),

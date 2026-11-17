@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
+use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tree\FoundReference;
@@ -76,20 +77,16 @@ final readonly class BrokenReference implements ReferenceProblemKindInterface
         $contentType = $this->contentTypes->getByEntry($entry)->code;
 
         /** @var list<FoundReference> $found */
-        $found = [];
-        $ids = [];
-        foreach ($this->referenceFinder->inTree($entry->getBlockTree(), $contentType) as $reference) {
-            if ($this->typeLoaders->has($reference->reference->type)) {
-                $found[] = $reference;
-                $ids[$reference->reference->type][$reference->reference->id] = true;
-            }
-        }
+        $found = array_values(array_filter(
+            iterator_to_array($this->referenceFinder->inTree($entry->getBlockTree(), $contentType), false),
+            fn (FoundReference $reference): bool => $this->typeLoaders->has($reference->reference->type),
+        ));
 
         $existing = [];
-        foreach ($ids as $type => $typeIds) {
+        foreach (ReferenceLoader::idsByType(ReferenceFinder::references($found)) as $type => $ids) {
             $loader = $this->typeLoaders->get($type);
             if ($loader instanceof ReferenceTypeLoaderInterface) {
-                $existing[$type] = array_fill_keys($loader->existing(array_map(strval(...), array_keys($typeIds))), true);
+                $existing[$type] = array_fill_keys($loader->existing($ids), true);
             }
         }
 

@@ -37,6 +37,7 @@ use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Component\Translation\Translator;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 
 final class MisfitValueTest extends TestCase
 {
@@ -217,8 +218,7 @@ final class MisfitValueTest extends TestCase
         ]));
 
         return new MisfitValue(
-            new BlockTypeRegistry(['heading' => Heading::class, 'group' => Group::class, 'rich_text' => RichText::class, 'store' => Store::class, 'testimonial' => Testimonial::class], new FieldReader()),
-            new LayoutRegistry(['page' => ['wide' => Wide::class]], new FieldReader(), disabled: $disabledLayouts),
+            new TreeValues(new BlockTypeRegistry(['heading' => Heading::class, 'group' => Group::class, 'rich_text' => RichText::class, 'store' => Store::class, 'testimonial' => Testimonial::class], new FieldReader()), new LayoutRegistry(['page' => ['wide' => Wide::class]], new FieldReader(), disabled: $disabledLayouts)),
             new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
             new FallbackValues($handlers, $this->prophesize(FallbackChainInterface::class)->reveal()),
         );

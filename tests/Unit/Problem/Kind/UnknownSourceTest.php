@@ -26,6 +26,7 @@ use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Component\Translation\TranslatableMessage;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 
 /**
  * A list filled by a source the code no longer has yields nothing, and the admin flags it. See "The contract" in
@@ -128,8 +129,7 @@ final class UnknownSourceTest extends TestCase
     private static function kind(): UnknownSource
     {
         return new UnknownSource(
-            new BlockTypeRegistry(['products' => Products::class, 'taxons' => Taxons::class, 'group' => Group::class], new FieldReader()),
-            new LayoutRegistry(['page' => ['showcase' => Showcase::class]], new FieldReader()),
+            new TreeValues(new BlockTypeRegistry(['products' => Products::class, 'taxons' => Taxons::class, 'group' => Group::class], new FieldReader()), new LayoutRegistry(['page' => ['showcase' => Showcase::class]], new FieldReader())),
             new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
             Sources::registry(['on_sale' => new OnSale(), 'clearance' => new Clearance()], ['clearance']),
         );

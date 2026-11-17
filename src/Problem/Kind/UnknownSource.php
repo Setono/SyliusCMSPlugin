@@ -10,13 +10,11 @@ use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\Severity;
-use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
-use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
-use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface;
 use Setono\SyliusCMSPlugin\Source\StoredSource;
-use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredValue;
+use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
@@ -30,114 +28,67 @@ final readonly class UnknownSource implements ProblemKindInterface
     public const CODE = 'unknown_source';
 
     public function __construct(
-        private BlockTypeRegistryInterface $blockTypes,
-        private LayoutRegistryInterface $layouts,
+        private TreeValues $treeValues,
         private ContentTypeRegistryInterface $contentTypes,
         private SourceRegistryInterface $sources,
     ) {
     }
 
+    /**
+     * A layout that was removed or disabled is another kind's problem, and the default layout ignores its values, so
+     * only the lists the tree renders are checked
+     */
     public function findIn(EntryInterface $entry): iterable
     {
-        $tree = $entry->getBlockTree();
+        foreach ($this->treeValues->inTree($entry->getBlockTree(), $this->contentTypes->getByEntry($entry)->code) as $value) {
+            $code = $this->unknownCode($value);
+            if (null === $code) {
+                continue;
+            }
 
-        // A layout that was removed or disabled is another kind's problem, and the default layout ignores its values
-        $layout = $tree->layout;
-        $contentType = $this->contentTypes->getByEntry($entry)->code;
-        if (null !== $layout && $this->layouts->has($contentType, $layout->code) && !$this->layouts->get($contentType, $layout->code)->disabled) {
-            foreach ($this->unknownSources($this->layouts->get($contentType, $layout->code)->fields, $layout->fields) as [$field, $locale, $code]) {
+            $field = $value->field;
+            if (null === $value->block || null === $value->blockType) {
                 yield new Problem(
                     self::CODE,
                     Severity::Warning,
                     $entry,
                     new TranslatableMessage('setono_sylius_cms.problem.unknown_layout_source', ['%field%' => new TranslatableMessage($field->field->label), '%source%' => $code]),
-                    Fix::inBuilder($entry, null, $locale),
+                    Fix::inBuilder($entry, null, $value->locale),
                     null,
                     $field->name,
-                    $locale,
+                    $value->locale,
                 );
-            }
-        }
-
-        yield from $this->inBlocks($entry, $tree->blocks);
-    }
-
-    /**
-     * @param list<StoredBlock> $blocks
-     *
-     * @return \Generator<Problem>
-     */
-    private function inBlocks(EntryInterface $entry, array $blocks): \Generator
-    {
-        foreach ($blocks as $block) {
-            // A block of a type the code no longer has is kept as it is, with what's inside it
-            if (!$this->blockTypes->has($block->type)) {
-                continue;
-            }
-
-            $blockType = $this->blockTypes->get($block->type);
-            foreach ($this->unknownSources($blockType->fields, $block->fields) as [$field, $locale, $code]) {
-                yield new Problem(
-                    self::CODE,
-                    Severity::Warning,
-                    $entry,
-                    new TranslatableMessage('setono_sylius_cms.problem.unknown_source', [
-                        '%field%' => new TranslatableMessage($field->field->label),
-                        '%block%' => new TranslatableMessage($blockType->label),
-                        '%source%' => $code,
-                    ]),
-                    Fix::inBuilder($entry, $block->key, $locale),
-                    $block->key,
-                    $field->name,
-                    $locale,
-                );
-            }
-
-            yield from $this->inBlocks($entry, $block->children);
-        }
-    }
-
-    /**
-     * The list fields filled by a source the code doesn't have, each with the locale of the value, or null for a shared
-     * value, and the source's code
-     *
-     * @param array<string, FieldMetadata> $fields
-     * @param array<string, mixed> $values the stored values by field name
-     *
-     * @return \Generator<array{FieldMetadata, string|null, string}>
-     */
-    private function unknownSources(array $fields, array $values): \Generator
-    {
-        foreach ($fields as $name => $field) {
-            if (!$field->field instanceof ListField) {
-                continue;
-            }
-
-            $stored = $values[$name] ?? null;
-            if ($field->translatable && is_array($stored) && !array_is_list($stored) && !StoredSource::isSource($stored)) {
-                foreach ($stored as $locale => $value) {
-                    $code = $this->unknownCode($value);
-                    if (null !== $code) {
-                        yield [$field, (string) $locale, $code];
-                    }
-                }
 
                 continue;
             }
 
-            $code = $this->unknownCode($stored);
-            if (null !== $code) {
-                yield [$field, null, $code];
-            }
+            yield new Problem(
+                self::CODE,
+                Severity::Warning,
+                $entry,
+                new TranslatableMessage('setono_sylius_cms.problem.unknown_source', [
+                    '%field%' => new TranslatableMessage($field->field->label),
+                    '%block%' => new TranslatableMessage($value->blockType->label),
+                    '%source%' => $code,
+                ]),
+                Fix::inBuilder($entry, $value->block->key, $value->locale),
+                $value->block->key,
+                $field->name,
+                $value->locale,
+            );
         }
     }
 
     /**
-     * The code of the source the value holds, when the code no longer has it
+     * The code of the source a list field's value holds, when the code no longer has it
      */
-    private function unknownCode(mixed $value): ?string
+    private function unknownCode(StoredValue $value): ?string
     {
-        $source = StoredSource::fromValue($value);
+        if (!$value->field->field instanceof ListField) {
+            return null;
+        }
+
+        $source = StoredSource::fromValue($value->value);
 
         return null === $source || $this->sources->has($source->code) ? null : $source->code;
     }
