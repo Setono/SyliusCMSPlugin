@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\Html;
 use Setono\SyliusCMSPlugin\Tests\Support\Placements;
@@ -12,6 +13,7 @@ use Setono\SyliusCMSPlugin\Tests\Support\ProfiledQueries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * Snippets that block trees reference through Snippet blocks. See "Snippet" in docs/spec/blocks.md and "Rendering a
@@ -19,6 +21,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  */
 final class SnippetBlockTest extends WebTestCase
 {
+    use Catalog;
     use Entries;
     use Placements;
     use ProfiledQueries;
@@ -73,7 +76,28 @@ final class SnippetBlockTest extends WebTestCase
         $crawler = $client->request('GET', '/en_US/about-us');
 
         self::assertResponseIsSuccessful();
-        self::assertSame(['About us'], $crawler->filter('.cms-tree h2')->each(static fn ($node): string => $node->text()));
+        self::assertSame(['About us'], $crawler->filter('.cms-tree h2')->each(static fn (Crawler $node): string => $node->text()));
+    }
+
+    /**
+     * The snippet a Snippet block shows gets the host-page context of the tree it sits in: here, the product of the
+     * product page whose slot shows the snippet that holds the Snippet block
+     *
+     * @test
+     */
+    public function it_passes_the_context_of_the_tree_it_sits_in_on_to_the_snippet_it_shows(): void
+    {
+        $client = self::createClient();
+        self::createProduct('T_SHIRT', 'T-shirt');
+        $note = new StoredBlock(self::FOOTER, 'app_product_note', 1);
+        $note->setValue('text', 'en_US', 'Size guide for');
+        $sizeGuide = self::createSnippet('Size guide', [$note], published: true, context: ['product']);
+        self::place(self::createSnippet('Product sidebar', [self::snippetBlock(self::REFERENCE, $sizeGuide)], published: true, context: ['product']), 'product.after_price');
+
+        $crawler = $client->request('GET', '/en_US/products/t-shirt');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['Size guide for T-shirt'], $crawler->filter('.cms-slot--product-after-price .app-product-note')->each(static fn (Crawler $node): string => $node->text()));
     }
 
     /**
@@ -89,8 +113,8 @@ final class SnippetBlockTest extends WebTestCase
         $crawler = $client->request('GET', '/en_US/about-us');
 
         self::assertResponseIsSuccessful();
-        self::assertSame(['A', 'B'], $crawler->filter('.cms-tree h2')->each(static fn ($node): string => $node->text()));
-        self::assertSame(['A', 'B'], $crawler->filter('.cms-slot--shop-footer h2')->each(static fn ($node): string => $node->text()));
+        self::assertSame(['A', 'B'], $crawler->filter('.cms-tree h2')->each(static fn (Crawler $node): string => $node->text()));
+        self::assertSame(['A', 'B'], $crawler->filter('.cms-slot--shop-footer h2')->each(static fn (Crawler $node): string => $node->text()));
     }
 
     /**
