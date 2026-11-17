@@ -1,11 +1,15 @@
 import * as Popover from '@radix-ui/react-popover';
-import { useId, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { useBuilder, useBuilderState, usePresenceState, usePreviewState, useSettingsState } from '../context';
 import { formatDateTime, fromLocalInput } from '../dates';
+import { CONTEXT_FIELD, contextNames } from '../hostPageContext';
 import { useTranslator, type MessageKey, type Translate } from '../i18n';
 import { hasTranslation, localeOf, offeredLocales } from '../locales';
 import { isRemovedLayout, layoutOf } from '../layouts';
 import { LocalDateTimeInput } from '../form/LocalDateTimeInput';
+import { SearchList } from '../search/SearchPicker';
+import searchStyles from '../search/SearchPicker.module.css';
+import type { Sample, SampleResult, SnippetPreviewState } from '../snippetPreview';
 import { locks } from '../store';
 import { localeCounts } from '../translationState';
 import type { EntryStatus, FieldSchema, Schedule } from '../types';
@@ -77,6 +81,7 @@ export function TopBar() {
             </div>
             <LocaleSwitcher />
             <PreviewChannel />
+            <SnippetPreview />
             <ShownTo />
             <PreviewDate />
             <PreviewWidth />
@@ -157,6 +162,132 @@ function PreviewChannel() {
                 </option>
             ))}
         </select>
+    );
+}
+
+/**
+ * For a snippet: the pages it's for, such as "Product page", the placement whose host page the preview shows, and the
+ * sample object the page is of, which starts as one inside the placement's page scope. A warning shows when the sample
+ * object is outside it, and where the placement loses its capped slot for the shoppers it's shown to, the snippets they
+ * see there instead. See "Snippet preview" in docs/spec/builder.md
+ */
+function SnippetPreview() {
+    const t = useTranslator();
+    const { placements, snippetPreview } = useBuilder();
+    const contextKeys = useBuilderState((state) => state.contextKeys);
+    const declared = useBuilderState((state) => state.entry.fields[CONTEXT_FIELD]);
+    const placement = usePreviewState((state) => state.placement);
+    const setPlacement = usePreviewState((state) => state.setPlacement);
+    const setSample = usePreviewState((state) => state.setSample);
+    const token = usePreviewState((state) => state.token);
+    const [shown, setShown] = useState<SnippetPreviewState | null>(null);
+
+    // What the page shows changes with each token
+    useEffect(() => {
+        if (snippetPreview === null || token === null) {
+            setShown(null);
+
+            return undefined;
+        }
+
+        let active = true;
+        snippetPreview.state(token).then(
+            (state) => active && setShown(state),
+            () => active && setShown(null),
+        );
+
+        return () => {
+            active = false;
+        };
+    }, [snippetPreview, token]);
+
+    if (placements === null) {
+        return null;
+    }
+
+    const keys = Array.isArray(declared) ? declared.filter((key): key is string => typeof key === 'string') : [];
+    const context = keys.length === 0 ? t('setono_sylius_cms.builder.context_any_page') : contextNames(keys, contextKeys, t).join(' + ');
+    const sample = shown?.sample ?? null;
+
+    return (
+        <div className={styles.snippetPreview}>
+            <span className={styles.snippetContext} title={t('setono_sylius_cms.builder.context_help')}>
+                {context}
+            </span>
+            {placements.length === 0 ? (
+                <span className={styles.snippetContext}>{t('setono_sylius_cms.builder.snippet_preview.no_placements')}</span>
+            ) : (
+                <select
+                    className={styles.channel}
+                    aria-label={t('setono_sylius_cms.builder.snippet_preview.placement')}
+                    value={placement ?? ''}
+                    onChange={(event) => setPlacement(event.currentTarget.value === '' ? null : event.currentTarget.value)}
+                >
+                    {placements.map(({ uuid, label, removed }) => (
+                        <option key={uuid} value={uuid} disabled={removed}>
+                            {label}
+                        </option>
+                    ))}
+                    <option value="">{t('setono_sylius_cms.builder.snippet_preview.plain_page')}</option>
+                </select>
+            )}
+            {sample !== null && snippetPreview !== null && token !== null && <SamplePicker sample={sample} search={(query) => snippetPreview.samples(token, query)} onPick={setSample} />}
+            {sample?.matches === false && (
+                <p role="alert" className={styles.outsideScope}>
+                    {t('setono_sylius_cms.builder.snippet_preview.outside_scope', { '%sample%': sample.name })}
+                </p>
+            )}
+            {shown?.shownInstead != null && (
+                <p className={styles.shownInstead} data-shown-instead>
+                    {t('setono_sylius_cms.builder.snippet_preview.shown_instead', { '%snippets%': shown.shownInstead.join(', ') })}
+                </p>
+            )}
+        </div>
+    );
+}
+
+/**
+ * The sample object of a snippet's preview, which opens a search of the objects of its context key, each marked when
+ * its page is inside the placement's page scope. Picking one reloads the preview on its page.
+ */
+function SamplePicker({ sample, search, onPick }: { sample: Sample; search: (query: string) => Promise<SampleResult[]>; onPick: (ref: string) => void }) {
+    const t = useTranslator();
+    const [open, setOpen] = useState(false);
+    const label = t('setono_sylius_cms.builder.snippet_preview.sample');
+    const inScope = t('setono_sylius_cms.builder.snippet_preview.in_scope');
+    // The page scope of what each result found is, by ref
+    const found = useRef(new Map<string, boolean | null>());
+
+    return (
+        <Popover.Root open={open} onOpenChange={setOpen}>
+            <Popover.Trigger asChild>
+                <button type="button" className={styles.sample} aria-label={`${label}: ${sample.name}`} title={label}>
+                    {sample.name}
+                </button>
+            </Popover.Trigger>
+            <Popover.Portal>
+                <Popover.Content className={searchStyles.popover} aria-label={label} side="bottom" align="start" sideOffset={4} collisionPadding={8}>
+                    <SearchList
+                        api={{
+                            search: async (_kind, query) => {
+                                const results = await search(query);
+                                results.forEach(({ ref, matches }) => found.current.set(ref, matches));
+
+                                return results;
+                            },
+                        }}
+                        kind={sample.key}
+                        parameters={undefined}
+                        searchLabel={t('setono_sylius_cms.builder.snippet_preview.search_samples')}
+                        describe={({ ref }) => (found.current.get(ref) === true ? inScope : null)}
+                        onPick={({ ref }) => {
+                            setOpen(false);
+                            onPick(ref);
+                        }}
+                    />
+                </Popover.Content>
+            </Popover.Portal>
+        </Popover.Root>
     );
 }
 

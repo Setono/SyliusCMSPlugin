@@ -235,6 +235,15 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.snippet.search'
     | 'setono_sylius_cms.builder.snippet.shared'
     | 'setono_sylius_cms.builder.snippet.shared_help'
+    // A snippet's preview on the host page of one of its placements, with a sample object
+    | 'setono_sylius_cms.builder.snippet_preview.in_scope'
+    | 'setono_sylius_cms.builder.snippet_preview.no_placements'
+    | 'setono_sylius_cms.builder.snippet_preview.outside_scope'
+    | 'setono_sylius_cms.builder.snippet_preview.placement'
+    | 'setono_sylius_cms.builder.snippet_preview.plain_page'
+    | 'setono_sylius_cms.builder.snippet_preview.sample'
+    | 'setono_sylius_cms.builder.snippet_preview.search_samples'
+    | 'setono_sylius_cms.builder.snippet_preview.shown_instead'
     // Pickers' search
     | 'setono_sylius_cms.builder.search.failed'
     | 'setono_sylius_cms.builder.search.no_results'

@@ -374,3 +374,45 @@
     outline: 2px solid var(--builder-color-focus);
     outline-offset: 2px;
 }
+
+/* A snippet's preview: its context, its placement, its sample object, and what the preview tells of them */
+.snippetPreview {
+    display: flex;
+    flex: 0 1 auto;
+    gap: var(--builder-space-2);
+    align-items: center;
+    min-width: 0;
+}
+
+.snippetContext {
+    flex: none;
+    color: var(--builder-color-text-muted);
+    white-space: nowrap;
+}
+
+.sample {
+    composes: button from '../ui/Buttons.module.css';
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.outsideScope,
+.shownInstead {
+    max-width: 18rem;
+    margin: 0;
+    padding: var(--builder-space-1) var(--builder-space-2);
+    border-radius: var(--builder-radius-sm);
+    font-size: var(--builder-font-size-sm);
+}
+
+.outsideScope {
+    background: var(--builder-color-warning-subtle);
+    color: var(--builder-color-warning);
+}
+
+.shownInstead {
+    background: var(--builder-color-neutral-subtle);
+    color: var(--builder-color-text-muted);
+}

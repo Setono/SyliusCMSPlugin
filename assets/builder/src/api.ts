@@ -43,10 +43,14 @@ export interface BuilderApi {
     snippetBlocks?(snippet: string): Promise<StoredBlock[]>;
 }
 
-/** What the preview shows the working copy in, to whom and when. The sample object and the placement come later. */
+/** What the preview shows the working copy in, to whom and when, and for a snippet, where and with which sample object. */
 export interface PreviewRequest extends ShownToAndDate {
     channel: string;
     locale: string;
+    /** For a snippet, the placement whose host page shows it, or null for a plain page. */
+    placement?: string | null;
+    /** For a snippet, the ref of its sample object, or null for the one the preview starts with. */
+    sample?: string | null;
 }
 
 export class ApiError extends Error {
@@ -186,11 +190,11 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = defaultFetch):
             return settings as unknown as EntrySettings;
         },
 
-        async createPreviewUrl({ channel, locale, shownTo, date }) {
+        async createPreviewUrl({ channel, locale, shownTo, date, placement, sample }) {
             const body = await request(config.endpoints.previewToken, {
                 method: 'POST',
                 headers: { ...write, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ entry: config.entryUuid, channel, locale, shownTo, date }),
+                body: JSON.stringify({ entry: config.entryUuid, channel, locale, shownTo, date, placement, sample }),
             });
 
             const url = isObject(body) ? body.url : undefined;

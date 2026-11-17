@@ -78,6 +78,10 @@ export interface BuilderConfig {
         snippetBlocks?: string;
         /** Another entry's builder, with UUID_PLACEHOLDER for its UUID, which Edit snippet opens. Without it, there's no Edit snippet. */
         builder?: string;
+        /** What the top bar shows of a snippet's preview, under a preview token. Without it, the top bar shows nothing of it. */
+        previewSnippet?: string;
+        /** The sample objects a snippet's preview can show it with, under a preview token. Without it, the sample object can't be picked. */
+        previewSamples?: string;
     };
     /** The store's channels. The settings pick the entry's channels from them, and the preview picks from the entry's. */
     channels: Channel[];

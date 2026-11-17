@@ -64,15 +64,21 @@ type Found = { state: 'searching' } | { state: 'found'; results: SearchResult[] 
 /** How long it waits after a key press before it searches. */
 const DELAY = 200;
 
-interface SearchListProps {
-    api: SearchApi;
+export interface SearchListProps {
+    api: Pick<SearchApi, 'search'>;
     kind: string;
     parameters: Readonly<Record<string, string>> | undefined;
     searchLabel: string;
     onPick: (result: SearchResult) => void;
+    /** A note after a result's name, such as whether a sample object is inside a page scope, or null for none. */
+    describe?: ((result: SearchResult) => string | null) | undefined;
 }
 
-function SearchList({ api, kind, parameters, searchLabel, onPick }: SearchListProps) {
+/**
+ * The search box and what it finds, which a picker's popover holds. It searches as the editor types, and the arrow
+ * keys and Enter pick too.
+ */
+export function SearchList({ api, kind, parameters, searchLabel, onPick, describe }: SearchListProps) {
     const t = useTranslator();
     const listId = useId();
     const [query, setQuery] = useState('');
@@ -162,6 +168,7 @@ function SearchList({ api, kind, parameters, searchLabel, onPick }: SearchListPr
                     >
                         {result.thumbnail === null ? <span className={styles.thumbnail} aria-hidden="true" /> : <img className={styles.thumbnail} src={result.thumbnail} alt="" />}
                         <span className={styles.name}>{result.name}</span>
+                        {describe?.(result) != null && <span className={styles.description}>{describe(result)}</span>}
                     </li>
                 ))}
             </ul>

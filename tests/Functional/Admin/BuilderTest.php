@@ -76,6 +76,8 @@ final class BuilderTest extends WebTestCase
             'sourceCount' => '/admin/cms/api/sources/count',
             'snippetBlocks' => '/admin/cms/api/snippets/00000000-0000-4000-8000-000000000000/blocks',
             'builder' => '/admin/cms/entry/00000000-0000-4000-8000-000000000000/builder',
+            'previewSnippet' => '/admin/cms/api/preview/snippet',
+            'previewSamples' => '/admin/cms/api/preview/samples',
         ], $config['endpoints']);
         self::assertSame([['code' => 'WEB', 'name' => 'Setono CMS Test Store', 'locales' => ['en_US']]], $config['channels'], "The store's channels, for the settings' channel picker and the preview's");
         self::assertSame([['code' => 'en_US', 'name' => 'English (United States)', 'fallbackChain' => ['en_US']]], $config['locales']);

@@ -7,6 +7,7 @@ import { localeOf } from './locales';
 import type { PresenceState, PresenceStore } from './presence';
 import type { PreviewState, PreviewStore } from './preview';
 import type { SettingsState, SettingsStore } from './settings';
+import type { SnippetPreviewApi } from './snippetPreview';
 import type { StoredBlock } from './types';
 import type { BuilderState, BuilderStore } from './store';
 import type { UrlsState, UrlsStore } from './urls';
@@ -35,6 +36,8 @@ export interface BuilderSession {
     overviewUrl: string;
     /** A snippet's placements, which are managed on its overview page, or null for an entry that isn't a snippet. */
     placements: SnippetPlacement[] | null;
+    /** What the top bar shows of a snippet's preview and the sample objects it can show it with. Null without the endpoints. */
+    snippetPreview: SnippetPreviewApi | null;
     /**
      * Opens a snippet in the builder, once the unsaved changes are sent, with a way back to the Snippet block that shows
      * it. Null when the builder page doesn't say where another entry's builder is.

@@ -103,6 +103,10 @@ final readonly class BuilderAction
                     // each with UUID_PLACEHOLDER for the snippet's UUID
                     'snippetBlocks' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_snippet_blocks', ['uuid' => self::UUID_PLACEHOLDER]),
                     'builder' => $this->urlGenerator->generate('setono_sylius_cms_admin_builder', ['uuid' => self::UUID_PLACEHOLDER]),
+                    // What the top bar shows of a snippet's preview, and the sample objects it can show it with, under
+                    // the preview's token
+                    'previewSnippet' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_snippet'),
+                    'previewSamples' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_samples'),
                 ],
                 'channels' => array_map(static fn (array $channel): array => [
                     'code' => $channel['channel']->getCode(),
