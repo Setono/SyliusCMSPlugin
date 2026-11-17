@@ -12,6 +12,7 @@ setono_sylius_cms:
         carousel: Carousel
         column: Column
         columns: Columns
+        downloads: Downloads
         first_match: First match
         group: Group
         heading: Heading
@@ -22,6 +23,7 @@ setono_sylius_cms:
         rich_text: Rich text
         spacer: Spacer
         taxons: Taxons
+        video: Video
     # The buttons the carousel script adds in the shop. %number% is the slide's number, which the script fills in
     carousel:
         next: Next slide
@@ -88,6 +90,9 @@ setono_sylius_cms:
         date_window_condition:
             from: From
             until: Until
+        downloads:
+            documents: Documents
+            heading: Heading
         group:
             full_width: Full width
         heading:
@@ -122,12 +127,19 @@ setono_sylius_cms:
             taxon: Taxon
         taxons:
             taxons: Taxons
+        video:
+            embed_url: YouTube or Vimeo URL
+            embed_url_help: Paste the address of a YouTube or Vimeo video, or choose a video from the media library instead.
+            poster: Poster
+            poster_help: Shown before the video plays. Leave it empty to use the video's own poster from the media library.
+            video: Video
     layout:
         page:
             standard: Standard
     # The link targets' labels. See "Link targets" in docs/spec/extending.md
     link_target:
         entry: Entry
+        media: Document or video
         product: Product
         taxon: Taxon
         url: URL
@@ -205,6 +217,9 @@ setono_sylius_cms:
         newest_products: Newest
         products_in_taxon: In taxon
         taxon_children: Children of a taxon
+    # The Video block's embed, named to screen readers
+    video:
+        embed_title: Video
     ui:
         all_entries: All entries
         any_channel: Any channel

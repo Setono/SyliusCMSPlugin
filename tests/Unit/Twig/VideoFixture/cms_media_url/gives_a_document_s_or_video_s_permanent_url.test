@@ -1,0 +1,14 @@
+--TEST--
+cms_media_url() gives a document's or video's permanent URL, given as a media item or by its UUID, and nothing for an image, null or a UUID no media item has
+--TEMPLATE--
+{{ cms_media_url(document) }}
+{{ cms_media_url(video) }}
+{{ cms_media_url(uuid) }}
+[{{ cms_media_url(image) }}][{{ cms_media_url(null) }}][{{ cms_media_url('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f') }}][{{ cms_media_url('size-guide.pdf') }}]
+--DATA--
+return ['document' => $this->document(), 'video' => $this->video(), 'uuid' => strtoupper($this->inTheLibrary($this->document())), 'image' => $this->image()]
+--EXPECT--
+https://localhost/media/permanent/size-guide.pdf
+https://localhost/media/permanent/shop-tour.mp4
+https://localhost/media/permanent/size-guide.pdf
+[][][][]

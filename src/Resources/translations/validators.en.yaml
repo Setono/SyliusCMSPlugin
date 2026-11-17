@@ -1,9 +1,11 @@
 setono_sylius_cms:
     block:
+        exactly_one_of: 'Fill in one of these, but only one: %fields%.'
         not_allowed: '%block% can''t go here.'
         too_few: '{1} Needs at least one %type% block inside.|]1,Inf[ Needs at least %count% %type% blocks inside.'
         too_many: '[0,1] Can hold at most one %type% block.|]1,Inf[ Can hold at most %count% %type% blocks.'
         unknown_type: 'Its block type "%type%" no longer exists, so it isn''t shown.'
+        video_or_embed_url: Choose a video, or enter a YouTube or Vimeo URL, but not both.
     field:
         invalid_choice: The value you selected is not a valid choice.
         link_target_not_allowed: 'This field can''t link to %target%.'
@@ -23,6 +25,7 @@ setono_sylius_cms:
         not_taxon: This value should be a taxon's code.
         not_text: This value should be text.
         not_toggle: This value should be on or off.
+        not_video_embed_url: Enter the URL of a YouTube or Vimeo video.
         not_whole_number: This value should be a whole number.
         required: This field is required.
         source_of_another_kind: '{{ source }} lists something else than this field.'

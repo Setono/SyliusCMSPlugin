@@ -1,0 +1,7 @@
+{# The video media item, or else the YouTube or Vimeo URL, in a 16:9 frame. The block renders nothing in the shop without a video to show. In the builder's preview, cms_video() prints a placeholder #}
+{%- set video -%}{{ cms_video(block.video ?? block.embedUrl, {poster: block.poster, title: 'setono_sylius_cms.video.embed_title'|trans}) }}{%- endset -%}
+{%- if video is not empty -%}
+    <div class="cms-video{{ view.styleClass ? ' ' ~ view.styleClass }}">
+        <div class="cms-video__frame">{{ video }}</div>
+    </div>
+{%- endif -%}

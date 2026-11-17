@@ -43,6 +43,14 @@
             <tag name="setono_sylius_cms.link_target" priority="20"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Link\Target\MediaLinkTarget" class="Setono\SyliusCMSPlugin\Link\Target\MediaLinkTarget">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaItemReferenceLoader"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\PermanentUrlGeneratorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\Search\MediaSearch"/>
+
+            <tag name="setono_sylius_cms.link_target" priority="15"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Link\Target\UrlLinkTarget" class="Setono\SyliusCMSPlugin\Link\Target\UrlLinkTarget">
             <tag name="setono_sylius_cms.link_target" priority="10"/>
         </service>

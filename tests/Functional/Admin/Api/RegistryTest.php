@@ -115,7 +115,7 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($registry);
         $blockTypes = self::blockTypes($registry);
 
-        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'button', 'banner', 'accordion', 'accordion_item', 'link_list', 'link', 'products', 'taxons', 'carousel', 'first_match'], array_keys($blockTypes));
+        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'video', 'button', 'banner', 'accordion', 'accordion_item', 'link_list', 'link', 'downloads', 'products', 'taxons', 'carousel', 'first_match'], array_keys($blockTypes));
 
         self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
         self::assertNull($blockTypes['columns']['parents']);
@@ -128,10 +128,12 @@ final class RegistryTest extends BuilderApiTestCase
             ['type' => 'heading', 'min' => null, 'max' => null],
             ['type' => 'rich_text', 'min' => null, 'max' => null],
             ['type' => 'image', 'min' => null, 'max' => null],
+            ['type' => 'video', 'min' => null, 'max' => null],
             ['type' => 'button', 'min' => null, 'max' => null],
             ['type' => 'banner', 'min' => null, 'max' => null],
             ['type' => 'accordion', 'min' => null, 'max' => null],
             ['type' => 'link_list', 'min' => null, 'max' => null],
+            ['type' => 'downloads', 'min' => null, 'max' => null],
             ['type' => 'products', 'min' => null, 'max' => null],
             ['type' => 'taxons', 'min' => null, 'max' => null],
             ['type' => 'carousel', 'min' => null, 'max' => null],
@@ -216,6 +218,7 @@ final class RegistryTest extends BuilderApiTestCase
             ['code' => 'entry', 'label' => 'Entry', 'translatableRef' => false],
             ['code' => 'product', 'label' => 'Product', 'translatableRef' => false],
             ['code' => 'taxon', 'label' => 'Taxon', 'translatableRef' => false],
+            ['code' => 'media', 'label' => 'Document or video', 'translatableRef' => false],
             ['code' => 'url', 'label' => 'URL', 'translatableRef' => true],
             ['code' => 'app_store', 'label' => 'Store', 'translatableRef' => false],
         ], $registry['linkTargets']);
@@ -230,7 +233,7 @@ final class RegistryTest extends BuilderApiTestCase
         $schema = $link['schema'];
         self::assertIsArray($schema);
         self::assertSame(['link', 'Link', true, false], [$schema['x-cms-type'], $schema['x-cms-label'], $schema['x-cms-required'], $schema['x-cms-translatable']]);
-        self::assertSame(['targets' => ['entry', 'product', 'taxon', 'url', 'app_store'], 'translatable' => null], $schema['x-cms-options']);
+        self::assertSame(['targets' => ['entry', 'product', 'taxon', 'media', 'url', 'app_store'], 'translatable' => null], $schema['x-cms-options']);
     }
 
     /**

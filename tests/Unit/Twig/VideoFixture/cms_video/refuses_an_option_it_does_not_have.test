@@ -1,0 +1,8 @@
+--TEST--
+cms_video() refuses an option it doesn't have
+--TEMPLATE--
+{{ cms_video(video, {autoplay: true}) }}
+--DATA--
+return $this->rendering(['video' => $this->video()])
+--EXCEPTION--
+Twig\Error\RuntimeError: An exception has been thrown during the rendering of a template ("The option "autoplay" does not exist. Defined options are: "class", "poster", "title".") in "index.twig" at line 2.

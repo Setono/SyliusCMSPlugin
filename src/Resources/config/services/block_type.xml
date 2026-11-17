@@ -32,6 +32,10 @@
             <tag name="setono_sylius_cms.block_type"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Block\Video" class="Setono\SyliusCMSPlugin\Block\Video">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Block\Button" class="Setono\SyliusCMSPlugin\Block\Button">
             <tag name="setono_sylius_cms.block_type"/>
         </service>
@@ -53,6 +57,10 @@
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Block\Link" class="Setono\SyliusCMSPlugin\Block\Link">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Block\Downloads" class="Setono\SyliusCMSPlugin\Block\Downloads">
             <tag name="setono_sylius_cms.block_type"/>
         </service>
 

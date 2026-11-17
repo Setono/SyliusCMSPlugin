@@ -1,0 +1,14 @@
+{# A link to each document's permanent URL, which follows a replace, named by the document's name. The block renders nothing without a document #}
+{% set documents = cms_value(block, 'documents') %}
+{% if documents is not null and documents|length > 0 %}
+    <div class="cms-downloads{{ view.styleClass ? ' ' ~ view.styleClass }}">
+        {%- if block.heading %}
+        <h2 class="cms-downloads__heading">{{ cms_field(block, 'heading') }}</h2>
+        {%- endif %}
+        <ul class="cms-downloads__items">
+            {%- for document in documents %}
+            <li><a class="cms-downloads__item" href="{{ cms_media_url(document) }}">{{ document.name }}</a></li>
+            {%- endfor %}
+        </ul>
+    </div>
+{% endif %}
