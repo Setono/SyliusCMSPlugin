@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
-import { useStore } from 'zustand';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { useLookup } from '../lookup';
 import type { SearchApi, SearchResult } from './api';
 import { createKnownRefs, knownKey, type KnownRefsStore } from './known';
 
@@ -27,17 +27,9 @@ export function SearchProvider({ api, children }: { api: SearchApi; children: Re
  * it wasn't found or the kind can't look refs up. Without a search, nothing is known.
  */
 export function useKnownRef(kind: string, ref: string | null): SearchResult | undefined {
-    const search = useSearch();
-    const known = search?.known ?? noneKnown;
-    const found = useStore(known, (state) => (ref === null ? undefined : state.items[knownKey(kind, ref)]));
+    const found = useKnownRefs(kind, ref === null ? [] : [ref]);
 
-    useEffect(() => {
-        if (ref !== null && ref !== '') {
-            known.getState().request(kind, [ref]);
-        }
-    }, [known, kind, ref]);
-
-    return found ?? undefined;
+    return (ref === null ? undefined : found[ref]) ?? undefined;
 }
 
 /**
@@ -46,20 +38,11 @@ export function useKnownRef(kind: string, ref: string | null): SearchResult | un
  * a search, nothing is known.
  */
 export function useKnownRefs(kind: string, refs: readonly string[]): Readonly<Record<string, SearchResult | null>> {
-    const search = useSearch();
-    const known = search?.known ?? noneKnown;
-    const items = useStore(known, (state) => state.items);
-    const key = refs.filter((ref) => ref !== '').join('\u0000');
-
-    useEffect(() => {
-        if (key !== '') {
-            known.getState().request(kind, key.split('\u0000'));
-        }
-    }, [known, kind, key]);
+    const known = useLookup(useSearch()?.known ?? noneKnown, refs.filter((ref) => ref !== '').map((ref) => knownKey(kind, ref)));
 
     const found: Record<string, SearchResult | null> = {};
     for (const ref of refs) {
-        const item = items[knownKey(kind, ref)];
+        const item = known[knownKey(kind, ref)];
         if (item !== undefined) {
             found[ref] = item;
         }

@@ -39,8 +39,8 @@ describe('what pickers know of the things fields hold', () => {
         const find = vi.fn(async () => [{ ref: 'MUG', name: 'Mug', thumbnail: null }]);
         const known = createKnownRefs({ find });
 
-        known.getState().request('product', ['MUG', 'DELETED', 'MUG']);
-        known.getState().request('product', ['MUG']);
+        known.getState().request([knownKey('product', 'MUG'), knownKey('product', 'DELETED'), knownKey('product', 'MUG')]);
+        known.getState().request([knownKey('product', 'MUG')]);
         await vi.waitFor(() => expect(known.getState().items[knownKey('product', 'MUG')]).toEqual({ ref: 'MUG', name: 'Mug', thumbnail: null }));
 
         expect(find).toHaveBeenCalledOnce();
@@ -52,8 +52,8 @@ describe('what pickers know of the things fields hold', () => {
         const find = vi.fn(async () => []);
         const known = createKnownRefs({ find });
 
-        known.getState().remember('taxon', [{ ref: 'SHIRTS', name: 'Shirts', thumbnail: null }]);
-        known.getState().request('taxon', ['SHIRTS']);
+        known.getState().remember({ [knownKey('taxon', 'SHIRTS')]: { ref: 'SHIRTS', name: 'Shirts', thumbnail: null } });
+        known.getState().request([knownKey('taxon', 'SHIRTS')]);
 
         expect(find).not.toHaveBeenCalled();
         expect(known.getState().items[knownKey('taxon', 'SHIRTS')]?.name).toBe('Shirts');
@@ -63,11 +63,13 @@ describe('what pickers know of the things fields hold', () => {
         const find = vi.fn().mockRejectedValueOnce(new Error('Offline')).mockResolvedValue([]);
         const known = createKnownRefs({ find });
 
-        known.getState().request('product', ['MUG']);
+        known.getState().request([knownKey('product', 'MUG')]);
         await vi.waitFor(() => expect(find).toHaveBeenCalledOnce());
-        await Promise.resolve();
-        known.getState().request('product', ['MUG']);
 
-        await vi.waitFor(() => expect(find).toHaveBeenCalledTimes(2));
+        // Once the failure is in, the next request asks again
+        await vi.waitFor(() => {
+            known.getState().request([knownKey('product', 'MUG')]);
+            expect(find).toHaveBeenCalledTimes(2);
+        });
     });
 });

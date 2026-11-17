@@ -3,6 +3,7 @@ import { useEffect, useId, useState, type KeyboardEvent } from 'react';
 import { useTranslator } from '../i18n';
 import type { SearchApi, SearchResult } from './api';
 import { useSearch } from './context';
+import { knownKey } from './known';
 import styles from './SearchPicker.module.css';
 
 export interface SearchPickerProps {
@@ -43,7 +44,7 @@ export function SearchPicker({ kind, label, searchLabel, disabled = false, descr
                             kind={kind}
                             searchLabel={searchLabel}
                             onPick={(result) => {
-                                search.known.getState().remember(kind, [result]);
+                                search.known.getState().remember({ [knownKey(kind, result.ref)]: result });
                                 setOpen(false);
                                 onPick(result);
                             }}
