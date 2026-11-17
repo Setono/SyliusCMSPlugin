@@ -108,7 +108,7 @@ final readonly class VideoEmbed
 
     private static function vimeo(string $path, mixed $hash, string $fragment): ?self
     {
-        $id = null;
+        // A video's own page, where an unlisted video's hash follows its ID
         if (1 === preg_match('~^/(\d+)(?:/([0-9a-f]+))?/?$~', $path, $matches)) {
             $id = $matches[1];
             $hash = $matches[2] ?? null;
