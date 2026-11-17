@@ -25,6 +25,7 @@ use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
 use Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher;
 use Setono\SyliusCMSPlugin\Rendering\PlacementData;
+use Setono\SyliusCMSPlugin\Rendering\PlacementPicker;
 use Setono\SyliusCMSPlugin\Rendering\PlacementProviderInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
@@ -314,6 +315,36 @@ final class SlotRendererTest extends TestCase
     }
 
     /**
+     * The winners are picked before anything renders, so the first snippet wins even though its blocks are all hidden,
+     * and the slot shows nothing. See "Capped slots" in docs/spec/targeting.md
+     *
+     * @test
+     */
+    public function it_shows_only_the_first_cap_matching_placements_of_a_capped_slot_even_when_a_winner_shows_nothing(): void
+    {
+        $hidden = new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e41', 'heading', 1, fields: ['text' => ['en_US' => 'Hidden']]);
+        $hidden->conditions = [['kind' => 'locale', 'negate' => false, 'params' => ['locales' => ['da_DK']]]];
+        $hiddenHero = $this->snippet(null, $hidden);
+        $unpublished = $this->snippet('Unpublished');
+        $hero = $this->snippet('Hero');
+        $fallback = $this->snippet('Fallback');
+        $this->visibleSnippets->get(Argument::any(), $this->context)->willReturn([$hiddenHero->getUuid() => $hiddenHero, $hero->getUuid() => $hero, $fallback->getUuid() => $fallback]);
+
+        $this->placementProvider->getPlacements($this->context->channel)->willReturn([
+            self::placement('shop.hero', $unpublished, 0),
+            self::placement('shop.hero', $hero, 1),
+            self::placement('shop.hero', $fallback, 2),
+        ]);
+        self::assertSame('<div class="cms-slot cms-slot--shop-hero">[Hero]</div>', $this->renderer()->render('shop.hero'));
+
+        $this->placementProvider->getPlacements($this->context->channel)->willReturn([
+            self::placement('shop.hero', $hiddenHero, 0),
+            self::placement('shop.hero', $fallback, 1),
+        ]);
+        self::assertSame('', $this->renderer()->render('shop.hero'));
+    }
+
+    /**
      * @test
      */
     public function it_renders_the_snippets_in_a_slot_of_the_builder_s_preview_as_shoppers_see_them_with_its_shown_to_and_date(): void
@@ -352,6 +383,7 @@ final class SlotRendererTest extends TestCase
             new SlotRegistry([
                 'shop.top' => ['label' => 'setono_sylius_cms.slot.shop.top', 'provides' => [], 'cap' => null],
                 'shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null],
+                'shop.hero' => ['label' => 'app.cms.slot.hero', 'provides' => [], 'cap' => 1],
                 'product.top' => ['label' => 'setono_sylius_cms.slot.product.top', 'provides' => ['product'], 'cap' => null],
                 'product.after_price' => ['label' => 'setono_sylius_cms.slot.product.after_price', 'provides' => ['product'], 'cap' => null],
             ]),
@@ -362,7 +394,10 @@ final class SlotRendererTest extends TestCase
             ),
             $this->renderContextFactory->reveal(),
             $this->placementProvider->reveal(),
-            $this->visibleSnippets->reveal(),
+            new PlacementPicker(
+                new PageScopeMatcher(Conditions::matcher(['on_product_page' => new OnProductPage()]), $referenceLoader),
+                $this->visibleSnippets->reveal(),
+            ),
             $this->upgrader->reveal(),
             new BlockViewBuilder(
                 $blockTypes,
@@ -373,7 +408,6 @@ final class SlotRendererTest extends TestCase
             ),
             $referenceLoader,
             new Environment(new ArrayLoader([SlotRenderer::TEMPLATE => $template])),
-            new PageScopeMatcher(Conditions::matcher(['on_product_page' => new OnProductPage()]), $referenceLoader),
         );
     }
 
