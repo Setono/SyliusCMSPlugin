@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Rendering;
 
+use Setono\SyliusCMSPlugin\Context\HostPageContextResolver;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
@@ -17,13 +18,18 @@ use Twig\Environment;
 /**
  * Renders a slot in the steps of "Rendering a slot" in docs/spec/rendering.md:
  *
- * 1. its context: the context keys it provides, taken from what it's passed (context resolvers join with #257)
+ * 1. its context: the context keys it provides, taken from what it's passed, and those it isn't passed from their
+ *    context resolvers. A key that can't be resolved, such as the product on a page that isn't a product page, makes it
+ *    print nothing
  * 2. the channel's placements in it, which load once a request, when the first slot renders
- * 3. those whose snippet is visible, in editor order (page scopes join with #258)
+ * 3. those whose snippet is visible and needs no more context than the slot provides, in editor order (page scopes
+ *    join with #258)
  * 4. its cap (#259)
  * 5. each shown snippet's tree, rendered with the slot's context in the slot template, inside the slot's wrapper
  *
- * A slot with nothing to show prints nothing, not even its wrapper
+ * It takes the placements before it resolves its context, so a slot without placements resolves nothing: a page
+ * doesn't look up its product for an empty product.top. A slot with nothing to show prints nothing, not even its
+ * wrapper
  */
 final class SlotRenderer implements SlotRendererInterface, ResetInterface
 {
@@ -35,6 +41,7 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
 
     public function __construct(
         private readonly SlotRegistryInterface $slots,
+        private readonly HostPageContextResolver $hostPageContext,
         private readonly RenderContextFactoryInterface $renderContextFactory,
         private readonly PlacementProviderInterface $placementProvider,
         private readonly VisibleSnippetsInterface $visibleSnippets,
@@ -49,17 +56,22 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
     {
         $slot = $this->slots->get($identifier);
 
-        // 1. The context keys it provides, of what it's passed
-        $renderContext = $this->renderContextFactory->create(self::providedContext($slot, $context));
-
-        // 2. The channel's placements in it
-        $placements = $this->placementsIn($slot, $renderContext->channel);
+        // 2. The channel's placements in it, before its context, which a slot without placements doesn't need
+        $placements = $this->placementsIn($slot, $this->renderContextFactory->create()->channel);
         if ([] === $placements) {
             return '';
         }
 
-        // 3. Those whose snippet is visible, in editor order
-        $shown = $this->withVisibleSnippets($placements, $renderContext);
+        // 1. The context keys it provides, of what it's passed and from their resolvers
+        $provided = $this->hostPageContext->resolve($slot->provides, $context);
+        if (null === $provided) {
+            return '';
+        }
+
+        $renderContext = $this->renderContextFactory->create($provided);
+
+        // 3. Those whose snippet is visible and needs no more context than the slot provides, in editor order
+        $shown = $this->withVisibleSnippets($slot, $placements, $renderContext);
 
         // 4. The cap joins here with #259
 
@@ -73,23 +85,6 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
     public function reset(): void
     {
         $this->placements = [];
-    }
-
-    /**
-     * @param array<array-key, mixed> $context
-     *
-     * @return array<string, object>
-     */
-    private static function providedContext(SlotMetadata $slot, array $context): array
-    {
-        $provided = [];
-        foreach ($slot->provides as $key) {
-            if (isset($context[$key]) && is_object($context[$key])) {
-                $provided[$key] = $context[$key];
-            }
-        }
-
-        return $provided;
     }
 
     /**
@@ -116,13 +111,14 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
     }
 
     /**
-     * The placements whose snippet is visible, each with its snippet, in the order given
+     * The placements whose snippet is visible, each with its snippet, in the order given. A snippet whose published
+     * content needs a context key the slot doesn't provide, such as one the code no longer declares, isn't shown
      *
      * @param non-empty-list<PlacementData> $placements
      *
      * @return list<array{PlacementData, SnippetInterface}>
      */
-    private function withVisibleSnippets(array $placements, RenderContext $context): array
+    private function withVisibleSnippets(SlotMetadata $slot, array $placements, RenderContext $context): array
     {
         $snippets = $this->visibleSnippets->get(
             array_values(array_unique(array_map(static fn (PlacementData $placement): string => $placement->snippetUuid, $placements))),
@@ -131,8 +127,9 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
 
         $shown = [];
         foreach ($placements as $placement) {
-            if (isset($snippets[$placement->snippetUuid])) {
-                $shown[] = [$placement, $snippets[$placement->snippetUuid]];
+            $snippet = $snippets[$placement->snippetUuid] ?? null;
+            if (null !== $snippet && $slot->providesAll($snippet->getContext())) {
+                $shown[] = [$placement, $snippet];
             }
         }
 

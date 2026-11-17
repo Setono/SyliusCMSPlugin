@@ -9,11 +9,14 @@ use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Block\Heading;
+use Setono\SyliusCMSPlugin\Context\ContextResolverInterface;
+use Setono\SyliusCMSPlugin\Context\HostPageContextResolver;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
@@ -36,9 +39,12 @@ use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\Product;
+use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\Taxon;
 use Sylius\Resource\Translation\Provider\ImmutableTranslationLocaleProvider;
 use Symfony\Component\DependencyInjection\ServiceLocator;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
 
@@ -58,6 +64,9 @@ final class SlotRendererTest extends TestCase
     /** @var ObjectProphecy<StoredDataUpgraderInterface> */
     private ObjectProphecy $upgrader;
 
+    /** @var ObjectProphecy<ContextResolverInterface> */
+    private ObjectProphecy $productResolver;
+
     private RenderContext $context;
 
     protected function setUp(): void
@@ -71,6 +80,7 @@ final class SlotRendererTest extends TestCase
         $this->placementProvider = $this->prophesize(PlacementProviderInterface::class);
         $this->visibleSnippets = $this->prophesize(VisibleSnippetsInterface::class);
         $this->upgrader = $this->prophesize(StoredDataUpgraderInterface::class);
+        $this->productResolver = $this->prophesize(ContextResolverInterface::class);
     }
 
     /**
@@ -196,6 +206,73 @@ final class SlotRendererTest extends TestCase
     }
 
     /**
+     * product.top sits in a layout event that fires on every page and passes no product
+     *
+     * @test
+     */
+    public function it_resolves_a_context_key_the_slot_is_not_passed_through_its_context_resolver(): void
+    {
+        $product = new Product();
+        $this->productResolver->resolve(Argument::type(Request::class))->willReturn($product);
+        $snippet = $this->snippet('Free returns');
+        $this->renderContextFactory->create(['product' => $product])->willReturn($this->context)->shouldBeCalled();
+        $this->placementProvider->getPlacements($this->context->channel)->willReturn([self::placement('product.top', $snippet, 0)]);
+        $this->visibleSnippets->get([$snippet->getUuid()], $this->context)->willReturn([$snippet->getUuid() => $snippet]);
+
+        self::assertSame('<div class="cms-slot cms-slot--product-top">[Free returns]</div>', $this->renderer()->render('product.top', ['title' => 'Not a product']));
+    }
+
+    /**
+     * @test
+     */
+    public function it_prints_nothing_when_a_context_key_the_slot_provides_cannot_be_resolved(): void
+    {
+        $this->productResolver->resolve(Argument::type(Request::class))->willReturn(null);
+        $this->placementProvider->getPlacements($this->context->channel)->willReturn([self::placement('product.top', $this->snippet('Free returns'), 0)]);
+        $this->visibleSnippets->get(Argument::cetera())->shouldNotBeCalled();
+
+        self::assertSame('', $this->renderer()->render('product.top'));
+    }
+
+    /**
+     * A slot with no placements prints nothing without resolving anything, so a page doesn't look up a product for an
+     * empty product.top
+     *
+     * @test
+     */
+    public function it_resolves_nothing_for_a_slot_without_placements(): void
+    {
+        $this->productResolver->resolve(Argument::cetera())->shouldNotBeCalled();
+        $this->placementProvider->getPlacements($this->context->channel)->willReturn([]);
+
+        self::assertSame('', $this->renderer()->render('product.top'));
+    }
+
+    /**
+     * Such as a snippet whose published content needs a context key the code no longer declares, or one placed before a
+     * slot stopped providing a key
+     *
+     * @test
+     */
+    public function it_shows_nothing_of_a_snippet_that_needs_context_the_slot_does_not_provide(): void
+    {
+        $product = new Product();
+        $sizeGuide = $this->snippet('Size guide', context: ['product']);
+        $brand = $this->snippet('Brand story', context: ['product', 'brand']);
+        $footer = $this->snippet('Footer');
+        $this->placementProvider->getPlacements($this->context->channel)->willReturn([
+            self::placement('product.after_price', $sizeGuide, 0),
+            self::placement('product.after_price', $brand, 1),
+            self::placement('product.after_price', $footer, 2),
+            self::placement('shop.footer', $sizeGuide, 0),
+        ]);
+        $this->visibleSnippets->get(Argument::any(), $this->context)->willReturn([$sizeGuide->getUuid() => $sizeGuide, $brand->getUuid() => $brand, $footer->getUuid() => $footer]);
+
+        self::assertSame('<div class="cms-slot cms-slot--product-after-price">[Size guide][Footer]</div>', $this->renderer()->render('product.after_price', ['product' => $product]));
+        self::assertSame('', $this->renderer()->render('shop.footer'));
+    }
+
+    /**
      * @test
      */
     public function it_renders_the_snippets_in_a_slot_of_the_builder_s_preview_as_shoppers_see_them_with_its_shown_to_and_date(): void
@@ -227,13 +304,21 @@ final class SlotRendererTest extends TestCase
         $handlers = Conditions::fieldHandlers();
         $blockTypes = new BlockTypeRegistry(['heading' => Heading::class], new FieldReader());
         $referenceLoader = new ReferenceLoader(new ServiceLocator([]));
+        $requestStack = new RequestStack();
+        $requestStack->push(Request::create('/en_US/products/t-shirt'));
 
         return new SlotRenderer(
             new SlotRegistry([
                 'shop.top' => ['label' => 'setono_sylius_cms.slot.shop.top', 'provides' => [], 'cap' => null],
                 'shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null],
+                'product.top' => ['label' => 'setono_sylius_cms.slot.product.top', 'provides' => ['product'], 'cap' => null],
                 'product.after_price' => ['label' => 'setono_sylius_cms.slot.product.after_price', 'provides' => ['product'], 'cap' => null],
             ]),
+            new HostPageContextResolver(
+                new ContextKeyRegistry(['product' => ['class' => ProductInterface::class, 'label' => 'setono_sylius_cms.context_key.product']]),
+                new ServiceLocator(['product' => fn (): ContextResolverInterface => $this->productResolver->reveal()]),
+                $requestStack,
+            ),
             $this->renderContextFactory->reveal(),
             $this->placementProvider->reveal(),
             $this->visibleSnippets->reveal(),
@@ -253,9 +338,13 @@ final class SlotRendererTest extends TestCase
     /**
      * A snippet whose upgraded tree is a heading with the text, or the block given, or no blocks for neither
      */
-    private function snippet(?string $heading, ?StoredBlock $block = null): SnippetInterface
+    /**
+     * @param list<string> $context the context keys it needs
+     */
+    private function snippet(?string $heading, ?StoredBlock $block = null, array $context = []): SnippetInterface
     {
         $snippet = new Snippet();
+        $snippet->setContext($context);
 
         $blocks = [];
         if (null !== $heading) {
