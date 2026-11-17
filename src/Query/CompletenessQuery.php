@@ -44,7 +44,7 @@ final readonly class CompletenessQuery implements CompletenessQueryInterface
                     ->update(Entry::class, 'entry')
                     ->set('entry.completeLocales', ':complete_locales')
                     ->andWhere('entry.id IN (:ids)')
-                    ->setParameter('complete_locales', (string) $value, Types::TEXT)
+                    ->setParameter('complete_locales', $value, Types::TEXT)
                     ->setParameter('ids', $chunk)
                     ->getQuery()
                     ->execute()

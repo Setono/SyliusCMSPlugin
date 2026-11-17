@@ -119,8 +119,9 @@ final class EntryFilterTypesTest extends TypeTestCase
         self::assertContains('setono_sylius_cms_entry_translation_filter', $vars['block_prefixes']);
         $labels = [];
         foreach ($vars['choices'] as $choice) {
+            self::assertIsString($choice->value);
             self::assertInstanceOf(TranslatableMessage::class, $choice->label);
-            $labels[(string) $choice->value] = [$choice->label->getMessage(), $choice->label->getParameters()];
+            $labels[$choice->value] = [$choice->label->getMessage(), $choice->label->getParameters()];
         }
         // In the order the channels list them, and a locale Sylius has no name for goes by its code
         self::assertSame([

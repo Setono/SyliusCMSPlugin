@@ -41,6 +41,31 @@ final class OverviewTest extends WebTestCase
     }
 
     /**
+     * Every content type is offered, so a new one, such as a project's or a built-in one, shows up here unchanged. See
+     * "Create dialog" in docs/spec/admin.md
+     *
+     * @test
+     */
+    public function it_creates_an_entry_from_the_overview_through_the_create_dialog_which_asks_for_the_content_type_first(): void
+    {
+        $client = self::signedInClient();
+
+        $crawler = $client->request('GET', '/admin/cms');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('cms-create-entry', $crawler->selectButton('Create')->attr('aria-controls'));
+        self::assertSame(
+            [['Announcement', '/admin/cms/entries/announcement/new'], ['Page', '/admin/cms/entries/page/new']],
+            $crawler->filter('dialog#cms-create-entry [data-cms-create-entry-type]')->each(static fn (Crawler $type): array => [trim($type->text()), (string) $type->attr('href')]),
+        );
+        // The panels sit in the order of the spec
+        self::assertSame(
+            ['needs_attention', 'coming_up', 'translations', 'drafts_in_progress'],
+            $crawler->filter('[data-panel]')->each(static fn (Crawler $panel): ?string => $panel->attr('data-panel')),
+        );
+    }
+
+    /**
      * @test
      */
     public function it_groups_the_stores_errors_and_warnings_by_kind_under_needs_attention_each_with_where_it_is_fixed(): void
