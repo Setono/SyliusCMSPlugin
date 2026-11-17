@@ -9,6 +9,9 @@ import { actedOn, locks } from '../store';
 import { findBlock } from '../tree';
 import type { BlockTypeDefinition, FieldDefinition, StoredBlock } from '../types';
 import { blockHasErrors } from '../validation';
+import { SNIPPET } from '../form/SnippetControl';
+import { useKnownRef } from '../search/context';
+import { isSnippetBlock, shownSnippet } from '../snippets';
 import { readFieldValue } from '../values';
 import { AddBlockButton } from './BlockPicker';
 import styles from './BlockTreePane.module.css';
@@ -167,7 +170,9 @@ function BlockRow({ block, hidden }: { block: StoredBlock; hidden: boolean }) {
     const unresolvedLink = usePreviewState((state) => state.unresolvedLinks.includes(block.key));
     const label = blockLabel(block, blockType, t);
     const labelField = linkLabelField(blockType);
-    const hint = labelField === undefined ? blockHint(block, blockType, locale) : '';
+    const shared = isSnippetBlock(block);
+    const snippetName = useKnownRef(SNIPPET, shownSnippet(block))?.name ?? '';
+    const hint = shared ? snippetName : labelField === undefined ? blockHint(block, blockType, locale) : '';
     const holdsBlocks = (blockType?.children.length ?? 0) > 0;
     const target = dragging?.target?.key === block.key ? dragging.target : null;
     // While a scheduled publish locks the working copy, blocks are only selected
@@ -248,6 +253,7 @@ function BlockRow({ block, hidden }: { block: StoredBlock; hidden: boolean }) {
                 {hint !== '' && <span className={styles.hint}>{hint}</span>}
             </button>
             {labelField !== undefined && <LinkLabelBox block={block} field={labelField} readOnly={locked} onEditing={setEditingLabel} />}
+            {shared && <span className={styles.shared}>{t('setono_sylius_cms.builder.snippet.shared')}</span>}
             {hidden && <HiddenFlag />}
             {unresolvedLink && <UnresolvedLinkFlag />}
             {invalid && <InvalidFlag />}

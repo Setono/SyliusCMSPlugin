@@ -750,6 +750,14 @@ setono_sylius_cms:
         slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team. The URL: %url%'
         slug_help_homepage: 'Generated from the title until you change it. It may have slashes, such as about/team. As a homepage, it shows at %homepage%, and %url% redirects there in the channels it''s the homepage of.'
         slug_help_none: Generated from the title until you change it. It may have slashes, such as about/team.
+        # A Snippet block, which shows a snippet that stays the same wherever it's used. See "Snippet references" in docs/spec/builder.md
+        snippet:
+            detach: Detach to edit here
+            detach_failed: 'The snippet''s blocks couldn''t be copied here. Try again.'
+            edit: Edit snippet
+            search: Search snippets
+            shared: Shared
+            shared_help: 'It shows the snippet as it''s published, the same everywhere it''s used. Edit the snippet to change it everywhere, or detach it to edit a copy of its blocks here only.'
         # List fields filled by a source. See "Sources" in docs/spec/builder.md
         sources:
             count: '%count% items now'
