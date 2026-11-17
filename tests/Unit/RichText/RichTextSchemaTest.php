@@ -17,13 +17,14 @@ final class RichTextSchemaTest extends TestCase
      */
     public function it_has_the_nodes_marks_and_attributes_the_builders_editor_shares(): void
     {
-        /** @var array{nodes: list<string>, marks: list<string>, attributes: array<string, list<string>>, headingLevels: list<int>} $shared */
+        /** @var array{nodes: list<string>, marks: list<string>, attributes: array<string, list<string>>, markAttributes: array<string, list<string>>, headingLevels: list<int>} $shared */
         $shared = json_decode((string) file_get_contents(dirname(__DIR__, 2) . '/Fixture/rich-text-schema.json'), true, 512, \JSON_THROW_ON_ERROR);
         $schema = new RichTextSchema();
 
         self::assertEqualsCanonicalizing($shared['nodes'], $schema->nodes());
         self::assertEqualsCanonicalizing($shared['marks'], $schema->marks());
         self::assertEquals($shared['attributes'], $schema->attributes());
+        self::assertEquals($shared['markAttributes'], $schema->markAttributes());
         self::assertSame($shared['headingLevels'], RichTextSchema::HEADING_LEVELS);
     }
 
@@ -54,6 +55,64 @@ final class RichTextSchemaTest extends TestCase
             self::text('Hello', [['type' => 'bold'], ['type' => 'italic']]),
             self::text(' world'),
         ]]), $sanitized);
+    }
+
+    /**
+     * @test
+     */
+    public function it_keeps_a_link_s_target_ref_and_anchor_when_sanitising_and_drops_its_other_attributes(): void
+    {
+        $sanitized = (new RichTextSchema())->sanitize(self::doc(['type' => 'paragraph', 'content' => [
+            self::text('Red shirt', [['type' => 'cmsLink', 'attrs' => ['target' => 'product', 'ref' => 'T_SHIRT_RED', 'anchor' => 'sizes', 'href' => 'javascript:alert(1)', 'onclick' => 'alert(1)']], ['type' => 'bold']]),
+            self::text(' and '),
+            self::text('our story', [['type' => 'cmsLink', 'attrs' => ['target' => 'url', 'ref' => '/en_US/story']]]),
+        ]]));
+
+        self::assertSame(self::doc(['type' => 'paragraph', 'content' => [
+            self::text('Red shirt', [['type' => 'cmsLink', 'attrs' => ['target' => 'product', 'ref' => 'T_SHIRT_RED', 'anchor' => 'sizes']], ['type' => 'bold']]),
+            self::text(' and '),
+            self::text('our story', [['type' => 'cmsLink', 'attrs' => ['target' => 'url', 'ref' => '/en_US/story', 'anchor' => null]]]),
+        ]]), $sanitized);
+    }
+
+    /**
+     * @test
+     */
+    public function it_drops_a_link_without_a_target_or_a_ref_when_sanitising_and_keeps_its_text(): void
+    {
+        $schema = new RichTextSchema();
+
+        foreach ([
+            'no attributes' => ['type' => 'cmsLink'],
+            'attributes that are not a map' => ['type' => 'cmsLink', 'attrs' => 'product'],
+            'no target' => ['type' => 'cmsLink', 'attrs' => ['ref' => 'T_SHIRT_RED', 'anchor' => null]],
+            'an empty target' => ['type' => 'cmsLink', 'attrs' => ['target' => '', 'ref' => 'T_SHIRT_RED']],
+            'no ref' => ['type' => 'cmsLink', 'attrs' => ['target' => 'product', 'anchor' => null]],
+            'an empty ref' => ['type' => 'cmsLink', 'attrs' => ['target' => 'product', 'ref' => '']],
+            'a ref per locale, which rich text never has' => ['type' => 'cmsLink', 'attrs' => ['target' => 'url', 'ref' => ['en_US' => '/en_US/story']]],
+            'a target that is not a string' => ['type' => 'cmsLink', 'attrs' => ['target' => 42, 'ref' => 'T_SHIRT_RED']],
+        ] as $case => $link) {
+            self::assertSame(
+                self::doc(['type' => 'paragraph', 'content' => [self::text('Red shirt', [['type' => 'italic']])]]),
+                $schema->sanitize(self::doc(['type' => 'paragraph', 'content' => [self::text('Red shirt', [$link, ['type' => 'italic']])]])),
+                $case,
+            );
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_keeps_a_link_without_its_anchor_when_the_anchor_is_empty_or_not_a_string(): void
+    {
+        $schema = new RichTextSchema();
+
+        foreach (['', 42, ['sizes'], null] as $anchor) {
+            self::assertSame(
+                self::doc(['type' => 'paragraph', 'content' => [self::text('Shirts', [['type' => 'cmsLink', 'attrs' => ['target' => 'taxon', 'ref' => 'T_SHIRTS', 'anchor' => null]]])]]),
+                $schema->sanitize(self::doc(['type' => 'paragraph', 'content' => [self::text('Shirts', [['type' => 'cmsLink', 'attrs' => ['target' => 'taxon', 'ref' => 'T_SHIRTS', 'anchor' => $anchor]]])]])),
+            );
+        }
     }
 
     /**
@@ -222,6 +281,7 @@ final class RichTextSchemaTest extends TestCase
         yield 'strike' => [self::doc($paragraph(self::text('struck', [['type' => 'strike']]))), '<p><s>struck</s></p>'];
         yield 'code' => [self::doc($paragraph(self::text('$x', [['type' => 'code']]))), '<p><code>$x</code></p>'];
         yield 'marks together' => [self::doc($paragraph(self::text('both', [['type' => 'bold'], ['type' => 'italic']]))), '<p><strong><em>both</em></strong></p>'];
+        yield 'cmsLink, which nothing resolves without a resolver' => [self::doc($paragraph(self::text('a link', [['type' => 'cmsLink', 'attrs' => ['target' => 'url', 'ref' => 'https://example.com', 'anchor' => null]]]))), '<p>a link</p>'];
     }
 
     /**

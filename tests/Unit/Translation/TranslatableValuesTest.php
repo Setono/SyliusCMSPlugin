@@ -24,7 +24,7 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
-use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
+use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Translation\Fixture\Promo;
 use Setono\SyliusCMSPlugin\Translation\Completeness;
@@ -399,7 +399,7 @@ final class TranslatableValuesTest extends TestCase
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
-            RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
+            RichTextHandler::class => Links::richTextHandler(...),
         ]));
 
         return new TranslatableValues(

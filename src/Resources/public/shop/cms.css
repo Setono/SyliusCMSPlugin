@@ -180,6 +180,19 @@
         color: var(--cms-button-secondary-color);
     }
 
+    /* Link list: its links one under the other, without bullets */
+    .cms-link-list__heading {
+        margin: 0 0 0.5em;
+    }
+
+    .cms-link-list__links {
+        display: grid;
+        row-gap: 0.25em;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
     /* Products and Taxons: a grid of the shop's product cards or of taxon tiles, as many to a row as fit at
        --cms-grid-item-min-width. A row that isn't full keeps its cards at the width of a full row's */
     .cms-products--grid,

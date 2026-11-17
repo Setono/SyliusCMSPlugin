@@ -1,12 +1,15 @@
 import type { Editor, JSONContent } from '@tiptap/core';
 import { Placeholder, UndoRedo } from '@tiptap/extensions';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslator, type MessageKey } from '../i18n';
+import { useLinkTargets } from '../linkTargets';
+import { LinkIcon } from '../shell/icons';
 import { documentValue, headingLevels, richTextExtensions, type HeadingLevel } from '../richText/schema';
 import type { JsonValue } from '../types';
 import { isJsonObject, jsonEqual, plainText } from '../values';
 import styles from './Form.module.css';
+import { RichTextLinkPanel } from './RichTextLinkPanel';
 import type { FieldControlProps } from './types';
 
 /**
@@ -19,6 +22,8 @@ export function RichTextControl({ id, value, onChange, schema, describedBy, plac
     const placeholderText = placeholder === undefined || placeholder === null ? '' : plainText(placeholder);
     const placeholderRef = useRef(placeholderText);
     placeholderRef.current = placeholderText;
+    // Whether the panel that links the selected text is open
+    const [linking, setLinking] = useState(false);
 
     const editor = useEditor({
         extensions: [...richTextExtensions, UndoRedo, Placeholder.configure({ placeholder: () => placeholderRef.current })],
@@ -52,7 +57,8 @@ export function RichTextControl({ id, value, onChange, schema, describedBy, plac
 
     return (
         <div className={styles.richText}>
-            <Toolbar editor={editor} controls={id} />
+            <Toolbar editor={editor} controls={id} linking={linking} onLink={() => setLinking((open) => !open)} />
+            {linking && <RichTextLinkPanel id={id} editor={editor} onClose={() => setLinking(false)} />}
             <EditorContent editor={editor} />
         </div>
     );
@@ -68,8 +74,18 @@ const marks: ReadonlyArray<{ mark: Mark; label: MessageKey; glyph: ReactNode }> 
     { mark: 'code', label: 'setono_sylius_cms.builder.rich_text.code', glyph: <code>{'</>'}</code> },
 ];
 
-function Toolbar({ editor, controls }: { editor: Editor; controls: string }) {
+interface ToolbarProps {
+    editor: Editor;
+    controls: string;
+    /** Whether the panel that links the selected text is open. */
+    linking: boolean;
+    onLink: () => void;
+}
+
+function Toolbar({ editor, controls, linking, onLink }: ToolbarProps) {
     const t = useTranslator();
+    // Without link targets, such as outside the builder, there's nothing to link to
+    const linkable = useLinkTargets().length > 0;
     const active = useEditorState({
         editor,
         selector: ({ editor: current }) => ({
@@ -78,6 +94,8 @@ function Toolbar({ editor, controls }: { editor: Editor; controls: string }) {
             underline: current.isActive('underline'),
             strike: current.isActive('strike'),
             code: current.isActive('code'),
+            link: current.isActive('cmsLink'),
+            selected: !current.state.selection.empty,
             heading: headingLevels.find((level) => current.isActive('heading', { level })),
             bulletList: current.isActive('bulletList'),
             orderedList: current.isActive('orderedList'),
@@ -93,6 +111,12 @@ function Toolbar({ editor, controls }: { editor: Editor; controls: string }) {
                     {glyph}
                 </ToolbarButton>
             ))}
+            {linkable && (
+                // Links the selected text, or changes the link the cursor is in
+                <ToolbarButton label={t('setono_sylius_cms.builder.rich_text.link')} pressed={active.link} expanded={linking} disabled={!active.selected && !active.link && !linking} onClick={onLink}>
+                    <LinkIcon />
+                </ToolbarButton>
+            )}
             <span className={styles.toolbarSeparator} aria-hidden="true" />
             {headingLevels.map((level: HeadingLevel) => (
                 <ToolbarButton
@@ -125,11 +149,14 @@ interface ToolbarButtonProps {
     label: string;
     /** Whether what it toggles is on where the cursor is. Left out for a button that only inserts. */
     pressed?: boolean;
+    /** Whether the panel it opens is open. Left out for a button that opens none. */
+    expanded?: boolean;
+    disabled?: boolean;
     onClick: () => void;
     children: ReactNode;
 }
 
-function ToolbarButton({ label, pressed, onClick, children }: ToolbarButtonProps) {
+function ToolbarButton({ label, pressed, expanded, disabled = false, onClick, children }: ToolbarButtonProps) {
     return (
         <button
             type="button"
@@ -137,6 +164,8 @@ function ToolbarButton({ label, pressed, onClick, children }: ToolbarButtonProps
             aria-label={label}
             title={label}
             aria-pressed={pressed}
+            aria-expanded={expanded}
+            disabled={disabled}
             // Keeps the editor's selection, which a click would otherwise take away
             onMouseDown={(event) => event.preventDefault()}
             onClick={onClick}

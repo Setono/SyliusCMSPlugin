@@ -1,0 +1,10 @@
+<nav class="cms-link-list{{ view.styleClass ? ' ' ~ view.styleClass }}"{% if block.heading %} aria-label="{{ block.heading }}"{% endif %}>
+    {%- if block.heading %}
+    <h2 class="cms-link-list__heading">{{ cms_field(block, 'heading') }}</h2>
+    {%- endif %}
+    <ul class="cms-link-list__links">
+        {%- for link in children -%}
+            {{ cms_block(link) }}
+        {%- endfor -%}
+    </ul>
+</nav>
