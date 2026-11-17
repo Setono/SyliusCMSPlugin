@@ -56,7 +56,7 @@ final class TransformFilterLoader implements LoaderInterface
      */
     private static function pixels(mixed $value, string $name): int
     {
-        $pixels = is_int($value) || (is_string($value) && ctype_digit($value)) ? (int) $value : 0;
+        $pixels = is_int($value) || (is_string($value) && 1 === preg_match('/^\d+$/', $value)) ? (int) $value : 0;
         if ($pixels < 1) {
             throw new \InvalidArgumentException(sprintf('An image variant\'s %s must be a positive number of pixels, not %s', $name, get_debug_type($value)));
         }
