@@ -52,6 +52,9 @@ setono_sylius_cms:
         accordion_item:
             content: Content
             title: Title
+        bestsellers_source:
+            include_children: Include the taxons below it
+            taxon: Taxon
         button:
             link: Link
         channel_condition:
@@ -175,6 +178,7 @@ setono_sylius_cms:
         invalid: '{1} Validation found an error to fix: %errors%|]1,Inf[ Validation found %count% errors to fix: %errors%'
     # The sources' labels. See "Sources" in docs/spec/sources.md
     source:
+        bestsellers: Bestsellers
         newest_products: Newest
         products_in_taxon: In taxon
         taxon_children: Children of a taxon

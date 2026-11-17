@@ -20,7 +20,7 @@
         The shipped sources. A source is a service carrying #[AsSource], which autoconfiguration tags
         setono_sylius_cms.source, and RegisterSourcesPass hands to the registry by code. The builder offers them by their
         tag's priority, so the shipped ones come first, in this order, and then a project's. The gaps leave room for the
-        shipped sources still to come: Bestsellers (50), Associations (30) and Same taxon (20)
+        shipped sources still to come: Associations (30) and Same taxon (20)
         -->
         <service id="Setono\SyliusCMSPlugin\Source\Product\ProductsInTaxonSource" class="Setono\SyliusCMSPlugin\Source\Product\ProductsInTaxonSource">
             <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface"/>
@@ -28,6 +28,14 @@
             <argument>%sylius.model.channel_pricing.class%</argument>
 
             <tag name="setono_sylius_cms.source" priority="60"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Source\Product\BestsellersSource" class="Setono\SyliusCMSPlugin\Source\Product\BestsellersSource">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Source\Product\TaxonFilter"/>
+            <argument>%setono_sylius_cms.model.bestseller_score.class%</argument>
+
+            <tag name="setono_sylius_cms.source" priority="50"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Source\Product\NewestProductsSource" class="Setono\SyliusCMSPlugin\Source\Product\NewestProductsSource">

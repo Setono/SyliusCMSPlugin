@@ -9,8 +9,10 @@ use Pagerfanta\Adapter\AdapterInterface;
 use Setono\SyliusCMSPlugin\Attribute\NoParams;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Source\Product\BestsellersParams;
 use Setono\SyliusCMSPlugin\Source\Product\ProductsInTaxonParams;
 use Setono\SyliusCMSPlugin\Source\Taxon\TaxonChildrenParams;
+use Setono\SyliusCMSPlugin\Tests\Support\Bestsellers;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
@@ -25,6 +27,7 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
  */
 final class ShippedSourcesTest extends KernelTestCase
 {
+    use Bestsellers;
     use Catalog;
     use Entries;
 
@@ -193,6 +196,89 @@ final class ShippedSourcesTest extends KernelTestCase
     /**
      * @test
      */
+    public function bestsellers_lists_the_visible_products_scored_in_the_channel_highest_first_then_by_id(): void
+    {
+        self::createChannel('OUTLET');
+        foreach (['BASIC', 'STRIPED', 'PLAIN', 'SAME', 'UNSCORED'] as $code) {
+            self::createProduct($code, $code);
+        }
+        self::createProduct('HIDDEN', 'Hidden', enabled: false);
+        self::createProduct('OUTLET_ONLY', 'Outlet only', channels: ['OUTLET']);
+        // Same scores as Plain, created after it, so after it by ID. A score of a product that's gone joins nothing
+        self::scoreProducts(['BASIC' => 2, 'STRIPED' => 7.5, 'SAME' => 4, 'PLAIN' => 4, 'HIDDEN' => 100, 'OUTLET_ONLY' => 50, 'GONE' => 20]);
+        // Scores in another channel don't count
+        self::scoreProducts(['UNSCORED' => 90, 'BASIC' => 80], 'OUTLET');
+
+        $adapter = self::bestsellers();
+
+        self::assertSame(['STRIPED', 'PLAIN', 'SAME', 'BASIC'], self::codes($adapter->getSlice(0, 10)));
+        self::assertSame(['PLAIN', 'SAME'], self::codes($adapter->getSlice(1, 2)));
+        self::assertSame(4, $adapter->getNbResults());
+    }
+
+    /**
+     * @test
+     */
+    public function bestsellers_lists_the_scored_products_in_the_taxon_or_below_it_with_its_children(): void
+    {
+        $clothing = self::createTaxon('CLOTHING', 'Clothing');
+        $shirts = self::createChildTaxon($clothing, 'T_SHIRTS', 'T-shirts');
+        $mugs = self::createTaxon('MUGS', 'Mugs');
+        $jacket = self::createProduct('JACKET', 'Jacket');
+        self::placeInTaxon($jacket, $clothing);
+        $basic = self::createProduct('BASIC', 'Basic');
+        self::placeInTaxon($basic, $shirts);
+        // In the taxon and below it, so listed once
+        self::placeInTaxon($basic, $clothing);
+        self::placeInTaxon(self::createProduct('STRIPED', 'Striped'), $shirts);
+        self::placeInTaxon(self::createProduct('MUG', 'Mug'), $mugs);
+        self::scoreProducts(['MUG' => 9, 'STRIPED' => 5, 'BASIC' => 3, 'JACKET' => 1]);
+
+        self::assertSame(['BASIC', 'JACKET'], self::codes(self::bestsellers($clothing)->getSlice(0, 10)));
+        $withChildren = self::bestsellers($clothing, includeChildren: true);
+        self::assertSame(['STRIPED', 'BASIC', 'JACKET'], self::codes($withChildren->getSlice(0, 10)));
+        self::assertSame(3, $withChildren->getNbResults());
+    }
+
+    /**
+     * @test
+     */
+    public function bestsellers_never_comes_up_short_while_enough_visible_products_are_scored(): void
+    {
+        $shirts = self::createTaxon('T_SHIRTS', 'T-shirts');
+        $scores = [];
+        foreach (range(1, 12) as $rank) {
+            // The best sellers are hidden, unscored or outside the taxon, and the rest of the list fills the first 8
+            $code = sprintf('P%02d', $rank);
+            $product = self::createProduct($code, $code, enabled: $rank > 2);
+            if (3 !== $rank) {
+                self::placeInTaxon($product, $shirts);
+            }
+            if (4 !== $rank) {
+                $scores[$code] = 100 - $rank;
+            }
+        }
+        self::scoreProducts($scores);
+
+        self::assertSame(['P05', 'P06', 'P07', 'P08', 'P09', 'P10', 'P11', 'P12'], self::codes(self::bestsellers($shirts)->getSlice(0, 8)));
+    }
+
+    /**
+     * @test
+     */
+    public function bestsellers_lists_nothing_until_the_scores_are_first_computed(): void
+    {
+        self::createProduct('BASIC', 'Basic');
+
+        $adapter = self::bestsellers();
+
+        self::assertSame([], self::codes($adapter->getSlice(0, 8)));
+        self::assertSame(0, $adapter->getNbResults());
+    }
+
+    /**
+     * @test
+     */
     public function children_of_a_taxon_lists_the_enabled_taxons_right_below_it_by_their_position(): void
     {
         $clothing = self::createTaxon('CLOTHING', 'Clothing');
@@ -225,6 +311,18 @@ final class ShippedSourcesTest extends KernelTestCase
         $params->sort = $sort;
 
         return self::source('products_in_taxon')->resolve($params, self::context());
+    }
+
+    /**
+     * @return AdapterInterface<mixed>
+     */
+    private static function bestsellers(?TaxonInterface $taxon = null, bool $includeChildren = false): AdapterInterface
+    {
+        $params = new BestsellersParams();
+        $params->taxon = $taxon;
+        $params->includeChildren = $includeChildren;
+
+        return self::source('bestsellers')->resolve($params, self::context());
     }
 
     private static function source(string $code): \Setono\SyliusCMSPlugin\Source\SourceInterface

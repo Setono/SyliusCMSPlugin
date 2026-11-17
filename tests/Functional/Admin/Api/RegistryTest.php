@@ -292,7 +292,7 @@ final class RegistryTest extends BuilderApiTestCase
                                 'additionalProperties' => false,
                             ],
                         ],
-                        'x-cms-options' => ['max' => null, 'sources' => ['products_in_taxon', 'newest_products'], 'limit' => 8],
+                        'x-cms-options' => ['max' => null, 'sources' => ['products_in_taxon', 'bestsellers', 'newest_products'], 'limit' => 8],
                         'x-cms-type' => 'products',
                         'x-cms-label' => 'Products',
                         'x-cms-help' => null,
