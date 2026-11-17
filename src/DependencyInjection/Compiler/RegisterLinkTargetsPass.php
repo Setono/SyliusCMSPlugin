@@ -40,8 +40,7 @@ final class RegisterLinkTargetsPass implements CompilerPassInterface
         /** @var array<string, Reference> $targets */
         $targets = [];
 
-        $codeOf = static fn (string $class): ?string => AttributeReader::linkTarget($class)?->code;
-        foreach (TaggedClasses::byCode($container, self::TAG, 'link target', '#[AsLinkTarget]', $codeOf, LinkTargetInterface::class) as $code => [$id, $class]) {
+        foreach (TaggedClasses::byCode($container, self::TAG, 'link target', '#[AsLinkTarget]', AttributeReader::linkTarget(...), LinkTargetInterface::class) as $code => [$id, $class]) {
             $classes[$code] = $class;
             $targets[$code] = new Reference($id);
         }

@@ -21,6 +21,7 @@ final class Rendering
     }
 
     /**
+     * @param RenderContext::PREVIEW_MODE_*|null $previewMode
      * @param array<string, object> $hostPageContext
      */
     public static function context(

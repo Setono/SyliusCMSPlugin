@@ -35,10 +35,7 @@ final class RegisterSourcesPass implements CompilerPassInterface
         /** @var array<string, Reference> $sources */
         $sources = [];
 
-        $codeOf = static fn (string $class): ?string => AttributeReader::source($class)?->code;
-        foreach (TaggedClasses::byCode($container, self::TAG, 'source', '#[AsSource]', $codeOf, SourceInterface::class) as $code => [$id, $class]) {
-            $attribute = AttributeReader::source($class) ?? throw new \LogicException(sprintf('The source %s has no #[AsSource]', $class));
-
+        foreach (TaggedClasses::byCode($container, self::TAG, 'source', '#[AsSource]', AttributeReader::source(...), SourceInterface::class) as $code => [$id, $class, $attribute]) {
             if (!class_exists($attribute->of) && !interface_exists($attribute->of)) {
                 throw new \LogicException(sprintf('The source %s lists %s, which is no class or interface', $class, $attribute->of));
             }

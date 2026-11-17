@@ -62,7 +62,7 @@ final class LinkLocaleParts
      * @throws \InvalidArgumentException when there's no link to write into, the parts aren't {label?, ref?} strings, or
      *                                   a ref is given for a link whose ref every locale shares
      *
-     * @return array<string, mixed>
+     * @return array<mixed>
      */
     public static function with(mixed $link, string $locale, mixed $parts): array
     {
