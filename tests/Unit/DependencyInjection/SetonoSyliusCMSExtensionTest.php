@@ -555,7 +555,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->load(['builder' => ['scripts' => ['/build/app/cms/controls.js']]]);
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.builder.scripts', ['/build/app/cms/controls.js']);
-        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BuilderAction::class, 12, '%setono_sylius_cms.builder.scripts%');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BuilderAction::class, 13, '%setono_sylius_cms.builder.scripts%');
     }
 
     /**
