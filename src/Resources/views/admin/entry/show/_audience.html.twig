@@ -1,0 +1,19 @@
+{#- An audience in words, such as "Everyone" or "Only Guests, Wholesale": `audience` is a Targeting\Audience, and its
+ # customer groups are named as the admin names them. See "Audience" in GLOSSARY.md
+ -#}
+{%- if audience.mode.value == 'everyone' -%}
+    {{ 'setono_sylius_cms.ui.audience.everyone'|trans }}
+{%- else -%}
+    {%- set names = cms_admin_customer_group_names() -%}
+    {%- set groups = [] -%}
+    {%- for group in audience.groups -%}
+        {%- if group == '@guest' -%}
+            {%- set groups = groups|merge(['setono_sylius_cms.ui.audience.guests'|trans]) -%}
+        {%- elseif group == '@no_group' -%}
+            {%- set groups = groups|merge(['setono_sylius_cms.ui.audience.no_group'|trans]) -%}
+        {%- else -%}
+            {%- set groups = groups|merge([names[group]|default(group)]) -%}
+        {%- endif -%}
+    {%- endfor -%}
+    {{ ('setono_sylius_cms.ui.audience.' ~ audience.mode.value)|trans({'%groups%': groups|sort|join(', ')}) }}
+{%- endif -%}

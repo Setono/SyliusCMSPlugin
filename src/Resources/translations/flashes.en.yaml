@@ -17,6 +17,8 @@ setono_sylius_cms:
     placement_not_moved: The placement is at the end of its slot already.
     placement_removed: The placement has been removed. The snippet no longer shows there.
     placement_slot_not_offered: Pick a slot that provides the host-page context the snippet needs.
+    placements_order_outdated: The slot's placements changed meanwhile, so the order wasn't saved. Order them again.
+    placements_ordered: The order has been saved. The slot shows its placements in the new order at once.
     revision_restored: The revision has been restored into the draft. Review it, then publish it.
     share_link_created: The share link has been made. Copy it from Share links.
     share_link_revoked: The share link has been revoked. It now answers as it would for anyone else.

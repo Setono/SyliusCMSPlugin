@@ -47,4 +47,16 @@ interface PlacementEditorInterface
      * @return bool false when it's last already, which changes nothing
      */
     public function moveDown(PlacementInterface $placement): bool;
+
+    /**
+     * Puts the slot's placements, of every snippet, in this order, as the Order… dialog of a capped slot does
+     *
+     * @param list<string> $placementUuids the UUIDs of every placement in the slot, each once, in their new order
+     *
+     * @return bool false when they're in that order already, which changes nothing
+     *
+     * @throws OutdatedPlacementOrderException when the list doesn't name each of the slot's placements exactly once,
+     *                                         such as when another tab added or removed one
+     */
+    public function reorder(string $slot, array $placementUuids): bool;
 }

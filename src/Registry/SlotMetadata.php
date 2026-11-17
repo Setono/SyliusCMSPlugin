@@ -14,6 +14,9 @@ final readonly class SlotMetadata
     /** Codes joined by dots, such as product.after_price */
     public const IDENTIFIER_PATTERN = '/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$/';
 
+    /** The template event of Sylius's own homepage, such as store_homepage's, which a CMS homepage doesn't render */
+    public const STORE_HOMEPAGE_EVENT = 'sylius.shop.homepage';
+
     /**
      * @param string $label a translation key
      * @param list<string> $provides the context keys it provides
@@ -43,6 +46,15 @@ final readonly class SlotMetadata
     public function wrapperClass(): string
     {
         return 'cms-slot cms-slot--' . strtr($this->identifier, '._', '--');
+    }
+
+    /**
+     * Whether it's tied to the template event of Sylius's own homepage, such as the stock slot store_homepage: a channel
+     * whose homepage is a CMS page doesn't render it. See "Rendering the homepage" in docs/spec/urls-and-seo.md
+     */
+    public function isOnStoreHomepage(): bool
+    {
+        return self::STORE_HOMEPAGE_EVENT === $this->templateEvent;
     }
 
     /**

@@ -43,6 +43,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction as DiscardEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\MediaLibraryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\MovePlacementAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\OrderPlacementsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PreviewRevisionAction as PreviewRevisionPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PublishEntryAction as PublishEntryPageAction;
@@ -164,10 +165,16 @@ return static function (RoutingConfigurator $routes): void {
         ->requirements(['uuid' => Requirement::UUID, 'id' => Requirement::DIGITS])
     ;
 
-    // The Placements section of a snippet's overview page: Add placement, and Move up, Move down, Remove and Edit page
-    // scope of a placement
+    // The Placements section of a snippet's overview page: Add placement, the Order… dialog of a capped slot, and Move
+    // up, Move down, Remove and Edit page scope of a placement
     $routes->add('setono_sylius_cms_admin_entry_placement_add', '/cms/entry/{uuid}/placements')
         ->controller(AddPlacementAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_entry_placement_order', '/cms/entry/{uuid}/placements/order')
+        ->controller(OrderPlacementsAction::class)
         ->methods(['POST'])
         ->requirements(['uuid' => Requirement::UUID])
     ;

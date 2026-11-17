@@ -28,5 +28,11 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Homepage\HomepageResolverInterface" alias="Setono\SyliusCMSPlugin\Homepage\HomepageResolver"/>
+
+        <!-- The channels whose homepage is a CMS page, which hides the slots on Sylius's own homepage -->
+        <service id="Setono\SyliusCMSPlugin\Homepage\CMSHomepageChannels" class="Setono\SyliusCMSPlugin\Homepage\CMSHomepageChannels">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface"/>
+            <argument type="service" id="sylius.repository.channel"/>
+        </service>
     </services>
 </container>

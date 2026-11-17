@@ -112,7 +112,7 @@ A page can be a channel's [homepage](../../GLOSSARY.md#entries).
 - **The route doesn't change.** It stays `sylius_shop_homepage`, so every `path('sylius_shop_homepage')` in themes keeps working.
 - **The page's own URL gets a `301` to `/{locale}/`** in every channel where it's the homepage. Links to the page point straight there, and `/{locale}/` is its canonical URL.
 - **The builder previews it at `/{locale}/`.**
-- **Sylius's homepage template doesn't render** on a channel with a CMS homepage, so placements in the `store_homepage` stock slot don't show there. The admin warns about such placements ([Admin](admin.md#problems)). The page's layout can have slots of its own ([Slots](slots.md)).
+- **Sylius's homepage template doesn't render** on a channel with a CMS homepage, so placements in the `store_homepage` stock slot, and in any slot tied to its template event `sylius.shop.homepage`, don't show there. The admin warns about such placements ([Admin](admin.md#problems)). The page's layout can have slots of its own ([Slots](slots.md)).
 
 ## SEO fields
 

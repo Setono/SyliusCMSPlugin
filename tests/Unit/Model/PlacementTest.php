@@ -7,6 +7,8 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Model;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Model\Placement;
 use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Targeting\Audience;
+use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Uid\UuidV7;
 
@@ -63,5 +65,24 @@ final class PlacementTest extends TestCase
         $placement->setPageScope($scope);
 
         self::assertSame($scope, $placement->getPageScope());
+    }
+
+    /**
+     * A capped slot's fallback: a placement with an empty page scope whose snippet's audience is everyone. See "Capped
+     * slots" in docs/spec/targeting.md
+     *
+     * @test
+     */
+    public function it_is_a_catch_all_with_an_empty_page_scope_and_a_snippet_for_everyone(): void
+    {
+        $forEveryone = new Snippet();
+        $forWholesale = new Snippet();
+        ChannelsAndAudience::modifier()->setAudience($forWholesale, Audience::only('wholesale'));
+        $scoped = new Placement($forEveryone, 'product.after_price', 0);
+        $scoped->setPageScope([['kind' => 'product', 'negate' => true, 'params' => ['products' => ['MUG']]]]);
+
+        self::assertTrue((new Placement($forEveryone, 'shop.top', 0))->isCatchAll());
+        self::assertFalse((new Placement($forWholesale, 'shop.top', 0))->isCatchAll());
+        self::assertFalse($scoped->isCatchAll());
     }
 }

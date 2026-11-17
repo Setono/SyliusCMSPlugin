@@ -254,6 +254,7 @@ setono_sylius_cms:
         broken_layout_rich_text_reference: 'A link in %field% in the layout leads to %type% that was deleted, so it shows as plain text.'
         broken_reference: '%field% in the %block% block refers to %type% that was deleted, so it isn''t shown.'
         broken_rich_text_reference: 'A link in %field% in the %block% block leads to %type% that was deleted, so it shows as plain text.'
+        capped_slot_without_catch_all: '"%slot%" is capped at %cap% and has no catch-all placement, with no page scope and a snippet for everyone, so some pages or shoppers may see nothing there.'
         deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
         deleted_customer_group_negated: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer excludes anyone through it.'
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
@@ -261,6 +262,7 @@ setono_sylius_cms:
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
         page_scope_removed_kind: 'The page scope of the placement in "%slot%" has a condition of the kind "%kind%", which the code no longer has, so the placement shows nothing.'
         page_scope_unprovided: 'The page scope of the placement in "%slot%" has a condition, %kind%, that needs the host-page context "%context%", which the slot no longer provides, so the placement shows nothing.'
+        placement_hidden_by_homepage: 'The placement in "%slot%" doesn''t show in %channels%, whose homepage is a CMS page, as Sylius''s own homepage doesn''t render there.'
         removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
         removed_context_key: 'It needs the context key "%key%", which the code no longer has, so none of its placements shows it.'
         removed_slot: 'A placement in the slot "%slot%", which the code no longer has, shows nothing.'
@@ -275,9 +277,11 @@ setono_sylius_cms:
     # Each kind of problem, by its code, as the Overview's Needs attention groups them. A project names its own kinds here
     problem_kind:
         broken_reference: Broken references
+        capped_slot_without_catch_all: Capped slots without a catch-all placement
         deleted_customer_group: Deleted customer groups
         misfit_value: Values that don't fit their field
         page_scope_mismatch: Page scopes that don't fit their slots
+        placement_hidden_by_homepage: Placements a CMS homepage hides
         removed_context_key: Removed context keys
         removed_layout: Removed layouts
         scheduled_publish_failed: Failed scheduled publishes
@@ -409,6 +413,11 @@ setono_sylius_cms:
         now: Now
         old_urls: 'Redirects from:'
         open_in_builder: Open in builder
+        order: Order…
+        # The Order… dialog of a capped slot on the overview page of a snippet placed in it. See "Placements" in docs/spec/admin.md
+        order_slot: 'Order of "%slot%"'
+        order_slot_help: '{1} Only the first placement that matches the page and the shopper shows, so put the most specific first, and last a catch-all, with no page scope and a snippet for everyone. Drag them into order.|]1,Inf[ Only the first %count% placements that match the page and the shopper show, so put the most specific first, and last a catch-all, with no page scope and a snippet for everyone. Drag them into order.'
+        order_slot_placements: 'The placements in "%slot%", in order'
         other_content_type: Another content type
         page_scope: Page scope
         page_scope_removed_kind: 'A condition of the kind "%kind%", which the code no longer has, so it shows nothing'
@@ -417,6 +426,7 @@ setono_sylius_cms:
         placements_help: Placements take effect at once, without publishing, and show the snippet while it is published. A slot shows its placements, of every snippet, in this order.
         position: Position
         position_in_slot: '%position% of %count%'
+        position_in_capped_slot: '%position% of %count% · capped at %cap%'
         preview: Preview
         problem_severity:
             error: Error
@@ -436,6 +446,7 @@ setono_sylius_cms:
         revisions: Revisions
         revisions_help: Every publish stores a revision. Preview one as it was, or restore it into the draft to review and publish it.
         revoke: Revoke
+        save_order: Save order
         schedule: Schedule
         schedule_again: Schedule again
         schedule_at: Publish at
@@ -460,6 +471,10 @@ setono_sylius_cms:
         shown_to_no_group: Signed in without a group
         slot: Slot
         slot_removed: The code no longer has this slot, so the placement shows nothing. Remove it.
+        # A capped slot's warnings, in its Order… dialog. See "Problems" in docs/spec/admin.md
+        slot_warning:
+            hidden_by_homepage: 'It doesn''t show in %channels%, whose homepage is a CMS page, as Sylius''s own homepage doesn''t render there.'
+            no_catch_all: None of its placements is a catch-all, with no page scope and a snippet for everyone, so some pages or shoppers may see nothing there.
         status: Status
         status_filter:
             needs_attention: Needs attention
@@ -483,6 +498,7 @@ setono_sylius_cms:
             shows_until: 'Shows until %until%'
             unpublished_changes: Unpublished changes
         this_page: This page
+        this_snippet: This snippet
         title: Title
         translation_chip:
             complete: complete
@@ -520,6 +536,10 @@ setono_sylius_cms:
             publishes_at_a_time: 'Publishes %at%'
             shows_from_a_date: 'Shows from %from%'
         where_it_shows_help: Whether shoppers see it now in each channel and language, and if they don't, why.
+        # Who a placement wins its slot for: its snippet's audience, where the placements above it leave it room. See "Placements" in docs/spec/admin.md
+        wins_for: Wins for
+        wins_for_fewer_above_match: '{1} %audience%, where no placement above it shows|]1,Inf[ %audience%, where fewer than %count% placements above it show'
+        wins_for_never: '{1} No one: a placement above it shows on every page to everyone|]1,Inf[ No one: %count% placements above it show on every page to everyone'
 
     # The builder app's UI strings. Every key under setono_sylius_cms.builder reaches the app through the registry endpoint
     builder:

@@ -20,6 +20,7 @@ use Setono\SyliusCMSPlugin\Block\Snippet as SnippetBlock;
 use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\SnippetHandler;
+use Setono\SyliusCMSPlugin\Homepage\CMSHomepageChannels;
 use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
@@ -311,6 +312,7 @@ final class AdminExtensionTest extends IntegrationTestCase
             $declaredContext->reveal(),
             $conditionKinds,
             new PageScopeSummaries($conditionKinds, Conditions::fieldHandlers(), new ServiceLocator([]), new IdentityTranslator()),
+            new CMSHomepageChannels($homepages->reveal(), $channels->reveal()),
         );
 
         $entries = $this->prophesize(EntryRepositoryInterface::class);

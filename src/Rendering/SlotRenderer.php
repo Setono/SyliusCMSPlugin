@@ -24,8 +24,9 @@ use Twig\Environment;
  * 2. the channel's placements in it, which load once a request, when the first slot renders
  * 3. those whose page scope matches the page, then of those, the ones whose snippet is visible and needs no more context
  *    than the slot provides, in editor order
- * 4. its cap (#259)
- * 5. each shown snippet's tree, rendered with the slot's context in the slot template, inside the slot's wrapper
+ * 4. of those, in a capped slot, the first `cap`. Steps 3 and 4 are PlacementPickerInterface's, which decides without
+ *    rendering, so a snippet whose blocks are all hidden still wins and shows nothing
+ * 5. each winning snippet's tree, rendered with the slot's context in the slot template, inside the slot's wrapper
  *
  * It takes the placements before it resolves its context, so a slot without placements resolves nothing: a page
  * doesn't look up its product for an empty product.top. A slot with nothing to show prints nothing, not even its
@@ -44,12 +45,11 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
         private readonly HostPageContextResolver $hostPageContext,
         private readonly RenderContextFactoryInterface $renderContextFactory,
         private readonly PlacementProviderInterface $placementProvider,
-        private readonly VisibleSnippetsInterface $visibleSnippets,
+        private readonly PlacementPickerInterface $placementPicker,
         private readonly StoredDataUpgraderInterface $upgrader,
         private readonly BlockViewBuilder $blockViewBuilder,
         private readonly ReferenceLoaderInterface $referenceLoader,
         private readonly Environment $twig,
-        private readonly PageScopeMatcherInterface $pageScopes,
     ) {
     }
 
@@ -72,13 +72,16 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
         $renderContext = $this->renderContextFactory->create($provided);
 
         // 3. Those whose page scope matches the page, and whose snippet is visible and needs no more context than the slot
-        // provides, in editor order
-        $shown = $this->withVisibleSnippets($slot, $this->pageScopes->matching($placements, $renderContext), $renderContext);
+        // provides, in editor order, and 4. in a capped slot, the first `cap` of them
+        $winners = [];
+        foreach ($this->placementPicker->pick($slot, $placements, $renderContext) as $candidate) {
+            if ($candidate->wins()) {
+                $winners[] = [$candidate->placement, $candidate->snippet];
+            }
+        }
 
-        // 4. The cap joins here with #259
-
-        // 5. Each snippet's tree with the slot's context
-        return $this->renderSnippets($slot, $shown, $renderContext);
+        // 5. Each winning snippet's tree with the slot's context
+        return $this->renderSnippets($slot, $winners, $renderContext);
     }
 
     /**
@@ -113,50 +116,20 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
     }
 
     /**
-     * The placements whose snippet is visible, each with its snippet, in the order given. A snippet whose published
-     * content needs a context key the slot doesn't provide, such as one the code no longer declares, isn't shown
-     *
-     * @param list<PlacementData> $placements
-     *
-     * @return list<array{PlacementData, SnippetInterface}>
-     */
-    private function withVisibleSnippets(SlotMetadata $slot, array $placements, RenderContext $context): array
-    {
-        if ([] === $placements) {
-            return [];
-        }
-
-        $snippets = $this->visibleSnippets->get(
-            array_values(array_unique(array_map(static fn (PlacementData $placement): string => $placement->snippetUuid, $placements))),
-            $context,
-        );
-
-        $shown = [];
-        foreach ($placements as $placement) {
-            $snippet = $snippets[$placement->snippetUuid] ?? null;
-            if (null !== $snippet && $slot->providesAll($snippet->getContext())) {
-                $shown[] = [$placement, $snippet];
-            }
-        }
-
-        return $shown;
-    }
-
-    /**
-     * The shown snippets' references load together, in one pass, before any of them renders. A snippet whose blocks
+     * The winning snippets' references load together, in one pass, before any of them renders. A snippet whose blocks
      * all stay hidden shows nothing, and a slot whose snippets show nothing prints nothing
      *
-     * @param list<array{PlacementData, SnippetInterface}> $shown
+     * @param list<array{PlacementData, SnippetInterface}> $winners
      */
-    private function renderSnippets(SlotMetadata $slot, array $shown, RenderContext $context): string
+    private function renderSnippets(SlotMetadata $slot, array $winners, RenderContext $context): string
     {
-        if ([] === $shown) {
+        if ([] === $winners) {
             return '';
         }
 
         $context = self::asShoppersSeeIt($context);
 
-        $trees = array_map(fn (array $placed): StoredTree => $this->upgrader->readBlockTree($placed[1]), $shown);
+        $trees = array_map(fn (array $winner): StoredTree => $this->upgrader->readBlockTree($winner[1]), $winners);
         $references = $this->referenceLoader->load((function () use ($trees): \Generator {
             foreach ($trees as $tree) {
                 yield from $this->blockViewBuilder->references($tree->blocks);
@@ -164,7 +137,7 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
         })(), $context);
 
         $snippets = [];
-        foreach ($shown as $index => [$placement, $snippet]) {
+        foreach ($winners as $index => [$placement, $snippet]) {
             $blocks = $this->blockViewBuilder->build($trees[$index]->blocks, $context, $references, $snippet->getUuid());
             if ([] !== $blocks) {
                 $snippets[] = new PlacedSnippet($placement, $snippet, $blocks);

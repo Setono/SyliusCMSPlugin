@@ -128,16 +128,25 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Context\HostPageContextResolver"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\PlacementProviderInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\VisibleSnippetsInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\PlacementPickerInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
             <argument type="service" id="twig"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcherInterface"/>
 
             <tag name="kernel.reset" method="reset"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Rendering\SlotRendererInterface" alias="Setono\SyliusCMSPlugin\Rendering\SlotRenderer"/>
+
+        <!--
+        Which of a slot's placements show, before anything renders: those whose page scope matches and whose snippet is
+        visible, and in a capped slot only the first ones. It answers every placement with its outcome
+        -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\PlacementPicker" class="Setono\SyliusCMSPlugin\Rendering\PlacementPicker">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcherInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\VisibleSnippetsInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\PlacementPickerInterface" alias="Setono\SyliusCMSPlugin\Rendering\PlacementPicker"/>
 
         <!-- Which of a slot's placements show on the page by their page scopes, before anything renders -->
         <service id="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher" class="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher">

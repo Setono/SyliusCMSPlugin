@@ -1,0 +1,12 @@
+{#- Who a placement wins its slot for, in words: `wins_for` is an Admin\WinsFor. See "Placements" in docs/spec/admin.md -#}
+{%- set audience -%}
+    {% include '@SetonoSyliusCMSPlugin/admin/entry/show/_audience.html.twig' with {'audience': wins_for.audience} only %}
+{%- endset -%}
+{%- if wins_for.when.value == 'never' -%}
+    {{ 'setono_sylius_cms.ui.wins_for_never'|trans({'%count%': wins_for.cap}) }}
+{%- elseif wins_for.when.value == 'fewer_above_match' -%}
+    {#- The audience is escaped already, and the rest is the catalogue's -#}
+    {{ 'setono_sylius_cms.ui.wins_for_fewer_above_match'|trans({'%count%': wins_for.cap, '%audience%': audience})|raw }}
+{%- else -%}
+    {{ audience }}
+{%- endif -%}

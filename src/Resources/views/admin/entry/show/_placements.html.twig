@@ -1,9 +1,13 @@
 {#
  # The overview page's Placements section, a block of setono_sylius_cms.admin.entry.show.sections, for a snippet: its
- # placements, each with its slot, its page scope and its place among the slot's placements of every snippet, with Move
- # up, Move down and Remove, plus Add placement, which offers the slots that provide at least the context the snippet
- # needs. Each form comes back to the overview page, and takes effect at once (ADR 0005). A placement in a slot the code
- # no longer declares is listed with the slot's identifier, to remove.
+ # placements, each with its slot, its page scope, its place among the slot's placements of every snippet and who it
+ # wins for, with Move up, Move down and Remove, plus Add placement, which offers the slots that provide at least the
+ # context the snippet needs. Each form comes back to the overview page, and takes effect at once (ADR 0005). A
+ # placement in a slot the code no longer declares is listed with the slot's identifier, to remove.
+ #
+ # A placement in a capped slot has Order… instead of Move up and Move down. It opens the slot's dialog, which lists
+ # every placement in the slot, of every snippet, to drag into order, with the slot's warnings. admin/slot-order.js runs
+ # the dialogs.
  #
  # Edit page scope is the page scope editor, part of the prebuilt builder app, mounted on each [data-cms-page-scope]
  # with the placement's config and the config the section's [data-cms-page-scopes] shares. It posts the scope's
@@ -11,6 +15,11 @@
  #}
 {% set placements = cms_admin_entry_placements(entry) %}
 {% if placements is not null %}
+    {# The id of each capped slot's Order… dialog, by the slot's identifier #}
+    {% set order_dialogs = {} %}
+    {% for order in placements.slotOrders %}
+        {% set order_dialogs = order_dialogs|merge({(order.slot.identifier): 'cms-slot-order-' ~ loop.index}) %}
+    {% endfor %}
     <link rel="stylesheet" href="{{ asset('bundles/setonosyliuscmsplugin/builder/builder.css') }}">
     <section class="ui segment" data-section="placements" aria-labelledby="cms-section-placements" data-cms-page-scopes data-config="{{ cms_admin_page_scope_editor(app.request.locale)|json_encode }}">
         <h2 class="ui dividing header" id="cms-section-placements">{{ 'setono_sylius_cms.ui.placements'|trans }}</h2>
@@ -25,6 +34,7 @@
                         <th>{{ 'setono_sylius_cms.ui.slot'|trans }}</th>
                         <th>{{ 'setono_sylius_cms.ui.page_scope'|trans }}</th>
                         <th>{{ 'setono_sylius_cms.ui.position'|trans }}</th>
+                        <th>{{ 'setono_sylius_cms.ui.wins_for'|trans }}</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -41,21 +51,7 @@
                                 {% endif %}
                             </td>
                             <td data-page-scope>
-                                {% if placed.pageScope is empty %}
-                                    <span data-every-page>{{ 'setono_sylius_cms.ui.every_page_the_slot_appears_on'|trans }}</span>
-                                {% else %}
-                                    <div class="ui list">
-                                        {% for condition in placed.pageScope %}
-                                            <div class="item" data-page-scope-condition="{{ condition.kind }}">
-                                                {%- if condition.label is null -%}
-                                                    {{ 'setono_sylius_cms.ui.page_scope_removed_kind'|trans({'%kind%': condition.kind}) }}
-                                                {%- else -%}
-                                                    {{ condition.label }} {{ condition.matches }}{% if condition.values is not empty %}: {{ condition.values|join(', ') }}{% endif %}
-                                                {%- endif -%}
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
+                                {% include '@SetonoSyliusCMSPlugin/admin/entry/show/_page_scope.html.twig' with {'page_scope': placed.pageScope} only %}
                                 {% if placed.slot is not null and (placed.scopeKinds is not empty or placed.pageScope is not empty) %}
                                     <div data-cms-page-scope data-config="{{ {
                                         'action': path('setono_sylius_cms_admin_entry_placement_page_scope', {'uuid': entry.uuid, 'placement': placement.uuid}),
@@ -66,13 +62,30 @@
                                     }|json_encode }}"></div>
                                 {% endif %}
                             </td>
-                            <td data-position>{{ 'setono_sylius_cms.ui.position_in_slot'|trans({'%position%': placed.position, '%count%': placed.count}) }}</td>
+                            <td data-position>
+                                {%- if placed.slot is not null and placed.slot.cap is not null -%}
+                                    {{ 'setono_sylius_cms.ui.position_in_capped_slot'|trans({'%position%': placed.position, '%count%': placed.count, '%cap%': placed.slot.cap}) }}
+                                {%- else -%}
+                                    {{ 'setono_sylius_cms.ui.position_in_slot'|trans({'%position%': placed.position, '%count%': placed.count}) }}
+                                {%- endif -%}
+                            </td>
+                            <td data-wins-for>
+                                {%- if placed.winsFor is not null -%}
+                                    {% include '@SetonoSyliusCMSPlugin/admin/entry/show/_wins_for.html.twig' with {'wins_for': placed.winsFor} only %}
+                                {%- endif -%}
+                            </td>
                             <td class="right aligned">
-                                <form method="post" action="{{ path('setono_sylius_cms_admin_entry_placement_move', {'uuid': entry.uuid, 'placement': placement.uuid}) }}" class="ui icon buttons" data-move>
-                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
-                                    <button type="submit" name="direction" value="up" class="ui icon button" title="{{ 'setono_sylius_cms.ui.move_up'|trans }}" aria-label="{{ 'setono_sylius_cms.ui.move_up'|trans }}"{% if placed.first %} disabled{% endif %}><i class="arrow up icon"></i></button>
-                                    <button type="submit" name="direction" value="down" class="ui icon button" title="{{ 'setono_sylius_cms.ui.move_down'|trans }}" aria-label="{{ 'setono_sylius_cms.ui.move_down'|trans }}"{% if placed.last %} disabled{% endif %}><i class="arrow down icon"></i></button>
-                                </form>
+                                {% if order_dialogs[placement.slot] is defined %}
+                                    <button type="button" class="ui labeled icon button" data-cms-slot-order-open aria-haspopup="dialog" aria-controls="{{ order_dialogs[placement.slot] }}">
+                                        <i class="sort icon"></i> {{ 'setono_sylius_cms.ui.order'|trans }}
+                                    </button>
+                                {% else %}
+                                    <form method="post" action="{{ path('setono_sylius_cms_admin_entry_placement_move', {'uuid': entry.uuid, 'placement': placement.uuid}) }}" class="ui icon buttons" data-move>
+                                        <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
+                                        <button type="submit" name="direction" value="up" class="ui icon button" title="{{ 'setono_sylius_cms.ui.move_up'|trans }}" aria-label="{{ 'setono_sylius_cms.ui.move_up'|trans }}"{% if placed.first %} disabled{% endif %}><i class="arrow up icon"></i></button>
+                                        <button type="submit" name="direction" value="down" class="ui icon button" title="{{ 'setono_sylius_cms.ui.move_down'|trans }}" aria-label="{{ 'setono_sylius_cms.ui.move_down'|trans }}"{% if placed.last %} disabled{% endif %}><i class="arrow down icon"></i></button>
+                                    </form>
+                                {% endif %}
                                 <form method="post" action="{{ path('setono_sylius_cms_admin_entry_placement_remove', {'uuid': entry.uuid, 'placement': placement.uuid}) }}" style="display: inline-block" data-remove>
                                     <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
                                     <button type="submit" class="ui labeled icon button" data-requires-confirmation><i class="trash icon"></i> {{ 'setono_sylius_cms.ui.remove'|trans }}</button>
@@ -82,6 +95,10 @@
                     {% endfor %}
                 </tbody>
             </table>
+
+            {% for order in placements.slotOrders %}
+                {% include '@SetonoSyliusCMSPlugin/admin/entry/show/_slot_order.html.twig' with {'entry': entry, 'order': order, 'dialog_id': order_dialogs[order.slot.identifier]} only %}
+            {% endfor %}
         {% endif %}
 
         {% if placements.offeredSlots is empty %}
@@ -106,4 +123,7 @@
         {% endif %}
     </section>
     <script type="module" src="{{ asset('bundles/setonosyliuscmsplugin/builder/builder.js') }}"></script>
+    {% if placements.slotOrders is not empty %}
+        <script type="module" src="{{ asset('bundles/setonosyliuscmsplugin/admin/slot-order.js') }}"></script>
+    {% endif %}
 {% endif %}

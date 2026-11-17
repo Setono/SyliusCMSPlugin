@@ -22,8 +22,9 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Writes each change in a transaction of its own, with the changedAt and the "Last edited" of the snippets it changes
- * the placements of, and dispatches PlacementsChanged once it commits. A move numbers the slot's placements 0, 1, 2…
- * in their new order, so placements at the same position, such as two added at once, get positions of their own
+ * the placements of, and dispatches PlacementsChanged once it commits. A move or a new order numbers the slot's
+ * placements 0, 1, 2… in their new order, so placements at the same position, such as two added at once, get positions
+ * of their own
  */
 final readonly class PlacementEditor implements PlacementEditorInterface
 {
@@ -99,6 +100,47 @@ final readonly class PlacementEditor implements PlacementEditorInterface
     public function moveDown(PlacementInterface $placement): bool
     {
         return $this->move($placement, 1);
+    }
+
+    public function reorder(string $slot, array $placementUuids): bool
+    {
+        $inSlot = [];
+        foreach ($this->placements->findBySlots([$slot]) as $placement) {
+            $inSlot[$placement->getUuid()] = $placement;
+        }
+
+        $ordered = [];
+        foreach ($placementUuids as $uuid) {
+            if (!isset($inSlot[$uuid]) || isset($ordered[$uuid])) {
+                throw new OutdatedPlacementOrderException($slot);
+            }
+
+            $ordered[$uuid] = $inSlot[$uuid];
+        }
+
+        if (count($ordered) !== count($inSlot)) {
+            throw new OutdatedPlacementOrderException($slot);
+        }
+
+        $ordered = array_values($ordered);
+        $moved = [];
+        foreach ($ordered as $position => $placement) {
+            if ($placement->getPosition() !== $position) {
+                $moved[] = $placement;
+            }
+        }
+
+        if ([] === $moved) {
+            return false;
+        }
+
+        $this->write(array_map(static fn (PlacementInterface $placement): SnippetInterface => $placement->getSnippet(), $moved), $slot, static function () use ($ordered): void {
+            foreach ($ordered as $position => $placement) {
+                $placement->setPosition($position);
+            }
+        });
+
+        return true;
     }
 
     /**

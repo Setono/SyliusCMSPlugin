@@ -101,6 +101,14 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\OrderPlacementsAction" class="Setono\SyliusCMSPlugin\Controller\Admin\OrderPlacementsAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Slot\PlacementEditorInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction" class="Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\SnippetPlacementRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Slot\PlacementEditorInterface"/>
