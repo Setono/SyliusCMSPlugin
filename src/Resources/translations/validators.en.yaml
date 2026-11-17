@@ -15,15 +15,20 @@ setono_sylius_cms:
         not_list: This value should be a list of codes.
         not_media_item: This value should be a media item from the media library.
         not_media_list: This value should be a list of media items from the media library.
+        not_number: This value should be a number.
+        not_on_step: 'This value isn''t a valid step. The two nearest valid values are {{ lower }} and {{ upper }}.'
         not_product: This value should be a product's code.
         not_rich_text: This value should be formatted text.
         not_taxon: This value should be a taxon's code.
         not_text: This value should be text.
         not_toggle: This value should be on or off.
+        not_whole_number: This value should be a whole number.
         required: This field is required.
+        too_large: This value should be {{ limit }} or less.
         too_long: This value is too long. It should have {{ limit }} characters or less.
         too_many_items: 'This list has too many items. It should have {{ limit }} item or less.|This list has too many items. It should have {{ limit }} items or less.'
         too_many_media_items: 'This list has too many media items. It should have {{ limit }} media item or less.|This list has too many media items. It should have {{ limit }} media items or less.'
+        too_small: This value should be {{ limit }} or more.
     slug:
         blank: A URL needs a slug.
         drafted_elsewhere: '"%title%" has the URL %url% in its draft too, in %channels%. Only one of them can be published there.'

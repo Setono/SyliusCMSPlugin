@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { fromLocalInput, toLocalInput } from '../src/dates';
 import { FieldRow } from '../src/form/FieldRow';
@@ -162,5 +162,74 @@ describe('date fields', () => {
         renderField(dateTimeSchema, 'next friday');
 
         expect(screen.getByLabelText('At')).toHaveValue('');
+    });
+});
+
+describe('number fields', () => {
+    const intervalSchema: FieldSchema = {
+        type: 'integer',
+        minimum: 2,
+        maximum: 30,
+        default: 5,
+        'x-cms-type': 'number',
+        'x-cms-label': 'Interval',
+        'x-cms-help': null,
+        'x-cms-required': false,
+        'x-cms-translatable': false,
+        'x-cms-options': { min: 2, max: 30, step: null, integer: true },
+    };
+    const ratingSchema: FieldSchema = {
+        ...intervalSchema,
+        type: 'number',
+        minimum: undefined,
+        maximum: undefined,
+        default: undefined,
+        'x-cms-label': 'Rating',
+        'x-cms-options': { min: null, max: null, step: 0.5, integer: false },
+    };
+
+    it('should render a number field as a spin button within its bounds that reports the number typed', () => {
+        const onChange = renderField(intervalSchema, 8);
+
+        const input = screen.getByRole('spinbutton', { name: 'Interval' });
+        expect(input).toHaveValue(8);
+        expect(input).toHaveAttribute('min', '2');
+        expect(input).toHaveAttribute('max', '30');
+        // A field that takes whole numbers moves in whole steps
+        expect(input).toHaveAttribute('step', '1');
+        expect(input).toHaveAttribute('inputmode', 'numeric');
+
+        fireEvent.change(input, { target: { value: '12' } });
+        expect(onChange).toHaveBeenLastCalledWith(12);
+    });
+
+    it('should show the default while the field is empty, and report clearing it as no value', () => {
+        const onChange = renderField(intervalSchema, 8);
+
+        fireEvent.change(screen.getByRole('spinbutton', { name: 'Interval' }), { target: { value: '' } });
+        expect(onChange).toHaveBeenLastCalledWith(null);
+
+        cleanup();
+        renderField(intervalSchema);
+        const empty = screen.getByRole('spinbutton', { name: 'Interval' });
+        expect(empty).toHaveValue(null);
+        expect(empty).toHaveAttribute('placeholder', '5');
+    });
+
+    it('should take fractions in the steps of the field, or of any size without a step', () => {
+        const onChange = renderField(ratingSchema, 4.5);
+
+        const input = screen.getByRole('spinbutton', { name: 'Rating' });
+        expect(input).toHaveValue(4.5);
+        expect(input).toHaveAttribute('step', '0.5');
+        expect(input).not.toHaveAttribute('min');
+        expect(input).toHaveAttribute('inputmode', 'decimal');
+
+        fireEvent.change(input, { target: { value: '3.5' } });
+        expect(onChange).toHaveBeenLastCalledWith(3.5);
+
+        cleanup();
+        renderField({ ...ratingSchema, 'x-cms-options': { min: null, max: null, step: null, integer: false } });
+        expect(screen.getByRole('spinbutton', { name: 'Rating' })).toHaveAttribute('step', 'any');
     });
 });
