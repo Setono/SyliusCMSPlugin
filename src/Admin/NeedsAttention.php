@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Admin;
 
-use Pagerfanta\Doctrine\ORM\QueryAdapter;
-use Pagerfanta\Pagerfanta;
-use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
@@ -26,23 +23,13 @@ final readonly class NeedsAttention
         private EntryRepositoryInterface $entries,
         private ProblemCountProviderInterface $problemCounts,
         private ProblemFinderInterface $problemFinder,
-        private int $limit = self::LIMIT,
     ) {
     }
 
     public function find(): NeedsAttentionGroups
     {
-        $queryBuilder = $this->entries->createListQueryBuilder();
-        $entry = $queryBuilder->getRootAliases()[0];
-        $queryBuilder
-            ->andWhere($this->problemCounts->getNeedsAttentionCondition($queryBuilder, $entry))
-            ->addOrderBy(sprintf('%s.lastEditedAt', $entry), 'DESC')
-            ->addOrderBy(sprintf('%s.id', $entry), 'DESC')
-        ;
-
-        /** @var Pagerfanta<EntryInterface> $paginator */
-        $paginator = new Pagerfanta(new QueryAdapter($queryBuilder));
-        $paginator->setMaxPerPage($this->limit);
+        $paginator = $this->entries->createNeedingAttentionPaginator($this->problemCounts);
+        $paginator->setMaxPerPage(self::LIMIT);
 
         $entries = iterator_to_array($paginator->getCurrentPageResults(), false);
         $problems = [];

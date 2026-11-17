@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Repository;
 
 use Doctrine\ORM\QueryBuilder;
+use Pagerfanta\Pagerfanta;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 
 /**
  * Finds entries of any content type. It's the repository of the setono_sylius_cms.entry resource, whose grids are the
@@ -82,6 +84,14 @@ interface EntryRepositoryInterface
      * @return list<EntryInterface>
      */
     public function findWithDraft(int $limit): array;
+
+    /**
+     * The entries the lists' Needs attention filter finds, those with an error or a warning by the counts stored with
+     * each, the one edited last first, which the Overview's Needs attention pages through
+     *
+     * @return Pagerfanta<EntryInterface>
+     */
+    public function createNeedingAttentionPaginator(ProblemCountProviderInterface $problemCounts): Pagerfanta;
 
     /**
      * The entries that may name one of the customer groups in their audience or in a customer group condition, in

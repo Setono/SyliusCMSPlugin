@@ -6,11 +6,14 @@ namespace Setono\SyliusCMSPlugin\Repository;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\QueryBuilder;
+use Pagerfanta\Doctrine\ORM\QueryAdapter;
+use Pagerfanta\Pagerfanta;
 use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
 /**
@@ -169,6 +172,21 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
     public function findEndingAfter(\DateTimeImmutable $now, int $limit): array
     {
         return $this->findByDateWindowBoundaryAfter('showUntil', $now, $limit);
+    }
+
+    public function createNeedingAttentionPaginator(ProblemCountProviderInterface $problemCounts): Pagerfanta
+    {
+        $queryBuilder = $this->createListQueryBuilder();
+        $queryBuilder
+            ->andWhere($problemCounts->getNeedsAttentionCondition($queryBuilder, 'o'))
+            ->addOrderBy('o.lastEditedAt', 'DESC')
+            ->addOrderBy('o.id', 'DESC')
+        ;
+
+        /** @var Pagerfanta<EntryInterface> $paginator */
+        $paginator = new Pagerfanta(new QueryAdapter($queryBuilder));
+
+        return $paginator;
     }
 
     public function findWithDraft(int $limit): array
