@@ -9,8 +9,9 @@ use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 
 /**
  * A Products block filled by Same taxon in a snippet for product pages: the editor finds the source in "Filled by" only
- * once the snippet is shown on product pages, and shoppers see the product's neighbours in its main taxon there. See
- * "Sources" in docs/spec/builder.md and "Product sources" in docs/spec/sources.md
+ * once the snippet is shown on product pages, the preview shows the neighbours of its sample product, and shoppers see
+ * the product's neighbours in its main taxon there. See "Sources" and "Snippet preview" in docs/spec/builder.md and
+ * "Product sources" in docs/spec/sources.md
  */
 final class SameTaxonTest extends UITestCase
 {
@@ -53,6 +54,12 @@ final class SameTaxonTest extends UITestCase
         Expect::locator($filledBy->getByRole('option', ['name' => 'Associations', 'exact' => true]))->toHaveCount(1);
         $filledBy->selectOption('same_taxon_products');
         $fields->getByRole('spinbutton', ['name' => 'Items to show'])->fill('2');
+
+        // The preview shows it with a sample product, the first by name while it has no placement: Basic, whose
+        // neighbours it counts and lists
+        Expect::locator($browser->getByRole('button', ['name' => 'Sample: Basic']))->toBeVisible();
+        Expect::locator($fields->getByText('3 items now'))->toBeVisible();
+        self::assertTexts(['V-neck', 'Striped'], $browser->frameLocator('iframe[title="Preview"]')->locator('.cms-products .sylius-product-name'));
 
         Expect::locator($browser->getByRole('status'))->toHaveText('Saved');
         $browser->getByRole('button', ['name' => 'Publish'])->click();

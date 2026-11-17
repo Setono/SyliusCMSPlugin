@@ -4,6 +4,7 @@
  * Immer's structural sharing: a block that didn't change is the same object before and after.
  * See "Updating the preview" in docs/spec/builder.md
  */
+import { CONTEXT_FIELD } from './hostPageContext';
 import { longestIncreasing } from './sequence';
 import type { Entry, FieldValues, StoredBlock } from './types';
 
@@ -53,11 +54,12 @@ export function planPreviewUpdate(before: Entry, after: Entry, shows: readonly s
 
 /**
  * The layout and its fields show around the blocks, and so do the entry fields the layout shows, so they need the whole
- * page. So does a translation shown or held back, and the slug, which moves the page. Entry fields the layout doesn't
- * show, and where values were translated from, don't change the page.
+ * page. So does a translation shown or held back, and the slug, which moves the page, and a snippet's declared context,
+ * which its preview's sample object is of. Entry fields the layout doesn't show, and where values were translated from,
+ * don't change the page.
  */
 function needsReload(before: Entry, after: Entry, shows: readonly string[]): boolean {
-    if (before.tree.layout !== after.tree.layout || changedFields(before.fields, after.fields).some((field) => shows.includes(field))) {
+    if (before.tree.layout !== after.tree.layout || changedFields(before.fields, after.fields).some((field) => field === CONTEXT_FIELD || shows.includes(field))) {
         return true;
     }
 

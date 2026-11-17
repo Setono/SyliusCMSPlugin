@@ -53,43 +53,45 @@ export function TopBar() {
     const schedule = useBuilderState((state) => state.schedule);
 
     return (
-        <div className={styles.bar}>
-            <a
-                href={backUrl}
-                className={styles.back}
-                onClick={(event) => {
-                    // A click with a modifier key opens the link elsewhere, which the browser does
-                    if (event.button === 0 && !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)) {
-                        event.preventDefault();
-                        leave();
-                    }
-                }}
-            >
-                <ArrowLeftIcon />
-                {t('setono_sylius_cms.builder.back')}
-            </a>
-            <div className={styles.heading}>
-                <h1 className={styles.title}>{title}</h1>
-                <span className={styles.status} data-status={status}>
-                    {t(statusLabels[status])}
-                </span>
-                {schedule !== null && (
-                    <span className={styles.status} data-status={schedule.status}>
-                        {scheduleLabel(t, schedule)}
+        <>
+            <div className={styles.bar}>
+                <a
+                    href={backUrl}
+                    className={styles.back}
+                    onClick={(event) => {
+                        // A click with a modifier key opens the link elsewhere, which the browser does
+                        if (event.button === 0 && !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)) {
+                            event.preventDefault();
+                            leave();
+                        }
+                    }}
+                >
+                    <ArrowLeftIcon />
+                    {t('setono_sylius_cms.builder.back')}
+                </a>
+                <div className={styles.heading}>
+                    <h1 className={styles.title}>{title}</h1>
+                    <span className={styles.status} data-status={status}>
+                        {t(statusLabels[status])}
                     </span>
-                )}
+                    {schedule !== null && (
+                        <span className={styles.status} data-status={schedule.status}>
+                            {scheduleLabel(t, schedule)}
+                        </span>
+                    )}
+                </div>
+                <LocaleSwitcher />
+                <PreviewChannel />
+                <ShownTo />
+                <PreviewDate />
+                <PreviewWidth />
+                <UndoRedo />
+                <SaveStatus />
+                <Editors />
+                <Publish />
             </div>
-            <LocaleSwitcher />
-            <PreviewChannel />
             <SnippetPreview />
-            <ShownTo />
-            <PreviewDate />
-            <PreviewWidth />
-            <UndoRedo />
-            <SaveStatus />
-            <Editors />
-            <Publish />
-        </div>
+        </>
     );
 }
 
@@ -166,10 +168,10 @@ function PreviewChannel() {
 }
 
 /**
- * For a snippet: the pages it's for, such as "Product page", the placement whose host page the preview shows, and the
- * sample object the page is of, which starts as one inside the placement's page scope. A warning shows when the sample
- * object is outside it, and where the placement loses its capped slot for the shoppers it's shown to, the snippets they
- * see there instead. See "Snippet preview" in docs/spec/builder.md
+ * For a snippet, a row of the top bar of its own: the pages it's for, such as "Product page", the placement whose host
+ * page the preview shows, and the sample object the page is of, which starts as one inside the placement's page scope.
+ * A warning shows when the sample object is outside it, and where the placement loses its capped slot for the shoppers
+ * it's shown to, the snippets they see there instead. See "Snippet preview" in docs/spec/builder.md
  */
 function SnippetPreview() {
     const t = useTranslator();
@@ -210,28 +212,36 @@ function SnippetPreview() {
     const sample = shown?.sample ?? null;
 
     return (
-        <div className={styles.snippetPreview}>
-            <span className={styles.snippetContext} title={t('setono_sylius_cms.builder.context_help')}>
-                {context}
+        <div className={styles.snippetPreview} role="group" aria-label={t('setono_sylius_cms.builder.snippet_preview.label')}>
+            <span className={styles.snippetField}>
+                <span className={styles.snippetLabel}>{t('setono_sylius_cms.builder.context')}</span>
+                <span className={styles.snippetContext} title={t('setono_sylius_cms.builder.context_help')}>
+                    {context}
+                </span>
             </span>
             {placements.length === 0 ? (
-                <span className={styles.snippetContext}>{t('setono_sylius_cms.builder.snippet_preview.no_placements')}</span>
+                <span className={styles.snippetLabel}>{t('setono_sylius_cms.builder.snippet_preview.no_placements')}</span>
             ) : (
-                <select
-                    className={styles.channel}
-                    aria-label={t('setono_sylius_cms.builder.snippet_preview.placement')}
-                    value={placement ?? ''}
-                    onChange={(event) => setPlacement(event.currentTarget.value === '' ? null : event.currentTarget.value)}
-                >
-                    {placements.map(({ uuid, label, removed }) => (
-                        <option key={uuid} value={uuid} disabled={removed}>
-                            {label}
-                        </option>
-                    ))}
-                    <option value="">{t('setono_sylius_cms.builder.snippet_preview.plain_page')}</option>
-                </select>
+                <label className={styles.snippetField}>
+                    <span className={styles.snippetLabel}>{t('setono_sylius_cms.builder.snippet_preview.placement')}</span>
+                    <select className={styles.channel} value={placement ?? ''} onChange={(event) => setPlacement(event.currentTarget.value === '' ? null : event.currentTarget.value)}>
+                        {placements.map(({ uuid, label, removed }) => (
+                            <option key={uuid} value={uuid} disabled={removed}>
+                                {label}
+                            </option>
+                        ))}
+                        <option value="">{t('setono_sylius_cms.builder.snippet_preview.plain_page')}</option>
+                    </select>
+                </label>
             )}
-            {sample !== null && snippetPreview !== null && token !== null && <SamplePicker sample={sample} search={(query) => snippetPreview.samples(token, query)} onPick={setSample} />}
+            {sample !== null && snippetPreview !== null && token !== null && (
+                <span className={styles.snippetField}>
+                    <span className={styles.snippetLabel} aria-hidden="true">
+                        {t('setono_sylius_cms.builder.snippet_preview.sample')}
+                    </span>
+                    <SamplePicker sample={sample} search={(query) => snippetPreview.samples(token, query)} onPick={setSample} />
+                </span>
+            )}
             {sample?.matches === false && (
                 <p role="alert" className={styles.outsideScope}>
                     {t('setono_sylius_cms.builder.snippet_preview.outside_scope', { '%sample%': sample.name })}

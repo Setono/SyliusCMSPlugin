@@ -14,8 +14,10 @@ const snippetStrings: Record<string, string> = {
     ...strings,
     'setono_sylius_cms.builder.context_any_page': 'Any page',
     'setono_sylius_cms.builder.context_help': 'The pages it can be placed on.',
+    'setono_sylius_cms.builder.context': 'Shown on',
     'setono_sylius_cms.builder.snippet_preview.in_scope': 'In the page scope',
-    'setono_sylius_cms.builder.snippet_preview.no_placements': 'Not placed yet',
+    'setono_sylius_cms.builder.snippet_preview.label': 'Snippet preview',
+    'setono_sylius_cms.builder.snippet_preview.no_placements': 'Not placed yet, so it shows on a plain page',
     'setono_sylius_cms.builder.snippet_preview.outside_scope': "%sample% is outside the placement's page scope, so shoppers don't see the snippet on its page.",
     'setono_sylius_cms.builder.snippet_preview.placement': 'Placement',
     'setono_sylius_cms.builder.snippet_preview.plain_page': 'A plain page',
@@ -181,7 +183,7 @@ describe('Snippet preview', () => {
         await openBuilder(api, fakeSnippetPreview(), { ...config, placements: [] });
 
         await waitFor(() => expect(api.createPreviewUrl).toHaveBeenCalledExactlyOnceWith({ channel: 'WEB', locale: 'en_US', shownTo: '@guest', date: null, placement: null, sample: null }));
-        expect(screen.getByText('Not placed yet')).toBeInTheDocument();
+        expect(within(screen.getByRole('group', { name: 'Snippet preview' })).getByText('Not placed yet, so it shows on a plain page')).toBeInTheDocument();
         expect(screen.queryByRole('combobox', { name: 'Placement' })).not.toBeInTheDocument();
     });
 
@@ -191,6 +193,7 @@ describe('Snippet preview', () => {
 
         await waitFor(() => expect(api.createPreviewUrl).toHaveBeenCalledExactlyOnceWith({ channel: 'WEB', locale: 'en_US', shownTo: '@guest', date: null }));
         expect(screen.queryByRole('combobox', { name: 'Placement' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('group', { name: 'Snippet preview' })).not.toBeInTheDocument();
     });
 });
 

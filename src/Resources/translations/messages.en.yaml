@@ -861,7 +861,8 @@ setono_sylius_cms:
         # A snippet's preview on the host page of one of its placements, with a sample object. See "Snippet preview" in docs/spec/builder.md
         snippet_preview:
             in_scope: In the page scope
-            no_placements: Not placed yet
+            label: Snippet preview
+            no_placements: Not placed yet, so it shows on a plain page
             outside_scope: '%sample% is outside the placement''s page scope, so shoppers don''t see the snippet on its page.'
             placement: Placement
             plain_page: A plain page

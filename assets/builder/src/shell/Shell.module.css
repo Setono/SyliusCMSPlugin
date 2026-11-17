@@ -5,7 +5,7 @@
     grid-template-areas:
         "top top top"
         "tree preview selection";
-    grid-template-rows: var(--builder-top-bar-height) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
     grid-template-columns: var(--builder-tree-width) minmax(0, 1fr) var(--builder-selection-width);
     background: var(--builder-color-canvas);
     color: var(--builder-color-text);
@@ -21,6 +21,8 @@
 }
 
 .topBar {
+    display: flex;
+    flex-direction: column;
     grid-area: top;
     min-width: 0;
     border-bottom: 1px solid var(--builder-color-border);

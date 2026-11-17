@@ -2,7 +2,7 @@
     display: flex;
     gap: var(--builder-space-4);
     align-items: center;
-    height: 100%;
+    height: var(--builder-top-bar-height);
     padding: 0 var(--builder-space-4);
 }
 
@@ -375,18 +375,30 @@
     outline-offset: 2px;
 }
 
-/* A snippet's preview: its context, its placement, its sample object, and what the preview tells of them */
+/* A snippet's preview, in a row of its own: its context, its placement, its sample object, and what the preview tells */
 .snippetPreview {
     display: flex;
-    flex: 0 1 auto;
+    flex-wrap: wrap;
+    gap: var(--builder-space-2) var(--builder-space-4);
+    align-items: center;
+    padding: var(--builder-space-2) var(--builder-space-4);
+    border-top: 1px solid var(--builder-color-border);
+}
+
+.snippetField {
+    display: flex;
+    flex: none;
     gap: var(--builder-space-2);
     align-items: center;
-    min-width: 0;
+}
+
+.snippetLabel {
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
 }
 
 .snippetContext {
-    flex: none;
-    color: var(--builder-color-text-muted);
+    font-weight: var(--builder-font-weight-medium);
     white-space: nowrap;
 }
 
@@ -400,7 +412,6 @@
 
 .outsideScope,
 .shownInstead {
-    max-width: 18rem;
     margin: 0;
     padding: var(--builder-space-1) var(--builder-space-2);
     border-radius: var(--builder-radius-sm);

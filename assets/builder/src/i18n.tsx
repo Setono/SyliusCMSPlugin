@@ -237,6 +237,7 @@ export type MessageKey =
     | 'setono_sylius_cms.builder.snippet.shared_help'
     // A snippet's preview on the host page of one of its placements, with a sample object
     | 'setono_sylius_cms.builder.snippet_preview.in_scope'
+    | 'setono_sylius_cms.builder.snippet_preview.label'
     | 'setono_sylius_cms.builder.snippet_preview.no_placements'
     | 'setono_sylius_cms.builder.snippet_preview.outside_scope'
     | 'setono_sylius_cms.builder.snippet_preview.placement'
