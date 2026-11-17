@@ -239,7 +239,7 @@ final class PlacementEditorTest extends TestCase
         $snippet = new Snippet();
         $changedAt = $snippet->getChangedAt();
         $placement = new Placement($snippet, 'shop.footer', 0);
-        $error = new TranslatableMessage('setono_sylius_cms.page_scope.needs');
+        $error = new TranslatableMessage('setono_sylius_cms.page_scope.needs', [], 'validators');
         $this->pageScopeValidator->validate('shop.footer', [['kind' => 'product', 'negate' => false, 'params' => []]])->willReturn([$error]);
 
         try {
