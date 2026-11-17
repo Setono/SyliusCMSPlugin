@@ -97,6 +97,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryShareLinks"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\WhereItShows"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryPlacements"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\SnippetUses"/>
 
             <tag name="twig.runtime"/>
         </service>

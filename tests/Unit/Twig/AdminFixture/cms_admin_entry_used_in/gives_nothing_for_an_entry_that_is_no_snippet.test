@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_entry_used_in() gives nothing for an entry that isn't a snippet
+--TEMPLATE--
+{{ cms_admin_entry_used_in(page) is null ? 'none' }}
+--DATA--
+return $this->aPage('About us')
+--EXPECT--
+none
