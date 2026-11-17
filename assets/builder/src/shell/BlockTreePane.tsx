@@ -3,9 +3,8 @@ import { hiddenInPreview } from '../conditions';
 import { useBuilder, useBuilderState, useFallbackChain, usePreviewState, useValidationState } from '../context';
 import { useTranslator, type Translate } from '../i18n';
 import { linkShape, offeredTargets, readLink, writeLink } from '../links';
-import { useLinkTargets } from '../linkTargets';
+import { useLinkRef, useLinkTargets } from '../linkTargets';
 import { canMove, canMoveBlocks, placement, type DropZone } from '../nesting';
-import { useKnownRef } from '../search/context';
 import { actedOn, locks } from '../store';
 import { findBlock } from '../tree';
 import type { BlockTypeDefinition, FieldDefinition, StoredBlock } from '../types';
@@ -297,11 +296,13 @@ function zoneOf(event: DragEvent<HTMLElement>, holdsBlocks: boolean): DropZone {
 }
 
 /**
- * The Link field whose label a block's row edits: a Link block's, as a Link list holds them. See "Link list and Link"
- * in docs/spec/blocks.md
+ * The Link field whose label a block's row edits: the one field of a block type that holds nothing but a Link, such as
+ * the Link blocks a Link list holds, and the Button. See "Link list and Link" in docs/spec/blocks.md
  */
 function linkLabelField(blockType: BlockTypeDefinition | undefined): FieldDefinition | undefined {
-    return blockType?.code === 'link' ? blockType.fields.find(({ schema }) => schema['x-cms-type'] === 'link') : undefined;
+    const [only, ...others] = blockType?.fields ?? [];
+
+    return only !== undefined && others.length === 0 && only.schema['x-cms-type'] === 'link' ? only : undefined;
 }
 
 interface LinkLabelBoxProps {
@@ -326,8 +327,7 @@ function LinkLabelBox({ block, field, readOnly, onEditing }: LinkLabelBoxProps) 
     const first = offeredTargets(schema, linkTargets)[0]?.code ?? '';
     const value = readFieldValue(block.fields, field.name, schema['x-cms-translatable'], locale);
     const link = readLink(value, shape, chain, first);
-    const typed = linkTargets.find(({ code }) => code === link.target)?.translatableRef ?? false;
-    const known = useKnownRef(link.target, typed || link.ref === '' ? null : link.ref);
+    const { refIsTyped, found } = useLinkRef(link);
 
     return (
         <input
@@ -335,7 +335,7 @@ function LinkLabelBox({ block, field, readOnly, onEditing }: LinkLabelBoxProps) 
             className={styles.labelBox}
             aria-label={t('setono_sylius_cms.builder.link.row_label')}
             value={link.label}
-            placeholder={link.labelFallback ?? known?.name ?? (typed && link.ref !== '' ? link.ref : undefined)}
+            placeholder={link.labelFallback ?? found?.name ?? (refIsTyped && link.ref !== '' ? link.ref : undefined)}
             readOnly={readOnly}
             onFocus={() => onEditing(true)}
             onBlur={() => onEditing(false)}

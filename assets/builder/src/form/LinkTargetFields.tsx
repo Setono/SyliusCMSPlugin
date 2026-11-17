@@ -1,7 +1,6 @@
 import { useTranslator } from '../i18n';
-import { useLinkTargets } from '../linkTargets';
+import { useLinkRef, useLinkTargets } from '../linkTargets';
 import type { EditedLink, LinkChange, LinkTargetDefinition } from '../links';
-import { useKnownRef } from '../search/context';
 import { SearchPicker } from '../search/SearchPicker';
 import formStyles from './Form.module.css';
 import styles from './LinkControl.module.css';
@@ -25,8 +24,7 @@ export function LinkTargetFields({ id, offered, link, onChange, required, descri
     const t = useTranslator();
     const linkTargets = useLinkTargets();
     const target = linkTargets.find(({ code }) => code === link.target);
-    const typed = target?.translatableRef ?? false;
-    const known = useKnownRef(link.target, typed || link.ref === '' ? null : link.ref);
+    const { refIsTyped, found } = useLinkRef(link);
     const targetLabel = target?.label ?? link.target;
 
     return (
@@ -47,7 +45,7 @@ export function LinkTargetFields({ id, offered, link, onChange, required, descri
                 {/* A target the code no longer has, or the field no longer links to, stays shown until another is picked */}
                 {!offered.some(({ code }) => code === link.target) && <option value={link.target}>{link.target}</option>}
             </select>
-            {typed ? (
+            {refIsTyped ? (
                 <div className={styles.part}>
                     <label htmlFor={`${id}-ref`} className={styles.label}>
                         {t('setono_sylius_cms.builder.link.url')}
@@ -64,7 +62,7 @@ export function LinkTargetFields({ id, offered, link, onChange, required, descri
                 </div>
             ) : (
                 <div className={styles.picked}>
-                    <span className={link.ref === '' ? styles.nothing : styles.name}>{link.ref === '' ? t('setono_sylius_cms.builder.link.nothing_picked') : (known?.name ?? link.ref)}</span>
+                    <span className={link.ref === '' ? styles.nothing : styles.name}>{link.ref === '' ? t('setono_sylius_cms.builder.link.nothing_picked') : (found?.name ?? link.ref)}</span>
                     <SearchPicker
                         kind={link.target}
                         label={link.ref === '' ? t('setono_sylius_cms.builder.link.choose') : t('setono_sylius_cms.builder.link.change')}
