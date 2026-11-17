@@ -20,7 +20,7 @@ final class SnippetBlockTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_shows_a_footer_snippet_in_a_page_sees_it_marked_as_shared_then_detaches_it_and_edits_the_copy_alone(): void
+    public function it_lets_an_admin_user_show_a_footer_snippet_in_a_page_see_it_marked_as_shared_then_detach_it_and_edit_the_copy_alone(): void
     {
         $footer = self::createSnippet('Footer', [self::heading(self::HEADING, 'Free shipping over $50')], published: true);
         $page = self::createPage('About us', 'about-us');

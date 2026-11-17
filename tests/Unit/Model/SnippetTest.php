@@ -43,7 +43,7 @@ final class SnippetTest extends TestCase
     /**
      * @test
      */
-    public function its_translations_are_entry_translations(): void
+    public function it_uses_entry_translations(): void
     {
         $snippet = new Snippet();
         $snippet->setCurrentLocale('en_US');

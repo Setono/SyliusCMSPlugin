@@ -21,7 +21,7 @@ final class SnippetPreviewTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_previews_a_snippet_placed_on_product_pages_switches_the_sample_product_and_sees_an_edit_patched_into_the_slot(): void
+    public function it_lets_an_admin_user_preview_a_snippet_placed_on_product_pages_switch_the_sample_product_and_see_an_edit_patched_into_the_slot(): void
     {
         self::createProduct('T_SHIRT', 'T-shirt');
         self::createProduct('MUG', 'Mug');

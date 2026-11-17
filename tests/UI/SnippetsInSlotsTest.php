@@ -15,7 +15,7 @@ final class SnippetsInSlotsTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_creates_a_snippet_publishes_it_places_it_in_the_footer_and_sees_it_in_the_shop_s_footer(): void
+    public function it_lets_an_admin_user_create_a_snippet_publish_it_place_it_in_the_footer_and_see_it_in_the_shop_s_footer(): void
     {
         $this->signInAsAdmin();
 

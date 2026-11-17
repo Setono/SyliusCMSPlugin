@@ -26,7 +26,7 @@ final class ProfilerPanelTest extends UITestCase
     /**
      * @test
      */
-    public function a_developer_opens_the_cms_panel_from_the_toolbar_of_a_product_page_and_sees_its_slots(): void
+    public function it_lets_a_developer_open_the_cms_panel_from_the_toolbar_of_a_product_page_and_see_its_slots(): void
     {
         self::createProduct('T_SHIRT', 'T-shirt');
         self::place(self::createSnippet('Draft', [self::heading('0193a5be-0000-7000-8000-000000000001', 'Draft')]), 'product.after_price');

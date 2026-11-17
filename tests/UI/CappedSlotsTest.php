@@ -25,7 +25,7 @@ final class CappedSlotsTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_drags_the_other_snippet_first_in_the_order_dialog_of_a_slot_capped_at_1_and_the_shop_shows_it(): void
+    public function it_lets_an_admin_user_drag_the_other_snippet_first_in_the_order_dialog_of_a_slot_capped_at_1_and_see_it_in_the_shop(): void
     {
         $freeShipping = self::createSnippet('Free shipping', [self::heading('0193a5be-0000-7000-8000-000000000001', 'Free shipping on orders over $50')], published: true);
         $sale = self::createSnippet('Winter sale', [self::heading('0193a5be-0000-7000-8000-000000000002', 'Winter sale: 20% off')], published: true);
@@ -66,7 +66,7 @@ final class CappedSlotsTest extends UITestCase
      *
      * @test
      */
-    public function an_admin_user_moves_a_placement_with_its_arrows_and_cancels_without_changing_the_order(): void
+    public function it_lets_an_admin_user_move_a_placement_with_its_arrows_and_cancel_without_changing_the_order(): void
     {
         $freeShipping = self::createSnippet('Free shipping', published: true);
         $sale = self::createSnippet('Winter sale', published: true);

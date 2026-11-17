@@ -22,7 +22,7 @@ final class BindingsTest extends UITestCase
      *
      * @test
      */
-    public function an_admin_user_binds_a_snippet_s_heading_to_the_product_s_name_publishes_it_and_sees_each_product_s_own_name(): void
+    public function it_lets_an_admin_user_bind_a_snippet_s_heading_to_the_product_s_name_publish_it_and_see_each_product_s_own_name(): void
     {
         self::createProduct('T_SHIRT', 'T-shirt');
         self::createProduct('MUG', 'Mug');

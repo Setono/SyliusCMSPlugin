@@ -20,7 +20,7 @@ final class SameTaxonTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_fills_a_products_block_with_same_taxon_in_a_snippet_for_product_pages_and_shoppers_see_the_product_s_neighbours(): void
+    public function it_lets_an_admin_user_fill_a_products_block_with_same_taxon_in_a_snippet_for_product_pages_so_shoppers_see_the_product_s_neighbours(): void
     {
         $shirts = self::createTaxon('T_SHIRTS', 'T-shirts');
         $basic = self::createProduct('BASIC', 'Basic');

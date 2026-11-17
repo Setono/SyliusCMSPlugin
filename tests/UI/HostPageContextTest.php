@@ -19,7 +19,7 @@ final class HostPageContextTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_sets_a_snippet_s_context_to_product_pages_adds_a_block_that_needs_the_product_places_it_under_the_price_and_sees_it_on_a_product_page(): void
+    public function it_lets_an_admin_user_set_a_snippet_s_context_to_product_pages_add_a_block_that_needs_the_product_place_it_under_the_price_and_see_it_on_a_product_page(): void
     {
         self::createProduct('T_SHIRT', 'T-shirt');
         $snippet = self::createSnippet('Size guide');

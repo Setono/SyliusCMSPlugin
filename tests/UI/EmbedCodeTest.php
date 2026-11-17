@@ -18,7 +18,7 @@ final class EmbedCodeTest extends UITestCase
     /**
      * @test
      */
-    public function its_script_runs_in_the_shop_after_publishing_but_never_in_the_builder_where_a_placeholder_stands_in(): void
+    public function it_runs_the_script_in_the_shop_after_publishing_but_never_in_the_builder_where_a_placeholder_stands_in(): void
     {
         $this->signInAsAdmin();
         $page = self::createPage('Reviews', 'reviews');

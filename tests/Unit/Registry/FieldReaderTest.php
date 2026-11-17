@@ -114,7 +114,7 @@ final class FieldReaderTest extends TestCase
     /**
      * @test
      */
-    public function a_shipped_field_type_brings_no_field_control_of_its_own(): void
+    public function it_gives_a_shipped_field_type_no_field_control_of_its_own(): void
     {
         $quote = (new FieldReader())->read(Review::class)['quote'];
 

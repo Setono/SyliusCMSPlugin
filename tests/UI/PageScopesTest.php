@@ -22,7 +22,7 @@ final class PageScopesTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_scopes_a_placement_to_products_in_the_shoes_taxon_and_sees_the_snippet_on_a_shoe_and_not_on_a_t_shirt(): void
+    public function it_lets_an_admin_user_scope_a_placement_to_products_in_the_shoes_taxon_and_see_the_snippet_on_a_shoe_and_not_on_a_t_shirt(): void
     {
         $shoes = self::createTaxon('SHOES', 'Shoes');
         self::placeInTaxon(self::createProduct('SNEAKERS', 'Sneakers'), $shoes);
