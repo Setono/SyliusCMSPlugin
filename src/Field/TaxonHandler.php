@@ -20,7 +20,7 @@ final class TaxonHandler implements FitCheckingFieldHandlerInterface
 
     public function hydrate(Field $field, mixed $value, HydrationContext $context): ?TaxonInterface
     {
-        $taxon = Codes::isCode($value) ? $context->references->get('taxon', $value) : null;
+        $taxon = Codes::isCode($value) ? $context->references->get(ReferenceType::TAXON, $value) : null;
 
         return $taxon instanceof TaxonInterface ? $taxon : null;
     }
@@ -32,7 +32,7 @@ final class TaxonHandler implements FitCheckingFieldHandlerInterface
 
     public function references(Field $field, mixed $value): iterable
     {
-        return Codes::references('taxon', [$value]);
+        return Codes::references(ReferenceType::TAXON, [$value]);
     }
 
     public function validate(Field $field, mixed $value, ExecutionContextInterface $context): void

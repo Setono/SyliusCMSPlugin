@@ -17,7 +17,7 @@ final class Products extends ListField
 {
     public function itemType(): string
     {
-        return 'product';
+        return ReferenceType::PRODUCT;
     }
 
     public function itemClass(): string

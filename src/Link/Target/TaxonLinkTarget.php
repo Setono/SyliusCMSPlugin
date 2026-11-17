@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Link\Target;
 use Setono\SyliusCMSPlugin\Attribute\AsLinkTarget;
 use Setono\SyliusCMSPlugin\Builder\Search\SearchInterface;
 use Setono\SyliusCMSPlugin\Field\Reference;
+use Setono\SyliusCMSPlugin\Field\ReferenceType;
 use Setono\SyliusCMSPlugin\Link\ReferencingLinkTargetInterface;
 use Setono\SyliusCMSPlugin\Link\ResolvedLink;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
@@ -48,7 +49,7 @@ final readonly class TaxonLinkTarget implements ReferencingLinkTargetInterface
 
     public function reference(string $ref): ?Reference
     {
-        return '' === $ref ? null : new Reference('taxon', $ref, false);
+        return '' === $ref ? null : new Reference(ReferenceType::TAXON, $ref, false);
     }
 
     public function link(object $record, string $ref, RenderContext $context): ?ResolvedLink

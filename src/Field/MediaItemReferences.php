@@ -16,7 +16,7 @@ use Symfony\Component\Uid\Uuid;
  */
 final class MediaItemReferences
 {
-    public const TYPE = 'media_item';
+    public const TYPE = ReferenceType::MEDIA_ITEM;
 
     /**
      * @phpstan-assert-if-true string $value

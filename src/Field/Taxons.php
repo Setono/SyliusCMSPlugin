@@ -17,7 +17,7 @@ final class Taxons extends ListField
 {
     public function itemType(): string
     {
-        return 'taxon';
+        return ReferenceType::TAXON;
     }
 
     public function itemClass(): string

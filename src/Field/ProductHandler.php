@@ -20,7 +20,7 @@ final class ProductHandler implements FitCheckingFieldHandlerInterface
 
     public function hydrate(Field $field, mixed $value, HydrationContext $context): ?ProductInterface
     {
-        $product = Codes::isCode($value) ? $context->references->get('product', $value) : null;
+        $product = Codes::isCode($value) ? $context->references->get(ReferenceType::PRODUCT, $value) : null;
 
         return $product instanceof ProductInterface ? $product : null;
     }
@@ -32,7 +32,7 @@ final class ProductHandler implements FitCheckingFieldHandlerInterface
 
     public function references(Field $field, mixed $value): iterable
     {
-        return Codes::references('product', [$value]);
+        return Codes::references(ReferenceType::PRODUCT, [$value]);
     }
 
     public function validate(Field $field, mixed $value, ExecutionContextInterface $context): void

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Rendering;
 
 use Doctrine\Persistence\ManagerRegistry;
-use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 
@@ -38,26 +37,11 @@ final readonly class ProductReferenceLoader implements ReferenceTypeLoaderInterf
             ->getResult()
         ;
 
-        $loaded = [];
-        foreach ($products as $product) {
-            $loaded[(string) $product->getCode()] = $product;
-        }
-
-        return $loaded;
+        return CodedRecords::byCode($products);
     }
 
     public function existing(array $ids): array
     {
-        /** @var list<string> $codes */
-        $codes = EntityManagers::of($this->managerRegistry, $this->productClass)->createQueryBuilder()
-            ->select('product.code')
-            ->from($this->productClass, 'product')
-            ->andWhere('product.code IN (:codes)')
-            ->setParameter('codes', $ids)
-            ->getQuery()
-            ->getSingleColumnResult()
-        ;
-
-        return $codes;
+        return CodedRecords::existing($this->managerRegistry, $this->productClass, $ids);
     }
 }

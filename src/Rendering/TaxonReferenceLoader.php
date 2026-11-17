@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Rendering;
 
 use Doctrine\Persistence\ManagerRegistry;
-use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Query\VisibleTaxonsQueryInterface;
 use Sylius\Component\Core\Model\TaxonInterface;
 
@@ -42,26 +41,11 @@ final readonly class TaxonReferenceLoader implements ReferenceTypeLoaderInterfac
             ->getResult()
         ;
 
-        $loaded = [];
-        foreach ($taxons as $taxon) {
-            $loaded[(string) $taxon->getCode()] = $taxon;
-        }
-
-        return $loaded;
+        return CodedRecords::byCode($taxons);
     }
 
     public function existing(array $ids): array
     {
-        /** @var list<string> $codes */
-        $codes = EntityManagers::of($this->managerRegistry, $this->taxonClass)->createQueryBuilder()
-            ->select('taxon.code')
-            ->from($this->taxonClass, 'taxon')
-            ->andWhere('taxon.code IN (:codes)')
-            ->setParameter('codes', $ids)
-            ->getQuery()
-            ->getSingleColumnResult()
-        ;
-
-        return $codes;
+        return CodedRecords::existing($this->managerRegistry, $this->taxonClass, $ids);
     }
 }
