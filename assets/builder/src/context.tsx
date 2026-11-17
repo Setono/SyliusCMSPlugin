@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 import { useStore } from 'zustand';
 import type { BuilderApi, PreviewRequest } from './api';
-import type { Channel, CustomerGroup, Locale } from './config';
+import type { Channel, CustomerGroup, Locale, SnippetPlacement } from './config';
 import type { LeavingState, LeavingStore } from './leaving';
 import { localeOf } from './locales';
 import type { PresenceState, PresenceStore } from './presence';
@@ -32,6 +32,8 @@ export interface BuilderSession {
     leaving: LeavingStore;
     /** The entry's overview page, for publishing history, revisions, share links and placements. */
     overviewUrl: string;
+    /** A snippet's placements, which are managed on its overview page, or null for an entry that isn't a snippet. */
+    placements: SnippetPlacement[] | null;
     preview: PreviewStore;
     /** Asks for a preview token, and answers with the URL of the preview it turns on. */
     createPreviewUrl: (preview: PreviewRequest) => Promise<string>;

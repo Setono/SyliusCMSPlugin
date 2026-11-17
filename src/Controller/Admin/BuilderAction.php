@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin;
 
+use Setono\SyliusCMSPlugin\Admin\EntryPlacement;
+use Setono\SyliusCMSPlugin\Admin\EntryPlacements;
 use Setono\SyliusCMSPlugin\Builder\MediaLibraryConfig;
 use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
@@ -51,6 +53,7 @@ final readonly class BuilderAction
         private FallbackChainInterface $fallbackChain,
         private StartingValuesInterface $startingValues,
         private MediaLibraryConfig $mediaLibraryConfig,
+        private EntryPlacements $entryPlacements,
     ) {
     }
 
@@ -100,6 +103,8 @@ final readonly class BuilderAction
                 // The media picker is the media library opened as a picker, with the library's endpoints, and the
                 // store's locales for the alt text. The registry gives it the upload limit and types
                 'media' => $this->mediaLibraryConfig->of($request->getLocale()),
+                // A snippet's placements, which the builder lists without changing them, or null for another entry
+                'placements' => $this->placements($entry),
                 // Where the preview's Shown to and Date start. Date is a UTC date and time, or null for now
                 'preview' => [
                     'shownTo' => $this->startingValues->shownTo($entry),
@@ -191,6 +196,27 @@ final readonly class BuilderAction
             static fn (CustomerGroupInterface $group): array => ['code' => $group->getCode(), 'name' => $group->getName()],
             $this->customerGroupRepository->findBy([], ['name' => 'ASC']),
         ));
+    }
+
+    /**
+     * A snippet's placements, by slot as its overview page lists them, each with its slot's label in the admin user's
+     * locale, or the slot's identifier when the code no longer declares it. Null for an entry that isn't a snippet
+     *
+     * @return list<array{uuid: string, slot: string, label: string, removed: bool}>|null
+     */
+    private function placements(EntryInterface $entry): ?array
+    {
+        $section = $this->entryPlacements->of($entry);
+        if (null === $section) {
+            return null;
+        }
+
+        return array_map(fn (EntryPlacement $placed): array => [
+            'uuid' => $placed->placement->getUuid(),
+            'slot' => $placed->placement->getSlot(),
+            'label' => null === $placed->slot ? $placed->placement->getSlot() : $this->translator->trans($placed->slot->label),
+            'removed' => null === $placed->slot,
+        ], $section->placements);
     }
 
     private static function query(Request $request, string $name): ?string

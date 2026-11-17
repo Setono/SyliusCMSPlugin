@@ -153,6 +153,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                         leave: () => void leaving.getState().leave(),
                         leaving,
                         overviewUrl: config.overviewUrl,
+                        placements: config.placements ?? null,
                         publish: createPublish(store, autosave, () => api.publish(), validationStore),
                         discard: createDiscard(store, autosave, () => api.discard()),
                         schedule: createSchedule(store, autosave, (at) => api.schedule(at), validationStore),

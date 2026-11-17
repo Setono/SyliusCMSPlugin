@@ -31,6 +31,17 @@ export interface ShownToAndDate {
     date: string | null;
 }
 
+/** One of a snippet's placements, which are managed on its overview page and only listed in the builder. */
+export interface SnippetPlacement {
+    uuid: string;
+    /** The slot's identifier, such as shop.footer. */
+    slot: string;
+    /** The slot's label in the admin user's locale, or its identifier when the code no longer declares it. */
+    label: string;
+    /** Whether the code no longer declares the slot, so the placement shows nothing. */
+    removed: boolean;
+}
+
 /** What the builder page passes to the app, as JSON in the data-config attribute of #cms-builder. */
 export interface BuilderConfig {
     entryUuid: string;
@@ -72,6 +83,8 @@ export interface BuilderConfig {
     customerGroups: CustomerGroup[];
     /** Where the preview's Shown to and Date start, from the entry's audience and date window. Guests and now without it. */
     preview?: ShownToAndDate;
+    /** A snippet's placements, by slot, which the More tab lists. Null or absent for an entry that isn't a snippet. */
+    placements?: SnippetPlacement[] | null;
     /** UI strings needed before the registry arrives, such as the loading text. Optional. */
     strings?: Record<string, string>;
     /**

@@ -209,6 +209,17 @@
     overflow-wrap: anywhere;
 }
 
+/* A snippet's placements in the More tab, which it lists without a way to change them */
+.placements {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow-wrap: anywhere;
+}
+
 /* The More tab's link to the overview page */
 .link {
     align-self: flex-start;

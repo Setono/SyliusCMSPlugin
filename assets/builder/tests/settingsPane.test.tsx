@@ -103,6 +103,38 @@ describe('the entry settings', () => {
         expect(pane().queryByRole('tabpanel', { name: 'More' })).not.toBeInTheDocument();
     });
 
+    it("should list a snippet's placements in the More tab, without a way to change them", async () => {
+        await openBuilder(fakeApi(), {
+            ...config,
+            placements: [
+                { uuid: '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d01', slot: 'shop.footer', label: 'Every page: the footer', removed: false },
+                { uuid: '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d02', slot: 'shop.removed', label: 'shop.removed', removed: true },
+            ],
+        });
+
+        fireEvent.click(pane().getByRole('tab', { name: 'More' }));
+
+        const panel = within(pane().getByRole('tabpanel', { name: 'More' }));
+        const placements = within(panel.getByRole('list', { name: 'Placements' }));
+        expect(placements.getAllByRole('listitem').map((item) => item.textContent)).toEqual(['Every page: the footer', 'shop.removed (no longer in the code)']);
+        expect(panel.getByText('Placements are managed on the overview page.')).toBeInTheDocument();
+        expect(panel.queryByRole('button')).not.toBeInTheDocument();
+    });
+
+    it('should say a snippet without placements shows in no slot', async () => {
+        await openBuilder(fakeApi(), { ...config, placements: [] });
+        fireEvent.click(pane().getByRole('tab', { name: 'More' }));
+
+        expect(within(pane().getByRole('tabpanel', { name: 'More' })).getByText('It shows in no slot yet. Placements are managed on the overview page.')).toBeInTheDocument();
+    });
+
+    it('should list no placements for an entry that is not a snippet', async () => {
+        await openBuilder();
+        fireEvent.click(pane().getByRole('tab', { name: 'More' }));
+
+        expect(within(pane().getByRole('tabpanel', { name: 'More' })).queryByRole('heading', { name: 'Placements' })).not.toBeInTheDocument();
+    });
+
     it('should move between the tabs with the arrow keys, which only the selected tab takes the focus for', async () => {
         await openBuilder();
         const settingsTab = pane().getByRole('tab', { name: 'Settings' });

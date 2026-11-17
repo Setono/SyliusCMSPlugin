@@ -609,6 +609,7 @@ setono_sylius_cms:
         not_shown_in_layout: Not shown in this layout
         no_group: Signed in without a group
         no_matching_block_types: No block types match
+        no_placements: It shows in no slot yet. Placements are managed on the overview page.
         noindex: Hide from search engines
         noindex_help: Asks search engines not to list this page, in every language. It takes effect when you publish.
         no_style: None
@@ -616,6 +617,9 @@ setono_sylius_cms:
         old_urls: Redirects from
         old_urls_help: The URLs of the slugs this had before, which redirect here.
         open_overview: Open the overview page
+        placement_removed: '%slot% (no longer in the code)'
+        placements: Placements
+        placements_help: Placements are managed on the overview page.
         outdated: 'The %locale% text it was translated from has changed. It now reads:'
         path: Path
         preview: Preview
