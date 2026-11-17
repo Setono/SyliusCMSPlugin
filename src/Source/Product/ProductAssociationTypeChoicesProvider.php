@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Source\Product;
 
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Sylius\Component\Product\Model\ProductAssociationTypeInterface;
+use Sylius\Component\Product\Model\ProductAssociationTypeTranslationInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Contracts\Service\ResetInterface;
 
@@ -33,14 +34,24 @@ final class ProductAssociationTypeChoicesProvider implements ChoicesProviderInte
         foreach ($this->types as $type) {
             $code = $type->getCode();
             if (null !== $code) {
-                // Not getTranslation(), which adds an empty translation in a locale the type has none in
-                $choices[$code] = $type->getTranslations()->get($localeCode)?->getName() ?? $code;
+                $choices[$code] = self::name($type, $localeCode) ?? $code;
             }
         }
 
         uasort($choices, strnatcasecmp(...));
 
         return $choices;
+    }
+
+    /**
+     * Its name in the locale. Not through getTranslation(), which adds an empty translation in a locale the type has
+     * none in, and a later flush would save it
+     */
+    private static function name(ProductAssociationTypeInterface $type, string $localeCode): ?string
+    {
+        $translation = $type->getTranslations()->get($localeCode);
+
+        return $translation instanceof ProductAssociationTypeTranslationInterface ? $translation->getName() : null;
     }
 
     public function reset(): void
