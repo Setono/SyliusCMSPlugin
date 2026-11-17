@@ -240,6 +240,7 @@ final class RegistryTest extends BuilderApiTestCase
         foreach ($image['fields'] as $field) {
             self::assertIsArray($field);
             self::assertIsArray($field['schema']);
+            self::assertIsString($field['name']);
             $fields[$field['name']] = [$field['schema']['x-cms-type'], $field['schema']['x-cms-label'], $field['schema']['x-cms-required'], $field['schema']['x-cms-translatable']];
         }
 

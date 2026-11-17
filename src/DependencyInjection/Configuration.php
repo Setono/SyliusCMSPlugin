@@ -270,19 +270,25 @@ final class Configuration implements ConfigurationInterface
                             ->scalarPrototype()
                                 ->validate()->always(self::assertWidth(...))->end()
                             ->end()
-                            ->validate()
-                                ->always(static function (array $widths): array {
-                                    $widths = array_values(array_unique($widths));
-                                    sort($widths);
-
-                                    return $widths;
-                                })
-                            ->end()
+                            ->validate()->always(self::ascendingWidths(...))->end()
                         ->end()
                     ->end()
                 ->end()
             ->end()
         ;
+    }
+
+    /**
+     * @param list<int> $widths
+     *
+     * @return list<int> in ascending order, each once
+     */
+    private static function ascendingWidths(array $widths): array
+    {
+        $widths = array_values(array_unique($widths));
+        sort($widths);
+
+        return $widths;
     }
 
     /**

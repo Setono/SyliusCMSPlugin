@@ -58,7 +58,12 @@ final class LiipImageProviderTest extends TestCase
         $cacheManager->addResolver('setono_sylius_cms', $this->resolver->reveal());
 
         $this->mediaUrls = $this->prophesize(MediaUrlGeneratorInterface::class);
-        $this->mediaUrls->generate(Argument::any())->will(static fn (array $arguments): string => '/media/cms/' . $arguments[0]->getPath());
+        $this->mediaUrls->generate(Argument::type(MediaItemInterface::class))->will(static function (array $arguments): string {
+            $mediaItem = $arguments[0];
+            \assert($mediaItem instanceof MediaItemInterface);
+
+            return '/media/cms/' . $mediaItem->getPath();
+        });
 
         $this->provider = new LiipImageProvider($cacheManager, $this->mediaUrls->reveal(), $this->prophesize(ImagineInterface::class)->reveal());
     }
@@ -156,8 +161,10 @@ final class LiipImageProviderTest extends TestCase
      */
     private static function parse(string $url): array
     {
-        self::assertMatchesRegularExpression('~^/media/cache/resolve/([^/]+)/rc/([^/]+)/([^?]+)\?(.+)$~', $url);
-        preg_match('~^/media/cache/resolve/([^/]+)/rc/([^/]+)/([^?]+)\?(.+)$~', $url, $matches);
+        if (1 !== preg_match('~^/media/cache/resolve/([^/]+)/rc/([^/]+)/([^?]+)\?(.+)$~', $url, $matches)) {
+            self::fail(sprintf('%s isn\'t a URL of Liip\'s runtime resolve route', $url));
+        }
+
         parse_str($matches[4], $query);
         self::assertIsArray($query['filters'] ?? null);
 
@@ -174,7 +181,12 @@ final class LiipImageProviderTest extends TestCase
         $generator = new UrlGenerator($routes, new RequestContext());
 
         $router = $this->prophesize(RouterInterface::class);
-        $router->generate(Argument::cetera())->will(static fn (array $arguments): string => $generator->generate(...$arguments));
+        $router->generate(Argument::type('string'), Argument::type('array'), Argument::type('int'))->will(static function (array $arguments) use ($generator): string {
+            [$name, $parameters, $referenceType] = $arguments;
+            \assert(is_string($name) && is_array($parameters) && is_int($referenceType));
+
+            return $generator->generate($name, $parameters, $referenceType);
+        });
 
         return $router->reveal();
     }

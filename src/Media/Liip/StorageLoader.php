@@ -28,11 +28,17 @@ final readonly class StorageLoader implements LoaderInterface
     }
 
     /**
+     * @param mixed $path the image's storage path
+     *
      * @throws NotLoadableException when the storage has no such file, or it's a cached variant
      */
     public function find($path): BinaryInterface
     {
-        $path = ltrim((string) $path, '/');
+        if (!is_string($path)) {
+            throw new NotLoadableException(sprintf('An image\'s path must be a string, not %s', get_debug_type($path)));
+        }
+
+        $path = ltrim($path, '/');
         if (str_starts_with($path, StorageResolver::PREFIX . '/')) {
             throw new NotLoadableException(sprintf('"%s" is an image variant, which no variant is made from', $path));
         }

@@ -204,7 +204,7 @@ final class ImageTest extends WebTestCase
     {
         preg_match_all('~ (\d+)w(?:,|$)~', $srcset, $matches);
 
-        return array_map('intval', $matches[1]);
+        return array_map(intval(...), $matches[1]);
     }
 
     /**

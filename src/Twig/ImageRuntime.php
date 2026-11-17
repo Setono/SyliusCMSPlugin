@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig;
 
-use Setono\SyliusCMSPlugin\Field\MediaItemReferences;
 use Setono\SyliusCMSPlugin\Media\AltTextResolverInterface;
 use Setono\SyliusCMSPlugin\Media\ImageFormat;
 use Setono\SyliusCMSPlugin\Media\ImageLayout;
@@ -17,6 +16,7 @@ use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
+use Symfony\Component\Uid\Uuid;
 use Twig\Extension\RuntimeExtensionInterface;
 
 /**
@@ -112,7 +112,7 @@ final readonly class ImageRuntime implements RuntimeExtensionInterface
     private function mediaItem(MediaItemInterface|string|null $media): ?MediaItemInterface
     {
         if (is_string($media)) {
-            $media = MediaItemReferences::isUuid($media) ? $this->mediaItemRepository->findOneByUuid(strtolower($media)) : null;
+            $media = Uuid::isValid($media) ? $this->mediaItemRepository->findOneByUuid(strtolower($media)) : null;
         }
 
         return null !== $media && MediaKind::Image === $media->getKind() ? $media : null;

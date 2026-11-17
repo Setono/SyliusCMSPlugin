@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Media\Liip;
 use League\Flysystem\FilesystemOperator;
 use Liip\ImagineBundle\Binary\BinaryInterface;
 use Liip\ImagineBundle\Exception\Imagine\Cache\Resolver\NotResolvableException;
+use Liip\ImagineBundle\Exception\Imagine\Cache\Resolver\NotStorableException;
 use Liip\ImagineBundle\Imagine\Cache\Resolver\ResolverInterface;
 use Liip\ImagineBundle\Imagine\Filter\FilterConfiguration;
 
@@ -51,17 +52,25 @@ final readonly class StorageResolver implements ResolverInterface
         return $url;
     }
 
+    /**
+     * @throws NotStorableException when the variant has no content
+     */
     public function store(BinaryInterface $binary, $path, $filter): void
     {
-        $this->storage->write($this->variantPath($path, $filter), $binary->getContent(), ['mimetype' => $binary->getMimeType()]);
+        $content = $binary->getContent();
+        if (!is_string($content)) {
+            throw new NotStorableException(sprintf('The variant of "%s" in the filter set "%s" has no content to store', $path, $filter));
+        }
+
+        $this->storage->write($this->variantPath($path, $filter), $content, ['mimetype' => $binary->getMimeType()]);
     }
 
     /**
      * Removes the variants of the paths in the filter sets: of a source path, every variant of it, and of a path with
      * runtime filters, that one variant. Without paths, every variant of the filter sets
      *
-     * @param list<string> $paths
-     * @param list<string> $filters
+     * @param array<string> $paths
+     * @param array<string> $filters
      */
     public function remove(array $paths, array $filters): void
     {

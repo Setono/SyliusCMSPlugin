@@ -173,7 +173,12 @@ final class ImageExtensionTest extends IntegrationTestCase
         // Prophecy binds the promise to the double, so the library is reached through a reference
         $library = &$this->library;
         $mediaItems = $this->prophesize(MediaItemRepositoryInterface::class);
-        $mediaItems->findOneByUuid(Argument::type('string'))->will(static fn (array $arguments): ?MediaItemInterface => $library[$arguments[0]] ?? null);
+        $mediaItems->findOneByUuid(Argument::type('string'))->will(static function (array $arguments) use (&$library): ?MediaItemInterface {
+            $uuid = $arguments[0];
+            \assert(is_string($uuid));
+
+            return $library[$uuid] ?? null;
+        });
 
         return $mediaItems->reveal();
     }
