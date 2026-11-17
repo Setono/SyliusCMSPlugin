@@ -41,7 +41,8 @@ final readonly class ImageRuntime implements RuntimeExtensionInterface
 
     /**
      * Prints nothing for null, a broken reference or a media item that isn't an image. In the builder's preview, it
-     * prints a grey placeholder at the image's aspect ratio instead
+     * prints a grey placeholder at the image's aspect ratio instead. An <img>, or a <picture> when it has <source>s, for
+     * AVIF or art-directed images, or a picture class
      *
      * @param array<string, mixed> $context
      * @param MediaItemInterface|string|null $media a media item, or its UUID
