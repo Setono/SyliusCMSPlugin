@@ -491,6 +491,34 @@ final class BlockViewBuilderTest extends TestCase
     }
 
     /**
+     * So a block that throws while rendering is logged with the entry an editor fixes it in
+     *
+     * @test
+     */
+    public function it_gives_each_view_the_uuid_of_the_entry_whose_tree_holds_its_block_including_inside_a_snippet_block(): void
+    {
+        $footer = self::snippet(self::heading(self::C, 'Opening hours'));
+        $page = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e40';
+
+        $views = $this->builder()->build([self::heading(self::A, 'About us'), self::snippetBlock(self::B, $footer)], $this->context('en_US'), self::snippetsMap($footer), $page);
+
+        self::assertSame([$page, $page], array_map(static fn (BlockView $view): ?string => $view->entry, $views));
+        self::assertSame($footer->getUuid(), $views[1]->children[0]->entry);
+    }
+
+    /**
+     * Such as the blocks the builder sends to be previewed
+     *
+     * @test
+     */
+    public function it_gives_views_of_blocks_that_are_no_entry_s_no_entry(): void
+    {
+        $views = $this->builder()->build([self::heading(self::A, 'About us')], $this->context('en_US'));
+
+        self::assertNull($views[0]->entry);
+    }
+
+    /**
      * @param iterable<mixed> $references
      *
      * @return list<array{string, string, bool}>

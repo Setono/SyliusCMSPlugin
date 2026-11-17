@@ -48,7 +48,7 @@ final readonly class LayoutRenderer implements LayoutRendererInterface
         return $this->twig->render($layout->template, [
             'entry' => $entry,
             'layout' => $this->hydrator->hydrateObject($layout->class, $layout->fields, $values, $context, $references),
-            'blocks' => $this->blockViewBuilder->build($tree->blocks, $context, $references),
+            'blocks' => $this->blockViewBuilder->build($tree->blocks, $context, $references, $entry->getUuid()),
             'context' => $context->getHostPageContext(),
             CMSRuntime::RENDER_CONTEXT => $context,
         ]);
