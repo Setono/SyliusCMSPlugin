@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Repository;
 
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\QueryBuilder;
 use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
@@ -158,6 +159,52 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
     public function countEntries(?string $contentType = null): int
     {
         return (int) $this->entries($contentType)->select('COUNT(o.id)')->getQuery()->getSingleScalarResult();
+    }
+
+    public function findStartingAfter(\DateTimeImmutable $now, int $limit): array
+    {
+        return $this->findByDateWindowBoundaryAfter('showFrom', $now, $limit);
+    }
+
+    public function findEndingAfter(\DateTimeImmutable $now, int $limit): array
+    {
+        return $this->findByDateWindowBoundaryAfter('showUntil', $now, $limit);
+    }
+
+    public function findWithDraft(int $limit): array
+    {
+        /** @var list<EntryInterface> $entries */
+        $entries = $this->createQueryBuilder('o')
+            ->andWhere(sprintf('EXISTS (SELECT cms_draft.id FROM %s cms_draft WHERE cms_draft.entry = o)', DraftInterface::class))
+            ->addOrderBy('o.lastEditedAt', 'DESC')
+            ->addOrderBy('o.id', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $entries;
+    }
+
+    /**
+     * The entries whose date window's start or end, $boundary, comes after $now, the first first. The columns hold UTC
+     *
+     * @return list<EntryInterface>
+     */
+    private function findByDateWindowBoundaryAfter(string $boundary, \DateTimeImmutable $now, int $limit): array
+    {
+        /** @var list<EntryInterface> $entries */
+        $entries = $this->createQueryBuilder('o')
+            ->andWhere(sprintf('o.%s > :now', $boundary))
+            ->setParameter('now', $now->setTimezone(new \DateTimeZone('UTC')), Types::DATETIME_IMMUTABLE)
+            ->addOrderBy(sprintf('o.%s', $boundary), 'ASC')
+            ->addOrderBy('o.id', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $entries;
     }
 
     /**

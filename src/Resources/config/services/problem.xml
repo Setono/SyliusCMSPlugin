@@ -15,13 +15,17 @@
         <!--
         The errors and warnings of each entry, counted when the entry is written and stored with it, which the lists'
         marker, their Needs attention filter and the Content badge read. RegisterProblemKindsPass hands the updater
-        the kinds whose problems are stored, and the fingerprint their classes
+        the kinds whose problems are stored, and the fingerprint their classes. The working copies it reads go on to the
+        other counts stored with each entry: the locales it's complete in
         -->
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater" class="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater">
             <argument type="collection"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprintInterface"/>
+            <argument type="collection">
+                <argument type="service" id="Setono\SyliusCMSPlugin\Translation\CompletenessCounter"/>
+            </argument>
             <argument type="service" id="logger"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater"/>

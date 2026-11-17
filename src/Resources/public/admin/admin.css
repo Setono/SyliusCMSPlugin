@@ -109,3 +109,13 @@
     overflow-x: auto;
     margin-bottom: 1em;
 }
+
+/* The Overview's panels: a kind of problem under Needs attention, and a channel under Translations, each with room above */
+.cms-overview .cms-problem-group + .cms-problem-group,
+.cms-overview [data-channel] + [data-channel] {
+    margin-top: 1.5em;
+}
+
+.cms-overview .cms-problem-group {
+    margin-bottom: 1em;
+}

@@ -279,6 +279,20 @@ describe('the media library', () => {
         expect(grid().getByRole('button', { name: /cat/ })).toBeInTheDocument();
     });
 
+    it('should open filtered by missing alt text when its screen asks for it, as the Overview links to it', async () => {
+        const api = fakeApi([mediaItem('dog', { missingAlt: false }), mediaItem('cat')]);
+        render(<MediaLibraryApp config={{ ...libraryConfig, filters: { missingAlt: true } }} api={api} />);
+
+        await waitFor(() => expect(grid().getAllByRole('listitem')).toHaveLength(1));
+        expect(api.list).toHaveBeenCalledTimes(1);
+        expect(api.list).toHaveBeenLastCalledWith({ folder: 'all', search: '', kind: null, missingAlt: true }, 1);
+        expect(screen.getByRole('checkbox', { name: 'Missing alt text' })).toBeChecked();
+
+        fireEvent.click(screen.getByRole('checkbox', { name: 'Missing alt text' }));
+
+        await waitFor(() => expect(grid().getAllByRole('listitem')).toHaveLength(2));
+    });
+
     it('should move the selected media item to another folder, out of the folder that is open', async () => {
         const api = fakeApi([mediaItem('dog')]);
         await api.createFolder('Campaigns', null);

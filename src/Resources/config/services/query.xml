@@ -2,6 +2,12 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
+        <!-- The locales each entry is complete in, stored with it, which the Overview's Translations and the lists' translation filter read -->
+        <service id="Setono\SyliusCMSPlugin\Query\CompletenessQuery" class="Setono\SyliusCMSPlugin\Query\CompletenessQuery">
+            <argument type="service" id="doctrine"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Query\CompletenessQueryInterface" alias="Setono\SyliusCMSPlugin\Query\CompletenessQuery"/>
+
         <service id="Setono\SyliusCMSPlugin\Query\VisibleEntriesQuery" class="Setono\SyliusCMSPlugin\Query\VisibleEntriesQuery">
             <argument type="service" id="doctrine"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>

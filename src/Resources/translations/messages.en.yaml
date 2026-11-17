@@ -211,6 +211,17 @@ setono_sylius_cms:
         unknown_source: '%field% in the %block% block is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unreadable: 'This content can''t be read: %reason%'
         url_taken_by_route: 'URL taken by a Sylius route: shoppers get the page of the route %route% at %url%.'
+    # Each kind of problem, by its code, as the Overview's Needs attention groups them. A project names its own kinds here
+    problem_kind:
+        broken_reference: Broken references
+        deleted_customer_group: Deleted customer groups
+        misfit_value: Values that don't fit their field
+        removed_layout: Removed layouts
+        scheduled_publish_failed: Failed scheduled publishes
+        scheduled_publish_overdue: Overdue scheduled publishes
+        unknown_block_type: Blocks of removed types
+        unknown_source: Lists filled by removed sources
+        url_taken_by_route: URLs taken by Sylius routes
     publish:
         invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'
     # What a reference refers to, by its type, with its article, as a broken reference names it. See "References" in docs/spec/content-model.md
@@ -233,7 +244,10 @@ setono_sylius_cms:
         embed_title: Video
     ui:
         all_entries: All entries
+        all_needing_attention: '{1} The entry that needs attention|]1,Inf[ All %count% entries that need attention'
+        all_unpublished_changes: All entries with unpublished changes
         any_channel: Any channel
+        any_translation: Any
         any_status: Any status
         audience:
             everyone: Everyone
@@ -245,6 +259,13 @@ setono_sylius_cms:
         cancel_schedule: Cancel the schedule
         channel: Channel
         close: Close
+        coming_up: Coming up
+        # What happens to an entry in the Overview's Coming up
+        coming_up_event:
+            ends: Stops showing
+            publishes: Publishes
+            starts: Starts showing
+        complete_of: '%complete% of %entries% complete'
         content: Content
         content_description: Pages and everything else shoppers read that isn't a product
         copied: Copied
@@ -255,6 +276,7 @@ setono_sylius_cms:
         date: Date
         discard_changes: Discard changes
         dismiss: Dismiss
+        drafts_in_progress: Drafts in progress
         error_count: '{0} No errors|{1} 1 error|]1,Inf[ %count% errors'
         fix_in_builder: Fix in builder
         fix_in_publishing: Go to Publishing
@@ -264,6 +286,7 @@ setono_sylius_cms:
         homepage_url: 'The homepage, where its own URL redirects in the channels it''s the homepage of'
         language: Language
         last_edited: Last edited
+        last_edited_at: 'Last edited %at%'
         last_published: 'Last published %date%'
         link: Link
         made_by: Made by
@@ -275,11 +298,17 @@ setono_sylius_cms:
         no_revisions: Every publish stores a revision, which you can preview and restore. There are none yet.
         no_share_links: Share the draft with anyone, as a link that shows it in the shop without signing in. There are none yet.
         no_urls: It has no URL yet, because it has no slug.
+        missing_alt_text: '{1} 1 image has no alt text in one or more languages|]1,Inf[ %count% images have no alt text in one or more languages'
+        no_drafts_in_progress: No published entry has unpublished changes.
+        no_entries_in_channel: No entries are in this channel.
+        nothing_coming_up: No scheduled publishes, and no date windows that start or end.
+        not_complete_count: '%count% not complete'
+        not_complete_in: 'Not complete in %locale%'
+        nothing_needs_attention: Nothing needs attention.
         now: Now
         old_urls: 'Redirects from:'
         open_in_builder: Open in builder
         other_content_type: Another content type
-        overview_placeholder: What needs attention, what's coming up, translations and drafts in progress will show here. Until then, find the entries in their lists.
         pick_content_type: What do you want to create?
         preview: Preview
         problem_severity:
