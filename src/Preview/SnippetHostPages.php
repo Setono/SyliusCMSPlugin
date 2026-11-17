@@ -50,7 +50,7 @@ final readonly class SnippetHostPages
      */
     public function sampleKey(SnippetInterface $snippet, ?PlacementInterface $placement): ?string
     {
-        return SampleObjects::keyOf($this->slotOf($placement)?->provides ?? $snippet->getContext());
+        return SampleObjects::keyOf($this->slotOf($placement)->provides ?? $snippet->getContext());
     }
 
     /**

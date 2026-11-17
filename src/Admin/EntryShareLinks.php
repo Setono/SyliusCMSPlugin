@@ -88,7 +88,7 @@ final readonly class EntryShareLinks
             return null;
         }
 
-        return $this->slots->find($slot)?->label ?? $slot;
+        return $this->slots->find($slot)->label ?? $slot;
     }
 
     private static function nameOf(?ChannelInterface $channel, string $code): string
