@@ -9,8 +9,7 @@ use Setono\SyliusCMSPlugin\Media\ImageFormat;
 use Setono\SyliusCMSPlugin\Media\ImageLayout;
 use Setono\SyliusCMSPlugin\Media\ImageOptions;
 use Setono\SyliusCMSPlugin\Media\ImageProviderInterface;
-use Setono\SyliusCMSPlugin\Media\ImageTransform;
-use Setono\SyliusCMSPlugin\Media\ImageVariants;
+use Setono\SyliusCMSPlugin\Media\ImageRendition;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
@@ -57,56 +56,66 @@ final readonly class ImageRuntime implements RuntimeExtensionInterface
             return RenderContext::PREVIEW_MODE_BUILDER === $this->renderContext($context)->previewMode ? self::placeholder($options) : '';
         }
 
-        $sourceWidth = $mediaItem->getWidth();
-        $sourceHeight = $mediaItem->getHeight();
-        $aspectRatio = $options->aspectRatio ?? (null !== $sourceWidth && null !== $sourceHeight && $sourceHeight > 0 ? $sourceWidth / $sourceHeight : null);
-        $width = $options->width ?? $sourceWidth;
-
-        $attributes = [
-            'width' => $width,
-            'height' => null === $width || null === $aspectRatio ? null : max(1, (int) round($width / $aspectRatio)),
-            'alt' => $this->alt($context, $mediaItem, $options),
-            'class' => $options->class,
-            'loading' => $options->priority ? null : 'lazy',
-            'decoding' => $options->priority ? null : 'async',
-            'fetchpriority' => $options->priority ? 'high' : null,
-        ];
-
-        if (!ImageVariants::areMadeFor($mediaItem) || null === $width || null === $sourceWidth || null === $sourceHeight) {
-            // Served as uploaded at every width, so the transform asks for nothing in particular
-            $src = $this->imageProvider->url($mediaItem, new ImageTransform(max(1, $width ?? 1), null, ImageFormat::Original, $mediaItem->getFocalPoint()));
-
-            return self::tag('img', ['src' => $src] + $attributes);
-        }
-
-        // The widest a variant can be without upscaling: the source's width, or its crop's at another aspect ratio
-        $maxWidth = null === $options->aspectRatio ? $sourceWidth : max(1, min($sourceWidth, (int) floor($sourceHeight * $options->aspectRatio)));
-        $widths = $options->layout->widths(max(1, $width), max(1, $maxWidth), $this->widths);
-        $sizes = ImageLayout::Fixed === $options->layout ? null : ($options->sizes ?? $options->layout->sizes($width));
-
-        $url = fn (int $variantWidth, ImageFormat $format): string => $this->imageProvider->url($mediaItem, new ImageTransform($variantWidth, $options->aspectRatio, $format, $mediaItem->getFocalPoint()));
-        $srcset = static function (ImageFormat $format) use ($url, $widths, $options): string {
-            $candidates = [];
-            foreach ($widths as $i => $variantWidth) {
-                $candidates[] = $url($variantWidth, $format) . ' ' . (ImageLayout::Fixed === $options->layout ? ($i + 1) . 'x' : $variantWidth . 'w');
-            }
-
-            return implode(', ', $candidates);
-        };
-
         $format = match ($options->format) {
             ImageOptions::FORMAT_ORIGINAL => ImageFormat::Original,
             ImageOptions::FORMAT_WEBP => ImageFormat::Webp,
             default => $this->imageProvider->supportsFormat(ImageFormat::Webp) ? ImageFormat::Webp : ImageFormat::Original,
         };
+        // Liip doesn't negotiate formats, so the browser picks AVIF from a source where it supports it
+        $avif = ImageOptions::FORMAT_AUTO === $options->format && $this->imageProvider->supportsFormat(ImageFormat::Avif);
 
-        $img = self::tag('img', ['src' => $url(self::srcWidth($widths, min($width, $maxWidth)), $format), 'srcset' => $srcset($format), 'sizes' => $sizes] + $attributes);
-        if (ImageOptions::FORMAT_AUTO !== $options->format || !$this->imageProvider->supportsFormat(ImageFormat::Avif)) {
+        // The art-directed images come first, so the browser takes one where its media query matches
+        $sources = '';
+        foreach ($options->artDirection as $artDirectedImage) {
+            $artDirectedItem = $this->mediaItem($artDirectedImage->image);
+            if (null !== $artDirectedItem) {
+                $sources .= self::sources($this->rendition($artDirectedItem, $options, $artDirectedImage->aspectRatio), $artDirectedImage->media, $format, $avif);
+            }
+        }
+
+        $image = $this->rendition($mediaItem, $options, $options->aspectRatio);
+        if ($avif && $image->hasVariants()) {
+            $sources .= self::tag('source', ['type' => ImageFormat::Avif->mimeType(), 'srcset' => $image->srcset(ImageFormat::Avif), 'sizes' => $image->sizes]);
+        }
+
+        $img = self::tag('img', [
+            'src' => $image->src($format),
+            'srcset' => $image->hasVariants() ? $image->srcset($format) : null,
+            'sizes' => $image->sizes,
+            'width' => $image->width,
+            'height' => $image->height,
+            'alt' => $this->alt($context, $mediaItem, $options),
+            'class' => $options->class,
+            'loading' => $options->priority ? null : 'lazy',
+            'decoding' => $options->priority ? null : 'async',
+            'fetchpriority' => $options->priority ? 'high' : null,
+        ]);
+
+        if ('' === $sources && null === $options->pictureClass) {
             return $img;
         }
 
-        // Liip doesn't negotiate formats, so the browser picks AVIF from a source where it supports it
-        return '<picture>' . self::tag('source', ['type' => ImageFormat::Avif->mimeType(), 'srcset' => $srcset(ImageFormat::Avif), 'sizes' => $sizes]) . $img . '</picture>';
+        return self::tag('picture', ['class' => $options->pictureClass]) . $sources . $img . '</picture>';
+    }
+
+    private function rendition(MediaItemInterface $mediaItem, ImageOptions $options, ?float $aspectRatio): ImageRendition
+    {
+        return ImageRendition::of($this->imageProvider, $mediaItem, $options, $aspectRatio, $this->widths);
+    }
+
+    /**
+     * The <source>s of an art-directed image for its media query: AVIF first where it's offered, then the <img>'s format.
+     * They carry the image's own size, which may differ from the <img>'s
+     */
+    private static function sources(ImageRendition $image, string $media, ImageFormat $format, bool $avif): string
+    {
+        $size = ['sizes' => $image->sizes, 'width' => $image->width, 'height' => $image->height];
+        $sources = '';
+        if ($avif && $image->hasVariants()) {
+            $sources .= self::tag('source', ['media' => $media, 'type' => ImageFormat::Avif->mimeType(), 'srcset' => $image->srcset(ImageFormat::Avif)] + $size);
+        }
+
+        return $sources . self::tag('source', ['media' => $media, 'srcset' => $image->srcset($format)] + $size);
     }
 
     private function mediaItem(MediaItemInterface|string|null $media): ?MediaItemInterface
@@ -146,25 +155,8 @@ final readonly class ImageRuntime implements RuntimeExtensionInterface
     }
 
     /**
-     * The variant the src gives browsers without srcset: the narrowest that covers the rendered width
-     *
-     * @param non-empty-list<int<1, max>> $widths in ascending order
-     *
-     * @return int<1, max>
-     */
-    private static function srcWidth(array $widths, int $width): int
-    {
-        foreach ($widths as $variantWidth) {
-            if ($variantWidth >= $width) {
-                return $variantWidth;
-            }
-        }
-
-        return $widths[array_key_last($widths)];
-    }
-
-    /**
-     * A grey box at the image's aspect ratio, the one the template gives or 16:9, as wide as the image renders
+     * A grey box at the image's aspect ratio, the one the template gives or 16:9, as wide as the image renders. It stands in
+     * for the <picture> and the <img>, so it takes both their classes
      */
     private static function placeholder(ImageOptions $options): string
     {
@@ -177,7 +169,7 @@ final readonly class ImageRuntime implements RuntimeExtensionInterface
             };
         }
 
-        return self::tag('span', ['class' => trim('cms-image-placeholder ' . $options->class), 'style' => $style, 'aria-hidden' => 'true']) . '</span>';
+        return self::tag('span', ['class' => implode(' ', array_filter(['cms-image-placeholder', $options->pictureClass, $options->class], static fn (?string $class): bool => null !== $class)), 'style' => $style, 'aria-hidden' => 'true']) . '</span>';
     }
 
     private static function number(float $number): string

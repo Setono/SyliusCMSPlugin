@@ -1,0 +1,12 @@
+--TEST--
+cms_image() leaves out an art-directed image that's empty, a broken reference or not an image, so without a mobile image it renders the plain <img>, and takes one given by its UUID or served as uploaded
+--TEMPLATE--
+{{ cms_image(image, {width: 320, art_direction: [{media: '(max-width: 47.99rem)', image: none}]}) }}
+{{ cms_image(image, {width: 320, art_direction: [{media: '(max-width: 47.99rem)', image: '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f'}, {media: '(max-width: 30rem)', image: video}]}) }}
+{{ cms_image(image, {width: 320, art_direction: [{media: '(max-width: 47.99rem)', image: uuid}, {media: '(max-width: 30rem)', image: svg}]}) }}
+--DATA--
+return $this->rendering(['image' => $this->image(2400, 1600), 'video' => $this->video(), 'svg' => $this->svg(), 'uuid' => $this->inTheLibrary($this->mobileImage(800, 1000))])
+--EXPECT--
+<img src="/webp/320/summer-sale.jpg" srcset="/webp/320/summer-sale.jpg 320w, /webp/640/summer-sale.jpg 640w" sizes="(min-width: 320px) 320px, 100vw" width="320" height="213" alt="A beach at dawn" loading="lazy" decoding="async">
+<img src="/webp/320/summer-sale.jpg" srcset="/webp/320/summer-sale.jpg 320w, /webp/640/summer-sale.jpg 640w" sizes="(min-width: 320px) 320px, 100vw" width="320" height="213" alt="A beach at dawn" loading="lazy" decoding="async">
+<picture><source media="(max-width: 47.99rem)" srcset="/webp/320/summer-sale-mobile.jpg 320w, /webp/640/summer-sale-mobile.jpg 640w" sizes="(min-width: 320px) 320px, 100vw" width="320" height="400"><source media="(max-width: 30rem)" srcset="/media/cms/logo.svg" width="320" height="107"><img src="/webp/320/summer-sale.jpg" srcset="/webp/320/summer-sale.jpg 320w, /webp/640/summer-sale.jpg 640w" sizes="(min-width: 320px) 320px, 100vw" width="320" height="213" alt="A beach at dawn" loading="lazy" decoding="async"></picture>

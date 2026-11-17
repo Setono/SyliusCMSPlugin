@@ -1,14 +1,16 @@
 --TEST--
-cms_image() renders a grey placeholder for an empty image in the builder's preview, at the aspect ratio the template gives or 16:9, as wide as the image renders and with its class
+cms_image() renders a grey placeholder for an empty image in the builder's preview, at the aspect ratio the template gives or 16:9, as wide as the image renders and with its picture class and class
 --TEMPLATE--
 {{ cms_image(null) }}
 {{ cms_image(null, {width: 400, aspect_ratio: 1, class: 'app-hero__image'}) }}
 {{ cms_image(video, {layout: 'fixed', width: 120, aspect_ratio: 3}) }}
 {{ cms_image('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f', {layout: 'full_width', aspect_ratio: 2.5}) }}
+{{ cms_image(null, {layout: 'full_width', picture_class: 'cms-banner__media', class: 'app-banner__image', art_direction: [{media: '(max-width: 47.99rem)', image: mobile}]}) }}
 --DATA--
-return $this->rendering(['video' => $this->video()], 'builder')
+return $this->rendering(['video' => $this->video(), 'mobile' => $this->mobileImage()], 'builder')
 --EXPECT--
 <span class="cms-image-placeholder" style="aspect-ratio: 1.7778" aria-hidden="true"></span>
 <span class="cms-image-placeholder app-hero__image" style="aspect-ratio: 1; max-width: 400px" aria-hidden="true"></span>
 <span class="cms-image-placeholder" style="aspect-ratio: 3; width: 120px" aria-hidden="true"></span>
 <span class="cms-image-placeholder" style="aspect-ratio: 2.5" aria-hidden="true"></span>
+<span class="cms-image-placeholder cms-banner__media app-banner__image" style="aspect-ratio: 1.7778" aria-hidden="true"></span>
