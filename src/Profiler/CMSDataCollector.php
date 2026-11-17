@@ -6,11 +6,16 @@ namespace Setono\SyliusCMSPlugin\Profiler;
 
 use Setono\SyliusCMSPlugin\Context\EntryTitle;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\PlacementInterface;
+use Setono\SyliusCMSPlugin\Query\NotVisibleReason;
 use Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
 use Setono\SyliusCMSPlugin\Rendering\CandidatePlacement;
 use Setono\SyliusCMSPlugin\Rendering\PlacementOutcome;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
+use Sylius\Component\Channel\Context\ChannelContextInterface;
+use Sylius\Component\Channel\Context\ChannelNotFoundException;
 use Sylius\Resource\Model\CodeAwareInterface;
 use Sylius\Resource\Model\ResourceInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,8 +26,9 @@ use Symfony\Component\HttpKernel\DataCollector\DataCollector;
  * The CMS panel of the Symfony profiler: each slot rendered on the page, sub-requests' such as taxon.header's included,
  * with the context it resolved and where each key came from, every candidate placement in editor order with whether it
  * showed and, if not, why, its render time, and any block or snippet that threw. Also the blocks that threw outside any
- * slot. Why a snippet isn't visible is read from the visible-entries query when the profiler collects, so a page that
- * isn't profiled doesn't ask. Registered in debug only. See "Profiler panel" in docs/spec/rendering.md
+ * slot. Why a snippet isn't visible is read from the visible-entries query when the profiler collects, and so are the
+ * placements whose snippet isn't in the channel, which the shop never reads, so a page that isn't profiled doesn't
+ * ask. Registered in debug only. See "Profiler panel" in docs/spec/rendering.md
  *
  * @internal
  *
@@ -38,17 +44,25 @@ final class CMSDataCollector extends DataCollector
     /** @var \WeakMap<SlotTrace, array{reasons: array<string, string>, titles: array<string, string>}> what was read for each slot */
     private \WeakMap $read;
 
+    /** @var \WeakMap<SlotTrace, list<PlacementInterface>> each slot's placements whose snippet isn't in the channel */
+    private \WeakMap $outsideChannel;
+
     public function __construct(
         private readonly RenderedSlots $slots,
         private readonly SlotRegistryInterface $slotRegistry,
         private readonly VisibleEntriesQueryInterface $visibleEntries,
         private readonly EntryRepositoryInterface $entries,
+        private readonly PlacementRepositoryInterface $placements,
+        private readonly ChannelContextInterface $channelContext,
     ) {
         $this->read = new \WeakMap();
+        $this->outsideChannel = new \WeakMap();
     }
 
     public function collect(Request $request, Response $response, ?\Throwable $exception = null): void
     {
+        $this->readOutsideChannel();
+
         $this->data = [
             'slots' => array_map($this->slot(...), $this->slots->all()),
             'failures' => array_map(self::failure(...), $this->slots->failuresOutsideSlots()),
@@ -121,7 +135,7 @@ final class CMSDataCollector extends DataCollector
                 array_values($trace->context),
             ),
             'unresolvedKey' => $trace->unresolvedKey,
-            'candidates' => null === $trace->candidates ? null : $this->candidates($trace, $trace->candidates),
+            'candidates' => $this->candidates($trace),
             'shown' => count(array_filter($trace->candidates ?? [], static fn (CandidatePlacement $candidate): bool => $candidate->wins())),
             'duration' => $trace->duration,
             'failures' => array_map(self::failure(...), $trace->failures),
@@ -129,21 +143,78 @@ final class CMSDataCollector extends DataCollector
     }
 
     /**
-     * @param list<CandidatePlacement> $candidates
+     * Its candidates in the channel, with its placements whose snippet isn't in the channel among them, in editor order.
+     * Null when it picked none and has none outside the channel, or when it stopped before it picked, as its candidates
+     * in the channel are unknown then
      *
-     * @return list<Candidate>
+     * @return list<Candidate>|null
      */
-    private function candidates(SlotTrace $trace, array $candidates): array
+    private function candidates(SlotTrace $trace): ?array
     {
+        $outsideChannel = $this->outsideChannel[$trace] ?? [];
+        if (null === $trace->candidates && [] === $outsideChannel) {
+            return null;
+        }
+
+        $candidates = $trace->candidates ?? [];
         $read = $this->read[$trace] ??= $this->readFor($trace, $candidates);
 
-        return array_map(static fn (CandidatePlacement $candidate): array => [
-            'placement' => $candidate->placement->uuid,
-            'snippet' => $candidate->placement->snippetUuid,
-            'title' => null === $candidate->snippet ? $read['titles'][$candidate->placement->snippetUuid] ?? $candidate->placement->snippetUuid : EntryTitle::of($candidate->snippet),
-            'outcome' => $candidate->outcome->value,
-            'reason' => PlacementOutcome::SnippetNotVisible === $candidate->outcome ? $read['reasons'][$candidate->placement->snippetUuid] ?? null : null,
-        ], $candidates);
+        $listed = [];
+        foreach ($candidates as $candidate) {
+            $listed[] = [$candidate->placement->position, [
+                'placement' => $candidate->placement->uuid,
+                'snippet' => $candidate->placement->snippetUuid,
+                'title' => null === $candidate->snippet ? $read['titles'][$candidate->placement->snippetUuid] ?? $candidate->placement->snippetUuid : EntryTitle::of($candidate->snippet),
+                'outcome' => $candidate->outcome->value,
+                'reason' => PlacementOutcome::SnippetNotVisible === $candidate->outcome ? $read['reasons'][$candidate->placement->snippetUuid] ?? null : null,
+            ]];
+        }
+
+        foreach ($outsideChannel as $placement) {
+            $listed[] = [$placement->getPosition(), [
+                'placement' => $placement->getUuid(),
+                'snippet' => $placement->getSnippet()->getUuid(),
+                'title' => EntryTitle::of($placement->getSnippet()),
+                'outcome' => PlacementOutcome::SnippetNotVisible->value,
+                'reason' => NotVisibleReason::NotInChannel->value,
+            ]];
+        }
+
+        // By position, the slot's own order; at the same position, those in the channel first, as it read them
+        usort($listed, static fn (array $a, array $b): int => $a[0] <=> $b[0]);
+
+        return array_column($listed, 1);
+    }
+
+    /**
+     * The placements whose snippet isn't in the channel, of every slot that picked or had no placements in the channel,
+     * with one query for all of them. A slot that stopped before it picked lists no candidates, so it isn't asked
+     */
+    private function readOutsideChannel(): void
+    {
+        $unread = [];
+        foreach ($this->slots->all() as $trace) {
+            if (!isset($this->outsideChannel[$trace]) && null === $trace->unresolvedKey) {
+                $this->outsideChannel[$trace] = [];
+                $unread[$trace->identifier][] = $trace;
+            }
+        }
+
+        if ([] === $unread) {
+            return;
+        }
+
+        try {
+            $channelCode = (string) $this->channelContext->getChannel()->getCode();
+        } catch (ChannelNotFoundException) {
+            return;
+        }
+
+        foreach ($this->placements->findOutsideChannel(array_keys($unread), $channelCode) as $placement) {
+            foreach ($unread[$placement->getSlot()] ?? [] as $trace) {
+                $this->outsideChannel[$trace] = [...$this->outsideChannel[$trace] ?? [], $placement];
+            }
+        }
     }
 
     /**

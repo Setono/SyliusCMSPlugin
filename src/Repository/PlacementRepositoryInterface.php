@@ -33,6 +33,16 @@ interface PlacementRepositoryInterface
     public function findBySlots(array $slots): array;
 
     /**
+     * The placements in these slots whose snippet isn't in the channel, which the shop never reads, with their snippets,
+     * by slot and then in each slot's order. The profiler panel lists them
+     *
+     * @param list<string> $slots slot identifiers
+     *
+     * @return list<PlacementInterface>
+     */
+    public function findOutsideChannel(array $slots, string $channelCode): array;
+
+    /**
      * The position after the last of the slot's placements, where a new placement goes: 0 in a slot with none
      */
     public function nextPosition(string $slot): int;

@@ -41,6 +41,8 @@ SetonoSyliusCMSExtension loads this file in debug only. See "Profiler panel" in 
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+            <argument type="service" id="sylius.context.channel"/>
 
             <tag name="data_collector" id="setono_sylius_cms" template="@SetonoSyliusCMSPlugin/profiler/cms.html.twig" priority="-10"/>
         </service>

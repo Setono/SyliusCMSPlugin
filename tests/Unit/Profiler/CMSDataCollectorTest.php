@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Model\Placement;
 use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Profiler\CMSDataCollector;
@@ -20,7 +21,10 @@ use Setono\SyliusCMSPlugin\Rendering\CandidatePlacement;
 use Setono\SyliusCMSPlugin\Rendering\PlacementData;
 use Setono\SyliusCMSPlugin\Rendering\PlacementOutcome;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Sylius\Component\Channel\Context\ChannelContextInterface;
+use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\Product;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -35,6 +39,12 @@ final class CMSDataCollectorTest extends TestCase
     /** @var ObjectProphecy<EntryRepositoryInterface> */
     private ObjectProphecy $entries;
 
+    /** @var ObjectProphecy<PlacementRepositoryInterface> */
+    private ObjectProphecy $placements;
+
+    /** @var ObjectProphecy<ChannelContextInterface> */
+    private ObjectProphecy $channelContext;
+
     private RenderedSlots $slots;
 
     protected function setUp(): void
@@ -42,6 +52,12 @@ final class CMSDataCollectorTest extends TestCase
         $this->visibleEntries = $this->prophesize(VisibleEntriesQueryInterface::class);
         $this->entries = $this->prophesize(EntryRepositoryInterface::class);
         $this->entries->findByUuids(Argument::any())->willReturn([]);
+        $this->placements = $this->prophesize(PlacementRepositoryInterface::class);
+        $this->placements->findOutsideChannel(Argument::cetera())->willReturn([]);
+        $channel = new Channel();
+        $channel->setCode('WEB');
+        $this->channelContext = $this->prophesize(ChannelContextInterface::class);
+        $this->channelContext->getChannel()->willReturn($channel);
         $this->slots = new RenderedSlots();
     }
 
@@ -185,12 +201,63 @@ final class CMSDataCollectorTest extends TestCase
         $slot->candidates = [new CandidatePlacement(self::placement('01', $draft), PlacementOutcome::SnippetNotVisible)];
         $this->visibleEntries->whyNotVisible(Argument::cetera())->willReturn([$draft->getUuid() => NotVisibleReason::Disabled])->shouldBeCalledOnce();
         $this->entries->findByUuids(Argument::any())->willReturn([$draft])->shouldBeCalledOnce();
+        $this->placements->findOutsideChannel(Argument::cetera())->willReturn([])->shouldBeCalledOnce();
 
         $collector = $this->collector();
         $collector->collect(new Request(), new Response());
         $collector->collect(new Request(), new Response());
 
         self::assertSame('disabled', $collector->getSlots()[0]['candidates'][0]['reason'] ?? null);
+    }
+
+    /**
+     * The shop never reads them, so the profiler reads them when it collects, with one query for every slot
+     *
+     * @test
+     */
+    public function it_lists_the_placements_whose_snippet_is_not_in_the_channel_among_the_candidates_in_editor_order(): void
+    {
+        $wins = self::snippet('Free shipping');
+        $capped = self::snippet('Winter sale');
+        $elsewhere = self::snippet('Danish shipping');
+        $slot = $this->slots->start('shop.top');
+        $slot->renderContext = Rendering::context();
+        $slot->candidates = [
+            new CandidatePlacement(self::placement('01', $wins), PlacementOutcome::Wins, $wins),
+            new CandidatePlacement(self::placement('03', $capped), PlacementOutcome::CapReached, $capped),
+        ];
+        $this->slots->start('shop.footer');
+        $elsewhereInTop = new Placement($elsewhere, 'shop.top', 2);
+        $elsewhereInFooter = new Placement($elsewhere, 'shop.footer', 0);
+        $this->placements->findOutsideChannel(['shop.top', 'shop.footer'], 'WEB')->willReturn([$elsewhereInTop, $elsewhereInFooter])->shouldBeCalledOnce();
+
+        $slots = $this->collected()->getSlots();
+
+        self::assertSame([
+            [self::uuid('01'), 'Free shipping', 'wins', null],
+            [$elsewhereInTop->getUuid(), 'Danish shipping', 'snippet_not_visible', 'not_in_channel'],
+            [self::uuid('03'), 'Winter sale', 'cap_reached', null],
+        ], array_map(static fn (array $candidate): array => [$candidate['placement'], $candidate['title'], $candidate['outcome'], $candidate['reason']], $slots[0]['candidates'] ?? []));
+        self::assertSame(
+            [['placement' => $elsewhereInFooter->getUuid(), 'snippet' => $elsewhere->getUuid(), 'title' => 'Danish shipping', 'outcome' => 'snippet_not_visible', 'reason' => 'not_in_channel']],
+            $slots[1]['candidates'],
+            'A slot whose only placements are other channels\' lists them',
+        );
+        self::assertSame(0, $slots[1]['shown']);
+    }
+
+    /**
+     * Its candidates in the channel are unknown, as it stopped before it picked
+     *
+     * @test
+     */
+    public function it_lists_no_candidates_of_a_slot_whose_context_it_could_not_resolve(): void
+    {
+        $slot = $this->slots->start('product.after_price');
+        $slot->unresolvedKey = 'product';
+        $this->placements->findOutsideChannel(Argument::cetera())->shouldNotBeCalled();
+
+        self::assertNull($this->collected()->getSlots()[0]['candidates']);
     }
 
     /**
@@ -239,7 +306,7 @@ final class CMSDataCollectorTest extends TestCase
             'shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null],
             'product.after_price' => ['label' => 'setono_sylius_cms.slot.product.after_price', 'provides' => ['product'], 'cap' => null, 'template_event' => ['name' => 'sylius.shop.product.show.right_sidebar', 'priority' => 28]],
             'taxon.header' => ['label' => 'setono_sylius_cms.slot.taxon.header', 'provides' => ['taxon'], 'cap' => null, 'template_event' => ['name' => 'sylius.shop.taxon.header', 'priority' => 1]],
-        ]), $this->visibleEntries->reveal(), $this->entries->reveal());
+        ]), $this->visibleEntries->reveal(), $this->entries->reveal(), $this->placements->reveal(), $this->channelContext->reveal());
     }
 
     private static function snippet(string $title): SnippetInterface

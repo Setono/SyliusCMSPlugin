@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Repository;
 
+use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
@@ -50,6 +51,33 @@ class PlacementRepository extends EntityRepository implements PlacementRepositor
             ->innerJoin('o.snippet', 'placedSnippet')
             ->andWhere('o.slot IN (:slots)')
             ->setParameter('slots', $slots)
+            ->addOrderBy('o.slot', 'ASC')
+            ->addOrderBy('o.position', 'ASC')
+            ->addOrderBy('o.id', 'ASC')
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $placements;
+    }
+
+    public function findOutsideChannel(array $slots, string $channelCode): array
+    {
+        if ([] === $slots) {
+            return [];
+        }
+
+        /** @var list<PlacementInterface> $placements */
+        $placements = $this->createQueryBuilder('o')
+            ->addSelect('placedSnippet')
+            ->innerJoin('o.snippet', 'placedSnippet')
+            ->andWhere('o.slot IN (:slots)')
+            ->andWhere(sprintf(
+                'NOT EXISTS (SELECT snippetChannel.id FROM %s snippetChannel WHERE snippetChannel.entry = placedSnippet AND snippetChannel.code = :channel)',
+                EntryChannelInterface::class,
+            ))
+            ->setParameter('slots', $slots)
+            ->setParameter('channel', $channelCode)
             ->addOrderBy('o.slot', 'ASC')
             ->addOrderBy('o.position', 'ASC')
             ->addOrderBy('o.id', 'ASC')

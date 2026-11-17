@@ -77,6 +77,36 @@ final class ProfilerPanelTest extends WebTestCase
     }
 
     /**
+     * The shop never reads them, so the panel reads them when it collects
+     *
+     * @test
+     */
+    public function it_lists_the_placements_whose_snippet_is_not_in_the_channel_with_that_reason(): void
+    {
+        $client = self::createClient();
+        $first = self::place(self::createSnippet('Free shipping', [self::heading('0193a5be-0000-7000-8000-000000000001', 'Free shipping')], published: true), 'shop.footer');
+        $danish = self::place(self::createSnippet('Danish shipping', [self::heading('0193a5be-0000-7000-8000-000000000002', 'Danish shipping')], published: true, channels: ['DK']), 'shop.footer');
+        $last = self::place(self::createSnippet('Returns', [self::heading('0193a5be-0000-7000-8000-000000000003', 'Returns')], published: true), 'shop.footer');
+        $elsewhere = self::place(self::createSnippet('Elsewhere', [self::heading('0193a5be-0000-7000-8000-000000000004', 'Elsewhere')], published: true, channels: []), 'shop.top');
+
+        $client->enableProfiler();
+        $client->request('GET', '/en_US/');
+
+        self::assertResponseIsSuccessful();
+        $slots = self::slots($client);
+        self::assertSame([
+            [$first->getUuid(), 'Free shipping', 'wins', null],
+            [$danish->getUuid(), 'Danish shipping', 'snippet_not_visible', 'not_in_channel'],
+            [$last->getUuid(), 'Returns', 'wins', null],
+        ], self::candidates($slots['shop.footer']));
+        self::assertSame(2, $slots['shop.footer']['shown']);
+
+        // A slot whose only placements are other channels' resolves no context, but lists them
+        self::assertNull($slots['shop.top']['context']);
+        self::assertSame([[$elsewhere->getUuid(), 'Elsewhere', 'snippet_not_visible', 'not_in_channel']], self::candidates($slots['shop.top']));
+    }
+
+    /**
      * Sylius renders the taxon header in a sub-request, which the main request's panel lists too
      *
      * @test
