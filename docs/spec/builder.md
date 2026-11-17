@@ -24,7 +24,7 @@ From left to right:
 - **The entry's title and status labels**, the same labels the entry lists use ([Admin](admin.md#entry-lists)).
 - **Locale switcher.** The builder edits one locale at a time, and the preview renders that locale. Each locale shows its untranslated and outdated counts ([Localization](localization.md#completeness-and-outdated-flags)).
 - **Preview channel**, one of the entry's channels.
-- **For a snippet:** the placement and the sample object pickers ([Snippet preview](#snippet-preview)).
+- **For a snippet:** a row of its own under the rest, with the snippet's context, the placement and the sample object pickers ([Snippet preview](#snippet-preview)).
 - **Shown to** (Guest, Signed in without a group, or any customer group) and **Date** (now, or a chosen date and time) ([Targeting](targeting.md)).
 - **Desktop or mobile** width for the preview.
 - **Undo and redo**, which work in the browser on the working copy.
@@ -110,8 +110,12 @@ A list field ([Content model](content-model.md#fields)) has a **Filled by** sele
 - **The preview is the real host page** of one of the snippet's placements, with the draft snippet in its slot. The slot is outlined and labelled.
 - **The placement picker** switches between the snippet's placements. Placements themselves are read-only in the builder and managed on the entry's overview page ([Admin](admin.md#entry-overview-page)).
 - **The sample object picker** chooses the host-page object, such as a product. It defaults to an object that matches the placement's page scope, and marks the objects that match. A warning shows when the chosen object is outside the scope.
+  - Sample objects are products, taxons and entries with their own URL that shoppers can see, the objects of the stock context keys. The picker searches those of the first key the placement's slot provides, or the snippet declares.
+  - The default is the first that matches the scope, of the objects the scope names, then for products the first products in the taxons it names, then the first page of the picker's search. A snippet with no placement starts with the first of that page.
+- **The host page** of a placement is the page of its sample object: a product's page, a taxon's product listing or an entry's own URL. A slot that provides nothing shows on the homepage when it's on every page of the shop's layout or on Sylius's homepage. A slot whose page the plugin can't know, such as the checkout's sidebar or a project's own, renders on a plain page instead. A project decorates `HostPageUrlGeneratorInterface` for its own slots ([Extending](extending.md#rendering-services)).
 - **A snippet with no placements** previews on a plain page with a sample object of its declared context.
-- **A snippet that loses its capped slot** for the current Shown to still shows there in the preview, and the top bar says which snippet such shoppers actually see ([Targeting](targeting.md)).
+- **A snippet that loses its capped slot** for the current Shown to still shows there in the preview, and the top bar says which snippet such shoppers actually see ([Targeting](targeting.md)). It takes one of the slot's seats, so the placements above it that match keep the others.
+- **Changing the snippet's declared context** reloads the preview, with a sample object of the new context.
 
 ## Translation aids
 
@@ -190,7 +194,9 @@ The builder talks to plain JSON controllers under the admin firewall, not to API
 | `entry_discard` | POST | `/entries/{uuid}/discard` | Discards the draft. |
 | `entry_presence` | POST | `/entries/{uuid}/presence` | Tells the server the editor still has the entry open, and answers with who else does. |
 | `preview_token` | POST | `/preview/token` | Creates a preview token for an entry, channel, locale, sample object, placement, Shown to and Date, and answers with the iframe URL. |
-| `preview_render` | POST | `/preview/render` | Renders the given blocks of the working copy under a preview token, and answers with their HTML by key. |
+| `preview_render` | POST | `/preview/render` | Renders the given blocks of the working copy under a preview token, and answers with their HTML by key. A snippet's render with the preview's sample object. |
+| `preview_snippet` | GET | `/preview/snippet` | Under a snippet's preview token, what the top bar shows: the sample object, with whether it's inside the placement's page scope, and the snippets shoppers see where the placement loses its capped slot. |
+| `preview_samples` | GET | `/preview/samples?q=` | Under a snippet's preview token, the sample objects the picker finds, each with whether it's inside the placement's page scope. |
 | `search` | GET | `/search/{kind}?q=` | Search for pickers. `{kind}` is `product`, `taxon`, `entry`, `snippet`, `media`, `customer_group`, `product_attribute` or a link target's code. With `?refs=a,b` instead of `q`, it looks those refs up, so a picker names the values it holds. A snippet search takes `provides`, the context keys the edited entry provides, and `entry`, the edited entry's UUID, and leaves out the snippets that need more and the entry itself. |
 | `snippet_blocks` | GET | `/snippets/{uuid}/blocks` | The blocks a Snippet block shows: the snippet's published content, upgraded, without blocks of removed types. "Detach to edit here" copies them, with new keys. |
 | `source_count` | POST | `/sources/count` | How many items a source yields for given parameters under a preview token. |

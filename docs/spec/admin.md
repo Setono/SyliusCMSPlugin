@@ -73,7 +73,7 @@ Every entry has one, between its list and the builder.
 - **Placements** (snippets): see [Placements](#placements).
 - **Where it shows:** a grid of the store's channels and the locales of each. Each cell says Live, or why not: not in the channel, no translation, held back, disabled, not published yet, publishes at a time, ended, shows from a date, or hidden by a Sylius route. The audience shows below the grid.
 - **Revisions:** who published each and when. Each can be previewed read-only, or restored into the draft.
-- **Share links:** each link's channel, locale, Shown to, Date and who made it, with copy and revoke, plus New ([Publishing](publishing.md)).
+- **Share links:** each link's channel, locale, Shown to, Date and who made it, and for a snippet the placement whose host page shows it and the sample object, with copy and revoke, plus New ([Publishing](publishing.md)). A snippet's New picks one of its placements, or a plain page.
 - **URLs** (content types with their own URL): the URL per locale, the old slugs that redirect, and for a page "Homepage of" per channel, showing the page that's each channel's homepage now.
 - **Used in** (snippets): the entries whose block trees reference it, each with where: in its published content, in its draft, or published but removed in the draft.
 - **Translations:** the chips. Translating happens in the builder.

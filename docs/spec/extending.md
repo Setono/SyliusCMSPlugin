@@ -597,6 +597,18 @@ interface ReferenceLoaderInterface
 }
 ```
 
+A snippet's preview and share links show it on the host page of one of its placements ([Builder](builder.md#snippet-preview)). The plugin knows the pages of the stock context keys' objects and the slots of the shop's layout. A project decorates `HostPageUrlGeneratorInterface` for a slot of its own whose page it knows, such as a store locator's:
+
+```php
+namespace Setono\SyliusCMSPlugin\Preview;
+
+interface HostPageUrlGeneratorInterface
+{
+    /** An absolute URL of a page that renders the slot, with the sample object, or null for a plain page. */
+    public function generate(SlotMetadata $slot, ?object $sample, ChannelInterface $channel, string $localeCode): ?string;
+}
+```
+
 `PlacementData` is a serializable value object, so a decorator can cache it: the placement's UUID, the snippet's UUID, the slot identifier, the page scope's conditions and the position. `EntryUrlMatch` has the entry's UUID and content type code, and `redirectTo`: the current path when `$path` is an old slug, otherwise `null`.
 
 `RenderContext` (`Setono\SyliusCMSPlugin\Rendering\RenderContext`) carries the channel, the locale code, the currency code, the customer (or `null`), the customer group value (a group code, `@guest` or `@no_group`), the current time, the host-page context (`get(string $key): ?object`) and its preview mode: `null`, `builder` or `share` ([Rendering](rendering.md#preview-mode-and-share-links)). Preview mode's Shown to and Date set the customer group value and the time here, and nowhere else.
