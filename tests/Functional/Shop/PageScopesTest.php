@@ -105,6 +105,27 @@ final class PageScopesTest extends WebTestCase
     }
 
     /**
+     * A page scope reads the context its slot provides, not what the snippet declares, so a snippet shown on any page
+     * can be in the footer everywhere and beside the images of shoes
+     *
+     * @test
+     */
+    public function it_publishes_and_shows_a_snippet_for_any_page_placed_in_the_footer_and_scoped_to_shoes_in_a_product_slot(): void
+    {
+        $client = self::createClient();
+        self::createCatalog();
+        $snippet = self::createSnippet('Free returns', [self::heading(self::HEADING, 'Free returns')]);
+        self::place($snippet, 'shop.footer');
+        self::scope(self::place($snippet, 'product.sidebar'), [self::productInTaxon(['SHOES'])]);
+
+        self::publishEntry($snippet);
+
+        $crawler = $client->request('GET', '/en_US/products/sneakers');
+        self::assertSame(['cms-slot cms-slot--product-sidebar', 'cms-slot cms-slot--shop-footer'], $crawler->filter('.cms-slot')->each(static fn (Crawler $slot): string => (string) $slot->attr('class')));
+        self::assertSame(['Free returns'], self::headingsOn($client, '/en_US/products/t-shirt'));
+    }
+
+    /**
      * Such as a project's condition kind a deploy removed: the condition is kept, and the placement shows nothing
      *
      * @test
