@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
  *
  * @internal
  */
-final class HostPageContextResolver
+final class HostPageContextResolver implements HostPageContextResolverInterface
 {
     /** @var \WeakMap<Request, array<string, object|null>> what each resolver found, by main request and key */
     private \WeakMap $resolved;
@@ -35,10 +35,7 @@ final class HostPageContextResolver
     }
 
     /**
-     * @param list<string> $keys the context keys to resolve, such as those a slot provides
-     * @param array<array-key, mixed> $passed what the slot is passed, such as its template event's context
-     *
-     * @return array<string, object>|null the object of each key, or null when one can't be resolved
+     * It resolves the keys in order, and stops at the first it can't resolve
      */
     public function resolve(array $keys, array $passed): ?array
     {

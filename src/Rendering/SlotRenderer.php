@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Rendering;
 
-use Setono\SyliusCMSPlugin\Context\HostPageContextResolver;
+use Setono\SyliusCMSPlugin\Context\HostPageContextResolverInterface;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
@@ -44,7 +44,7 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
 
     public function __construct(
         private readonly SlotRegistryInterface $slots,
-        private readonly HostPageContextResolver $hostPageContext,
+        private readonly HostPageContextResolverInterface $hostPageContext,
         private readonly RenderContextFactoryInterface $renderContextFactory,
         private readonly PlacementProviderInterface $placementProvider,
         private readonly PlacementPickerInterface $placementPicker,

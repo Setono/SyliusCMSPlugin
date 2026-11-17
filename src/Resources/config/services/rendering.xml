@@ -142,7 +142,7 @@
         -->
         <service id="Setono\SyliusCMSPlugin\Rendering\SlotRenderer" class="Setono\SyliusCMSPlugin\Rendering\SlotRenderer">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Context\HostPageContextResolver"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Context\HostPageContextResolverInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\PlacementProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\PlacementPickerInterface"/>

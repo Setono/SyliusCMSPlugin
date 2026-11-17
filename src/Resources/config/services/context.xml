@@ -9,6 +9,7 @@
             <argument type="collection"/>
             <argument type="service" id="request_stack"/>
         </service>
+        <service id="Setono\SyliusCMSPlugin\Context\HostPageContextResolverInterface" alias="Setono\SyliusCMSPlugin\Context\HostPageContextResolver"/>
 
         <!-- The shipped resolvers' priority is low, so a project's #[AsContextResolver] of the same key replaces them -->
         <service id="Setono\SyliusCMSPlugin\Context\ProductContextResolver" class="Setono\SyliusCMSPlugin\Context\ProductContextResolver">
