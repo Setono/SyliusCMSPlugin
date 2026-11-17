@@ -39,5 +39,13 @@
 
             <tag name="console.command"/>
         </service>
+
+        <service id="Setono\SyliusCMSPlugin\Command\ComputeBestsellersCommand" class="Setono\SyliusCMSPlugin\Command\ComputeBestsellersCommand">
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Bestsellers\BestsellersComputer"/>
+            <argument type="service" id="event_dispatcher"/>
+
+            <tag name="console.command"/>
+        </service>
     </services>
 </container>

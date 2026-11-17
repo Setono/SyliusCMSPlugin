@@ -11,5 +11,13 @@
         </service>
         <!-- A project with analytics data aliases this to its own calculator -->
         <service id="Setono\SyliusCMSPlugin\Bestsellers\BestsellersCalculatorInterface" alias="Setono\SyliusCMSPlugin\Bestsellers\PaidOrdersCalculator"/>
+
+        <!-- Runs the calculator for a channel and replaces the channel's scores, for setono:cms:bestsellers:compute -->
+        <service id="Setono\SyliusCMSPlugin\Bestsellers\BestsellersComputer" class="Setono\SyliusCMSPlugin\Bestsellers\BestsellersComputer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Bestsellers\BestsellersCalculatorInterface"/>
+            <argument type="service" id="setono_sylius_cms.factory.bestseller_score"/>
+            <argument type="service" id="doctrine"/>
+            <argument>%setono_sylius_cms.model.bestseller_score.class%</argument>
+        </service>
     </services>
 </container>
