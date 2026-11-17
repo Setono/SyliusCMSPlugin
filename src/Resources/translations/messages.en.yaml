@@ -20,6 +20,7 @@ setono_sylius_cms:
         rich_text: Rich text
         spacer: Spacer
         taxons: Taxons
+        video: Video
     choice:
         heading_level:
             h1: Heading 1
@@ -84,6 +85,12 @@ setono_sylius_cms:
             show_title: Show title
         taxons:
             taxons: Taxons
+        video:
+            embed_url: YouTube or Vimeo URL
+            embed_url_help: Paste the address of a YouTube or Vimeo video, or choose a video from the media library instead.
+            poster: Poster
+            poster_help: Shown before the video plays. Leave it empty to use the video's own poster from the media library.
+            video: Video
     layout:
         page:
             standard: Standard
@@ -161,6 +168,9 @@ setono_sylius_cms:
     # Why a scheduled publish was stopped when it ran, which the overview page shows and EntryPublishFailed carries
     scheduled_publish:
         invalid: '{1} Validation found an error to fix: %errors%|]1,Inf[ Validation found %count% errors to fix: %errors%'
+    # The Video block's embed, named to screen readers
+    video:
+        embed_title: Video
     ui:
         all_entries: All entries
         any_channel: Any channel
