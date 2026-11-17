@@ -74,7 +74,7 @@ The testing rule is in [the spec's Testing section](docs/spec/README.md#testing)
 
 The functional and UI suites need a database with the schema created, the `test` fixtures loaded (`(cd tests/Application && APP_ENV=test bin/console sylius:fixtures:load test --no-interaction)`) and built assets. The UI suite also needs the Playwright browser: `vendor/bin/playwright-install chromium` (Node 20+).
 
-Infection (`vendor/bin/infection`) requires 100% MSI on the `unit` suite. It leaves out the code only the functional suite can test (`excludes` in `infection.json.dist`); everything else needs unit tests that kill every mutant.
+Mutation testing is postponed until the 2.0 release (settled in #290). Until then, don't run Infection (`vendor/bin/infection`) for a change, and CI's "Mutation tests" job reports its score without failing the build. Before 2.0 it gates again: 100% MSI on the `unit` suite, leaving out only the code the functional suite alone can test (`excludes` in `infection.json.dist`), so everything else will need unit tests that kill every mutant. Unit tests are still required for every change.
 
 ### Static Analysis
 
