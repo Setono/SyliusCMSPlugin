@@ -33,4 +33,13 @@ final readonly class ConditionKindMetadata
         public string $matchesNot = 'setono_sylius_cms.builder.is_not_one_of',
     ) {
     }
+
+    /**
+     * Whether it reads the host-page context, which a page scope's conditions do. See "Page scopes" in
+     * docs/spec/slots.md
+     */
+    public function readsHostPage(): bool
+    {
+        return in_array(Reads::HostPage, $this->reads ?? [], true);
+    }
 }

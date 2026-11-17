@@ -51,4 +51,17 @@ final class PlacementTest extends TestCase
 
         self::assertSame(2, $placement->getPosition());
     }
+
+    /**
+     * @test
+     */
+    public function it_is_limited_by_a_page_scope(): void
+    {
+        $placement = new Placement(new Snippet(), 'product.after_price', 0);
+        $scope = [['kind' => 'product_in_taxon', 'negate' => false, 'params' => ['taxons' => ['SHOES'], 'includeChildren' => true]]];
+
+        $placement->setPageScope($scope);
+
+        self::assertSame($scope, $placement->getPageScope());
+    }
 }

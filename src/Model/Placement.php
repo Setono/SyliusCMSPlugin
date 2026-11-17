@@ -48,6 +48,11 @@ class Placement implements PlacementInterface
         return $this->pageScope;
     }
 
+    public function setPageScope(array $pageScope): void
+    {
+        $this->pageScope = $pageScope;
+    }
+
     public function getPosition(): int
     {
         return $this->position;

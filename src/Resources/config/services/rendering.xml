@@ -109,10 +109,18 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
             <argument type="service" id="twig"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcherInterface"/>
 
             <tag name="kernel.reset" method="reset"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Rendering\SlotRendererInterface" alias="Setono\SyliusCMSPlugin\Rendering\SlotRenderer"/>
+
+        <!-- Which of a slot's placements show on the page by their page scopes, before anything renders -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher" class="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Condition\ConditionMatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcherInterface" alias="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher"/>
 
         <!-- Where the shop reads a channel's placements. A project can decorate it to cache placements -->
         <service id="Setono\SyliusCMSPlugin\Rendering\PlacementProvider" class="Setono\SyliusCMSPlugin\Rendering\PlacementProvider">

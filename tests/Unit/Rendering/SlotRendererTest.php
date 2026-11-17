@@ -23,6 +23,7 @@ use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Registry\UnknownSlotException;
 use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
+use Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher;
 use Setono\SyliusCMSPlugin\Rendering\PlacementData;
 use Setono\SyliusCMSPlugin\Rendering\PlacementProviderInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
@@ -32,6 +33,7 @@ use Setono\SyliusCMSPlugin\Rendering\SlotRenderer;
 use Setono\SyliusCMSPlugin\Rendering\VisibleSnippetsInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\OnProductPage;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -273,6 +275,45 @@ final class SlotRendererTest extends TestCase
     }
 
     /**
+     * Its scope's references load before its snippet's visibility is asked, which only the matching placements' snippets
+     * need
+     *
+     * @test
+     */
+    public function it_shows_only_the_placements_whose_page_scope_matches_the_page(): void
+    {
+        $product = new Product();
+        $this->context = Rendering::context(channel: $this->context->channel, hostPageContext: ['product' => $product]);
+        $this->renderContextFactory->create(Argument::any())->willReturn($this->context);
+        $onProductPages = $this->snippet('On product pages');
+        $offProductPages = $this->snippet('Off product pages');
+        $everywhere = $this->snippet('Everywhere');
+        $this->placementProvider->getPlacements($this->context->channel)->willReturn([
+            self::placement('product.after_price', $onProductPages, 0, [['kind' => 'on_product_page', 'negate' => false, 'params' => []]]),
+            self::placement('product.after_price', $offProductPages, 1, [['kind' => 'on_product_page', 'negate' => true, 'params' => []]]),
+            self::placement('product.after_price', $everywhere, 2),
+        ]);
+        $this->visibleSnippets->get([$onProductPages->getUuid(), $everywhere->getUuid()], $this->context)
+            ->willReturn([$onProductPages->getUuid() => $onProductPages, $everywhere->getUuid() => $everywhere]);
+
+        self::assertSame('<div class="cms-slot cms-slot--product-after-price">[On product pages][Everywhere]</div>', $this->renderer()->render('product.after_price', ['product' => $product]));
+    }
+
+    /**
+     * @test
+     */
+    public function it_prints_nothing_when_no_placement_s_page_scope_matches_the_page(): void
+    {
+        $product = new Product();
+        $this->placementProvider->getPlacements($this->context->channel)->willReturn([
+            self::placement('product.after_price', $this->snippet('Off product pages'), 0, [['kind' => 'removed', 'negate' => true, 'params' => []]]),
+        ]);
+        $this->visibleSnippets->get(Argument::cetera())->shouldNotBeCalled();
+
+        self::assertSame('', $this->renderer()->render('product.after_price', ['product' => $product]));
+    }
+
+    /**
      * @test
      */
     public function it_renders_the_snippets_in_a_slot_of_the_builder_s_preview_as_shoppers_see_them_with_its_shown_to_and_date(): void
@@ -332,6 +373,7 @@ final class SlotRendererTest extends TestCase
             ),
             $referenceLoader,
             new Environment(new ArrayLoader([SlotRenderer::TEMPLATE => $template])),
+            new PageScopeMatcher(Conditions::matcher(['on_product_page' => new OnProductPage()]), $referenceLoader),
         );
     }
 
@@ -360,8 +402,11 @@ final class SlotRendererTest extends TestCase
         return $snippet;
     }
 
-    private static function placement(string $slot, SnippetInterface $snippet, int $position): PlacementData
+    /**
+     * @param list<array<string, mixed>> $pageScope
+     */
+    private static function placement(string $slot, SnippetInterface $snippet, int $position, array $pageScope = []): PlacementData
     {
-        return new PlacementData(sprintf('0193a5be-71b0-7a3c-9d4e-%012d', random_int(0, 999_999_999)), $snippet->getUuid(), $slot, [], $position);
+        return new PlacementData(sprintf('0193a5be-71b0-7a3c-9d4e-%012d', random_int(0, 999_999_999)), $snippet->getUuid(), $slot, $pageScope, $position);
     }
 }

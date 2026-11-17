@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Slot;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
+use Setono\SyliusCMSPlugin\Condition\StoredCondition;
 use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
 use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Event\PlacementsChanged;
@@ -39,6 +40,7 @@ final readonly class PlacementEditor implements PlacementEditorInterface
         private EditRecorder $editRecorder,
         private EventDispatcherInterface $eventDispatcher,
         private DeclaredContextInterface $declaredContext,
+        private PageScopeValidatorInterface $pageScopeValidator,
     ) {
     }
 
@@ -65,6 +67,27 @@ final readonly class PlacementEditor implements PlacementEditorInterface
     {
         $this->write([$placement->getSnippet()], $placement->getSlot(), static function (EntityManagerInterface $manager) use ($placement): void {
             $manager->remove($placement);
+        });
+    }
+
+    public function setPageScope(PlacementInterface $placement, array $pageScope): void
+    {
+        $errors = $this->pageScopeValidator->validate($placement->getSlot(), $pageScope);
+        if ([] !== $errors) {
+            throw new InvalidPageScopeException($errors);
+        }
+
+        $conditions = [];
+        foreach ($pageScope as $value) {
+            // The validator refuses what isn't a condition
+            $condition = StoredCondition::fromValue($value);
+            if (null !== $condition) {
+                $conditions[] = $condition;
+            }
+        }
+
+        $this->write([$placement->getSnippet()], $placement->getSlot(), static function () use ($placement, $conditions): void {
+            $placement->setPageScope($conditions);
         });
     }
 
