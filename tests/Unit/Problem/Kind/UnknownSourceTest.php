@@ -85,7 +85,7 @@ final class UnknownSourceTest extends TestCase
             'unknown_source',
             Severity::Warning,
             $page,
-            new TranslatableMessage('setono_sylius_cms.problem.unknown_layout_source', ['%field%' => new TranslatableMessage('app.showcase.products'), '%source%' => 'removed']),
+            new TranslatableMessage('setono_sylius_cms.problem.unknown_layout_source', ['%field%' => new TranslatableMessage('setono_sylius_cms.field.products.products'), '%source%' => 'removed']),
             Fix::inBuilder($page),
             null,
             'products',

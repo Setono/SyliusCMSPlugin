@@ -239,9 +239,21 @@ final class RegistryTest extends BuilderApiTestCase
                 [
                     'name' => 'products',
                     'schema' => [
-                        'type' => 'array',
-                        'items' => ['type' => 'string', 'minLength' => 1],
-                        'x-cms-options' => ['max' => null, 'sources' => true, 'limit' => 8],
+                        // Hand-picked codes, or a source of products
+                        'anyOf' => [
+                            ['type' => 'array', 'items' => ['type' => 'string', 'minLength' => 1]],
+                            [
+                                'type' => 'object',
+                                'properties' => [
+                                    '$source' => ['type' => 'string', 'minLength' => 1],
+                                    '$params' => ['type' => 'object'],
+                                    '$limit' => ['type' => 'integer', 'minimum' => 1],
+                                ],
+                                'required' => ['$source', '$params', '$limit'],
+                                'additionalProperties' => false,
+                            ],
+                        ],
+                        'x-cms-options' => ['max' => null, 'sources' => ['products_in_taxon', 'newest_products'], 'limit' => 8],
                         'x-cms-type' => 'products',
                         'x-cms-label' => 'Products',
                         'x-cms-help' => null,
