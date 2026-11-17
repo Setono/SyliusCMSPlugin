@@ -51,4 +51,15 @@ final readonly class RenderContext
     {
         return $this->hostPageContext;
     }
+
+    /**
+     * The same context in another preview mode, such as none for what a preview shows as shoppers see it, which keeps
+     * the preview's Shown to and Date
+     *
+     * @param self::PREVIEW_MODE_*|null $previewMode
+     */
+    public function withPreviewMode(?string $previewMode): self
+    {
+        return new self($this->channel, $this->localeCode, $this->currencyCode, $this->customer, $this->customerGroup, $this->now, $this->hostPageContext, $previewMode);
+    }
 }

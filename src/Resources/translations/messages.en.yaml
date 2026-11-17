@@ -202,6 +202,7 @@ setono_sylius_cms:
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
         removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
+        removed_slot: 'A placement in the slot "%slot%", which the code no longer has, shows nothing.'
         scheduled_publish_failed: 'The publish scheduled for %at% was stopped: %reason%'
         scheduled_publish_overdue: 'The publish scheduled for %at% hasn''t run. The Messenger worker may not be running.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
@@ -220,6 +221,34 @@ setono_sylius_cms:
     # Why a scheduled publish was stopped when it ran, which the overview page shows and EntryPublishFailed carries
     scheduled_publish:
         invalid: '{1} Validation found an error to fix: %errors%|]1,Inf[ Validation found %count% errors to fix: %errors%'
+    # The stock slots' labels, which the placement editor shows. See "Stock slots" in docs/spec/slots.md
+    slot:
+        account:
+            dashboard: 'Account dashboard: after the customer''s information'
+        cart:
+            after_summary: 'Cart: below the summary'
+        checkout:
+            sidebar: 'Checkout: the sidebar'
+        order:
+            thank_you: 'Thank-you page: after the message'
+        product:
+            after_associations: 'Product page: below the associations'
+            after_price: 'Product page: under the price'
+            before_tabs: 'Product page: above the tabs'
+            details_tab: 'Product page: in the details tab, after the description'
+            sidebar: 'Product page: the bottom of the column beside the images'
+            top: 'Product page: above the main content'
+        shop:
+            after_content: 'Every page: below the main content'
+            before_content: 'Every page: above the main content'
+            footer: 'Every page: the footer'
+            top: 'Every page: the top of the header'
+        store_homepage: 'The store''s own homepage: above its blocks'
+        taxon:
+            after_grid: 'Taxon page: below the product grid'
+            before_grid: 'Taxon page: above the product grid'
+            header: 'Taxon page: the header'
+            sidebar: 'Taxon page: the sidebar, below the taxon menu'
     # The sources' labels. See "Sources" in docs/spec/sources.md
     source:
         bestsellers: Bestsellers
@@ -230,6 +259,7 @@ setono_sylius_cms:
     video:
         embed_title: Video
     ui:
+        add_placement: Add placement
         all_entries: All entries
         any_channel: Any channel
         any_status: Any status
@@ -255,6 +285,7 @@ setono_sylius_cms:
         dismiss: Dismiss
         error_count: '{0} No errors|{1} 1 error|]1,Inf[ %count% errors'
         fix_in_builder: Fix in builder
+        fix_in_placements: Go to Placements
         fix_in_publishing: Go to Publishing
         homepage_now: Homepage now
         homepage_of: Homepage of
@@ -267,11 +298,15 @@ setono_sylius_cms:
         made_by: Made by
         media: Media
         media_description: Images, videos and documents for your content, shared by every channel
+        move_down: Move down
+        move_up: Move up
         new_entry: 'New %content_type%'
         new_entry_heading: New entry
         new_share_link: New
+        no_placements: 'It shows in no slot yet. Add a placement to show it on the shop''s pages.'
         no_revisions: Every publish stores a revision, which you can preview and restore. There are none yet.
         no_share_links: Share the draft with anyone, as a link that shows it in the shop without signing in. There are none yet.
+        no_slots_offered: No slot provides the host-page context it needs.
         no_urls: It has no URL yet, because it has no slug.
         now: Now
         old_urls: 'Redirects from:'
@@ -279,6 +314,10 @@ setono_sylius_cms:
         other_content_type: Another content type
         overview_placeholder: What needs attention, what's coming up, translations and drafts in progress will show here. Until then, find the entries in their lists.
         pick_content_type: What do you want to create?
+        placements: Placements
+        placements_help: Placements take effect at once, without publishing, and show the snippet while it is published. A slot shows its placements, of every snippet, in this order.
+        position: Position
+        position_in_slot: '%position% of %count%'
         preview: Preview
         problem_severity:
             error: Error
@@ -319,6 +358,8 @@ setono_sylius_cms:
         shown_to: Shown to
         shown_to_guest: Guest
         shown_to_no_group: Signed in without a group
+        slot: Slot
+        slot_removed: The code no longer has this slot, so the placement shows nothing. Remove it.
         status: Status
         status_filter:
             needs_attention: Needs attention

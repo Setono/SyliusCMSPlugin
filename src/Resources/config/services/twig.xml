@@ -15,6 +15,12 @@
             <tag name="twig.runtime"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Twig\SlotRuntime" class="Setono\SyliusCMSPlugin\Twig\SlotRuntime">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\SlotRendererInterface"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
         <!-- What the cms_* runtimes share: the render context of a template, and a media item given by its UUID -->
         <service id="Setono\SyliusCMSPlugin\Twig\RenderContexts" class="Setono\SyliusCMSPlugin\Twig\RenderContexts">
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
@@ -90,6 +96,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryShareLinks"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\WhereItShows"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryPlacements"/>
 
             <tag name="twig.runtime"/>
         </service>

@@ -50,6 +50,11 @@ use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Twig\AdminExtension;
 use Setono\SyliusCMSPlugin\Twig\AdminRuntime;
 use Setono\SyliusCMSPlugin\Twig\EntryOverviewRuntime;
+use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
+use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
+use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Model\Placement;
+use Setono\SyliusCMSPlugin\Admin\EntryPlacements;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\Channel;
@@ -80,6 +85,9 @@ final class AdminExtensionTest extends IntegrationTestCase
 
     /** @var list<HomepageInterface> the store's homepage rows */
     private array $homepages = [];
+
+    /** @var list<Placement> the store's placements */
+    private array $placements = [];
 
     /** @var ObjectProphecy<RepositoryInterface<CustomerGroupInterface>> */
     private ObjectProphecy $customerGroups;
@@ -158,6 +166,19 @@ final class AdminExtensionTest extends IntegrationTestCase
         $page->setBlockTree(new StoredTree(null, [new StoredBlock($key, 'promo', 1)]));
 
         return ['page' => $page];
+    }
+
+    /**
+     * A snippet placed in the footer
+     *
+     * @return array{snippet: Snippet}
+     */
+    public function aSnippetPlacedInTheFooter(): array
+    {
+        $snippet = new Snippet();
+        $this->placements = [new Placement($snippet, 'shop.footer', 0)];
+
+        return ['snippet' => $snippet];
     }
 
     protected static function getFixturesDirectory(): string
@@ -240,7 +261,17 @@ final class AdminExtensionTest extends IntegrationTestCase
         $channels->findBy([], ['id' => 'ASC'])->willReturn([$web, $b2b]);
         $channelHomepages = new ChannelHomepages($channels->reveal(), $homepages->reveal());
 
-        $overview = new EntryOverviewRuntime($entryUrls, $channelHomepages, $problemFinder, $revisions->reveal(), $entryShareLinks, $whereItShows);
+        $placements = $this->prophesize(PlacementRepositoryInterface::class);
+        $placed = &$this->placements;
+        $placements->findBySnippet(Argument::any())->will(static function (array $arguments) use (&$placed): array {
+            return array_values(array_filter($placed, static fn (Placement $placement): bool => $placement->getSnippet() === ($arguments[0] ?? null)));
+        });
+        $placements->findBySlots(Argument::any())->will(static function () use (&$placed): array {
+            return $placed;
+        });
+        $entryPlacements = new EntryPlacements($placements->reveal(), new SlotRegistry(['shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null]]));
+
+        $overview = new EntryOverviewRuntime($entryUrls, $channelHomepages, $problemFinder, $revisions->reveal(), $entryShareLinks, $whereItShows, $entryPlacements);
 
         return [new FactoryRuntimeLoader([
             AdminRuntime::class => static fn (): AdminRuntime => $runtime,

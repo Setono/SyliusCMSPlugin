@@ -58,6 +58,14 @@
         margin-inline: calc(50% - 50vw);
     }
 
+    /* The wrapper a slot with something to show prints around its snippets' top-level blocks: spaced like a tree's, but
+       not contained, since the slot sits wherever its template event prints it */
+    .cms-slot {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: var(--cms-block-spacing);
+    }
+
     /* Group: its content stays contained, also when its background is full width */
     .cms-group__inner {
         display: grid;

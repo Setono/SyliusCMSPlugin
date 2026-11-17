@@ -29,10 +29,12 @@ use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
+use Setono\SyliusCMSPlugin\Rendering\SlotRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer;
 use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
 use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGenerator;
@@ -47,6 +49,7 @@ use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Setono\SyliusCMSPlugin\Twig\HeadTagsRuntime;
 use Setono\SyliusCMSPlugin\Twig\LinkRuntime;
 use Setono\SyliusCMSPlugin\Twig\RenderContexts;
+use Setono\SyliusCMSPlugin\Twig\SlotRuntime;
 use Setono\SyliusCMSPlugin\Value\ItemList;
 use Setono\SyliusCMSPlugin\Value\Link;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
@@ -159,6 +162,16 @@ final class CMSExtensionTest extends IntegrationTestCase
                 $canonicalUrls,
                 new Availability(),
             ),
+            SlotRuntime::class => static fn (): SlotRuntime => new SlotRuntime(new class() implements SlotRendererInterface {
+                public function render(string $identifier, array $context = []): string
+                {
+                    if ('shop.empty' === $identifier) {
+                        return '';
+                    }
+
+                    return sprintf('<div class="%s">%s with %s</div>', (new SlotMetadata($identifier, 'app.label'))->wrapperClass(), $identifier, [] === $context ? 'nothing' : implode(', ', array_keys($context)));
+                }
+            }),
             LinkRuntime::class => fn (): LinkRuntime => new LinkRuntime(
                 new EntryLinkTarget($this->visibleEntries(), $canonicalUrls, $this->prophesize(SearchInterface::class)->reveal()),
                 new TaxonLinkTarget($this->prophesize(ReferenceTypeLoaderInterface::class)->reveal(), $shopUrls, $this->prophesize(SearchInterface::class)->reveal()),

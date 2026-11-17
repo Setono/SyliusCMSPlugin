@@ -6,6 +6,8 @@ namespace Setono\SyliusCMSPlugin\Twig;
 
 use Setono\SyliusCMSPlugin\Admin\ChannelHomepage;
 use Setono\SyliusCMSPlugin\Admin\ChannelHomepages;
+use Setono\SyliusCMSPlugin\Admin\EntryPlacements;
+use Setono\SyliusCMSPlugin\Admin\EntryPlacementsSection;
 use Setono\SyliusCMSPlugin\Admin\EntryRow;
 use Setono\SyliusCMSPlugin\Admin\EntryShareLink;
 use Setono\SyliusCMSPlugin\Admin\EntryShareLinks;
@@ -36,7 +38,16 @@ final readonly class EntryOverviewRuntime implements RuntimeExtensionInterface
         private RevisionRepositoryInterface $revisions,
         private EntryShareLinks $shareLinks,
         private WhereItShows $whereItShows,
+        private EntryPlacements $entryPlacements,
     ) {
+    }
+
+    /**
+     * A snippet's placements and the slots it can be placed in, or null for an entry that isn't a snippet
+     */
+    public function entryPlacements(EntryInterface $entry): ?EntryPlacementsSection
+    {
+        return $this->entryPlacements->of($entry);
     }
 
     /**

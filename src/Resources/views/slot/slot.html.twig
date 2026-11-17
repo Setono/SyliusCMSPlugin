@@ -1,0 +1,11 @@
+{#
+ # A slot with something to show (Rendering\SlotRenderer): its wrapper, cms-slot and a modifier of its identifier, around
+ # the top-level blocks of the snippets it shows, in editor order. A slot with nothing to show doesn't render this. It gets:
+ #   slot      the slot (Registry\SlotMetadata)
+ #   snippets  the snippets it shows (Rendering\PlacedSnippet), each with its placement and its blocks that show
+ #   context   the host-page context the slot provides
+ # See "Slots" in docs/spec/slots.md
+ #}
+<div class="{{ slot.wrapperClass }}">
+    {%- for placed in snippets %}{{ cms_blocks(placed.blocks) }}{% endfor -%}
+</div>

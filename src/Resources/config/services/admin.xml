@@ -88,6 +88,12 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
 
+        <!-- A snippet's placements and the slots it can be placed in, which its overview page gets through cms_admin_entry_placements() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryPlacements" class="Setono\SyliusCMSPlugin\Admin\EntryPlacements">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+        </service>
+
         <!-- Where an entry shows, per channel and locale, which its overview page gets through cms_admin_where_it_shows() -->
         <service id="Setono\SyliusCMSPlugin\Admin\WhereItShows" class="Setono\SyliusCMSPlugin\Admin\WhereItShows">
             <argument type="service" id="sylius.repository.channel"/>

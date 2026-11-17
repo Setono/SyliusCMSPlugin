@@ -95,6 +95,37 @@
             <tag name="setono_sylius_cms.reference_type_loader" type="taxon"/>
         </service>
 
+        <!--
+        Renders a slot where its template event fires or a template calls cms_slot(). It reads the channel's placements
+        once a request, when the first slot renders
+        -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\SlotRenderer" class="Setono\SyliusCMSPlugin\Rendering\SlotRenderer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\PlacementProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\VisibleSnippetsInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
+            <argument type="service" id="twig"/>
+
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\SlotRendererInterface" alias="Setono\SyliusCMSPlugin\Rendering\SlotRenderer"/>
+
+        <!-- Where the shop reads a channel's placements. A project can decorate it to cache placements -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\PlacementProvider" class="Setono\SyliusCMSPlugin\Rendering\PlacementProvider">
+            <argument type="service" id="doctrine"/>
+            <argument>%setono_sylius_cms.model.placement.class%</argument>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\PlacementProviderInterface" alias="Setono\SyliusCMSPlugin\Rendering\PlacementProvider"/>
+
+        <!-- The snippets a slot may show: the visible ones -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\VisibleSnippets" class="Setono\SyliusCMSPlugin\Rendering\VisibleSnippets">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\VisibleSnippetsInterface" alias="Setono\SyliusCMSPlugin\Rendering\VisibleSnippets"/>
+
         <service id="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookup" class="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookup">
             <argument type="service" id="doctrine"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>

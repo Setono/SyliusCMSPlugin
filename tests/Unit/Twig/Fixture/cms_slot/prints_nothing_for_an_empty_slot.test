@@ -1,0 +1,8 @@
+--TEST--
+cms_slot() prints nothing for a slot with nothing to show
+--TEMPLATE--
+[{{ cms_slot('shop.empty') }}]
+--DATA--
+return []
+--EXPECT--
+[]

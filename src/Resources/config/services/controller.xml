@@ -70,6 +70,33 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <!-- The overview page's Placements section (docs/spec/admin.md#placements) -->
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\SnippetPlacementRequest" class="Setono\SyliusCMSPlugin\Controller\Admin\SnippetPlacementRequest">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\AddPlacementAction" class="Setono\SyliusCMSPlugin\Controller\Admin\AddPlacementAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Slot\PlacementEditorInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\MovePlacementAction" class="Setono\SyliusCMSPlugin\Controller\Admin\MovePlacementAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\SnippetPlacementRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Slot\PlacementEditorInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction" class="Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\SnippetPlacementRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Slot\PlacementEditorInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface"/>

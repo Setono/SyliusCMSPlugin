@@ -1,0 +1,8 @@
+--TEST--
+cms_slot() renders the slot, passing it host-page context by key
+--TEMPLATE--
+{{ cms_slot('app.store_locator.top', {store_location: location}) }}
+--DATA--
+return ['location' => new \ArrayObject(['name' => 'Copenhagen'])]
+--EXPECT--
+<div class="cms-slot cms-slot--app-store-locator-top">app.store_locator.top with store_location</div>

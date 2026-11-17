@@ -513,6 +513,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
             'blocks' => [
                 'publishing' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_publishing.html.twig', 'priority' => 100],
                 'problems' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_problems.html.twig', 'priority' => 90],
+                'placements' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_placements.html.twig', 'priority' => 80],
                 'where_it_shows' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_where_it_shows.html.twig', 'priority' => 70],
                 'revisions' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_revisions.html.twig', 'priority' => 60],
                 'share_links' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_share_links.html.twig', 'priority' => 50],

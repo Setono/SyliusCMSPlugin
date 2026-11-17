@@ -1,0 +1,76 @@
+{#
+ # The overview page's Placements section, a block of setono_sylius_cms.admin.entry.show.sections, for a snippet: its
+ # placements, each with its slot and its place among the slot's placements of every snippet, with Move up, Move down and
+ # Remove, plus Add placement, which offers the slots that provide at least the context the snippet needs. Each form
+ # comes back to the overview page, and takes effect at once (ADR 0005). A placement in a slot the code no longer
+ # declares is listed with the slot's identifier, to remove. See "Placements" in docs/spec/admin.md
+ #}
+{% set placements = cms_admin_entry_placements(entry) %}
+{% if placements is not null %}
+    <section class="ui segment" data-section="placements" aria-labelledby="cms-section-placements">
+        <h2 class="ui dividing header" id="cms-section-placements">{{ 'setono_sylius_cms.ui.placements'|trans }}</h2>
+
+        {% if placements.placements is empty %}
+            <p>{{ 'setono_sylius_cms.ui.no_placements'|trans }}</p>
+        {% else %}
+            <p>{{ 'setono_sylius_cms.ui.placements_help'|trans }}</p>
+            <table class="ui very basic table">
+                <thead>
+                    <tr>
+                        <th>{{ 'setono_sylius_cms.ui.slot'|trans }}</th>
+                        <th>{{ 'setono_sylius_cms.ui.position'|trans }}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for placed in placements.placements %}
+                        {% set placement = placed.placement %}
+                        <tr data-placement="{{ placement.uuid }}" data-slot="{{ placement.slot }}"{% if placed.slot is null %} class="warning"{% endif %}>
+                            <td>
+                                <span data-slot-label>{{ placed.slot is null ? placement.slot : placed.slot.label|trans }}</span>
+                                {% if placed.slot is null %}
+                                    <div data-slot-removed><small>{{ 'setono_sylius_cms.ui.slot_removed'|trans }}</small></div>
+                                {% else %}
+                                    <div><small><code>{{ placement.slot }}</code></small></div>
+                                {% endif %}
+                            </td>
+                            <td data-position>{{ 'setono_sylius_cms.ui.position_in_slot'|trans({'%position%': placed.position, '%count%': placed.count}) }}</td>
+                            <td class="right aligned">
+                                <form method="post" action="{{ path('setono_sylius_cms_admin_entry_placement_move', {'uuid': entry.uuid, 'placement': placement.uuid}) }}" class="ui icon buttons" data-move>
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
+                                    <button type="submit" name="direction" value="up" class="ui icon button" title="{{ 'setono_sylius_cms.ui.move_up'|trans }}" aria-label="{{ 'setono_sylius_cms.ui.move_up'|trans }}"{% if placed.first %} disabled{% endif %}><i class="arrow up icon"></i></button>
+                                    <button type="submit" name="direction" value="down" class="ui icon button" title="{{ 'setono_sylius_cms.ui.move_down'|trans }}" aria-label="{{ 'setono_sylius_cms.ui.move_down'|trans }}"{% if placed.last %} disabled{% endif %}><i class="arrow down icon"></i></button>
+                                </form>
+                                <form method="post" action="{{ path('setono_sylius_cms_admin_entry_placement_remove', {'uuid': entry.uuid, 'placement': placement.uuid}) }}" style="display: inline-block" data-remove>
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
+                                    <button type="submit" class="ui labeled icon button" data-requires-confirmation><i class="trash icon"></i> {{ 'setono_sylius_cms.ui.remove'|trans }}</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+        {% if placements.offeredSlots is empty %}
+            <p data-no-slots>{{ 'setono_sylius_cms.ui.no_slots_offered'|trans }}</p>
+        {% else %}
+            <form class="ui form" method="post" action="{{ path('setono_sylius_cms_admin_entry_placement_add', {'uuid': entry.uuid}) }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
+                <div class="inline fields">
+                    <div class="field">
+                        <label for="cms-placement-slot">{{ 'setono_sylius_cms.ui.slot'|trans }}</label>
+                        <select id="cms-placement-slot" name="slot">
+                            {% for slot in placements.offeredSlots %}
+                                <option value="{{ slot.identifier }}">{{ slot.label|trans }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <button type="submit" class="ui labeled icon button"><i class="plus icon"></i> {{ 'setono_sylius_cms.ui.add_placement'|trans }}</button>
+                    </div>
+                </div>
+            </form>
+        {% endif %}
+    </section>
+{% endif %}

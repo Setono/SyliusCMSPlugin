@@ -18,9 +18,11 @@ use Setono\SyliusCMSPlugin\Model\EntryChannel;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\Placement;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
+use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountListener;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface;
 use Setono\SyliusCMSPlugin\Problem\ReferenceProblemKindInterface;
@@ -78,6 +80,22 @@ final class ProblemCountListenerTest extends TestCase
         // What it wrote is counted once
         $listener->postFlush();
         self::assertSame([[$page]], $this->updated);
+    }
+
+    /**
+     * @test
+     */
+    public function it_counts_the_problems_of_a_snippet_a_flush_adds_moves_or_removes_a_placement_of(): void
+    {
+        $snippet = new Snippet();
+        $listener = new ProblemCountListener($this->updater->reveal());
+
+        foreach ([[[new Placement($snippet, 'shop.footer', 0)], [], []], [[], [new Placement($snippet, 'shop.footer', 1)], []], [[], [], [new Placement($snippet, 'shop.gone', 0)]]] as $scheduled) {
+            $listener->onFlush($this->flushing(...$scheduled));
+            $listener->postFlush();
+        }
+
+        self::assertSame([[$snippet], [$snippet], [$snippet]], $this->updated);
     }
 
     /**

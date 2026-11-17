@@ -33,6 +33,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaFolderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaItemAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UploadMediaAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ValidateEntryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\AddPlacementAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CancelScheduleAction as CancelSchedulePageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;
@@ -40,9 +41,11 @@ use Setono\SyliusCMSPlugin\Controller\Admin\CreateShareLinkAction as CreateShare
 use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction as DiscardEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\MediaLibraryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\MovePlacementAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PreviewRevisionAction as PreviewRevisionPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PublishEntryAction as PublishEntryPageAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\RestoreRevisionAction as RestoreRevisionPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\RevokeShareLinkAction as RevokeShareLinkPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\ScheduleEntryAction as ScheduleEntryPageAction;
@@ -157,6 +160,25 @@ return static function (RoutingConfigurator $routes): void {
         ->controller(RevokeShareLinkPageAction::class)
         ->methods(['POST'])
         ->requirements(['uuid' => Requirement::UUID, 'id' => Requirement::DIGITS])
+    ;
+
+    // The Placements section of a snippet's overview page: Add placement, and Move up, Move down and Remove of a placement
+    $routes->add('setono_sylius_cms_admin_entry_placement_add', '/cms/entry/{uuid}/placements')
+        ->controller(AddPlacementAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_entry_placement_move', '/cms/entry/{uuid}/placements/{placement}/move')
+        ->controller(MovePlacementAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID, 'placement' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_entry_placement_remove', '/cms/entry/{uuid}/placements/{placement}/remove')
+        ->controller(RemovePlacementAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID, 'placement' => Requirement::UUID])
     ;
 
     $routes->add('setono_sylius_cms_admin_entry_delete', '/cms/entry/{uuid}')

@@ -20,3 +20,6 @@ app:
             landing: Landing
         link_target:
             store: Store
+        slot:
+            announcements: Announcements, above the header
+            store_locator_top: Store locator, at the top
