@@ -252,6 +252,21 @@ describe('the media library', () => {
         await waitFor(() => expect(api.save).toHaveBeenLastCalledWith('clip', { name: 'Launch film', credit: null, poster: null }));
     });
 
+    it('should flag the selected image while it misses alt text in a locale, until the alt text is saved', async () => {
+        const api = fakeApi([mediaItem('dog', { name: 'Dog', altTexts: { en_US: 'A dog' } })]);
+        await openLibrary(api);
+
+        fireEvent.click(await grid().findByRole('button', { name: /Dog/ }));
+        const details = within(screen.getByRole('complementary', { name: 'Dog' }));
+        expect(details.getByText('No alt text')).toBeInTheDocument();
+
+        fireEvent.change(details.getByLabelText('German (Germany)'), { target: { value: 'Ein Hund' } });
+        fireEvent.click(details.getByRole('button', { name: 'Save' }));
+
+        await waitFor(() => expect(details.getByRole('status')).toHaveTextContent('Saved'));
+        expect(details.queryByText('No alt text')).not.toBeInTheDocument();
+    });
+
     it('should show only the images missing alt text when filtered', async () => {
         const api = fakeApi([mediaItem('dog', { missingAlt: false }), mediaItem('cat')]);
         await openLibrary(api);

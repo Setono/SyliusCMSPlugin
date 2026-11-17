@@ -57,6 +57,7 @@ export function MediaItemDetails({ item }: { item: MediaItem }) {
             <h2 id={`${id}-heading`} className={styles.detailsHeading}>
                 {item.name}
             </h2>
+            {image && item.missingAlt && <span className={styles.flag}>{t('setono_sylius_cms.builder.media.missing_alt_flag')}</span>}
 
             {image && <FocalPointEditor src={item.url} value={focalPoint} onChange={setFocalPoint} />}
 

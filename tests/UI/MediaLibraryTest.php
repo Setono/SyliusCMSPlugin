@@ -53,6 +53,7 @@ final class MediaLibraryTest extends UITestCase
         $beachUuid = self::item($dropZone, 'beach')->getAttribute('data-media-item');
         self::item($dropZone, 'beach')->click();
         $details = $browser->getByRole('complementary', ['name' => 'beach']);
+        Expect::locator($details)->toContainText('No alt text');
         $details->getByLabel('English (United States)')->fill('Waves on a sandy beach');
         $area = $details->getByTestId('focal-point-area');
         $box = $area->boundingBox();
@@ -61,6 +62,7 @@ final class MediaLibraryTest extends UITestCase
         $details->getByRole('button', ['name' => 'Save'])->click();
         Expect::locator($details->getByRole('status'))->toHaveText('Saved');
         Expect::locator(self::item($dropZone, 'beach'))->not()->toContainText('No alt text');
+        Expect::locator($details)->not()->toContainText('No alt text');
 
         // Only the other is missing alt text
         $browser->getByRole('checkbox', ['name' => 'Missing alt text'])->check();
