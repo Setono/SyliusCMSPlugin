@@ -12,6 +12,6 @@ use Setono\SyliusCMSPlugin\Model\Page;
 #[Layout(code: 'hero', contentType: Page::class, label: 'Hero', template: 'hero.html.twig')]
 final class Hero
 {
-    #[Media(label: 'Image')]
+    #[Media(label: 'app.cms.field.image')]
     public ?MediaItemInterface $image = null;
 }
