@@ -173,8 +173,7 @@ final class SnippetPreviewTest extends BuilderApiTestCase
             'key' => self::KEY, 'type' => 'heading', 'version' => 1,
             'fields' => ['text' => ['$bind' => 'taxon.name', '$params' => [], '$fallback' => ['en_US' => 'Our taxon']]],
         ]]], $csrfToken);
-        self::assertIsArray($response);
-        self::assertStringContainsString('<h2 class="cms-heading">Shoes</h2>', (string) ($response['blocks'][self::KEY] ?? ''));
+        self::assertStringContainsString('<h2 class="cms-heading">Shoes</h2>', self::renderedBlock($response));
     }
 
     /**
@@ -272,8 +271,7 @@ final class SnippetPreviewTest extends BuilderApiTestCase
         ]]], $csrfToken);
 
         self::assertResponseIsSuccessful();
-        self::assertIsArray($response);
-        self::assertSame(sprintf('<!--cms:block %s heading--><h2 class="cms-heading">Mug</h2><!--/cms:block %1$s-->', self::KEY), Html::withoutWhitespaceBetweenTags((string) ($response['blocks'][self::KEY] ?? '')));
+        self::assertSame(sprintf('<!--cms:block %s heading--><h2 class="cms-heading">Mug</h2><!--/cms:block %1$s-->', self::KEY), Html::withoutWhitespaceBetweenTags(self::renderedBlock($response)));
     }
 
     /**
@@ -282,6 +280,19 @@ final class SnippetPreviewTest extends BuilderApiTestCase
     private static function productName(): StoredBlock
     {
         return new StoredBlock(self::KEY, 'heading', 1, fields: ['text' => ['$bind' => 'product.name', '$params' => [], '$fallback' => ['en_US' => 'This product']]]);
+    }
+
+    /**
+     * The HTML preview_render answers for the block with the key KEY
+     */
+    private static function renderedBlock(mixed $response): string
+    {
+        self::assertIsArray($response);
+        self::assertIsArray($response['blocks'] ?? null);
+        $html = $response['blocks'][self::KEY] ?? null;
+        self::assertIsString($html);
+
+        return $html;
     }
 
     /**

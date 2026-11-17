@@ -31,6 +31,9 @@ final class SampleObjectsTest extends TestCase
 {
     use ProphecyTrait;
 
+    /** @var array<string, ProductInterface> */
+    private static array $products = [];
+
     /**
      * @test
      */
@@ -201,15 +204,17 @@ final class SampleObjectsTest extends TestCase
         return ['kind' => 'product_code_is', 'negate' => false, 'params' => ['code' => $code]];
     }
 
+    /**
+     * The same product for the same code, so a test can tell which one it got
+     */
     private static function product(string $code): ProductInterface
     {
-        static $products = [];
-
-        if (!isset($products[$code])) {
-            $products[$code] = new Product();
-            $products[$code]->setCode($code);
+        if (!isset(self::$products[$code])) {
+            $product = new Product();
+            $product->setCode($code);
+            self::$products[$code] = $product;
         }
 
-        return $products[$code];
+        return self::$products[$code];
     }
 }
