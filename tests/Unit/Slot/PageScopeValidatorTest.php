@@ -82,7 +82,7 @@ final class PageScopeValidatorTest extends TestCase
     public function it_refuses_a_condition_of_a_kind_that_does_not_read_the_host_page(): void
     {
         self::assertEquals(
-            [new TranslatableMessage('setono_sylius_cms.page_scope.not_host_page', ['%number%' => 1, '%kind%' => new TranslatableMessage('Locale is')], 'validators')],
+            [new TranslatableMessage('setono_sylius_cms.page_scope.not_host_page', ['%number%' => 1, '%kind%' => new TranslatableMessage(Conditions::registry()->get('locale_is')->label)], 'validators')],
             $this->validator()->validate('product.after_price', [['kind' => 'locale_is', 'negate' => false, 'params' => ['locales' => ['da_DK']]]]),
         );
     }
