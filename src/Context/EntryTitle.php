@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Context;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
+use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 
 /**
  * How a context check names another entry, such as the snippet a Snippet block shows: by its title in its first
@@ -29,5 +30,16 @@ final class EntryTitle
         }
 
         return $entry->getUuid();
+    }
+
+    /**
+     * How a picker names an entry in the admin user's locale: by its title in the locale along its fallback chain, or
+     * else as of() does
+     */
+    public static function inLocale(EntryInterface $entry, string $localeCode, FallbackValues $fallbackValues): string
+    {
+        $title = $fallbackValues->entryValue($entry, 'title', $localeCode);
+
+        return is_string($title) ? $title : self::of($entry);
     }
 }

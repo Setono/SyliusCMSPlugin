@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Builder\Search;
 
+use Setono\SyliusCMSPlugin\Context\EntryTitle;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Setono\SyliusCMSPlugin\Context\Needs;
@@ -11,7 +12,6 @@ use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
-use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Uid\Uuid;
@@ -106,25 +106,6 @@ final readonly class SnippetSearch implements SearchInterface
      */
     private function results(array $snippets, string $localeCode): array
     {
-        return array_map(fn (SnippetInterface $snippet): SearchResult => new SearchResult($snippet->getUuid(), $this->title($snippet, $localeCode)), $snippets);
-    }
-
-    /**
-     * The title in the locale along its fallback chain, or else in any locale the snippet has one in
-     */
-    private function title(SnippetInterface $snippet, string $localeCode): string
-    {
-        $title = $this->fallbackValues->entryValue($snippet, 'title', $localeCode);
-        if (is_string($title)) {
-            return $title;
-        }
-
-        foreach ($snippet->getTranslations() as $translation) {
-            if ($translation instanceof EntryTranslationInterface && null !== $translation->getTitle() && '' !== $translation->getTitle()) {
-                return $translation->getTitle();
-            }
-        }
-
-        return $snippet->getUuid();
+        return array_map(fn (SnippetInterface $snippet): SearchResult => new SearchResult($snippet->getUuid(), EntryTitle::inLocale($snippet, $localeCode, $this->fallbackValues)), $snippets);
     }
 }
