@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Event\MediaItemDeleted;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\MediaFieldsKernel;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -47,9 +48,7 @@ final class MediaUsageTest extends MediaApiTestCase
         ]], $answer);
 
         // The library counts them
-        $list = self::json($client, 'GET', '/admin/cms/api/media');
-        self::assertIsArray($list);
-        self::assertSame(['unused' => 0, 'summer' => 2], array_column($list['items'], 'usageCount', 'name'));
+        self::assertSame(['unused' => 0, 'summer' => 2], array_column(self::items($client, ''), 'usageCount', 'name'));
     }
 
     /**
@@ -66,16 +65,28 @@ final class MediaUsageTest extends MediaApiTestCase
         self::createPageWithBlocks('Summer sale', 'sale', [self::block($used->getUuid())], published: true);
         self::createPageWithBlocks('Our story', 'story', [self::block($draftOnly->getUuid())]);
 
-        $answer = self::json($client, 'GET', '/admin/cms/api/media?unused=1');
-
-        self::assertResponseIsSuccessful();
-        self::assertIsArray($answer);
-        self::assertSame([$prices->getUuid(), $unused->getUuid()], array_column($answer['items'], 'uuid'));
+        self::assertSame([$prices->getUuid(), $unused->getUuid()], array_column(self::items($client, 'unused=1'), 'uuid'));
 
         // With the other filters
-        $answer = self::json($client, 'GET', '/admin/cms/api/media?unused=1&kind=image');
+        self::assertSame([$unused->getUuid()], array_column(self::items($client, 'unused=1&kind=image'), 'uuid'));
+    }
+
+    /**
+     * The media items the library lists with this query
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function items(KernelBrowser $client, string $query): array
+    {
+        $answer = self::json($client, 'GET', '/admin/cms/api/media?' . $query);
+        self::assertResponseIsSuccessful();
         self::assertIsArray($answer);
-        self::assertSame([$unused->getUuid()], array_column($answer['items'], 'uuid'));
+        self::assertIsArray($answer['items']);
+
+        /** @var list<array<string, mixed>> $items */
+        $items = $answer['items'];
+
+        return $items;
     }
 
     /**

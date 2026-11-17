@@ -12,7 +12,6 @@ use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\MediaHandler;
 use Setono\SyliusCMSPlugin\Field\MediaListHandler;
-use Setono\SyliusCMSPlugin\Media\MediaUsageChanges;
 use Setono\SyliusCMSPlugin\Media\MediaUsageIndexer;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
@@ -33,7 +32,7 @@ use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
-use Sylius\Resource\Factory\Factory;
+use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
 final class MediaUsageIndexerTest extends TestCase
@@ -197,6 +196,12 @@ final class MediaUsageIndexerTest extends TestCase
 
     private function indexer(): MediaUsageIndexer
     {
+        $factory = $this->prophesize(FactoryInterface::class);
+        $factory->createNew()->will(static fn (): MediaUsage => new MediaUsage());
+
+        /** @var FactoryInterface<MediaUsageInterface> $usageFactory */
+        $usageFactory = $factory->reveal();
+
         return new MediaUsageIndexer(
             $this->workingCopies->reveal(),
             new ReferenceFinder(
@@ -209,7 +214,7 @@ final class MediaUsageIndexerTest extends TestCase
                 ])),
             ),
             new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
-            new Factory(MediaUsage::class),
+            $usageFactory,
         );
     }
 
