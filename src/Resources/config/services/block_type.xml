@@ -56,6 +56,10 @@
             <tag name="setono_sylius_cms.block_type"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Block\Downloads" class="Setono\SyliusCMSPlugin\Block\Downloads">
+            <tag name="setono_sylius_cms.block_type"/>
+        </service>
+
         <!-- Commerce -->
         <service id="Setono\SyliusCMSPlugin\Block\Products" class="Setono\SyliusCMSPlugin\Block\Products">
             <tag name="setono_sylius_cms.block_type"/>

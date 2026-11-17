@@ -10,6 +10,7 @@ setono_sylius_cms:
         button: Button
         column: Column
         columns: Columns
+        downloads: Downloads
         first_match: First match
         group: Group
         heading: Heading
@@ -57,6 +58,9 @@ setono_sylius_cms:
         date_window_condition:
             from: From
             until: Until
+        downloads:
+            documents: Documents
+            heading: Heading
         group:
             full_width: Full width
         heading:
