@@ -180,6 +180,28 @@ describe('a field of a project’s own field type', () => {
         expect(onChange).toHaveBeenCalledWith(null);
     });
 
+    it.each([
+        ['an empty string', ''],
+        ['an empty list', []],
+    ])('should not set back the null the store keeps for %s a cms-change event just gave', (_, emptied: JsonValue) => {
+        const onChange = vi.fn();
+        const row = (value: JsonValue | undefined) => (
+            <TranslatorProvider value={createTranslator(strings)}>
+                <FieldRow id="field" schema={openingHours} value={value} locale="en_US" onChange={onChange} />
+            </TranslatorProvider>
+        );
+        const { rerender } = render(row({ monday: '9-17' }));
+
+        act(() => {
+            control().dispatchEvent(new CustomEvent('cms-change', { bubbles: true, detail: { value: emptied } }));
+        });
+        // The store keeps an empty value as none
+        rerender(row(undefined));
+
+        expect(onChange).toHaveBeenCalledWith(emptied);
+        expect(control().sets.value).toBe(1);
+    });
+
     it('should set the value again when it changes from outside, such as by undo', () => {
         const onChange = vi.fn();
         const row = (value: JsonValue) => (

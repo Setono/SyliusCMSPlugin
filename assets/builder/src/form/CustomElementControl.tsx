@@ -10,6 +10,7 @@ import type { MediaKind } from '../media/types';
 import type { SearchApi, SearchResult } from '../search/api';
 import { useSearch } from '../search/context';
 import type { FieldSchema, JsonValue } from '../types';
+import { normalizeValue } from '../values';
 import type { FieldControlProps } from './types';
 import { UnsupportedControl } from './UnsupportedControl';
 
@@ -112,7 +113,8 @@ function CustomElementHost({ tag, id, value, onChange, schema, locale, described
         const changed = (event: Event): void => {
             const detail: unknown = event instanceof CustomEvent ? event.detail : undefined;
             const next = typeof detail === 'object' && detail !== null && 'value' in detail ? ((detail as { value?: JsonValue }).value ?? null) : null;
-            given.current = JSON.stringify(next);
+            // As the store keeps it, which keeps an empty string or list as none
+            given.current = JSON.stringify(normalizeValue(next));
             latestOnChange.current(structuredClone(next));
         };
 
