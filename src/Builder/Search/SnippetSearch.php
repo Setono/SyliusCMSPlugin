@@ -63,8 +63,8 @@ final readonly class SnippetSearch implements SearchInterface
 
         /** @var list<SnippetInterface> $found */
         $found = $snippets->getQuery()->getResult();
-        $fitting = array_filter($found, static fn (SnippetInterface $snippet): bool => $snippet->getUuid() !== $entry
-            && (!is_string($provides) || Needs::areMet($snippet->getContext(), self::keys($provides))));
+        $fitting = array_filter($found, static fn (SnippetInterface $snippet): bool => $snippet->getUuid() !== $entry &&
+            (!is_string($provides) || Needs::areMet($snippet->getContext(), self::keys($provides))));
 
         return $this->results(array_slice(array_values($fitting), 0, self::LIMIT), $localeCode);
     }

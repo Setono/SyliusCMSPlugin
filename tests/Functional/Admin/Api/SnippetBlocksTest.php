@@ -48,8 +48,10 @@ final class SnippetBlocksTest extends BuilderApiTestCase
             'conditions' => [],
             'children' => [],
         ], $response['blocks'][0]);
-        self::assertIsArray($response['blocks'][1]['children'] ?? null);
-        self::assertSame([self::NESTED], array_column($response['blocks'][1]['children'], 'key'));
+        $group = $response['blocks'][1] ?? null;
+        self::assertIsArray($group);
+        self::assertIsArray($group['children'] ?? null);
+        self::assertSame([self::NESTED], array_column($group['children'], 'key'));
     }
 
     /**
