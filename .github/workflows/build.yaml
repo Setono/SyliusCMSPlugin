@@ -215,6 +215,12 @@ jobs:
                     - "8.3"
                     - "8.4"
 
+                # Each suite collects code coverage on one PHP version, the one the "Code Coverage" job runs the unit
+                # suite on. The others run without it
+                include:
+                    -   php-version: "8.3"
+                        coverage: "pcov"
+
         steps:
             # The runner image doesn't ship MySQL, so it runs as a container with a pinned version
             -   name: "Start MySQL"
@@ -226,7 +232,7 @@ jobs:
             -   name: "Setup PHP, with composer and extensions"
                 uses: "shivammathur/setup-php@v2"
                 with:
-                    coverage: "none"
+                    coverage: "${{ matrix.coverage || 'none' }}"
                     extensions: "${{ env.PHP_EXTENSIONS }}"
                     php-version: "${{ matrix.php-version }}"
                     tools: "flex"
@@ -270,7 +276,23 @@ jobs:
                 run: "(cd tests/Application && bin/console sylius:fixtures:load test --no-interaction)"
 
             -   name: "Run the ${{ matrix.suite }} suite"
+                if: "matrix.coverage != 'pcov'"
                 run: "vendor/bin/phpunit --testsuite ${{ matrix.suite }}"
+
+            # playwright-symfony runs the kernel in the test's own process, so pcov also sees the PHP the browser reaches
+            -   name: "Run the ${{ matrix.suite }} suite and collect code coverage with pcov"
+                if: "matrix.coverage == 'pcov'"
+                run: "vendor/bin/phpunit --testsuite ${{ matrix.suite }} --coverage-clover=.build/logs/clover.xml"
+
+            # Each suite uploads under a flag of its own, and Codecov merges the flags (codecov.yml)
+            -   name: "Send code coverage report to Codecov.io"
+                if: "matrix.coverage == 'pcov'"
+                uses: "codecov/codecov-action@v5"
+                with:
+                    disable_search: true
+                    files: ".build/logs/clover.xml"
+                    flags: "${{ matrix.suite }}"
+                    token: "${{ secrets.CODECOV_TOKEN }}"
 
     builder:
         name: "Builder app"
@@ -376,6 +398,9 @@ jobs:
                 run: "vendor/bin/phpunit --testsuite unit --coverage-clover=.build/logs/clover.xml"
 
             -   name: "Send code coverage report to Codecov.io"
-                uses: "codecov/codecov-action@v4"
+                uses: "codecov/codecov-action@v5"
                 with:
+                    disable_search: true
+                    files: ".build/logs/clover.xml"
+                    flags: "unit"
                     token: "${{ secrets.CODECOV_TOKEN }}"

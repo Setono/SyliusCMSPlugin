@@ -1,0 +1,10 @@
+{# The template of the test application's Store hours block type (tests/Application/Block/StoreHours.php), with its own opening hours field type #}
+{% set hours = cms_value(block, 'hours') %}
+<div class="app-store-hours{{ view.styleClass ? ' ' ~ view.styleClass }}">
+    {% if hours is not null %}
+        <ul>
+            {%- for day, times in hours.days %}<li>{{ ('app.cms.opening_hours.' ~ day)|trans }} {{ times.opens }}–{{ times.closes }}</li>{% endfor -%}
+        </ul>
+        {% if hours.photo is not null %}<p class="app-store-hours__photo">{{ hours.photo.name }}</p>{% endif %}
+    {% endif %}
+</div>

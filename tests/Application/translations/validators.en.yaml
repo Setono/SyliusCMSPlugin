@@ -1,0 +1,7 @@
+app:
+    cms:
+        opening_hours:
+            invalid: These aren't opening hours.
+            unknown_day: '"%day%" isn''t a day of the week.'
+            invalid_time: Enter %day%'s hours as HH:MM, such as 09:00.
+            closes_before_opens: On %day% the store closes before it opens.

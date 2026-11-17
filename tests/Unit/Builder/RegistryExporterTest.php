@@ -36,7 +36,9 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\OpeningHoursHandler;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Store;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Titled;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\RatingHandler;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Review;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Standard;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Wide;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\Clearance;
@@ -129,6 +131,32 @@ final class RegistryExporterTest extends TestCase
         self::assertIsArray($fields['name']);
         self::assertSame('text', $fields['name']['x-cms-type']);
         self::assertArrayNotHasKey('x-cms-control', $fields['name']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_adds_the_x_cms_keywords_around_a_project_field_types_own_schema_with_the_binding_types_it_accepts(): void
+    {
+        $blockTypes = array_column($this->exporter(blockTypes: ['review' => Review::class])->export()['blockTypes'], null, 'code');
+        self::assertIsArray($blockTypes['review']['fields']);
+        $fields = array_column($blockTypes['review']['fields'], 'schema', 'name');
+
+        self::assertSame([
+            'type' => 'integer',
+            'minimum' => 1,
+            'maximum' => 5,
+            'x-cms-options' => ['stars' => 5],
+            'x-cms-type' => 'app_rating',
+            'x-cms-control' => 'app-rating',
+            'x-cms-label' => '[app.rating]',
+            'x-cms-help' => null,
+            'x-cms-required' => false,
+            'x-cms-translatable' => false,
+            'x-cms-bindable' => ['number'],
+        ], $fields['rating']);
+        self::assertIsArray($fields['quote']);
+        self::assertArrayNotHasKey('x-cms-bindable', $fields['quote'], 'A field type that accepts no binding leaves it out');
     }
 
     /**
@@ -432,6 +460,7 @@ final class RegistryExporterTest extends TestCase
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator->reveal()),
             OpeningHoursHandler::class => static fn (): OpeningHoursHandler => new OpeningHoursHandler(),
+            RatingHandler::class => static fn (): RatingHandler => new RatingHandler(),
             DateTimeHandler::class => static fn (): DateTimeHandler => new DateTimeHandler(),
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
             TaxonHandler::class => static fn (): TaxonHandler => new TaxonHandler(),

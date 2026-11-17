@@ -85,6 +85,27 @@ final class BuilderTest extends WebTestCase
     }
 
     /**
+     * The test application lists the script of its opening hours field control under setono_sylius_cms.builder.scripts.
+     * Scripts load as ES modules, before the app, so their custom elements are defined when it renders their fields
+     *
+     * @test
+     */
+    public function it_loads_the_field_control_scripts_as_es_modules_before_the_builder_app(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        $page = self::createPage('About us', 'about-us');
+
+        $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(
+            ['/cms/opening-hours.js', '/bundles/setonosyliuscmsplugin/builder/builder.js'],
+            $crawler->filter('script[type="module"]')->each(static fn (Crawler $script): ?string => $script->attr('src')),
+        );
+    }
+
+    /**
      * The locale switcher offers the locales of the entry's channels, and an empty translatable field shows its
      * fallback value. The test app configures de_CH to fall back to de_DE. See "In the builder" in
      * docs/spec/localization.md

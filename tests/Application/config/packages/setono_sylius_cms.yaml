@@ -7,3 +7,7 @@ setono_sylius_cms:
     # Swiss German falls back to German before the store's fallback locale
     fallback_locales:
         de_CH: [de_DE]
+
+    # The field control of the test application's own opening hours field type, a custom element
+    builder:
+        scripts: ['/cms/opening-hours.js']

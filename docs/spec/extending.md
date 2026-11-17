@@ -293,9 +293,9 @@ final class OpeningHours extends Field
 | `code` | `string` | required | The field type's code. Unique, and never changes once content uses it. |
 | `translatable` | `bool` | `false` | Its default translatability, used when a field leaves `translatable:` at `null`. It decides whether the plugin stores one value or a locale map of values. A field type can still keep locale maps inside its one value: Link declares `false` and keeps its label per locale, and its handler reads the field's own `translatable` to pick the [link's shape](content-model.md#links). |
 | `bindable` | `list<BindingType>` | `[]` | The binding types a field of this type accepts. Empty means it can't be bound. |
-| `control` | `string\|null` | `null` | The custom element's tag name ([Field controls](#field-controls)). Required for a project's own field type. The shipped field types have none. |
+| `control` | `string\|null` | `null` | The custom element's tag name ([Field controls](#field-controls)), such as `app-opening-hours`: lowercase, starting with a letter, with a hyphen in it. Required for a project's own field type. The shipped field types have none. |
 
-The shipped field types carry it too, with the codes, defaults and binding types in the table above.
+The shipped field types carry it too, with the codes, defaults and binding types in the table above. A field attribute class that extends another inherits its field type, as the list fields share theirs. The container build fails on two field types with one code, a code that doesn't match `^[a-z][a-z0-9_]*$`, a project's own field type without a valid `control`, and a field attribute without `#[FieldType]`. It checks the shipped field types and those the fields of block types, layouts, content types, and the parameters of condition kinds and sources use.
 
 ```php
 namespace Setono\SyliusCMSPlugin\Field;
@@ -341,9 +341,13 @@ Everything else in the schema, the JSON Schema for one value, is the handler's.
 
 A project's own field type comes with a [field control](../../GLOSSARY.md#content-structure): a custom element, loaded from a script listed under `setono_sylius_cms.builder.scripts`. A block type built only from shipped field types needs no JS.
 
-- The builder sets four properties on the element: `.value` (the stored value, for the current locale when the field is translatable), `.field` (its schema), `.locale` (the locale being edited) and `.builder`.
+- The builder sets four properties on the element: `.value` (the stored value, for the current locale when the field is translatable, or `null` when it has none), `.field` (its schema), `.locale` (the locale being edited) and `.builder`. It sets `.field`, `.locale` and `.builder` before `.value`, and each again only when it changes.
 - `.builder` has `search(kind, query)`, which resolves to `[{ref, name, thumbnail}]` for `product`, `taxon`, `entry`, `media` or a link target's code, `pickMedia({kinds, multiple})`, which resolves to UUIDs or `null`, and `trans(key, params)`.
-- The field control dispatches a bubbling `cms-change` `CustomEvent` with `detail.value` whenever its value changes.
+  - `pickMedia()` opens the media library as a picker, as a Media field does. `kinds` defaults to `['image']` and `multiple` to `false`, and it resolves to `null` when the editor cancels.
+  - `trans()` translates the builder's own UI strings, the `setono_sylius_cms.builder.*` keys, filling in placeholders such as `{'%count%': 3}`, and gives back the key it doesn't know. A field type's own strings reach its field control translated, in `x-cms-options`, from its handler's `schema()`, which can inject the translator.
+- The field control dispatches a bubbling `cms-change` `CustomEvent` with `detail.value` whenever its value changes. `null`, `''`, `[]` or no `value` removes it. The builder doesn't set a value back on the element that just gave it, so the element keeps its own state, such as the focus.
+- The builder renders the element as a group its field's label names, and creates it once its custom element is defined. Scripts load as ES modules before the builder app, in the order they're listed.
+- The builder's store freezes the values it keeps, so the element gets a copy in `.value` and the builder keeps a copy of `detail.value`.
 
 ## Sources
 
@@ -752,7 +756,7 @@ setono_sylius_cms:
         # de_CH: [de_DE]
 
     builder:
-        scripts: []          # field control scripts, as public paths or absolute URLs, loaded as ES modules
+        scripts: []          # field control scripts, as public paths, such as /build/app/cms/controls.js, or absolute http(s) URLs, loaded as ES modules in this order
 
     presets:
         paths: []            # directories of code preset files; bundles prepend theirs
