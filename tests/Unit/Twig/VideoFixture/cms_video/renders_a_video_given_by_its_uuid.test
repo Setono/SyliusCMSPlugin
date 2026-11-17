@@ -1,0 +1,8 @@
+--TEST--
+cms_video() renders a video media item given by its UUID, in either case
+--TEMPLATE--
+{{ cms_video(uuid) }}
+--DATA--
+return $this->rendering(['uuid' => strtoupper($this->inTheLibrary($this->video()))])
+--EXPECT--
+<video src="/media/cms/shop-tour.mp4" width="1920" height="1080" preload="metadata" controls playsinline></video>

@@ -32,6 +32,22 @@
             <tag name="twig.runtime"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Twig\VideoRuntime" class="Setono\SyliusCMSPlugin\Twig\VideoRuntime">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\ImageProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Twig\MediaRuntime" class="Setono\SyliusCMSPlugin\Twig\MediaRuntime">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\PermanentUrlGeneratorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Twig\HeadTagsRuntime" class="Setono\SyliusCMSPlugin\Twig\HeadTagsRuntime">
             <argument type="service" id="Setono\SyliusCMSPlugin\Seo\MetaValuesInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface"/>
