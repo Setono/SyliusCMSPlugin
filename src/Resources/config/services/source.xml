@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- Narrows a visible-products query to the products in a taxon, or in it or below it, for the product sources with a taxon parameter -->
+        <service id="Setono\SyliusCMSPlugin\Source\Product\TaxonFilter" class="Setono\SyliusCMSPlugin\Source\Product\TaxonFilter">
+            <argument>%sylius.model.product_taxon.class%</argument>
+        </service>
+
+        <!--
+        The shipped sources. A source is a service carrying #[AsSource], which autoconfiguration tags
+        setono_sylius_cms.source, and RegisterSourcesPass hands to the registry by code. The builder offers them in the
+        order they're defined in, so the shipped ones come first, in this order
+        -->
+        <service id="Setono\SyliusCMSPlugin\Source\Product\ProductsInTaxonSource" class="Setono\SyliusCMSPlugin\Source\Product\ProductsInTaxonSource">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Source\Product\TaxonFilter"/>
+            <argument>%sylius.model.channel_pricing.class%</argument>
+
+            <tag name="setono_sylius_cms.source"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Source\Product\NewestProductsSource" class="Setono\SyliusCMSPlugin\Source\Product\NewestProductsSource">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface"/>
+
+            <tag name="setono_sylius_cms.source"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Source\Taxon\TaxonChildrenSource" class="Setono\SyliusCMSPlugin\Source\Taxon\TaxonChildrenSource">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleTaxonsQueryInterface"/>
+
+            <tag name="setono_sylius_cms.source"/>
+        </service>
+    </services>
+</container>
