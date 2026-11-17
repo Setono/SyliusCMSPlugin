@@ -22,6 +22,7 @@ use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Homepage\CMSHomepageChannels;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -283,6 +284,7 @@ final class AdminExtensionTest extends IntegrationTestCase
             $declaredContext->reveal(),
             $conditionKinds,
             new PageScopeSummaries($conditionKinds, Conditions::fieldHandlers(), new ServiceLocator([]), new IdentityTranslator()),
+            new CMSHomepageChannels($homepages->reveal(), $channels->reveal()),
         );
 
         $overview = new EntryOverviewRuntime($entryUrls, $channelHomepages, $problemFinder, $revisions->reveal(), $entryShareLinks, $whereItShows, $entryPlacements);

@@ -10,8 +10,9 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 /**
  * The test application plus slots of a project's own, as a project declares them: app.store_locator.top, which the
  * project's template cms/slot/store_locator.html.twig renders with cms_slot() below every page's content, and
- * app.announcements, tied to the shop layout's header template event. It also caps the stock slot shop.top, and adds
- * the Promo layout for pages, whose template renders its own slot, app.promo.after_blocks, with the entry being shown
+ * app.announcements, tied to the shop layout's header template event. It also caps the stock slots shop.top and
+ * store_homepage at 1, and adds the Promo layout for pages, whose template renders its own slot,
+ * app.promo.after_blocks, with the entry being shown
  */
 final class SlotsKernel extends FixtureKernel
 {
@@ -28,6 +29,7 @@ final class SlotsKernel extends FixtureKernel
             'app.store_locator.top' => ['label' => 'app.cms.slot.store_locator_top'],
             'app.announcements' => ['label' => 'app.cms.slot.announcements', 'template_event' => ['name' => 'sylius.shop.layout.header', 'priority' => 40]],
             'shop.top' => ['cap' => 1],
+            'store_homepage' => ['cap' => 1],
             'app.promo.after_blocks' => ['label' => 'app.cms.slot.promo_after_blocks', 'provides' => ['entry']],
         ]]);
 
