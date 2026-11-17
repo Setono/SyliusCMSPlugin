@@ -90,6 +90,7 @@ setono_sylius_cms:
     # The link targets' labels. See "Link targets" in docs/spec/extending.md
     link_target:
         entry: Entry
+        media: Document or video
         product: Product
         taxon: Taxon
         url: URL

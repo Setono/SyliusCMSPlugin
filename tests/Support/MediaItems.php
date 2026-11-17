@@ -109,6 +109,24 @@ trait MediaItems
     }
 
     /**
+     * The smallest PDF a MIME type check takes for one, a document
+     */
+    protected static function pdf(string $comment = 'price list'): string
+    {
+        return sprintf("%%PDF-1.4\n%% %s\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%%%EOF\n", $comment);
+    }
+
+    /**
+     * An MP4 holding only its file type box, which a MIME type check takes for a video without dimensions
+     */
+    protected static function mp4(): string
+    {
+        $type = 'isom' . pack('N', 512) . 'isomiso2mp41';
+
+        return pack('N', 8 + strlen($type)) . 'ftyp' . $type;
+    }
+
+    /**
      * A file as a browser uploads it, with this name
      */
     protected function uploadedFile(string $filename, string $content, int $error = \UPLOAD_ERR_OK): UploadedFile

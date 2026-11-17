@@ -64,6 +64,12 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface" alias="Setono\SyliusCMSPlugin\Media\MediaUrlGenerator"/>
 
+        <!-- The permanent URLs of documents and videos, which the setono_sylius_cms_media route redirects to their current file -->
+        <service id="Setono\SyliusCMSPlugin\Media\PermanentUrlGenerator" class="Setono\SyliusCMSPlugin\Media\PermanentUrlGenerator">
+            <argument type="service" id="router"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Media\PermanentUrlGeneratorInterface" alias="Setono\SyliusCMSPlugin\Media\PermanentUrlGenerator"/>
+
         <!--
         Replacing a file: the old file is deleted by a delayed message on Sylius's event bus, routed to Sylius's main
         transport (SetonoSyliusCMSExtension::prependMessenger()), once media.grace_period is over

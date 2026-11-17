@@ -29,6 +29,14 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <!-- The permanent URLs of documents and videos, outside the locale prefix (routes/media.php) -->
+        <service id="Setono\SyliusCMSPlugin\Controller\Shop\PermanentUrlAction" class="Setono\SyliusCMSPlugin\Controller\Shop\PermanentUrlAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction" class="Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
             <argument type="service" id="twig"/>
