@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Factory\HomepageFactory;
 use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
 use Setono\SyliusCMSPlugin\Media\FileSize;
+use Setono\SyliusCMSPlugin\Media\GracePeriod;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
@@ -217,8 +218,8 @@ final class Configuration implements ConfigurationInterface
     }
 
     /**
-     * The media library's storage, the MIME types each kind of media item allows, and the upload limit. See
-     * "What the library holds" and "Image processing" in docs/spec/media.md
+     * The media library's storage, the MIME types each kind of media item allows, the upload limit, and how long a
+     * replaced file is kept. See "What the library holds", "Replacing a file" and "Image processing" in docs/spec/media.md
      */
     private function addMediaSection(ArrayNodeDefinition $node): void
     {
@@ -248,10 +249,27 @@ final class Configuration implements ConfigurationInterface
                                 ->then(static fn (mixed $size): int => FileSize::parse(is_int($size) || is_string($size) ? $size : ''))
                             ->end()
                         ->end()
+                        ->scalarNode('grace_period')
+                            ->info('An ISO 8601 duration before a replaced file and its variants are deleted, so pages cached before the replace don\'t show broken images')
+                            ->defaultValue(GracePeriod::DEFAULT)
+                            ->cannotBeEmpty()
+                            ->validate()->always(self::assertDuration(...))->end()
+                        ->end()
                     ->end()
                 ->end()
             ->end()
         ;
+    }
+
+    /**
+     * @throws \InvalidArgumentException when it isn't an ISO 8601 duration
+     */
+    private static function assertDuration(mixed $duration): string
+    {
+        $duration = is_scalar($duration) ? (string) $duration : get_debug_type($duration);
+        new GracePeriod($duration);
+
+        return $duration;
     }
 
     /**
