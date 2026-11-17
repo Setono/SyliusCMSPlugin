@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import { useTranslator, type Translate } from '../i18n';
+import type { MediaLimits } from './config';
 import { useMediaLibrary, useMediaLibraryContext } from './context';
 import { Field } from './Field';
 import { FolderTree } from './FolderTree';
@@ -7,14 +8,14 @@ import styles from './MediaLibrary.module.css';
 import { MediaItemDetails } from './MediaItemDetails';
 import type { RefusedUpload } from './store';
 import { ALL_MEDIA, MEDIA_KINDS, UNSORTED, type MediaItem, type MediaKind } from './types';
-import { formatSize, typeNames } from './upload';
+import { clientRefusalMessage } from './upload';
 
 /** How long after the last keystroke the search is sent, in milliseconds. */
 const SEARCH_DELAY = 300;
 
 /**
- * The media library: the folder tree, the search and filters, the grid of media items with their missing-alt flags, which
- * files are dropped on to upload them into the open folder, and the selected media item. Its screen in the admin shows
+ * The media library: the folder tree, the search and filters, the grid of media items with their usage counts and
+ * missing-alt flags, which files are dropped on to upload them into the open folder, and the selected media item. Its screen in the admin shows
  * it, and the builder's media picker opens the same library. See "Media library" in docs/spec/admin.md.
  */
 export function MediaLibrary() {
@@ -51,6 +52,7 @@ function Toolbar() {
     const [search, setSearch] = useState(filters.search);
     const fileInput = useRef<HTMLInputElement>(null);
     const missingAltId = useId();
+    const unusedId = useId();
 
     useEffect(() => {
         if (search === store.getState().filters.search) {
@@ -108,6 +110,15 @@ function Toolbar() {
                     onChange={(event) => void store.getState().setFilters({ missingAlt: event.target.checked })}
                 />
                 <label htmlFor={missingAltId}>{t('setono_sylius_cms.builder.media.missing_alt')}</label>
+            </div>
+            <div className={styles.checkboxField}>
+                <input
+                    id={unusedId}
+                    type="checkbox"
+                    checked={filters.unused === true}
+                    onChange={(event) => void store.getState().setFilters({ unused: event.target.checked })}
+                />
+                <label htmlFor={unusedId}>{t('setono_sylius_cms.builder.media.not_used')}</label>
             </div>
             <button type="button" className={styles.primary} disabled={uploading} onClick={() => fileInput.current?.click()}>
                 {uploading ? t('setono_sylius_cms.builder.media.uploading') : t('setono_sylius_cms.builder.media.upload')}
@@ -169,16 +180,8 @@ function UploadMessages() {
     );
 }
 
-function refusedMessage(t: Translate, refusal: RefusedUpload, limits: Parameters<typeof typeNames>[0]): string {
-    if (refusal.client === undefined) {
-        return refusal.error;
-    }
-
-    const limit = formatSize(limits.maxUploadSize);
-
-    return refusal.client.reason === 'too_big'
-        ? t('setono_sylius_cms.builder.media.too_big', { '%filename%': refusal.filename, '%size%': formatSize(refusal.client.size), '%limit%': limit })
-        : t('setono_sylius_cms.builder.media.not_allowed', { '%filename%': refusal.filename, '%types%': typeNames(limits).join(', '), '%limit%': limit });
+function refusedMessage(t: Translate, refusal: RefusedUpload, limits: MediaLimits): string {
+    return refusal.client === undefined ? refusal.error : clientRefusalMessage(t, refusal.filename, refusal.client, limits);
 }
 
 function Grid() {
@@ -210,7 +213,7 @@ function Grid() {
 
     // A kind the picker stays at isn't a filter the editor set
     const kindFiltered = filters.kind !== null && (filters.kinds ?? MEDIA_KINDS).length > 1;
-    const filtered = filters.search.trim() !== '' || kindFiltered || filters.missingAlt;
+    const filtered = filters.search.trim() !== '' || kindFiltered || filters.missingAlt || filters.unused === true;
     const folderName =
         filters.folder === ALL_MEDIA || filters.folder === UNSORTED
             ? t('setono_sylius_cms.builder.media.unsorted')
@@ -262,6 +265,7 @@ function Grid() {
                         >
                             <Thumbnail item={item} />
                             <span className={styles.itemName}>{item.name}</span>
+                            <span className={styles.usageCount}>{usageCount(t, item.usageCount)}</span>
                             {item.missingAlt && <span className={styles.flag}>{t('setono_sylius_cms.builder.media.missing_alt_flag')}</span>}
                         </button>
                     </li>
@@ -275,6 +279,15 @@ function Grid() {
             <p className={styles.dropHint}>{t('setono_sylius_cms.builder.media.drop_here', { '%folder%': folderName })}</p>
         </div>
     );
+}
+
+/** How many entries use a media item, as the grid shows it. */
+function usageCount(t: Translate, count: number): string {
+    if (count === 0) {
+        return t('setono_sylius_cms.builder.media.not_used');
+    }
+
+    return count === 1 ? t('setono_sylius_cms.builder.media.use_count_one') : t('setono_sylius_cms.builder.media.use_count', { '%count%': String(count) });
 }
 
 function Thumbnail({ item }: { item: MediaItem }) {

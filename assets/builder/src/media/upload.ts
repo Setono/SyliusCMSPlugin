@@ -1,3 +1,4 @@
+import type { Translate } from '../i18n';
 import type { MediaLimits } from './config';
 import type { MediaKind } from './types';
 
@@ -33,6 +34,15 @@ export function checkFile(file: File, limits: MediaLimits): ClientRefusal | null
     }
 
     return null;
+}
+
+/** What the library says about a file it refused before sending it, naming the limit, as the server says it. */
+export function clientRefusalMessage(t: Translate, filename: string, refusal: ClientRefusal, limits: MediaLimits): string {
+    const limit = formatSize(limits.maxUploadSize);
+
+    return refusal.reason === 'too_big'
+        ? t('setono_sylius_cms.builder.media.too_big', { '%filename%': filename, '%size%': formatSize(refusal.size), '%limit%': limit })
+        : t('setono_sylius_cms.builder.media.not_allowed', { '%filename%': filename, '%types%': typeNames(limits).join(', '), '%limit%': limit });
 }
 
 /** What editors call the shipped types, as the server names them. Others are called by their subtype. */

@@ -1,16 +1,20 @@
-import { useId, useState, type FormEvent } from 'react';
+import { useEffect, useId, useState, type FormEvent } from 'react';
 import { useTranslator } from '../i18n';
 import { useMediaLibrary, useMediaLibraryContext } from './context';
+import { DeleteMediaItemDialog } from './DeleteMediaItemDialog';
 import { Field } from './Field';
 import { FocalPointEditor } from './FocalPointEditor';
 import { flattenTree, folderTree } from './folders';
 import styles from './MediaLibrary.module.css';
+import { ReplaceFileDialog } from './ReplaceFileDialog';
 import type { FocalPoint, MediaItem } from './types';
 import { formatSize } from './upload';
+import { UsedIn } from './UsedIn';
 
 /**
  * The selected media item: its focal point, name, credit and alt text per locale, saved together, which takes effect at
- * once wherever it's used, and Move, which puts it in another folder. See "Media library" in docs/spec/admin.md.
+ * once wherever it's used, Move, which puts it in another folder, its Used in list, Replace file, and Delete, which is
+ * disabled while it's used. See "Media library" in docs/spec/admin.md.
  */
 export function MediaItemDetails({ item }: { item: MediaItem }) {
     const t = useTranslator();
@@ -25,7 +29,15 @@ export function MediaItemDetails({ item }: { item: MediaItem }) {
     const [altTexts, setAltTexts] = useState<Record<string, string>>(() => Object.fromEntries(config.locales.map(({ code }) => [code, item.altTexts[code] ?? ''])));
     const [focalPoint, setFocalPoint] = useState<FocalPoint>(item.focalPoint ?? { x: 0.5, y: 0.5 });
     const [moveTo, setMoveTo] = useState(item.folder ?? '');
+    const [dialog, setDialog] = useState<'replace' | 'delete' | null>(null);
     const image = item.kind === 'image';
+    const usedInList = useMediaLibrary((state) => (state.uses?.uuid === item.uuid ? state.uses.list : null));
+    // Delete stays disabled while it's used, or while what uses it is looked up
+    const inUse = item.usageCount > 0 || usedInList === null || usedInList.length > 0;
+
+    useEffect(() => {
+        void store.getState().loadUses(item.uuid);
+    }, [store, item.uuid]);
 
     const save = (event: FormEvent): void => {
         event.preventDefault();
@@ -109,6 +121,8 @@ export function MediaItemDetails({ item }: { item: MediaItem }) {
                 </button>
             </div>
 
+            <UsedIn uuid={item.uuid} />
+
             <dl className={styles.file}>
                 <dt>{t('setono_sylius_cms.builder.media.file')}</dt>
                 <dd>
@@ -123,6 +137,29 @@ export function MediaItemDetails({ item }: { item: MediaItem }) {
                     <dd>{t('setono_sylius_cms.builder.media.dimensions', { '%width%': String(item.width), '%height%': String(item.height) })}</dd>
                 )}
             </dl>
+
+            <div className={styles.actions}>
+                <button type="button" className={styles.secondary} onClick={() => setDialog('replace')}>
+                    {t('setono_sylius_cms.builder.media.replace_file')}
+                </button>
+                <button
+                    type="button"
+                    className={styles.danger}
+                    disabled={inUse}
+                    aria-describedby={inUse ? `${id}-in-use` : undefined}
+                    onClick={() => setDialog('delete')}
+                >
+                    {t('setono_sylius_cms.builder.media.delete')}
+                </button>
+            </div>
+            {inUse && (
+                <p id={`${id}-in-use`} className={styles.help}>
+                    {t('setono_sylius_cms.builder.media.delete_in_use')}
+                </p>
+            )}
+
+            {dialog === 'replace' && <ReplaceFileDialog item={item} onClose={() => setDialog(null)} />}
+            {dialog === 'delete' && <DeleteMediaItemDialog item={item} onClose={() => setDialog(null)} />}
         </aside>
     );
 }

@@ -33,6 +33,8 @@ export interface MediaItem {
     folder: string | null;
     /** The current file's public URL. */
     url: string;
+    /** How many entries use it, as the usage index has it. It can't be deleted while any do. */
+    usageCount: number;
     createdAt: string;
     changedAt: string;
 }
@@ -81,8 +83,26 @@ export interface MediaFilters {
     /** One kind, or null for any of those it may show. */
     kind: MediaKind | null;
     missingAlt: boolean;
+    /** Only the media items nothing uses. */
+    unused?: boolean;
     /** The only kinds it may show, such as those a media field takes in the builder's media picker. Every kind without it. */
     kinds?: readonly MediaKind[];
+}
+
+/** An entry that uses a media item, as its Used in list shows it. See "Usage index" in docs/spec/media.md. */
+export interface MediaUse {
+    /** The entry's UUID. */
+    entry: string;
+    /** Its title as the admin's lists show it, or null when it has none. */
+    title: string | null;
+    /** Its content type, as editors call it. */
+    contentType: string;
+    /** Its overview page in the admin. */
+    url: string;
+    /** Whether its draft uses the media item. */
+    draft: boolean;
+    /** Whether its published content, which shoppers see, uses the media item. */
+    published: boolean;
 }
 
 /** What a save changes. Left out stays as it is. */

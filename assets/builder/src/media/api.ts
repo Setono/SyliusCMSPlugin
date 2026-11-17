@@ -1,6 +1,6 @@
 import { ApiError } from '../api';
 import type { MediaLibraryConfig } from './config';
-import { ALL_MEDIA, type MediaFilters, type MediaFolder, type MediaItem, type MediaItemChanges, type MediaPage, type UploadAnswer } from './types';
+import { ALL_MEDIA, type MediaFilters, type MediaFolder, type MediaItem, type MediaItemChanges, type MediaPage, type MediaUse, type UploadAnswer } from './types';
 
 /** The media library's endpoints. They're internal, and change together with the app. */
 export interface MediaApi {
@@ -12,6 +12,12 @@ export interface MediaApi {
     upload(files: readonly File[], folder: string | null, copy: boolean): Promise<UploadAnswer>;
     /** Saves a media item's metadata, which takes effect at once, and answers with it. */
     save(uuid: string, changes: MediaItemChanges): Promise<MediaItem>;
+    /** The entries that use a media item, its Used in list. */
+    uses(uuid: string): Promise<MediaUse[]>;
+    /** Replaces a media item's file, which takes effect at once wherever it's used, and answers with it. */
+    replace(uuid: string, file: File): Promise<MediaItem>;
+    /** Deletes a media item that nothing uses, with its file. */
+    remove(uuid: string): Promise<void>;
     folders(): Promise<MediaFolder[]>;
     /** Creates a folder inside another, or at the top for null. */
     createFolder(name: string, parent: string | null): Promise<MediaFolder>;
@@ -27,8 +33,12 @@ export function createMediaApi(config: Pick<MediaLibraryConfig, 'csrfToken' | 'e
     const request = async (url: string, init: RequestInit = {}): Promise<unknown> => {
         const response = await fetchFn(url, { credentials: 'same-origin', ...init, headers: { Accept: 'application/json', ...init.headers } });
         const body: unknown = await response.json().catch(() => undefined);
-        if (response.status !== 200 && response.status !== 201) {
+        if (response.status !== 200 && response.status !== 201 && response.status !== 204) {
             throw new ApiError(errorMessage(body) ?? `${url} answered ${response.status}.`, response.status);
+        }
+
+        if (response.status === 204) {
+            return undefined;
         }
 
         if (body === undefined) {
@@ -82,6 +92,22 @@ export function createMediaApi(config: Pick<MediaLibraryConfig, 'csrfToken' | 'e
             return (await request(`${config.endpoints.media}/${uuid}`, write('PATCH', changes))) as MediaItem;
         },
 
+        async uses(uuid) {
+            return ((await request(`${config.endpoints.media}/${uuid}/uses`)) as { uses: MediaUse[] }).uses;
+        },
+
+        async replace(uuid, file) {
+            const body = new FormData();
+            body.append('file', file, file.name);
+
+            // The browser sets the multipart Content-Type with its boundary
+            return (await request(`${config.endpoints.media}/${uuid}/file`, { method: 'POST', headers: { 'X-CSRF-Token': config.csrfToken }, body })) as MediaItem;
+        },
+
+        async remove(uuid) {
+            await request(`${config.endpoints.media}/${uuid}`, { method: 'DELETE', headers: { 'X-CSRF-Token': config.csrfToken } });
+        },
+
         async folders() {
             const body = await request(config.endpoints.folders);
 
@@ -103,7 +129,7 @@ const FIND_CHUNK = 60;
 
 /**
  * The list endpoint's query: the folder, unless it's All media, the search, the kind, or the kinds it may show
- * separated by commas, the missing-alt filter and the page.
+ * separated by commas, the missing-alt and unused filters and the page.
  */
 export function listQuery(filters: MediaFilters, page: number): string {
     const query = new URLSearchParams();
@@ -123,6 +149,10 @@ export function listQuery(filters: MediaFilters, page: number): string {
 
     if (filters.missingAlt) {
         query.set('missingAlt', '1');
+    }
+
+    if (filters.unused === true) {
+        query.set('unused', '1');
     }
 
     query.set('page', String(page));
