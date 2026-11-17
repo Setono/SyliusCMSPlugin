@@ -86,13 +86,13 @@ final class ProductsAndTaxonsTest extends WebTestCase
         $crawler = $client->request('GET', '/en_US/shop-now');
 
         self::assertResponseIsSuccessful();
-        $tiles = $crawler->filter('.cms-tree > .cms-taxons > .cms-taxons__item');
+        $links = $crawler->filter('.cms-tree > .cms-taxons > .cms-taxons__item');
         self::assertSame(
             [['Mugs', '/en_US/taxons/mugs', null], ['T-shirts', '/en_US/taxons/t-shirts', 'http://localhost/media/cache/resolve/sylius_shop_product_thumbnail/ab/cd/t-shirts.jpg']],
-            $tiles->each(static fn (Crawler $tile): array => [
-                $tile->filter('.cms-taxons__name')->text(),
-                $tile->attr('href'),
-                0 === $tile->filter('img')->count() ? null : $tile->filter('img')->attr('src'),
+            $links->each(static fn (Crawler $link): array => [
+                $link->filter('.cms-taxons__name')->text(),
+                $link->attr('href'),
+                0 === $link->filter('img')->count() ? null : $link->filter('img')->attr('src'),
             ]),
         );
     }
