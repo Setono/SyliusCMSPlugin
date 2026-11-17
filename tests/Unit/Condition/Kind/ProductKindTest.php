@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Value\ItemList;
 use Sylius\Component\Core\Model\Product;
+use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\Taxon;
 
 final class ProductKindTest extends TestCase
@@ -61,7 +62,7 @@ final class ProductKindTest extends TestCase
         (new ProductKind())->matches(new NoParams(), self::onProductPage(self::product('T_SHIRT')));
     }
 
-    private static function params(Product ...$products): ProductParams
+    private static function params(ProductInterface ...$products): ProductParams
     {
         $params = new ProductParams();
         $params->products = ItemList::of(array_values($products));

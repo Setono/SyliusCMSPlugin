@@ -102,7 +102,11 @@ final class PageScopeMatcherTest extends TestCase
         $product = new Product();
         $context = Rendering::context();
         $loader = $this->prophesize(ReferenceLoaderInterface::class);
-        $loader->load(Argument::that(static fn (iterable $references): bool => [new Reference('product', 'T_SHIRT', false), new Reference('product', 'MUG', false)] == [...$references]), $context)
+        $loader->load(Argument::that(static function (iterable $references): bool {
+            self::assertEquals([new Reference('product', 'T_SHIRT', false), new Reference('product', 'MUG', false)], [...$references]);
+
+            return true;
+        }), $context)
             ->shouldBeCalledOnce()
             ->willReturn(new ReferenceMap(['product' => ['T_SHIRT' => $product]]));
 

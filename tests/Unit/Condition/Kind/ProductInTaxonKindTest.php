@@ -14,6 +14,7 @@ use Setono\SyliusCMSPlugin\Value\ItemList;
 use Sylius\Component\Core\Model\Product;
 use Sylius\Component\Core\Model\ProductTaxon;
 use Sylius\Component\Core\Model\Taxon;
+use Sylius\Component\Core\Model\TaxonInterface;
 
 final class ProductInTaxonKindTest extends TestCase
 {
@@ -95,7 +96,7 @@ final class ProductInTaxonKindTest extends TestCase
     }
 
     /**
-     * @param list<Taxon> $taxons
+     * @param list<TaxonInterface> $taxons
      */
     private static function params(array $taxons, bool $includeChildren = false): ProductInTaxonParams
     {

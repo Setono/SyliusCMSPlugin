@@ -93,6 +93,16 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Context\DeclaredContextInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\PageScopeSummaries"/>
+        </service>
+
+        <!-- Words placements' page scopes, naming what they refer to through the builder's searches -->
+        <service id="Setono\SyliusCMSPlugin\Admin\PageScopeSummaries" class="Setono\SyliusCMSPlugin\Admin\PageScopeSummaries">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+            <argument type="tagged_locator" tag="setono_sylius_cms.search" index-by="kind"/>
+            <argument type="service" id="translator"/>
         </service>
 
         <!-- Where an entry shows, per channel and locale, which its overview page gets through cms_admin_where_it_shows() -->

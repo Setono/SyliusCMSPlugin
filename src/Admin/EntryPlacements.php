@@ -8,14 +8,16 @@ use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
+use Setono\SyliusCMSPlugin\Registry\ConditionKindMetadata;
+use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 
 /**
  * The placements of a snippet, which the Placements section of its overview page lists through
- * cms_admin_entry_placements(), each with its place among its slot's placements of every snippet, and the slots Add
- * placement offers. See "Placements" in docs/spec/admin.md
+ * cms_admin_entry_placements(), each with its place among its slot's placements of every snippet, its page scope and the
+ * condition kinds its page scope may hold, and the slots Add placement offers. See "Placements" in docs/spec/admin.md
  */
 final readonly class EntryPlacements
 {
@@ -23,6 +25,8 @@ final readonly class EntryPlacements
         private PlacementRepositoryInterface $placements,
         private SlotRegistryInterface $slots,
         private DeclaredContextInterface $declaredContext,
+        private ConditionKindRegistryInterface $conditionKinds,
+        private PageScopeSummaries $pageScopes,
     ) {
     }
 
@@ -48,19 +52,38 @@ final readonly class EntryPlacements
             }
         }
 
-        $listed = array_map(function (PlacementInterface $placement) use ($inSlots): EntryPlacement {
+        $pageScopes = $this->pageScopes->of($placements);
+
+        $listed = array_map(function (PlacementInterface $placement) use ($inSlots, $pageScopes): EntryPlacement {
             $inSlot = $inSlots[$placement->getSlot()] ?? [$placement->getUuid()];
             $index = array_search($placement->getUuid(), $inSlot, true);
+            $slot = $this->slots->has($placement->getSlot()) ? $this->slots->get($placement->getSlot()) : null;
 
             return new EntryPlacement(
                 $placement,
-                $this->slots->has($placement->getSlot()) ? $this->slots->get($placement->getSlot()) : null,
+                $slot,
                 false === $index ? count($inSlot) : $index + 1,
                 count($inSlot),
+                $pageScopes[$placement->getUuid()] ?? [],
+                null === $slot ? [] : $this->scopeKinds($slot),
             );
         }, $placements);
 
         return new EntryPlacementsSection(self::inDeclaredOrder($listed, $this->slots->all()), $this->slots->providing($this->declaredContext->toPlace($entry)));
+    }
+
+    /**
+     * The codes of the condition kinds a page scope in the slot may hold: those that read the host page and whose
+     * needs the slot provides. See "Page scopes" in docs/spec/slots.md
+     *
+     * @return list<string>
+     */
+    private function scopeKinds(SlotMetadata $slot): array
+    {
+        return array_values(array_map(
+            static fn (ConditionKindMetadata $kind): string => $kind->code,
+            array_filter($this->conditionKinds->all(), static fn (ConditionKindMetadata $kind): bool => $kind->readsHostPage() && $slot->providesAll($kind->needs)),
+        ));
     }
 
     /**

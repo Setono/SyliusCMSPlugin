@@ -29,6 +29,7 @@ final class AdminExtension extends AbstractExtension
             new TwigFunction('cms_admin_entry_share_links', [EntryOverviewRuntime::class, 'entryShareLinks']),
             new TwigFunction('cms_admin_where_it_shows', [EntryOverviewRuntime::class, 'whereItShows']),
             new TwigFunction('cms_admin_entry_placements', [EntryOverviewRuntime::class, 'entryPlacements']),
+            new TwigFunction('cms_admin_page_scope_editor', [PageScopeEditorRuntime::class, 'config']),
             new TwigFunction('cms_admin_share_link_targets', [EntryOverviewRuntime::class, 'shareLinkTargets']),
             new TwigFunction('cms_admin_content_type', [AdminRuntime::class, 'contentType']),
             new TwigFunction('cms_admin_content_types', [AdminRuntime::class, 'contentTypes']),

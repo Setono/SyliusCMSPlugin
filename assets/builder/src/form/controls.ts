@@ -33,6 +33,7 @@ export const fieldControls: Readonly<Record<string, FieldControl>> = {
     products: CatalogListControl,
     taxon: CatalogControl,
     taxons: CatalogListControl,
+    entries: CatalogListControl,
     code: CodeControl,
 };
 

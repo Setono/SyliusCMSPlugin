@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Value\ItemList;
 use Sylius\Component\Core\Model\Product;
 use Sylius\Component\Core\Model\Taxon;
+use Sylius\Component\Core\Model\TaxonInterface;
 
 final class TaxonKindTest extends TestCase
 {
@@ -70,7 +71,7 @@ final class TaxonKindTest extends TestCase
         (new TaxonKind())->matches(new NoParams(), self::onTaxonPage(self::taxon('SHOES')));
     }
 
-    private static function params(Taxon ...$taxons): TaxonParams
+    private static function params(TaxonInterface ...$taxons): TaxonParams
     {
         $params = new TaxonParams();
         $params->taxons = ItemList::of(array_values($taxons));

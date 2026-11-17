@@ -49,6 +49,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\RestoreRevisionAction as RestoreRevisionPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\RevokeShareLinkAction as RevokeShareLinkPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\ScheduleEntryAction as ScheduleEntryPageAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\SetPlacementPageScopeAction;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Routing\Requirement\Requirement;
 
@@ -162,7 +163,8 @@ return static function (RoutingConfigurator $routes): void {
         ->requirements(['uuid' => Requirement::UUID, 'id' => Requirement::DIGITS])
     ;
 
-    // The Placements section of a snippet's overview page: Add placement, and Move up, Move down and Remove of a placement
+    // The Placements section of a snippet's overview page: Add placement, and Move up, Move down, Remove and Edit page
+    // scope of a placement
     $routes->add('setono_sylius_cms_admin_entry_placement_add', '/cms/entry/{uuid}/placements')
         ->controller(AddPlacementAction::class)
         ->methods(['POST'])
@@ -177,6 +179,12 @@ return static function (RoutingConfigurator $routes): void {
 
     $routes->add('setono_sylius_cms_admin_entry_placement_remove', '/cms/entry/{uuid}/placements/{placement}/remove')
         ->controller(RemovePlacementAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID, 'placement' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_entry_placement_page_scope', '/cms/entry/{uuid}/placements/{placement}/page-scope')
+        ->controller(SetPlacementPageScopeAction::class)
         ->methods(['POST'])
         ->requirements(['uuid' => Requirement::UUID, 'placement' => Requirement::UUID])
     ;

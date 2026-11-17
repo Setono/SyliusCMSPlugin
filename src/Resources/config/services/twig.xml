@@ -101,6 +101,14 @@
             <tag name="twig.runtime"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Twig\PageScopeEditorRuntime" class="Setono\SyliusCMSPlugin\Twig\PageScopeEditorRuntime">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\RegistryExporter"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\UiStrings"/>
+            <argument type="service" id="router"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Twig\OverviewRuntime" class="Setono\SyliusCMSPlugin\Twig\OverviewRuntime">
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\ComingUp"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryRows"/>

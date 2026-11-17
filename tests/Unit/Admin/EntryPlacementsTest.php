@@ -10,7 +10,13 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Admin\EntryPlacement;
 use Setono\SyliusCMSPlugin\Admin\EntryPlacements;
+use Setono\SyliusCMSPlugin\Admin\PageScopeCondition;
+use Setono\SyliusCMSPlugin\Admin\PageScopeSummaries;
+use Setono\SyliusCMSPlugin\Condition\Kind\ProductKind;
+use Setono\SyliusCMSPlugin\Condition\Kind\TaxonKind;
 use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
+use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\ListFieldHandler;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\Placement;
 use Setono\SyliusCMSPlugin\Model\Snippet;
@@ -18,6 +24,10 @@ use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
+use Setono\SyliusCMSPlugin\Tests\Support\Sources;
+use Symfony\Component\DependencyInjection\ServiceLocator;
+use Symfony\Component\Translation\IdentityTranslator;
 
 final class EntryPlacementsTest extends TestCase
 {
@@ -109,6 +119,35 @@ final class EntryPlacementsTest extends TestCase
     }
 
     /**
+     * A page scope takes the kinds that read the host page and whose needs its slot provides
+     *
+     * @test
+     */
+    public function it_offers_each_placement_the_condition_kinds_its_page_scope_may_hold_and_words_its_scope(): void
+    {
+        $snippet = new Snippet();
+        $scoped = new Placement($snippet, 'product.after_price', 0);
+        $scoped->setPageScope([['kind' => 'product', 'negate' => true, 'params' => ['products' => ['T_SHIRT']]]]);
+        $inFooter = new Placement($snippet, 'shop.footer', 0);
+        $removed = new Placement($snippet, 'shop.removed', 0);
+        $this->placements->findBySnippet($snippet)->willReturn([$scoped, $inFooter, $removed]);
+        $this->placements->findBySlots(Argument::any())->willReturn([$scoped, $inFooter, $removed]);
+
+        $section = $this->entryPlacements()->of($snippet);
+
+        self::assertNotNull($section);
+        self::assertSame([
+            ['shop.footer', [], []],
+            ['product.after_price', ['product'], [['product', 'setono_sylius_cms.condition_kind.product', 'setono_sylius_cms.builder.is_not_one_of', ['T_SHIRT']]]],
+            ['shop.removed', [], []],
+        ], array_map(static fn (EntryPlacement $placement): array => [
+            $placement->placement->getSlot(),
+            $placement->scopeKinds,
+            array_map(static fn (PageScopeCondition $condition): array => [$condition->kind, $condition->label, $condition->matches, $condition->values], $placement->pageScope),
+        ], $section->placements));
+    }
+
+    /**
      * @test
      */
     public function it_has_no_placements_section_for_an_entry_that_is_not_a_snippet(): void
@@ -128,10 +167,23 @@ final class EntryPlacementsTest extends TestCase
 
     private function entryPlacements(): EntryPlacements
     {
-        return new EntryPlacements($this->placements->reveal(), new SlotRegistry([
-            'shop.top' => ['label' => 'setono_sylius_cms.slot.shop.top', 'provides' => [], 'cap' => null],
-            'shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null],
-            'product.after_price' => ['label' => 'setono_sylius_cms.slot.product.after_price', 'provides' => ['product'], 'cap' => null],
-        ]), $this->declaredContext->reveal());
+        $conditionKinds = Conditions::registry(['product' => new ProductKind(), 'taxon' => new TaxonKind()]);
+
+        return new EntryPlacements(
+            $this->placements->reveal(),
+            new SlotRegistry([
+                'shop.top' => ['label' => 'setono_sylius_cms.slot.shop.top', 'provides' => [], 'cap' => null],
+                'shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null],
+                'product.after_price' => ['label' => 'setono_sylius_cms.slot.product.after_price', 'provides' => ['product'], 'cap' => null],
+            ]),
+            $this->declaredContext->reveal(),
+            $conditionKinds,
+            new PageScopeSummaries(
+                $conditionKinds,
+                new FieldHandlerLocator(new ServiceLocator([ListFieldHandler::class => static fn (): ListFieldHandler => Sources::listFieldHandler()])),
+                new ServiceLocator([]),
+                new IdentityTranslator(),
+            ),
+        );
     }
 }

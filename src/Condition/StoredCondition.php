@@ -41,7 +41,9 @@ final class StoredCondition
             return null;
         }
 
-        /** @var array<string, mixed> $params */
-        return ['kind' => $kind, 'negate' => $negate, 'params' => $params];
+        /** @var array<string, mixed> $map */
+        $map = $params;
+
+        return ['kind' => $kind, 'negate' => $negate, 'params' => $map];
     }
 }
