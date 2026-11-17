@@ -6,7 +6,11 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection;
 
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
+use Setono\SyliusCMSPlugin\Attribute\AsBindableProperty;
 use Setono\SyliusCMSPlugin\Attribute\AsContextResolver;
+use Setono\SyliusCMSPlugin\Binding\BindingType;
+use Setono\SyliusCMSPlugin\Binding\PropertyPathProperty;
+use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductBrand;
 use Setono\SyliusCMSPlugin\Attribute\AsSource;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
@@ -321,6 +325,39 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
             'taxon' => ['class' => TaxonInterface::class, 'label' => 'setono_sylius_cms.context_key.taxon'],
             'entry' => ['class' => EntryInterface::class, 'label' => 'setono_sylius_cms.context_key.entry'],
         ], $this->container->getExtensionConfig('setono_sylius_cms')[0]['context_keys'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function it_autoconfigures_bindable_properties_by_their_attribute(): void
+    {
+        $this->load();
+
+        $configurators = $this->container->getAutoconfiguredAttributes();
+        self::assertArrayHasKey(AsBindableProperty::class, $configurators);
+
+        $definition = new ChildDefinition('');
+        $configurators[AsBindableProperty::class]($definition, new AsBindableProperty('product', 'brand', 'app.binding.brand', BindingType::Text), new \ReflectionClass(ProductBrand::class));
+
+        self::assertSame(['setono_sylius_cms.bindable_property' => [[]]], $definition->getTags());
+    }
+
+    /**
+     * @test
+     */
+    public function it_registers_a_bindable_property_per_property_path_the_config_declares_with_its_declaration_in_its_tag(): void
+    {
+        $this->load(['bindable_properties' => ['product' => ['brand' => ['label' => 'app.cms.binding.brand', 'type' => 'text', 'path' => 'brand.name']]]]);
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('setono_sylius_cms.bindable_property.product.brand', 0, 'brand.name');
+        $this->assertContainerBuilderHasServiceDefinitionWithTag('setono_sylius_cms.bindable_property.product.brand', 'setono_sylius_cms.bindable_property', [
+            'context_key' => 'product',
+            'code' => 'brand',
+            'label' => 'app.cms.binding.brand',
+            'type' => 'text',
+        ]);
+        self::assertSame(PropertyPathProperty::class, $this->container->getDefinition('setono_sylius_cms.bindable_property.product.brand')->getClass());
     }
 
     /**

@@ -46,7 +46,17 @@ final class Links
      */
     public static function richTextHandler(): RichTextHandler
     {
-        return new RichTextHandler(new RichTextSchema(), new LinkResolver(self::registry()));
+        return self::richTextHandlerWith([]);
+    }
+
+    /**
+     * The rich text field type, whose binding tokens can show these bindable properties
+     *
+     * @param list<BindablePropertyInterface> $properties
+     */
+    public static function richTextHandlerWith(array $properties): RichTextHandler
+    {
+        return new RichTextHandler(new RichTextSchema(), new LinkResolver(self::registry()), Bindings::resolver($properties), Bindings::validator($properties));
     }
 
     /**

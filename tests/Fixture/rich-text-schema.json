@@ -1,9 +1,10 @@
 {
-    "nodes": ["doc", "paragraph", "text", "heading", "bulletList", "orderedList", "listItem", "blockquote", "hardBreak", "horizontalRule"],
+    "nodes": ["doc", "paragraph", "text", "heading", "bulletList", "orderedList", "listItem", "blockquote", "hardBreak", "horizontalRule", "cmsBinding"],
     "marks": ["bold", "italic", "underline", "strike", "code", "cmsLink"],
     "attributes": {
         "heading": ["level"],
-        "orderedList": ["start"]
+        "orderedList": ["start"],
+        "cmsBinding": ["property", "params", "fallback"]
     },
     "markAttributes": {
         "cmsLink": ["target", "ref", "anchor"]
