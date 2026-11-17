@@ -53,6 +53,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
             <argument type="service" id="setono_sylius_cms.factory.media_item"/>
             <argument type="service" id="setono_sylius_cms.storage"/>
+            <argument type="service" id="clock"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Media\MediaUploaderInterface" alias="Setono\SyliusCMSPlugin\Media\MediaUploader"/>
 

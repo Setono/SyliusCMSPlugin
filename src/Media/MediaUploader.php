@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Media;
 
 use League\Flysystem\FilesystemOperator;
+use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Model\MediaFolderInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
@@ -24,6 +25,7 @@ final readonly class MediaUploader implements MediaUploaderInterface
         private MediaItemRepositoryInterface $mediaItemRepository,
         private FactoryInterface $mediaItemFactory,
         private FilesystemOperator $storage,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -48,6 +50,7 @@ final readonly class MediaUploader implements MediaUploaderInterface
             $mediaItem->setDimensions($checked->width, $checked->height);
             $mediaItem->setChecksum($checked->checksum);
             $mediaItem->setPath(StoragePath::for($mediaItem->getUuid(), $originalFilename, $checked->extension));
+            $mediaItem->setChangedAt($this->clock->now());
 
             $checked->store($this->storage, $mediaItem->getPath());
 
