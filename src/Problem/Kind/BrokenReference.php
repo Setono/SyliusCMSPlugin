@@ -29,8 +29,9 @@ use Symfony\Component\Translation\TranslatableMessage;
  * product a link leads to: a broken reference, an error. Rendering skips it, so the field is empty, the list leaves it
  * out, the link isn't rendered or a link in rich text shows as plain text (ADR 0002). It's fixed in the builder, at the
  * block and in the locale of the value it's in. Each reference type with a loader is checked with one query per entry. A
- * media item, entry, product or taxon written, such as one deleted, has the entries that may refer to it counted again.
- * See "References" in docs/spec/content-model.md and "Problems" in docs/spec/admin.md
+ * media item, entry, product or taxon deleted, or one whose UUID or code changes, has the entries that may refer to it
+ * counted again; other writes of them run no query. See "References" in docs/spec/content-model.md and "Problems" in
+ * docs/spec/admin.md
  */
 final readonly class BrokenReference implements ReferenceProblemKindInterface
 {
@@ -54,9 +55,24 @@ final readonly class BrokenReference implements ReferenceProblemKindInterface
         return [MediaItemInterface::class, EntryInterface::class, ProductInterface::class, TaxonInterface::class];
     }
 
-    public function findEntriesReferencing(array $referenced): iterable
+    /**
+     * Fields refer to them by their UUIDs and codes (ADR 0002), so only deleting one or changing those breaks or mends a
+     * reference: its existence is all this kind reads, and not whether it's enabled or published
+     */
+    public static function getReferenceFields(): array
     {
-        $ids = [];
+        return [
+            MediaItemInterface::class => 'uuid',
+            EntryInterface::class => 'uuid',
+            ProductInterface::class => 'code',
+            TaxonInterface::class => 'code',
+        ];
+    }
+
+    public function findEntriesReferencing(array $referenced, array $formerValues = []): iterable
+    {
+        // The entries that referred to a former code may still, and now hold a broken reference
+        $ids = $formerValues;
         foreach ($referenced as $record) {
             $id = match (true) {
                 $record instanceof MediaItemInterface, $record instanceof EntryInterface => $record->getUuid(),
@@ -69,7 +85,7 @@ final readonly class BrokenReference implements ReferenceProblemKindInterface
             }
         }
 
-        return [] === $ids ? [] : $this->entries->findReferencing($ids);
+        return [] === $ids ? [] : $this->entries->findReferencing(array_values(array_unique($ids)));
     }
 
     public function findIn(EntryInterface $entry): iterable

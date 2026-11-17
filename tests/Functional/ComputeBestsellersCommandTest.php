@@ -18,8 +18,9 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * setono:cms:bestsellers:compute runs the bestsellers calculator for every channel, or one, replaces each channel's
- * scores, and then dispatches BestsellersComputed. The default calculator counts each product's paid orders over the
- * last 30 days. See "Bestsellers" in docs/spec/sources.md and "Console commands" in docs/spec/extending.md
+ * scores, and then dispatches BestsellersComputed. The default calculator counts each product's orders completed in
+ * the last 30 days, whatever their payment state. See "Bestsellers" in docs/spec/sources.md and "Console commands" in
+ * docs/spec/extending.md
  */
 final class ComputeBestsellersCommandTest extends KernelTestCase
 {
@@ -46,7 +47,7 @@ final class ComputeBestsellersCommandTest extends KernelTestCase
     /**
      * @test
      */
-    public function it_scores_each_product_by_how_many_paid_orders_inside_the_last_30_days_contained_it_in_each_channel(): void
+    public function it_scores_each_product_by_how_many_orders_completed_inside_the_last_30_days_contained_it_in_each_channel(): void
     {
         $shirt = self::createProduct('SHIRT', 'Shirt', channels: ['WEB', 'OUTLET']);
         $mug = self::createProduct('MUG', 'Mug', channels: ['WEB', 'OUTLET']);
@@ -55,19 +56,20 @@ final class ComputeBestsellersCommandTest extends KernelTestCase
         self::createOrder([$shirt], checkoutCompletedAt: new \DateTime('-29 days'));
         // An order counts once, however many of its items are the product
         self::createOrder([$shirt, $shirt]);
-        // Orders that don't count: not paid, or completed before the window
+        // An order counts whatever its payment state
         self::createOrder([$cap], OrderPaymentStates::STATE_AWAITING_PAYMENT);
         self::createOrder([$cap], OrderPaymentStates::STATE_REFUNDED);
-        self::createOrder([$cap], checkoutCompletedAt: new \DateTime('-31 days'));
+        // One completed before the window doesn't
+        self::createOrder([$mug], checkoutCompletedAt: new \DateTime('-31 days'));
         self::createOrder([$mug], channelCode: 'OUTLET');
 
         $tester = self::compute();
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
-        self::assertSame(['SHIRT' => 3.0, 'MUG' => 1.0], self::scoresOf('WEB'));
+        self::assertSame(['SHIRT' => 3.0, 'CAP' => 2.0, 'MUG' => 1.0], self::scoresOf('WEB'));
         self::assertSame(['MUG' => 1.0], self::scoresOf('OUTLET'));
         $display = (string) preg_replace('/\s+/', ' ', $tester->getDisplay());
-        self::assertStringContainsString('WEB: scored 2 products', $display);
+        self::assertStringContainsString('WEB: scored 3 products', $display);
         self::assertStringContainsString('OUTLET: scored 1 product', $display);
     }
 
@@ -91,7 +93,7 @@ final class ComputeBestsellersCommandTest extends KernelTestCase
     /**
      * @test
      */
-    public function it_leaves_a_channel_without_paid_orders_without_scores(): void
+    public function it_leaves_a_channel_without_completed_orders_without_scores(): void
     {
         self::scoreProducts(['SHIRT' => 10]);
 

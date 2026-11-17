@@ -287,7 +287,7 @@ final class Configuration implements ConfigurationInterface
     }
 
     /**
-     * The window the default bestsellers calculator counts paid orders over. See "Bestsellers" in docs/spec/sources.md
+     * The window the default bestsellers calculator counts completed orders over. See "Bestsellers" in docs/spec/sources.md
      */
     private function addBestsellersSection(ArrayNodeDefinition $node): void
     {
@@ -297,7 +297,7 @@ final class Configuration implements ConfigurationInterface
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->scalarNode('window')
-                            ->info('An ISO 8601 duration: the default bestsellers calculator counts the paid orders whose checkout completed this long ago or later')
+                            ->info('An ISO 8601 duration: the default bestsellers calculator counts the orders whose checkout completed this long ago or later')
                             ->defaultValue('P30D')
                             ->cannotBeEmpty()
                             ->validate()->always(self::assertDuration(...))->end()

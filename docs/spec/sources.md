@@ -27,6 +27,7 @@ A source is a class with `#[AsSource]` that implements `SourceInterface` ([Exten
 - **A source built on Doctrine returns a `QueryAdapter`**, so paging, counting and visibility filtering happen in SQL. A source over a list uses Pagerfanta's array adapters.
 - **It builds on the [visible queries](#visible-queries).** They're provided, not enforced, but shipped sources use them and agency sources should.
 - **It declares the context keys it needs** (`needs:`). The builder offers it only where they're available, and it yields nothing when one is missing at render time. A source that fits only some content types as `entry` context also implements `EntryContextAwareInterface` ([Extending](extending.md#sources)).
+- **A reference parameter that was set but no longer resolves narrows to nothing.** When a parameter such as a taxon was filled in, but what it refers to was deleted or the shopper may no longer see it (a disabled taxon), the plugin doesn't call the source: the list yields nothing, rather than what the source yields with the parameter left empty. Bestsellers in a deleted taxon shows nothing, not every taxon's bestsellers. The admin flags a deleted one as a [broken reference](content-model.md#references). A parameter left empty is the source's to read.
 
 Hand-picked lists follow the same rules: their picks are filtered through the same visible queries and keep the editor's order, so their counts are right too.
 
@@ -57,7 +58,7 @@ Every shipped source can be disabled with `setono_sylius_cms.disabled.sources`. 
 | Code | Label | Needs | Parameters | Order |
 | --- | --- | --- | --- | --- |
 | `products_in_taxon` | In taxon | | `taxon` (Taxon, required), `includeChildren` (Toggle, off), `sort` (Choice: `position` (default), `newest`, `price`, `name`) | `position`: the product's position in the taxon. `newest`: newest first. `price`: the lowest price of its enabled variants in the channel, lowest first. `name`: the translated name, A to Z. Then the ID. |
-| `bestsellers` | Bestsellers | | `taxon` (Taxon, optional), `includeChildren` (Toggle, off) | the score, highest first, then the ID. See [Bestsellers](#bestsellers). |
+| `bestsellers` | Bestsellers | | `taxon` (Taxon, optional: every taxon when empty, nothing when it no longer resolves), `includeChildren` (Toggle, off) | the score, highest first, then the ID. See [Bestsellers](#bestsellers). |
 | `newest_products` | Newest | | none | newest first, then the ID |
 | `product_associations` | Associations | `product` | `associationType` (Choice of the store's association type codes, optional: empty means every type) | the associated product's ID |
 | `same_taxon_products` | Same taxon | `product` | none | the product's position in the host page's product's main taxon, then the ID. It leaves that product out, and yields nothing when the product has no main taxon. |
@@ -88,7 +89,7 @@ Every shipped source can be disabled with `setono_sylius_cms.disabled.sources`. 
 The Bestsellers source is swapped at its calculation, not at its lookup ([ADR 0022](../adr/0022-sources-return-a-pagerfanta-adapter.md)).
 
 - **A calculator** implements `BestsellersCalculatorInterface` and yields a score for each product code in a channel ([Extending](extending.md#bestsellers)).
-- **The default calculator** scores each product by how many paid orders contained it, in the channel, over a rolling window: `setono_sylius_cms.bestsellers.window`, 30 days (`P30D`) by default. An order counts when its checkout completed inside the window and its payment state is paid.
+- **The default calculator**, `CompletedOrdersCalculator`, scores each product by how many orders contained it, in the channel, over a rolling window: `setono_sylius_cms.bestsellers.window`, 30 days (`P30D`) by default. An order counts when its checkout completed inside the window, whatever its payment state. Its query is public, `createQueryBuilder(channel)`, so a project's calculator can narrow it, such as to paid orders.
 - **`setono:cms:bestsellers:compute [--channel=CODE]`** runs the calculator for every channel, or one, and replaces that channel's scores in the plugin's table. The project runs it from cron. When it finishes, it dispatches `BestsellersComputed` with the channel codes ([Extending](extending.md#events)).
 - **The source** joins the visible-products query against the scores for the current channel, with its taxon filter and its order in SQL, so a list of 8 never comes up short while there are 8 scored products. Products with no score are left out.
 - **Until the command first runs**, the table is empty, and so is every Bestsellers list.

@@ -11,7 +11,7 @@ use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
- * The entry's URL, /{locale}/{prefix}/{slug}, on the host of the request, which is the channel's
+ * The entry's URL, /{locale}/{prefix}/{slug}, on the host of the request, which is the channel's, or only its path
  */
 final readonly class CanonicalUrlGenerator implements CanonicalUrlGeneratorInterface
 {
@@ -21,13 +21,13 @@ final readonly class CanonicalUrlGenerator implements CanonicalUrlGeneratorInter
     ) {
     }
 
-    public function generate(EntryInterface $entry, ChannelInterface $channel, string $localeCode): ?string
+    public function generate(EntryInterface $entry, ChannelInterface $channel, string $localeCode, int $referenceType = UrlGeneratorInterface::ABSOLUTE_URL): ?string
     {
         $path = EntryPath::of($this->contentTypes->getByEntry($entry), $entry, $localeCode);
         if (null === $path) {
             return null;
         }
 
-        return $this->urlGenerator->generate('setono_sylius_cms_shop_entry', ['_locale' => $localeCode, 'path' => $path], UrlGeneratorInterface::ABSOLUTE_URL);
+        return $this->urlGenerator->generate('setono_sylius_cms_shop_entry', ['_locale' => $localeCode, 'path' => $path], $referenceType);
     }
 }

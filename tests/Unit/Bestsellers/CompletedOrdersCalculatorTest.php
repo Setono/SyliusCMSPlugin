@@ -9,43 +9,33 @@ use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
-use Setono\SyliusCMSPlugin\Bestsellers\PaidOrdersCalculator;
+use Setono\SyliusCMSPlugin\Bestsellers\CompletedOrdersCalculator;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\Order;
 use Symfony\Component\Clock\MockClock;
 
 /**
- * The default bestsellers calculator: a product's score in a channel is how many of the channel's paid orders whose
- * checkout completed inside bestsellers.window contained it. It counts in SQL, so its query is what's checked here, and
- * the functional suite counts real orders. See "Bestsellers" in docs/spec/sources.md
+ * The default bestsellers calculator: a product's score in a channel is how many of the channel's orders whose
+ * checkout completed inside bestsellers.window contained it, whatever their payment state. It counts in SQL, so its
+ * query is what's checked here, and the functional suite counts real orders. See "Bestsellers" in docs/spec/sources.md
  */
-final class PaidOrdersCalculatorTest extends TestCase
+final class CompletedOrdersCalculatorTest extends TestCase
 {
     use ProphecyTrait;
 
     /**
      * @test
      */
-    public function it_counts_the_orders_of_the_channel_that_contained_each_product_each_order_once(): void
+    public function it_counts_the_orders_of_the_channel_that_contained_each_product_each_order_once_whatever_their_payment_state(): void
     {
         $channel = self::channel();
         $queryBuilder = $this->calculator()->createQueryBuilder($channel);
 
         self::assertSame(sprintf(
-            'SELECT product.code AS productCode, COUNT(DISTINCT o.id) AS orders FROM %s o INNER JOIN o.items item INNER JOIN item.variant variant INNER JOIN variant.product product WHERE o.channel = :channel AND o.paymentState = :paymentState AND o.checkoutCompletedAt >= :since AND o.checkoutCompletedAt <= :until GROUP BY product.code',
+            'SELECT product.code AS productCode, COUNT(DISTINCT o.id) AS orders FROM %s o INNER JOIN o.items item INNER JOIN item.variant variant INNER JOIN variant.product product WHERE o.channel = :channel AND o.checkoutCompletedAt >= :since AND o.checkoutCompletedAt <= :until GROUP BY product.code',
             Order::class,
         ), $queryBuilder->getDQL());
         self::assertSame($channel, $queryBuilder->getParameter('channel')?->getValue());
-    }
-
-    /**
-     * @test
-     */
-    public function it_counts_only_paid_orders(): void
-    {
-        $queryBuilder = $this->calculator()->createQueryBuilder(self::channel());
-
-        self::assertSame('paid', $queryBuilder->getParameter('paymentState')?->getValue());
     }
 
     /**
@@ -80,13 +70,13 @@ final class PaidOrdersCalculatorTest extends TestCase
         $this->calculator('30 days');
     }
 
-    private function calculator(string $window = 'P30D'): PaidOrdersCalculator
+    private function calculator(string $window = 'P30D'): CompletedOrdersCalculator
     {
         $entityManager = $this->prophesize(EntityManagerInterface::class);
         $entityManager->getExpressionBuilder()->willReturn(new Expr());
         $entityManager->createQueryBuilder()->will(static fn (): QueryBuilder => new QueryBuilder($entityManager->reveal()));
 
-        return new PaidOrdersCalculator($entityManager->reveal(), Order::class, new MockClock('2026-11-17 12:00:00'), $window);
+        return new CompletedOrdersCalculator($entityManager->reveal(), Order::class, new MockClock('2026-11-17 12:00:00'), $window);
     }
 
     private static function channel(): Channel

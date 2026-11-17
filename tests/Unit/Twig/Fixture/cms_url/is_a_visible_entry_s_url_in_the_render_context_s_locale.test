@@ -5,4 +5,4 @@ cms_url() is the URL of an entry the shopper may see, in the render context's ch
 --DATA--
 return $this->rendering(['entry' => $this->visiblePage(['en_US' => ['About us', 'about-us'], 'de_DE' => ['Über uns', 'ueber-uns']])], locale: 'de_DE')
 --EXPECT--
-https://shop.example/de_DE/ueber-uns
+/de_DE/ueber-uns

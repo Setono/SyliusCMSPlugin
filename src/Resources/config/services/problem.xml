@@ -50,15 +50,19 @@
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemCountProvider"/>
 
         <!--
-        Has the entries a flush writes counted again once it's done, and those that reference what it writes.
-        RegisterProblemKindsPass hands it the kinds about references and what they reference
+        Has the entries a flush writes counted again once it's done, and those that reference what it writes: of what
+        entries refer to by a field, such as a product's code, only a delete or a change of the field. RegisterProblemKindsPass
+        hands it the kinds about references, what they reference and the fields they refer to it by. preUpdate gives it
+        an update's change set
         -->
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountListener" class="Setono\SyliusCMSPlugin\Problem\ProblemCountListener">
             <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface"/>
             <argument type="collection"/>
             <argument type="collection"/>
+            <argument type="collection"/>
 
             <tag name="doctrine.event_listener" event="onFlush"/>
+            <tag name="doctrine.event_listener" event="preUpdate"/>
             <tag name="doctrine.event_listener" event="postFlush"/>
             <tag name="kernel.reset" method="reset"/>
         </service>

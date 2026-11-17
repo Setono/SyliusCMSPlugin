@@ -16,6 +16,7 @@ use Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\GreetingKernel;
+use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Customers;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -33,6 +34,7 @@ use Symfony\Component\DomCrawler\Crawler;
  */
 final class ProblemCountsTest extends WebTestCase
 {
+    use Catalog;
     use ClockSensitiveTrait;
     use Customers;
     use Entries;
@@ -150,6 +152,38 @@ final class ProblemCountsTest extends WebTestCase
 
         self::assertEquals(new ProblemCount(), self::storedCount($inAudience));
         self::assertEquals(new ProblemCount(1, 0), self::storedCount($inDraft));
+    }
+
+    /**
+     * Entries refer to a product by its code, so a product deleted or given another code counts the entries that may
+     * refer to it again, by its new code and its former one, and any other write of a product counts nothing
+     *
+     * @test
+     */
+    public function it_counts_the_entries_that_refer_to_a_product_again_only_when_it_is_deleted_or_its_code_changes(): void
+    {
+        self::bootKernel();
+        $mug = self::createProduct('MUG', 'Mug');
+        $cap = self::createProduct('CAP', 'Cap');
+        $mugsAndHats = self::createPageWithBlocks('Mugs and hats', 'mugs-and-hats', [new StoredBlock(self::PROMO, 'products', 1, fields: ['products' => ['MUG', 'HAT']])], published: true);
+        $caps = self::createPageWithBlocks('Caps', 'caps', [new StoredBlock(self::PROMO, 'products', 1, fields: ['products' => ['CAP']])], published: true);
+        self::assertEquals(new ProblemCount(1, 0), self::storedCount($mugsAndHats), 'There\'s no product "HAT"');
+        self::assertEquals(new ProblemCount(), self::storedCount($caps));
+
+        self::query()->store([(int) $mugsAndHats->getId() => new ProblemCount(5, 4)], self::fingerprint());
+        $mug->setEnabled(false);
+        $mug->setName('Big mug');
+        self::manager()->flush();
+        self::assertEquals(new ProblemCount(5, 4), self::storedCount($mugsAndHats), 'Writing a product otherwise counts nothing again');
+
+        $cap->setCode('HAT');
+        self::manager()->flush();
+        self::assertEquals(new ProblemCount(), self::storedCount($mugsAndHats), 'The product "HAT" exists now');
+        self::assertEquals(new ProblemCount(1, 0), self::storedCount($caps), 'The product "CAP" no longer exists');
+
+        self::manager()->remove($mug);
+        self::manager()->flush();
+        self::assertEquals(new ProblemCount(1, 0), self::storedCount($mugsAndHats), 'The product "MUG" was deleted');
     }
 
     /**

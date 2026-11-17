@@ -49,7 +49,15 @@ final class DeletedCustomerGroup implements ReferenceProblemKindInterface, Reset
         return [CustomerGroupInterface::class];
     }
 
-    public function findEntriesReferencing(array $referenced): iterable
+    /**
+     * None: a group added again with a code entries name mends their conditions and audiences, so every write counts
+     */
+    public static function getReferenceFields(): array
+    {
+        return [];
+    }
+
+    public function findEntriesReferencing(array $referenced, array $formerValues = []): iterable
     {
         // The store's groups changed
         $this->reset();

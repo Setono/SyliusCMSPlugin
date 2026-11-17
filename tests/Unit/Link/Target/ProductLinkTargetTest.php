@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Link\Target;
 
 use PHPUnit\Framework\TestCase;
-use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Builder\Search\SearchInterface;
@@ -19,7 +18,10 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Sylius\Component\Core\Model\Product;
 use Sylius\Component\Core\Model\ProductTranslation;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\Generator\UrlGenerator;
+use Symfony\Component\Routing\RequestContext;
+use Symfony\Component\Routing\Route;
+use Symfony\Component\Routing\RouteCollection;
 
 final class ProductLinkTargetTest extends TestCase
 {
@@ -28,25 +30,12 @@ final class ProductLinkTargetTest extends TestCase
     /** @var ObjectProphecy<ReferenceTypeLoaderInterface> */
     private ObjectProphecy $products;
 
-    /** @var ObjectProphecy<UrlGeneratorInterface> */
-    private ObjectProphecy $urlGenerator;
-
     /** @var ObjectProphecy<SearchInterface> */
     private ObjectProphecy $search;
 
     protected function setUp(): void
     {
         $this->products = $this->prophesize(ReferenceTypeLoaderInterface::class);
-        $this->urlGenerator = $this->prophesize(UrlGeneratorInterface::class);
-        $this->urlGenerator
-            ->generate('sylius_shop_product_show', Argument::type('array'), UrlGeneratorInterface::ABSOLUTE_URL)
-            ->will(static function (array $arguments): string {
-                $parameters = $arguments[1];
-                \assert(is_array($parameters) && is_string($parameters['_locale']) && is_string($parameters['slug']));
-
-                return sprintf('https://localhost/%s/products/%s', $parameters['_locale'], $parameters['slug']);
-            })
-        ;
         $this->search = $this->prophesize(SearchInterface::class);
     }
 
@@ -70,7 +59,7 @@ final class ProductLinkTargetTest extends TestCase
         $this->products->load(['T_SHIRT'], $context)->willReturn(['T_SHIRT' => self::product()]);
 
         self::assertEquals(
-            new ResolvedLink('product', 'T_SHIRT', 'https://localhost/de_DE/products/rotes-t-shirt', 'Rotes T-Shirt'),
+            new ResolvedLink('product', 'T_SHIRT', '/de_DE/products/rotes-t-shirt', 'Rotes T-Shirt'),
             $this->target()->resolve('T_SHIRT', $context),
         );
     }
@@ -115,7 +104,12 @@ final class ProductLinkTargetTest extends TestCase
 
     private function target(): ProductLinkTarget
     {
-        return new ProductLinkTarget($this->products->reveal(), $this->urlGenerator->reveal(), $this->search->reveal());
+        // A real generator on the shop's host, so a link's URL shows whether it's a path or an absolute URL
+        $routes = new RouteCollection();
+        $routes->add('sylius_shop_product_show', new Route('/{_locale}/products/{slug}', requirements: ['slug' => '.+(?<!/)']));
+        $urlGenerator = new UrlGenerator($routes, new RequestContext(host: 'localhost', scheme: 'https'));
+
+        return new ProductLinkTarget($this->products->reveal(), $urlGenerator, $this->search->reveal());
     }
 
     private static function product(): Product

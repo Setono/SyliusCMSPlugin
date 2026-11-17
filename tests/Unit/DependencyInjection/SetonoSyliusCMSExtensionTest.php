@@ -11,7 +11,7 @@ use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
 use Setono\SyliusCMSPlugin\Bestsellers\BestsellersCalculatorInterface;
-use Setono\SyliusCMSPlugin\Bestsellers\PaidOrdersCalculator;
+use Setono\SyliusCMSPlugin\Bestsellers\CompletedOrdersCalculator;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
@@ -453,8 +453,8 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->load(['bestsellers' => ['window' => 'P7D']]);
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.bestsellers.window', 'P7D');
-        $this->assertContainerBuilderHasServiceDefinitionWithArgument(PaidOrdersCalculator::class, 3, '%setono_sylius_cms.bestsellers.window%');
-        $this->assertContainerBuilderHasAlias(BestsellersCalculatorInterface::class, PaidOrdersCalculator::class);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(CompletedOrdersCalculator::class, 3, '%setono_sylius_cms.bestsellers.window%');
+        $this->assertContainerBuilderHasAlias(BestsellersCalculatorInterface::class, CompletedOrdersCalculator::class);
     }
 
     /**

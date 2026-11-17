@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Link\Target;
 
 use PHPUnit\Framework\TestCase;
-use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Builder\Search\SearchInterface;
@@ -19,7 +18,10 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Sylius\Component\Core\Model\Taxon;
 use Sylius\Component\Taxonomy\Model\TaxonTranslation;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\Generator\UrlGenerator;
+use Symfony\Component\Routing\RequestContext;
+use Symfony\Component\Routing\Route;
+use Symfony\Component\Routing\RouteCollection;
 
 final class TaxonLinkTargetTest extends TestCase
 {
@@ -28,25 +30,12 @@ final class TaxonLinkTargetTest extends TestCase
     /** @var ObjectProphecy<ReferenceTypeLoaderInterface> */
     private ObjectProphecy $taxons;
 
-    /** @var ObjectProphecy<UrlGeneratorInterface> */
-    private ObjectProphecy $urlGenerator;
-
     /** @var ObjectProphecy<SearchInterface> */
     private ObjectProphecy $search;
 
     protected function setUp(): void
     {
         $this->taxons = $this->prophesize(ReferenceTypeLoaderInterface::class);
-        $this->urlGenerator = $this->prophesize(UrlGeneratorInterface::class);
-        $this->urlGenerator
-            ->generate('sylius_shop_product_index', Argument::type('array'), UrlGeneratorInterface::ABSOLUTE_URL)
-            ->will(static function (array $arguments): string {
-                $parameters = $arguments[1];
-                \assert(is_array($parameters) && is_string($parameters['_locale']) && is_string($parameters['slug']));
-
-                return sprintf('https://localhost/%s/taxons/%s', $parameters['_locale'], $parameters['slug']);
-            })
-        ;
         $this->search = $this->prophesize(SearchInterface::class);
     }
 
@@ -70,7 +59,7 @@ final class TaxonLinkTargetTest extends TestCase
         $this->taxons->load(['T_SHIRTS'], $context)->willReturn(['T_SHIRTS' => self::taxon()]);
 
         self::assertEquals(
-            new ResolvedLink('taxon', 'T_SHIRTS', 'https://localhost/en_US/taxons/category/t-shirts', 'T-shirts'),
+            new ResolvedLink('taxon', 'T_SHIRTS', '/en_US/taxons/category/t-shirts', 'T-shirts'),
             $this->target()->resolve('T_SHIRTS', $context),
         );
     }
@@ -115,7 +104,12 @@ final class TaxonLinkTargetTest extends TestCase
 
     private function target(): TaxonLinkTarget
     {
-        return new TaxonLinkTarget($this->taxons->reveal(), $this->urlGenerator->reveal(), $this->search->reveal());
+        // A real generator on the shop's host, so a link's URL shows whether it's a path or an absolute URL
+        $routes = new RouteCollection();
+        $routes->add('sylius_shop_product_index', new Route('/{_locale}/taxons/{slug}', requirements: ['slug' => '.+(?<!/)']));
+        $urlGenerator = new UrlGenerator($routes, new RequestContext(host: 'localhost', scheme: 'https'));
+
+        return new TaxonLinkTarget($this->taxons->reveal(), $urlGenerator, $this->search->reveal());
     }
 
     private static function taxon(): Taxon

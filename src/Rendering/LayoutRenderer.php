@@ -38,11 +38,12 @@ final readonly class LayoutRenderer implements LayoutRendererInterface
         // The default layout of an entry whose layout was removed or disabled ignores the values stored for that one
         $values = null !== $stored && $stored->code === $layout->code ? $stored->fields : [];
 
-        // One pass loads the references of the layout and of the blocks together, with one query per type
-        $references = $this->referenceLoader->load(ReferenceFinder::references((function () use ($layout, $values, $tree): \Generator {
-            yield from $this->referenceFinder->inValues($layout->fields, $values);
-            yield from $this->referenceFinder->inBlocks($tree->blocks);
-        })()), $context);
+        // One pass loads the references of the layout and of the blocks, their conditions' included, together, with one
+        // query per type
+        $references = $this->referenceLoader->load((function () use ($layout, $values, $tree): \Generator {
+            yield from ReferenceFinder::references($this->referenceFinder->inValues($layout->fields, $values));
+            yield from $this->blockViewBuilder->references($tree->blocks);
+        })(), $context);
 
         return $this->twig->render($layout->template, [
             'entry' => $entry,

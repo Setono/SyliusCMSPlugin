@@ -20,9 +20,9 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * Resolves what list fields store when a source fills them: the references the source's parameters hold, which load
  * with the rest of the tree's before rendering, the source's adapter with its parameters hydrated, and what publish
- * checks. A source the code no longer has, one that lists something else than the field, or one that needs a context
- * key the page doesn't have, yields nothing. A disabled source keeps resolving. See "The contract" in
- * docs/spec/sources.md
+ * checks. A source the code no longer has, one that lists something else than the field, one that needs a context
+ * key the page doesn't have, or one with a parameter set to a reference that no longer resolves, yields nothing. A
+ * disabled source keeps resolving. See "The contract" in docs/spec/sources.md
  *
  * @internal
  */
@@ -46,23 +46,7 @@ final readonly class SourceResolver
      */
     public function references(string $code, array $params): array
     {
-        if (!$this->sources->has($code)) {
-            return [];
-        }
-
-        $references = [];
-        foreach ($this->sources->get($code)->fields as $name => $field) {
-            $value = $params[$name] ?? null;
-            if (null === $value) {
-                continue;
-            }
-
-            foreach ($this->fieldHandlers->get($field->field)->references($field->field, $value) as $reference) {
-                $references[] = $reference;
-            }
-        }
-
-        return $references;
+        return $this->sources->has($code) ? $this->paramsHydrator->references($this->sources->get($code)->fields, $params) : [];
     }
 
     /**
@@ -91,7 +75,10 @@ final readonly class SourceResolver
             }
         }
 
-        return $source->source->resolve($this->paramsHydrator->hydrate($source->params, $source->fields, $params, $context), $context->renderContext);
+        // A parameter set to a taxon that was deleted, or that the shopper may no longer see, narrows to nothing
+        $hydrated = $this->paramsHydrator->hydrateResolved($source->params, $source->fields, $params, $context);
+
+        return null === $hydrated ? new ArrayAdapter([]) : $source->source->resolve($hydrated, $context->renderContext);
     }
 
     /**

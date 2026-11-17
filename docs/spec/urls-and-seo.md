@@ -66,7 +66,7 @@ setono_sylius_cms_shop:
 - **The lookup is memoised** within a request, so the condition and the controller share one query.
 - **A URL no entry claims** fails the condition, so the request falls through to Sylius's ordinary 404.
 - **The condition runs before the firewall**, so it only checks that the URL exists in that channel and locale. The controller checks that the entry is [visible](content-model.md#when-an-entry-shows), including its audience, which needs the signed-in customer.
-- **Generating a URL.** Templates use `cms_url(entry)` or a link ([Extending](extending.md#twig)), never the route name directly.
+- **Generating a URL.** Templates use `cms_url(entry)` or a link ([Extending](extending.md#twig)), never the route name directly. Both give a relative path, as Sylius's `path()` does. Only the canonical and hreflang links are absolute ([Head tags](#head-tags)).
 
 Every URL that no other route matches costs one indexed lookup.
 

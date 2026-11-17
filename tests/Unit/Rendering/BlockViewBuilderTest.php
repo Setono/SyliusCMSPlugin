@@ -36,12 +36,14 @@ use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
+use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ProductAvailable;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\TreeValues;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Sylius\Component\Core\Model\ChannelInterface;
+use Sylius\Component\Core\Model\ProductInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
@@ -334,6 +336,38 @@ final class BlockViewBuilderTest extends TestCase
     }
 
     /**
+     * A project's condition kind can take a product, which loads with the fields' references, so the conditions of the
+     * blocks that render match against the records the shopper may see
+     *
+     * @test
+     */
+    public function it_loads_the_references_in_visibility_conditions_parameters_in_the_same_pass(): void
+    {
+        $cover = self::image();
+        $tShirt = $this->prophesize(ProductInterface::class)->reveal();
+        $context = $this->context('en_US');
+
+        $child = new StoredBlock(self::B, 'heading', 1, conditions: [self::productAvailable('MUG')]);
+        $parent = new StoredBlock(self::A, 'gallery', 1, fields: ['cover' => self::COVER], conditions: [self::productAvailable('T_SHIRT')], children: [$child]);
+        $removed = new StoredBlock(self::C, 'removed', 1, conditions: [self::productAvailable('CAP')]);
+
+        $loader = $this->prophesize(ReferenceLoaderInterface::class);
+        $loader->load(Argument::that(static fn (iterable $references): bool => [
+            ['media_item', self::COVER, true],
+            ['product', 'T_SHIRT', false],
+            ['product', 'MUG', false],
+        ] === self::references($references)), $context)
+            ->willReturn(new ReferenceMap(['media_item' => [self::COVER => $cover], 'product' => ['T_SHIRT' => $tShirt]]))
+            ->shouldBeCalledOnce()
+        ;
+
+        $views = $this->builder($loader->reveal())->build([$parent, $removed], $context);
+
+        self::assertSame([self::A], self::keys($views));
+        self::assertSame([], $views[0]->children, 'The mug the shopper may not see hides its block');
+    }
+
+    /**
      * @test
      */
     public function it_hydrates_from_the_reference_map_it_is_given_without_loading_references(): void
@@ -375,6 +409,14 @@ final class BlockViewBuilderTest extends TestCase
         $mediaItem->setKind(MediaKind::Image);
 
         return $mediaItem;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function productAvailable(string $code): array
+    {
+        return ['kind' => 'product_available', 'negate' => false, 'params' => ['product' => $code]];
     }
 
     private static function onlyIn(StoredBlock $block, string $localeCode): StoredBlock
@@ -420,7 +462,7 @@ final class BlockViewBuilderTest extends TestCase
         return new BlockViewBuilder(
             $blockTypes,
             new BlockHydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal())),
-            Conditions::matcher(),
+            Conditions::matcher(['product_available' => new ProductAvailable()]),
             new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())), $handlers),
             $referenceLoader ?? new ReferenceLoader(new ServiceLocator([])),
         );

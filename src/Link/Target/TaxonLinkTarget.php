@@ -16,9 +16,9 @@ use Sylius\Component\Core\Model\TaxonInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
- * A taxon, by its code. It leads to the taxon's product listing in the shop, named by the taxon's name, while it's
- * enabled ("Visible queries" in docs/spec/sources.md) and has a translation in the locale, which its URL needs.
- * See "Link targets" in docs/spec/extending.md
+ * A taxon, by its code. It leads to the path of the taxon's product listing in the shop, named by the taxon's name,
+ * while it's enabled ("Visible queries" in docs/spec/sources.md) and has a translation in the locale, which its URL
+ * needs. See "Link targets" in docs/spec/extending.md
  */
 #[AsLinkTarget(code: 'taxon', label: 'setono_sylius_cms.link_target.taxon')]
 final readonly class TaxonLinkTarget implements ReferencingLinkTargetInterface
@@ -67,7 +67,7 @@ final readonly class TaxonLinkTarget implements ReferencingLinkTargetInterface
         return new ResolvedLink(
             'taxon',
             $ref,
-            $this->urlGenerator->generate('sylius_shop_product_index', ['_locale' => $context->localeCode, 'slug' => $slug], UrlGeneratorInterface::ABSOLUTE_URL),
+            $this->urlGenerator->generate('sylius_shop_product_index', ['_locale' => $context->localeCode, 'slug' => $slug]),
             (string) $translation->getName(),
         );
     }

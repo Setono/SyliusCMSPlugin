@@ -15,10 +15,11 @@ use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * An entry with a URL of its own, by its UUID. It leads to the entry's URL in the channel and locale, the channel's
+ * An entry with a URL of its own, by its UUID. It leads to the entry's path in the channel and locale, the channel's
  * root for a channel's homepage, named by its title, while the shopper may see the entry there ("References to
  * unavailable entries" in docs/spec/localization.md). See "Link targets" in docs/spec/extending.md
  */
@@ -61,7 +62,7 @@ final readonly class EntryLinkTarget implements ReferencingLinkTargetInterface
             return null;
         }
 
-        $url = $this->urlGenerator->generate($record, $context->channel, $context->localeCode);
+        $url = $this->urlGenerator->generate($record, $context->channel, $context->localeCode, UrlGeneratorInterface::ABSOLUTE_PATH);
         if (null === $url) {
             return null;
         }

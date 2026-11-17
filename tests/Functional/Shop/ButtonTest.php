@@ -43,7 +43,7 @@ final class ButtonTest extends WebTestCase
         $button = $crawler->filter('.cms-tree > a.cms-button');
         self::assertSame('cms-button cms-button--secondary', $button->attr('class'));
         self::assertSame('Red T-shirt', $button->text());
-        self::assertSame('http://localhost/en_US/products/red-t-shirt', $button->attr('href'));
+        self::assertSame('/en_US/products/red-t-shirt', $button->attr('href'));
     }
 
     /**
@@ -167,7 +167,7 @@ final class ButtonTest extends WebTestCase
         $crawler = $client->request('GET', '/en_US/start');
 
         self::assertResponseIsSuccessful();
-        self::assertSame([['About us', 'http://localhost/en_US/about']], $crawler->filter('.cms-tree .cms-button')->each(static fn (Crawler $button): array => [$button->text(), $button->attr('href')]));
+        self::assertSame([['About us', '/en_US/about']], $crawler->filter('.cms-tree .cms-button')->each(static fn (Crawler $button): array => [$button->text(), $button->attr('href')]));
     }
 
     /**
@@ -222,7 +222,7 @@ final class ButtonTest extends WebTestCase
         self::setHomepageOf($home, 'WEB');
         self::createPageWithBlocks('Start', 'start', [self::button(self::BUTTON, ['target' => 'entry', 'ref' => $home->getUuid(), 'label' => ['en_US' => 'Home']])], published: true);
 
-        self::assertSame('http://localhost/en_US/', $client->request('GET', '/en_US/start')->filter('.cms-tree > a.cms-button')->attr('href'));
+        self::assertSame('/en_US/', $client->request('GET', '/en_US/start')->filter('.cms-tree > a.cms-button')->attr('href'));
     }
 
     /**
@@ -237,7 +237,7 @@ final class ButtonTest extends WebTestCase
         $button = $client->request('GET', '/en_US/start')->filter('.cms-tree > a.cms-button');
 
         self::assertSame('T-shirts', $button->text());
-        self::assertSame('http://localhost/en_US/taxons/t-shirts', $button->attr('href'));
+        self::assertSame('/en_US/taxons/t-shirts', $button->attr('href'));
     }
 
     /**

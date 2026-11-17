@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Customers;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\ProfiledQueries;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -17,8 +20,10 @@ use Symfony\Component\DomCrawler\Crawler;
  */
 final class VisibilityConditionsTest extends WebTestCase
 {
+    use Catalog;
     use Customers;
     use Entries;
+    use ProfiledQueries;
 
     /**
      * @test
@@ -176,6 +181,46 @@ final class VisibilityConditionsTest extends WebTestCase
 
         $client->loginUser(self::createShopUser('shopper@example.com'), 'shop');
         self::assertSame(['Default banner'], self::headings($client->request('GET', '/en_US/home')));
+    }
+
+    /**
+     * A project's condition kind can take a product, which loads with the products the page's fields hold, in one query.
+     * The test application's kind matches while the shopper may see the product
+     *
+     * @test
+     */
+    public function it_hides_blocks_by_a_project_condition_kind_whose_product_parameter_loads_with_the_page_s_products(): void
+    {
+        $client = self::createClient();
+        self::createProduct('T_SHIRT', 'T-shirt');
+        self::createProduct('CAP', 'Cap');
+        self::createProduct('MUG', 'Mug', enabled: false);
+        $available = static fn (string $product, bool $negate = false): array => ['kind' => 'app_product_available', 'negate' => $negate, 'params' => ['product' => $product]];
+        self::createPageWithBlocks('Shop now', 'shop-now', [
+            self::headingIf('0193a5be-0000-7000-8000-000000000001', 'T-shirts are in', $available('T_SHIRT')),
+            self::headingIf('0193a5be-0000-7000-8000-000000000002', 'Mugs are in', $available('MUG')),
+            self::headingIf('0193a5be-0000-7000-8000-000000000003', 'Mugs are out', $available('MUG', negate: true)),
+            new StoredBlock('0193a5be-0000-7000-8000-000000000004', 'products', 1, fields: ['products' => ['CAP']]),
+        ], published: true);
+        // The queries of a request are profiled from a kernel that's booted afresh, which comes after the first request
+        $client->request('GET', '/');
+
+        $client->enableProfiler();
+        $crawler = $client->request('GET', '/en_US/shop-now');
+
+        self::assertSame(['T-shirts are in', 'Mugs are out'], self::headings($crawler));
+        self::assertCount(1, $crawler->filter('.cms-products__item'));
+        self::assertCount(1, self::productQueries($client), 'One query loads the products of the fields and the conditions');
+    }
+
+    /**
+     * The SQL of the queries the request ran that read products by code, leaving out the shop's own queries
+     *
+     * @return list<string>
+     */
+    private static function productQueries(KernelBrowser $client): array
+    {
+        return array_values(array_filter(self::queries($client), static fn (string $sql): bool => 1 === preg_match('/FROM sylius_product \w+ .*\bcode IN \(/', $sql)));
     }
 
     /**

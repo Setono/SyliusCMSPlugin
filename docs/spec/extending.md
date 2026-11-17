@@ -476,13 +476,15 @@ interface LinkTargetInterface
 
 Shipped targets:
 
+The `entry`, `product` and `taxon` targets lead to relative paths, such as `/en_US/products/red-t-shirt`, as Sylius's templates link with `path()`. Only an entry's canonical and hreflang links are absolute URLs ([URLs and SEO](urls-and-seo.md#head-tags)).
+
 | Code | Refers to | Resolves to |
 | --- | --- | --- |
-| `entry` | an entry with its own URL, by UUID | its URL in the current channel and locale, or `null` when it isn't visible |
-| `product` | a product, by code | its shop URL, or `null` when it isn't visible ([Sources](sources.md#visible-queries)) |
-| `taxon` | a taxon, by code | its shop URL, or `null` when it isn't enabled |
+| `entry` | an entry with its own URL, by UUID | its path in the current channel and locale, `/{locale}/` for the channel's homepage, or `null` when it isn't visible |
+| `product` | a product, by code | its page's path in the shop, or `null` when it isn't visible ([Sources](sources.md#visible-queries)) |
+| `taxon` | a taxon, by code | its product listing's path in the shop, or `null` when it isn't enabled |
 | `media` | a document or video media item, by UUID | its permanent URL ([Media](media.md#permanent-urls)) |
-| `url` | a URL, per locale (`translatableRef: true`), including `mailto:` and `tel:` | the URL as typed |
+| `url` | a URL, per locale (`translatableRef: true`): `http://` or `https://`, `mailto:`, `tel:`, a path (`/…`), a query (`?…`) or an anchor (`#…`) | the URL as typed, when it's one of those. Any other scheme, such as `javascript:`, resolves to `null`, so the link doesn't render, and publish refuses it, in a Link field and in rich text |
 
 ## Context keys and resolvers
 
@@ -559,7 +561,7 @@ interface BestsellersCalculatorInterface
 }
 ```
 
-`setono:cms:bestsellers:compute` calls it per channel and stores the scores. The default counts paid orders over `bestsellers.window`. A project with analytics data aliases the interface to its own calculator ([Sources](sources.md#bestsellers)).
+`setono:cms:bestsellers:compute` calls it per channel and stores the scores. The default, `CompletedOrdersCalculator`, counts the orders whose checkout completed inside `bestsellers.window`, whatever their payment state. A project with analytics data aliases the interface to its own calculator, which can build on the default's public `createQueryBuilder(channel)` ([Sources](sources.md#bestsellers)).
 
 ## Rendering services
 
@@ -657,7 +659,7 @@ Every event that changes shopper output implements `StorefrontChangedInterface`,
 | `cms_video(video, options = {})` | safe HTML | Renders a video as the Video block shows it. `video` is a video media item or its UUID, rendered as a `<video>` of its current file with `controls`, `playsinline` and `preload="metadata"`, or a YouTube or Vimeo URL, rendered as the provider's privacy-enhanced embed in a lazy `<iframe>`. Options: `poster` (an image media item or its UUID, over the video media item's own poster, shown as one WebP variant cropped to 16:9 and at most 1280 wide), `title` (the embed's `title`, which names it to screen readers) and `class`. It prints nothing for `null`, a broken reference, a media item that isn't a video or a URL it doesn't know, and in the builder's preview a grey 16:9 placeholder instead ([Blocks](blocks.md#video)). |
 | `cms_media_url(media)` | `?string` | The [permanent URL](media.md#permanent-urls) of a document or video media item, or of its UUID, which links to it lead to, such as the Downloads block's. `null` for `null`, a UUID no media item has, or an image, which has no permanent URL. |
 | `cms_link(link)` | `?ResolvedLink` | Resolves a `Link` value. `null` means don't render the link. |
-| `cms_url(entry)` | `?string` | An entry's URL in the current channel and locale, or `null` when it has none or isn't visible. Given a taxon, its product listing's URL, as the `taxon` link target builds it, or `null` without a translation in the locale. |
+| `cms_url(entry)` | `?string` | An entry's path in the current channel and locale, as the `entry` link target builds it (`/{locale}/` for the channel's homepage), or `null` when it has none or isn't visible. Given a taxon, its product listing's path, as the `taxon` link target builds it, or `null` without a translation in the locale. Relative, as Sylius's `path()` gives. |
 | `cms_head_tags(entry)` | safe HTML | Prints the meta and link tags of an entry shown at its own URL or as a homepage, for the shop layout's `metatags` block: the meta description, robots, the canonical link and the hreflang links ([URLs and SEO](urls-and-seo.md#head-tags)). A tag added later reaches every layout that calls it. |
 | `cms_meta_title(entry)` | `string` | The title text of an entry shown at its own URL or as a homepage, for the shop layout's `title` block: the meta title, or else the title, each through the fallback chain. |
 | `cms_preview_mode()` | `?string` | `builder` in the builder's preview, `share` on a share link, otherwise `null`. Themes use it to leave out analytics and other tracking ([Rendering](rendering.md#preview-mode-and-share-links)). |
@@ -772,7 +774,7 @@ setono_sylius_cms:
         keep: 50             # per entry; older ones are pruned by setono:cms:revisions:prune
 
     bestsellers:
-        window: 'P30D'       # ISO 8601 duration the default calculator counts paid orders over
+        window: 'P30D'       # ISO 8601 duration the default calculator counts completed orders over
 
     resources:               # the shipped Sylius resources, registered as setono_sylius_cms.<name>
         page:

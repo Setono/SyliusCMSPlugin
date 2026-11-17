@@ -371,6 +371,45 @@ final class ListFieldHandlerTest extends TestCase
     }
 
     /**
+     * A taxon that was deleted, or that the shopper may no longer see, makes the source yield nothing rather than
+     * widen to what it would yield without one, such as Bestsellers in every taxon
+     *
+     * @test
+     */
+    public function it_yields_nothing_for_a_source_whose_reference_parameter_was_set_but_no_longer_resolves(): void
+    {
+        $source = new OnSale([self::product('A')]);
+        $handler = Sources::listFieldHandler(['on_sale' => $source]);
+
+        $list = $handler->hydrate(new Products(label: 'Products'), self::stored('on_sale', ['taxon' => 'GONE']), self::context());
+
+        self::assertInstanceOf(ItemList::class, $list);
+        self::assertSame([], $list->toArray());
+        self::assertSame([], $source->resolvedWith, 'The source isn\'t asked');
+    }
+
+    /**
+     * A reference parameter left empty is the source's to read, such as Bestsellers in every taxon
+     *
+     * @test
+     */
+    public function it_resolves_a_source_whose_reference_parameter_was_left_empty(): void
+    {
+        $source = new OnSale([self::product('A')]);
+        $handler = Sources::listFieldHandler(['on_sale' => $source]);
+
+        foreach ([[], ['taxon' => null], ['taxon' => '']] as $params) {
+            $list = $handler->hydrate(new Products(label: 'Products'), self::stored('on_sale', $params), self::context());
+
+            self::assertInstanceOf(ItemList::class, $list);
+            self::assertCount(1, $list->toArray());
+        }
+
+        self::assertCount(3, $source->resolvedWith);
+        self::assertNull($source->resolvedWith[0]->taxon);
+    }
+
+    /**
      * @test
      */
     public function it_reads_parameters_stored_as_an_empty_map(): void
