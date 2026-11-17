@@ -22,16 +22,16 @@ final readonly class FailureHandler implements FailureHandlerInterface
     ) {
     }
 
-    public function blockFailed(BlockView $view, \Throwable $exception): void
+    public function blockFailed(string $key, string $type, ?string $entry, \Throwable $exception): void
     {
         if ($this->debug) {
             throw $exception;
         }
 
         $this->logger->error('The block {key} of type {type} in the entry {entry} threw while rendering, so it was left out: {message}', [
-            'entry' => $view->entry,
-            'key' => $view->key,
-            'type' => $view->type,
+            'entry' => $entry,
+            'key' => $key,
+            'type' => $type,
             'message' => ExceptionMessage::of($exception),
             'exception' => $exception,
         ]);

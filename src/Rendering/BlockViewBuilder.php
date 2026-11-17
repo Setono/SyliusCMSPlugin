@@ -24,6 +24,11 @@ use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
  * A Snippet block's children are its snippet's blocks, built with the context of the tree it sits in. A snippet that
  * would render inside itself, directly or through other snippets, is skipped the second time: the Snippet block that
  * would show it again gets no children. See "Rendering a block tree" in docs/spec/rendering.md
+ *
+ * Fields are hydrated here, before any template renders, so a block that throws while its view is built, such as from a
+ * field handler or a condition kind, throws while it renders: it goes to the failure handler, and in production it gets
+ * no view and its neighbours still do. The builder's preview gets the exception. See "Failures" in
+ * docs/spec/rendering.md
  */
 final readonly class BlockViewBuilder
 {
@@ -34,6 +39,7 @@ final readonly class BlockViewBuilder
         private BlockReferences $blockReferences,
         private ReferenceLoaderInterface $referenceLoader,
         private StoredDataUpgraderInterface $upgrader,
+        private FailureHandlerInterface $failures,
     ) {
     }
 
@@ -80,26 +86,26 @@ final readonly class BlockViewBuilder
     private function views(array $blocks, RenderContext $context, ReferenceMap $references, bool $firstOnly, array $inside): array
     {
         $views = [];
+        $entry = [] === $inside ? null : $inside[array_key_last($inside)];
 
         foreach ($blocks as $block) {
-            // A block of a type the code no longer has isn't rendered, and nor is one its conditions hide
-            if (!$this->blockTypes->has($block->type) || !$this->conditions->matchesAll($block->conditions, $context, $references)) {
+            try {
+                $view = $this->view($block, $context, $references, $inside, $entry);
+            } catch (\Throwable $e) {
+                if (RenderContext::PREVIEW_MODE_BUILDER === $context->previewMode) {
+                    throw $e;
+                }
+
+                $this->failures->blockFailed($block->key, $block->type, $entry, $e);
+
                 continue;
             }
 
-            $blockType = $this->blockTypes->get($block->type);
-            $hydrated = $this->hydrator->hydrate($blockType, $block, $context, $references);
-            $views[] = new BlockView(
-                $block->key,
-                $block->type,
-                $hydrated,
-                $blockType->styleClass($block->style),
-                $hydrated instanceof Snippet
-                    ? $this->snippetViews($hydrated->snippet, $context, $references, $inside)
-                    : $this->views($block->children, $context, $references, is_a($blockType->class, FirstMatch::class, true), $inside),
-                array_keys(array_filter($blockType->fields, static fn (FieldMetadata $field): bool => BoundValue::isBound($field, $block->fields[$field->name] ?? null))),
-                [] === $inside ? null : $inside[array_key_last($inside)],
-            );
+            if (null === $view) {
+                continue;
+            }
+
+            $views[] = $view;
 
             if ($firstOnly) {
                 break;
@@ -107,6 +113,34 @@ final readonly class BlockViewBuilder
         }
 
         return $views;
+    }
+
+    /**
+     * The block's view, or null for a block of a type the code no longer has, which isn't rendered, and one its
+     * conditions hide
+     *
+     * @param list<string> $inside
+     */
+    private function view(StoredBlock $block, RenderContext $context, ReferenceMap $references, array $inside, ?string $entry): ?BlockView
+    {
+        if (!$this->blockTypes->has($block->type) || !$this->conditions->matchesAll($block->conditions, $context, $references)) {
+            return null;
+        }
+
+        $blockType = $this->blockTypes->get($block->type);
+        $hydrated = $this->hydrator->hydrate($blockType, $block, $context, $references);
+
+        return new BlockView(
+            $block->key,
+            $block->type,
+            $hydrated,
+            $blockType->styleClass($block->style),
+            $hydrated instanceof Snippet
+                ? $this->snippetViews($hydrated->snippet, $context, $references, $inside)
+                : $this->views($block->children, $context, $references, is_a($blockType->class, FirstMatch::class, true), $inside),
+            array_keys(array_filter($blockType->fields, static fn (FieldMetadata $field): bool => BoundValue::isBound($field, $block->fields[$field->name] ?? null))),
+            $entry,
+        );
     }
 
     /**

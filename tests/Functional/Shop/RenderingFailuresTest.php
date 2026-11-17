@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\BrokenBlockKernel;
+use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\Unbuildable;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\Placements;
 use Setono\SyliusCMSPlugin\Tests\Support\RecordingLogger;
@@ -78,6 +79,28 @@ final class RenderingFailuresTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSame(['Before', 'After'], self::headings($crawler, '.cms-tree > .cms-group'));
         self::assertSelectorNotExists('.cms-broken');
+    }
+
+    /**
+     * Fields are hydrated before the templates render, which counts as rendering the block
+     *
+     * @test
+     */
+    public function it_drops_a_block_that_throws_while_it_is_hydrated_and_logs_it(): void
+    {
+        $client = self::createClient(['debug' => false]);
+        $page = self::createPageWithBlocks('About us', 'about-us', [self::heading(self::BEFORE, 'Before'), new StoredBlock(self::BROKEN, 'unbuildable', 1), self::heading(self::AFTER, 'After')], published: true);
+
+        $crawler = $client->request('GET', '/en_US/about-us');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['Before', 'After'], self::headings($crawler, '.cms-tree'));
+        self::assertSame([[
+            'entry' => $page->getUuid(),
+            'key' => self::BROKEN,
+            'type' => 'unbuildable',
+            'message' => Unbuildable::MESSAGE,
+        ]], self::loggedFailures());
     }
 
     /**

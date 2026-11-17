@@ -8,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Log\LoggerInterface;
-use Setono\SyliusCMSPlugin\Rendering\BlockView;
 use Setono\SyliusCMSPlugin\Rendering\FailureHandler;
 use Setono\SyliusCMSPlugin\Rendering\PlacementData;
 use Twig\Error\RuntimeError;
@@ -40,7 +39,7 @@ final class FailureHandlerTest extends TestCase
             'exception' => $exception,
         ])->shouldBeCalledOnce();
 
-        (new FailureHandler($logger->reveal(), false))->blockFailed(self::view(self::PAGE), $exception);
+        (new FailureHandler($logger->reveal(), false))->blockFailed(self::KEY, 'heading', self::PAGE, $exception);
     }
 
     /**
@@ -53,7 +52,7 @@ final class FailureHandlerTest extends TestCase
         $logger->error(Argument::cetera())->shouldNotBeCalled();
 
         try {
-            (new FailureHandler($logger->reveal(), true))->blockFailed(self::view(self::PAGE), $exception);
+            (new FailureHandler($logger->reveal(), true))->blockFailed(self::KEY, 'heading', self::PAGE, $exception);
             self::fail('The exception was thrown');
         } catch (\RuntimeException $thrown) {
             self::assertSame($exception, $thrown);
@@ -69,7 +68,7 @@ final class FailureHandlerTest extends TestCase
         $logger = $this->prophesize(LoggerInterface::class);
         $logger->error(Argument::any(), Argument::withEntry('message', 'Boom'))->shouldBeCalledOnce();
 
-        (new FailureHandler($logger->reveal(), false))->blockFailed(self::view(self::PAGE), $exception);
+        (new FailureHandler($logger->reveal(), false))->blockFailed(self::KEY, 'heading', self::PAGE, $exception);
     }
 
     /**
@@ -82,7 +81,7 @@ final class FailureHandlerTest extends TestCase
         $logger = $this->prophesize(LoggerInterface::class);
         $logger->error(Argument::any(), Argument::withEntry('entry', null))->shouldBeCalledOnce();
 
-        (new FailureHandler($logger->reveal(), false))->blockFailed(self::view(null), new \RuntimeException('Boom'));
+        (new FailureHandler($logger->reveal(), false))->blockFailed(self::KEY, 'heading', null, new \RuntimeException('Boom'));
     }
 
     /**
@@ -115,11 +114,6 @@ final class FailureHandlerTest extends TestCase
         $this->expectExceptionObject($exception);
 
         (new FailureHandler($logger->reveal(), true))->snippetFailed(self::placement(), $exception);
-    }
-
-    private static function view(?string $entry): BlockView
-    {
-        return new BlockView(self::KEY, 'heading', new \stdClass(), null, [], entry: $entry);
     }
 
     private static function placement(): PlacementData

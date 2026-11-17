@@ -27,8 +27,9 @@ use Twig\Environment;
  *    rendering, so a snippet whose blocks are all hidden still wins and shows nothing
  * 5. each winning snippet's tree, rendered with the slot's context in the slot template, inside the slot's wrapper
  *
- * A winning snippet that throws before its blocks render, such as when its tree can't be upgraded, goes to the failure
- * handler, and in production the others still show. A block that throws is the block renderer's (FailSafeBlockRenderer)
+ * A winning snippet whose tree can't be read, such as one no upgrader brings up to date, goes to the failure handler,
+ * and in production the others still show. A block that throws is BlockViewBuilder's and the block renderer's
+ * (FailSafeBlockRenderer)
  *
  * It takes the placements before it resolves its context, so a slot without placements resolves nothing: a page
  * doesn't look up its product for an empty product.top. A slot with nothing to show prints nothing, not even its
@@ -151,14 +152,7 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
         foreach ($trees as $index => $tree) {
             [$placement, $snippet] = $winners[$index];
 
-            try {
-                $blocks = $this->blockViewBuilder->build($tree->blocks, $context, $references, $snippet->getUuid());
-            } catch (\Throwable $e) {
-                $this->failures->snippetFailed($placement, $e);
-
-                continue;
-            }
-
+            $blocks = $this->blockViewBuilder->build($tree->blocks, $context, $references, $snippet->getUuid());
             if ([] !== $blocks) {
                 $snippets[] = new PlacedSnippet($placement, $snippet, $blocks);
             }

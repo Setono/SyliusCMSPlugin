@@ -10,8 +10,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
- * The test application plus the Broken block type, whose template always throws, and a logger that keeps what's
- * logged (RecordingLogger)
+ * The test application plus the Broken block type, whose template always throws, the Unbuildable one, which throws
+ * when it's hydrated, and a logger that keeps what's logged (RecordingLogger)
  */
 final class BrokenBlockKernel extends FixtureKernel
 {
@@ -26,6 +26,7 @@ final class BrokenBlockKernel extends FixtureKernel
 
         // Registered the way an app's services.yaml registers its classes: autoconfigured, with no tag of its own
         $container->register(Broken::class, Broken::class)->setAutoconfigured(true);
+        $container->register(Unbuildable::class, Unbuildable::class)->setAutoconfigured(true);
 
         $container->register(RecordingLogger::class, RecordingLogger::class)
             ->setDecoratedService('logger')

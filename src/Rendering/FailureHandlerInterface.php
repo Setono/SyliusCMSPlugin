@@ -12,14 +12,18 @@ namespace Setono\SyliusCMSPlugin\Rendering;
 interface FailureHandlerInterface
 {
     /**
-     * The block shows nothing
+     * The block shows nothing, nor do the blocks inside it, when it throws while its view is built
+     *
+     * @param string $key the block's key
+     * @param string $type its block type's code
+     * @param string|null $entry the UUID of the entry whose tree holds it, or null for blocks that are no entry's
      *
      * @throws \Throwable the exception, in dev
      */
-    public function blockFailed(BlockView $view, \Throwable $exception): void;
+    public function blockFailed(string $key, string $type, ?string $entry, \Throwable $exception): void;
 
     /**
-     * The placement's snippet shows nothing in its slot, such as when its tree can't be read or built
+     * The placement's snippet shows nothing in its slot, such as when its tree can't be read
      *
      * @throws \Throwable the exception, in dev
      */

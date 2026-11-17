@@ -38,7 +38,6 @@ use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\OnProductPage;
-use Setono\SyliusCMSPlugin\Tests\Unit\Rendering\Fixture\Unbuildable;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -391,19 +390,6 @@ final class SlotRendererTest extends TestCase
     }
 
     /**
-     * @test
-     */
-    public function it_hands_a_snippet_whose_blocks_can_t_be_built_to_the_failure_handler(): void
-    {
-        $broken = $this->snippet('Broken', new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e50', 'unbuildable', 1));
-        $this->placementProvider->getPlacements($this->context->channel)->willReturn([$brokenPlacement = self::placement('shop.footer', $broken, 0)]);
-        $this->visibleSnippets->get(Argument::any(), $this->context)->willReturn([$broken->getUuid() => $broken]);
-        $this->failures->snippetFailed($brokenPlacement, Argument::which('getMessage', Unbuildable::MESSAGE))->shouldBeCalledOnce();
-
-        self::assertSame('', $this->renderer()->render('shop.footer'));
-    }
-
-    /**
      * In dev, the handler throws it on
      *
      * @test
@@ -435,7 +421,7 @@ final class SlotRendererTest extends TestCase
     private function renderer(string $template = '<div class="{{ slot.wrapperClass }}">{% for placed in snippets %}{% for view in placed.blocks %}[{{ view.block.text }}]{% endfor %}{% endfor %}</div>'): SlotRenderer
     {
         $handlers = Conditions::fieldHandlers();
-        $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'unbuildable' => Unbuildable::class], new FieldReader());
+        $blockTypes = new BlockTypeRegistry(['heading' => Heading::class], new FieldReader());
         $referenceLoader = new ReferenceLoader(new ServiceLocator([]));
         $requestStack = new RequestStack();
         $requestStack->push(Request::create('/en_US/products/t-shirt'));
@@ -467,6 +453,7 @@ final class SlotRendererTest extends TestCase
                 new BlockReferences($blockTypes, $conditions, new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())), $handlers)),
                 $referenceLoader,
                 $this->upgrader->reveal(),
+                $this->failures->reveal(),
             ),
             $referenceLoader,
             new Environment(new ArrayLoader([SlotRenderer::TEMPLATE => $template])),

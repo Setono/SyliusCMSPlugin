@@ -27,7 +27,7 @@ final readonly class FailSafeBlockRenderer implements BlockRendererInterface
         try {
             return $this->renderer->render($view, $context);
         } catch (\Throwable $e) {
-            $this->failures->blockFailed($view, $e);
+            $this->failures->blockFailed($view->key, $view->type, $view->entry, $e);
 
             return '';
         }

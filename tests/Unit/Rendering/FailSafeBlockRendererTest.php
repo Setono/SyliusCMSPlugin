@@ -43,7 +43,7 @@ final class FailSafeBlockRendererTest extends TestCase
         $renderer = $this->prophesize(BlockRendererInterface::class);
         $renderer->render(Argument::cetera())->willThrow($exception);
         $failures = $this->prophesize(FailureHandlerInterface::class);
-        $failures->blockFailed($view, $exception)->shouldBeCalledOnce();
+        $failures->blockFailed($view->key, $view->type, $view->entry, $exception)->shouldBeCalledOnce();
 
         self::assertSame('', (new FailSafeBlockRenderer($renderer->reveal(), $failures->reveal()))->render($view, Rendering::context()));
     }

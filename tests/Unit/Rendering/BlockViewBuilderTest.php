@@ -36,6 +36,7 @@ use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
 use Setono\SyliusCMSPlugin\Rendering\BlockReferences;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
+use Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
@@ -46,6 +47,7 @@ use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ProductAvailable;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
+use Setono\SyliusCMSPlugin\Tests\Unit\Rendering\Fixture\Unbuildable;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Tree\TreeValues;
@@ -507,6 +509,46 @@ final class BlockViewBuilderTest extends TestCase
     }
 
     /**
+     * Its fields are hydrated before any template renders, so a field handler or a condition kind that throws makes the
+     * block throw while it renders, as a template would. Its neighbours still get views
+     *
+     * @test
+     */
+    public function it_hands_a_block_that_throws_while_its_view_is_built_to_the_failure_handler_and_builds_the_others(): void
+    {
+        $page = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e40';
+        $failures = $this->prophesize(FailureHandlerInterface::class);
+        $failures->blockFailed(self::B, 'unbuildable', $page, Argument::which('getMessage', Unbuildable::MESSAGE))->shouldBeCalledOnce();
+
+        $views = $this->builder(failures: $failures->reveal())->build(
+            [self::heading(self::A, 'Before'), new StoredBlock(self::B, 'unbuildable', 1), new StoredBlock(self::C, 'group', 1, children: [self::heading(self::D, 'After')])],
+            $this->context('en_US'),
+            entry: $page,
+        );
+
+        self::assertSame([self::A, self::C], self::keys($views));
+        self::assertSame([self::D], self::keys($views[1]->children));
+    }
+
+    /**
+     * The builder's preview shows a block's error on the block when it renders (Preview\PreviewBlockRenderer)
+     *
+     * @test
+     */
+    public function it_throws_what_a_block_threw_while_its_view_was_built_in_the_builders_preview(): void
+    {
+        $failures = $this->prophesize(FailureHandlerInterface::class);
+        $failures->blockFailed(Argument::cetera())->shouldNotBeCalled();
+
+        $this->expectExceptionMessage(Unbuildable::MESSAGE);
+
+        $this->builder(failures: $failures->reveal())->build(
+            [new StoredBlock(self::B, 'unbuildable', 1)],
+            $this->context('en_US')->withPreviewMode(RenderContext::PREVIEW_MODE_BUILDER),
+        );
+    }
+
+    /**
      * Such as the blocks the builder sends to be previewed
      *
      * @test
@@ -598,7 +640,7 @@ final class BlockViewBuilderTest extends TestCase
         return array_map(static fn (BlockView $view): string => $view->key, $views);
     }
 
-    private function builder(?ReferenceLoaderInterface $referenceLoader = null): BlockViewBuilder
+    private function builder(?ReferenceLoaderInterface $referenceLoader = null, ?FailureHandlerInterface $failures = null): BlockViewBuilder
     {
         $fallbackChain = $this->prophesize(FallbackChainInterface::class);
         $fallbackChain->localesFor('da_DK')->willReturn(['da_DK', 'en_US']);
@@ -617,7 +659,7 @@ final class BlockViewBuilderTest extends TestCase
         ]));
 
         $blockTypes = new BlockTypeRegistry(
-            ['heading' => Heading::class, 'rich_text' => RichText::class, 'group' => Group::class, 'first_match' => FirstMatch::class, 'gallery' => Gallery::class, 'snippet' => SnippetBlock::class],
+            ['heading' => Heading::class, 'rich_text' => RichText::class, 'group' => Group::class, 'first_match' => FirstMatch::class, 'gallery' => Gallery::class, 'snippet' => SnippetBlock::class, 'unbuildable' => Unbuildable::class],
             new FieldReader(),
             styles: ['group' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-group--brand']]],
         );
@@ -629,6 +671,7 @@ final class BlockViewBuilderTest extends TestCase
             new BlockReferences($blockTypes, $conditions, new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())), $handlers)),
             $referenceLoader ?? new ReferenceLoader(new ServiceLocator([])),
             $this->upgrader(),
+            $failures ?? $this->prophesize(FailureHandlerInterface::class)->reveal(),
         );
     }
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Profiler;
 
-use Setono\SyliusCMSPlugin\Rendering\BlockView;
 use Setono\SyliusCMSPlugin\Rendering\ExceptionMessage;
 use Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface;
 use Setono\SyliusCMSPlugin\Rendering\PlacementData;
@@ -28,11 +27,11 @@ final readonly class TraceableFailureHandler implements FailureHandlerInterface
         $this->recorded = new \WeakMap();
     }
 
-    public function blockFailed(BlockView $view, \Throwable $exception): void
+    public function blockFailed(string $key, string $type, ?string $entry, \Throwable $exception): void
     {
-        $this->record($exception, new RecordedFailure($view->entry, $view->key, $view->type, null, ExceptionMessage::of($exception)));
+        $this->record($exception, new RecordedFailure($entry, $key, $type, null, ExceptionMessage::of($exception)));
 
-        $this->handler->blockFailed($view, $exception);
+        $this->handler->blockFailed($key, $type, $entry, $exception);
     }
 
     public function snippetFailed(PlacementData $placement, \Throwable $exception): void

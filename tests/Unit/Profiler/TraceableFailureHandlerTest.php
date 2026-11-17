@@ -10,7 +10,6 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Profiler\RecordedFailure;
 use Setono\SyliusCMSPlugin\Profiler\RenderedSlots;
 use Setono\SyliusCMSPlugin\Profiler\TraceableFailureHandler;
-use Setono\SyliusCMSPlugin\Rendering\BlockView;
 use Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface;
 use Setono\SyliusCMSPlugin\Rendering\PlacementData;
 use Twig\Error\RuntimeError;
@@ -29,13 +28,12 @@ final class TraceableFailureHandlerTest extends TestCase
     public function it_records_a_block_that_threw_in_the_slot_rendering_now_and_hands_it_on(): void
     {
         $exception = new \RuntimeException('Boom');
-        $view = self::view(self::BLOCK, 'broken');
         $handler = $this->prophesize(FailureHandlerInterface::class);
-        $handler->blockFailed($view, $exception)->shouldBeCalledOnce();
+        $handler->blockFailed(self::BLOCK, 'broken', self::SNIPPET, $exception)->shouldBeCalledOnce();
         $slots = new RenderedSlots();
         $slot = $slots->start('shop.footer');
 
-        (new TraceableFailureHandler($handler->reveal(), $slots))->blockFailed($view, $exception);
+        (new TraceableFailureHandler($handler->reveal(), $slots))->blockFailed(self::BLOCK, 'broken', self::SNIPPET, $exception);
 
         self::assertEquals([new RecordedFailure(self::SNIPPET, self::BLOCK, 'broken', null, 'Boom')], $slot->failures);
     }
@@ -67,7 +65,7 @@ final class TraceableFailureHandlerTest extends TestCase
         $handler = $this->prophesize(FailureHandlerInterface::class);
         $slots = new RenderedSlots();
 
-        (new TraceableFailureHandler($handler->reveal(), $slots))->blockFailed(self::view(self::BLOCK, 'broken'), new \RuntimeException('Boom'));
+        (new TraceableFailureHandler($handler->reveal(), $slots))->blockFailed(self::BLOCK, 'broken', self::SNIPPET, new \RuntimeException('Boom'));
 
         self::assertEquals([new RecordedFailure(self::SNIPPET, self::BLOCK, 'broken', null, 'Boom')], $slots->failuresOutsideSlots());
     }
@@ -83,7 +81,7 @@ final class TraceableFailureHandlerTest extends TestCase
         $exception = new \RuntimeException('Boom');
         $handler = $this->prophesize(FailureHandlerInterface::class);
         $handler->blockFailed(Argument::cetera())->will(static function (array $arguments): void {
-            $thrown = $arguments[1];
+            $thrown = $arguments[3];
             self::assertInstanceOf(\Throwable::class, $thrown);
 
             throw $thrown;
@@ -92,21 +90,16 @@ final class TraceableFailureHandlerTest extends TestCase
         $traceable = new TraceableFailureHandler($handler->reveal(), $slots);
 
         try {
-            $traceable->blockFailed(self::view(self::BLOCK, 'broken'), $exception);
+            $traceable->blockFailed(self::BLOCK, 'broken', self::SNIPPET, $exception);
         } catch (\RuntimeException) {
         }
 
         try {
-            $traceable->blockFailed(self::view('0193a5be-0000-7000-8000-000000000003', 'group'), new RuntimeError('Twig\'s wrapper', previous: $exception));
+            $traceable->blockFailed('0193a5be-0000-7000-8000-000000000003', 'group', self::SNIPPET, new RuntimeError('Twig\'s wrapper', previous: $exception));
             self::fail('The exception was thrown on');
         } catch (RuntimeError) {
         }
 
         self::assertEquals([new RecordedFailure(self::SNIPPET, self::BLOCK, 'broken', null, 'Boom')], $slots->failuresOutsideSlots());
-    }
-
-    private static function view(string $key, string $type): BlockView
-    {
-        return new BlockView($key, $type, new \stdClass(), null, [], entry: self::SNIPPET);
     }
 }

@@ -57,6 +57,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockReferences"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer" class="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer">
