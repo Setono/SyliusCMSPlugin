@@ -11,3 +11,5 @@ app:
             transparent_header: Transparent header
         layout:
             landing: Landing
+        link_target:
+            store: Store

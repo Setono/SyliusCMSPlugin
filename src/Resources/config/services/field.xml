@@ -45,5 +45,14 @@
         <service id="Setono\SyliusCMSPlugin\Field\MediaListHandler" class="Setono\SyliusCMSPlugin\Field\MediaListHandler">
             <tag name="setono_sylius_cms.field_handler"/>
         </service>
+
+        <!-- Link resolves its link through its link target, a link to a record from the references loaded before rendering -->
+        <service id="Setono\SyliusCMSPlugin\Field\LinkHandler" class="Setono\SyliusCMSPlugin\Field\LinkHandler">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Link\LinkResolver"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
+
+            <tag name="setono_sylius_cms.field_handler"/>
+        </service>
     </services>
 </container>

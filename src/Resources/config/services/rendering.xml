@@ -65,6 +65,31 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface" alias="Setono\SyliusCMSPlugin\Rendering\ReferenceLoader"/>
 
+        <!-- The entries, products and taxons references name, those the shopper may see through the visible queries -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\EntryReferenceLoader" class="Setono\SyliusCMSPlugin\Rendering\EntryReferenceLoader">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface"/>
+
+            <tag name="setono_sylius_cms.reference_type_loader" type="entry"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Rendering\ProductReferenceLoader" class="Setono\SyliusCMSPlugin\Rendering\ProductReferenceLoader">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface"/>
+            <argument type="service" id="doctrine"/>
+            <argument>%sylius.model.product.class%</argument>
+
+            <tag name="setono_sylius_cms.reference_type_loader" type="product"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Rendering\TaxonReferenceLoader" class="Setono\SyliusCMSPlugin\Rendering\TaxonReferenceLoader">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleTaxonsQueryInterface"/>
+            <argument type="service" id="doctrine"/>
+            <argument>%sylius.model.taxon.class%</argument>
+
+            <tag name="setono_sylius_cms.reference_type_loader" type="taxon"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookup" class="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookup">
             <argument type="service" id="doctrine"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>

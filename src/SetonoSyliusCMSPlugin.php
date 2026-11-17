@@ -8,6 +8,7 @@ use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBlockTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterConditionKindsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLayoutsPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLinkTargetsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterProblemKindsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterUpgradersPass;
 use Sylius\Bundle\CoreBundle\Application\SyliusPluginTrait;
@@ -39,5 +40,6 @@ final class SetonoSyliusCMSPlugin extends AbstractResourceBundle
         $container->addCompilerPass(new RegisterUpgradersPass());
         $container->addCompilerPass(new RegisterProblemKindsPass());
         $container->addCompilerPass(new RegisterConditionKindsPass());
+        $container->addCompilerPass(new RegisterLinkTargetsPass());
     }
 }

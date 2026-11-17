@@ -23,6 +23,41 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         return $entry instanceof EntryInterface ? $entry : null;
     }
 
+    public function findByUuids(array $uuids): array
+    {
+        if ([] === $uuids) {
+            return [];
+        }
+
+        /** @var list<EntryInterface> $entries */
+        $entries = $this->createQueryBuilder('o')
+            ->andWhere('o.uuid IN (:uuids)')
+            ->setParameter('uuids', $uuids)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $entries;
+    }
+
+    public function findExistingUuids(array $uuids): array
+    {
+        if ([] === $uuids) {
+            return [];
+        }
+
+        /** @var list<string> $existing */
+        $existing = $this->createQueryBuilder('o')
+            ->select('o.uuid')
+            ->andWhere('o.uuid IN (:uuids)')
+            ->setParameter('uuids', $uuids)
+            ->getQuery()
+            ->getSingleColumnResult()
+        ;
+
+        return $existing;
+    }
+
     public function findOneById(int $id): ?EntryInterface
     {
         $entry = $this->find($id);

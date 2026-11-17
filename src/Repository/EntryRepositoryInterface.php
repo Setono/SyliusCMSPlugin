@@ -16,6 +16,24 @@ interface EntryRepositoryInterface
     public function findOneByUuid(string $uuid): ?EntryInterface;
 
     /**
+     * The entries with these UUIDs, of any content type
+     *
+     * @param list<string> $uuids
+     *
+     * @return list<EntryInterface>
+     */
+    public function findByUuids(array $uuids): array;
+
+    /**
+     * Those of the UUIDs that an entry has
+     *
+     * @param list<string> $uuids
+     *
+     * @return list<string>
+     */
+    public function findExistingUuids(array $uuids): array;
+
+    /**
      * The entry with this id. One the entity manager has loaded already is answered without a query
      */
     public function findOneById(int $id): ?EntryInterface;

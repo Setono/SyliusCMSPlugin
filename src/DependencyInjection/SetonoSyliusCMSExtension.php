@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\DependencyInjection;
 use Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter;
 use Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
+use Setono\SyliusCMSPlugin\Attribute\AsLinkTarget;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
@@ -14,6 +15,7 @@ use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBlockTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterConditionKindsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLayoutsPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLinkTargetsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterProblemKindsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterUpgradersPass;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
@@ -84,6 +86,9 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         });
         $container->registerAttributeForAutoconfiguration(AsUpgrader::class, static function (ChildDefinition $definition): void {
             $definition->addTag(RegisterUpgradersPass::TAG);
+        });
+        $container->registerAttributeForAutoconfiguration(AsLinkTarget::class, static function (ChildDefinition $definition): void {
+            $definition->addTag(RegisterLinkTargetsPass::TAG);
         });
     }
 
