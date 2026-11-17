@@ -191,9 +191,9 @@ final class PageScopesTest extends WebTestCase
     }
 
     /**
-     * The headings in the page's slots
+     * The headings in the page's slots. Typed loosely, since the lowest DomCrawler types each() as a bare array
      *
-     * @return list<string>
+     * @return array<mixed>
      */
     private static function headingsOn(KernelBrowser $client, string $url): array
     {
