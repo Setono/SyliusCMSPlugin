@@ -396,7 +396,7 @@
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaIndexAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaIndexAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaLookup"/>
             <argument type="service" id="sylius.translation_locale_provider"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaItemAnswer"/>
 
@@ -406,7 +406,7 @@
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\UploadMediaAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\UploadMediaAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaUploaderInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaLookup"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaItemAnswer"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\UploadLimit"/>
             <argument type="service" id="translator"/>
@@ -416,8 +416,7 @@
 
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaItemAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaItemAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaLookup"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaItemSaverInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaItemAnswer"/>
 
@@ -426,7 +425,7 @@
 
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ReplaceMediaFileAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ReplaceMediaFileAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaLookup"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaFileReplacerInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaItemAnswer"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\UploadLimit"/>
@@ -437,7 +436,7 @@
 
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\DeleteMediaItemAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\DeleteMediaItemAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaLookup"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaItemDeleterInterface"/>
             <argument type="service" id="translator"/>
 
@@ -446,7 +445,7 @@
 
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaUsesAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaUsesAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaLookup"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaUsageRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryRows"/>
             <argument type="service" id="router"/>
@@ -455,7 +454,9 @@
             <tag name="controller.service_arguments"/>
         </service>
 
-        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaFolderRequest" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaFolderRequest">
+        <!-- The media items and folders the media endpoints are asked about by UUID -->
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaLookup" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaLookup">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>
         </service>
 
@@ -468,7 +469,7 @@
 
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateMediaFolderAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateMediaFolderAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaFolderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaLookup"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaFolderModifierInterface"/>
 
             <tag name="controller.service_arguments"/>
@@ -476,8 +477,7 @@
 
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaFolderAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaFolderAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaFolderRequest"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaLookup"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaFolderModifierInterface"/>
 
             <tag name="controller.service_arguments"/>

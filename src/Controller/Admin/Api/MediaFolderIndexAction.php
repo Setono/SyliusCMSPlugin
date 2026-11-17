@@ -24,6 +24,6 @@ final readonly class MediaFolderIndexAction
     {
         $this->adminAccessChecker->denyUnlessAdmin();
 
-        return new JsonResponse(['folders' => array_map(MediaFolderRequest::answer(...), $this->folderRepository->findAllByName())]);
+        return new JsonResponse(['folders' => array_map(MediaFolderAnswer::of(...), $this->folderRepository->findAllByName())]);
     }
 }

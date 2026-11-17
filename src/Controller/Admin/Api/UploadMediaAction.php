@@ -8,7 +8,6 @@ use Setono\SyliusCMSPlugin\Media\MediaUploaderInterface;
 use Setono\SyliusCMSPlugin\Media\RefusedFileException;
 use Setono\SyliusCMSPlugin\Media\UploadLimit;
 use Setono\SyliusCMSPlugin\Model\MediaFolderInterface;
-use Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,7 +25,7 @@ final readonly class UploadMediaAction
     public function __construct(
         private BuilderRequest $builderRequest,
         private MediaUploaderInterface $uploader,
-        private MediaFolderRepositoryInterface $folderRepository,
+        private MediaLookup $lookup,
         private MediaItemAnswer $answer,
         private UploadLimit $uploadLimit,
         private TranslatorInterface $translator,
@@ -79,7 +78,7 @@ final readonly class UploadMediaAction
             return null;
         }
 
-        return $this->folderRepository->findOneByUuid($uuid) ?? throw new NotFoundHttpException(sprintf('There is no media folder %s', $uuid));
+        return $this->lookup->folder($uuid);
     }
 
     /**

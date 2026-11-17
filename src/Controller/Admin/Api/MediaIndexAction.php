@@ -7,13 +7,11 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 use Setono\SyliusCMSPlugin\Media\MediaFilter;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
-use Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Sylius\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -33,7 +31,7 @@ final readonly class MediaIndexAction
     public function __construct(
         private AdminAccessChecker $adminAccessChecker,
         private MediaItemRepositoryInterface $mediaItemRepository,
-        private MediaFolderRepositoryInterface $folderRepository,
+        private MediaLookup $lookup,
         private TranslationLocaleProviderInterface $translationLocaleProvider,
         private MediaItemAnswer $answer,
     ) {
@@ -62,7 +60,7 @@ final readonly class MediaIndexAction
         }
 
         $filter = new MediaFilter(
-            folder: '' === $folder || self::UNSORTED === $folder ? null : $this->folderRepository->findOneByUuid($folder) ?? throw new NotFoundHttpException(sprintf('There is no media folder %s', $folder)),
+            folder: '' === $folder || self::UNSORTED === $folder ? null : $this->lookup->folder($folder),
             unsorted: self::UNSORTED === $folder,
             search: is_string($query['q'] ?? null) ? $query['q'] : null,
             kinds: $kinds,

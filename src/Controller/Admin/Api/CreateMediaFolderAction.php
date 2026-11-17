@@ -19,7 +19,7 @@ final readonly class CreateMediaFolderAction
 {
     public function __construct(
         private BuilderRequest $builderRequest,
-        private MediaFolderRequest $folderRequest,
+        private MediaLookup $lookup,
         private MediaFolderModifierInterface $modifier,
     ) {
     }
@@ -29,12 +29,12 @@ final readonly class CreateMediaFolderAction
         return $this->builderRequest->withCsrfToken($request, function () use ($request): JsonResponse {
             try {
                 $body = $request->toArray();
-                $folder = $this->modifier->create(MediaFolderRequest::string($body['name'] ?? null, 'name'), $this->folderRequest->parent($body['parent'] ?? null));
+                $folder = $this->modifier->create(BodyValue::string($body['name'] ?? null, 'name'), $this->lookup->folderIn($body['parent'] ?? null, 'parent'));
             } catch (JsonException|InvalidMediaChangeException $e) {
                 return BuilderRequest::badRequest($e->getMessage());
             }
 
-            return new JsonResponse(MediaFolderRequest::answer($folder), Response::HTTP_CREATED);
+            return new JsonResponse(MediaFolderAnswer::of($folder), Response::HTTP_CREATED);
         });
     }
 }

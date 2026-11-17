@@ -7,11 +7,9 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 use Setono\SyliusCMSPlugin\Media\MediaItemDeleterInterface;
 use Setono\SyliusCMSPlugin\Media\MediaItemDeleteVetoedException;
 use Setono\SyliusCMSPlugin\Media\MediaItemInUseException;
-use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -23,7 +21,7 @@ final readonly class DeleteMediaItemAction
 {
     public function __construct(
         private BuilderRequest $builderRequest,
-        private MediaItemRepositoryInterface $mediaItemRepository,
+        private MediaLookup $lookup,
         private MediaItemDeleterInterface $deleter,
         private TranslatorInterface $translator,
     ) {
@@ -32,7 +30,7 @@ final readonly class DeleteMediaItemAction
     public function __invoke(Request $request, string $uuid): JsonResponse
     {
         return $this->builderRequest->withCsrfToken($request, function () use ($uuid): JsonResponse {
-            $mediaItem = $this->mediaItemRepository->findOneByUuid($uuid) ?? throw new NotFoundHttpException(sprintf('There is no media item %s', $uuid));
+            $mediaItem = $this->lookup->mediaItem($uuid);
 
             try {
                 $this->deleter->delete($mediaItem);

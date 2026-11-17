@@ -8,14 +8,10 @@ use Setono\SyliusCMSPlugin\Media\FocalPoint;
 use Setono\SyliusCMSPlugin\Media\InvalidMediaChangeException;
 use Setono\SyliusCMSPlugin\Media\MediaItemMetadata;
 use Setono\SyliusCMSPlugin\Media\MediaItemSaverInterface;
-use Setono\SyliusCMSPlugin\Model\MediaFolderInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
-use Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface;
-use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Saves the metadata in the body, which takes effect at once: any of `name`, `folder` (a folder's UUID, or null for
@@ -27,8 +23,7 @@ final readonly class UpdateMediaItemAction
 {
     public function __construct(
         private BuilderRequest $builderRequest,
-        private MediaItemRepositoryInterface $mediaItemRepository,
-        private MediaFolderRepositoryInterface $folderRepository,
+        private MediaLookup $lookup,
         private MediaItemSaverInterface $saver,
         private MediaItemAnswer $answer,
     ) {
@@ -37,7 +32,7 @@ final readonly class UpdateMediaItemAction
     public function __invoke(Request $request, string $uuid): JsonResponse
     {
         return $this->builderRequest->withCsrfToken($request, function () use ($request, $uuid): JsonResponse {
-            $mediaItem = $this->mediaItemRepository->findOneByUuid($uuid) ?? throw new NotFoundHttpException(sprintf('There is no media item %s', $uuid));
+            $mediaItem = $this->lookup->mediaItem($uuid);
 
             try {
                 $this->saver->save($mediaItem, $this->metadata($mediaItem, $request->toArray()));
@@ -61,31 +56,13 @@ final readonly class UpdateMediaItemAction
         $metadata = MediaItemMetadata::of($mediaItem);
 
         return (new MediaItemMetadata(
-            array_key_exists('name', $body) ? self::string($body['name'], 'name') : $metadata->name,
-            array_key_exists('folder', $body) ? $this->folder($body['folder']) : $metadata->folder,
-            array_key_exists('credit', $body) ? self::nullableString($body['credit'], 'credit') : $metadata->credit,
+            array_key_exists('name', $body) ? BodyValue::string($body['name'], 'name') : $metadata->name,
+            array_key_exists('folder', $body) ? $this->lookup->folderIn($body['folder'], 'folder') : $metadata->folder,
+            array_key_exists('credit', $body) ? BodyValue::nullableString($body['credit'], 'credit') : $metadata->credit,
             $metadata->altTexts,
             array_key_exists('focalPoint', $body) ? self::focalPoint($body['focalPoint']) : $metadata->focalPoint,
-            array_key_exists('poster', $body) ? $this->poster($body['poster']) : $metadata->poster,
+            array_key_exists('poster', $body) ? $this->lookup->mediaItemIn($body['poster'], 'poster') : $metadata->poster,
         ))->withAltTexts(array_key_exists('altTexts', $body) ? self::altTexts($body['altTexts']) : []);
-    }
-
-    private function folder(mixed $uuid): ?MediaFolderInterface
-    {
-        if (null === $uuid) {
-            return null;
-        }
-
-        return $this->folderRepository->findOneByUuid(self::string($uuid, 'folder')) ?? throw new InvalidMediaChangeException(sprintf('There is no media folder %s', self::string($uuid, 'folder')));
-    }
-
-    private function poster(mixed $uuid): ?MediaItemInterface
-    {
-        if (null === $uuid) {
-            return null;
-        }
-
-        return $this->mediaItemRepository->findOneByUuid(self::string($uuid, 'poster')) ?? throw new InvalidMediaChangeException(sprintf('There is no media item %s', self::string($uuid, 'poster')));
     }
 
     private static function focalPoint(mixed $focalPoint): FocalPoint
@@ -112,19 +89,9 @@ final readonly class UpdateMediaItemAction
 
         $changed = [];
         foreach ($altTexts as $locale => $altText) {
-            $changed[(string) $locale] = self::nullableString($altText, sprintf('alt text in %s', $locale));
+            $changed[(string) $locale] = BodyValue::nullableString($altText, sprintf('alt text in %s', $locale));
         }
 
         return $changed;
-    }
-
-    private static function string(mixed $value, string $name): string
-    {
-        return is_string($value) ? $value : throw new InvalidMediaChangeException(sprintf('The %s must be a string', $name));
-    }
-
-    private static function nullableString(mixed $value, string $name): ?string
-    {
-        return null === $value ? null : self::string($value, $name);
     }
 }

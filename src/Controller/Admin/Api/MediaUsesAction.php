@@ -6,11 +6,9 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Model\MediaUsageInterface;
-use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaUsageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
@@ -23,7 +21,7 @@ final readonly class MediaUsesAction
 {
     public function __construct(
         private AdminAccessChecker $adminAccessChecker,
-        private MediaItemRepositoryInterface $mediaItemRepository,
+        private MediaLookup $lookup,
         private MediaUsageRepositoryInterface $usages,
         private EntryRows $entryRows,
         private UrlGeneratorInterface $urlGenerator,
@@ -35,7 +33,7 @@ final readonly class MediaUsesAction
     {
         $this->adminAccessChecker->denyUnlessAdmin();
 
-        $mediaItem = $this->mediaItemRepository->findOneByUuid($uuid) ?? throw new NotFoundHttpException(sprintf('There is no media item %s', $uuid));
+        $mediaItem = $this->lookup->mediaItem($uuid);
 
         $uses = $this->usages->findByMediaItem($mediaItem->getUuid());
         $this->entryRows->load(array_map(static fn (MediaUsageInterface $use): object => $use->getEntry(), $uses));
