@@ -20,6 +20,7 @@ use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\Taxon;
 use Sylius\Component\Taxonomy\Model\TaxonTranslation;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 final class TaxonLinkTargetTest extends TestCase
 {
@@ -134,6 +135,6 @@ final class TaxonLinkTargetTest extends TestCase
 
     private function context(string $localeCode): RenderContext
     {
-        return new RenderContext($this->prophesize(ChannelInterface::class)->reveal(), $localeCode, 'USD', null, '@guest', new \DateTimeImmutable());
+        return Rendering::context(localeCode: $localeCode);
     }
 }

@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Link\Target\UrlLinkTarget;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Sylius\Component\Core\Model\ChannelInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 final class UrlLinkTargetTest extends TestCase
 {
@@ -107,6 +108,6 @@ final class UrlLinkTargetTest extends TestCase
 
     private function context(): RenderContext
     {
-        return new RenderContext($this->prophesize(ChannelInterface::class)->reveal(), 'en_US', 'USD', null, '@guest', new \DateTimeImmutable());
+        return Rendering::context();
     }
 }

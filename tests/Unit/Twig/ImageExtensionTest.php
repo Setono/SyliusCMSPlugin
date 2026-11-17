@@ -25,6 +25,7 @@ use Sylius\Component\Core\Model\Channel;
 use Sylius\Resource\Translation\Provider\ImmutableTranslationLocaleProvider;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\Test\IntegrationTestCase;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * Runs the .test files in ImageFixture: cms_image(). Their --DATA-- sections build the media items with the helpers
@@ -98,7 +99,7 @@ final class ImageExtensionTest extends IntegrationTestCase
     public function rendering(array $variables, ?string $previewMode = null, string $locale = 'en_US'): array
     {
         return $variables + [
-            CMSRuntime::RENDER_CONTEXT => new RenderContext(new Channel(), $locale, 'USD', null, '@guest', new \DateTimeImmutable(), [], $previewMode),
+            CMSRuntime::RENDER_CONTEXT => Rendering::context(localeCode: $locale, previewMode: $previewMode),
         ];
     }
 
@@ -200,7 +201,7 @@ final class ImageExtensionTest extends IntegrationTestCase
     private function shopRenderContext(): RenderContextFactoryInterface
     {
         $factory = $this->prophesize(RenderContextFactoryInterface::class);
-        $factory->create()->willReturn(new RenderContext(new Channel(), 'de_DE', 'EUR', null, '@guest', new \DateTimeImmutable()));
+        $factory->create()->willReturn(Rendering::context(localeCode: 'de_DE', currencyCode: 'EUR'));
 
         return $factory->reveal();
     }

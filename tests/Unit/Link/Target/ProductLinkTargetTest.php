@@ -20,6 +20,7 @@ use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\Product;
 use Sylius\Component\Core\Model\ProductTranslation;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 final class ProductLinkTargetTest extends TestCase
 {
@@ -135,6 +136,6 @@ final class ProductLinkTargetTest extends TestCase
 
     private function context(string $localeCode): RenderContext
     {
-        return new RenderContext($this->prophesize(ChannelInterface::class)->reveal(), $localeCode, 'USD', null, '@guest', new \DateTimeImmutable());
+        return Rendering::context(localeCode: $localeCode);
     }
 }

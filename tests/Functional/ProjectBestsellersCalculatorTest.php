@@ -19,6 +19,7 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * A project with analytics data aliases BestsellersCalculatorInterface to its own calculator, and the command, the table
@@ -72,6 +73,6 @@ final class ProjectBestsellersCalculatorTest extends KernelTestCase
         $channel = $channels->findOneByCode('WEB');
         self::assertInstanceOf(ChannelInterface::class, $channel);
 
-        return new RenderContext($channel, 'en_US', 'USD', null, '@guest', new \DateTimeImmutable());
+        return Rendering::context(channel: $channel);
     }
 }

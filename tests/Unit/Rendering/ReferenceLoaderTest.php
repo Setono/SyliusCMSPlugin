@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 final class ReferenceLoaderTest extends TestCase
 {
@@ -103,6 +104,6 @@ final class ReferenceLoaderTest extends TestCase
 
     private function renderContext(): RenderContext
     {
-        return new RenderContext($this->prophesize(ChannelInterface::class)->reveal(), 'en_US', 'USD', null, '@guest', new \DateTimeImmutable());
+        return Rendering::context();
     }
 }

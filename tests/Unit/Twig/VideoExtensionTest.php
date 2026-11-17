@@ -25,6 +25,7 @@ use Setono\SyliusCMSPlugin\Twig\VideoRuntime;
 use Sylius\Component\Core\Model\Channel;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\Test\IntegrationTestCase;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * Runs the .test files in VideoFixture: cms_video() and cms_media_url(). Their --DATA-- sections build the media items
@@ -92,7 +93,7 @@ final class VideoExtensionTest extends IntegrationTestCase
     public function rendering(array $variables, ?string $previewMode = null): array
     {
         return $variables + [
-            CMSRuntime::RENDER_CONTEXT => new RenderContext(new Channel(), 'en_US', 'USD', null, '@guest', new \DateTimeImmutable(), [], $previewMode),
+            CMSRuntime::RENDER_CONTEXT => Rendering::context(previewMode: $previewMode),
         ];
     }
 
@@ -199,7 +200,7 @@ final class VideoExtensionTest extends IntegrationTestCase
     private function shopRenderContext(): RenderContextFactoryInterface
     {
         $factory = $this->prophesize(RenderContextFactoryInterface::class);
-        $factory->create()->willReturn(new RenderContext(new Channel(), 'en_US', 'USD', null, '@guest', new \DateTimeImmutable()));
+        $factory->create()->willReturn(Rendering::context());
 
         return $factory->reveal();
     }

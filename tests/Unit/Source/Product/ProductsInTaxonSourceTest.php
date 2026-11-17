@@ -19,6 +19,7 @@ use Sylius\Component\Core\Model\ChannelPricing;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductTaxon;
 use Sylius\Component\Core\Model\Taxon;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * "In taxon": the products in a taxon, or in it or below it, in the order editors pick, each order ending in the ID so
@@ -204,6 +205,6 @@ final class ProductsInTaxonSourceTest extends TestCase
         $channel = new Channel();
         $channel->setCode('WEB');
 
-        return new RenderContext($channel, $localeCode, 'USD', null, '@guest', new \DateTimeImmutable());
+        return Rendering::context(localeCode: $localeCode, channel: $channel);
     }
 }

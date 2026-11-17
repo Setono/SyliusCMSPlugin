@@ -21,6 +21,7 @@ use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Sylius\Component\Core\Model\Channel;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 final class MediaLinkTargetTest extends TestCase
 {
@@ -178,6 +179,6 @@ final class MediaLinkTargetTest extends TestCase
 
     private static function context(): RenderContext
     {
-        return new RenderContext(new Channel(), 'en_US', 'USD', null, '@guest', new \DateTimeImmutable());
+        return Rendering::context();
     }
 }

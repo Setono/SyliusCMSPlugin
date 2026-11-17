@@ -20,6 +20,7 @@ use Sylius\Component\Core\Model\Product;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductTaxon;
 use Sylius\Component\Core\Model\Taxon;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * "Bestsellers": the visible products with a score in the channel, highest first, then by ID, optionally only those in a
@@ -117,6 +118,6 @@ final class BestsellersSourceTest extends TestCase
         $channel = new Channel();
         $channel->setCode('WEB');
 
-        return new RenderContext($channel, 'en_US', 'USD', null, '@guest', new \DateTimeImmutable());
+        return Rendering::context(channel: $channel);
     }
 }

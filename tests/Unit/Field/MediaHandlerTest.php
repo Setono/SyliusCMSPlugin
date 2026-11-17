@@ -21,6 +21,7 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Field\Fixture\WithMedia;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 final class MediaHandlerTest extends TestCase
 {
@@ -207,7 +208,7 @@ final class MediaHandlerTest extends TestCase
     private function hydrationContext(array $mediaItems): HydrationContext
     {
         return new HydrationContext(
-            new RenderContext($this->prophesize(ChannelInterface::class)->reveal(), 'en_US', 'USD', null, '@guest', new \DateTimeImmutable()),
+            Rendering::context(),
             new ReferenceMap(['media_item' => $mediaItems]),
         );
     }

@@ -20,6 +20,7 @@ use Sylius\Component\Core\Model\Product as ProductModel;
 use Sylius\Component\Core\Model\Taxon as TaxonModel;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * The Taxon field type: a taxon's code, hydrated as the taxon while the shopper may see it
@@ -120,7 +121,7 @@ final class TaxonHandlerTest extends TestCase
     private function hydrationContext(array $records): HydrationContext
     {
         return new HydrationContext(
-            new RenderContext($this->prophesize(ChannelInterface::class)->reveal(), 'en_US', 'USD', null, '@guest', new \DateTimeImmutable()),
+            Rendering::context(),
             new ReferenceMap($records),
         );
     }

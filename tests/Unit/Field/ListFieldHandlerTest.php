@@ -25,6 +25,7 @@ use Sylius\Component\Core\Model\Taxon;
 use Sylius\Component\Core\Model\TaxonInterface;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * The Products and Taxons field types: hand-picked lists of codes, hydrated from the references loaded before rendering,
@@ -300,7 +301,7 @@ final class ListFieldHandlerTest extends TestCase
     private function hydrationContext(array $records): HydrationContext
     {
         return new HydrationContext(
-            new RenderContext($this->prophesize(ChannelInterface::class)->reveal(), 'en_US', 'USD', null, '@guest', new \DateTimeImmutable()),
+            Rendering::context(),
             new ReferenceMap($records),
         );
     }

@@ -21,6 +21,7 @@ use Setono\SyliusCMSPlugin\Value\Link;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 final class UnresolvedLinkNoticesTest extends TestCase
 {
@@ -132,6 +133,6 @@ final class UnresolvedLinkNoticesTest extends TestCase
      */
     private function context(?string $previewMode): RenderContext
     {
-        return new RenderContext($this->prophesize(ChannelInterface::class)->reveal(), 'en_US', 'USD', null, '@guest', new \DateTimeImmutable(), [], $previewMode);
+        return Rendering::context(previewMode: $previewMode);
     }
 }

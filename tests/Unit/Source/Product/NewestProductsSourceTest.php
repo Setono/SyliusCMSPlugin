@@ -14,6 +14,7 @@ use Setono\SyliusCMSPlugin\Source\Product\NewestProductsSource;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\RecordsQueries;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\ProductInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * "Newest": the visible products, newest first, then by ID. See "Product sources" in docs/spec/sources.md
@@ -55,6 +56,6 @@ final class NewestProductsSourceTest extends TestCase
         $channel = new Channel();
         $channel->setCode('WEB');
 
-        return new RenderContext($channel, 'en_US', 'USD', null, '@guest', new \DateTimeImmutable());
+        return Rendering::context(channel: $channel);
     }
 }

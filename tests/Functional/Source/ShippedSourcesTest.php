@@ -20,6 +20,7 @@ use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\TaxonInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * The shipped sources against a real database: what each lists, in its order, ending in the ID, paged in SQL.
@@ -363,6 +364,6 @@ final class ShippedSourcesTest extends KernelTestCase
         $channel = $channels->findOneByCode('WEB');
         self::assertInstanceOf(ChannelInterface::class, $channel);
 
-        return new RenderContext($channel, 'en_US', 'USD', null, '@guest', new \DateTimeImmutable());
+        return Rendering::context(channel: $channel);
     }
 }

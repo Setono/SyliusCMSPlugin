@@ -18,6 +18,7 @@ use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 final class EntryLinkTargetTest extends TestCase
 {
@@ -150,6 +151,6 @@ final class EntryLinkTargetTest extends TestCase
 
     private function context(): RenderContext
     {
-        return new RenderContext($this->channel, 'en_US', 'USD', null, '@guest', new \DateTimeImmutable());
+        return Rendering::context(channel: $this->channel);
     }
 }

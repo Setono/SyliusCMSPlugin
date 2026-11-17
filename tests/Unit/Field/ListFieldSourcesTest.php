@@ -24,6 +24,7 @@ use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\Taxon;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * A list field filled by a source: stored as {"$source", "$params", "$limit"}, resolved when a template first reads it,
@@ -361,6 +362,6 @@ final class ListFieldSourcesTest extends TestCase
         $channel = new Channel();
         $channel->setCode('WEB');
 
-        return new HydrationContext(new RenderContext($channel, 'en_US', 'USD', null, '@guest', new \DateTimeImmutable(), $hostPageContext), $references);
+        return new HydrationContext(Rendering::context(channel: $channel, hostPageContext: $hostPageContext), $references);
     }
 }

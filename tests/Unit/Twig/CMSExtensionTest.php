@@ -68,6 +68,7 @@ use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\Test\IntegrationTestCase;
 use Setono\SyliusCMSPlugin\Link\Target\TaxonLinkTarget;
 use Sylius\Component\Core\Model\Taxon;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * Runs the .test files in Fixture, one directory per function. Twig evaluates their --DATA-- sections inside this
@@ -180,7 +181,7 @@ final class CMSExtensionTest extends IntegrationTestCase
     public function rendering(array $variables, ?string $previewMode = null, string $locale = 'en_US', ?ChannelInterface $channel = null): array
     {
         return $variables + [
-            CMSRuntime::RENDER_CONTEXT => new RenderContext($channel ?? new Channel(), $locale, 'USD', null, '@guest', new \DateTimeImmutable(), [], $previewMode),
+            CMSRuntime::RENDER_CONTEXT => Rendering::context(localeCode: $locale, channel: $channel ?? new Channel(), previewMode: $previewMode),
         ];
     }
 
@@ -287,7 +288,7 @@ final class CMSExtensionTest extends IntegrationTestCase
     private function shopRenderContext(): RenderContextFactoryInterface
     {
         $factory = $this->prophesize(RenderContextFactoryInterface::class);
-        $factory->create()->willReturn(new RenderContext(new Channel(), 'da_DK', 'DKK', null, '@guest', new \DateTimeImmutable()));
+        $factory->create()->willReturn(Rendering::context(localeCode: 'da_DK', currencyCode: 'DKK'));
 
         return $factory->reveal();
     }

@@ -14,6 +14,7 @@ use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\TaxonInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 /**
  * The products and taxons queries that link targets and sources build on, mirroring Sylius's own shop listing.
@@ -143,7 +144,7 @@ final class VisibleProductsAndTaxonsQueryTest extends KernelTestCase
         $channel = $channels->findOneByCode('WEB');
         self::assertInstanceOf(ChannelInterface::class, $channel);
 
-        return new RenderContext($channel, $localeCode, 'USD', null, '@guest', new \DateTimeImmutable());
+        return Rendering::context(localeCode: $localeCode, channel: $channel);
     }
 
     private static function productsQuery(): VisibleProductsQueryInterface

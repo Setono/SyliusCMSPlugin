@@ -22,6 +22,7 @@ use Setono\SyliusCMSPlugin\Value\Link as LinkValue;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 
 final class LinkHandlerTest extends TestCase
 {
@@ -411,7 +412,7 @@ final class LinkHandlerTest extends TestCase
     private function context(string $localeCode, ReferenceMap $references = new ReferenceMap()): HydrationContext
     {
         return new HydrationContext(
-            new RenderContext($this->prophesize(ChannelInterface::class)->reveal(), $localeCode, 'USD', null, '@guest', new \DateTimeImmutable()),
+            Rendering::context(localeCode: $localeCode),
             $references,
         );
     }
