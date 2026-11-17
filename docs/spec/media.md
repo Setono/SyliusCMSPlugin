@@ -156,6 +156,8 @@ The first visitor to each variant waits for it to be generated.
 | `alt` | `string\|null` | the media item's alt text | Overrides the alt text. Templates pass the block's alt override here. |
 | `class` | `string\|null` | `null` | Added to the `<img>`. |
 | `format` | `'auto'`, `'webp'` or `'original'` | `'auto'` | **Auto** renders a `<picture>` with an AVIF `<source>` where supported and WebP in the `<img>`. **WebP** renders a plain `<img>`. **Original** keeps the source format. |
+| `art_direction` | list of `{media, image, aspect_ratio?}` | `[]` | Other images for some screens, such as a Banner's mobile image. Each whose `image` (a media item, its UUID or `null`) is an image becomes a `<source media="{media}">` in a `<picture>`, before the image's own sources: an AVIF one first where offered, then one in the `<img>`'s format, sized by the same `layout`, `width` and `sizes`, at its own aspect ratio or `aspect_ratio`. An empty, broken or non-image one is left out, and without the main image nothing renders. |
+| `picture_class` | `string\|null` | `null` | Always renders a `<picture>` with this class, also when it has no `<source>`. A builder placeholder takes it too. |
 
 What it renders:
 
