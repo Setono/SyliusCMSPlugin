@@ -427,6 +427,23 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_builds_the_overview_from_a_template_event_whose_blocks_are_its_panels_in_the_specs_order(): void
+    {
+        $this->load();
+
+        self::assertSame([
+            'blocks' => [
+                'needs_attention' => ['template' => '@SetonoSyliusCMSPlugin/admin/overview/_needs_attention.html.twig', 'priority' => 40],
+                'coming_up' => ['template' => '@SetonoSyliusCMSPlugin/admin/overview/_coming_up.html.twig', 'priority' => 30],
+                'translations' => ['template' => '@SetonoSyliusCMSPlugin/admin/overview/_translations.html.twig', 'priority' => 20],
+                'drafts_in_progress' => ['template' => '@SetonoSyliusCMSPlugin/admin/overview/_drafts_in_progress.html.twig', 'priority' => 10],
+            ],
+        ], $this->templateEvents()['setono_sylius_cms.admin.overview.panels'] ?? null);
+    }
+
+    /**
+     * @test
+     */
     public function it_routes_the_messages_that_run_a_scheduled_publish_and_delete_a_replaced_file_to_sylius_main_transport(): void
     {
         $this->load();
@@ -633,6 +650,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
             ],
             'status' => ['type' => 'setono_sylius_cms_entry_status', 'label' => 'setono_sylius_cms.ui.status'],
             'channel' => ['type' => 'setono_sylius_cms_entry_channel', 'label' => 'setono_sylius_cms.ui.channel'],
+            'translation' => ['type' => 'setono_sylius_cms_entry_translation', 'label' => 'setono_sylius_cms.ui.translations'],
         ], $grid['filters']);
         self::assertSame([
             'main' => [
@@ -655,6 +673,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         self::assertSame([
             'setono_sylius_cms_entry_status' => '@SyliusUi/Grid/Filter/select.html.twig',
             'setono_sylius_cms_entry_channel' => '@SyliusUi/Grid/Filter/select.html.twig',
+            'setono_sylius_cms_entry_translation' => '@SyliusUi/Grid/Filter/select.html.twig',
         ], $config['templates']['filter']);
     }
 
