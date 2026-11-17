@@ -105,6 +105,11 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.xml');
 
+        // The profiler panel, whose decorators record what each slot does, only where errors are shown too
+        if ($container->hasParameter('kernel.debug') && true === $container->getParameter('kernel.debug')) {
+            $loader->load('services/profiler.xml');
+        }
+
         self::registerPropertyPaths($container, $config['bindable_properties']);
 
         // The Flysystem storage media items are stored in: the plugin's own local one, setono_sylius_cms.storage, which

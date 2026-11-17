@@ -21,6 +21,9 @@ use Setono\SyliusCMSPlugin\Context\TaxonContextResolver;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
+use Setono\SyliusCMSPlugin\Profiler\CMSDataCollector;
+use Setono\SyliusCMSPlugin\Profiler\TraceableSlotRenderer;
+use Setono\SyliusCMSPlugin\Rendering\SlotRendererInterface;
 use Setono\SyliusCMSPlugin\Factory\PlacementFactory;
 use Setono\SyliusCMSPlugin\Factory\PlacementFactoryInterface;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
@@ -98,6 +101,39 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $resources = array_map(static fn (ResourceInterface $resource): string => (string) $resource, $this->container->getResources());
 
         self::assertContains(dirname(__DIR__, 3) . '/src/Resources/config/services.xml', $resources);
+    }
+
+    /**
+     * The profiler panel and what records it, which decorate the rendering services. See "Profiler panel" in
+     * docs/spec/rendering.md
+     *
+     * @test
+     */
+    public function it_registers_the_profiler_panel_in_debug(): void
+    {
+        $this->setParameter('kernel.debug', true);
+
+        $this->load();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithTag(CMSDataCollector::class, 'data_collector', [
+            'id' => CMSDataCollector::NAME,
+            'template' => '@SetonoSyliusCMSPlugin/profiler/cms.html.twig',
+            'priority' => -10,
+        ]);
+        self::assertSame(SlotRendererInterface::class, $this->container->getDefinition(TraceableSlotRenderer::class)->getDecoratedService()[0] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function it_registers_no_profiler_panel_without_debug(): void
+    {
+        $this->setParameter('kernel.debug', false);
+
+        $this->load();
+
+        $this->assertContainerBuilderNotHasService(CMSDataCollector::class);
+        $this->assertContainerBuilderNotHasService(TraceableSlotRenderer::class);
     }
 
     /**
