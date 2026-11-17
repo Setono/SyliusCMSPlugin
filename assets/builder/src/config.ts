@@ -1,3 +1,4 @@
+import { readDataConfig } from './dataConfig';
 import type { MediaLibraryConfig } from './media/config';
 
 /** A channel of the store. */
@@ -111,10 +112,5 @@ export function withUuid(endpoint: string, uuid: string): string {
 }
 
 export function readConfig(element: HTMLElement): BuilderConfig {
-    const json = element.dataset.config;
-    if (json === undefined || json === '') {
-        throw new Error('The builder needs its configuration in the data-config attribute.');
-    }
-
-    return JSON.parse(json) as BuilderConfig;
+    return readDataConfig<BuilderConfig>(element, 'The builder needs its configuration in the data-config attribute.');
 }

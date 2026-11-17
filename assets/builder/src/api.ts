@@ -300,6 +300,7 @@ function errorMessage(body: unknown): string | undefined {
     return isObject(body) && typeof body.error === 'string' ? body.error : undefined;
 }
 
-function isObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null;
+/** Whether an endpoint's answer, or a part of it, is a JSON object, which a list isn't. */
+export function isObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

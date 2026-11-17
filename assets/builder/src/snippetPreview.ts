@@ -4,7 +4,7 @@
  * object picker finds, both under the preview's token. They're internal to the builder.
  * See "Snippet preview" in docs/spec/builder.md
  */
-import { ApiError, defaultFetch, send, type Fetch } from './api';
+import { ApiError, defaultFetch, isObject, send, type Fetch } from './api';
 import type { SnippetPlacement } from './config';
 import type { SearchResult } from './search/api';
 
@@ -66,10 +66,6 @@ export function createSnippetPreviewApi(endpoints: { snippet: string; samples: s
 /** The placement a snippet's preview starts in: its first one in a slot the code still declares, or null for a plain page. */
 export function startingPlacement(placements: readonly SnippetPlacement[] | null): string | null {
     return placements?.find(({ removed }) => !removed)?.uuid ?? null;
-}
-
-function isObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function isSample(value: unknown): value is Sample {

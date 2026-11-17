@@ -2,6 +2,7 @@
  * What the page scope editor of the Placements section of a snippet's overview page gets from the page. See "Placements"
  * in docs/spec/admin.md and "Page scopes" in docs/spec/slots.md
  */
+import { readDataConfig } from '../dataConfig';
 import type { ConditionKindDefinition, ContextKeyDefinition, VisibilityCondition } from '../types';
 
 /** What a section's editors share, as JSON in the data-config attribute of its [data-cms-page-scopes]. */
@@ -32,18 +33,9 @@ export interface PlacementScopeConfig {
 }
 
 export function readPageScopesConfig(element: HTMLElement): PageScopesConfig {
-    return read<PageScopesConfig>(element, 'The page scope editors need their configuration in the data-config attribute.');
+    return readDataConfig<PageScopesConfig>(element, 'The page scope editors need their configuration in the data-config attribute.');
 }
 
 export function readPlacementScopeConfig(element: HTMLElement): PlacementScopeConfig {
-    return read<PlacementScopeConfig>(element, "A page scope editor needs its placement's configuration in the data-config attribute.");
-}
-
-function read<T>(element: HTMLElement, missing: string): T {
-    const json = element.dataset.config;
-    if (json === undefined || json === '') {
-        throw new Error(missing);
-    }
-
-    return JSON.parse(json) as T;
+    return readDataConfig<PlacementScopeConfig>(element, "A page scope editor needs its placement's configuration in the data-config attribute.");
 }

@@ -1,3 +1,4 @@
+import { readDataConfig } from '../dataConfig';
 import type { MediaFilters, MediaKind } from './types';
 
 /** A locale of the store, which media items have alt text in. */
@@ -35,10 +36,5 @@ export interface MediaLibraryConfig {
 }
 
 export function readMediaLibraryConfig(element: HTMLElement): MediaLibraryConfig {
-    const json = element.dataset.config;
-    if (json === undefined || json === '') {
-        throw new Error('The media library needs its configuration in the data-config attribute.');
-    }
-
-    return JSON.parse(json) as MediaLibraryConfig;
+    return readDataConfig<MediaLibraryConfig>(element, 'The media library needs its configuration in the data-config attribute.');
 }
