@@ -32,7 +32,7 @@ final class ShareLinksTest extends BuilderApiTestCase
 
         self::assertResponseStatusCodeSame(201);
         self::assertIsArray($shareLink);
-        self::assertSame(['id', 'url', 'channel', 'locale', 'shownTo', 'date', 'createdAt', 'createdBy'], array_keys($shareLink));
+        self::assertSame(['id', 'url', 'channel', 'locale', 'shownTo', 'date', 'createdAt', 'createdBy', 'placement', 'sample'], array_keys($shareLink));
         self::assertIsInt($shareLink['id']);
         self::assertIsString($shareLink['url']);
         self::assertMatchesRegularExpression('#^http://localhost/en_US/about-us\?_cms_share=[A-Za-z0-9_-]{43}$#', $shareLink['url']);
@@ -43,6 +43,8 @@ final class ShareLinksTest extends BuilderApiTestCase
         self::assertIsString($shareLink['createdAt']);
         self::assertMatchesRegularExpression('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/', $shareLink['createdAt']);
         self::assertSame('John Doe', $shareLink['createdBy']);
+        self::assertNull($shareLink['placement'], 'A page shows at its own URL');
+        self::assertNull($shareLink['sample']);
 
         // Anyone with the link sees the draft, without an admin account
         $client->restart();

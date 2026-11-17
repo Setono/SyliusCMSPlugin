@@ -51,8 +51,7 @@ final class PreviewTokenTest extends BuilderApiTestCase
     }
 
     /**
-     * Until the builder previews a snippet on the page of one of its placements (#260), it previews it on a plain shop
-     * page. See "Snippet preview" in docs/spec/builder.md
+     * A snippet with no placement previews on a plain shop page. See "Snippet preview" in docs/spec/builder.md
      *
      * @test
      */
