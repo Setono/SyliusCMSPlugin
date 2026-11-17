@@ -22,6 +22,7 @@ use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
+use Sylius\Component\Channel\Model\ChannelInterface as BaseChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -42,14 +43,16 @@ final class PlacementHiddenByHomepageTest extends TestCase
     /** @var ObjectProphecy<HomepageRepositoryInterface> */
     private ObjectProphecy $homepages;
 
-    /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> */
+    /** @var ObjectProphecy<ChannelRepositoryInterface<BaseChannelInterface>> */
     private ObjectProphecy $channels;
 
     protected function setUp(): void
     {
         $this->placements = $this->prophesize(PlacementRepositoryInterface::class);
         $this->homepages = $this->prophesize(HomepageRepositoryInterface::class);
-        $this->channels = $this->prophesize(ChannelRepositoryInterface::class);
+        /** @var ObjectProphecy<ChannelRepositoryInterface<BaseChannelInterface>> $channels */
+        $channels = $this->prophesize(ChannelRepositoryInterface::class);
+        $this->channels = $channels;
         $this->channels->findBy(['code' => ['GONE', 'WEB']])->willReturn([self::channel('WEB', 'Web store')]);
     }
 

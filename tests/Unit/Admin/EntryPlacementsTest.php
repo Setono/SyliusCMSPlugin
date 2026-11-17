@@ -34,6 +34,7 @@ use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
+use Sylius\Component\Channel\Model\ChannelInterface as BaseChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -53,7 +54,7 @@ final class EntryPlacementsTest extends TestCase
     /** @var ObjectProphecy<HomepageRepositoryInterface> */
     private ObjectProphecy $homepages;
 
-    /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> */
+    /** @var ObjectProphecy<ChannelRepositoryInterface<BaseChannelInterface>> */
     private ObjectProphecy $channels;
 
     protected function setUp(): void
@@ -63,7 +64,9 @@ final class EntryPlacementsTest extends TestCase
         $this->declaredContext = $this->prophesize(DeclaredContextInterface::class);
         $this->declaredContext->toPlace(Argument::type(SnippetInterface::class))->will(static fn (array $arguments): array => $arguments[0] instanceof SnippetInterface ? $arguments[0]->getContext() : []);
         $this->homepages = $this->prophesize(HomepageRepositoryInterface::class);
-        $this->channels = $this->prophesize(ChannelRepositoryInterface::class);
+        /** @var ObjectProphecy<ChannelRepositoryInterface<BaseChannelInterface>> $channels */
+        $channels = $this->prophesize(ChannelRepositoryInterface::class);
+        $this->channels = $channels;
     }
 
     /**
@@ -237,7 +240,7 @@ final class EntryPlacementsTest extends TestCase
             $order->withoutCatchAll,
             $order->hiddenByHomepageIn,
         ], $section->slotOrders));
-        self::assertSame('removed', $section->slotOrders[1]->placements[0]->pageScope[0]->kind ?? null, "Another snippet's placement has its page scope worded");
+        self::assertSame(['removed'], array_map(static fn (PageScopeCondition $condition): string => $condition->kind, $section->slotOrders[1]->placements[0]->pageScope), "Another snippet's placement has its page scope worded");
     }
 
     /**

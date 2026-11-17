@@ -57,10 +57,14 @@ final class PlacementPickerTest extends TestCase
             );
         });
         self::$snippets = [];
+        self::$placements = [];
     }
 
     /** @var array<string, SnippetInterface> the snippets the tests make, by UUID */
     public static array $snippets = [];
+
+    /** @var list<string> the snippet UUIDs of the placements the tests make, in the order they're made */
+    private static array $placements = [];
 
     /**
      * @test
@@ -218,9 +222,10 @@ final class PlacementPickerTest extends TestCase
      */
     private static function placement(SnippetInterface $snippet, array $pageScope = []): PlacementData
     {
-        static $position = 0;
+        $position = count(self::$placements);
+        self::$placements[] = $snippet->getUuid();
 
-        return new PlacementData(sprintf('0193a5be-71b0-7a3c-9d4e-%012d', ++$position), $snippet->getUuid(), 'product.after_price', $pageScope, $position);
+        return new PlacementData(sprintf('0193a5be-71b0-7a3c-9d4e-%012d', $position), $snippet->getUuid(), 'product.after_price', $pageScope, $position);
     }
 
     /**

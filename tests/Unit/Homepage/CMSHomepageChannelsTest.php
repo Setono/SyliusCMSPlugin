@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Homepage\CMSHomepageChannels;
 use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepositoryInterface;
+use Sylius\Component\Channel\Model\ChannelInterface as BaseChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -26,13 +27,15 @@ final class CMSHomepageChannelsTest extends TestCase
     /** @var ObjectProphecy<HomepageRepositoryInterface> */
     private ObjectProphecy $homepages;
 
-    /** @var ObjectProphecy<ChannelRepositoryInterface<ChannelInterface>> */
+    /** @var ObjectProphecy<ChannelRepositoryInterface<BaseChannelInterface>> */
     private ObjectProphecy $channels;
 
     protected function setUp(): void
     {
         $this->homepages = $this->prophesize(HomepageRepositoryInterface::class);
-        $this->channels = $this->prophesize(ChannelRepositoryInterface::class);
+        /** @var ObjectProphecy<ChannelRepositoryInterface<BaseChannelInterface>> $channels */
+        $channels = $this->prophesize(ChannelRepositoryInterface::class);
+        $this->channels = $channels;
     }
 
     /**
