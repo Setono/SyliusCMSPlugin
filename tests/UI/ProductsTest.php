@@ -68,11 +68,12 @@ final class ProductsTest extends UITestCase
     }
 
     /**
-     * Opens the Products field's search with its add button, which the field's label names, and picks what it finds
+     * Opens the Products field's search with its add button, and picks what it finds. The field's label names its
+     * "Filled by" select, since sources can fill it too
      */
     private static function pick(PageInterface $page, LocatorInterface $fields, string $query, string $name): void
     {
-        $fields->getByRole('button', ['name' => 'Products', 'exact' => true])->click();
+        $fields->getByRole('button', ['name' => 'Add product', 'exact' => true])->click();
         $page->getByRole('combobox', ['name' => 'Search products'])->fill($query);
         $page->getByRole('option', ['name' => $name, 'exact' => true])->click();
         Expect::locator($page->getByRole('combobox', ['name' => 'Search products']))->toHaveCount(0);
