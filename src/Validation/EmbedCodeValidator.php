@@ -40,10 +40,10 @@ final readonly class EmbedCodeValidator
             return [];
         }
 
-        $published = self::embedCodeKeys($publishedTree->blocks);
+        $published = self::embedCodeKeys($publishedTree);
 
         $errors = [];
-        foreach (self::embedCodeKeys($tree->blocks) as $key) {
+        foreach (self::embedCodeKeys($tree) as $key) {
             if (!in_array($key, $published, true)) {
                 $errors[] = new ValidationError($key, null, null, $this->translator->trans('setono_sylius_cms.block.embed_code_off', [], 'validators'));
             }
@@ -53,21 +53,13 @@ final readonly class EmbedCodeValidator
     }
 
     /**
-     * @param list<StoredBlock> $blocks
-     *
-     * @return list<string> the keys of the embed_code blocks among them and below them, depth first
+     * @return list<string> the keys of the tree's embed_code blocks, depth first
      */
-    private static function embedCodeKeys(array $blocks): array
+    private static function embedCodeKeys(StoredTree $tree): array
     {
-        $keys = [];
-        foreach ($blocks as $block) {
-            if (EmbedCode::CODE === $block->type) {
-                $keys[] = $block->key;
-            }
-
-            $keys = [...$keys, ...self::embedCodeKeys($block->children)];
-        }
-
-        return $keys;
+        return array_values(array_map(
+            static fn (StoredBlock $block): string => $block->key,
+            array_filter($tree->allBlocks(), static fn (StoredBlock $block): bool => EmbedCode::CODE === $block->type),
+        ));
     }
 }
