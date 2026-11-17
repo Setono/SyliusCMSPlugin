@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Tests\Support\Customers;
+use Setono\SyliusCMSPlugin\Tests\Support\Html;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Component\DomCrawler\Crawler;
 
 final class PreviewTokenTest extends BuilderApiTestCase
 {
     use Customers;
+
+    private const KEY = '0193a5be-0000-7000-8000-000000000001';
 
     /**
      * @test
@@ -45,6 +48,48 @@ final class PreviewTokenTest extends BuilderApiTestCase
         self::assertResponseStatusCodeSame(200);
         self::assertSelectorTextSame('.cms-tree .cms-heading', 'Hello');
         self::assertSelectorExists('link[rel="alternate"][hreflang="x-default"][href$="/en_US/about-us"]', 'The channel is WEB, whose default locale is en_US, though its hostname is localhost');
+    }
+
+    /**
+     * Until the builder previews a snippet on the page of one of its placements (#260), it previews it on a plain shop
+     * page. See "Snippet preview" in docs/spec/builder.md
+     *
+     * @test
+     */
+    public function it_answers_a_plain_shop_page_that_shows_the_working_copy_of_a_snippet_marked_for_the_builder(): void
+    {
+        $client = self::createClient(server: ['HTTP_HOST' => 'admin.example']);
+        $snippet = self::createSnippet('Free shipping', [self::heading(self::KEY, 'Free shipping over $50')]);
+        $csrfToken = self::openBuilder($client, $snippet);
+
+        /** @var array{url: string} $response */
+        $response = self::json($client, 'POST', '/admin/cms/api/preview/token', ['entry' => $snippet->getUuid(), 'channel' => 'WEB', 'locale' => 'en_US', 'shownTo' => '@guest'], $csrfToken);
+
+        self::assertMatchesRegularExpression('#^http://admin\.example/en_US/_cms/snippet-preview\?_cms_preview=[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$#', $response['url']);
+
+        $crawler = $client->request('GET', $response['url']);
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSame(
+            sprintf('<!--cms:block %s heading--><h2 class="cms-heading"><!--cms:field %1$s text text-->Free shipping over $50<!--/cms:field %1$s text--></h2><!--/cms:block %1$s-->', self::KEY),
+            Html::withoutWhitespaceBetweenTags($crawler->filter('.cms-slot')->html()),
+        );
+        self::assertSelectorExists('#footer', 'It shows in the shop\'s own layout');
+    }
+
+    /**
+     * @test
+     */
+    public function it_shows_the_plain_snippet_page_only_to_the_builder_s_preview_of_a_snippet(): void
+    {
+        $client = self::createClient();
+        $page = self::createPage('About us', 'about-us', 'Hello');
+
+        $client->request('GET', '/en_US/_cms/snippet-preview');
+        self::assertResponseStatusCodeSame(404);
+
+        $client->request('GET', '/en_US/_cms/snippet-preview?_cms_preview=' . self::previewToken($page));
+        self::assertResponseStatusCodeSame(404);
     }
 
     /**

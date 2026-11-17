@@ -116,6 +116,25 @@ final class SlotsTest extends WebTestCase
     }
 
     /**
+     * Only the edited entry is marked for the builder to select and type in. See "Preview mode and share links" in
+     * docs/spec/rendering.md
+     *
+     * @test
+     */
+    public function it_shows_the_snippets_in_the_slots_of_the_builder_s_preview_as_shoppers_see_them(): void
+    {
+        $client = self::createClient();
+        self::place(self::createSnippet('Free shipping', [self::heading(self::FREE_SHIPPING, 'Free shipping')], published: true), 'shop.footer');
+        $page = self::createPage('About us', 'about-us', 'About us');
+
+        $crawler = $client->request('GET', '/en_US/about-us?_cms_preview=' . self::previewToken($page));
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('<!--cms:block', $crawler->filter('.cms-tree')->html());
+        self::assertSame('<h2 class="cms-heading">Free shipping</h2>', Html::withoutWhitespaceBetweenTags($crawler->filter('.cms-slot--shop-footer')->html()));
+    }
+
+    /**
      * @test
      */
     public function it_keeps_a_placement_in_a_slot_the_code_no_longer_declares_and_shows_nothing_of_it(): void

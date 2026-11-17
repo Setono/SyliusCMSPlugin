@@ -1,0 +1,16 @@
+{#
+ # The plain shop page the builder previews a snippet on (Controller\Shop\SnippetPreviewAction): the snippet's
+ # top-level blocks in the shop's layout, in a wrapper spaced like a slot's. It gets:
+ #   snippet  the previewed snippet's working copy
+ #   blocks   its visible top-level blocks, as BlockViews
+ #   context  the host-page context: none
+ #}
+{% extends '@SyliusShop/layout.html.twig' %}
+
+{% block title %}{{ cms_value(snippet, 'title') }}{% endblock %}
+
+{% block content %}
+    <div class="cms-slot">
+        {{ cms_blocks(blocks) }}
+    </div>
+{% endblock %}

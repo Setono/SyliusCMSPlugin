@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
+use Setono\SyliusCMSPlugin\Controller\Shop\SnippetPreviewAction;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
@@ -19,11 +21,12 @@ use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Creates a preview token for an entry, a channel, a locale, Shown to and Date, and answers with the URL the builder
  * loads in its preview iframe: the working copy's canonical URL, on the admin's own host, which is the channel's root for
- * its homepage. The sample object and the placement join it with their tickets. See "Preview mode" in docs/spec/builder.md
+ * its homepage, and for a snippet a plain shop page. The sample object and the placement join it with their tickets. See "Preview mode" in docs/spec/builder.md
  */
 final readonly class PreviewTokenAction
 {
@@ -39,6 +42,7 @@ final readonly class PreviewTokenAction
         private WorkingCopyProviderInterface $workingCopyProvider,
         private PreviewTokenSigner $signer,
         private CanonicalUrlGeneratorInterface $canonicalUrls,
+        private UrlGeneratorInterface $urlGenerator,
     ) {
     }
 
@@ -89,8 +93,12 @@ final readonly class PreviewTokenAction
             return BuilderRequest::badRequest(sprintf('The date must be null or a UTC date and time such as 2026-12-01T00:00:00Z, got %s', json_encode($date)));
         }
 
-        // Where the working copy's page lives in the channel and locale, such as a homepage's channel's root
-        $url = $this->canonicalUrls->generate($this->workingCopyProvider->getWorkingCopy($entry), $channel, $localeCode);
+        // Where the working copy's page lives in the channel and locale, such as a homepage's channel's root. A snippet has no
+        // page of its own, so it shows on a plain shop page, until #260 shows it on the page of one of its placements
+        $workingCopy = $this->workingCopyProvider->getWorkingCopy($entry);
+        $url = $workingCopy instanceof SnippetInterface
+            ? $this->urlGenerator->generate(SnippetPreviewAction::ROUTE, ['_locale' => $localeCode], UrlGeneratorInterface::ABSOLUTE_URL)
+            : $this->canonicalUrls->generate($workingCopy, $channel, $localeCode);
         if (null === $url) {
             return BuilderRequest::badRequest(sprintf('The entry has no URL in %s', $localeCode));
         }
