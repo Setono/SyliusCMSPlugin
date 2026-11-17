@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Rendering;
 
 use Setono\SyliusCMSPlugin\Attribute\NoParams;
+use Setono\SyliusCMSPlugin\Field\Choice;
+use Setono\SyliusCMSPlugin\Field\Field;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\HydrationContext;
 use Setono\SyliusCMSPlugin\Field\Reference;
@@ -40,8 +42,9 @@ final readonly class ParamsHydrator
 
     /**
      * Hydrates as hydrate() does, or gives null when a parameter set to a reference no longer resolves: what it refers
-     * to was deleted, or the shopper may not see it, such as a disabled taxon. A source then yields nothing, rather than
-     * what it yields without the parameter. See "The contract" in docs/spec/sources.md
+     * to was deleted, or the shopper may not see it, such as a disabled taxon, or a choice from the store, such as an
+     * association type, is one the store no longer has. A source then yields nothing, rather than what it yields
+     * without the parameter. See "The contract" in docs/spec/sources.md
      *
      * @param class-string|null $class the parameters class, or null for none, which gives a NoParams
      * @param array<string, FieldMetadata> $fields the parameters class's fields, by property name
@@ -75,7 +78,7 @@ final readonly class ParamsHydrator
             $handler = $this->fieldHandlers->get($field->field);
             $hydrated = $handler->hydrate($field->field, $value, $context);
             if (null === $hydrated) {
-                if ($resolvedOnly && [] !== [...$handler->references($field->field, $value)]) {
+                if ($resolvedOnly && ([] !== [...$handler->references($field->field, $value)] || self::isChoiceFromTheStore($field->field))) {
                     return null;
                 }
 
@@ -90,6 +93,15 @@ final readonly class ParamsHydrator
         }
 
         return $params;
+    }
+
+    /**
+     * Whether the field is one Choice out of what a choices provider gives from the store, such as an association type,
+     * which, like a reference, no longer resolves once the store no longer has what it was set to
+     */
+    private static function isChoiceFromTheStore(Field $field): bool
+    {
+        return $field instanceof Choice && null !== $field->choicesProvider && !$field->multiple;
     }
 
     /**
