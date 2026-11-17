@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Twig;
 
 use Setono\SyliusCMSPlugin\Media\AltTextResolverInterface;
 use Setono\SyliusCMSPlugin\Media\ImageFormat;
+use Setono\SyliusCMSPlugin\Media\ImageFormatsInterface;
 use Setono\SyliusCMSPlugin\Media\ImageLayout;
 use Setono\SyliusCMSPlugin\Media\ImageOptions;
 use Setono\SyliusCMSPlugin\Media\ImageProviderInterface;
@@ -32,6 +33,7 @@ final readonly class ImageRuntime implements RuntimeExtensionInterface
      */
     public function __construct(
         private ImageProviderInterface $imageProvider,
+        private ImageFormatsInterface $imageFormats,
         private AltTextResolverInterface $altTextResolver,
         private MediaItemRepositoryInterface $mediaItemRepository,
         private RenderContextFactoryInterface $renderContextFactory,
@@ -60,10 +62,10 @@ final readonly class ImageRuntime implements RuntimeExtensionInterface
         $format = match ($options->format) {
             ImageOptions::FORMAT_ORIGINAL => ImageFormat::Original,
             ImageOptions::FORMAT_WEBP => ImageFormat::Webp,
-            default => $this->imageProvider->supportsFormat(ImageFormat::Webp) ? ImageFormat::Webp : ImageFormat::Original,
+            default => $this->imageFormats->supports(ImageFormat::Webp) ? ImageFormat::Webp : ImageFormat::Original,
         };
         // Liip doesn't negotiate formats, so the browser picks AVIF from a source where it supports it
-        $avif = ImageOptions::FORMAT_AUTO === $options->format && $this->imageProvider->supportsFormat(ImageFormat::Avif);
+        $avif = ImageOptions::FORMAT_AUTO === $options->format && $this->imageFormats->supports(ImageFormat::Avif);
 
         // The art-directed images come first, so the browser takes one where its media query matches
         $sources = '';

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Twig;
 
 use Setono\SyliusCMSPlugin\Media\ImageFormat;
+use Setono\SyliusCMSPlugin\Media\ImageFormatsInterface;
 use Setono\SyliusCMSPlugin\Media\ImageProviderInterface;
 use Setono\SyliusCMSPlugin\Media\ImageTransform;
 use Setono\SyliusCMSPlugin\Media\ImageVariants;
@@ -37,6 +38,7 @@ final readonly class VideoRuntime implements RuntimeExtensionInterface
     public function __construct(
         private MediaUrlGeneratorInterface $mediaUrlGenerator,
         private ImageProviderInterface $imageProvider,
+        private ImageFormatsInterface $imageFormats,
         private MediaItemRepositoryInterface $mediaItemRepository,
         private RenderContextFactoryInterface $renderContextFactory,
     ) {
@@ -108,7 +110,7 @@ final readonly class VideoRuntime implements RuntimeExtensionInterface
             return $this->imageProvider->url($poster, new ImageTransform(max(1, $width ?? 1), null, ImageFormat::Original, $poster->getFocalPoint()));
         }
 
-        $format = $this->imageProvider->supportsFormat(ImageFormat::Webp) ? ImageFormat::Webp : ImageFormat::Original;
+        $format = $this->imageFormats->supports(ImageFormat::Webp) ? ImageFormat::Webp : ImageFormat::Original;
         $posterWidth = max(1, min(self::POSTER_WIDTH, $width, (int) floor($height * self::ASPECT_RATIO)));
 
         return $this->imageProvider->url($poster, new ImageTransform($posterWidth, self::ASPECT_RATIO, $format, $poster->getFocalPoint()));

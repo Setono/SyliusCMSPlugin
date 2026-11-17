@@ -24,6 +24,7 @@
 
         <service id="Setono\SyliusCMSPlugin\Twig\ImageRuntime" class="Setono\SyliusCMSPlugin\Twig\ImageRuntime">
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\ImageProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\ImageFormatsInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\AltTextResolverInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
@@ -35,6 +36,7 @@
         <service id="Setono\SyliusCMSPlugin\Twig\VideoRuntime" class="Setono\SyliusCMSPlugin\Twig\VideoRuntime">
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\ImageProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\ImageFormatsInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
 

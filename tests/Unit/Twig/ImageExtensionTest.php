@@ -75,6 +75,7 @@ final class ImageExtensionTest extends IntegrationTestCase
         return [new FactoryRuntimeLoader([
             ImageRuntime::class => fn (): ImageRuntime => new ImageRuntime(
                 new FakeImageProvider($this->avif),
+                new FakeImageProvider($this->avif),
                 // de_CH falls back to de_DE, and then to en_US
                 new AltTextResolver(new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'), ['de_CH' => ['de_DE']])),
                 $this->mediaItems(),

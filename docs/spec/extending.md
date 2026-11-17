@@ -533,6 +533,8 @@ interface ImageProviderInterface
 
 `ImageTransform` holds `width` (`int`), `aspectRatio` (`?float`, width divided by height), `format` (`'webp'`, `'avif'` or `'original'`) and `focalPoint` (`x` and `y` from 0 to 1). The default provider uses LiipImagine ([Media](media.md#image-processing)). A project swaps it for an image CDN by aliasing the interface to its own service.
 
+`cms_image()` offers a format, such as AVIF, only where `Setono\SyliusCMSPlugin\Media\ImageFormatsInterface::supports(ImageFormat $format): bool` says the images are served in it. The default answers WebP and the original format always, and AVIF where LiipImagine's image library writes it, so a project with an image CDN aliases this interface too.
+
 ## Bestsellers
 
 ```php

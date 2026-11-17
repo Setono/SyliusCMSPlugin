@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Media\Liip;
 
-use Imagine\Image\ImagineInterface;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use Liip\ImagineBundle\Imagine\Cache\Resolver\ResolverInterface;
 use Liip\ImagineBundle\Imagine\Cache\Signer;
@@ -65,7 +64,7 @@ final class LiipImageProviderTest extends TestCase
             return '/media/cms/' . $mediaItem->getPath();
         });
 
-        $this->provider = new LiipImageProvider($cacheManager, $this->mediaUrls->reveal(), $this->prophesize(ImagineInterface::class)->reveal());
+        $this->provider = new LiipImageProvider($cacheManager, $this->mediaUrls->reveal());
     }
 
     /**
@@ -131,16 +130,6 @@ final class LiipImageProviderTest extends TestCase
 
         self::assertSame('/media/cms/' . $svg->getPath(), $this->provider->url($svg, new ImageTransform(320, 1.0, ImageFormat::Webp, new FocalPoint())));
         self::assertSame('/media/cms/' . $gif->getPath(), $this->provider->url($gif, new ImageTransform(960, null, ImageFormat::Avif, new FocalPoint())));
-    }
-
-    /**
-     * @test
-     */
-    public function it_offers_webp_and_the_original_format_and_avif_only_where_the_image_library_says_it_supports_it(): void
-    {
-        self::assertTrue($this->provider->supportsFormat(ImageFormat::Webp));
-        self::assertTrue($this->provider->supportsFormat(ImageFormat::Original));
-        self::assertFalse($this->provider->supportsFormat(ImageFormat::Avif), 'An image library that can\'t say what it supports isn\'t trusted with AVIF');
     }
 
     private static function image(string $mimeType = 'image/jpeg', string $filename = 'summer-sale.jpg'): MediaItemInterface

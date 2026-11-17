@@ -167,9 +167,14 @@
         <service id="Setono\SyliusCMSPlugin\Media\Liip\LiipImageProvider" class="Setono\SyliusCMSPlugin\Media\Liip\LiipImageProvider">
             <argument type="service" id="liip_imagine.cache.manager"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaUrlGeneratorInterface"/>
-            <argument type="service" id="liip_imagine"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Media\ImageProviderInterface" alias="Setono\SyliusCMSPlugin\Media\Liip\LiipImageProvider"/>
+
+        <!-- The formats cms_image() offers: AVIF only where Liip's image library writes it -->
+        <service id="Setono\SyliusCMSPlugin\Media\Liip\LiipImageFormats" class="Setono\SyliusCMSPlugin\Media\Liip\LiipImageFormats">
+            <argument type="service" id="liip_imagine"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Media\ImageFormatsInterface" alias="Setono\SyliusCMSPlugin\Media\Liip\LiipImageFormats"/>
 
         <service id="Setono\SyliusCMSPlugin\Media\Liip\StorageLoader" class="Setono\SyliusCMSPlugin\Media\Liip\StorageLoader">
             <argument type="service" id="setono_sylius_cms.media.storage"/>

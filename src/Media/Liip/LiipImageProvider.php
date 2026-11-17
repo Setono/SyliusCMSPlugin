@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Media\Liip;
 
-use Imagine\Driver\InfoProvider;
-use Imagine\Image\ImagineInterface;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
-use Setono\SyliusCMSPlugin\Media\ImageFormat;
 use Setono\SyliusCMSPlugin\Media\ImageProviderInterface;
 use Setono\SyliusCMSPlugin\Media\ImageTransform;
 use Setono\SyliusCMSPlugin\Media\ImageVariants;
@@ -24,13 +21,9 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  */
 final readonly class LiipImageProvider implements ImageProviderInterface
 {
-    /**
-     * @param ImagineInterface $imagine the image library Liip is configured with, which says whether it writes AVIF
-     */
     public function __construct(
         private CacheManager $cacheManager,
         private MediaUrlGeneratorInterface $mediaUrlGenerator,
-        private ImagineInterface $imagine,
     ) {
     }
 
@@ -55,13 +48,5 @@ final readonly class LiipImageProvider implements ImageProviderInterface
             null,
             UrlGeneratorInterface::ABSOLUTE_PATH,
         );
-    }
-
-    public function supportsFormat(ImageFormat $format): bool
-    {
-        return match ($format) {
-            ImageFormat::Original, ImageFormat::Webp => true,
-            ImageFormat::Avif => $this->imagine instanceof InfoProvider && true === $this->imagine::getDriverInfo(false)?->isFormatSupported('avif'),
-        };
     }
 }

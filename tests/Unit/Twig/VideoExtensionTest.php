@@ -71,6 +71,7 @@ final class VideoExtensionTest extends IntegrationTestCase
             VideoRuntime::class => fn (): VideoRuntime => new VideoRuntime(
                 $this->mediaUrls(),
                 new FakeImageProvider(false),
+                new FakeImageProvider(false),
                 $this->mediaItems(),
                 $this->shopRenderContext(),
             ),
