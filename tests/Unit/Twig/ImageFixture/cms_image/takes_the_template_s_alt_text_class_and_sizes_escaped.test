@@ -1,0 +1,10 @@
+--TEST--
+cms_image() takes the alt text, the class and the sizes the template gives, escaped
+--TEMPLATE--
+{{ cms_image(image, {layout: 'fixed', width: 200, alt: 'Our "summer" <sale>', class: 'app-hero__image'}) }}
+{{ cms_image(image, {width: 400, sizes: '(min-width: 768px) 50vw, 100vw'}) }}
+--DATA--
+return $this->rendering(['image' => $this->image()])
+--EXPECT--
+<img src="/webp/200/summer-sale.jpg" srcset="/webp/200/summer-sale.jpg 1x, /webp/400/summer-sale.jpg 2x" width="200" height="133" alt="Our &quot;summer&quot; &lt;sale&gt;" class="app-hero__image" loading="lazy" decoding="async">
+<img src="/webp/640/summer-sale.jpg" srcset="/webp/320/summer-sale.jpg 320w, /webp/640/summer-sale.jpg 640w, /webp/960/summer-sale.jpg 960w" sizes="(min-width: 768px) 50vw, 100vw" width="400" height="267" alt="A beach at dawn" loading="lazy" decoding="async">

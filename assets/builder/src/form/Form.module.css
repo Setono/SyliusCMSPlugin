@@ -251,3 +251,53 @@
     border: 0;
     border-top: 1px solid var(--builder-color-border-strong);
 }
+
+/* A link in rich text, which leads nowhere in the editor */
+.richTextEditor a {
+    color: var(--builder-color-accent);
+    text-decoration: underline;
+    cursor: text;
+}
+
+.toolbarButton:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+/* Linking the selected text: the target picker a Link field has, under the toolbar */
+.linkPanel {
+    padding: var(--builder-space-2);
+    border-bottom: 1px solid var(--builder-color-border);
+    background: var(--builder-color-surface);
+}
+
+.linkPanelActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--builder-space-2);
+}
+
+.button {
+    min-height: var(--builder-control-height);
+    padding: 0 var(--builder-space-3);
+    border: 1px solid var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-surface);
+    color: var(--builder-color-text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+    background: var(--builder-color-hover);
+}
+
+.button:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
+.button:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}

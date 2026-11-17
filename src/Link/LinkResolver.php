@@ -34,6 +34,17 @@ final readonly class LinkResolver
     }
 
     /**
+     * Why publish refuses the ref, as a translation key, when its target refuses it, as the url target refuses a
+     * javascript: URL. Null when the target takes it or doesn't check refs
+     */
+    public function refError(string $target, string $ref): ?string
+    {
+        $linkTarget = $this->linkTarget($target);
+
+        return $linkTarget instanceof RefCheckingLinkTargetInterface ? $linkTarget->refError($ref) : null;
+    }
+
+    /**
      * Where the link leads for the shopper, with the anchor, or null when it doesn't resolve and isn't rendered
      *
      * @param string $ref the current locale's ref

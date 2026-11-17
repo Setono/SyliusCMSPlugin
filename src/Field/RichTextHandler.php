@@ -4,14 +4,24 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Field;
 
+use Setono\SyliusCMSPlugin\Link\LinkResolver;
+use Setono\SyliusCMSPlugin\Link\ResolvedLink;
+use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
+/**
+ * Handles rich text: a ProseMirror document, sanitised against the one rich text schema and rendered to HTML when it's
+ * hydrated. Its links resolve through their link targets, from the records loaded before rendering, and one that doesn't
+ * resolve renders as plain text. See "Rich text" in docs/spec/content-model.md
+ */
 final readonly class RichTextHandler implements SanitizingFieldHandlerInterface, EmptinessCheckingFieldHandlerInterface, FitCheckingFieldHandlerInterface
 {
-    public function __construct(private RichTextSchema $schema)
-    {
+    public function __construct(
+        private RichTextSchema $schema,
+        private LinkResolver $linkResolver,
+    ) {
     }
 
     public function schema(Field $field): array
@@ -33,12 +43,42 @@ final readonly class RichTextHandler implements SanitizingFieldHandlerInterface,
             return null;
         }
 
-        return new RichTextValue($document, $this->schema->render($document));
+        /** @var array<string, ResolvedLink|null> $resolved each link's target, ref and anchor => where it leads */
+        $resolved = [];
+        $resolveLink = function (string $target, string $ref, ?string $anchor) use (&$resolved, $context): ?ResolvedLink {
+            $key = serialize([$target, $ref, $anchor]);
+            if (!array_key_exists($key, $resolved)) {
+                $resolved[$key] = $this->linkResolver->resolve($target, $ref, $anchor, $context);
+            }
+
+            return $resolved[$key];
+        };
+        $inBuilder = RenderContext::PREVIEW_MODE_BUILDER === $context->renderContext->previewMode;
+        $html = $this->schema->render($document, $resolveLink, $inBuilder);
+
+        // Rendering resolved every link
+        return new RichTextValue($document, $html, count(array_filter($resolved, is_null(...))));
     }
 
+    /**
+     * The records its links lead to, each once, such as a product. A link to a URL refers to none
+     */
     public function references(Field $field, mixed $value): iterable
     {
-        return [];
+        $document = $this->schema->sanitize($value);
+        if (null === $document) {
+            return [];
+        }
+
+        $references = [];
+        foreach ($this->schema->links($document) as $link) {
+            $reference = $this->linkResolver->reference($link['target'], $link['ref']);
+            if (null !== $reference) {
+                $references[$reference->type . "\0" . $reference->id] = $reference;
+            }
+        }
+
+        return array_values($references);
     }
 
     /**
@@ -51,11 +91,26 @@ final readonly class RichTextHandler implements SanitizingFieldHandlerInterface,
 
     public function validate(Field $field, mixed $value, ExecutionContextInterface $context): void
     {
-        if (null === $value || $this->fits($field, $value)) {
+        if (null === $value) {
             return;
         }
 
-        $context->buildViolation('setono_sylius_cms.field.not_rich_text')->addViolation();
+        $document = $this->schema->sanitize($value);
+        if (null === $document) {
+            $context->buildViolation('setono_sylius_cms.field.not_rich_text')->addViolation();
+
+            return;
+        }
+
+        // A link whose ref its target refuses, such as a javascript: URL, is refused as a Link field's is, once
+        foreach ($this->schema->links($document) as $link) {
+            $error = $this->linkResolver->refError($link['target'], $link['ref']);
+            if (null !== $error) {
+                $context->buildViolation($error)->addViolation();
+
+                return;
+            }
+        }
     }
 
     /**

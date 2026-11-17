@@ -21,7 +21,7 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
-use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
+use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\LandingTranslation;
@@ -313,7 +313,7 @@ final class BlockTreeValidatorTest extends TestCase
         ], new FieldReader());
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
-            RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
+            RichTextHandler::class => Links::richTextHandler(...),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator),
         ]));
 

@@ -26,7 +26,7 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
-use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
+use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\OpeningHoursHandler;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Store;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Kind\Fixture\Wide;
@@ -211,7 +211,7 @@ final class MisfitValueTest extends TestCase
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
-            RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
+            RichTextHandler::class => Links::richTextHandler(...),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new Translator('en')),
             OpeningHoursHandler::class => static fn (): OpeningHoursHandler => new OpeningHoursHandler(),
         ]));

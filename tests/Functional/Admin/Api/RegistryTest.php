@@ -115,7 +115,7 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($registry);
         $blockTypes = self::blockTypes($registry);
 
-        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'button', 'accordion', 'accordion_item', 'products', 'taxons', 'first_match'], array_keys($blockTypes));
+        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'button', 'accordion', 'accordion_item', 'link_list', 'link', 'products', 'taxons', 'first_match'], array_keys($blockTypes));
 
         self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
         self::assertNull($blockTypes['columns']['parents']);
@@ -127,8 +127,10 @@ final class RegistryTest extends BuilderApiTestCase
             ['type' => 'spacer', 'min' => null, 'max' => null],
             ['type' => 'heading', 'min' => null, 'max' => null],
             ['type' => 'rich_text', 'min' => null, 'max' => null],
+            ['type' => 'image', 'min' => null, 'max' => null],
             ['type' => 'button', 'min' => null, 'max' => null],
             ['type' => 'accordion', 'min' => null, 'max' => null],
+            ['type' => 'link_list', 'min' => null, 'max' => null],
             ['type' => 'products', 'min' => null, 'max' => null],
             ['type' => 'taxons', 'min' => null, 'max' => null],
             ['type' => 'first_match', 'min' => null, 'max' => null],
@@ -145,6 +147,10 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertNull($blockTypes['accordion']['parents']);
         self::assertSame(['accordion'], $blockTypes['accordion_item']['parents']);
         self::assertSame([], $blockTypes['accordion_item']['children']);
+
+        self::assertSame([['type' => 'link', 'min' => null, 'max' => null]], $blockTypes['link_list']['children']);
+        self::assertSame(['link_list'], $blockTypes['link']['parents']);
+        self::assertSame([], $blockTypes['link']['children']);
 
         self::assertSame('/bundles/setonosyliuscmsplugin/thumbnail/block/columns.svg', $blockTypes['columns']['thumbnail']);
         self::assertFalse($blockTypes['spacer']['disabled']);
@@ -218,6 +224,39 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($schema);
         self::assertSame(['link', 'Link', true, false], [$schema['x-cms-type'], $schema['x-cms-label'], $schema['x-cms-required'], $schema['x-cms-translatable']]);
         self::assertSame(['targets' => ['entry', 'product', 'taxon', 'url', 'app_store'], 'translatable' => null], $schema['x-cms-options']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_answers_the_image_block_with_a_required_image_an_alt_text_and_a_caption_per_language_and_a_link(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+
+        $registry = self::json($client, 'GET', '/admin/cms/api/registry');
+        self::assertIsArray($registry);
+
+        $image = self::blockTypes($registry)['image'];
+        self::assertSame('Image', $image['label']);
+        self::assertSame('/bundles/setonosyliuscmsplugin/thumbnail/block/image.svg', $image['thumbnail']);
+        self::assertSame([], $image['children']);
+        self::assertIsArray($image['fields']);
+
+        $fields = [];
+        foreach ($image['fields'] as $field) {
+            self::assertIsArray($field);
+            self::assertIsArray($field['schema']);
+            self::assertIsString($field['name']);
+            $fields[$field['name']] = [$field['schema']['x-cms-type'], $field['schema']['x-cms-label'], $field['schema']['x-cms-required'], $field['schema']['x-cms-translatable']];
+        }
+
+        self::assertSame([
+            'image' => ['media', 'Image', true, false],
+            'alt' => ['text', 'Alt text', false, true],
+            'caption' => ['text', 'Caption', false, true],
+            'link' => ['link', 'Link', false, false],
+        ], $fields);
     }
 
     /**

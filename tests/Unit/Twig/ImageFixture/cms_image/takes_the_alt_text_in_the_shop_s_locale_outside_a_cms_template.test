@@ -1,0 +1,8 @@
+--TEST--
+cms_image() takes the alt text in the shop's locale in a template without the render context, such as a theme's own
+--TEMPLATE--
+{{ cms_image(image, {layout: 'fixed', width: 200}) }}
+--DATA--
+return ['image' => $this->image(2400, 1600, ['en_US' => 'A beach at dawn', 'de_DE' => 'Ein Strand'])]
+--EXPECT--
+<img src="/webp/200/summer-sale.jpg" srcset="/webp/200/summer-sale.jpg 1x, /webp/400/summer-sale.jpg 2x" width="200" height="133" alt="Ein Strand" loading="lazy" decoding="async">

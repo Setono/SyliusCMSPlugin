@@ -1,0 +1,8 @@
+--TEST--
+cms_image() renders a constrained image at the width the template gives: the widths of the ladder up to the first that covers twice it, for dense screens, sizes from the width, the height from the source's aspect ratio, and the narrowest variant that covers the width as the src
+--TEMPLATE--
+{{ cms_image(image, {width: 400}) }}
+--DATA--
+return $this->rendering(['image' => $this->image(2400, 1600)])
+--EXPECT--
+<img src="/webp/640/summer-sale.jpg" srcset="/webp/320/summer-sale.jpg 320w, /webp/640/summer-sale.jpg 640w, /webp/960/summer-sale.jpg 960w" sizes="(min-width: 400px) 400px, 100vw" width="400" height="267" alt="A beach at dawn" loading="lazy" decoding="async">

@@ -13,6 +13,9 @@ setono_sylius_cms:
         first_match: First match
         group: Group
         heading: Heading
+        image: Image
+        link: Link
+        link_list: Link list
         products: Products
         rich_text: Rich text
         spacer: Spacer
@@ -63,6 +66,16 @@ setono_sylius_cms:
         heading:
             level: Level
             text: Text
+        image:
+            alt: Alt text
+            alt_help: Describes the image here. Leave it empty to use the image's own alt text from the media library.
+            caption: Caption
+            image: Image
+            link: Link
+        link:
+            link: Link
+        link_list:
+            heading: Heading
         locale_condition:
             locales: Locales
         products:
@@ -129,10 +142,13 @@ setono_sylius_cms:
     # What the builder's preview shows editors and shoppers don't see
     preview:
         unresolved_link: '%field% isn''t shown here: what it links to isn''t visible in this channel and locale, or was deleted.'
+        unresolved_rich_text_link: 'A link in %field% shows as plain text here: what it links to isn''t visible in this channel and locale, or was deleted.'
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
         broken_layout_reference: '%field% in the layout refers to %type% that was deleted, so it isn''t shown.'
+        broken_layout_rich_text_reference: 'A link in %field% in the layout leads to %type% that was deleted, so it shows as plain text.'
         broken_reference: '%field% in the %block% block refers to %type% that was deleted, so it isn''t shown.'
+        broken_rich_text_reference: 'A link in %field% in the %block% block leads to %type% that was deleted, so it shows as plain text.'
         deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
         deleted_customer_group_negated: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer excludes anyone through it.'
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
@@ -394,6 +410,7 @@ setono_sylius_cms:
             label: Label
             label_help: In this language. Leave it empty to show the name of what it links to.
             nothing_picked: Nothing chosen
+            row_label: Link label
             search: 'Search: %target%'
             url: URL
         load_failed: Couldn't load the entry
@@ -530,6 +547,11 @@ setono_sylius_cms:
             heading: 'Heading %level%'
             horizontal_rule: Horizontal line
             italic: Italic
+            link: Link
+            link_apply: Apply
+            link_cancel: Cancel
+            link_remove: Remove link
+            link_target: Links to
             ordered_list: Numbered list
             strike: Strikethrough
             toolbar: Formatting

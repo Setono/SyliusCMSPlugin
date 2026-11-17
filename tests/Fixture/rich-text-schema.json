@@ -1,9 +1,12 @@
 {
     "nodes": ["doc", "paragraph", "text", "heading", "bulletList", "orderedList", "listItem", "blockquote", "hardBreak", "horizontalRule"],
-    "marks": ["bold", "italic", "underline", "strike", "code"],
+    "marks": ["bold", "italic", "underline", "strike", "code", "cmsLink"],
     "attributes": {
         "heading": ["level"],
         "orderedList": ["start"]
+    },
+    "markAttributes": {
+        "cmsLink": ["target", "ref", "anchor"]
     },
     "headingLevels": [2, 3, 4]
 }

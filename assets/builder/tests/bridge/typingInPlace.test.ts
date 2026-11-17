@@ -304,6 +304,33 @@ describe('typing in place in the preview', () => {
             expect(posted.at(-1)).toEqual({ type: 'undo' });
         });
 
+        it('should keep the links the preview renders, whether they resolve or not, as the editor types', () => {
+            const richText = query('.cms-rich-text');
+            query('.cms-rich-text p').innerHTML =
+                'Read <a href="http://localhost/en_US/story" data-cms-link-target="entry" data-cms-link-ref="0193a5be-0000-7000-8000-000000000001">our story</a> ' +
+                'or meet <span data-cms-link-target="entry" data-cms-link-ref="0193a5be-0000-7000-8000-000000000002" data-cms-link-anchor="team">the team</span>';
+            fireEvent.click(query('.cms-rich-text p'));
+
+            fireEvent.keyDown(richText, { key: 'a', ctrlKey: true });
+            fireEvent.click(within(controls()).getByRole('button', { name: 'Bold' }));
+
+            const story = { type: 'cmsLink', attrs: { target: 'entry', ref: '0193a5be-0000-7000-8000-000000000001', anchor: null } };
+            const team = { type: 'cmsLink', attrs: { target: 'entry', ref: '0193a5be-0000-7000-8000-000000000002', anchor: 'team' } };
+            expect(edits()).toEqual([
+                {
+                    type: 'edit',
+                    key: 'r',
+                    field: 'content',
+                    value: doc(
+                        text('Read ', ['bold']),
+                        { type: 'text', text: 'our story', marks: [{ type: 'bold' }, story] },
+                        text(' or meet ', ['bold']),
+                        { type: 'text', text: 'the team', marks: [{ type: 'bold' }, team] },
+                    ),
+                },
+            ]);
+        });
+
         it('should send no value for rich text emptied in place', () => {
             const richText = query('.cms-rich-text');
             fireEvent.click(query('.cms-rich-text p'));

@@ -1,0 +1,12 @@
+--TEST--
+cms_image() falls back to the media item's alt text when the template's is empty, through the fallback chain of the locale, and prints an empty alt attribute when there's none
+--TEMPLATE--
+{{ cms_image(image, {layout: 'fixed', width: 200, alt: ''}) }}
+{{ cms_image(german, {layout: 'fixed', width: 200, alt: null}) }}
+{{ cms_image(untitled, {layout: 'fixed', width: 200}) }}
+--DATA--
+return $this->rendering(['image' => $this->image(), 'german' => $this->image(2400, 1600, ['en_US' => 'A beach at dawn', 'de_DE' => 'Ein Strand']), 'untitled' => $this->image(2400, 1600, [])], null, 'de_CH')
+--EXPECT--
+<img src="/webp/200/summer-sale.jpg" srcset="/webp/200/summer-sale.jpg 1x, /webp/400/summer-sale.jpg 2x" width="200" height="133" alt="A beach at dawn" loading="lazy" decoding="async">
+<img src="/webp/200/summer-sale.jpg" srcset="/webp/200/summer-sale.jpg 1x, /webp/400/summer-sale.jpg 2x" width="200" height="133" alt="Ein Strand" loading="lazy" decoding="async">
+<img src="/webp/200/summer-sale.jpg" srcset="/webp/200/summer-sale.jpg 1x, /webp/400/summer-sale.jpg 2x" width="200" height="133" alt="" loading="lazy" decoding="async">

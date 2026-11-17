@@ -350,6 +350,48 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_makes_the_widths_of_the_image_variants_a_parameter(): void
+    {
+        $this->load(['media' => ['widths' => [400, 800]]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.media.widths', [400, 800]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_adds_a_liip_filter_set_per_format_that_reads_and_caches_with_the_plugin_s_own_loader_and_resolver(): void
+    {
+        $this->load();
+
+        self::assertSame([['filter_sets' => [
+            'setono_sylius_cms_webp' => ['data_loader' => 'setono_sylius_cms', 'cache' => 'setono_sylius_cms', 'quality' => 80, 'format' => 'webp', 'filters' => [], 'post_processors' => []],
+            'setono_sylius_cms_avif' => ['data_loader' => 'setono_sylius_cms', 'cache' => 'setono_sylius_cms', 'quality' => 60, 'format' => 'avif', 'filters' => [], 'post_processors' => []],
+            'setono_sylius_cms_original' => ['data_loader' => 'setono_sylius_cms', 'cache' => 'setono_sylius_cms', 'quality' => 85, 'format' => null, 'filters' => [], 'post_processors' => []],
+        ]]], $this->container->getExtensionConfig('liip_imagine'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_makes_the_filter_sets_read_and_cache_with_the_liip_loader_and_resolver_a_project_names(): void
+    {
+        $this->container->loadFromExtension('setono_sylius_cms', ['media' => ['liip' => ['loader' => 'app_s3', 'resolver' => 'app_s3_cache']]]);
+
+        $this->load(['media' => ['liip' => ['loader' => 'app_s3', 'resolver' => 'app_s3_cache']]]);
+
+        /** @var array<string, array{data_loader: string, cache: string}> $filterSets */
+        $filterSets = $this->container->getExtensionConfig('liip_imagine')[0]['filter_sets'] ?? [];
+        self::assertCount(3, $filterSets);
+        foreach ($filterSets as $filterSet) {
+            self::assertSame('app_s3', $filterSet['data_loader']);
+            self::assertSame('app_s3_cache', $filterSet['cache']);
+        }
+    }
+
+    /**
+     * @test
+     */
     public function it_loads_the_stylesheet_of_the_content_badge_on_every_admin_page_after_sylius_own_styles(): void
     {
         $this->load();

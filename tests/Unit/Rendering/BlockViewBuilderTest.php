@@ -34,8 +34,8 @@ use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
-use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
+use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -403,7 +403,7 @@ final class BlockViewBuilderTest extends TestCase
 
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
-            RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
+            RichTextHandler::class => Links::richTextHandler(...),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator->reveal()),
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
             MediaHandler::class => static fn (): MediaHandler => new MediaHandler(),

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Problem\Kind;
 
 use Psr\Container\ContainerInterface;
+use Setono\SyliusCMSPlugin\Field\RichText;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Problem\Fix;
@@ -25,9 +26,9 @@ use Symfony\Component\Translation\TranslatableMessage;
 /**
  * A reference in a field of a block or of the layout to a record that was deleted, such as a media item, or the
  * product a link leads to: a broken reference, an error. Rendering skips it, so the field is empty, the list leaves it
- * out or the link isn't rendered (ADR 0002). It's fixed in the builder, at the block and in the locale of the value it's
- * in. Each reference type with a loader is checked with one query per entry. A media item, entry, product or taxon
- * written, such as one deleted, has the entries that may refer to it counted again.
+ * out, the link isn't rendered or a link in rich text shows as plain text (ADR 0002). It's fixed in the builder, at the
+ * block and in the locale of the value it's in. Each reference type with a loader is checked with one query per entry. A
+ * media item, entry, product or taxon written, such as one deleted, has the entries that may refer to it counted again.
  * See "References" in docs/spec/content-model.md and "Problems" in docs/spec/admin.md
  */
 final readonly class BrokenReference implements ReferenceProblemKindInterface
@@ -105,16 +106,19 @@ final readonly class BrokenReference implements ReferenceProblemKindInterface
     {
         $type = new TranslatableMessage(sprintf('setono_sylius_cms.reference_type.%s', $reference->reference->type));
 
+        // A link in rich text that doesn't resolve still shows its text, as plain text
         if (null === $reference->block) {
             $layout = $this->layouts->get($contentType, (string) $entry->getBlockTree()->layout?->code);
-            $message = new TranslatableMessage('setono_sylius_cms.problem.broken_layout_reference', [
-                '%field%' => new TranslatableMessage($layout->fields[$reference->field]->field->label),
+            $field = $layout->fields[$reference->field]->field;
+            $message = new TranslatableMessage($field instanceof RichText ? 'setono_sylius_cms.problem.broken_layout_rich_text_reference' : 'setono_sylius_cms.problem.broken_layout_reference', [
+                '%field%' => new TranslatableMessage($field->label),
                 '%type%' => $type,
             ]);
         } else {
             $blockType = $this->blockTypes->get((string) $entry->getBlockTree()->findBlock($reference->block)?->type);
-            $message = new TranslatableMessage('setono_sylius_cms.problem.broken_reference', [
-                '%field%' => new TranslatableMessage($blockType->fields[$reference->field]->field->label),
+            $field = $blockType->fields[$reference->field]->field;
+            $message = new TranslatableMessage($field instanceof RichText ? 'setono_sylius_cms.problem.broken_rich_text_reference' : 'setono_sylius_cms.problem.broken_reference', [
+                '%field%' => new TranslatableMessage($field->label),
                 '%block%' => new TranslatableMessage($blockType->label),
                 '%type%' => $type,
             ]);

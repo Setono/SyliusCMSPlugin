@@ -97,6 +97,8 @@ final class ConfigurationTest extends TestCase
                 ],
                 'max_upload_size' => null,
                 'grace_period' => 'P1D',
+                'liip' => ['loader' => 'setono_sylius_cms', 'resolver' => 'setono_sylius_cms'],
+                'widths' => [320, 640, 960, 1280, 1600, 1920, 2560],
             ],
             'resources' => [
                 'entry' => [
@@ -255,7 +257,46 @@ final class ConfigurationTest extends TestCase
             ],
             'max_upload_size' => 20 * 1024 * 1024,
             'grace_period' => 'P1D',
+            'liip' => ['loader' => 'setono_sylius_cms', 'resolver' => 'setono_sylius_cms'],
+            'widths' => [320, 640, 960, 1280, 1600, 1920, 2560],
         ]], 'media');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_name_the_liip_loader_and_resolver_its_images_are_processed_with(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['media' => ['liip' => ['loader' => 'app_s3', 'resolver' => 'app_s3_cache']]],
+        ], ['media' => ['liip' => ['loader' => 'app_s3', 'resolver' => 'app_s3_cache']]], 'media.liip');
+    }
+
+    /**
+     * @test
+     */
+    public function it_takes_the_widths_of_the_image_variants_in_ascending_order_each_once(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['media' => ['widths' => [1200, 400, 800, 400]]],
+        ], ['media' => ['widths' => [400, 800, 1200]]], 'media.widths');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_width_that_is_not_a_positive_number_of_pixels(): void
+    {
+        $this->assertConfigurationIsInvalid([['media' => ['widths' => [640, 0]]]], 'An image width must be a positive number of pixels');
+        $this->assertConfigurationIsInvalid([['media' => ['widths' => ['wide']]]], 'An image width must be a positive number of pixels');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_no_widths(): void
+    {
+        $this->assertConfigurationIsInvalid([['media' => ['widths' => []]]], 'should have at least 1 element');
     }
 
     /**
