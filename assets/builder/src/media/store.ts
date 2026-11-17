@@ -94,11 +94,13 @@ export const initialFilters: MediaFilters = { folder: ALL_MEDIA, search: '', kin
 /**
  * @param pick the picker it's opened as in the builder, which shows only the kinds of media item it offers, with the kind
  *             filter set to the one kind when it offers one. Without it, the library on its own screen.
+ * @param shownFirst the filters the library on its own screen starts with, such as missing alt text.
  */
-export function createMediaLibraryStore(api: MediaApi, limits: MediaLimits, pick: PickMode | null = null): MediaLibraryStore {
+export function createMediaLibraryStore(api: MediaApi, limits: MediaLimits, pick: PickMode | null = null, shownFirst: Partial<MediaFilters> = {}): MediaLibraryStore {
     // Only the answer to the last list request is shown
     let listRequests = 0;
-    const filters: MediaFilters = pick === null ? initialFilters : { ...initialFilters, kind: pick.kinds.length === 1 ? (pick.kinds[0] ?? null) : null, kinds: pick.kinds };
+    const filters: MediaFilters =
+        pick === null ? { ...initialFilters, ...shownFirst } : { ...initialFilters, kind: pick.kinds.length === 1 ? (pick.kinds[0] ?? null) : null, kinds: pick.kinds };
 
     return createStore<MediaLibraryState>()((set, get) => {
         /** In a picker, picks these media items of the kinds it offers: all of them, or the first where only one is picked. */

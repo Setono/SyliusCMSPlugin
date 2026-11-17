@@ -23,6 +23,12 @@ use Symfony\Contracts\Service\ResetInterface;
  */
 final class ProblemCountFingerprint implements ProblemCountFingerprintInterface, ResetInterface
 {
+    /**
+     * What's counted with the problems: raised when something more is counted, so every entry is counted again, such as
+     * 2 for the locales each entry is complete in (Problem\EntryCounterInterface)
+     */
+    private const COUNTED = 2;
+
     /** @var non-empty-string|null */
     private ?string $fingerprint = null;
 
@@ -43,6 +49,7 @@ final class ProblemCountFingerprint implements ProblemCountFingerprintInterface,
     public function get(): string
     {
         return $this->fingerprint ??= hash('xxh128', serialize([
+            self::COUNTED,
             $this->kinds,
             $this->blockTypes->all(),
             $contentTypes = $this->contentTypes->all(),

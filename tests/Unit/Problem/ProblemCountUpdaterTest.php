@@ -13,6 +13,7 @@ use Psr\Log\NullLogger;
 use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Problem\EntryCounterInterface;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprintInterface;
@@ -144,6 +145,39 @@ final class ProblemCountUpdaterTest extends TestCase
     }
 
     /**
+     * Such as the locales each entry is complete in, which are counted again on the same writes and deploys
+     *
+     * @test
+     */
+    public function it_hands_the_working_copies_it_reads_to_the_other_counts_stored_with_each_entry_by_the_entrys_id(): void
+    {
+        $withProblems = $this->entry(3, [Severity::Error]);
+        $clean = $this->entry(4, []);
+        $unreadable = $this->unreadable(5, new InvalidStoredTreeException('Not a block tree'));
+        $counter = $this->prophesize(EntryCounterInterface::class);
+
+        $this->updater(counters: [$counter->reveal()])->update([$withProblems, $clean, $unreadable, new Page()]);
+
+        $counter->count([3 => $this->workingCopyOf($withProblems), 4 => $this->workingCopyOf($clean)])->shouldHaveBeenCalledOnce();
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_a_working_copy_to_the_other_counts_even_when_a_kind_fails_on_it(): void
+    {
+        $failing = $this->entry(3, []);
+        $kind = $this->prophesize(ProblemKindInterface::class);
+        $kind->findIn(Argument::any())->willThrow(new \RuntimeException('The API is down'));
+        $counter = $this->prophesize(EntryCounterInterface::class);
+
+        $this->updater([$kind->reveal()], counters: [$counter->reveal()])->update([$failing]);
+
+        self::assertSame([], $this->stored);
+        $counter->count([3 => $this->workingCopyOf($failing)])->shouldHaveBeenCalledOnce();
+    }
+
+    /**
      * @test
      */
     public function it_counts_no_entry_that_isnt_saved_yet_and_stores_nothing_without_entries(): void
@@ -214,8 +248,9 @@ final class ProblemCountUpdaterTest extends TestCase
 
     /**
      * @param list<ProblemKindInterface>|null $kinds
+     * @param list<EntryCounterInterface> $counters
      */
-    private function updater(?array $kinds = null, ?LoggerInterface $logger = null): ProblemCountUpdater
+    private function updater(?array $kinds = null, ?LoggerInterface $logger = null, array $counters = []): ProblemCountUpdater
     {
         $problems = &$this->problems;
         $kind = $this->prophesize(ProblemKindInterface::class);
@@ -234,6 +269,6 @@ final class ProblemCountUpdaterTest extends TestCase
             yield from array_slice($problems[spl_object_id($workingCopy)] ?? [], 1);
         });
 
-        return new ProblemCountUpdater($kinds ?? [$kind->reveal(), $otherKinds->reveal()], $this->workingCopies->reveal(), $this->query->reveal(), $this->fingerprint->reveal(), $logger ?? new NullLogger());
+        return new ProblemCountUpdater($kinds ?? [$kind->reveal(), $otherKinds->reveal()], $this->workingCopies->reveal(), $this->query->reveal(), $this->fingerprint->reveal(), $counters, $logger ?? new NullLogger());
     }
 }

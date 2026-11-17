@@ -83,6 +83,13 @@ abstract class Entry implements EntryInterface
 
     protected ?string $problemsCountedWith = null;
 
+    /*
+     * The locales the working copy is complete in, counted with the problems, or null until they're counted. They're
+     * written and read in SQL (Query\CompletenessQuery), never through the entry
+     */
+
+    protected ?string $completeLocales = null;
+
     public function __construct()
     {
         $this->initializeTranslationsCollection();

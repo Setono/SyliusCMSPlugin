@@ -102,6 +102,26 @@
             <argument type="service" id="clock"/>
         </service>
 
+        <!-- The Overview's Needs attention, which its panel gets through cms_admin_needs_attention() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\NeedsAttention" class="Setono\SyliusCMSPlugin\Admin\NeedsAttention">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface"/>
+        </service>
+
+        <!-- The Overview's Coming up, which its panel gets through cms_admin_coming_up() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\ComingUp" class="Setono\SyliusCMSPlugin\Admin\ComingUp">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="clock"/>
+        </service>
+
+        <!-- The Overview's Translations, which its panel gets through cms_admin_translation_completeness() -->
+        <service id="Setono\SyliusCMSPlugin\Admin\TranslationCompleteness" class="Setono\SyliusCMSPlugin\Admin\TranslationCompleteness">
+            <argument type="service" id="sylius.repository.channel"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\CompletenessQueryInterface"/>
+        </service>
+
         <!-- The locale a new entry's title and slug go into -->
         <service id="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver" class="Setono\SyliusCMSPlugin\Admin\NewEntryLocaleResolver">
             <!-- In the admin, the admin user's locale -->
@@ -121,6 +141,12 @@
 
         <service id="Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter" class="Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter">
             <tag name="sylius.grid_filter" type="setono_sylius_cms_entry_channel" form_type="Setono\SyliusCMSPlugin\Form\Type\Filter\EntryChannelFilterType"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Admin\Grid\TranslationFilter" class="Setono\SyliusCMSPlugin\Admin\Grid\TranslationFilter">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\CompletenessQueryInterface"/>
+
+            <tag name="sylius.grid_filter" type="setono_sylius_cms_entry_translation" form_type="Setono\SyliusCMSPlugin\Form\Type\Filter\EntryTranslationFilterType"/>
         </service>
     </services>
 </container>

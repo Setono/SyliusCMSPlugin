@@ -62,6 +62,12 @@
             </options>
         </field>
         <field name="problemsCountedWith" column="problems_counted_with" type="string" length="64" nullable="true"/>
+        <!--
+        The locales the working copy is complete in, by code, each between commas, such as ",da_DK,en_US,", or null
+        until it's counted. It's counted with the problems, and the Overview's Translations and the lists' translation
+        filter read it in SQL (Query\CompletenessQuery), never through the entry
+        -->
+        <field name="completeLocales" column="complete_locales" type="text" nullable="true"/>
 
         <one-to-many field="translations" target-entity="Setono\SyliusCMSPlugin\Model\EntryTranslation"
                      mapped-by="translatable" index-by="locale" fetch="EXTRA_LAZY" orphan-removal="true">

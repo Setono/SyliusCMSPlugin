@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
 use Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter;
 use Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter;
+use Setono\SyliusCMSPlugin\Admin\Grid\TranslationFilter;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
 use Setono\SyliusCMSPlugin\Attribute\AsLinkTarget;
 use Setono\SyliusCMSPlugin\Attribute\AsSource;
@@ -138,6 +139,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     {
         $this->prependGrids($container);
         $this->prependEntryOverviewEvents($container);
+        $this->prependOverviewEvents($container);
         $this->prependProblems($container);
         $this->prependMessenger($container);
         // Before the config is read, so the slots it reads hold them
@@ -316,6 +318,34 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     }
 
     /**
+     * The Overview, the Content hub's home, is built from the Sylius template event
+     * setono_sylius_cms.admin.overview.panels, whose blocks are its panels in the spec's order, which the priorities
+     * leave room in: needs_attention (40), coming_up (30), translations (20) and drafts_in_progress (10). A panel reads
+     * what it shows itself, through a cms_admin_* function, and projects add, reorder or switch off panels in their own
+     * sylius_ui config. See "Overview" in docs/spec/admin.md
+     */
+    private function prependOverviewEvents(ContainerBuilder $container): void
+    {
+        $block = static fn (string $template, int $priority): array => [
+            'template' => sprintf('@SetonoSyliusCMSPlugin/admin/overview/%s.html.twig', $template),
+            'priority' => $priority,
+        ];
+
+        $container->prependExtensionConfig('sylius_ui', [
+            'events' => [
+                'setono_sylius_cms.admin.overview.panels' => [
+                    'blocks' => [
+                        'needs_attention' => $block('_needs_attention', 40),
+                        'coming_up' => $block('_coming_up', 30),
+                        'translations' => $block('_translations', 20),
+                        'drafts_in_progress' => $block('_drafts_in_progress', 10),
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    /**
      * The admin's entry lists, as Sylius grids of the entry resource, the way Sylius plugins ship grids: All entries
      * (setono_sylius_cms_admin_entry_all) and each content type's list (setono_sylius_cms_admin_entry), which gets the
      * content type's code from the route. Projects change them in their own sylius_grid config. The fields are spaced
@@ -360,6 +390,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                         ],
                         'status' => ['type' => StatusFilter::TYPE, 'label' => 'setono_sylius_cms.ui.status'],
                         'channel' => ['type' => ChannelFilter::TYPE, 'label' => 'setono_sylius_cms.ui.channel'],
+                        // The entries not complete in a locale, which the Overview's Translations links to
+                        'translation' => ['type' => TranslationFilter::TYPE, 'label' => 'setono_sylius_cms.ui.translations'],
                     ],
                     'actions' => [
                         'main' => [
@@ -394,6 +426,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 'filter' => [
                     StatusFilter::TYPE => '@SyliusUi/Grid/Filter/select.html.twig',
                     ChannelFilter::TYPE => '@SyliusUi/Grid/Filter/select.html.twig',
+                    TranslationFilter::TYPE => '@SyliusUi/Grid/Filter/select.html.twig',
                 ],
             ],
         ]);

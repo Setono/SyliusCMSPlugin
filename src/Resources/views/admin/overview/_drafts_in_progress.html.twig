@@ -1,0 +1,33 @@
+{#
+ # The Overview's Drafts in progress, a block of setono_sylius_cms.admin.overview.panels: the entries with unpublished
+ # changes, the one edited last first, each with its draft's title, which links to the entry's overview page, and a link
+ # to them all in All entries. See "Overview" in docs/spec/admin.md
+ #}
+{% set entries = cms_admin_drafts_in_progress() %}
+<div class="column">
+    <section class="ui segment" data-panel="drafts_in_progress" aria-labelledby="cms-panel-drafts-in-progress">
+        <h2 class="ui dividing header" id="cms-panel-drafts-in-progress">{{ 'setono_sylius_cms.ui.drafts_in_progress'|trans }}</h2>
+
+        {% if entries is empty %}
+            <p>{{ 'setono_sylius_cms.ui.no_drafts_in_progress'|trans }}</p>
+        {% else %}
+            <div class="ui divided relaxed list">
+                {% for entry in entries %}
+                    {% set row = cms_admin_entry_row(entry) %}
+                    <div class="item" data-entry="{{ entry.uuid }}">
+                        <i class="pencil alternate icon" aria-hidden="true"></i>
+                        <div class="content">
+                            <a class="header" href="{{ path('setono_sylius_cms_admin_entry_show', {'uuid': entry.uuid}) }}">{{ row.title|default('setono_sylius_cms.ui.untitled'|trans) }}</a>
+                            <div class="description">
+                                {{- row.contentType.label|trans }} · {{ 'setono_sylius_cms.ui.last_edited_at'|trans({'%at%': entry.lastEditedAt|date('Y-m-d H:i')}) -}}
+                                {% if entry.lastEditedBy is not null %} {{ 'setono_sylius_cms.ui.by'|trans({'%name%': entry.lastEditedBy}) }}{% endif -%}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <a href="{{ path('setono_sylius_cms_admin_entry_index_all', {'criteria': {'status': 'unpublished_changes'}}) }}">{{ 'setono_sylius_cms.ui.all_unpublished_changes'|trans }}</a>
+        {% endif %}
+    </section>
+</div>

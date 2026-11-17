@@ -1,5 +1,7 @@
 {#
- # The hub's home. Needs attention, Coming up, Translations and Drafts in progress come with #275
+ # The hub's home, the Overview: its panels are the blocks of the template event setono_sylius_cms.admin.overview.panels,
+ # each a column of the grid, and Create opens the create dialog, which asks for the content type first.
+ # See "Overview" and "Create dialog" in docs/spec/admin.md
  #}
 {% extends '@SetonoSyliusCMSPlugin/admin/layout.html.twig' %}
 
@@ -9,17 +11,23 @@
 {% block title %}{{ 'setono_sylius_cms.ui.content'|trans }} {{ parent() }}{% endblock %}
 
 {% block hub_content %}
-    {{ headers.default('setono_sylius_cms.ui.content'|trans, 'pencil alternate', 'setono_sylius_cms.ui.content_description'|trans) }}
+    <div class="ui stackable two column grid">
+        <div class="column">
+            {{ headers.default('setono_sylius_cms.ui.content'|trans, 'pencil alternate', 'setono_sylius_cms.ui.content_description'|trans) }}
 
-    {{ breadcrumb.crumble([
-        { label: 'sylius.ui.administration'|trans, url: path('sylius_admin_dashboard') },
-        { label: 'setono_sylius_cms.ui.content'|trans },
-    ]) }}
+            {{ breadcrumb.crumble([
+                { label: 'sylius.ui.administration'|trans, url: path('sylius_admin_dashboard') },
+                { label: 'setono_sylius_cms.ui.content'|trans },
+            ]) }}
+        </div>
+        <div class="middle aligned column">
+            <div class="ui right floated buttons">
+                {% include '@SetonoSyliusCMSPlugin/admin/entry/_create_dialog.html.twig' only %}
+            </div>
+        </div>
+    </div>
 
-    <div class="ui segment">
-        <p>{{ 'setono_sylius_cms.ui.overview_placeholder'|trans }}</p>
-        <a class="ui labeled icon button" href="{{ path('setono_sylius_cms_admin_entry_index_all') }}">
-            <i class="list icon"></i> {{ 'setono_sylius_cms.ui.all_entries'|trans }}
-        </a>
+    <div class="ui stackable two column grid cms-overview">
+        {{ sylius_template_event('setono_sylius_cms.admin.overview.panels') }}
     </div>
 {% endblock %}
