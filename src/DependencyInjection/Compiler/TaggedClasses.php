@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\DependencyInjection\Compiler;
 
+use Setono\SyliusCMSPlugin\Registry\Code;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
- * The classes of the services carrying a tag: the block types, layouts and upgraders a project registers by attribute,
- * which autoconfiguration tags
+ * The classes of the services carrying a tag: the block types, layouts, upgraders, link targets and sources a project
+ * registers by attribute, which autoconfiguration tags
  *
  * @internal
  */
@@ -60,5 +61,41 @@ final class TaggedClasses
         usort($ids, static fn (string $a, string $b): int => [$priorities[$b] ?? 0, $order[$a]] <=> [$priorities[$a] ?? 0, $order[$b]]);
 
         return array_combine($ids, array_map(static fn (string $id): string => $classes[$id], $ids));
+    }
+
+    /**
+     * The services carrying a tag that registers them under the code of their attribute, such as link targets and
+     * sources, by their tag's priority: service id and class by code. Each must have the attribute, a valid code that
+     * no other has, and implement the interface
+     *
+     * @param string $what what the services are, for the errors, such as "source"
+     * @param string $attribute the attribute's name, for the errors, such as "#[AsSource]"
+     * @param \Closure(class-string): ?string $codeOf the code of the class's attribute, or null when it has none
+     * @param class-string $interface
+     *
+     * @return array<string, array{string, class-string}> code => [service id, class]
+     */
+    public static function byCode(ContainerBuilder $container, string $tag, string $what, string $attribute, \Closure $codeOf, string $interface): array
+    {
+        $byCode = [];
+        foreach (self::byPriority($container, $tag, $what) as $id => $class) {
+            $code = $codeOf($class) ?? throw new \LogicException(sprintf('The service "%s" is tagged "%s", but its class %s has no %s', $id, $tag, $class, $attribute));
+
+            if (!Code::isValid($code)) {
+                throw new \LogicException(sprintf('The %s code "%s" of %s must match %s', $what, $code, $class, Code::PATTERN));
+            }
+
+            if (!is_a($class, $interface, true)) {
+                throw new \LogicException(sprintf('The %s %s must implement %s', $what, $class, $interface));
+            }
+
+            if (isset($byCode[$code]) && $byCode[$code][1] !== $class) {
+                throw new \LogicException(sprintf('The %s code "%s" is used by both %s and %s. Codes are unique per kind, so give one of them another code', $what, $code, $byCode[$code][1], $class));
+            }
+
+            $byCode[$code] = [$id, $class];
+        }
+
+        return $byCode;
     }
 }

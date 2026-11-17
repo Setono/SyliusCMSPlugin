@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\DependencyInjection\Compiler;
 
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
-use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistry;
 use Setono\SyliusCMSPlugin\Source\SourceInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -36,17 +35,9 @@ final class RegisterSourcesPass implements CompilerPassInterface
         /** @var array<string, Reference> $sources */
         $sources = [];
 
-        foreach (TaggedClasses::byPriority($container, self::TAG, 'source') as $id => $class) {
-            $attribute = AttributeReader::source($class) ?? throw new \LogicException(sprintf('The service "%s" is tagged "%s", but its class %s has no #[AsSource]', $id, self::TAG, $class));
-            $code = $attribute->code;
-
-            if (!Code::isValid($code)) {
-                throw new \LogicException(sprintf('The source code "%s" of %s must match %s', $code, $class, Code::PATTERN));
-            }
-
-            if (!is_a($class, SourceInterface::class, true)) {
-                throw new \LogicException(sprintf('The source %s must implement %s', $class, SourceInterface::class));
-            }
+        $codeOf = static fn (string $class): ?string => AttributeReader::source($class)?->code;
+        foreach (TaggedClasses::byCode($container, self::TAG, 'source', '#[AsSource]', $codeOf, SourceInterface::class) as $code => [$id, $class]) {
+            $attribute = AttributeReader::source($class) ?? throw new \LogicException(sprintf('The source %s has no #[AsSource]', $class));
 
             if (!class_exists($attribute->of) && !interface_exists($attribute->of)) {
                 throw new \LogicException(sprintf('The source %s lists %s, which is no class or interface', $class, $attribute->of));
@@ -54,10 +45,6 @@ final class RegisterSourcesPass implements CompilerPassInterface
 
             if (null !== $attribute->params && !class_exists($attribute->params)) {
                 throw new \LogicException(sprintf('The parameters class %s of the source %s doesn\'t exist', $attribute->params, $class));
-            }
-
-            if (isset($classes[$code]) && $classes[$code] !== $class) {
-                throw new \LogicException(sprintf('The source code "%s" is used by both %s and %s. Codes are unique per kind, so give one of them another code', $code, $classes[$code], $class));
             }
 
             $classes[$code] = $class;
