@@ -33,8 +33,6 @@ final readonly class SnippetPlacementRequest
      */
     public function submit(Request $request, string $uuid, string $placement, callable $change): RedirectResponse
     {
-        return $this->overviewRequest->submit($request, $uuid, function (EntryInterface $entry) use ($placement, $change): array {
-            return $change($this->placements->findOneOfSnippet($entry, $placement) ?? throw new NotFoundHttpException(sprintf('The entry %s has no placement %s', $entry->getUuid(), $placement)));
-        });
+        return $this->overviewRequest->submit($request, $uuid, fn (EntryInterface $entry): array => $change($this->placements->findOneOfSnippet($entry, $placement) ?? throw new NotFoundHttpException(sprintf('The entry %s has no placement %s', $entry->getUuid(), $placement))));
     }
 }
