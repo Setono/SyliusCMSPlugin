@@ -122,6 +122,14 @@ final class ImageExtensionTest extends IntegrationTestCase
         return self::mediaItem(MediaKind::Image, 'image/jpeg', 'summer-sale.jpg', $width, $height, $altTexts, $focalPoint);
     }
 
+    /**
+     * A JPEG for narrow screens, such as a Banner's mobile image, with no alt text of its own
+     */
+    public function mobileImage(int $width = 800, int $height = 1000): MediaItemInterface
+    {
+        return self::mediaItem(MediaKind::Image, 'image/jpeg', 'summer-sale-mobile.jpg', $width, $height);
+    }
+
     public function svg(?int $width = 120, ?int $height = 40): MediaItemInterface
     {
         return self::mediaItem(MediaKind::Image, 'image/svg+xml', 'logo.svg', $width, $height, ['en_US' => 'Our logo']);

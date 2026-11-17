@@ -115,7 +115,7 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($registry);
         $blockTypes = self::blockTypes($registry);
 
-        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'video', 'button', 'accordion', 'accordion_item', 'link_list', 'link', 'downloads', 'products', 'taxons', 'carousel', 'first_match'], array_keys($blockTypes));
+        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'video', 'button', 'banner', 'accordion', 'accordion_item', 'link_list', 'link', 'downloads', 'products', 'taxons', 'carousel', 'first_match'], array_keys($blockTypes));
 
         self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
         self::assertNull($blockTypes['columns']['parents']);
@@ -130,6 +130,7 @@ final class RegistryTest extends BuilderApiTestCase
             ['type' => 'image', 'min' => null, 'max' => null],
             ['type' => 'video', 'min' => null, 'max' => null],
             ['type' => 'button', 'min' => null, 'max' => null],
+            ['type' => 'banner', 'min' => null, 'max' => null],
             ['type' => 'accordion', 'min' => null, 'max' => null],
             ['type' => 'link_list', 'min' => null, 'max' => null],
             ['type' => 'downloads', 'min' => null, 'max' => null],
@@ -151,6 +152,10 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertNull($blockTypes['accordion']['parents']);
         self::assertSame(['accordion'], $blockTypes['accordion_item']['parents']);
         self::assertSame([], $blockTypes['accordion_item']['children']);
+
+        self::assertSame([['type' => 'button', 'min' => null, 'max' => null]], $blockTypes['banner']['children']);
+        self::assertNull($blockTypes['banner']['parents']);
+        self::assertNull($blockTypes['button']['parents'], 'A Button goes in a Banner and anywhere else');
 
         self::assertSame([['type' => 'link', 'min' => null, 'max' => null]], $blockTypes['link_list']['children']);
         self::assertSame(['link_list'], $blockTypes['link']['parents']);

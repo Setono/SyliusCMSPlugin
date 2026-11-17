@@ -26,6 +26,8 @@ final readonly class ImageOptions
      * @param string|null $alt overrides the media item's alt text, unless it's empty
      * @param string|null $class added to the <img>
      * @param self::FORMAT_* $format auto renders a <picture> with an AVIF source where the image provider supports it
+     * @param list<ArtDirectedImage> $artDirection other images shown where their media queries match, in a <picture>
+     * @param string|null $pictureClass renders the image in a <picture> with this class, also when it has no <source>
      */
     public function __construct(
         public ImageLayout $layout = ImageLayout::Constrained,
@@ -36,6 +38,8 @@ final readonly class ImageOptions
         public ?string $alt = null,
         public ?string $class = null,
         public string $format = self::FORMAT_AUTO,
+        public array $artDirection = [],
+        public ?string $pictureClass = null,
     ) {
     }
 
@@ -46,7 +50,7 @@ final readonly class ImageOptions
      */
     public static function fromArray(array $options): self
     {
-        /** @var array{layout: string, width: int<1, max>|null, aspect_ratio: int|float|null, sizes: string|null, priority: bool, alt: string|null, class: string|null, format: self::FORMAT_*} $options */
+        /** @var array{layout: string, width: int<1, max>|null, aspect_ratio: int|float|null, sizes: string|null, priority: bool, alt: string|null, class: string|null, format: self::FORMAT_*, art_direction: list<ArtDirectedImage>, picture_class: string|null} $options */
         $options = self::resolver()->resolve($options);
 
         $layout = ImageLayout::from($options['layout']);
@@ -63,6 +67,8 @@ final readonly class ImageOptions
             $options['alt'],
             $options['class'],
             $options['format'],
+            $options['art_direction'],
+            $options['picture_class'],
         );
     }
 
@@ -79,6 +85,8 @@ final readonly class ImageOptions
                 'alt' => null,
                 'class' => null,
                 'format' => self::FORMAT_AUTO,
+                'art_direction' => [],
+                'picture_class' => null,
             ])
             ->setAllowedValues('layout', array_map(static fn (ImageLayout $layout): string => $layout->value, ImageLayout::cases()))
             ->setAllowedTypes('width', ['null', 'int'])
@@ -90,10 +98,25 @@ final readonly class ImageOptions
             ->setAllowedTypes('alt', ['null', 'string'])
             ->setAllowedTypes('class', ['null', 'string'])
             ->setAllowedValues('format', [self::FORMAT_AUTO, self::FORMAT_WEBP, self::FORMAT_ORIGINAL])
+            ->setAllowedTypes('art_direction', 'array[]')
+            ->setAllowedTypes('picture_class', ['null', 'string'])
+            ->setNormalizer('art_direction', self::artDirection(...))
             ->setNormalizer('sizes', static fn (Options $options, ?string $sizes): ?string => null === $sizes || '' === trim($sizes) ? null : $sizes)
             ->setNormalizer('class', static fn (Options $options, ?string $class): ?string => null === $class || '' === trim($class) ? null : trim($class))
+            ->setNormalizer('picture_class', static fn (Options $options, ?string $class): ?string => null === $class || '' === trim($class) ? null : trim($class))
         ;
 
         return $resolver;
+    }
+
+    /**
+     * @param Options<array<string, mixed>> $options
+     * @param array<array-key, array<array-key, mixed>> $images what the allowed type array[] lets through
+     *
+     * @return list<ArtDirectedImage>
+     */
+    private static function artDirection(Options $options, array $images): array
+    {
+        return array_values(array_map(ArtDirectedImage::fromArray(...), $images));
     }
 }

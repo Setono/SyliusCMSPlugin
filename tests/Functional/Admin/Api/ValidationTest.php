@@ -26,13 +26,13 @@ final class ValidationTest extends BuilderApiTestCase
 
     private const STRAY_COLUMN = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e52';
 
-    private const BANNER = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e53';
+    private const COUNTDOWN = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e53';
 
     private const GROUP = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e54';
 
     private const GROUP_COPY = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e55';
 
-    private const BANNER_COPY = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e56';
+    private const COUNTDOWN_COPY = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e56';
 
     /**
      * @test
@@ -66,7 +66,7 @@ final class ValidationTest extends BuilderApiTestCase
     {
         $client = self::createClient();
         $page = self::createPageWithBlocks('About us', 'about-us', [
-            new StoredBlock(self::GROUP, 'group', 1, children: [new StoredBlock(self::BANNER, 'banner', 1, fields: ['title' => 'Winter sale'])]),
+            new StoredBlock(self::GROUP, 'group', 1, children: [new StoredBlock(self::COUNTDOWN, 'countdown', 1, fields: ['title' => 'Winter sale'])]),
         ], published: true);
         $csrfToken = self::openBuilder($client, $page);
 
@@ -74,7 +74,7 @@ final class ValidationTest extends BuilderApiTestCase
             ['op' => 'set_value', 'key' => self::GROUP, 'field' => 'fullWidth', 'locale' => null, 'value' => true],
             ['op' => 'add_block', 'parent' => null, 'index' => 1, 'after' => self::GROUP, 'block' => [
                 'key' => self::GROUP_COPY, 'type' => 'group', 'version' => 1, 'style' => null, 'fields' => ['fullWidth' => true], 'translated' => [], 'conditions' => [], 'children' => [
-                    ['key' => self::BANNER_COPY, 'type' => 'banner', 'version' => 1, 'style' => null, 'fields' => ['title' => 'Winter sale'], 'translated' => [], 'conditions' => [], 'children' => []],
+                    ['key' => self::COUNTDOWN_COPY, 'type' => 'countdown', 'version' => 1, 'style' => null, 'fields' => ['title' => 'Winter sale'], 'translated' => [], 'conditions' => [], 'children' => []],
                 ],
             ]],
         ]], $csrfToken);
@@ -84,7 +84,7 @@ final class ValidationTest extends BuilderApiTestCase
 
         $draft = (string) self::drafts()->findOneByEntry(self::reloadPage($page))?->getContent();
         self::assertStringContainsString(sprintf('{"key":"%s","type":"group","version":1,"style":null,"fields":{"fullWidth":true},', self::GROUP), $draft);
-        self::assertStringContainsString(sprintf('{"key":"%s","type":"banner","version":1,"style":null,"fields":{"title":"Winter sale"},', self::BANNER_COPY), $draft);
+        self::assertStringContainsString(sprintf('{"key":"%s","type":"countdown","version":1,"style":null,"fields":{"title":"Winter sale"},', self::COUNTDOWN_COPY), $draft);
     }
 
     /**
@@ -233,7 +233,7 @@ final class ValidationTest extends BuilderApiTestCase
             new StoredBlock(self::HEADING, 'heading', 1),
             new StoredBlock(self::COLUMNS, 'columns', 1, children: [new StoredBlock(self::COLUMN, 'column', 1)]),
             new StoredBlock(self::STRAY_COLUMN, 'column', 1),
-            new StoredBlock(self::BANNER, 'banner', 1, fields: ['title' => 'Winter sale']),
+            new StoredBlock(self::COUNTDOWN, 'countdown', 1, fields: ['title' => 'Winter sale']),
         ]);
     }
 
@@ -246,7 +246,7 @@ final class ValidationTest extends BuilderApiTestCase
             ['block' => self::HEADING, 'field' => 'text', 'locale' => 'en_US', 'message' => 'This field is required.'],
             ['block' => self::COLUMNS, 'field' => null, 'locale' => null, 'message' => 'Needs at least 2 Column blocks inside.'],
             ['block' => self::STRAY_COLUMN, 'field' => null, 'locale' => null, 'message' => 'Column can\'t go here.'],
-            ['block' => self::BANNER, 'field' => null, 'locale' => null, 'message' => 'Its block type "banner" no longer exists, so it isn\'t shown.'],
+            ['block' => self::COUNTDOWN, 'field' => null, 'locale' => null, 'message' => 'Its block type "countdown" no longer exists, so it isn\'t shown.'],
         ];
     }
 

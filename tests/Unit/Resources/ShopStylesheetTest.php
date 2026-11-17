@@ -141,6 +141,29 @@ final class ShopStylesheetTest extends TestCase
     /**
      * @test
      */
+    public function it_makes_a_banner_at_least_its_min_height_with_its_image_covering_it_and_its_content_over_it(): void
+    {
+        self::assertSame('var(--cms-banner-min-height)', self::declarations('.cms-banner')['min-height'] ?? null);
+
+        // The media and the content share the banner's one grid cell, so the content sits over the image
+        self::assertSame('1 / 1', self::declarations('.cms-banner__media')['grid-area'] ?? null);
+        self::assertSame('1 / 1', self::declarations('.cms-banner__content')['grid-area'] ?? null);
+        self::assertSame('stretch', self::declarations('.cms-banner__media')['align-self'] ?? null, 'The media fills a banner its content or min height makes taller');
+        self::assertSame(['width' => '100%', 'height' => '100%', 'object-fit' => 'cover'], array_intersect_key(self::declarations('.cms-banner__media img'), ['width' => true, 'height' => true, 'object-fit' => true]));
+    }
+
+    /**
+     * @test
+     */
+    public function it_shades_a_banner_s_image_behind_its_content_with_the_overlay(): void
+    {
+        self::assertSame('var(--cms-banner-overlay)', self::declarations('.cms-banner__media ~ .cms-banner__content')['background'] ?? null);
+        self::assertArrayNotHasKey('background', self::declarations('.cms-banner__content'), 'A banner without an image has no shade');
+    }
+
+    /**
+     * @test
+     */
     public function it_never_styles_html_or_body(): void
     {
         self::assertDoesNotMatchRegularExpression('/(^|[\s,}>~+])(html|body)\b/', self::css());

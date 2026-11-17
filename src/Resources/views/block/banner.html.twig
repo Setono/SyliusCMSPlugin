@@ -1,0 +1,27 @@
+{# The image fills the banner, in a <picture> whose narrow source is the mobile image, below the shop's mobile breakpoint
+   of 48rem. Without an image the shop gets no media, and the builder's preview a placeholder. The heading, text and
+   buttons sit over it, and are left out when there's nothing to show #}
+{%- set media -%}
+    {{ cms_image(block.image, {
+        layout: 'full_width',
+        alt: block.alt,
+        picture_class: 'cms-banner__media',
+        art_direction: [{media: '(max-width: 47.99rem)', image: block.mobileImage}],
+    }) }}
+{%- endset -%}
+<div class="cms-banner{{ block.fullWidth ? ' cms-full-width' }}{{ view.styleClass ? ' ' ~ view.styleClass }}">
+    {{- media -}}
+    {%- if block.heading is not empty or block.text is not null or children is not empty -%}
+        <div class="cms-banner__content">
+            {%- if block.heading is not empty -%}
+                <h2 class="cms-banner__heading">{{ cms_field(block, 'heading') }}</h2>
+            {%- endif -%}
+            {%- if block.text is not null -%}
+                <div class="cms-banner__text">{{ cms_field(block, 'text') }}</div>
+            {%- endif -%}
+            {%- if children is not empty -%}
+                <div class="cms-banner__buttons">{{ cms_blocks(children) }}</div>
+            {%- endif -%}
+        </div>
+    {%- endif -%}
+</div>

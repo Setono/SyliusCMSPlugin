@@ -7,6 +7,7 @@ setono_sylius_cms:
     block_type:
         accordion: Accordion
         accordion_item: Accordion item
+        banner: Banner
         button: Button
         carousel: Carousel
         column: Column
@@ -66,6 +67,15 @@ setono_sylius_cms:
         accordion_item:
             content: Content
             title: Title
+        banner:
+            alt: Alt text
+            alt_help: Describes the image here. Leave it empty to use the image's own alt text from the media library.
+            full_width: Full width
+            heading: Heading
+            image: Image
+            mobile_image: Mobile image
+            mobile_image_help: Shown instead of the image on narrow screens, such as phones. Leave it empty to show the image there too.
+            text: Text
         bestsellers_source:
             include_children: Include the taxons below it
             taxon: Taxon

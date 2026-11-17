@@ -1,0 +1,8 @@
+--TEST--
+cms_image() renders an art-directed image's AVIF <source> and then its WebP one, both for its media query, before the image's own AVIF <source>, where the image provider gives AVIF
+--TEMPLATE--
+{{ cms_image(image, {layout: 'full_width', art_direction: [{media: '(max-width: 47.99rem)', image: mobile}]}) }}
+--DATA--
+return $this->withAvif() + $this->rendering(['image' => $this->image(1000, 500), 'mobile' => $this->mobileImage(600, 600)])
+--EXPECT--
+<picture><source media="(max-width: 47.99rem)" type="image/avif" srcset="/avif/320/summer-sale-mobile.jpg 320w, /avif/600/summer-sale-mobile.jpg 600w" sizes="100vw" width="600" height="600"><source media="(max-width: 47.99rem)" srcset="/webp/320/summer-sale-mobile.jpg 320w, /webp/600/summer-sale-mobile.jpg 600w" sizes="100vw" width="600" height="600"><source type="image/avif" srcset="/avif/320/summer-sale.jpg 320w, /avif/640/summer-sale.jpg 640w, /avif/960/summer-sale.jpg 960w, /avif/1000/summer-sale.jpg 1000w" sizes="100vw"><img src="/webp/1000/summer-sale.jpg" srcset="/webp/320/summer-sale.jpg 320w, /webp/640/summer-sale.jpg 640w, /webp/960/summer-sale.jpg 960w, /webp/1000/summer-sale.jpg 1000w" sizes="100vw" width="1000" height="500" alt="A beach at dawn" loading="lazy" decoding="async"></picture>
