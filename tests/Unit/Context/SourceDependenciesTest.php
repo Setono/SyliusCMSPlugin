@@ -106,11 +106,13 @@ final class SourceDependenciesTest extends TestCase
         $page->setBlockTree(new StoredTree(new StoredLayout('showcase', 1, ['products' => self::stored('neighbours')]), []));
 
         self::assertEquals([
-            new ContextDependency(
-                new TranslatableMessage('setono_sylius_cms.context.layout_source', ['%source%' => new TranslatableMessage('app.source.neighbours'), '%field%' => new TranslatableMessage('setono_sylius_cms.field.products.products')], 'validators'),
-                ['product', 'taxon'],
-            ),
+            new ContextDependency(self::inLayout('app.source.neighbours', 'setono_sylius_cms.field.products.products'), ['product', 'taxon']),
         ], [...self::finder()->findIn($page)]);
+    }
+
+    private static function inLayout(string $source, string $field): TranslatableMessage
+    {
+        return new TranslatableMessage('setono_sylius_cms.context.layout_source', ['%source%' => new TranslatableMessage($source), '%field%' => new TranslatableMessage($field)], 'validators');
     }
 
     private static function inBlock(string $source, string $block): TranslatableMessage
