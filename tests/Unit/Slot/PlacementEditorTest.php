@@ -10,11 +10,13 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
 use Setono\SyliusCMSPlugin\Event\PlacementsChanged;
 use Setono\SyliusCMSPlugin\Factory\PlacementFactory;
 use Setono\SyliusCMSPlugin\Model\Placement;
 use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Publishing\EditRecorder;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
@@ -37,6 +39,9 @@ final class PlacementEditorTest extends TestCase
 
     /** @var ObjectProphecy<PlacementRepositoryInterface> */
     private ObjectProphecy $placements;
+
+    /** @var ObjectProphecy<DeclaredContextInterface> */
+    private ObjectProphecy $declaredContext;
 
     private EventDispatcher $eventDispatcher;
 
@@ -71,6 +76,9 @@ final class PlacementEditorTest extends TestCase
         });
 
         $this->placements = $this->prophesize(PlacementRepositoryInterface::class);
+        // What the snippet's rows declare, unless a test drafts more
+        $this->declaredContext = $this->prophesize(DeclaredContextInterface::class);
+        $this->declaredContext->toPlace(Argument::type(SnippetInterface::class))->will(static fn (array $arguments): array => $arguments[0] instanceof SnippetInterface ? $arguments[0]->getContext() : []);
 
         $this->eventDispatcher = new EventDispatcher();
         $this->eventDispatcher->addListener(PlacementsChanged::class, function (PlacementsChanged $event): void {
@@ -112,6 +120,22 @@ final class PlacementEditorTest extends TestCase
         $this->placements->nextPosition('product.after_price')->willReturn(0);
 
         self::assertSame('product.after_price', $this->editor()->add($snippet, 'product.after_price')->getSlot());
+
+        $this->expectException(SlotNotOfferedException::class);
+        $this->expectExceptionMessage('The slot "shop.footer" doesn\'t provide the context the snippet needs');
+
+        $this->editor()->add($snippet, 'shop.footer');
+    }
+
+    /**
+     * Its working copy may declare more context than its published content, which it publishes next
+     *
+     * @test
+     */
+    public function it_adds_no_placement_in_a_slot_that_does_not_provide_the_context_the_snippet_s_working_copy_declares(): void
+    {
+        $snippet = new Snippet();
+        $this->declaredContext->toPlace($snippet)->willReturn(['product']);
 
         $this->expectException(SlotNotOfferedException::class);
         $this->expectExceptionMessage('The slot "shop.footer" doesn\'t provide the context the snippet needs');
@@ -234,6 +258,7 @@ final class PlacementEditorTest extends TestCase
             $clock,
             new EditRecorder($tokenStorage, $clock),
             $this->eventDispatcher,
+            $this->declaredContext->reveal(),
         );
     }
 }

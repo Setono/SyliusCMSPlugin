@@ -24,6 +24,12 @@
             <tag name="setono_sylius_cms.context_resolver" priority="-100"/>
         </service>
 
+        <!-- The context keys a slot must provide for a snippet to be placed in it -->
+        <service id="Setono\SyliusCMSPlugin\Context\DeclaredContext" class="Setono\SyliusCMSPlugin\Context\DeclaredContext">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Context\DeclaredContextInterface" alias="Setono\SyliusCMSPlugin\Context\DeclaredContext"/>
+
         <!--
         What depends on the host-page context an entry provides or a snippet declares, which publish holds against it and
         which blocks a change of a snippet's declared context. Each kind of dependency is a finder tagged

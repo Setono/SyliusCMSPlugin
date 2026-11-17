@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Admin\EntryUrls;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
 use Setono\SyliusCMSPlugin\Admin\TranslationChips;
 use Setono\SyliusCMSPlugin\Admin\WhereItShows;
+use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
@@ -28,6 +29,7 @@ use Setono\SyliusCMSPlugin\Model\Placement;
 use Setono\SyliusCMSPlugin\Model\Revision;
 use Setono\SyliusCMSPlugin\Model\ShareLink;
 use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
@@ -269,7 +271,9 @@ final class AdminExtensionTest extends IntegrationTestCase
         $placements->findBySlots(Argument::any())->will(static function () use (&$placed): array {
             return $placed;
         });
-        $entryPlacements = new EntryPlacements($placements->reveal(), new SlotRegistry(['shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null]]));
+        $declaredContext = $this->prophesize(DeclaredContextInterface::class);
+        $declaredContext->toPlace(Argument::type(SnippetInterface::class))->will(static fn (array $arguments): array => $arguments[0] instanceof SnippetInterface ? $arguments[0]->getContext() : []);
+        $entryPlacements = new EntryPlacements($placements->reveal(), new SlotRegistry(['shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null]]), $declaredContext->reveal());
 
         $overview = new EntryOverviewRuntime($entryUrls, $channelHomepages, $problemFinder, $revisions->reveal(), $entryShareLinks, $whereItShows, $entryPlacements);
 

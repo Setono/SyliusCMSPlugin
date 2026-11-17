@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Admin;
 
+use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
@@ -21,6 +22,7 @@ final readonly class EntryPlacements
     public function __construct(
         private PlacementRepositoryInterface $placements,
         private SlotRegistryInterface $slots,
+        private DeclaredContextInterface $declaredContext,
     ) {
     }
 
@@ -58,7 +60,7 @@ final readonly class EntryPlacements
             );
         }, $placements);
 
-        return new EntryPlacementsSection(self::inDeclaredOrder($listed, $this->slots->all()), $this->slots->providing($entry->getContext()));
+        return new EntryPlacementsSection(self::inDeclaredOrder($listed, $this->slots->all()), $this->slots->providing($this->declaredContext->toPlace($entry)));
     }
 
     /**

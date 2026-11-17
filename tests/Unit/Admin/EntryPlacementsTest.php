@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Admin;
 
 use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Admin\EntryPlacement;
 use Setono\SyliusCMSPlugin\Admin\EntryPlacements;
+use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\Placement;
 use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
@@ -23,9 +26,15 @@ final class EntryPlacementsTest extends TestCase
     /** @var ObjectProphecy<PlacementRepositoryInterface> */
     private ObjectProphecy $placements;
 
+    /** @var ObjectProphecy<DeclaredContextInterface> */
+    private ObjectProphecy $declaredContext;
+
     protected function setUp(): void
     {
         $this->placements = $this->prophesize(PlacementRepositoryInterface::class);
+        // What the snippet's rows declare, unless a test drafts more
+        $this->declaredContext = $this->prophesize(DeclaredContextInterface::class);
+        $this->declaredContext->toPlace(Argument::type(SnippetInterface::class))->will(static fn (array $arguments): array => $arguments[0] instanceof SnippetInterface ? $arguments[0]->getContext() : []);
     }
 
     /**
@@ -90,6 +99,18 @@ final class EntryPlacementsTest extends TestCase
     /**
      * @test
      */
+    public function it_offers_the_slots_that_provide_the_context_the_snippet_s_working_copy_declares_too(): void
+    {
+        $snippet = new Snippet();
+        $this->placements->findBySnippet($snippet)->willReturn([]);
+        $this->declaredContext->toPlace($snippet)->willReturn(['product']);
+
+        self::assertSame(['product.after_price'], self::identifiers($this->entryPlacements()->of($snippet)->offeredSlots ?? []));
+    }
+
+    /**
+     * @test
+     */
     public function it_has_no_placements_section_for_an_entry_that_is_not_a_snippet(): void
     {
         self::assertNull($this->entryPlacements()->of(new Page()));
@@ -111,6 +132,6 @@ final class EntryPlacementsTest extends TestCase
             'shop.top' => ['label' => 'setono_sylius_cms.slot.shop.top', 'provides' => [], 'cap' => null],
             'shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null],
             'product.after_price' => ['label' => 'setono_sylius_cms.slot.product.after_price', 'provides' => ['product'], 'cap' => null],
-        ]));
+        ]), $this->declaredContext->reveal());
     }
 }

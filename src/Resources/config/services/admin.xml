@@ -92,6 +92,7 @@
         <service id="Setono\SyliusCMSPlugin\Admin\EntryPlacements" class="Setono\SyliusCMSPlugin\Admin\EntryPlacements">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Context\DeclaredContextInterface"/>
         </service>
 
         <!-- Where an entry shows, per channel and locale, which its overview page gets through cms_admin_where_it_shows() -->

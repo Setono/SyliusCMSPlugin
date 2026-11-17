@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Slot;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Clock\ClockInterface;
+use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
 use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Event\PlacementsChanged;
 use Setono\SyliusCMSPlugin\Factory\PlacementFactoryInterface;
@@ -37,6 +38,7 @@ final readonly class PlacementEditor implements PlacementEditorInterface
         private ClockInterface $clock,
         private EditRecorder $editRecorder,
         private EventDispatcherInterface $eventDispatcher,
+        private DeclaredContextInterface $declaredContext,
     ) {
     }
 
@@ -46,7 +48,7 @@ final readonly class PlacementEditor implements PlacementEditorInterface
             throw SlotNotOfferedException::undeclared($slot);
         }
 
-        if (!in_array($slot, array_map(static fn (SlotMetadata $offered): string => $offered->identifier, $this->slots->providing($snippet->getContext())), true)) {
+        if (!in_array($slot, array_map(static fn (SlotMetadata $offered): string => $offered->identifier, $this->slots->providing($this->declaredContext->toPlace($snippet))), true)) {
             throw SlotNotOfferedException::withoutContext($slot);
         }
 

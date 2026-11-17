@@ -12,6 +12,7 @@
             <argument type="service" id="clock"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
             <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Context\DeclaredContextInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Slot\PlacementEditorInterface" alias="Setono\SyliusCMSPlugin\Slot\PlacementEditor"/>
     </services>
