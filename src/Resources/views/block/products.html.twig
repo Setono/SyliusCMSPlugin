@@ -1,0 +1,9 @@
+{# Each product through the shop's own product card, so CMS product lists match the shop's other lists on every theme #}
+{% set products = cms_value(block, 'products') %}
+{% if products is not null and products|length > 0 %}
+    <div class="cms-products cms-products--{{ block.display }}{{ view.styleClass ? ' ' ~ view.styleClass }}">
+        {%- for product in products %}
+            <div class="cms-products__item">{% include '@SyliusShop/Product/_box.html.twig' with {'product': product} only %}</div>
+        {%- endfor %}
+    </div>
+{% endif %}
