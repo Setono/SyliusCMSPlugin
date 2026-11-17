@@ -59,7 +59,11 @@ setono_sylius_cms:
         channel: Channel
         customer_group: Customer group
         date_window: Date window
+        entry: Entry
         locale: Locale
+        product: Product
+        product_in_taxon: Product in taxon
+        taxon: Taxon
     content_type:
         page: Page
         snippet: Snippet
@@ -107,6 +111,8 @@ setono_sylius_cms:
         downloads:
             documents: Documents
             heading: Heading
+        entry_condition:
+            entries: Entries
         embed_code:
             code: Code
             code_help: 'HTML, scripts included, such as a review widget or a newsletter form. It runs in the shop as it is, but not in the builder''s preview.'
@@ -127,6 +133,11 @@ setono_sylius_cms:
             heading: Heading
         locale_condition:
             locales: Locales
+        product_condition:
+            products: Products
+        product_in_taxon_condition:
+            include_children: Include the taxons below them
+            taxons: Taxons
         products:
             display: Display
             products: Products
@@ -144,6 +155,8 @@ setono_sylius_cms:
             show_title: Show title
         taxon_children_source:
             taxon: Taxon
+        taxon_condition:
+            taxons: Taxons
         taxons:
             taxons: Taxons
         video:
@@ -214,6 +227,8 @@ setono_sylius_cms:
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
+        page_scope_removed_kind: 'The page scope of the placement in "%slot%" has a condition of the kind "%kind%", which the code no longer has, so the placement shows nothing.'
+        page_scope_unprovided: 'The page scope of the placement in "%slot%" has a condition, %kind%, that needs the host-page context "%context%", which the slot no longer provides, so the placement shows nothing.'
         removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
         removed_context_key: 'It needs the context key "%key%", which the code no longer has, so none of its placements shows it.'
         removed_slot: 'A placement in the slot "%slot%", which the code no longer has, shows nothing.'
@@ -230,6 +245,7 @@ setono_sylius_cms:
         broken_reference: Broken references
         deleted_customer_group: Deleted customer groups
         misfit_value: Values that don't fit their field
+        page_scope_mismatch: Page scopes that don't fit their slots
         removed_context_key: Removed context keys
         removed_layout: Removed layouts
         scheduled_publish_failed: Failed scheduled publishes
@@ -323,6 +339,7 @@ setono_sylius_cms:
         dismiss: Dismiss
         drafts_in_progress: Drafts in progress
         error_count: '{0} No errors|{1} 1 error|]1,Inf[ %count% errors'
+        every_page_the_slot_appears_on: Every page the slot appears on
         fix_in_builder: Fix in builder
         fix_in_placements: Go to Placements
         fix_in_publishing: Go to Publishing
@@ -359,6 +376,8 @@ setono_sylius_cms:
         old_urls: 'Redirects from:'
         open_in_builder: Open in builder
         other_content_type: Another content type
+        page_scope: Page scope
+        page_scope_removed_kind: 'A condition of the kind "%kind%", which the code no longer has, so it shows nothing'
         pick_content_type: What do you want to create?
         placements: Placements
         placements_help: Placements take effect at once, without publishing, and show the snippet while it is published. A slot shows its placements, of every snippet, in this order.
@@ -542,6 +561,7 @@ setono_sylius_cms:
         is_outside: is outside
         # The Product, Products, Taxon and Taxons fields' controls. See "List fields" in docs/spec/sources.md
         items:
+            add_entry: Add entry
             add_product: Add product
             add_taxon: Add taxon
             at_most: 'Up to %max%'
@@ -550,6 +570,7 @@ setono_sylius_cms:
             not_found: '%code% no longer exists, so it isn''t shown.'
             nothing_picked: Nothing chosen
             remove: Remove
+            search_entries: Search entries
             search_products: Search products
             search_taxons: Search taxons
         keep_mine: Keep mine
@@ -681,6 +702,15 @@ setono_sylius_cms:
         old_urls: Redirects from
         old_urls_help: The URLs of the slugs this had before, which redirect here.
         open_overview: Open the overview page
+        # The page scope editor of a placement, on its snippet's overview page. See "Page scopes" in docs/spec/slots.md
+        page_scope:
+            cancel: Cancel
+            description: 'Limit the placement in "%slot%" to some of the pages the slot appears on. Its conditions all have to match.'
+            edit: Edit page scope
+            every_page: 'No conditions: it shows on every page the slot appears on.'
+            save: Save page scope
+            title: Page scope
+            unknown_condition_kind_help: 'The code no longer has this kind of condition, so the placement doesn''t show. Remove the condition to show it again.'
         placement_removed: '%slot% (no longer in the code)'
         placements: Placements
         placements_help: Placements are managed on the overview page.

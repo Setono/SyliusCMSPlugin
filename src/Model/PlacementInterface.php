@@ -34,6 +34,11 @@ interface PlacementInterface extends ResourceInterface
     public function getPageScope(): array;
 
     /**
+     * @param list<array<string, mixed>> $pageScope the conditions, in the stored condition format
+     */
+    public function setPageScope(array $pageScope): void;
+
+    /**
      * Its place in the order of the slot's placements, from every snippet: lower comes first
      */
     public function getPosition(): int;

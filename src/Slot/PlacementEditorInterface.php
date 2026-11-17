@@ -25,6 +25,16 @@ interface PlacementEditorInterface
     public function remove(PlacementInterface $placement): void;
 
     /**
+     * Replaces the placement's page scope, which limits it to the shop pages it matches. Empty, it shows on every page
+     * the slot appears on
+     *
+     * @param array<mixed> $pageScope its conditions in the stored condition format, in order
+     *
+     * @throws InvalidPageScopeException when a condition isn't one a page scope of a placement in its slot may hold
+     */
+    public function setPageScope(PlacementInterface $placement, array $pageScope): void;
+
+    /**
      * Swaps the placement with the one before it in its slot, which can be another snippet's
      *
      * @return bool false when it's first already, which changes nothing

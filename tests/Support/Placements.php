@@ -56,6 +56,43 @@ trait Placements
     }
 
     /**
+     * Limits the placement to the shop pages its page scope matches, as the overview page's Edit page scope does
+     *
+     * @param list<array<string, mixed>> $pageScope its conditions in the stored condition format
+     */
+    protected static function scope(PlacementInterface $placement, array $pageScope): void
+    {
+        self::placementEditor()->setPageScope($placement, $pageScope);
+    }
+
+    /**
+     * Gives the placement a page scope without asking whether it may hold it, as a scope saved before a deploy removed
+     * a condition kind or changed what its slot provides is
+     *
+     * @param list<array<string, mixed>> $pageScope its conditions in the stored condition format
+     */
+    protected static function scopeUnchecked(PlacementInterface $placement, array $pageScope): void
+    {
+        $placement->setPageScope($pageScope);
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.placement');
+        $manager->flush();
+    }
+
+    /**
+     * The condition "product is in taxon", "is one of" or, negated, "is not one of", in the stored condition format
+     *
+     * @param list<string> $taxons taxon codes
+     *
+     * @return array<string, mixed>
+     */
+    protected static function productInTaxon(array $taxons, bool $negate = false, bool $includeChildren = false): array
+    {
+        return ['kind' => 'product_in_taxon', 'negate' => $negate, 'params' => ['taxons' => $taxons, 'includeChildren' => $includeChildren]];
+    }
+
+    /**
      * The snippet's placements as the database holds them, as [slot, position] by slot and then in each slot's order
      *
      * @return list<array{string, int}>

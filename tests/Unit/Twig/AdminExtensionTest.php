@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Admin\EntryPlacements;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\EntryShareLinks;
 use Setono\SyliusCMSPlugin\Admin\EntryUrls;
+use Setono\SyliusCMSPlugin\Admin\PageScopeSummaries;
 use Setono\SyliusCMSPlugin\Admin\StatusLabeler;
 use Setono\SyliusCMSPlugin\Admin\TranslationChips;
 use Setono\SyliusCMSPlugin\Admin\WhereItShows;
@@ -53,6 +54,7 @@ use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
 use Setono\SyliusCMSPlugin\Routing\TakenUrlFinderInterface;
 use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
+use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Homepages;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Translation\TranslatableValues;
@@ -81,6 +83,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
+use Symfony\Component\Translation\IdentityTranslator;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\Test\IntegrationTestCase;
 
@@ -301,7 +304,14 @@ final class AdminExtensionTest extends IntegrationTestCase
         });
         $declaredContext = $this->prophesize(DeclaredContextInterface::class);
         $declaredContext->toPlace(Argument::type(SnippetInterface::class))->will(static fn (array $arguments): array => $arguments[0] instanceof SnippetInterface ? $arguments[0]->getContext() : []);
-        $entryPlacements = new EntryPlacements($placements->reveal(), new SlotRegistry(['shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null]]), $declaredContext->reveal());
+        $conditionKinds = Conditions::registry();
+        $entryPlacements = new EntryPlacements(
+            $placements->reveal(),
+            new SlotRegistry(['shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null]]),
+            $declaredContext->reveal(),
+            $conditionKinds,
+            new PageScopeSummaries($conditionKinds, Conditions::fieldHandlers(), new ServiceLocator([]), new IdentityTranslator()),
+        );
 
         $entries = $this->prophesize(EntryRepositoryInterface::class);
         $showing = &$this->showingSnippets;

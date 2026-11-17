@@ -7,11 +7,14 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Field;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Setono\SyliusCMSPlugin\Field\Entries;
 use Setono\SyliusCMSPlugin\Field\HydrationContext;
 use Setono\SyliusCMSPlugin\Field\ListFieldHandler;
 use Setono\SyliusCMSPlugin\Field\Products;
 use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Field\Taxons;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
@@ -172,6 +175,26 @@ final class ListFieldHandlerTest extends TestCase
 
         self::assertInstanceOf(ItemList::class, $list);
         self::assertSame([$shirts], [...$list]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_hydrates_entries_by_uuid_from_the_entry_references(): void
+    {
+        $about = new Page();
+        $faq = new Page();
+
+        $list = Sources::listFieldHandler()->hydrate(
+            new Entries(label: 'Entries'),
+            [$faq->getUuid(), 'a-deleted-entry', $about->getUuid()],
+            $this->hydrationContext(['entry' => [$about->getUuid() => $about, $faq->getUuid() => $faq]]),
+        );
+
+        self::assertInstanceOf(ItemList::class, $list);
+        self::assertSame([$faq, $about], [...$list]);
+        self::assertSame('entry', (new Entries(label: 'Entries'))->itemType());
+        self::assertSame(EntryInterface::class, (new Entries(label: 'Entries'))->itemClass());
     }
 
     /**

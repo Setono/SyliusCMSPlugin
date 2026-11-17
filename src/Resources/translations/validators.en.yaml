@@ -49,6 +49,14 @@ setono_sylius_cms:
         too_many_media_items: 'This list has too many media items. It should have {{ limit }} media item or less.|This list has too many media items. It should have {{ limit }} media items or less.'
         too_small: This value should be {{ limit }} or more.
         unknown_source: 'The source "{{ source }}" no longer exists, so this list shows nothing.'
+    # What a placement's page scope may hold. See "Page scopes" in docs/spec/slots.md
+    page_scope:
+        field: 'Condition %number%, %kind%: %field%: %message%'
+        malformed: 'Condition %number% isn''t a condition.'
+        needs: 'Condition %number%, %kind%, needs the host-page context "%context%", which the slot doesn''t provide.'
+        not_host_page: 'Condition %number%, %kind%, doesn''t read the page, so it can''t limit a placement. Put it on the snippet''s blocks instead.'
+        removed_slot: 'The slot "%slot%" no longer exists, so its placement can''t be limited to some pages. Remove the placement.'
+        unknown_kind: 'Condition %number%: the condition kind "%kind%" no longer exists. Remove the condition.'
     slug:
         blank: A URL needs a slug.
         drafted_elsewhere: '"%title%" has the URL %url% in its draft too, in %channels%. Only one of them can be published there.'

@@ -63,7 +63,6 @@
         <service id="Setono\SyliusCMSPlugin\Context\PlacementDependencies" class="Setono\SyliusCMSPlugin\Context\PlacementDependencies">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
             <tag name="setono_sylius_cms.context_dependency_finder" priority="10"/>
         </service>
 

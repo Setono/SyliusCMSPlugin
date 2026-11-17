@@ -1,0 +1,36 @@
+/* The page scope editor of a placement, made of the builder's dialog, on a snippet's overview page in the admin */
+.overlay {
+    composes: overlay from '../ui/Dialog.module.css';
+}
+
+.dialog {
+    composes: dialog from '../ui/Dialog.module.css';
+    width: calc(var(--builder-dialog-width) * 1.25);
+}
+
+.title {
+    composes: title from '../ui/Dialog.module.css';
+}
+
+.description {
+    composes: description from '../ui/Dialog.module.css';
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-3);
+    margin: 0;
+}
+
+.actions {
+    composes: actions from '../ui/Dialog.module.css';
+}
+
+.primary {
+    composes: primary from '../ui/Buttons.module.css';
+}
+
+.secondary {
+    composes: secondary from '../ui/Buttons.module.css';
+}

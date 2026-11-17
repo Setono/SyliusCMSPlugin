@@ -17,6 +17,9 @@ use Setono\SyliusCMSPlugin\Rendering\RenderContext;
  * context. A block's conditions combine with AND, and the values within one condition with OR, which its kind decides.
  * A condition's `negate` gives "is not one of": the plugin negates, so kinds never do. A condition of a kind the code
  * no longer has never matches, so its block stays hidden rather than showing to shoppers it was meant to be hidden from.
+ * Nor does a condition whose kind needs a context key the render context doesn't hold, such as a product condition in a
+ * snippet's tree on its plain preview page, or in a slot whose code no longer provides the product: it can't be answered,
+ * negated or not, as a source that needs a missing key yields nothing. So a kind is only asked with its needs met.
  * A parameter that refers to a record, such as a project's kind's product, is hydrated from the records loaded before
  * rendering, with the rest of the tree's references, which references() lists for that pass.
  * See "Visibility conditions" in docs/spec/targeting.md. Projects add condition kinds rather than change how they combine
@@ -53,7 +56,7 @@ final readonly class ConditionMatcher
     public function matches(array $condition, RenderContext $context, ReferenceMap $references = new ReferenceMap()): bool
     {
         $kind = $this->kindOf($condition);
-        if (null === $kind) {
+        if (null === $kind || !self::holdsWhatItNeeds($context, $kind)) {
             return false;
         }
 
@@ -81,6 +84,17 @@ final readonly class ConditionMatcher
         }
 
         return $references;
+    }
+
+    private static function holdsWhatItNeeds(RenderContext $context, ConditionKindMetadata $kind): bool
+    {
+        foreach ($kind->needs as $key) {
+            if (null === $context->get($key)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

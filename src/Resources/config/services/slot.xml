@@ -13,7 +13,17 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Context\DeclaredContextInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Slot\PageScopeValidatorInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Slot\PlacementEditorInterface" alias="Setono\SyliusCMSPlugin\Slot\PlacementEditor"/>
+
+        <!-- What a placement's page scope may hold, in its slot -->
+        <service id="Setono\SyliusCMSPlugin\Slot\PageScopeValidator" class="Setono\SyliusCMSPlugin\Slot\PageScopeValidator">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\FieldValidator"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Slot\PageScopeValidatorInterface" alias="Setono\SyliusCMSPlugin\Slot\PageScopeValidator"/>
     </services>
 </container>

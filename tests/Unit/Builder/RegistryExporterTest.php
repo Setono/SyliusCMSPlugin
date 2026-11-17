@@ -255,6 +255,24 @@ final class RegistryExporterTest extends TestCase
     }
 
     /**
+     * What the page scope editor on a snippet's overview page gets: only the kinds a page scope can hold, as the builder
+     * gets them
+     *
+     * @test
+     */
+    public function it_exports_the_condition_kinds_that_read_the_host_page_and_the_context_keys_for_page_scopes(): void
+    {
+        $exporter = $this->exporter(conditionKinds: ['on_product_page' => new OnProductPage()]);
+        $registry = $exporter->export();
+
+        self::assertSame([
+            'conditionKinds' => array_values(array_filter($registry['conditionKinds'], static fn (array $kind): bool => 'on_product_page' === $kind['code'])),
+            'contextKeys' => $registry['contextKeys'],
+        ], $exporter->exportForPageScopes());
+        self::assertCount(1, $exporter->exportForPageScopes()['conditionKinds']);
+    }
+
+    /**
      * @test
      */
     public function it_exports_the_context_keys_with_their_labels_and_the_slots_with_the_keys_they_provide(): void

@@ -48,6 +48,8 @@ These kinds ship. Each declares the context keys it needs and what it reads ([Ex
 
 Kinds that read `HostPage` work in visibility conditions and in page scopes. The others work only in visibility conditions.
 
+**A condition whose kind needs a context key the page doesn't provide never matches**, negated or not, as a condition of a kind the code no longer has doesn't, and a source that needs a missing key yields nothing ([Sources](sources.md)). Its block stays hidden, and a placement it scopes doesn't show. The builder and the placement editor offer a kind only where its needs are provided, so this happens only where the code changed, or on a snippet's preview page without a sample object.
+
 **Not shipped:** cart contents or total (promotions cover that), device (CSS covers that), currency, URL or UTM parameters, recurring times such as a weekday or an hour, and order history. Developers can add any of these as their own condition kinds, which work on blocks and page scopes, never on entries.
 
 ## An entry's audience
