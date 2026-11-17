@@ -1,4 +1,4 @@
-import { ApiError } from '../api';
+import { defaultFetch, send, type Fetch, type Request } from '../api';
 import type { MediaLibraryConfig } from './config';
 import { ALL_MEDIA, type MediaFilters, type MediaFolder, type MediaItem, type MediaItemChanges, type MediaPage, type MediaUse, type UploadAnswer } from './types';
 
@@ -25,30 +25,10 @@ export interface MediaApi {
     updateFolder(uuid: string, changes: { name?: string; parent?: string | null }): Promise<MediaFolder>;
 }
 
-type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
-
-const defaultFetch: Fetch = (input, init) => fetch(input, init);
-
 export function createMediaApi(config: Pick<MediaLibraryConfig, 'csrfToken' | 'endpoints'>, fetchFn: Fetch = defaultFetch): MediaApi {
-    const request = async (url: string, init: RequestInit = {}): Promise<unknown> => {
-        const response = await fetchFn(url, { credentials: 'same-origin', ...init, headers: { Accept: 'application/json', ...init.headers } });
-        const body: unknown = await response.json().catch(() => undefined);
-        if (response.status !== 200 && response.status !== 201 && response.status !== 204) {
-            throw new ApiError(errorMessage(body) ?? `${url} answered ${response.status}.`, response.status);
-        }
+    const request = async (url: string, init: Request = {}): Promise<unknown> => send(fetchFn, url, init);
 
-        if (response.status === 204) {
-            return undefined;
-        }
-
-        if (body === undefined) {
-            throw new ApiError(`${url} didn't answer with JSON.`, response.status);
-        }
-
-        return body;
-    };
-
-    const write = (method: 'POST' | 'PATCH', body: unknown): RequestInit => ({
+    const write = (method: 'POST' | 'PATCH', body: unknown): Request => ({
         method,
         headers: { 'X-CSRF-Token': config.csrfToken, 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -158,8 +138,4 @@ export function listQuery(filters: MediaFilters, page: number): string {
     query.set('page', String(page));
 
     return query.toString();
-}
-
-function errorMessage(body: unknown): string | undefined {
-    return typeof body === 'object' && body !== null && 'error' in body && typeof body.error === 'string' ? body.error : undefined;
 }

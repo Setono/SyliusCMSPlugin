@@ -59,18 +59,24 @@ export class ApiError extends Error {
     }
 }
 
-type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
+/** How the API modules reach the server: the browser's fetch, or a fake in tests. */
+export type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
-interface Request {
+export interface Request {
     method?: 'GET' | 'PATCH' | 'POST' | 'PUT' | 'DELETE';
     headers?: Record<string, string>;
-    body?: string;
+    /** JSON as a string, or form data for an upload, whose multipart Content-Type the browser sets. */
+    body?: string | FormData;
 }
 
-const defaultFetch: Fetch = (input, init) => fetch(input, init);
+export const defaultFetch: Fetch = (input, init) => fetch(input, init);
 
-/** Sends a request to one of the builder's endpoints, and answers with the JSON it answers 200 with. */
-async function send(fetchFn: Fetch, url: string, { method = 'GET', headers = {}, body: requestBody }: Request = {}): Promise<unknown> {
+/**
+ * Sends a request to one of the admin's internal endpoints, and answers with the JSON it answers 200 or 201 with, or
+ * undefined for 204 No Content. Any other status throws an ApiError with the server's message, and its validation
+ * errors when it gives them.
+ */
+export async function send(fetchFn: Fetch, url: string, { method = 'GET', headers = {}, body: requestBody }: Request = {}): Promise<unknown> {
     const response = await fetchFn(url, {
         method,
         credentials: 'same-origin',
@@ -79,8 +85,12 @@ async function send(fetchFn: Fetch, url: string, { method = 'GET', headers = {},
     });
 
     const body: unknown = await response.json().catch(() => undefined);
-    if (response.status !== 200) {
+    if (response.status !== 200 && response.status !== 201 && response.status !== 204) {
         throw new ApiError(errorMessage(body) ?? `${url} answered ${response.status}.`, response.status, (isObject(body) ? validationErrors(body.errors) : null) ?? []);
+    }
+
+    if (response.status === 204) {
+        return undefined;
     }
 
     if (body === undefined) {
