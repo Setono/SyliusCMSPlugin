@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\DependencyInjection;
 use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Factory\HomepageFactory;
+use Setono\SyliusCMSPlugin\Factory\PlacementFactory;
 use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
 use Setono\SyliusCMSPlugin\Media\FileSize;
 use Setono\SyliusCMSPlugin\Media\GracePeriod;
@@ -41,6 +42,8 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\Placement;
+use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Model\Revision;
 use Setono\SyliusCMSPlugin\Model\RevisionInterface;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
@@ -52,6 +55,7 @@ use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
 use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\Code;
+use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
@@ -60,6 +64,7 @@ use Setono\SyliusCMSPlugin\Repository\MediaFolderRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaUsageRepository;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
+use Setono\SyliusCMSPlugin\Repository\PlacementRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepository;
@@ -114,6 +119,7 @@ final class Configuration implements ConfigurationInterface
 
         $this->addBlockStylesSection($rootNode);
         $this->addContentTypesSection($rootNode);
+        $this->addSlotsSection($rootNode);
         $this->addFallbackLocalesSection($rootNode);
         $this->addRevisionsSection($rootNode);
         $this->addMediaSection($rootNode);
@@ -183,6 +189,49 @@ final class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                     ->validate()->always(self::assertContentTypeCodes(...))->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * The slots editors show snippets in, by identifier, with the stock slots prepended (see SetonoSyliusCMSExtension).
+     * A later config deep merges into an earlier one, so a project caps a stock slot with slots.<identifier>.cap, and
+     * the context keys it sets replace the earlier ones. See "Slots" in docs/spec/slots.md
+     */
+    private function addSlotsSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('slots')
+                    ->info('The slots editors show snippets in: slot identifier, such as product.after_price => {label, provides, cap, template_event}')
+                    ->useAttributeAsKey('identifier')
+                    ->normalizeKeys(false)
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('label')->info('A translation key, shown in the placement editor')->isRequired()->cannotBeEmpty()->end()
+                            ->arrayNode('provides')
+                                ->info('The context keys the slot provides')
+                                ->performNoDeepMerging()
+                                ->scalarPrototype()
+                                    ->validate()->always(static fn (mixed $key): string => self::assertCode('context key', is_scalar($key) ? (string) $key : ''))->end()
+                                ->end()
+                            ->end()
+                            ->integerNode('cap')
+                                ->info('The number of placements that show at most, or null for no cap')
+                                ->min(1)
+                                ->defaultNull()
+                            ->end()
+                            ->arrayNode('template_event')
+                                ->info('The Sylius template event the slot renders in, with the priority of its block. Leave it out for a slot rendered with cms_slot()')
+                                ->children()
+                                    ->scalarNode('name')->isRequired()->cannotBeEmpty()->end()
+                                    ->integerNode('priority')->defaultValue(0)->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                    ->validate()->always(self::assertSlotIdentifiers(...))->end()
                 ->end()
             ->end()
         ;
@@ -421,6 +470,22 @@ final class Configuration implements ConfigurationInterface
         return $contentTypes;
     }
 
+    /**
+     * @param array<array-key, array<string, mixed>> $slots
+     *
+     * @return array<array-key, array<string, mixed>>
+     */
+    private static function assertSlotIdentifiers(array $slots): array
+    {
+        foreach (array_keys($slots) as $identifier) {
+            if (!SlotMetadata::isIdentifier((string) $identifier)) {
+                throw new \InvalidArgumentException(sprintf('The slot identifier "%s" must be codes joined by dots, such as product.after_price', $identifier));
+            }
+        }
+
+        return $slots;
+    }
+
     private static function assertDisabledLayout(mixed $layout): string
     {
         $layout = is_scalar($layout) ? (string) $layout : '';
@@ -443,8 +508,9 @@ final class Configuration implements ConfigurationInterface
 
     /**
      * The shipped Sylius resources. The draft and the rows beside an entry (its channels, its audience groups, who has
-     * it open, its saves, its revisions, its old slugs, its scheduled publish, its share links and the channels a
-     * page is the homepage of), and the bestseller scores, have no admin screens of their own, so they have no controller.
+     * it open, its saves, its revisions, its old slugs, its scheduled publish, its share links, the channels a
+     * page is the homepage of and a snippet's placements), and the bestseller scores, have no admin screens of their own,
+     * so they have no controller.
      * A project extends a shipped content type the way it extends any Sylius model:
      * by overriding classes.model, and translation.classes.model, with its own subclasses.
      * The channel and audience group rows always belong to an entry, and the homepage rows to a page, so their
@@ -471,6 +537,7 @@ final class Configuration implements ConfigurationInterface
                     ->append(self::resourceWithoutController('media_folder', MediaFolder::class, MediaFolderInterface::class, MediaFolderRepository::class))
                     ->append(self::resourceWithoutController('media_usage', MediaUsage::class, MediaUsageInterface::class, MediaUsageRepository::class))
                     ->append(self::resourceWithoutController('bestseller_score', BestsellerScore::class, BestsellerScoreInterface::class))
+                    ->append(self::resourceWithoutController('placement', Placement::class, PlacementInterface::class, PlacementRepository::class, PlacementFactory::class))
                     ->append(self::contentTypeResource('page', Page::class, PageInterface::class, PageTranslation::class, PageTranslationInterface::class))
                     ->append(self::contentTypeResource('snippet', Snippet::class, SnippetInterface::class, EntryTranslation::class, EntryTranslationInterface::class))
                 ->end()

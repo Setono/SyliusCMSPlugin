@@ -51,6 +51,12 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\SourceRegistry"/>
 
+        <!-- The slots setono_sylius_cms.slots declares, the stock slots first -->
+        <service id="Setono\SyliusCMSPlugin\Registry\SlotRegistry" class="Setono\SyliusCMSPlugin\Registry\SlotRegistry">
+            <argument>%setono_sylius_cms.slots%</argument>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\SlotRegistry"/>
+
         <service id="Setono\SyliusCMSPlugin\Registry\NestingRules" class="Setono\SyliusCMSPlugin\Registry\NestingRules">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>

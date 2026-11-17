@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\DependencyInjection\Configuration;
 use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Factory\HomepageFactory;
+use Setono\SyliusCMSPlugin\Factory\PlacementFactory;
 use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
 use Setono\SyliusCMSPlugin\Model\BestsellerScore;
 use Setono\SyliusCMSPlugin\Model\BestsellerScoreInterface;
@@ -41,6 +42,8 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\Placement;
+use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Model\Revision;
 use Setono\SyliusCMSPlugin\Model\RevisionInterface;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
@@ -59,6 +62,7 @@ use Setono\SyliusCMSPlugin\Repository\MediaFolderRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaUsageRepository;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
+use Setono\SyliusCMSPlugin\Repository\PlacementRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepository;
@@ -91,6 +95,7 @@ final class ConfigurationTest extends TestCase
             'disabled' => ['block_types' => [], 'layouts' => [], 'sources' => []],
             'assets' => true,
             'content_types' => [],
+            'slots' => [],
             'block_styles' => [],
             'fallback_locales' => [],
             'revisions' => ['keep' => 50],
@@ -234,6 +239,14 @@ final class ConfigurationTest extends TestCase
                         'interface' => BestsellerScoreInterface::class,
                         'repository' => EntityRepository::class,
                         'factory' => Factory::class,
+                    ],
+                ],
+                'placement' => [
+                    'classes' => [
+                        'model' => Placement::class,
+                        'interface' => PlacementInterface::class,
+                        'repository' => PlacementRepository::class,
+                        'factory' => PlacementFactory::class,
                     ],
                 ],
                 'page' => [
@@ -656,6 +669,78 @@ final class ConfigurationTest extends TestCase
         yield 'an invalid code' => [['Page' => ['prefix' => 'pg']], 'The content type code "Page" must match ^[a-z][a-z0-9_]*$'];
         yield 'a number as a code' => [[7 => ['prefix' => 'pg']], 'The content type code "7" must match ^[a-z][a-z0-9_]*$'];
         yield 'a dash in the code, which is kept' => [['blog-post' => ['prefix' => 'pg']], 'The content type code "blog-post" must match ^[a-z][a-z0-9_]*$'];
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_declare_slots_by_identifier_with_a_label_the_context_keys_they_provide_a_cap_and_a_template_event(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['slots' => [
+                'app.store_locator.top' => [
+                    'label' => 'app.cms.slot.store_locator_top',
+                    'provides' => ['store_location'],
+                    'cap' => 1,
+                    'template_event' => ['name' => 'app.store_locator.top', 'priority' => 10],
+                ],
+                'page.landing.after_hero' => ['label' => 'app.cms.slot.after_hero'],
+                'app.header' => ['label' => 'app.cms.slot.header', 'template_event' => ['name' => 'sylius.shop.layout.header']],
+            ]],
+        ], ['slots' => [
+            'app.store_locator.top' => [
+                'label' => 'app.cms.slot.store_locator_top',
+                'provides' => ['store_location'],
+                'cap' => 1,
+                'template_event' => ['name' => 'app.store_locator.top', 'priority' => 10],
+            ],
+            'page.landing.after_hero' => ['label' => 'app.cms.slot.after_hero', 'provides' => [], 'cap' => null],
+            'app.header' => ['label' => 'app.cms.slot.header', 'template_event' => ['name' => 'sylius.shop.layout.header', 'priority' => 0], 'provides' => [], 'cap' => null],
+        ]], 'slots');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_later_config_cap_a_slot_an_earlier_one_declared_and_replace_the_keys_it_provides(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['slots' => ['shop.top' => ['label' => 'setono_sylius_cms.slot.shop.top', 'provides' => ['product'], 'template_event' => ['name' => 'sylius.shop.layout.header', 'priority' => 30]]]],
+            ['slots' => ['shop.top' => ['cap' => 1, 'provides' => ['taxon']]]],
+        ], ['slots' => [
+            'shop.top' => [
+                'label' => 'setono_sylius_cms.slot.shop.top',
+                'provides' => ['taxon'],
+                'template_event' => ['name' => 'sylius.shop.layout.header', 'priority' => 30],
+                'cap' => 1,
+            ],
+        ]], 'slots');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidSlots
+     *
+     * @param array<array-key, mixed> $slots
+     */
+    public function it_refuses_an_invalid_slot(array $slots, string $message): void
+    {
+        $this->assertConfigurationIsInvalid([['slots' => $slots]], $message);
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>, string}>
+     */
+    public function provideInvalidSlots(): iterable
+    {
+        yield 'an identifier with a capital' => [['Shop.top' => ['label' => 'a']], 'The slot identifier "Shop.top" must be codes joined by dots, such as product.after_price'];
+        yield 'an identifier with a hyphen' => [['shop.after-price' => ['label' => 'a']], 'The slot identifier "shop.after-price" must be codes joined by dots, such as product.after_price'];
+        yield 'an identifier ending in a dot' => [['shop.' => ['label' => 'a']], 'The slot identifier "shop." must be codes joined by dots, such as product.after_price'];
+        yield 'no label' => [['shop.top' => []], 'The child config "label" under "setono_sylius_cms.slots.shop.top" must be configured'];
+        yield 'a cap of none' => [['shop.top' => ['label' => 'a', 'cap' => 0]], 'The value 0 is too small for path "setono_sylius_cms.slots.shop.top.cap"'];
+        yield 'a context key that is no code' => [['shop.top' => ['label' => 'a', 'provides' => ['Product']]], 'The context key code "Product" must match'];
+        yield 'a template event without a name' => [['shop.top' => ['label' => 'a', 'template_event' => ['priority' => 1]]], 'The child config "name" under "setono_sylius_cms.slots.shop.top.template_event" must be configured'];
     }
 
     /**

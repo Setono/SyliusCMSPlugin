@@ -58,9 +58,12 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     /** The grid action type of the entry lists' Create, which opens the create dialog */
     private const CREATE_ENTRY_ACTION = 'setono_sylius_cms_create_entry';
 
+    /** The template of the block a slot tied to a template event renders in, which gets the slot's identifier in _cms_slot */
+    private const SLOT_BLOCK_TEMPLATE = '@SetonoSyliusCMSPlugin/slot/template_event.html.twig';
+
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, resources: array<string, array<string, mixed>>} $config */
+        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, slots: array<string, array{label: string, provides: list<string>, cap: int|null, template_event?: array{name: string, priority: int}}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, resources: array<string, array<string, mixed>>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         $container->setParameter('setono_sylius_cms.disabled.block_types', $config['disabled']['block_types']);
@@ -73,6 +76,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         ), static fn (?string $layout): bool => null !== $layout));
         $container->setParameter('setono_sylius_cms.block_styles', $config['block_styles']);
         $container->setParameter(RegisterContentTypesPass::CONFIG_PARAMETER, $config['content_types']);
+        // The slots, the stock slots that prepend() prepends first
+        $container->setParameter('setono_sylius_cms.slots', $config['slots']);
         $container->setParameter('setono_sylius_cms.fallback_locales', $config['fallback_locales']);
         $container->setParameter('setono_sylius_cms.revisions.keep', $config['revisions']['keep']);
         $container->setParameter('setono_sylius_cms.media.types', $config['media']['types']);
@@ -134,9 +139,13 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $this->prependEntryOverviewEvents($container);
         $this->prependProblems($container);
         $this->prependMessenger($container);
+        // Before the config is read, so the slots it reads hold them
+        $container->prependExtensionConfig($this->getAlias(), ['slots' => StockSlots::config()]);
 
-        /** @var array{assets: bool, media: array{storage: string, liip: array{loader: string, resolver: string}}} $config */
+        /** @var array{assets: bool, media: array{storage: string, liip: array{loader: string, resolver: string}}, slots: array<string, array{template_event?: array{name: string, priority: int}}>} $config */
         $config = $this->processConfiguration(new Configuration(), $container->getExtensionConfig($this->getAlias()));
+
+        $this->prependSlotBlocks($container, $config['slots']);
 
         if (self::STORAGE === $config['media']['storage']) {
             $this->prependStorage($container);
@@ -163,6 +172,34 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 ],
             ],
         ]);
+    }
+
+    /**
+     * One block on the template event of each slot tied to one, at its priority, which renders the slot. The block
+     * template gets the event's context with the slot's identifier in _cms_slot. A project switches a block off, or
+     * moves it, in its own sylius_ui config, though it moves a slot by changing its template_event.
+     * See "Slots" in docs/spec/slots.md
+     *
+     * @param array<string, array{template_event?: array{name: string, priority: int}}> $slots
+     */
+    private function prependSlotBlocks(ContainerBuilder $container, array $slots): void
+    {
+        $events = [];
+        foreach ($slots as $identifier => $slot) {
+            if (!isset($slot['template_event'])) {
+                continue;
+            }
+
+            $events[$slot['template_event']['name']]['blocks']['setono_sylius_cms.slot.' . $identifier] = [
+                'template' => self::SLOT_BLOCK_TEMPLATE,
+                'priority' => $slot['template_event']['priority'],
+                'context' => ['_cms_slot' => $identifier],
+            ];
+        }
+
+        if ([] !== $events) {
+            $container->prependExtensionConfig('sylius_ui', ['events' => $events]);
+        }
     }
 
     /**
