@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Validation;
 
+use Setono\SyliusCMSPlugin\Context\ContextCheckInterface;
 use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
@@ -19,7 +20,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  * constraints on the entry's and its translations' other properties, checks its URLs, and validates the block tree in
  * each locale. Last, it holds the tree's Embed code blocks against the entry's published tree. A translation without a
  * title is no translation (docs/spec/localization.md), such as one whose adding was undone in the builder, so it isn't
- * validated, unless the entry has none with a title
+ * validated, unless the entry has none with a title. What needs host-page context the entry doesn't provide, or a
+ * snippet doesn't declare, is refused too, as is a snippet's placement in a slot that doesn't provide what it declares
  */
 final readonly class EntryValidator implements EntryValidatorInterface
 {
@@ -32,12 +34,13 @@ final readonly class EntryValidator implements EntryValidatorInterface
         private EntryUrlValidatorInterface $urlValidator,
         private Availability $availability,
         private EmbedCodeValidator $embedCodeValidator,
+        private ContextCheckInterface $contextCheck,
     ) {
     }
 
     public function validate(EntryInterface $entry, EntryInterface $workingCopy): array
     {
-        $errors = $this->validateWorkingCopy($workingCopy);
+        $errors = [...$this->validateWorkingCopy($workingCopy), ...$this->contextCheck->mismatches($workingCopy)];
 
         // A never-published entry is its own working copy, and its rows hold what it would publish, not what's published
         $publishedTree = $entry->isPublished() ? $entry->getBlockTree() : new StoredTree(null, []);

@@ -69,6 +69,24 @@ final class StoredTree
     }
 
     /**
+     * @return list<StoredBlock> every block in the tree, depth first
+     */
+    public function allBlocks(): array
+    {
+        $all = [];
+        $walk = static function (array $blocks) use (&$all, &$walk): void {
+            /** @var list<StoredBlock> $blocks */
+            foreach ($blocks as $block) {
+                $all[] = $block;
+                $walk($block->children);
+            }
+        };
+        $walk($this->blocks);
+
+        return $all;
+    }
+
+    /**
      * @return list<string> every block key in the tree, depth first
      */
     public function keys(): array

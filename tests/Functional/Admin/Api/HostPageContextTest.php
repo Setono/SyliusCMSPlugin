@@ -1,0 +1,61 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
+
+use Setono\SyliusCMSPlugin\Tests\Support\Placements;
+use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+
+/**
+ * A snippet declares the host-page context it needs, publish refuses what needs context the entry doesn't provide, and
+ * a snippet's declared context can't change while something depends on it. See "Snippets and their context" in
+ * docs/spec/slots.md and "Validation" in docs/spec/publishing.md
+ */
+final class HostPageContextTest extends BuilderApiTestCase
+{
+    use Placements;
+
+    private const NOTE = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f';
+
+    /**
+     * The test application's Product note needs the product, which a page doesn't provide
+     *
+     * @test
+     */
+    public function it_refuses_to_publish_a_page_with_a_block_that_needs_the_product_and_says_why(): void
+    {
+        $client = self::signedIn();
+        $page = self::createPageWithBlocks('About us', 'about-us', [self::note()]);
+
+        $response = self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/validate', $page->getUuid()));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['errors' => [
+            ['block' => self::NOTE, 'field' => null, 'locale' => null, 'message' => 'The block "Product note" needs the host-page context "Product page".'],
+        ]], $response);
+    }
+
+    /**
+     * @test
+     */
+    public function it_publishes_a_snippet_that_declares_the_product_its_blocks_need(): void
+    {
+        $client = self::signedIn();
+        $snippet = self::createSnippet('Size guide', [self::note()], context: ['product']);
+        self::place($snippet, 'product.after_price');
+
+        $response = self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/validate', $snippet->getUuid()));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['errors' => []], $response);
+    }
+
+    private static function note(): StoredBlock
+    {
+        $block = new StoredBlock(self::NOTE, 'app_product_note', 1);
+        $block->setValue('text', 'en_US', 'Size guide for');
+
+        return $block;
+    }
+}

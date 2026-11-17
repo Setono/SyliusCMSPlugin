@@ -43,6 +43,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EmbedCodeValidator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Context\ContextCheckInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface" alias="Setono\SyliusCMSPlugin\Validation\EntryValidator"/>
     </services>

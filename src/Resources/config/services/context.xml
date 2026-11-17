@@ -23,5 +23,35 @@
             <argument type="service" id="sylius.context.locale"/>
             <tag name="setono_sylius_cms.context_resolver" priority="-100"/>
         </service>
+
+        <!--
+        What depends on the host-page context an entry provides or a snippet declares, which publish holds against it and
+        which blocks a change of a snippet's declared context. Each kind of dependency is a finder tagged
+        setono_sylius_cms.context_dependency_finder
+        -->
+        <service id="Setono\SyliusCMSPlugin\Context\ContextCheck" class="Setono\SyliusCMSPlugin\Context\ContextCheck">
+            <argument type="tagged_iterator" tag="setono_sylius_cms.context_dependency_finder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
+            <argument type="service" id="translator"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Context\ContextCheckInterface" alias="Setono\SyliusCMSPlugin\Context\ContextCheck"/>
+
+        <service id="Setono\SyliusCMSPlugin\Context\BlockDependencies" class="Setono\SyliusCMSPlugin\Context\BlockDependencies">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <tag name="setono_sylius_cms.context_dependency_finder" priority="30"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Context\ConditionDependencies" class="Setono\SyliusCMSPlugin\Context\ConditionDependencies">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <tag name="setono_sylius_cms.context_dependency_finder" priority="20"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Context\PlacementDependencies" class="Setono\SyliusCMSPlugin\Context\PlacementDependencies">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <tag name="setono_sylius_cms.context_dependency_finder" priority="10"/>
+        </service>
     </services>
 </container>

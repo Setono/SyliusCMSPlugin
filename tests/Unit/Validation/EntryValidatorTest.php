@@ -10,6 +10,7 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Block\EmbedCode;
 use Setono\SyliusCMSPlugin\Block\Heading;
+use Setono\SyliusCMSPlugin\Context\ContextCheckInterface;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
@@ -48,10 +49,30 @@ final class EntryValidatorTest extends TestCase
     /** @var ObjectProphecy<EntryUrlValidatorInterface> */
     private ObjectProphecy $urlValidator;
 
+    /** @var ObjectProphecy<ContextCheckInterface> */
+    private ObjectProphecy $contextCheck;
+
     protected function setUp(): void
     {
         $this->urlValidator = $this->prophesize(EntryUrlValidatorInterface::class);
         $this->urlValidator->validate(Argument::any())->willReturn([]);
+        $this->contextCheck = $this->prophesize(ContextCheckInterface::class);
+        $this->contextCheck->mismatches(Argument::any())->willReturn([]);
+    }
+
+    /**
+     * Such as a block whose type needs the product in a page, which provides only the entry
+     *
+     * @test
+     */
+    public function it_refuses_what_needs_context_the_working_copy_does_not_provide(): void
+    {
+        $entry = self::validEntry();
+        $workingCopy = clone $entry;
+        $error = new ValidationError(self::KEY, null, null, 'The block "Product note" needs the host-page context "Product page".');
+        $this->contextCheck->mismatches($workingCopy)->willReturn([$error]);
+
+        self::assertEquals([$error], $this->validator()->validate($entry, $workingCopy));
     }
 
     /**
@@ -278,6 +299,7 @@ final class EntryValidatorTest extends TestCase
             $this->urlValidator->reveal(),
             new Availability(),
             new EmbedCodeValidator(false, $translator),
+            $this->contextCheck->reveal(),
         );
     }
 }

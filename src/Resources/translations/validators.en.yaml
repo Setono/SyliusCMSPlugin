@@ -7,6 +7,13 @@ setono_sylius_cms:
         too_many: '[0,1] Can hold at most one %type% block.|]1,Inf[ Can hold at most %count% %type% blocks.'
         unknown_type: 'Its block type "%type%" no longer exists, so it isn''t shown.'
         video_or_embed_url: Choose a video, or enter a YouTube or Vimeo URL, but not both.
+    # What depends on host-page context, and why it doesn't fit. See "Snippets and their context" in docs/spec/slots.md
+    context:
+        block: 'The block "%block%"'
+        condition: 'The condition "%kind%" on the block "%block%"'
+        does_not_provide: '%what% doesn''t provide the host-page context %context%.'
+        needs: '%what% needs the host-page context %context%.'
+        placement: 'The placement in "%slot%"'
     field:
         invalid_choice: The value you selected is not a valid choice.
         link_target_not_allowed: 'This field can''t link to %target%.'
