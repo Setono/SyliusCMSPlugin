@@ -12,6 +12,10 @@
 </head>
 <body>
     <div id="cms-builder" data-config="{{ config|json_encode }}"></div>
+    {# The field controls of projects' own field types (setono_sylius_cms.builder.scripts), before the app, which renders their custom elements #}
+    {% for script in scripts %}
+    <script type="module" src="{{ script }}"></script>
+    {% endfor %}
     <script type="module" src="{{ asset('bundles/setonosyliuscmsplugin/builder/builder.js') }}"></script>
 </body>
 </html>

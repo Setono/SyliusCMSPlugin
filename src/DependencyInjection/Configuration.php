@@ -114,6 +114,7 @@ final class Configuration implements ConfigurationInterface
         $this->addRevisionsSection($rootNode);
         $this->addMediaSection($rootNode);
         $this->addBestsellersSection($rootNode);
+        $this->addBuilderSection($rootNode);
         $this->addResourcesSection($rootNode);
 
         return $treeBuilder;
@@ -306,6 +307,52 @@ final class Configuration implements ConfigurationInterface
                 ->end()
             ->end()
         ;
+    }
+
+    /**
+     * The scripts the builder loads as ES modules, which define the field controls of a project's own field types: the
+     * custom elements named in #[FieldType(control:)]. See "Field controls" in docs/spec/extending.md
+     */
+    private function addBuilderSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('builder')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->arrayNode('scripts')
+                            ->info('Field control scripts, as public paths, such as /build/app/cms/controls.js, or absolute URLs, loaded as ES modules in this order')
+                            ->scalarPrototype()
+                                ->validate()->always(self::assertScript(...))->end()
+                            ->end()
+                            ->validate()->always(self::eachOnce(...))->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * @param list<string> $scripts
+     *
+     * @return list<string> in their order, each once
+     */
+    private static function eachOnce(array $scripts): array
+    {
+        return array_values(array_unique($scripts));
+    }
+
+    /**
+     * @throws \InvalidArgumentException when it's neither a public path nor an absolute http(s) URL
+     */
+    private static function assertScript(mixed $script): string
+    {
+        if (!is_string($script) || 1 !== preg_match('#^(/(?!/)|https?://)\S+$#', $script)) {
+            throw new \InvalidArgumentException(sprintf('%s is neither a public path, such as /build/app/cms/controls.js, nor an absolute http(s) URL', is_scalar($script) ? sprintf('"%s"', (string) $script) : get_debug_type($script)));
+        }
+
+        return $script;
     }
 
     /**

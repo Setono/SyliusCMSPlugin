@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Builder;
 
 use Setono\SyliusCMSPlugin\Attribute\Style;
+use Setono\SyliusCMSPlugin\Binding\BindingType;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Media\MediaLimits;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
@@ -229,6 +230,9 @@ final readonly class RegistryExporter
         $schema['x-cms-help'] = null === $field->field->help ? null : $this->translator->trans($field->field->help);
         $schema['x-cms-required'] = $field->field->required;
         $schema['x-cms-translatable'] = $field->translatable;
+        if ([] !== $field->type->bindable) {
+            $schema['x-cms-bindable'] = array_map(static fn (BindingType $type): string => $type->value, $field->type->bindable);
+        }
 
         return $schema;
     }

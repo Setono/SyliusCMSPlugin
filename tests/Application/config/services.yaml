@@ -16,3 +16,9 @@ services:
     # The test application's own condition kind, with a product parameter, which #[AsConditionKind] registers through
     # autoconfiguration
     Setono\SyliusCMSPlugin\Tests\Application\Condition\ProductAvailableKind: ~
+
+    # The test application's own field type, opening hours: its handler, which autoconfiguration tags, and a block type
+    # with a field of it, which #[BlockType] registers. Its field control is public/cms/opening-hours.js
+    Setono\SyliusCMSPlugin\Tests\Application\Field\OpeningHoursHandler:
+        arguments: ['@translator']
+    Setono\SyliusCMSPlugin\Tests\Application\Block\StoreHours: ~

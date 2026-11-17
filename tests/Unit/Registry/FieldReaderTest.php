@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Registry;
 
 use PHPUnit\Framework\TestCase;
+use Setono\SyliusCMSPlugin\Binding\BindingType;
 use Setono\SyliusCMSPlugin\Field\Choice;
 use Setono\SyliusCMSPlugin\Field\Text;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Rating;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Review;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Teaser;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Untyped;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\WithUntypedField;
@@ -92,6 +95,31 @@ final class FieldReaderTest extends TestCase
     public function it_names_the_handler_service(): void
     {
         self::assertSame(\Setono\SyliusCMSPlugin\Field\TextHandler::class, (new FieldReader())->read(Teaser::class)['heading']->handler());
+    }
+
+    /**
+     * @test
+     */
+    public function it_reads_the_field_type_a_project_declares_on_its_own_field_attribute(): void
+    {
+        $rating = (new FieldReader())->read(Review::class)['rating'];
+
+        self::assertSame('app_rating', $rating->type->code);
+        self::assertFalse($rating->type->translatable);
+        self::assertSame([BindingType::Number], $rating->type->bindable);
+        self::assertSame('app-rating', $rating->type->control);
+        self::assertSame(Rating::class . 'Handler', $rating->handler(), 'The handler is the attribute class name plus "Handler"');
+    }
+
+    /**
+     * @test
+     */
+    public function a_shipped_field_type_brings_no_field_control_of_its_own(): void
+    {
+        $quote = (new FieldReader())->read(Review::class)['quote'];
+
+        self::assertSame('text', $quote->type->code);
+        self::assertNull($quote->type->control);
     }
 
     /**

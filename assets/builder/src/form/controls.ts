@@ -1,6 +1,8 @@
+import type { FieldSchema } from '../types';
 import { CatalogControl } from './CatalogControl';
 import { CatalogListControl } from './CatalogListControl';
 import { ChoiceControl } from './ChoiceControl';
+import { controlTag, CustomElementControl } from './CustomElementControl';
 import { DateControl } from './DateControl';
 import { DateTimeControl } from './DateTimeControl';
 import { LinkControl } from './LinkControl';
@@ -13,7 +15,7 @@ import { TextControl } from './TextControl';
 import { ToggleControl } from './ToggleControl';
 import type { FieldControl } from './types';
 
-/** The control for each field type, keyed by the schema's x-cms-type. */
+/** The control for each shipped field type, keyed by the schema's x-cms-type. */
 export const fieldControls: Readonly<Record<string, FieldControl>> = {
     text: TextControl,
     textarea: TextareaControl,
@@ -32,6 +34,13 @@ export const fieldControls: Readonly<Record<string, FieldControl>> = {
     taxons: CatalogListControl,
 };
 
-export function controlFor(fieldType: string): FieldControl | undefined {
+/** A field's control: the custom element a project's own field type names, or else its shipped field type's control. */
+export function controlFor(schema: FieldSchema): FieldControl | undefined {
+    if (controlTag(schema) !== null) {
+        return CustomElementControl;
+    }
+
+    const fieldType = schema['x-cms-type'];
+
     return Object.hasOwn(fieldControls, fieldType) ? fieldControls[fieldType] : undefined;
 }
