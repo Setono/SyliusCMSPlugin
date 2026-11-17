@@ -4,6 +4,7 @@ app:
             brand: Brand
         block_type:
             gallery: Gallery
+            product_note: Product note
             store_hours: Store hours
         condition_kind:
             product_available: Product is available
@@ -14,6 +15,7 @@ app:
             image: Image
             opening_hours: Opening hours
             opening_hours_help: Days without hours are closed.
+            product_note: Note
             product_available:
                 product: Product
             subtitle: Subtitle

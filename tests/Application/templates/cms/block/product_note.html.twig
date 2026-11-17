@@ -1,0 +1,2 @@
+{# The template of the test application's Product note block type (tests/Application/Block/ProductNote.php), with the product of the page it's on #}
+<p class="app-product-note{{ view.styleClass ? ' ' ~ view.styleClass }}">{{ cms_field(block, 'text') }} <span class="app-product-note__product">{{ context.product.name }}</span></p>

@@ -14,7 +14,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 /**
  * Collects the classes carrying #[BlockType], which autoconfiguration tags, into the block type registry.
  * Block types are metadata, not shared services, so their service definitions are removed. Two block types
- * with the same code fail the container build, and so do block styles added in config to a block type that doesn't exist
+ * with the same code fail the container build, and so do block styles added in config to a block type that doesn't
+ * exist, and a block type that needs a context key the config doesn't declare
  */
 final class RegisterBlockTypesPass implements CompilerPassInterface
 {
@@ -40,6 +41,7 @@ final class RegisterBlockTypesPass implements CompilerPassInterface
             }
 
             self::assertStyles($attribute, $class);
+            DeclaredContextKeys::assert($container, $attribute->needs, sprintf('The block type %s', $class));
 
             if (isset($classes[$code]) && $classes[$code] !== $class) {
                 throw new \LogicException(sprintf('The block type code "%s" is used by both %s and %s. Codes are unique per kind, so give one of them another code', $code, $classes[$code], $class));

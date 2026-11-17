@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Shop;
 
+use Setono\SyliusCMSPlugin\Context\EntryContext;
 use Setono\SyliusCMSPlugin\Homepage\HomepageResolverInterface;
 use Setono\SyliusCMSPlugin\Rendering\LayoutRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
@@ -38,7 +39,7 @@ final readonly class HomepageAction
         }
 
         // The tree in the page's layout, with the page as host-page context
-        return new Response($this->layoutRenderer->render($page, $this->renderContextFactory->create(['entry' => $page])));
+        return new Response($this->layoutRenderer->render($page, $this->renderContextFactory->create(EntryContext::objects($page))));
     }
 
     private function renderStoreHomepage(Request $request): Response

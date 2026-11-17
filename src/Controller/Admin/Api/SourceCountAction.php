@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
+use Setono\SyliusCMSPlugin\Context\EntryContext;
 use Setono\SyliusCMSPlugin\Field\HydrationContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
@@ -57,7 +58,7 @@ final readonly class SourceCountAction
         }
 
         $workingCopy = $this->previewedEntry->getPreviewedContent($preview->localeCode) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $preview->entryUuid));
-        $renderContext = $this->renderContextFactory->create(['entry' => $workingCopy]);
+        $renderContext = $this->renderContextFactory->create(EntryContext::objects($workingCopy));
         $references = $this->referenceLoader->load($this->sourceResolver->references($code, $params), $renderContext);
 
         return new JsonResponse(['count' => $this->sourceResolver->resolve($code, $params, null, new HydrationContext($renderContext, $references))->getNbResults()]);

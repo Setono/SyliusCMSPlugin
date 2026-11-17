@@ -18,7 +18,8 @@ use Symfony\Component\DependencyInjection\Reference;
 /**
  * Hands the services carrying #[AsConditionKind], which autoconfiguration tags, to the condition kind registry, by code.
  * Two condition kinds with the same code fail the container build, and so does a kind that doesn't implement
- * ConditionKindInterface, or that reads the time without implementing TimeDependentConditionKindInterface.
+ * ConditionKindInterface, that reads the time without implementing TimeDependentConditionKindInterface, or that needs
+ * a context key the config doesn't declare.
  * See "Condition kinds" in docs/spec/extending.md
  */
 final class RegisterConditionKindsPass implements CompilerPassInterface
@@ -56,6 +57,8 @@ final class RegisterConditionKindsPass implements CompilerPassInterface
             if (null !== $attribute->params && !class_exists($attribute->params)) {
                 throw new \LogicException(sprintf('The parameters class %s of the condition kind %s doesn\'t exist', $attribute->params, $class));
             }
+
+            DeclaredContextKeys::assert($container, $attribute->needs, sprintf('The condition kind %s', $class));
 
             if (isset($classes[$code]) && $classes[$code] !== $class) {
                 throw new \LogicException(sprintf('The condition kind code "%s" is used by both %s and %s. Codes are unique per kind, so give one of them another code', $code, $classes[$code], $class));

@@ -78,6 +78,7 @@ final class BlockTypeRegistry implements BlockTypeRegistryInterface
             $attribute->thumbnail,
             $disabled,
             self::styles($attribute->styles, $configuredStyles),
+            $attribute->needs,
         );
     }
 

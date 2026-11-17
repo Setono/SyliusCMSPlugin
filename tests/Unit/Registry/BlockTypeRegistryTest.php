@@ -16,6 +16,7 @@ use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\UnknownBlockTypeException;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\NotABlockType;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ProductBadge;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Teaser;
 
 final class BlockTypeRegistryTest extends TestCase
@@ -176,6 +177,15 @@ final class BlockTypeRegistryTest extends TestCase
         self::assertSame([], $plain->children);
         self::assertNull($plain->parents);
         self::assertNull($plain->thumbnail);
+        self::assertSame([], $plain->needs);
+    }
+
+    /**
+     * @test
+     */
+    public function it_reads_the_context_keys_a_block_type_needs(): void
+    {
+        self::assertSame(['product'], (new BlockTypeRegistry(['product_badge' => ProductBadge::class], new FieldReader()))->get('product_badge')->needs);
     }
 
     /**

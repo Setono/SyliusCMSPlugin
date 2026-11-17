@@ -482,6 +482,18 @@ setono_sylius_cms:
         children: Blocks inside
         condition: 'Condition %number%'
         condition_kind: Kind
+        # A snippet's host-page context, and why the picker and the condition kinds leave something out. See "Snippets and their context" in docs/spec/slots.md
+        context: Shown on
+        context_any_page: Any page
+        context_help: The pages it can be placed on. Blocks and conditions that need a product or a taxon are offered only where it has one.
+        context_in_the_way: 'This can''t change while these need it:'
+        context_block_needs: 'The block "%block%" needs %context%.'
+        context_condition_needs: 'A condition on the block "%block%" needs %context%.'
+        context_placement_needs: 'The placement in "%slot%" needs %context%.'
+        context_placement_does_not_provide: 'The placement in "%slot%" doesn''t provide %context%.'
+        context_removed_key: '%key%, which the code no longer declares'
+        needs_context: 'Needs: %context%'
+        not_available_here: Not available here
         condition_match: Matches when it
         copy_it_here: Copy it here
         clash: A colleague changed this too
