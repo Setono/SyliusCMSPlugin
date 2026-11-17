@@ -17,8 +17,9 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  * Validates the content type's fields as block fields are validated: its shared fields on the entry, and its
  * translatable fields on its translations, in each of the entry's locales. Then it checks the Symfony Validator
  * constraints on the entry's and its translations' other properties, checks its URLs, and validates the block tree in
- * each locale. Last, it holds the tree's Embed code blocks against the entry's published tree. A translation without a title is no translation (docs/spec/localization.md), such as one whose adding
- * was undone in the builder, so it isn't validated, unless the entry has none with a title
+ * each locale. Last, it holds the tree's Embed code blocks against the entry's published tree. A translation without a
+ * title is no translation (docs/spec/localization.md), such as one whose adding was undone in the builder, so it isn't
+ * validated, unless the entry has none with a title
  */
 final readonly class EntryValidator implements EntryValidatorInterface
 {
