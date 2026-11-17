@@ -105,6 +105,26 @@ final class PageScopesTest extends WebTestCase
     }
 
     /**
+     * The same kinds work as visibility conditions on a block, where its tree has their context: here a snippet for
+     * product pages, whose tree gets the product of the slot
+     *
+     * @test
+     */
+    public function it_hides_a_snippet_s_block_whose_visibility_condition_on_the_product_does_not_match(): void
+    {
+        $client = self::createClient();
+        self::createCatalog();
+        $shoeCare = self::heading('0193a5be-0000-7000-8000-000000000002', 'Shoe care');
+        $shoeCare->conditions = [self::productInTaxon(['SHOES'])];
+        $notSneakers = self::heading('0193a5be-0000-7000-8000-000000000003', 'More than sneakers');
+        $notSneakers->conditions = [['kind' => 'product', 'negate' => true, 'params' => ['products' => ['SNEAKERS']]]];
+        self::place(self::createSnippet('Product tips', [$shoeCare, $notSneakers], published: true, context: ['product']), 'product.after_price');
+
+        self::assertSame(['Shoe care'], self::headingsOn($client, '/en_US/products/sneakers'));
+        self::assertSame(['More than sneakers'], self::headingsOn($client, '/en_US/products/t-shirt'));
+    }
+
+    /**
      * A page scope reads the context its slot provides, not what the snippet declares, so a snippet shown on any page
      * can be in the footer everywhere and beside the images of shoes
      *
