@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Field;
 
 use Setono\SyliusCMSPlugin\Link\LinkResolver;
-use Setono\SyliusCMSPlugin\Link\RefCheckingLinkTargetInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Registry\LinkTargetMetadata;
 use Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface;
@@ -149,15 +148,12 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
             return;
         }
 
-        $linkTarget = $this->linkTargets->get($value['target'])->target;
-        if ($linkTarget instanceof RefCheckingLinkTargetInterface) {
-            foreach (self::refs($value['ref']) as $ref) {
-                $error = $linkTarget->refError($ref);
-                if (null !== $error) {
-                    $context->buildViolation($error)->addViolation();
+        foreach (self::refs($value['ref']) as $ref) {
+            $error = $this->linkResolver->refError($value['target'], $ref);
+            if (null !== $error) {
+                $context->buildViolation($error)->addViolation();
 
-                    return;
-                }
+                return;
             }
         }
 

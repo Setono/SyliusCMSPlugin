@@ -279,6 +279,26 @@ final class RichTextHandlerTest extends TestCase
         self::handler()->validate(new RichText(label: 'Content'), '<p>Hello</p>', $context->reveal());
     }
 
+    /**
+     * @test
+     */
+    public function it_rejects_a_link_whose_ref_its_target_refuses_once_and_accepts_the_others(): void
+    {
+        $builder = $this->prophesize(ConstraintViolationBuilderInterface::class);
+        $builder->addViolation()->shouldBeCalledOnce();
+
+        $context = $this->prophesize(ExecutionContextInterface::class);
+        $context->buildViolation('setono_sylius_cms.field.not_link_url')->willReturn($builder->reveal())->shouldBeCalledOnce();
+        $context->buildViolation(Argument::not('setono_sylius_cms.field.not_link_url'))->shouldNotBeCalled();
+
+        self::handler()->validate(new RichText(label: 'Content'), self::paragraph(
+            ['type' => 'text', 'text' => 'our site', 'marks' => [['type' => 'cmsLink', 'attrs' => ['target' => 'url', 'ref' => 'https://example.com', 'anchor' => null]]]],
+            ['type' => 'text', 'text' => 'a store that closed', 'marks' => [['type' => 'cmsLink', 'attrs' => ['target' => 'app_store', 'ref' => 'odense', 'anchor' => null]]]],
+            ['type' => 'text', 'text' => 'a script', 'marks' => [['type' => 'cmsLink', 'attrs' => ['target' => 'url', 'ref' => 'javascript:alert(1)', 'anchor' => null]]]],
+            ['type' => 'text', 'text' => 'another script', 'marks' => [['type' => 'cmsLink', 'attrs' => ['target' => 'url', 'ref' => 'javascript:alert(2)', 'anchor' => null]]]],
+        ), $context->reveal());
+    }
+
     private static function handler(): RichTextHandler
     {
         return Links::richTextHandler();

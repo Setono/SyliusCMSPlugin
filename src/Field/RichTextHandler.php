@@ -91,11 +91,26 @@ final readonly class RichTextHandler implements SanitizingFieldHandlerInterface,
 
     public function validate(Field $field, mixed $value, ExecutionContextInterface $context): void
     {
-        if (null === $value || $this->fits($field, $value)) {
+        if (null === $value) {
             return;
         }
 
-        $context->buildViolation('setono_sylius_cms.field.not_rich_text')->addViolation();
+        $document = $this->schema->sanitize($value);
+        if (null === $document) {
+            $context->buildViolation('setono_sylius_cms.field.not_rich_text')->addViolation();
+
+            return;
+        }
+
+        // A link whose ref its target refuses, such as a javascript: URL, is refused as a Link field's is, once
+        foreach ($this->schema->links($document) as $link) {
+            $error = $this->linkResolver->refError($link['target'], $link['ref']);
+            if (null !== $error) {
+                $context->buildViolation($error)->addViolation();
+
+                return;
+            }
+        }
     }
 
     /**
