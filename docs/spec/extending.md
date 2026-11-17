@@ -484,7 +484,7 @@ The `entry`, `product` and `taxon` targets lead to relative paths, such as `/en_
 | `product` | a product, by code | its page's path in the shop, or `null` when it isn't visible ([Sources](sources.md#visible-queries)) |
 | `taxon` | a taxon, by code | its product listing's path in the shop, or `null` when it isn't enabled |
 | `media` | a document or video media item, by UUID | its permanent URL ([Media](media.md#permanent-urls)) |
-| `url` | a URL, per locale (`translatableRef: true`), including `mailto:` and `tel:` | the URL as typed |
+| `url` | a URL, per locale (`translatableRef: true`): `http://` or `https://`, `mailto:`, `tel:`, a path (`/…`), a query (`?…`) or an anchor (`#…`) | the URL as typed, when it's one of those. Any other scheme, such as `javascript:`, resolves to `null`, so the link doesn't render, and publish refuses it, in a Link field and in rich text |
 
 ## Context keys and resolvers
 
