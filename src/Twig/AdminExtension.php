@@ -32,6 +32,7 @@ final class AdminExtension extends AbstractExtension
             new TwigFunction('cms_admin_content_type', [AdminRuntime::class, 'contentType']),
             new TwigFunction('cms_admin_content_types', [AdminRuntime::class, 'contentTypes']),
             new TwigFunction('cms_admin_customer_group_names', [AdminRuntime::class, 'customerGroupNames']),
+            new TwigFunction('cms_admin_needs_attention', [OverviewRuntime::class, 'needsAttention']),
             new TwigFunction('cms_admin_coming_up', [OverviewRuntime::class, 'comingUp']),
             new TwigFunction('cms_admin_drafts_in_progress', [OverviewRuntime::class, 'draftsInProgress']),
         ];

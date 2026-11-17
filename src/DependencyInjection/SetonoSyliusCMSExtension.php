@@ -295,6 +295,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
             'events' => [
                 'setono_sylius_cms.admin.overview.panels' => [
                     'blocks' => [
+                        'needs_attention' => $block('_needs_attention', 40),
                         'coming_up' => $block('_coming_up', 30),
                         'drafts_in_progress' => $block('_drafts_in_progress', 10),
                     ],

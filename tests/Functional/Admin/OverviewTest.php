@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\ScheduledPublishes;
+use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
@@ -27,10 +28,83 @@ final class OverviewTest extends WebTestCase
     use Entries;
     use ScheduledPublishes;
 
+    private const HEADING = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4f';
+
+    private const PROMO = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e50';
+
     protected function setUp(): void
     {
         self::mockTime('2026-11-20 10:00:00');
         self::forgetSentMessages();
+    }
+
+    /**
+     * @test
+     */
+    public function it_groups_the_stores_errors_and_warnings_by_kind_under_needs_attention_each_with_where_it_is_fixed(): void
+    {
+        $client = self::signedInClient();
+        self::addLocales('WEB', 'da_DK');
+        // An error and a warning
+        $about = self::edited(self::createPageWithBlocks('About us', 'about-us', [
+            new StoredBlock(self::PROMO, 'promo', 1),
+            new StoredBlock(self::HEADING, 'heading', 1, fields: ['text' => ['en_US' => 'Hello', 'da_DK' => 42]]),
+        ]), '2026-11-19 12:00:00');
+        // A warning of the same kind
+        $contact = self::edited(self::createPageWithBlocks('Contact', 'contact', [new StoredBlock(self::PROMO, 'promo', 1)]), '2026-11-19 11:00:00');
+        // A time-dependent error, found as of now
+        self::mockTime('2026-11-20 08:00:00');
+        $overdue = self::pageWithDraft('Overdue', 'overdue');
+        self::schedule($overdue, '2026-11-20 09:00:00');
+        self::mockTime('2026-11-20 10:00:00');
+        $overdue = self::edited(self::reloadPage($overdue), '2026-11-19 10:00:00');
+        // Missing translations are never problems
+        self::createPage('Clean', 'clean', 'Hello', published: true);
+
+        $crawler = $client->request('GET', '/admin/cms');
+
+        self::assertResponseIsSuccessful();
+        $panel = $crawler->filter('[data-panel="needs_attention"]');
+        self::assertSame('Needs attention', $panel->filter('h2')->text());
+        $overview = static fn (EntryInterface $entry): string => sprintf('/admin/cms/entry/%s', $entry->getUuid());
+        self::assertSame([
+            ['misfit_value', 'error', 'Values that don\'t fit their field 1', [
+                ['About us', $overview($about), 'Text in the Heading block holds a value that doesn\'t fit its field type, so it counts as empty.', sprintf('/admin/cms/entry/%s/builder?block=%s&locale=da_DK', $about->getUuid(), self::HEADING)],
+            ]],
+            ['scheduled_publish_overdue', 'error', 'Overdue scheduled publishes 1', [
+                ['Overdue and more', $overview($overdue), 'The publish scheduled for 2026-11-20 09:00 hasn\'t run. The Messenger worker may not be running.', sprintf('/admin/cms/entry/%s#cms-section-publishing', $overdue->getUuid())],
+            ]],
+            ['unknown_block_type', 'warning', 'Blocks of removed types 2', [
+                ['About us', $overview($about), 'A block of the type "promo", which the code no longer has, isn\'t shown.', sprintf('/admin/cms/entry/%s/builder?block=%s', $about->getUuid(), self::PROMO)],
+                ['Contact', $overview($contact), 'A block of the type "promo", which the code no longer has, isn\'t shown.', sprintf('/admin/cms/entry/%s/builder?block=%s', $contact->getUuid(), self::PROMO)],
+            ]],
+        ], $panel->filter('[data-problem-kind]')->each(static fn (Crawler $group): array => [
+            $group->attr('data-problem-kind'),
+            $group->attr('data-severity'),
+            $group->filter('h3')->text(),
+            $group->filter('[data-entry]')->each(static fn (Crawler $problem): array => [
+                $problem->filter('a.header')->text(),
+                $problem->filter('a.header')->attr('href'),
+                $problem->filter('.description')->text(),
+                $problem->filter('a.button')->attr('href'),
+            ]),
+        ]));
+        self::assertSame('/admin/cms/entries?criteria%5Bstatus%5D=needs_attention', $panel->selectLink('All 3 entries that need attention')->attr('href'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_says_when_nothing_needs_attention(): void
+    {
+        $client = self::signedInClient();
+        self::createPage('About us', 'about-us', 'Hello', published: true);
+
+        $crawler = $client->request('GET', '/admin/cms');
+
+        $panel = $crawler->filter('[data-panel="needs_attention"]');
+        self::assertCount(0, $panel->filter('[data-problem-kind]'));
+        self::assertSame('Nothing needs attention.', $panel->filter('p')->text());
     }
 
     /**
@@ -159,6 +233,20 @@ final class OverviewTest extends WebTestCase
         $scheduler = self::getContainer()->get(PublishSchedulerInterface::class);
 
         return $scheduler;
+    }
+
+    /**
+     * Sets when the entry was edited last, which orders what the panels list
+     */
+    private static function edited(PageInterface $page, string $at): PageInterface
+    {
+        $page->setLastEdited(new \DateTimeImmutable($at), null);
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.page');
+        $manager->flush();
+
+        return $page;
     }
 
     private static function withDateWindow(PageInterface $page, ?string $from, ?string $until): PageInterface

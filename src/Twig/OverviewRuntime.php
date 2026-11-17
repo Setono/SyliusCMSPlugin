@@ -7,6 +7,8 @@ namespace Setono\SyliusCMSPlugin\Twig;
 use Setono\SyliusCMSPlugin\Admin\ComingUp;
 use Setono\SyliusCMSPlugin\Admin\ComingUpEvent;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
+use Setono\SyliusCMSPlugin\Admin\NeedsAttention;
+use Setono\SyliusCMSPlugin\Admin\NeedsAttentionGroups;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Twig\Extension\RuntimeExtensionInterface;
@@ -26,7 +28,16 @@ final readonly class OverviewRuntime implements RuntimeExtensionInterface
         private ComingUp $comingUp,
         private EntryRows $entryRows,
         private EntryRepositoryInterface $entries,
+        private NeedsAttention $needsAttention,
     ) {
+    }
+
+    public function needsAttention(): NeedsAttentionGroups
+    {
+        $groups = $this->needsAttention->find();
+        $this->entryRows->load($groups->entries);
+
+        return $groups;
     }
 
     /**
