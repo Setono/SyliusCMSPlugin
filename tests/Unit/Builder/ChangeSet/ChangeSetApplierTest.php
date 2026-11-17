@@ -39,7 +39,7 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
-use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
+use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\ChangeSet\Fixture\Banner;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\ChangeSet\Fixture\SharedNote;
@@ -815,7 +815,7 @@ final class ChangeSetApplierTest extends TestCase
                 ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
                 TextHandler::class => static fn (): TextHandler => new TextHandler(),
                 ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
-                RichTextHandler::class => static fn (): RichTextHandler => new RichTextHandler(new RichTextSchema()),
+                RichTextHandler::class => static fn (): RichTextHandler => Links::richTextHandler(),
                 DateTimeHandler::class => static fn (): DateTimeHandler => new DateTimeHandler(),
             ])),
             new ContentTypeRegistry([

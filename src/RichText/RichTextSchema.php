@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\RichText;
 
+use Setono\SyliusCMSPlugin\Link\ResolvedLink;
 use Tiptap\Core\DOMSerializer;
 use Tiptap\Core\Extension;
 use Tiptap\Core\Schema;
@@ -19,7 +20,8 @@ final readonly class RichTextSchema
     /** The heading levels rich text has. A page's own headings are Heading blocks */
     public const HEADING_LEVELS = [2, 3, 4];
 
-    private Schema $schema;
+    /** @var list<Extension> the nodes and the marks but the link, which each render adds with how its links resolve */
+    private array $extensions;
 
     /** @var list<string> */
     private array $nodes;
@@ -50,9 +52,9 @@ final readonly class RichTextSchema
             new Marks\Code(),
         ];
 
-        $this->schema = new Schema([...$nodes, ...$marks]);
+        $this->extensions = [...$nodes, ...$marks];
         $this->nodes = array_map(self::name(...), $nodes);
-        $this->marks = array_map(self::name(...), $marks);
+        $this->marks = [...array_map(self::name(...), $marks), CMSLink::$name];
     }
 
     /**
@@ -77,6 +79,14 @@ final readonly class RichTextSchema
     public function attributes(): array
     {
         return array_map(array_keys(...), self::attributeRules());
+    }
+
+    /**
+     * @return array<string, list<string>> mark name => the names of the attributes it keeps
+     */
+    public function markAttributes(): array
+    {
+        return [CMSLink::$name => ['target', 'ref', 'anchor']];
     }
 
     /**
@@ -114,13 +124,45 @@ final readonly class RichTextSchema
     }
 
     /**
-     * Renders a sanitised document to HTML with tiptap-php
+     * Renders a sanitised document to HTML with tiptap-php. A link renders as an <a> to where it resolves, and as plain
+     * text when it doesn't
      *
      * @param array{type: 'doc', content: list<array<string, mixed>>} $document
+     * @param (\Closure(string, string, ?string): ?ResolvedLink)|null $resolveLink where a link's target, ref and anchor
+     *                                                                            lead for the shopper. Without it, no
+     *                                                                            link resolves
+     * @param bool $markLinks whether each link carries its attributes, and one that doesn't resolve renders as a <span>,
+     *                        so typing in place in the builder's preview reads every link back
      */
-    public function render(array $document): string
+    public function render(array $document, ?\Closure $resolveLink = null, bool $markLinks = false): string
     {
-        return (new DOMSerializer($this->schema))->process($document);
+        return (new DOMSerializer(new Schema([...$this->extensions, new CMSLink($resolveLink, $markLinks)])))->process($document);
+    }
+
+    /**
+     * The links in a sanitised document, in document order, each as often as a text holds it
+     *
+     * @param array<array-key, mixed> $node
+     *
+     * @return list<array{target: string, ref: string, anchor: string|null}>
+     */
+    public function links(array $node): array
+    {
+        $links = [];
+        foreach (is_array($node['marks'] ?? null) ? $node['marks'] : [] as $mark) {
+            $link = is_array($mark) && CMSLink::$name === ($mark['type'] ?? null) ? self::link($mark) : null;
+            if (null !== $link) {
+                $links[] = $link;
+            }
+        }
+
+        foreach (is_array($node['content'] ?? null) ? $node['content'] : [] as $child) {
+            if (is_array($child)) {
+                $links = [...$links, ...$this->links($child)];
+            }
+        }
+
+        return $links;
     }
 
     /**
@@ -210,7 +252,7 @@ final readonly class RichTextSchema
     }
 
     /**
-     * The attributes each node keeps, with whether a value fits. Other nodes keep none, and no mark has any yet
+     * The attributes each node keeps, with whether a value fits. Other nodes keep none. A link's are kept by link()
      *
      * @return array<string, array<string, \Closure(mixed): bool>>
      */
@@ -223,21 +265,56 @@ final readonly class RichTextSchema
     }
 
     /**
+     * The node's marks the schema has. A mark keeps only the attributes it has, and a link without a target and a ref is
+     * dropped, its text kept
+     *
      * @param array<array-key, mixed> $node
      *
-     * @return list<array{type: string}>
+     * @return list<array{type: string, attrs?: array<string, mixed>}>
      */
     private function marksOf(array $node): array
     {
         $marks = [];
         foreach (is_array($node['marks'] ?? null) ? $node['marks'] : [] as $mark) {
             $type = is_array($mark) ? ($mark['type'] ?? null) : null;
-            if (is_string($type) && in_array($type, $this->marks, true)) {
+            if (!is_string($type) || !in_array($type, $this->marks, true)) {
+                continue;
+            }
+
+            if (CMSLink::$name !== $type) {
                 $marks[] = ['type' => $type];
+
+                continue;
+            }
+
+            $link = self::link($mark);
+            if (null !== $link) {
+                $marks[] = ['type' => $type, 'attrs' => $link];
             }
         }
 
         return $marks;
+    }
+
+    /**
+     * A cmsLink mark's attributes, with an empty anchor as null, or null when it has no target or no ref
+     *
+     * @param array<array-key, mixed> $mark
+     *
+     * @return array{target: non-empty-string, ref: non-empty-string, anchor: non-empty-string|null}|null
+     */
+    private static function link(array $mark): ?array
+    {
+        $attributes = is_array($mark['attrs'] ?? null) ? $mark['attrs'] : [];
+        $target = $attributes['target'] ?? null;
+        $ref = $attributes['ref'] ?? null;
+        if (!is_string($target) || '' === $target || !is_string($ref) || '' === $ref) {
+            return null;
+        }
+
+        $anchor = $attributes['anchor'] ?? null;
+
+        return ['target' => $target, 'ref' => $ref, 'anchor' => is_string($anchor) && '' !== $anchor ? $anchor : null];
     }
 
     private static function name(Extension $extension): string
