@@ -16,11 +16,18 @@
             <argument>%sylius.model.product_taxon.class%</argument>
         </service>
 
+        <!-- What the Associations source's association type is picked from, as a Choice field's choices provider -->
+        <service id="Setono\SyliusCMSPlugin\Source\Product\ProductAssociationTypeChoicesProvider" class="Setono\SyliusCMSPlugin\Source\Product\ProductAssociationTypeChoicesProvider">
+            <argument type="service" id="sylius.repository.product_association_type"/>
+
+            <tag name="setono_sylius_cms.choices_provider"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
         <!--
         The shipped sources. A source is a service carrying #[AsSource], which autoconfiguration tags
         setono_sylius_cms.source, and RegisterSourcesPass hands to the registry by code. The builder offers them by their
-        tag's priority, so the shipped ones come first, in this order, and then a project's. The gaps leave room for the
-        shipped sources still to come: Associations (30) and Same taxon (20)
+        tag's priority, so the shipped ones come first, in this order, and then a project's
         -->
         <service id="Setono\SyliusCMSPlugin\Source\Product\ProductsInTaxonSource" class="Setono\SyliusCMSPlugin\Source\Product\ProductsInTaxonSource">
             <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface"/>
@@ -42,6 +49,20 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface"/>
 
             <tag name="setono_sylius_cms.source" priority="40"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Source\Product\ProductAssociationsSource" class="Setono\SyliusCMSPlugin\Source\Product\ProductAssociationsSource">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface"/>
+            <argument>%sylius.model.product_association.class%</argument>
+
+            <tag name="setono_sylius_cms.source" priority="30"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Source\Product\SameTaxonProductsSource" class="Setono\SyliusCMSPlugin\Source\Product\SameTaxonProductsSource">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleProductsQueryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Source\Product\TaxonFilter"/>
+
+            <tag name="setono_sylius_cms.source" priority="20"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Source\Taxon\TaxonChildrenSource" class="Setono\SyliusCMSPlugin\Source\Taxon\TaxonChildrenSource">
