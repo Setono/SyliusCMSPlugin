@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Attribute\NoParams;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Source\Product\BestsellersParams;
+use Setono\SyliusCMSPlugin\Source\Product\ProductAssociationsParams;
 use Setono\SyliusCMSPlugin\Source\Product\ProductsInTaxonParams;
 use Setono\SyliusCMSPlugin\Source\Taxon\TaxonChildrenParams;
 use Setono\SyliusCMSPlugin\Tests\Support\Bestsellers;
@@ -280,6 +281,77 @@ final class ShippedSourcesTest extends KernelTestCase
     /**
      * @test
      */
+    public function it_lists_with_associations_the_visible_products_associated_with_the_product_by_their_id_of_every_type_or_one(): void
+    {
+        $shirt = self::createProduct('T_SHIRT', 'T-shirt');
+        $cap = self::createProduct('CAP', 'Cap');
+        $belt = self::createProduct('BELT', 'Belt');
+        $hidden = self::createProduct('HIDDEN', 'Hidden', enabled: false);
+        $polo = self::createProduct('POLO', 'Polo');
+        $mug = self::createProduct('MUG', 'Mug');
+        $saucer = self::createProduct('SAUCER', 'Saucer');
+        $similar = self::createAssociationType('SIMILAR', 'Similar products');
+        $accessories = self::createAssociationType('ACCESSORIES', 'Accessories');
+        // Cap is in both, and listed once
+        self::associate($shirt, $similar, [$polo, $hidden, $cap]);
+        self::associate($shirt, $accessories, [$belt, $cap]);
+        // Another product's associations don't count
+        self::associate($mug, $accessories, [$saucer]);
+
+        $every = self::associations($shirt);
+        self::assertSame(['CAP', 'BELT', 'POLO'], self::codes($every->getSlice(0, 10)));
+        self::assertSame(['BELT', 'POLO'], self::codes($every->getSlice(1, 2)));
+        self::assertSame(3, $every->getNbResults());
+
+        self::assertSame(['CAP', 'BELT'], self::codes(self::associations($shirt, 'ACCESSORIES')->getSlice(0, 10)));
+        self::assertSame(['CAP', 'POLO'], self::codes(self::associations($shirt, 'SIMILAR')->getSlice(0, 10)));
+        self::assertSame([], self::codes(self::associations($cap)->getSlice(0, 10)), 'Associations go one way');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lists_with_same_taxon_the_other_visible_products_in_the_products_main_taxon_by_their_position_there(): void
+    {
+        $shirts = self::createTaxon('T_SHIRTS', 'T-shirts');
+        $mugs = self::createTaxon('MUGS', 'Mugs');
+        $basic = self::createProduct('BASIC', 'Basic');
+        self::placeInTaxon(self::createProduct('STRIPED', 'Striped'), $shirts);
+        self::placeInTaxon($basic, $shirts);
+        self::placeInTaxon(self::createProduct('PLAIN', 'Plain'), $shirts);
+        self::placeInTaxon(self::createProduct('HIDDEN', 'Hidden', enabled: false), $shirts);
+        self::placeInTaxon(self::createProduct('VNECK', 'V-neck'), $shirts, 0);
+        self::placeInTaxon(self::createProduct('MUG', 'Mug'), $mugs);
+        // The product is in Mugs too, but only its main taxon counts
+        self::placeInTaxon($basic, $mugs);
+        self::setMainTaxon($basic, $shirts);
+
+        $adapter = self::sameTaxon($basic);
+
+        self::assertSame(['VNECK', 'STRIPED', 'PLAIN'], self::codes($adapter->getSlice(0, 10)));
+        self::assertSame(['STRIPED', 'PLAIN'], self::codes($adapter->getSlice(1, 2)));
+        self::assertSame(3, $adapter->getNbResults());
+    }
+
+    /**
+     * @test
+     */
+    public function it_lists_nothing_with_same_taxon_when_the_product_has_no_main_taxon(): void
+    {
+        $shirts = self::createTaxon('T_SHIRTS', 'T-shirts');
+        $basic = self::createProduct('BASIC', 'Basic');
+        self::placeInTaxon($basic, $shirts);
+        self::placeInTaxon(self::createProduct('STRIPED', 'Striped'), $shirts);
+
+        $adapter = self::sameTaxon($basic);
+
+        self::assertSame([], self::codes($adapter->getSlice(0, 10)));
+        self::assertSame(0, $adapter->getNbResults());
+    }
+
+    /**
+     * @test
+     */
     public function it_lists_with_children_of_a_taxon_the_enabled_taxons_right_below_it_by_their_position(): void
     {
         $clothing = self::createTaxon('CLOTHING', 'Clothing');
@@ -326,6 +398,25 @@ final class ShippedSourcesTest extends KernelTestCase
         return self::source('bestsellers')->resolve($params, self::context());
     }
 
+    /**
+     * @return AdapterInterface<mixed>
+     */
+    private static function associations(ProductInterface $product, ?string $associationType = null): AdapterInterface
+    {
+        $params = new ProductAssociationsParams();
+        $params->associationType = $associationType;
+
+        return self::source('product_associations')->resolve($params, self::context($product));
+    }
+
+    /**
+     * @return AdapterInterface<mixed>
+     */
+    private static function sameTaxon(ProductInterface $product): AdapterInterface
+    {
+        return self::source('same_taxon_products')->resolve(new NoParams(), self::context($product));
+    }
+
     private static function source(string $code): \Setono\SyliusCMSPlugin\Source\SourceInterface
     {
         $registry = self::getContainer()->get(SourceRegistryInterface::class);
@@ -357,13 +448,13 @@ final class ShippedSourcesTest extends KernelTestCase
         $manager->flush();
     }
 
-    private static function context(): RenderContext
+    private static function context(?ProductInterface $product = null): RenderContext
     {
         /** @var ChannelRepositoryInterface<ChannelInterface> $channels */
         $channels = self::getContainer()->get('sylius.repository.channel');
         $channel = $channels->findOneByCode('WEB');
         self::assertInstanceOf(ChannelInterface::class, $channel);
 
-        return Rendering::context(channel: $channel);
+        return Rendering::context(channel: $channel, hostPageContext: null === $product ? [] : ['product' => $product]);
     }
 }

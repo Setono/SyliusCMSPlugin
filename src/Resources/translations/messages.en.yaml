@@ -160,6 +160,9 @@ setono_sylius_cms:
             heading: Heading
         locale_condition:
             locales: Locales
+        product_associations_source:
+            association_type: Association type
+            association_type_help: Leave it empty to list the products of every association type.
         product_attribute_binding:
             attribute: Attribute
         product_condition:
@@ -330,7 +333,9 @@ setono_sylius_cms:
     source:
         bestsellers: Bestsellers
         newest_products: Newest
+        product_associations: Associations
         products_in_taxon: In taxon
+        same_taxon_products: Same taxon
         taxon_children: Children of a taxon
     # The Video block's embed, named to screen readers
     video:

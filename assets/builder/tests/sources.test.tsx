@@ -7,7 +7,7 @@ import type { SearchResult } from '../src/search/api';
 import { createSourcesApi } from '../src/sources/api';
 import { SourcesProvider, type CountSource } from '../src/sources/context';
 import type { SourceDefinition } from '../src/sources/sources';
-import type { BlockTypeDefinition, EntryResponse, EntryStatus, FieldSchema, JsonObject, JsonValue, PresenceResponse, SaveResponse, ValidationError } from '../src/types';
+import type { BlockTypeDefinition, ContentTypeDefinition, Entry, EntryResponse, EntryStatus, FieldSchema, JsonObject, JsonValue, PresenceResponse, SaveResponse, ValidationError } from '../src/types';
 import { blockOf, entry, fakeSearch, page, registry, renderField, settings } from './fixtures';
 
 const strings = {
@@ -49,6 +49,7 @@ const sources: SourceDefinition[] = [
     },
     { code: 'newest_products', label: 'Newest', needs: [], fields: [] },
     { code: 'taxon_children', label: 'Children of a taxon', needs: [], fields: [field('taxon', 'taxon', 'Taxon')] },
+    { code: 'same_taxon_products', label: 'Same taxon', needs: ['product'], fields: [] },
 ];
 
 function productsSchema(offered: string[], limit = 8): FieldSchema {
@@ -67,8 +68,8 @@ const catalog: Record<string, SearchResult[]> = {
     taxon: [{ ref: 'T_SHIRTS', name: 'Category / T-shirts', thumbnail: null }],
 };
 
-function renderListField(schema: FieldSchema, initial?: JsonValue, count: CountSource | null = null) {
-    return renderField(schema, { initial, strings, search: fakeSearch(catalog), providers: (field) => <SourcesProvider value={{ sources, count }}>{field}</SourcesProvider> });
+function renderListField(schema: FieldSchema, initial?: JsonValue, count: CountSource | null = null, provided?: string[]) {
+    return renderField(schema, { initial, strings, search: fakeSearch(catalog), providers: (field) => <SourcesProvider value={{ sources, count, provided }}>{field}</SourcesProvider> });
 }
 
 function filledBy(): HTMLSelectElement {
@@ -191,8 +192,33 @@ describe('a list field that sources can fill', () => {
         expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Products' })).toHaveTextContent('Add product');
     });
-});
 
+    it("should leave out the sources that need context the edited entry doesn't provide", () => {
+        renderListField(productsSchema(['newest_products', 'same_taxon_products']), undefined, null, ['entry']);
+
+        expect(optionLabels(filledBy())).toEqual(['Hand-picked', 'Newest']);
+    });
+
+    it('should offer the sources whose context the edited entry provides', () => {
+        renderListField(productsSchema(['newest_products', 'same_taxon_products']), undefined, null, ['product']);
+
+        expect(optionLabels(filledBy())).toEqual(['Hand-picked', 'Newest', 'Same taxon']);
+    });
+
+    it('should offer every source outside the builder, where no entry provides context', () => {
+        renderListField(productsSchema(['newest_products', 'same_taxon_products']));
+
+        expect(optionLabels(filledBy())).toEqual(['Hand-picked', 'Newest', 'Same taxon']);
+    });
+
+    it('should keep a source the list already holds whose context the entry no longer provides, by its label', () => {
+        renderListField(productsSchema(['newest_products', 'same_taxon_products']), { $source: 'same_taxon_products', $params: {}, $limit: 4 }, null, []);
+
+        expect(optionLabels(filledBy())).toEqual(['Hand-picked', 'Same taxon', 'Newest']);
+        expect(filledBy()).toHaveValue('same_taxon_products');
+        expect(screen.queryByText('This source isn’t offered any more.')).not.toBeInTheDocument();
+    });
+});
 describe('the source_count endpoint', () => {
     it('should post the source and its parameters under the preview token, and answer with the count', async () => {
         const fetchFn = vi.fn(async () => new Response(JSON.stringify({ count: 7 }), { status: 200 }));
@@ -223,8 +249,16 @@ describe('the builder', () => {
         parents: null,
         children: [],
         styles: [],
-        fields: [{ name: 'products', schema: productsSchema(['newest_products']) }],
+        fields: [{ name: 'products', schema: productsSchema(['newest_products', 'same_taxon_products']) }],
     };
+
+    const listPage: ContentTypeDefinition = { ...page, blocks: [...(page.blocks ?? []), { type: 'products', min: null, max: null }] };
+
+    const listSnippet: ContentTypeDefinition = { ...listPage, code: 'snippet', label: 'Snippet', homepage: false, provides: null };
+
+    function listEntry(): Entry {
+        return entry([blockOf('products', 'list', [], { products: { $source: 'newest_products', $params: {}, $limit: 4 } })]);
+    }
 
     const config: BuilderConfig = {
         entryUuid: '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e',
@@ -252,10 +286,10 @@ describe('the builder', () => {
         customerGroups: [],
     };
 
-    function fakeApi(): BuilderApi {
+    function fakeApi(listed: Entry = listEntry()): BuilderApi {
         let previews = 0;
         const loaded = (): EntryResponse => ({
-            entry: entry([blockOf('products', 'list', [], { products: { $source: 'newest_products', $params: {}, $limit: 4 } })]),
+            entry: listed,
             settings: settings({ channels: ['WEB', 'B2B'] }),
             status: 'never_published',
             lockToken: 0,
@@ -266,7 +300,8 @@ describe('the builder', () => {
             fetchRegistry: vi.fn(async () => ({
                 ...registry,
                 blockTypes: [...registry.blockTypes, productsBlock],
-                contentTypes: [{ ...page, blocks: [...(page.blocks ?? []), { type: 'products', min: null, max: null }] }],
+                contentTypes: [listPage, listSnippet],
+                contextKeys: [{ key: 'product', label: 'Product page' }],
                 sources,
                 strings: { ...registry.strings, ...strings },
             })),
@@ -295,5 +330,18 @@ describe('the builder', () => {
 
         expect(await screen.findByText('2 items now')).toBeInTheDocument();
         expect(sourcesApi.count).toHaveBeenLastCalledWith('token-2', 'newest_products', {});
+    });
+
+    it('should not offer a source that needs the product in a page, which provides none', async () => {
+        render(<App config={config} api={fakeApi()} autosaveDelay={10} />);
+
+        expect(optionLabels(await screen.findByRole('combobox', { name: /Filled by/ }))).toEqual(['Hand-picked', 'Newest']);
+    });
+
+    it('should offer a source that needs the product in a snippet for product pages', async () => {
+        const forProductPages: Entry = { ...listEntry(), contentType: 'snippet', fields: { context: ['product'] } };
+        render(<App config={config} api={fakeApi(forProductPages)} autosaveDelay={10} />);
+
+        expect(optionLabels(await screen.findByRole('combobox', { name: /Filled by/ }))).toEqual(['Hand-picked', 'Newest', 'Same taxon']);
     });
 });

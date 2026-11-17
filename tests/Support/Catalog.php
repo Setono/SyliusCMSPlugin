@@ -13,6 +13,8 @@ use Sylius\Component\Core\Model\ProductTranslationInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 use Sylius\Component\Core\Model\TaxonImageInterface;
 use Sylius\Component\Core\Model\TaxonInterface;
+use Sylius\Component\Product\Model\ProductAssociationInterface;
+use Sylius\Component\Product\Model\ProductAssociationTypeInterface;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -117,6 +119,60 @@ trait Catalog
             $productTaxon->setPosition($position);
         }
         $product->addProductTaxon($productTaxon);
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('sylius.manager.product');
+        $manager->flush();
+    }
+
+    /**
+     * Makes the taxon the product's main taxon. It doesn't put the product in it: placeInTaxon() does
+     */
+    protected static function setMainTaxon(ProductInterface $product, TaxonInterface $taxon): void
+    {
+        $product->setMainTaxon($taxon);
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('sylius.manager.product');
+        $manager->flush();
+    }
+
+    /**
+     * An association type, named in en_US, the locale the test fixtures have
+     */
+    protected static function createAssociationType(string $code, string $name): ProductAssociationTypeInterface
+    {
+        /** @var FactoryInterface<ProductAssociationTypeInterface> $factory */
+        $factory = self::getContainer()->get('sylius.factory.product_association_type');
+        $type = $factory->createNew();
+        $type->setCurrentLocale('en_US');
+        $type->setFallbackLocale('en_US');
+        $type->setCode($code);
+        $type->setName($name);
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('sylius.manager.product_association_type');
+        $manager->persist($type);
+        $manager->flush();
+
+        return $type;
+    }
+
+    /**
+     * Associates the products with the product, as its association of the type, which Sylius allows one of per type
+     *
+     * @param list<ProductInterface> $products
+     */
+    protected static function associate(ProductInterface $product, ProductAssociationTypeInterface $type, array $products): void
+    {
+        /** @var FactoryInterface<ProductAssociationInterface> $factory */
+        $factory = self::getContainer()->get('sylius.factory.product_association');
+        $association = $factory->createNew();
+        $association->setType($type);
+        foreach ($products as $associated) {
+            $association->addAssociatedProduct($associated);
+        }
+        $product->addAssociation($association);
 
         /** @var ObjectManager $manager */
         $manager = self::getContainer()->get('sylius.manager.product');

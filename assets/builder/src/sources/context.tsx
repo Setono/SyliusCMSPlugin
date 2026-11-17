@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { usePreviewState } from '../context';
+import { useShallow } from 'zustand/react/shallow';
+import { useBuilderState, usePreviewState } from '../context';
+import { providedContext } from '../hostPageContext';
 import type { JsonObject } from '../types';
 import type { SourcesApi } from './api';
 import type { SourceDefinition } from './sources';
@@ -12,6 +14,11 @@ interface Sources {
     sources: readonly SourceDefinition[];
     /** Null while there's no preview to count in, or without the endpoint. */
     count: CountSource | null;
+    /**
+     * The context keys the edited entry provides or the snippet declares: a source is offered only where it provides
+     * all a source needs. Without them, outside the builder, every source is offered.
+     */
+    provided?: readonly string[] | undefined;
 }
 
 const SourcesContext = createContext<Sources>({ sources: [], count: null });
@@ -25,14 +32,16 @@ export function useSources(): Sources {
 }
 
 /**
- * Gives list fields' controls the sources, and counts what they yield under the token of the page the preview shows,
- * so in its channel, locale, Shown to and Date. It needs the builder's session, for the preview.
+ * Gives list fields' controls the sources, with the context the edited entry provides, which narrows those offered,
+ * and counts what they yield under the token of the page the preview shows, so in its channel, locale, Shown to and
+ * Date. It needs the builder's session, for the entry and the preview.
  */
 export function PreviewSourcesProvider({ sources, api, children }: { sources: readonly SourceDefinition[]; api: SourcesApi | null; children: ReactNode }) {
     const token = usePreviewState((state) => state.token);
+    const provided = useBuilderState(useShallow((state) => providedContext(state.rules.provides, state.entry)));
     const value = useMemo<Sources>(
-        () => ({ sources, count: api === null || token === null ? null : (source, params) => api.count(token, source, params) }),
-        [sources, api, token],
+        () => ({ sources, count: api === null || token === null ? null : (source, params) => api.count(token, source, params), provided }),
+        [sources, api, token, provided],
     );
 
     return <SourcesContext.Provider value={value}>{children}</SourcesContext.Provider>;
