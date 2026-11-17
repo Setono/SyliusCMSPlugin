@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Context;
 
+use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
-use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 
 /**
  * How a context check names another entry, such as the snippet a Snippet block shows: by its title in its first

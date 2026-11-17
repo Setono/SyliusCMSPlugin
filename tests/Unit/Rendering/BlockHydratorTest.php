@@ -14,7 +14,6 @@ use Setono\SyliusCMSPlugin\Localization\FallbackChain;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
-use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
@@ -25,9 +24,7 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Rendering\Fixture\StockNote;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Sylius\Component\Core\Model\Product;
 use Sylius\Resource\Translation\Provider\ImmutableTranslationLocaleProvider;
-use Setono\SyliusCMSPlugin\Validation\FieldConstraints;
 use Symfony\Component\DependencyInjection\ServiceLocator;
-use Symfony\Component\Validator\Validation;
 
 /**
  * Hydration resolves a binding from the host-page context, the channel or the customer before the fallback chain: an

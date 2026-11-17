@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Builder\Search;
 
-use Setono\SyliusCMSPlugin\Context\EntryTitle;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Setono\SyliusCMSPlugin\Context\EntryTitle;
 use Setono\SyliusCMSPlugin\Context\Needs;
 use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
