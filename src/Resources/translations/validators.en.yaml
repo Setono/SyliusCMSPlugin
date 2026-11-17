@@ -1,5 +1,6 @@
 setono_sylius_cms:
     block:
+        bound_link_label: 'A button that shows a binding, such as the product''s URL, needs a label.'
         embed_code_off: 'Embed code is switched off in this shop, so a new Embed code block can''t be published. Remove it.'
         exactly_one_of: 'Fill in one of these, but only one: %fields%.'
         not_allowed: '%block% can''t go here.'
@@ -20,6 +21,7 @@ setono_sylius_cms:
         binding_parameter_required: '{{ parameter }} is required.'
         invalid_choice: The value you selected is not a valid choice.
         link_target_not_allowed: 'This field can''t link to %target%.'
+        not_binding: This value should be a binding, with its parameters and fallback.
         not_code: This value should be HTML code.
         not_date: This value should be a date.
         not_date_time: This value should be a date and time.

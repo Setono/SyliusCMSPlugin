@@ -7,11 +7,13 @@ namespace Setono\SyliusCMSPlugin\Block;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Style;
 use Setono\SyliusCMSPlugin\Field\Link;
+use Setono\SyliusCMSPlugin\Validation\Constraint\BoundLinkLabel;
 use Setono\SyliusCMSPlugin\Value\Link as LinkValue;
 
 /**
  * A link shown as a button, labelled with the link's label or else the current name of what it leads to. A link that
- * doesn't resolve renders no button. See "Button" in docs/spec/blocks.md
+ * doesn't resolve renders no button. A bound link, such as one to the host page's product, has no name of its own, so
+ * publish requires its label. See "Button" in docs/spec/blocks.md
  */
 #[BlockType(
     code: 'button',
@@ -24,6 +26,7 @@ use Setono\SyliusCMSPlugin\Value\Link as LinkValue;
     ],
     thumbnail: '/bundles/setonosyliuscmsplugin/thumbnail/block/button.svg',
 )]
+#[BoundLinkLabel(field: 'link')]
 final class Button
 {
     #[Link(label: 'setono_sylius_cms.field.button.link', required: true)]

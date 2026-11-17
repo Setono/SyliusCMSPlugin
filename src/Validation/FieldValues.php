@@ -16,11 +16,14 @@ final readonly class FieldValues
      * @param array<string, mixed> $values the value of each field that isn't missing, as stored, by field name
      * @param array<string, string> $labels each field's label, translated, by field name
      * @param string|null $locale the locale of the translatable fields' values, or null when the block type has none
+     * @param list<string> $fallbackLocales the locale and the locales it falls back through, in order, which a value kept
+     *                                      per locale inside a shared one, such as a link's label, is read along
      */
     public function __construct(
         private array $values,
         private array $labels = [],
         public ?string $locale = null,
+        public array $fallbackLocales = [],
     ) {
     }
 
