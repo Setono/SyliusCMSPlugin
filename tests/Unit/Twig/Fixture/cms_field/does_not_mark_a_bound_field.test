@@ -1,0 +1,8 @@
+--TEST--
+cms_field() doesn't mark a field that shows a binding, which can't be typed in place
+--TEMPLATE--
+{{ cms_blocks(blocks) }}
+--DATA--
+return $this->rendering(['blocks' => [$this->boundHeading('T-shirt')]], 'builder')
+--EXPECT--
+<h2 class="cms-heading">T-shirt</h2>

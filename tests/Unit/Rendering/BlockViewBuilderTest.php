@@ -67,6 +67,27 @@ final class BlockViewBuilderTest extends TestCase
     private const DELETED = '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d03';
 
     /**
+     * Bound values can't be typed in place, so the view says which fields show one. See "Working in the preview" in
+     * docs/spec/builder.md
+     *
+     * @test
+     */
+    public function it_names_the_fields_that_show_a_binding(): void
+    {
+        $bound = new StoredBlock(self::A, 'heading', 1);
+        $bound->fields = ['text' => ['$bind' => 'product.name', '$params' => [], '$fallback' => ['en_US' => 'this product']]];
+        $typed = new StoredBlock(self::B, 'heading', 1);
+        $typed->fields = ['text' => ['en_US' => 'Hello']];
+
+        $views = $this->builder()->build([$bound, $typed], $this->context('en_US'));
+
+        self::assertSame(['text'], $views[0]->bound);
+        self::assertInstanceOf(Heading::class, $views[0]->block);
+        self::assertSame('this product', $views[0]->block->text);
+        self::assertSame([], $views[1]->bound);
+    }
+
+    /**
      * @test
      */
     public function it_builds_a_view_per_block_with_the_hydrated_block_type_object(): void

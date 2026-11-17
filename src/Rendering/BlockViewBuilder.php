@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Rendering;
 
+use Setono\SyliusCMSPlugin\Binding\BoundValue;
 use Setono\SyliusCMSPlugin\Block\FirstMatch;
 use Setono\SyliusCMSPlugin\Condition\ConditionMatcher;
 use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
@@ -97,6 +99,7 @@ final readonly class BlockViewBuilder
                 $this->hydrator->hydrate($blockType, $block, $context, $references),
                 $blockType->styleClass($block->style),
                 $this->views($block->children, $context, $references, is_a($blockType->class, FirstMatch::class, true)),
+                array_keys(array_filter($blockType->fields, static fn (FieldMetadata $field): bool => BoundValue::isBound($field, $block->fields[$field->name] ?? null))),
             );
 
             if ($firstOnly) {

@@ -128,6 +128,17 @@ final readonly class LinkHandler implements FitCheckingFieldHandlerInterface, Em
         return is_array($ref) ? LinkLocaleParts::isLocaleMap($ref) && [] === self::refs($ref) : null === $ref || '' === $ref;
     }
 
+    /**
+     * The binding a link to a URL holds in its ref
+     */
+    public function bindings(Field $field, mixed $value): iterable
+    {
+        $value = LinkLocaleParts::normalized($value);
+        $binding = is_array($value) ? StoredBinding::fromValue($value['ref'] ?? null) : null;
+
+        return null === $binding ? [] : [$binding];
+    }
+
     public function references(Field $field, mixed $value): iterable
     {
         $value = LinkLocaleParts::normalized($value);

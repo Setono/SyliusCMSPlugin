@@ -14,6 +14,7 @@ setono_sylius_cms:
         block: 'The block "%block%"'
         condition: 'The condition "%kind%" on the block "%block%"'
         does_not_provide: '%what% doesn''t provide the host-page context %context%.'
+        layout_binding: 'The binding "%binding%" in the layout'
         needs: '%what% needs the host-page context %context%.'
         placement: 'The placement in "%slot%"'
     field:

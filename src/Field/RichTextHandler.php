@@ -81,6 +81,16 @@ final readonly class RichTextHandler implements SanitizingFieldHandlerInterface,
     }
 
     /**
+     * The binding tokens in the document
+     */
+    public function bindings(Field $field, mixed $value): iterable
+    {
+        $document = $this->schema->sanitize($value);
+
+        return null === $document ? [] : $this->schema->bindings($document);
+    }
+
+    /**
      * The records its links lead to, each once, such as a product. A link to a URL refers to none
      */
     public function references(Field $field, mixed $value): iterable
