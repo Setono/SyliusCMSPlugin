@@ -342,7 +342,7 @@ Everything else in the schema, the JSON Schema for one value, is the handler's.
 
 ### Field controls
 
-A project's own field type comes with a [field control](../../GLOSSARY.md#content-structure): a custom element, loaded from a script listed under `setono_sylius_cms.builder.scripts`. A block type built only from shipped field types needs no JS.
+A project's own field type comes with a [field control](../../GLOSSARY.md#content-structure): a custom element, loaded from a script listed under `setono_sylius_cms.builder.scripts`. Each script is resolved through Symfony's `asset()`, so a project whose build versions its files, with a JSON manifest, lists the asset path, such as `build/app/cms/controls.js`, and the builder loads the built file. A block type built only from shipped field types needs no JS.
 
 - The builder sets four properties on the element: `.value` (the stored value, for the current locale when the field is translatable, or `null` when it has none), `.field` (its schema), `.locale` (the locale being edited) and `.builder`. It sets `.field`, `.locale` and `.builder` before `.value`, and each again only when it changes.
 - `.builder` has `search(kind, query)`, which resolves to `[{ref, name, thumbnail}]` for `product`, `taxon`, `entry`, `media` or a link target's code, `pickMedia({kinds, multiple})`, which resolves to UUIDs or `null`, and `trans(key, params)`.
@@ -771,7 +771,7 @@ setono_sylius_cms:
         # de_CH: [de_DE]
 
     builder:
-        scripts: []          # field control scripts, as public paths, such as /build/app/cms/controls.js, or absolute http(s) URLs, loaded as ES modules in this order
+        scripts: []          # field control scripts, as asset paths, such as build/app/cms/controls.js, public paths or absolute http(s) URLs, each resolved through asset(), loaded as ES modules in this order
 
     presets:
         paths: []            # directories of code preset files; bundles prepend theirs

@@ -889,12 +889,12 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
-    public function it_lets_a_project_list_the_scripts_of_its_field_controls_as_public_paths_or_absolute_urls(): void
+    public function it_lets_a_project_list_the_scripts_of_its_field_controls_as_asset_paths_public_paths_or_absolute_urls(): void
     {
         $this->assertProcessedConfigurationEquals([
-            ['builder' => ['scripts' => ['/build/app/cms/opening-hours.js']]],
-            ['builder' => ['scripts' => ['https://cdn.example.com/cms/rating.js', '/build/app/cms/opening-hours.js']]],
-        ], ['builder' => ['scripts' => ['/build/app/cms/opening-hours.js', 'https://cdn.example.com/cms/rating.js']]], 'builder');
+            ['builder' => ['scripts' => ['/build/app/cms/opening-hours.js', 'build/app/cms/rating.js']]],
+            ['builder' => ['scripts' => ['https://cdn.example.com/cms/map.js', '/build/app/cms/opening-hours.js']]],
+        ], ['builder' => ['scripts' => ['/build/app/cms/opening-hours.js', 'build/app/cms/rating.js', 'https://cdn.example.com/cms/map.js']]], 'builder');
     }
 
     /**
@@ -902,9 +902,9 @@ final class ConfigurationTest extends TestCase
      *
      * @dataProvider provideInvalidScripts
      */
-    public function it_refuses_a_script_that_is_neither_a_public_path_nor_an_absolute_url(string $script): void
+    public function it_refuses_a_script_that_is_neither_an_asset_path_a_public_path_nor_an_absolute_url(string $script): void
     {
-        $this->assertConfigurationIsInvalid([['builder' => ['scripts' => [$script]]]], sprintf('"%s" is neither a public path, such as /build/app/cms/controls.js, nor an absolute http(s) URL', $script));
+        $this->assertConfigurationIsInvalid([['builder' => ['scripts' => [$script]]]], sprintf('"%s" is neither an asset path, such as build/app/cms/controls.js, a public path, such as /cms/controls.js, nor an absolute http(s) URL', $script));
     }
 
     /**
@@ -912,8 +912,8 @@ final class ConfigurationTest extends TestCase
      */
     public function provideInvalidScripts(): iterable
     {
-        yield 'a relative path' => ['build/app/cms/controls.js'];
         yield 'empty' => [''];
+        yield 'with a space' => ['build/app/cms controls.js'];
         yield 'another scheme' => ['javascript:alert(1)'];
         yield 'a protocol-relative URL' => ['//cdn.example.com/controls.js'];
     }

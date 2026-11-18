@@ -460,7 +460,7 @@ final class Configuration implements ConfigurationInterface
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->arrayNode('scripts')
-                            ->info('Field control scripts, as public paths, such as /build/app/cms/controls.js, or absolute URLs, loaded as ES modules in this order')
+                            ->info('Field control scripts, as asset paths, such as build/app/cms/controls.js, which asset() resolves, public paths or absolute URLs, loaded as ES modules in this order')
                             ->scalarPrototype()
                                 ->validate()->always(self::assertScript(...))->end()
                             ->end()
@@ -483,12 +483,16 @@ final class Configuration implements ConfigurationInterface
     }
 
     /**
-     * @throws \InvalidArgumentException when it's neither a public path nor an absolute http(s) URL
+     * An asset path, which asset() resolves through the default asset package, so a versioned manifest gives the built
+     * file's URL, a public path, or an absolute http(s) URL, which asset() leaves as they are. A protocol-relative URL
+     * and other schemes, such as javascript:, are refused
+     *
+     * @throws \InvalidArgumentException when it's neither an asset path, a public path nor an absolute http(s) URL
      */
     private static function assertScript(mixed $script): string
     {
-        if (!is_string($script) || 1 !== preg_match('#^(/(?!/)|https?://)\S+$#', $script)) {
-            throw new \InvalidArgumentException(sprintf('%s is neither a public path, such as /build/app/cms/controls.js, nor an absolute http(s) URL', is_scalar($script) ? sprintf('"%s"', (string) $script) : get_debug_type($script)));
+        if (!is_string($script) || 1 !== preg_match('#^(https?://|/(?!/)|(?![a-z][a-z0-9+.-]*:)(?!/))\S+$#i', $script)) {
+            throw new \InvalidArgumentException(sprintf('%s is neither an asset path, such as build/app/cms/controls.js, a public path, such as /cms/controls.js, nor an absolute http(s) URL', is_scalar($script) ? sprintf('"%s"', (string) $script) : get_debug_type($script)));
         }
 
         return $script;

@@ -43,7 +43,7 @@ final readonly class BuilderAction
      * @param ChannelRepositoryInterface<ChannelInterface> $channelRepository
      * @param RepositoryInterface<CustomerGroupInterface> $customerGroupRepository
      * @param list<string> $scripts the scripts of the field controls of projects' own field types, from
-     *                              setono_sylius_cms.builder.scripts
+     *                              setono_sylius_cms.builder.scripts, which the template resolves through asset()
      */
     public function __construct(
         private AdminAccessChecker $adminAccessChecker,
