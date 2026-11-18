@@ -13,6 +13,8 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryReferenceInterface;
 use Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryReferenceRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -45,6 +47,7 @@ trait Blog
 
     /**
      * @param list<BlogCategoryInterface|string> $categories the categories, or their UUIDs, in the editor's order
+     * @param list<StoredBlock> $blocks the top-level blocks of its tree, in its default layout
      */
     protected static function createBlogPost(
         string $title,
@@ -54,6 +57,7 @@ trait Blog
         ?\DateTimeImmutable $publishedAt = null,
         ?string $excerpt = null,
         ?string $featuredImage = null,
+        array $blocks = [],
     ): BlogPostInterface {
         /** @var FactoryInterface<BlogPostInterface> $factory */
         $factory = self::getContainer()->get('setono_sylius_cms.factory.blog_post');
@@ -66,6 +70,7 @@ trait Blog
         $post->setCategories(array_map(static fn (BlogCategoryInterface|string $category): string => is_string($category) ? $category : $category->getUuid(), $categories));
         $post->setPublishedAt($publishedAt);
         $post->setFeaturedImage($featuredImage);
+        $post->setBlockTree(new StoredTree($post->getBlockTree()->layout, $blocks));
 
         $translation = $post->getTranslation('en_US');
         self::assertInstanceOf(BlogPostTranslationInterface::class, $translation);
