@@ -149,7 +149,7 @@ final class MediaUsageTest extends MediaApiTestCase
 
         // Used again, the preset's delete takes its use with it
         self::presetSaver()->save(new Preset('Summer banner', [self::block($uuid)], uuid: $replaced->uuid));
-        self::assertCount(1, (array) (self::json($client, 'GET', sprintf('/admin/cms/api/media/%s/uses', $uuid)) ?? [])['uses']);
+        self::assertSame(['uses' => [['entry' => null, 'preset' => $replaced->uuid]]], self::uses($client, $uuid));
         /** @var EditorPresetDeleterInterface $deleter */
         $deleter = self::getContainer()->get(EditorPresetDeleterInterface::class);
         $deleter->delete((string) $preset->uuid);
@@ -169,10 +169,7 @@ final class MediaUsageTest extends MediaApiTestCase
         $page = self::createPageWithBlocks('Summer sale', 'sale', [self::block($uuid)], published: true);
         $preset = self::presetSaver()->save(new Preset('Summer banner', [self::block($uuid)]));
 
-        $uses = self::json($client, 'GET', sprintf('/admin/cms/api/media/%s/uses', $uuid));
-
-        self::assertIsArray($uses);
-        self::assertSame([[$page->getUuid(), null], [null, $preset->uuid]], array_map(static fn (array $use): array => [$use['entry'], $use['preset']], (array) $uses['uses']));
+        self::assertSame(['uses' => [['entry' => $page->getUuid(), 'preset' => null], ['entry' => null, 'preset' => $preset->uuid]]], self::uses($client, $uuid));
         self::assertSame(['summer' => 2], array_column(self::items($client, ''), 'usageCount', 'name'));
         self::assertSame(['error' => 'It\'s used in 2 places, so it can\'t be deleted.'], self::json($client, 'DELETE', '/admin/cms/api/media/' . $uuid, null, $config['csrfToken']));
     }
@@ -248,6 +245,26 @@ final class MediaUsageTest extends MediaApiTestCase
 
         self::assertResponseStatusCodeSame(403);
         self::assertTrue(self::exists($uuid));
+    }
+
+    /**
+     * The media item's Used in list, each use as its entry's and its preset's UUID
+     *
+     * @return array{uses: list<array{entry: mixed, preset: mixed}>}
+     */
+    private static function uses(KernelBrowser $client, string $uuid): array
+    {
+        $answer = self::json($client, 'GET', sprintf('/admin/cms/api/media/%s/uses', $uuid));
+        self::assertIsArray($answer);
+        self::assertIsArray($answer['uses'] ?? null);
+
+        $uses = [];
+        foreach ($answer['uses'] as $use) {
+            self::assertIsArray($use);
+            $uses[] = ['entry' => $use['entry'] ?? null, 'preset' => $use['preset'] ?? null];
+        }
+
+        return ['uses' => $uses];
     }
 
     private static function presetSaver(): EditorPresetSaverInterface

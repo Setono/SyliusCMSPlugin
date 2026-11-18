@@ -11,6 +11,7 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
 use Setono\SyliusCMSPlugin\Model\EditorPreset;
+use Setono\SyliusCMSPlugin\Model\EditorPresetInterface;
 use Setono\SyliusCMSPlugin\Preset\EditorPresetContent;
 use Setono\SyliusCMSPlugin\Preset\EditorPresetDeleter;
 use Setono\SyliusCMSPlugin\Preset\EditorPresetProvider;
@@ -20,7 +21,7 @@ use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Repository\EditorPresetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\RecordingLogger;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
-use Sylius\Resource\Factory\Factory;
+use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Component\Clock\MockClock;
 
 /**
@@ -168,7 +169,13 @@ final class EditorPresetsTest extends TestCase
 
     private function saver(string $now): EditorPresetSaver
     {
-        return new EditorPresetSaver($this->repository->reveal(), new Factory(EditorPreset::class), $this->managerRegistry(), new MockClock($now, 'UTC'));
+        $factory = $this->prophesize(FactoryInterface::class);
+        $factory->createNew()->will(static fn (): EditorPreset => new EditorPreset());
+
+        /** @var FactoryInterface<EditorPresetInterface> $presetFactory */
+        $presetFactory = $factory->reveal();
+
+        return new EditorPresetSaver($this->repository->reveal(), $presetFactory, $this->managerRegistry(), new MockClock($now, 'UTC'));
     }
 
     private function managerRegistry(): ManagerRegistry

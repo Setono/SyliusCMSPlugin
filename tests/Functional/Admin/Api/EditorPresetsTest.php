@@ -90,7 +90,8 @@ final class EditorPresetsTest extends BuilderApiTestCase
         self::assertIsArray($response);
         self::assertIsArray($response['blocks'] ?? null);
         self::assertSame(['columns'], array_column($response['blocks'], 'type'));
-        self::assertNotSame(self::COLUMNS, ($response['blocks'][0] ?? [])['key'] ?? null);
+        self::assertIsArray($response['blocks'][0] ?? null);
+        self::assertNotSame(self::COLUMNS, $response['blocks'][0]['key'] ?? null);
     }
 
     /**
@@ -240,7 +241,7 @@ final class EditorPresetsTest extends BuilderApiTestCase
 
         self::assertResponseIsSuccessful();
         self::assertResponseHeaderSame('Content-Disposition', 'attachment; filename=spring_promo.json');
-        $content = (string) $client->getInternalResponse()->getContent();
+        $content = (string) $client->getResponse()->getContent();
         self::assertStringEndsWith("}\n", $content);
         /** @var array{blocks: list<array{fields: array<string, mixed>}>} $file */
         $file = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);

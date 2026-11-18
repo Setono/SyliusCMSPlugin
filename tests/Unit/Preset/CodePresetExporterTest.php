@@ -118,6 +118,7 @@ final class CodePresetExporterTest extends TestCase
 
         $column = $blocks[0]['children'][0] ?? null;
         self::assertIsArray($column);
+        self::assertIsArray($column['children'] ?? null);
         self::assertSame([['fullWidth' => true, 'heading' => ['en_US' => 'Sale']], []], array_column($column['children'], 'fields'));
         // The preset itself keeps its media references, as an editor preset in the store does
         self::assertSame(self::MEDIA, $banner->fields['image']);

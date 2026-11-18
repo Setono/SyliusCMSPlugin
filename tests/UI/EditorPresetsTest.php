@@ -66,7 +66,7 @@ final class EditorPresetsTest extends UITestCase
         Expect::locator($tree->getByRole('button', ['name' => 'Heading Shop now']))->toBeVisible();
         Expect::locator($tree->getByRole('button', ['name' => 'Heading Middle']))->toHaveCount(0);
         Expect::locator($page->getByRole('status'))->toHaveText('Saved');
-        self::assertSame(['Summer sale', 'Shop now'], array_map(static fn (StoredBlock $block): mixed => ($block->fields['text'] ?? [])['en_US'] ?? null, self::reloadPage($about)->getBlockTree()->blocks));
+        self::assertSame([['en_US' => 'Summer sale'], ['en_US' => 'Shop now']], array_map(static fn (StoredBlock $block): mixed => $block->fields['text'] ?? null, self::reloadPage($about)->getBlockTree()->blocks));
 
         // Rename it on the Presets screen
         $page = $this->visit('/admin/cms/presets');

@@ -40,12 +40,15 @@ final readonly class PresetBlocksRequest
             throw new \InvalidArgumentException('The body needs the entry the blocks are in, as {"entry": <uuid>}');
         }
 
-        $keys = $body['blocks'] ?? null;
-        if (!is_array($keys) || !array_is_list($keys) || [] !== array_filter($keys, static fn (mixed $key): bool => !is_string($key))) {
-            throw new \InvalidArgumentException('The body needs the keys of the blocks to save, as {"blocks": [<key>, …]}');
+        $keys = [];
+        foreach (is_array($body['blocks'] ?? null) ? $body['blocks'] : [null] as $key) {
+            if (!is_string($key)) {
+                throw new \InvalidArgumentException('The body needs the keys of the blocks to save, as {"blocks": [<key>, …]}');
+            }
+
+            $keys[] = $key;
         }
 
-        /** @var list<string> $keys */
         $workingCopy = $this->workingCopies->getWorkingCopy($this->builderRequest->entry($entry));
 
         return SelectedBlocks::in($this->upgrader->readBlockTree($workingCopy)->blocks, $keys);
