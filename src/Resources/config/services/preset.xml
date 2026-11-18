@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!--
+        The presets editors are offered: every provider tagged setono_sylius_cms.preset_provider, by its priority. Code
+        presets come first; editor presets join with their ticket
+        -->
+        <service id="Setono\SyliusCMSPlugin\Preset\CompositePresetProvider" class="Setono\SyliusCMSPlugin\Preset\CompositePresetProvider">
+            <argument type="tagged_iterator" tag="setono_sylius_cms.preset_provider"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Preset\PresetProviderInterface" alias="Setono\SyliusCMSPlugin\Preset\CompositePresetProvider"/>
+
+        <!-- The code presets: the files the container build found in setono_sylius_cms.presets.paths, by code -->
+        <service id="Setono\SyliusCMSPlugin\Preset\CodePresetProvider" class="Setono\SyliusCMSPlugin\Preset\CodePresetProvider">
+            <argument>%setono_sylius_cms.presets.files%</argument>
+            <argument>%setono_sylius_cms.disabled.presets%</argument>
+            <argument type="service" id="logger"/>
+
+            <tag name="setono_sylius_cms.preset_provider" priority="100"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+    </services>
+</container>

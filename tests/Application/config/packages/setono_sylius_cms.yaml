@@ -15,3 +15,7 @@ setono_sylius_cms:
 
     # The Embed code block, opted in to as a project opts in (ADR 0018). EmbedCodeOffKernel switches it off again
     embed_code: true
+
+    # The test application's code presets, in a directory of its own, as a project registers one
+    presets:
+        paths: ['%kernel.project_dir%/config/cms/presets']

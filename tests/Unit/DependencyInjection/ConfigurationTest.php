@@ -92,7 +92,7 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             [],
         ], [
-            'disabled' => ['block_types' => [], 'layouts' => [], 'sources' => []],
+            'disabled' => ['block_types' => [], 'layouts' => [], 'sources' => [], 'presets' => []],
             'embed_code' => false,
             'assets' => true,
             'content_types' => [],
@@ -116,6 +116,7 @@ final class ConfigurationTest extends TestCase
             ],
             'bestsellers' => ['window' => 'P30D'],
             'builder' => ['scripts' => []],
+            'presets' => ['paths' => []],
             'resources' => [
                 'entry' => [
                     'classes' => [
@@ -409,7 +410,7 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             ['disabled' => ['block_types' => ['spacer']]],
             ['disabled' => ['block_types' => ['group']]],
-        ], ['disabled' => ['block_types' => ['spacer', 'group'], 'layouts' => [], 'sources' => []]], 'disabled');
+        ], ['disabled' => ['block_types' => ['spacer', 'group'], 'layouts' => [], 'sources' => [], 'presets' => []]], 'disabled');
     }
 
     /**
@@ -420,7 +421,7 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             ['disabled' => ['layouts' => ['page.landing']]],
             ['disabled' => ['layouts' => ['blog_post.wide']]],
-        ], ['disabled' => ['block_types' => [], 'layouts' => ['page.landing', 'blog_post.wide'], 'sources' => []]], 'disabled');
+        ], ['disabled' => ['block_types' => [], 'layouts' => ['page.landing', 'blog_post.wide'], 'sources' => [], 'presets' => []]], 'disabled');
     }
 
     /**
@@ -431,7 +432,37 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             ['disabled' => ['sources' => ['newest_products']]],
             ['disabled' => ['sources' => ['taxon_children']]],
-        ], ['disabled' => ['block_types' => [], 'layouts' => [], 'sources' => ['newest_products', 'taxon_children']]], 'disabled');
+        ], ['disabled' => ['block_types' => [], 'layouts' => [], 'sources' => ['newest_products', 'taxon_children'], 'presets' => []]], 'disabled');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_switch_off_code_presets_by_code(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['disabled' => ['presets' => ['hero']]],
+            ['disabled' => ['presets' => ['faq']]],
+        ], ['disabled' => ['block_types' => [], 'layouts' => [], 'sources' => [], 'presets' => ['hero', 'faq']]], 'disabled');
+    }
+
+    /**
+     * @test
+     */
+    public function it_takes_the_directories_of_code_preset_files_that_bundles_prepend_and_a_project_adds(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['presets' => ['paths' => ['%kernel.project_dir%/vendor/acme/cms-presets/presets']]],
+            ['presets' => ['paths' => ['%kernel.project_dir%/config/cms/presets']]],
+        ], ['presets' => ['paths' => ['%kernel.project_dir%/vendor/acme/cms-presets/presets', '%kernel.project_dir%/config/cms/presets']]], 'presets');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_an_empty_directory_of_code_preset_files(): void
+    {
+        $this->assertConfigurationIsInvalid([['presets' => ['paths' => ['']]]], 'cannot contain an empty value');
     }
 
     /**

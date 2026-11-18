@@ -1,0 +1,25 @@
+{
+    "format": 1,
+    "name": "Product spotlight",
+    "category": "Products",
+    "description": "A note about the product of the page",
+    "thumbnail": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "0193a5be-0000-7000-8000-00000000c001",
+            "type": "app_product_note",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "text": {
+                    "da_DK": "Lavet til at holde",
+                    "en_US": "Made to last"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        }
+    ]
+}

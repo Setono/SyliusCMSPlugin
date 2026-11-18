@@ -43,6 +43,7 @@ use Setono\SyliusCMSPlugin\Model\Placement;
 use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
+use Setono\SyliusCMSPlugin\Preset\CodePresetProvider;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Profiler\CMSDataCollector;
 use Setono\SyliusCMSPlugin\Profiler\TraceableSlotRenderer;
@@ -74,6 +75,7 @@ use Sylius\Component\Core\Model\TaxonInterface;
 use Sylius\Resource\Factory\Factory;
 use Sylius\Resource\Factory\TranslatableFactory;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
+use Symfony\Component\Config\Resource\DirectoryResource;
 use Symfony\Component\Config\Resource\ResourceInterface;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -752,6 +754,27 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.builder.scripts', ['/build/app/cms/controls.js']);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(BuilderAction::class, 13, '%setono_sylius_cms.builder.scripts%');
+    }
+
+    /**
+     * See "Code presets" in docs/spec/layouts-and-presets.md
+     *
+     * @test
+     */
+    public function it_hands_the_code_preset_files_it_finds_in_the_registered_directories_by_code_and_the_disabled_codes_to_the_code_preset_provider(): void
+    {
+        $directory = (string) realpath(dirname(__DIR__) . '/Preset/Fixture/presets');
+        $this->setParameter('kernel.project_dir', dirname($directory));
+
+        $this->load(['presets' => ['paths' => ['%kernel.project_dir%/presets']], 'disabled' => ['presets' => ['faq']]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.presets.files', ['faq' => $directory . '/faq.json', 'hero' => $directory . '/hero.json']);
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.presets', ['faq']);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(CodePresetProvider::class, 0, '%setono_sylius_cms.presets.files%');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(CodePresetProvider::class, 1, '%setono_sylius_cms.disabled.presets%');
+        $this->assertContainerBuilderHasServiceDefinitionWithTag(CodePresetProvider::class, 'setono_sylius_cms.preset_provider', ['priority' => 100]);
+        // A file added to a directory rebuilds the container
+        self::assertContains((string) new DirectoryResource($directory, '/\.json$/'), array_map(static fn (ResourceInterface $resource): string => (string) $resource, $this->container->getResources()));
     }
 
     /**
