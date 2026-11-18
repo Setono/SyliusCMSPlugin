@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tree;
 
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
-use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 
 /**
