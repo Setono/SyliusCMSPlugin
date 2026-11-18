@@ -9,10 +9,6 @@ use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\Snippet as SnippetBlock;
-use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
-use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
-use Setono\SyliusCMSPlugin\Field\SnippetHandler;
-use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\Snippet;
@@ -23,15 +19,11 @@ use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
-use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Blocks;
-use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
+use Setono\SyliusCMSPlugin\Tests\Unit\Tree\SnippetCyclesTest;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
-use Setono\SyliusCMSPlugin\Tree\TreeValues;
-use Symfony\Component\DependencyInjection\ServiceLocator;
-use Symfony\Component\Translation\IdentityTranslator;
 use Symfony\Component\Translation\TranslatableMessage;
 
 final class SnippetInsideItselfTest extends TestCase
@@ -65,11 +57,11 @@ final class SnippetInsideItselfTest extends TestCase
     /**
      * @test
      */
-    public function it_flags_a_snippet_block_whose_snippet_shows_the_snippet_it_is_in_through_other_snippets(): void
+    public function it_flags_a_snippet_block_whose_snippet_shows_the_snippet_it_is_in_through_other_snippets_as_they_are_published(): void
     {
         $a = new Snippet();
-        $b = new Snippet();
-        $c = new Snippet();
+        $b = self::published(new Snippet());
+        $c = self::published(new Snippet());
         $a->setBlockTree(new StoredTree(null, [self::heading(), Blocks::snippet(self::SHOWS_B, $b)]));
         $b->setBlockTree(new StoredTree(null, [Blocks::snippet(self::SHOWS_C, $c)]));
         $c->setBlockTree(new StoredTree(null, [Blocks::snippet(self::SHOWS_A, $a)]));
@@ -87,8 +79,8 @@ final class SnippetInsideItselfTest extends TestCase
     public function it_flags_nothing_when_the_snippets_it_shows_never_show_it_even_when_they_show_each_other(): void
     {
         $a = new Snippet();
-        $b = new Snippet();
-        $c = new Snippet();
+        $b = self::published(new Snippet());
+        $c = self::published(new Snippet());
         $a->setBlockTree(new StoredTree(null, [Blocks::snippet(self::SHOWS_B, $b)]));
         $b->setBlockTree(new StoredTree(null, [Blocks::snippet(self::SHOWS_C, $c)]));
         $c->setBlockTree(new StoredTree(null, [Blocks::snippet(self::SHOWS_B, $b)]));
@@ -166,6 +158,13 @@ final class SnippetInsideItselfTest extends TestCase
         );
     }
 
+    private static function published(Snippet $snippet): Snippet
+    {
+        $snippet->publish(new \DateTimeImmutable('2026-11-18 10:00:00'));
+
+        return $snippet;
+    }
+
     private static function heading(): StoredBlock
     {
         return new StoredBlock(self::HEADING, 'heading', 1, fields: ['text' => ['en_US' => 'Footer']]);
@@ -173,16 +172,9 @@ final class SnippetInsideItselfTest extends TestCase
 
     private function kind(EntryRepositoryInterface $entries): SnippetInsideItself
     {
-        $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'snippet' => SnippetBlock::class], new FieldReader());
-        $handlers = new FieldHandlerLocator(new ServiceLocator([
-            TextHandler::class => static fn (): TextHandler => new TextHandler(),
-            ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
-            SnippetHandler::class => static fn (): SnippetHandler => new SnippetHandler(),
-        ]));
-
         return new SnippetInsideItself(
-            new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())), $handlers),
-            $blockTypes,
+            SnippetCyclesTest::snippetCycles($entries),
+            new BlockTypeRegistry(['heading' => Heading::class, 'snippet' => SnippetBlock::class], new FieldReader()),
             $entries,
         );
     }

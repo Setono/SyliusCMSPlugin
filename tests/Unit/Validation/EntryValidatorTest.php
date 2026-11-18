@@ -21,15 +21,18 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
+use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Article;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\LandingTranslation;
+use Setono\SyliusCMSPlugin\Tests\Unit\Tree\SnippetCyclesTest;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Validation\BlockTreeValidator;
 use Setono\SyliusCMSPlugin\Validation\EmbedCodeValidator;
+use Setono\SyliusCMSPlugin\Validation\SnippetCycleValidator;
 use Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface;
 use Setono\SyliusCMSPlugin\Validation\EntryValidator;
 use Setono\SyliusCMSPlugin\Validation\FieldConstraints;
@@ -302,6 +305,7 @@ final class EntryValidatorTest extends TestCase
             new Availability(),
             new EmbedCodeValidator(false, $translator),
             $this->contextCheck->reveal(),
+            new SnippetCycleValidator(SnippetCyclesTest::snippetCycles($this->prophesize(EntryRepositoryInterface::class)->reveal()), $translator),
         );
     }
 }

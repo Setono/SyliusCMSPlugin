@@ -44,6 +44,12 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
 
+        <!-- The Snippet fields through which a snippet would show inside itself -->
+        <service id="Setono\SyliusCMSPlugin\Tree\SnippetCycles" class="Setono\SyliusCMSPlugin\Tree\SnippetCycles">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+        </service>
+
         <!-- The references in blocks' fields and their visibility conditions' parameters -->
         <service id="Setono\SyliusCMSPlugin\Rendering\BlockReferences" class="Setono\SyliusCMSPlugin\Rendering\BlockReferences">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>

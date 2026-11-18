@@ -328,6 +328,7 @@ A reference to a snippet that stays in sync wherever it's used.
 - It's offered only where the host-page context the snippet declares is available ([Slots](slots.md#snippets-and-their-context)).
 - A snippet that isn't visible renders nothing ([Content model](content-model.md#when-an-entry-shows)).
 - "Detach to edit here" replaces the block with a copy of the snippet's blocks ([Builder](builder.md)).
+- **A snippet can't show itself.** Publish refuses a snippet whose Snippet block leads back to it, directly or through the published trees of the snippets it shows (a snippet never published shows nothing, so leads nowhere), naming the way, such as "Footer → Promo → Footer", and the builder flags the block ([Publishing](publishing.md#validation)). Imported or older data that still holds one is skipped the second time it would render and flagged by the `snippet_inside_itself` problem ([Rendering](rendering.md#rendering-a-block-tree)).
 
 ### Embed code
 

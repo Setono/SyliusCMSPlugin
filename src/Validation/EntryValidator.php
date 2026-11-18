@@ -21,7 +21,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  * each locale. Last, it holds the tree's Embed code blocks against the entry's published tree. A translation without a
  * title is no translation (docs/spec/localization.md), such as one whose adding was undone in the builder, so it isn't
  * validated, unless the entry has none with a title. What needs host-page context the entry doesn't provide, or a
- * snippet doesn't declare, is refused too, as is a snippet's placement in a slot that doesn't provide what it declares
+ * snippet doesn't declare, is refused too, as is a snippet's placement in a slot that doesn't provide what it declares,
+ * and a snippet's Snippet block that leads back to it
  */
 final readonly class EntryValidator implements EntryValidatorInterface
 {
@@ -35,12 +36,13 @@ final readonly class EntryValidator implements EntryValidatorInterface
         private Availability $availability,
         private EmbedCodeValidator $embedCodeValidator,
         private ContextCheckInterface $contextCheck,
+        private SnippetCycleValidator $snippetCycleValidator,
     ) {
     }
 
     public function validate(EntryInterface $entry, EntryInterface $workingCopy): array
     {
-        $errors = [...$this->validateWorkingCopy($workingCopy), ...$this->contextCheck->mismatches($workingCopy)];
+        $errors = [...$this->validateWorkingCopy($workingCopy), ...$this->contextCheck->mismatches($workingCopy), ...$this->snippetCycleValidator->validate($workingCopy)];
 
         // A never-published entry is its own working copy, and its rows hold what it would publish, not what's published
         $publishedTree = $entry->isPublished() ? $entry->getBlockTree() : new StoredTree(null, []);

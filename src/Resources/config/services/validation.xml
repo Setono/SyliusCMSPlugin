@@ -39,6 +39,11 @@
             <argument type="service" id="translator"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Validation\SnippetCycleValidator" class="Setono\SyliusCMSPlugin\Validation\SnippetCycleValidator">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\SnippetCycles"/>
+            <argument type="service" id="translator"/>
+        </service>
+
         <!-- What publish validates, and entry_validate answers. Decorate it to add checks of your own -->
         <service id="Setono\SyliusCMSPlugin\Validation\EntryValidator" class="Setono\SyliusCMSPlugin\Validation\EntryValidator">
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\BlockTreeValidator"/>
@@ -50,6 +55,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EmbedCodeValidator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Context\ContextCheckInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\SnippetCycleValidator"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface" alias="Setono\SyliusCMSPlugin\Validation\EntryValidator"/>
     </services>

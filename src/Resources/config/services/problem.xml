@@ -183,7 +183,7 @@
 
         <!-- A snippet that would render inside itself, which setono:cms:lint reports -->
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\SnippetInsideItself" class="Setono\SyliusCMSPlugin\Problem\Kind\SnippetInsideItself">
-            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\SnippetCycles"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
 
