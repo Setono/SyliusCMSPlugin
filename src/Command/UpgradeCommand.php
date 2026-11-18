@@ -17,7 +17,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * Runs the upgraders over all stored data and writes it back: the rows, drafts and revisions of every entry. Editor
- * presets (#270) join with their ticket. See "Console commands" in docs/spec/extending.md
+ * presets (#271) join with their ticket. See "Console commands" in docs/spec/extending.md
  */
 #[AsCommand(name: 'setono:cms:upgrade', description: 'Runs the upgraders over all stored CMS data and writes it back')]
 final class UpgradeCommand extends Command

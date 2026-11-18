@@ -317,8 +317,8 @@ final class AdminExtensionTest extends IntegrationTestCase
     public function presetsWithProblems(): array
     {
         $this->presetProblems = [
-            new PresetProblem('preset_removed_block_type', Severity::Warning, new Preset(new TranslationKey('app.preset.retired'), [], code: 'retired'), new TranslatableMessage('It has blocks of a removed type.')),
-            new PresetProblem('preset_removed_block_type', Severity::Warning, new Preset('Promo', [], uuid: '0193a5be-7255-7f00-8a1b-2c3d4e5f6a7b', changedAt: new \DateTimeImmutable()), new TranslatableMessage('It has blocks of another removed type.'), new Fix('Fix it', 'app_presets')),
+            new PresetProblem('preset_removed_block_type', Severity::Warning, new Preset(new TranslationKey('app.preset.retired'), [], code: 'retired'), new TranslatableMessage('setono_sylius_cms.problem.preset_removed_block_type', ['%types%' => '"gallery"'])),
+            new PresetProblem('preset_removed_block_type', Severity::Warning, new Preset('Promo', [], uuid: '0193a5be-7255-7f00-8a1b-2c3d4e5f6a7b', changedAt: new \DateTimeImmutable()), new TranslatableMessage('setono_sylius_cms.problem.preset_removed_block_type', ['%types%' => '"slideshow"']), new Fix('setono_sylius_cms.ui.fix_in_builder', 'setono_sylius_cms_admin_overview')),
         ];
 
         return [];

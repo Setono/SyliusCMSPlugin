@@ -17,7 +17,7 @@ use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
  * Writes an entry's stored data back upgraded, for setono:cms:upgrade: the block tree in its rows, its draft, which it
- * writes the way the builder's next save would, and its revisions. Editor presets (#270) join with their ticket.
+ * writes the way the builder's next save would, and its revisions. Editor presets (#271) join with their ticket.
  *
  * What was saved with a newer version than the code's is kept as it is. A draft or a revision saved with a newer version
  * of its content type is left as it is, because writing it back would drop the fields the code doesn't know
