@@ -9,10 +9,12 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateShareLinkAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DeleteMediaItemAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DiscardEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\InsertPresetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaFolderIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaUsesAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PresenceAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\PresetIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRenderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRevisionAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewSamplesAction;
@@ -263,6 +265,19 @@ return static function (RoutingConfigurator $routes): void {
         ->controller(SnippetBlocksAction::class)
         ->methods(['GET'])
         ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    // The block presets at a spot in an entry's tree, for the block picker's Presets tab
+    $routes->add('setono_sylius_cms_admin_api_preset_index', '/cms/api/presets')
+        ->controller(PresetIndexAction::class)
+        ->methods(['GET'])
+    ;
+
+    // A preset's blocks ready to insert into an entry. A code preset is named by its code, an editor preset by its UUID
+    $routes->add('setono_sylius_cms_admin_api_preset_insert', '/cms/api/presets/{preset}/insert')
+        ->controller(InsertPresetAction::class)
+        ->methods(['POST'])
+        ->requirements(['preset' => '[a-z][a-z0-9_]*|' . Requirement::UUID])
     ;
 
     $routes->add('setono_sylius_cms_admin_api_entry_save', '/cms/api/entries/{uuid}')

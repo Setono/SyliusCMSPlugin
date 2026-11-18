@@ -56,6 +56,30 @@ abstract class BuilderApiTestCase extends WebTestCase
     }
 
     /**
+     * The presets preset_index answers with at a spot, by id
+     *
+     * @return array<string, array{id: string, fromCode: bool, name: string, category: string|null, description: string|null, thumbnail: string|null, fits: bool, reasons: list<string>, issues: list<string>, blocks: list<array<string, mixed>>}>
+     */
+    protected static function presetsAt(KernelBrowser $client, string $uri): array
+    {
+        $response = self::json($client, 'GET', $uri);
+        self::assertResponseIsSuccessful();
+        self::assertIsArray($response);
+        self::assertIsArray($response['presets'] ?? null);
+
+        $presets = [];
+        foreach ($response['presets'] as $preset) {
+            self::assertIsArray($preset);
+            self::assertIsString($preset['id'] ?? null);
+            /** @var array{id: string, fromCode: bool, name: string, category: string|null, description: string|null, thumbnail: string|null, fits: bool, reasons: list<string>, issues: list<string>, blocks: list<array<string, mixed>>} $listed */
+            $listed = $preset;
+            $presets[$preset['id']] = $listed;
+        }
+
+        return $presets;
+    }
+
+    /**
      * @param array<array-key, mixed>|null $body
      */
     protected static function json(KernelBrowser $client, string $method, string $uri, ?array $body = null, ?string $csrfToken = null): mixed

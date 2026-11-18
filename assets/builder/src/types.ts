@@ -45,6 +45,34 @@ export interface StoredBlock {
     children: StoredBlock[];
 }
 
+/**
+ * A block preset as the Presets tab lists it at a spot in the entry's tree. See "Presets" in docs/spec/layouts-and-presets.md
+ */
+export interface PresetListing {
+    /** A code preset's code, or an editor preset's UUID. */
+    id: string;
+    /** Whether it's a code preset, which is read-only and marked as coming from code. */
+    fromCode: boolean;
+    name: string;
+    category: string | null;
+    description: string | null;
+    thumbnail: string | null;
+    /** Whether it's offered at the spot. */
+    fits: boolean;
+    /** Why it isn't offered at the spot, such as what context it needs. */
+    reasons: string[];
+    /** Why it's marked as invalid, such as blocks of a removed type. */
+    issues: string[];
+    /** The blocks it would insert into the entry, which the tab renders live. */
+    blocks: StoredBlock[];
+}
+
+/** A preset's blocks ready to insert, and what the editor is told, such as the blocks of removed types left out. */
+export interface InsertedPreset {
+    blocks: StoredBlock[];
+    notices: string[];
+}
+
 export interface StoredLayout {
     code: string;
     version: number;

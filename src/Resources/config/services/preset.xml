@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!--
+        The presets editors are offered: every provider tagged setono_sylius_cms.preset_provider, by its priority. Code
+        presets come first; editor presets join with their ticket
+        -->
+        <service id="Setono\SyliusCMSPlugin\Preset\CompositePresetProvider" class="Setono\SyliusCMSPlugin\Preset\CompositePresetProvider">
+            <argument type="tagged_iterator" tag="setono_sylius_cms.preset_provider"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Preset\PresetProviderInterface" alias="Setono\SyliusCMSPlugin\Preset\CompositePresetProvider"/>
+
+        <!-- The code presets: the files the container build found in setono_sylius_cms.presets.paths, by code -->
+        <service id="Setono\SyliusCMSPlugin\Preset\CodePresetProvider" class="Setono\SyliusCMSPlugin\Preset\CodePresetProvider">
+            <argument>%setono_sylius_cms.presets.files%</argument>
+            <argument>%setono_sylius_cms.disabled.presets%</argument>
+            <argument type="service" id="logger"/>
+
+            <tag name="setono_sylius_cms.preset_provider" priority="100"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+
+        <!-- Makes a preset's blocks ready to insert into an entry: upgraded, new keys, the entry's locales, keys resolved -->
+        <service id="Setono\SyliusCMSPlugin\Preset\InsertTransformer" class="Setono\SyliusCMSPlugin\Preset\InsertTransformer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\TranslationKeyResolverInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\TranslationKeyValues"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Preset\TranslationKeyValues" class="Setono\SyliusCMSPlugin\Preset\TranslationKeyValues">
+            <argument type="service" id="Setono\SyliusCMSPlugin\RichText\RichTextSchema"/>
+        </service>
+
+        <!-- Where a preset is offered, asking the same context dependency finders publish asks what its blocks need -->
+        <service id="Setono\SyliusCMSPlugin\Preset\PresetFitCheck" class="Setono\SyliusCMSPlugin\Preset\PresetFitCheck">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\NestingRulesInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="tagged_iterator" tag="setono_sylius_cms.context_dependency_finder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
+        </service>
+
+        <!-- What's wrong with a preset's blocks, for setono:cms:preset:validate, the Presets tab and the admin's problems -->
+        <service id="Setono\SyliusCMSPlugin\Preset\PresetCheck" class="Setono\SyliusCMSPlugin\Preset\PresetCheck">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\NestingRulesInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\TranslationKeyValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\StoredValueFit"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Preset\TranslationKeyResolver" class="Setono\SyliusCMSPlugin\Preset\TranslationKeyResolver">
+            <argument type="service" id="translator"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Preset\TranslationKeyResolverInterface" alias="Setono\SyliusCMSPlugin\Preset\TranslationKeyResolver"/>
+    </services>
+</container>

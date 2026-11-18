@@ -1,0 +1,34 @@
+{
+    "format": 1,
+    "name": "Retired gallery",
+    "category": "Media",
+    "description": null,
+    "thumbnail": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "0193a5be-0000-7000-8000-00000000d001",
+            "type": "heading",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "text": {
+                    "en_US": "Our gallery"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        },
+        {
+            "key": "0193a5be-0000-7000-8000-00000000d002",
+            "type": "gallery",
+            "version": 1,
+            "style": null,
+            "fields": {},
+            "translated": {},
+            "conditions": [],
+            "children": []
+        }
+    ]
+}

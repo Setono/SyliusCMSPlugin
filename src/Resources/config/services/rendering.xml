@@ -32,6 +32,11 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
         </service>
 
+        <!-- Whether a stored value fits its field type, for the misfit_value problem kind and the preset validator -->
+        <service id="Setono\SyliusCMSPlugin\Tree\StoredValueFit" class="Setono\SyliusCMSPlugin\Tree\StoredValueFit">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder" class="Setono\SyliusCMSPlugin\Tree\ReferenceFinder">
             <argument type="service" id="Setono\SyliusCMSPlugin\Tree\TreeValues"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>

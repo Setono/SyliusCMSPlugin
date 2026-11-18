@@ -32,12 +32,15 @@ use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Media\DeleteReplacedFile;
 use Setono\SyliusCMSPlugin\Media\Liip\FilterSets;
 use Setono\SyliusCMSPlugin\Media\Liip\LocalVariants;
+use Setono\SyliusCMSPlugin\Preset\CodePresetFiles;
+use Setono\SyliusCMSPlugin\Problem\PresetProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Config\Resource\DirectoryResource;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -49,6 +52,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     public const FIELD_HANDLER_TAG = 'setono_sylius_cms.field_handler';
 
     public const CHOICES_PROVIDER_TAG = 'setono_sylius_cms.choices_provider';
+
+    public const PRESET_PROBLEM_KIND_TAG = 'setono_sylius_cms.preset_problem_kind';
 
     /** The service id of the storage media items are stored in, which media.storage defaults to */
     public const STORAGE = 'setono_sylius_cms.storage';
@@ -72,7 +77,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>, content_types: list<string>}, embed_code: bool, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, slots: array<string, array{label: string, provides: list<string>, cap: int|null, template_event?: array{name: string, priority: int}}>, context_keys: array<string, array{class: class-string, label: string}>, bindable_properties: array<string, array<string, array{label: string, type: string, path: string}>>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, builder: array{scripts: list<string>}, resources: array<string, array<string, mixed>>} $config */
+        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>, presets: list<string>, content_types: list<string>}, embed_code: bool, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, slots: array<string, array{label: string, provides: list<string>, cap: int|null, template_event?: array{name: string, priority: int}}>, context_keys: array<string, array{class: class-string, label: string}>, bindable_properties: array<string, array<string, array{label: string, type: string, path: string}>>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, builder: array{scripts: list<string>}, presets: array{paths: list<string>}, resources: array<string, array<string, mixed>>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         // The Embed code block is switched off like a disabled block type until a project opts in (ADR 0018)
@@ -103,6 +108,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $container->setParameter('setono_sylius_cms.media.widths', $config['media']['widths']);
         $container->setParameter('setono_sylius_cms.bestsellers.window', $config['bestsellers']['window']);
         $container->setParameter('setono_sylius_cms.builder.scripts', $config['builder']['scripts']);
+        self::registerCodePresets($container, $config['presets']['paths'], $config['disabled']['presets']);
 
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.xml');
@@ -132,6 +138,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
         $container->registerForAutoconfiguration(FieldHandlerInterface::class)->addTag(self::FIELD_HANDLER_TAG);
         $container->registerForAutoconfiguration(ProblemKindInterface::class)->addTag(RegisterProblemKindsPass::TAG);
+        $container->registerForAutoconfiguration(PresetProblemKindInterface::class)->addTag(self::PRESET_PROBLEM_KIND_TAG);
         $container->registerForAutoconfiguration(ChoicesProviderInterface::class)->addTag(self::CHOICES_PROVIDER_TAG);
         $container->registerAttributeForAutoconfiguration(AsConditionKind::class, static function (ChildDefinition $definition): void {
             $definition->addTag(RegisterConditionKindsPass::TAG);
@@ -157,6 +164,30 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $container->registerAttributeForAutoconfiguration(AsBindableProperty::class, static function (ChildDefinition $definition): void {
             $definition->addTag(RegisterBindablePropertiesPass::TAG);
         });
+    }
+
+    /**
+     * The code preset files in the directories of setono_sylius_cms.presets.paths, by code, which a duplicate code fails.
+     * Each directory is a resource of the container, so adding or removing a file rebuilds it. See "Code presets" in
+     * docs/spec/layouts-and-presets.md
+     *
+     * @param list<string> $paths
+     * @param list<string> $disabled
+     */
+    private static function registerCodePresets(ContainerBuilder $container, array $paths, array $disabled): void
+    {
+        $directories = array_map(static function (string $path) use ($container): string {
+            $resolved = $container->getParameterBag()->resolveValue($path);
+
+            return is_string($resolved) ? $resolved : throw new \LogicException(sprintf('The directory %s in setono_sylius_cms.presets.paths must be a path', $path));
+        }, $paths);
+        $files = CodePresetFiles::in($directories);
+        foreach ($directories as $directory) {
+            $container->addResource(new DirectoryResource((string) realpath($directory), '/\.json$/'));
+        }
+
+        $container->setParameter('setono_sylius_cms.presets.files', $files);
+        $container->setParameter('setono_sylius_cms.disabled.presets', $disabled);
     }
 
     /**

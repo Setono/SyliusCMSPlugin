@@ -120,6 +120,10 @@ final class Configuration implements ConfigurationInterface
                             ->info('Source codes. Editors aren\'t offered them, and the lists they fill already keep resolving through them')
                             ->scalarPrototype()->end()
                         ->end()
+                        ->arrayNode('presets')
+                            ->info('Code preset codes. Editors aren\'t offered them')
+                            ->scalarPrototype()->end()
+                        ->end()
                         ->arrayNode('content_types')
                             ->info('Content type codes, such as blog_post, blog_category, faq_item and faq_category. They\'re hidden from the admin, the builder, sources and routing, and their columns stay mapped. Page and Snippet can\'t be switched off')
                             ->scalarPrototype()->end()
@@ -147,6 +151,7 @@ final class Configuration implements ConfigurationInterface
         $this->addMediaSection($rootNode);
         $this->addBestsellersSection($rootNode);
         $this->addBuilderSection($rootNode);
+        $this->addPresetsSection($rootNode);
         $this->addResourcesSection($rootNode);
 
         return $treeBuilder;
@@ -480,6 +485,27 @@ final class Configuration implements ConfigurationInterface
                                 ->validate()->always(self::assertScript(...))->end()
                             ->end()
                             ->validate()->always(self::eachOnce(...))->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * The directories of code preset files, which bundles prepend theirs to. Every *.json file directly in one is a code
+     * preset, whose code is its file name. See "Code presets" in docs/spec/layouts-and-presets.md
+     */
+    private function addPresetsSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('presets')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->arrayNode('paths')
+                            ->info('Directories of code preset files, such as %kernel.project_dir%/config/cms/presets. Bundles prepend theirs')
+                            ->scalarPrototype()->cannotBeEmpty()->end()
                         ->end()
                     ->end()
                 ->end()

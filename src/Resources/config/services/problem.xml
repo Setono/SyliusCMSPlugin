@@ -13,6 +13,24 @@
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemFinder"/>
 
         <!--
+        Finds the problems of presets, which aren't entries, once per request: the Overview's Needs attention lists them
+        and the Content badge counts them. A kind is a service tagged setono_sylius_cms.preset_problem_kind
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\PresetProblemFinder" class="Setono\SyliusCMSPlugin\Problem\PresetProblemFinder">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetProviderInterface"/>
+            <argument type="tagged_iterator" tag="setono_sylius_cms.preset_problem_kind"/>
+
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Problem\PresetProblemFinderInterface" alias="Setono\SyliusCMSPlugin\Problem\PresetProblemFinder"/>
+
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\PresetWithRemovedBlockTypes" class="Setono\SyliusCMSPlugin\Problem\Kind\PresetWithRemovedBlockTypes">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.preset_problem_kind"/>
+        </service>
+
+        <!--
         The errors and warnings of each entry, counted when the entry is written and stored with it, which the lists'
         marker, their Needs attention filter and the Content badge read. RegisterProblemKindsPass hands the updater
         the kinds whose problems are stored, and the fingerprint their classes. The working copies it reads go on to the
@@ -165,7 +183,7 @@
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue" class="Setono\SyliusCMSPlugin\Problem\Kind\MisfitValue">
             <argument type="service" id="Setono\SyliusCMSPlugin\Tree\TreeValues"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\StoredValueFit"/>
 
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
         </service>

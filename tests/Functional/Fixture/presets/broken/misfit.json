@@ -1,0 +1,36 @@
+{
+    "format": 1,
+    "name": "Misfits",
+    "category": null,
+    "description": null,
+    "thumbnail": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "0193a5be-0000-7000-8000-00000000f001",
+            "type": "columns",
+            "version": 1,
+            "style": null,
+            "fields": {},
+            "translated": {},
+            "conditions": [],
+            "children": [
+                {
+                    "key": "0193a5be-0000-7000-8000-00000000f002",
+                    "type": "heading",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "level": "h9",
+                        "text": {
+                            "en_US": "Too big"
+                        }
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": []
+                }
+            ]
+        }
+    ]
+}

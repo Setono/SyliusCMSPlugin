@@ -213,6 +213,25 @@ export function canReplace(rules: NestingRules, tree: readonly StoredBlock[], ke
     });
 }
 
+/**
+ * Whether blocks may go into a spot together: it allows each one's block type, with room for all of them. Inserting a
+ * preset puts its blocks there.
+ */
+export function canInsert(rules: NestingRules, tree: readonly StoredBlock[], blocks: readonly StoredBlock[], parent: string | null): boolean {
+    if (blocks.length === 0 || (parent !== null && findBlock(tree, parent) === undefined)) {
+        return false;
+    }
+
+    const siblings = blocksIn(tree, parent);
+    const allowed = allowedIn(rules, tree, parent);
+
+    return [...new Set(blocks.map((inserted) => inserted.type))].every((type) => {
+        const rule = allowed.find((candidate) => candidate.type === type);
+
+        return rule !== undefined && (rule.max === null || count(siblings, type) + count(blocks, type) <= rule.max);
+    });
+}
+
 /** The key of the block whose children hold the block, or null when it's at the top level or missing. */
 export function parentOf(tree: readonly StoredBlock[], key: string): string | null {
     return locateBlock(tree, key)?.parent ?? null;

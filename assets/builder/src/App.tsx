@@ -161,6 +161,8 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                 const leaving = createLeaving(store, autosave, (to) => navigate(to ?? config.backUrl));
                 const builderEndpoint = config.endpoints.builder;
                 const snippetBlocks = api.snippetBlocks?.bind(api);
+                const listPresets = api.presets?.bind(api);
+                const insertPreset = api.insertPreset?.bind(api);
 
                 // A save refused because a colleague scheduled a publish loads the working copy again, read-only
                 const reload = createReload(store, () => api.fetchEntry());
@@ -191,6 +193,18 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                                 ? null
                                 : (snippet, block) => void leaving.getState().leave(`${withUuid(builderEndpoint, snippet)}?${new URLSearchParams({ back: backHere(block, store.getState().locale) }).toString()}`),
                         snippetBlocks: snippetBlocks === undefined ? null : (snippet) => snippetBlocks(snippet),
+                        // The server reads the spot in the working copy as it has it, so the unsaved changes go first
+                        presets:
+                            listPresets === undefined || insertPreset === undefined
+                                ? null
+                                : {
+                                      list: async (parent) => {
+                                          await autosave?.flush();
+
+                                          return listPresets(parent);
+                                      },
+                                      insert: (id) => insertPreset(id),
+                                  },
                         publish: createPublish(store, autosave, () => api.publish(), validationStore),
                         discard: createDiscard(store, autosave, () => api.discard()),
                         schedule: createSchedule(store, autosave, (at) => api.schedule(at), validationStore),

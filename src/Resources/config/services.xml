@@ -20,6 +20,7 @@
         <import resource="services/link.xml"/>
         <import resource="services/localization.xml"/>
         <import resource="services/media.xml"/>
+        <import resource="services/preset.xml"/>
         <import resource="services/preview.xml"/>
         <import resource="services/problem.xml"/>
         <import resource="services/publishing.xml"/>

@@ -31,6 +31,26 @@ final class RichTextSchemaTest extends TestCase
     }
 
     /**
+     * A translation of a translation key in a code preset's rich text field is HTML, or plain text
+     *
+     * @test
+     */
+    public function it_reads_html_into_a_sanitised_document_and_plain_text_into_a_paragraph(): void
+    {
+        $schema = new RichTextSchema();
+
+        self::assertSame(['type' => 'doc', 'content' => [
+            ['type' => 'paragraph', 'content' => [
+                ['type' => 'text', 'text' => 'Up to '],
+                ['type' => 'text', 'text' => '50%', 'marks' => [['type' => 'bold']]],
+                ['type' => 'text', 'text' => ' off.'],
+            ]],
+            ['type' => 'heading', 'attrs' => ['level' => 3], 'content' => [['type' => 'text', 'text' => 'Terms']]],
+        ]], $schema->fromHtml('<p>Up to <strong>50%</strong> off.</p><h3>Terms</h3><script>alert(1)</script>'));
+        self::assertSame(['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'Fish & chips']]]]], $schema->fromHtml('Fish & chips'));
+    }
+
+    /**
      * @test
      */
     public function it_drops_an_unknown_node_with_everything_in_it_when_sanitising(): void

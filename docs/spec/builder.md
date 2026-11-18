@@ -201,12 +201,12 @@ The builder talks to plain JSON controllers under the admin firewall, not to API
 | `snippet_blocks` | GET | `/snippets/{uuid}/blocks` | The blocks a Snippet block shows: the snippet's published content, upgraded, without blocks of removed types. "Detach to edit here" copies them, with new keys. |
 | `source_count` | POST | `/sources/count` | How many items a source yields for given parameters under a preview token. |
 | `media_upload` | POST | `/media` | Uploads files into a folder, answering with the new media items or the duplicates found ([Media](media.md)). |
-| `preset_index` | GET | `/presets` | The code and editor presets, with their metadata and whether each fits. |
+| `preset_index` | GET | `/presets?entry=&parent=` | The block presets, code and editor, with their metadata, why each is marked invalid, whether each fits the spot (the entry's top level, or the children of the block `parent`) and why not, and the blocks each would insert, for the live render. |
 | `preset_create` | POST | `/presets` | Saves the selected blocks, or the whole tree as a starting point, as an editor preset. |
 | `preset_replace` | PUT | `/presets/{uuid}` | Replaces an editor preset's blocks ("Replace <name>"). |
 | `preset_update` | PATCH | `/presets/{uuid}` | Renames or recategorises an editor preset. |
 | `preset_delete` | DELETE | `/presets/{uuid}` | Deletes an editor preset. |
-| `preset_insert` | POST | `/presets/{uuid}/insert` | Returns a preset's blocks ready to insert into an entry: upgraded, with new keys, translation keys resolved for the entry's locales, and the blocks of removed types left out. |
+| `preset_insert` | POST | `/presets/{preset}/insert` | Returns a preset's blocks ready to insert into an entry: upgraded, with new keys, translation keys resolved for the entry's locales, and the blocks of removed or disabled types left out, with notices. `{preset}` is a code preset's code or an editor preset's UUID. |
 | `revision_index` | GET | `/entries/{uuid}/revisions` | The entry's revisions, with who published each and when. |
 | `revision_preview` | POST | `/revisions/{id}/preview` | Creates a read-only preview token for a revision. |
 | `revision_restore` | POST | `/revisions/{id}/restore` | Copies a revision into the draft. |

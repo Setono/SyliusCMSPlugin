@@ -1,0 +1,24 @@
+{
+    "format": 1,
+    "name": "From the future",
+    "category": null,
+    "description": null,
+    "thumbnail": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "0193a5be-0000-7000-8000-00000000e001",
+            "type": "heading",
+            "version": 9,
+            "style": null,
+            "fields": {
+                "text": {
+                    "en_US": "Later"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        }
+    ]
+}

@@ -7,6 +7,7 @@ import { allowedIn, insertableIn, leftOutIn, type NestingRules } from '../nestin
 import type { BlockSpot } from '../tree';
 import type { BlockTypeDefinition, Entry, StoredBlock } from '../types';
 import styles from './BlockPicker.module.css';
+import { PresetsTab } from './PresetsTab';
 
 export interface AddBlockButtonProps {
     /** The block whose children the new block joins, or null for the top level. */
@@ -55,6 +56,7 @@ export function AddBlockButton({ parent, className, label, children }: AddBlockB
                             store.getState().addBlock(code, parent);
                             setOpen(false);
                         }}
+                        onClose={() => setOpen(false)}
                     />
                 </Popover.Content>
             </Popover.Portal>
@@ -96,10 +98,12 @@ export function BlockPickerAt({ spot, onClose, children }: BlockPickerAtProps) {
                     <Popover.Content className={styles.picker} aria-label={t('setono_sylius_cms.builder.add_block')} side="bottom" align="center" sideOffset={8} collisionPadding={8}>
                         <BlockPicker
                             parent={spot.parent}
+                            index={spot.index}
                             onPick={(code) => {
                                 store.getState().addBlock(code, spot.parent, spot.index);
                                 onClose();
                             }}
+                            onClose={onClose}
                         />
                     </Popover.Content>
                 </Popover.Portal>
@@ -108,12 +112,45 @@ export function BlockPickerAt({ spot, onClose, children }: BlockPickerAtProps) {
     );
 }
 
+interface BlockPickerProps {
+    parent: string | null;
+    /** Where in the spot's list a preset's blocks go, or at the end. */
+    index?: number | undefined;
+    onPick: (code: string) => void;
+    onClose: () => void;
+}
+
+/**
+ * The block picker: its Blocks tab, and its Presets tab when the builder page gives the presets' endpoints. See "Block
+ * picker" in docs/spec/builder.md
+ */
+function BlockPicker({ parent, index, onPick, onClose }: BlockPickerProps) {
+    const t = useTranslator();
+    const { presets } = useBuilder();
+    const [tab, setTab] = useState<'blocks' | 'presets'>('blocks');
+
+    return (
+        <div className={styles.body}>
+            {presets !== null && (
+                <div role="tablist" className={styles.tabs}>
+                    {(['blocks', 'presets'] as const).map((name) => (
+                        <button key={name} type="button" role="tab" aria-selected={tab === name} className={styles.tab} onClick={() => setTab(name)}>
+                            {t(name === 'blocks' ? 'setono_sylius_cms.builder.blocks_tab' : 'setono_sylius_cms.builder.presets_tab')}
+                        </button>
+                    ))}
+                </div>
+            )}
+            {tab === 'blocks' ? <BlockTypes parent={parent} onPick={onPick} /> : <PresetsTab parent={parent} index={index} onInserted={onClose} />}
+        </div>
+    );
+}
+
 /**
  * The block types that fit a spot, each with its thumbnail, and a search. Those the spot would take but for the
  * host-page context they need, which the entry doesn't provide or the snippet doesn't declare, are named below with
  * what they need. See "Block picker" in docs/spec/builder.md
  */
-function BlockPicker({ parent, onPick }: { parent: string | null; onPick: (code: string) => void }) {
+function BlockTypes({ parent, onPick }: { parent: string | null; onPick: (code: string) => void }) {
     const t = useTranslator();
     const searchId = useId();
     const leftOutId = useId();
@@ -128,7 +165,7 @@ function BlockPicker({ parent, onPick }: { parent: string | null; onPick: (code:
     const leftOut = leftOutIn(rules, entry.tree.blocks, parent, provided).filter(({ blockType }) => matches(blockType));
 
     return (
-        <div className={styles.body}>
+        <>
             <label htmlFor={searchId} className={styles.visuallyHidden}>
                 {t('setono_sylius_cms.builder.search_block_types')}
             </label>
@@ -173,6 +210,6 @@ function BlockPicker({ parent, onPick }: { parent: string | null; onPick: (code:
                     </ul>
                 </>
             )}
-        </div>
+        </>
     );
 }

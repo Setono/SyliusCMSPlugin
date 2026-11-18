@@ -269,6 +269,26 @@ setono_sylius_cms:
         embed_code: 'Embed code runs in the shop, not in the builder''s preview.'
         unresolved_link: '%field% isn''t shown here: what it links to isn''t visible in this channel and locale, or was deleted.'
         unresolved_rich_text_link: 'A link in %field% shows as plain text here: what it links to isn''t visible in this channel and locale, or was deleted.'
+    # What inserting a preset tells editors. See "What inserting copies" in docs/spec/layouts-and-presets.md
+    preset:
+        disabled_block_type: '%block% blocks are switched off, so the preset''s were left out.'
+        # Why the block picker's Presets tab leaves a preset out at a spot. See "Where a preset is offered"
+        fit:
+            needs_context: 'Needs: %context%'
+            not_allowed: '%block% isn''t allowed here'
+            nothing_to_insert: 'Nothing in it can be inserted'
+            too_many: 'At most %count% %block% blocks fit here'
+        # What setono:cms:preset:validate reports and the Presets tab marks a preset for. See "Presets with invalid blocks"
+        issue:
+            disabled_block_type: '%block% blocks are switched off, so inserting it leaves them out.'
+            not_allowed: '%block% isn''t allowed in %parent%.'
+            removed_block_type: 'It has blocks of the type "%type%", which the code no longer has, so inserting it leaves them out.'
+            too_few: '%parent% needs at least %count% %block% blocks.'
+            too_many: '%parent% holds at most %count% %block% blocks.'
+            unknown_content_type: 'Its starting point is for the content type "%content_type%", which the code doesn''t have.'
+            unknown_layout: 'Its starting point''s layout "%layout%" isn''t a layout of %content_type%.'
+        newer_version: '"%type%" in the preset was saved with version %version%, but this store has version %code_version%, so the preset can''t be inserted.'
+        removed_block_type: 'Blocks of the type "%type%", which the code no longer has, were left out.'
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
         broken_entry_reference: '%field% refers to %type% that was deleted, so it isn''t shown.'
@@ -286,6 +306,7 @@ setono_sylius_cms:
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
         page_scope_removed_kind: 'The page scope of the placement in "%slot%" has a condition of the kind "%kind%", which the code no longer has, so the placement shows nothing.'
         page_scope_unprovided: 'The page scope of the placement in "%slot%" has a condition, %kind%, that needs the host-page context "%context%", which the slot no longer provides, so the placement shows nothing.'
+        preset_removed_block_type: 'It has blocks of the type %types%, which the code no longer has, so inserting it leaves them out.'
         placement_hidden_by_homepage: 'The placement in "%slot%" doesn''t show in %channels%, whose homepage is a CMS page, as Sylius''s own homepage doesn''t render there.'
         removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
         removed_context_key: 'It needs the context key "%key%", which the code no longer has, so none of its placements shows it.'
@@ -309,6 +330,7 @@ setono_sylius_cms:
         misfit_value: Values that don't fit their field
         page_scope_mismatch: Page scopes that don't fit their slots
         placement_hidden_by_homepage: Placements a CMS homepage hides
+        preset_removed_block_type: Presets with blocks of removed types
         removed_context_key: Removed context keys
         removed_layout: Removed layouts
         scheduled_publish_failed: Failed scheduled publishes
@@ -412,6 +434,7 @@ setono_sylius_cms:
         fix_in_builder: Fix in builder
         fix_in_placements: Go to Placements
         fix_in_publishing: Go to Publishing
+        from_code: From code
         homepage_now: Homepage now
         homepage_of: Homepage of
         homepage_of_help: The page each channel shows at its root URL in place of the store's own homepage. Choose the channels in the builder's settings.
@@ -627,6 +650,19 @@ setono_sylius_cms:
         context_removed_key: '%key%, which the code no longer declares'
         needs_context: 'Needs: %context%'
         not_available_here: Not available here
+        # The block picker's Presets tab. See "Presets" in docs/spec/layouts-and-presets.md
+        blocks_tab: Blocks
+        presets_tab: Presets
+        search_presets: Search presets
+        loading_presets: Loading presets…
+        presets_failed: 'The presets couldn''t be loaded.'
+        no_matching_presets: No presets match.
+        preset_uncategorised: Other
+        preset_from_code: From code
+        preset_invalid: Invalid blocks
+        preset_preview: Preview of %name%
+        insert_preset: Insert %name%
+        preset_does_not_fit: 'It doesn''t fit here any more.'
         condition_match: Matches when it
         copy_it_here: Copy it here
         clash: A colleague changed this too

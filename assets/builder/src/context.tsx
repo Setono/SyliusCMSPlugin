@@ -9,7 +9,7 @@ import type { PresenceState, PresenceStore } from './presence';
 import type { PreviewState, PreviewStore } from './preview';
 import type { SettingsState, SettingsStore } from './settings';
 import type { SnippetPreviewApi } from './snippetPreview';
-import type { FieldDefinition, StoredBlock } from './types';
+import type { FieldDefinition, InsertedPreset, PresetListing, StoredBlock } from './types';
 import type { BuilderState, BuilderStore } from './store';
 import type { UrlsState, UrlsStore } from './urls';
 import type { ValidationState, ValidationStore } from './validation';
@@ -46,6 +46,8 @@ export interface BuilderSession {
     editSnippet: ((snippet: string, block: string) => void) | null;
     /** The blocks a snippet shows, which Detach to edit here copies. Null without the endpoint. */
     snippetBlocks: ((snippet: string) => Promise<StoredBlock[]>) | null;
+    /** The block picker's Presets tab: the presets at a spot, once the unsaved changes are sent, and a preset's blocks ready to insert. Null without the endpoints. */
+    presets: PresetsSession | null;
     preview: PreviewStore;
     /** Asks for a preview token, and answers with the URL of the preview it turns on. */
     createPreviewUrl: (preview: PreviewRequest) => Promise<string>;
@@ -73,6 +75,14 @@ export interface BuilderSession {
     urls: UrlsStore;
     /** Says the editor changed the title in a locale, so the slug can follow it. */
     titleChanged: (locale: string, before: string | null) => void;
+}
+
+/** What the Presets tab asks the server. */
+export interface PresetsSession {
+    /** The block presets at the top level, or in a block's children, as the server sees the working copy once the unsaved changes are sent. */
+    list(parent: string | null): Promise<PresetListing[]>;
+    /** A preset's blocks ready to insert into the entry. */
+    insert(id: string): Promise<InsertedPreset>;
 }
 
 const BuilderContext = createContext<BuilderSession | null>(null);

@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\RichText;
 
 use Setono\SyliusCMSPlugin\Binding\StoredBinding;
 use Setono\SyliusCMSPlugin\Link\ResolvedLink;
+use Tiptap\Core\DOMParser;
 use Tiptap\Core\DOMSerializer;
 use Tiptap\Core\Extension;
 use Tiptap\Core\Schema;
@@ -109,6 +110,19 @@ final readonly class RichTextSchema
         }
 
         return ['type' => 'doc', 'content' => $this->content($value)];
+    }
+
+    /**
+     * Reads HTML, or plain text, into a sanitised document with tiptap-php, such as the translation of a translation key
+     * in a code preset's rich text field. What the schema doesn't have is dropped, and plain text becomes a paragraph
+     *
+     * @return array{type: 'doc', content: list<array<string, mixed>>}
+     */
+    public function fromHtml(string $html): array
+    {
+        $document = (new DOMParser(new Schema([...$this->extensions, new CMSBinding(), new CMSLink()])))->process($html);
+
+        return $this->sanitize($document) ?? ['type' => 'doc', 'content' => []];
     }
 
     /**
