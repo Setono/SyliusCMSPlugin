@@ -2,6 +2,7 @@ setono_sylius_cms:
     block:
         bound_link_label: 'A button that shows a binding, such as the product''s URL, needs a label.'
         embed_code_off: 'Embed code is switched off in this shop, so a new Embed code block can''t be published. Remove it.'
+        embed_code_off_changed: 'Embed code is switched off in this shop, so the code of an Embed code block can''t be changed. Undo the change, or remove the block.'
         exactly_one_of: 'Fill in one of these, but only one: %fields%.'
         not_allowed: '%block% can''t go here.'
         snippet_inside_itself: 'It would show this snippet inside itself: %path%. Pick another snippet.'

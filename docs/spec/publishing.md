@@ -79,7 +79,7 @@ Publish validates, refuses on errors, and points at the blocks and fields that h
 - the nesting rules: allowed block types, min and max, parents and needed context ([Content model](content-model.md#blocks-and-nesting))
 - blocks of a type the code no longer has
 - the Snippet block: a snippet whose Snippet blocks lead back to it, directly or through the published trees of the snippets they show, is refused at each such block, with a message naming the way, such as "Footer → Promo → Footer", and the builder flags it ([Blocks](blocks.md#snippet))
-- the Embed code block: while `embed_code` is off, an `embed_code` block that isn't already in the entry's published tree, with the same key, is refused, however it got into the draft, and the builder flags it ([Blocks](blocks.md#embed-code))
+- the Embed code block: while `embed_code` is off, an `embed_code` block that isn't already in the entry's published tree, with the same key, is refused, however it got into the draft, and so is one whose `code` differs from the published one's with that key, and the builder flags both ([Blocks](blocks.md#embed-code))
 - the slug: unique per channel and locale, and not matched by another route ([URLs and SEO](urls-and-seo.md#routing))
 
 Slug checks also run whenever a slug or the channels change, so the builder shows a clash before publish.

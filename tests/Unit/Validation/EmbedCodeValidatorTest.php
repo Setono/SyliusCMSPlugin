@@ -12,8 +12,8 @@ use Setono\SyliusCMSPlugin\Validation\ValidationError;
 
 /**
  * The publish rule of the Embed code block: while setono_sylius_cms.embed_code is off, an embed_code block whose key
- * isn't already in the entry's published tree is refused, however it got into the draft.
- * See "Validation" in docs/spec/publishing.md and ADR 0018
+ * isn't already in the entry's published tree is refused, however it got into the draft, and so is one whose code
+ * differs from the published one's. See "Validation" in docs/spec/publishing.md and ADR 0018
  */
 final class EmbedCodeValidatorTest extends TestCase
 {
@@ -24,6 +24,8 @@ final class EmbedCodeValidatorTest extends TestCase
     private const GROUP = '0193a5be-0000-7000-8000-0000000000e3';
 
     private const MESSAGE = 'Embed code is switched off in this shop, so a new Embed code block can\'t be published. Remove it.';
+
+    private const CHANGED = 'Embed code is switched off in this shop, so the code of an Embed code block can\'t be changed. Undo the change, or remove the block.';
 
     /**
      * @test
@@ -41,9 +43,36 @@ final class EmbedCodeValidatorTest extends TestCase
     /**
      * @test
      */
-    public function it_accepts_an_embed_code_block_whose_key_is_in_the_published_tree_while_embed_code_is_off_even_with_its_code_changed(): void
+    public function it_accepts_an_embed_code_block_whose_key_and_code_are_in_the_published_tree_while_embed_code_is_off(): void
     {
         self::assertSame([], self::validator(false)->validate(
+            self::tree(self::embedCode(self::PUBLISHED, '<p>Published</p>')),
+            self::tree(self::embedCode(self::PUBLISHED, '<p>Published</p>')),
+        ));
+    }
+
+    /**
+     * Its code can't be rewritten, so a compromised account can't swap an embed's script while the project has embeds
+     * switched off
+     *
+     * @test
+     */
+    public function it_refuses_an_embed_code_block_whose_code_differs_from_the_published_one_with_its_key_while_embed_code_is_off(): void
+    {
+        $errors = self::validator(false)->validate(
+            self::tree(self::embedCode(self::PUBLISHED, '<p>Changed</p>')),
+            self::tree(self::embedCode(self::PUBLISHED, '<p>Published</p>')),
+        );
+
+        self::assertEquals([new ValidationError(self::PUBLISHED, 'code', null, self::CHANGED)], $errors);
+    }
+
+    /**
+     * @test
+     */
+    public function it_accepts_a_changed_embed_code_block_while_embed_code_is_on(): void
+    {
+        self::assertSame([], self::validator(true)->validate(
             self::tree(self::embedCode(self::PUBLISHED, '<p>Changed</p>')),
             self::tree(self::embedCode(self::PUBLISHED, '<p>Published</p>')),
         ));

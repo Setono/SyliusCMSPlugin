@@ -243,7 +243,7 @@ The target's code must know everything the export uses:
 - **Older versions** are upgraded on import.
 - **A layout or slot the target's code no longer declares** is kept as it is and flagged, as everywhere else ([Admin](admin.md#problems)).
 - **A disabled content type, block type or layout** imports like any other. Disabling only hides it from editors.
-- **The Embed code block is the exception.** While `embed_code` is off, an import refuses an `embed_code` block that isn't already in the entry's published tree in the target, with the same key ([ADR 0018](../adr/0018-raw-html-is-an-opt-in-embed-code-block.md), [Blocks](blocks.md#embed-code)).
+- **The Embed code block is the exception.** While `embed_code` is off, an import refuses an `embed_code` block that isn't already in the entry's published tree in the target, with the same key, or whose `code` differs from that one's, as publish does ([ADR 0018](../adr/0018-raw-html-is-an-opt-in-embed-code-block.md), [Blocks](blocks.md#embed-code)).
 
 ## Commands
 

@@ -10,8 +10,9 @@ use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
 /**
  * The Embed code block with setono_sylius_cms.embed_code off, as in a project that hasn't opted in: editors can't add
- * it, publish refuses one whose key isn't already in the entry's published tree, however it got into the draft, and
- * blocks published while it was on keep rendering. See "Embed code" in docs/spec/blocks.md and ADR 0018
+ * it, publish refuses one whose key isn't already in the entry's published tree, however it got into the draft, or
+ * whose code differs from the published one's, and blocks published while it was on keep rendering, and can be moved
+ * or removed. See "Embed code" in docs/spec/blocks.md and ADR 0018
  */
 final class EmbedCodeSwitchedOffTest extends BuilderApiTestCase
 {
@@ -19,9 +20,13 @@ final class EmbedCodeSwitchedOffTest extends BuilderApiTestCase
 
     private const HEADING = '0193a5be-0000-7000-8000-0000000000e2';
 
+    private const GROUP = '0193a5be-0000-7000-8000-0000000000e3';
+
     private const CODE = '<div id="reviews"></div><script>document.documentElement.dataset.embedMarker = "set";</script>';
 
     private const REFUSED = 'Embed code is switched off in this shop, so a new Embed code block can\'t be published. Remove it.';
+
+    private const CHANGED = 'Embed code is switched off in this shop, so the code of an Embed code block can\'t be changed. Undo the change, or remove the block.';
 
     protected static function getKernelClass(): string
     {
@@ -112,6 +117,49 @@ final class EmbedCodeSwitchedOffTest extends BuilderApiTestCase
         self::assertResponseIsSuccessful();
         $client->request('GET', '/en_US/reviews');
         self::assertSelectorExists('.cms-tree > .cms-heading + .cms-embed-code > #reviews');
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_to_publish_a_changed_code_of_an_embed_code_block_published_while_it_was_on(): void
+    {
+        $client = self::createClient();
+        $page = self::createPageWithBlocks('Reviews', 'reviews', [self::embedCode()], published: true);
+        $csrfToken = self::openBuilder($client, $page);
+        self::saveChanges($page, [['op' => 'set_value', 'key' => self::EMBED_CODE, 'field' => 'code', 'locale' => null, 'value' => '<script>document.documentElement.dataset.skimmer = "set";</script>']]);
+
+        $response = self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/publish', $page->getUuid()), null, $csrfToken);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertIsArray($response);
+        self::assertSame([['block' => self::EMBED_CODE, 'field' => 'code', 'locale' => null, 'message' => self::CHANGED]], $response['errors'] ?? null);
+        $client->request('GET', '/en_US/reviews');
+        self::assertStringContainsString('<div class="cms-embed-code">' . self::CODE . '</div>', (string) $client->getResponse()->getContent());
+    }
+
+    /**
+     * @test
+     */
+    public function it_publishes_a_draft_that_moves_an_embed_code_block_published_while_it_was_on_into_another_block_or_removes_it(): void
+    {
+        $client = self::createClient();
+        $page = self::createPageWithBlocks('Reviews', 'reviews', [self::embedCode(), new StoredBlock(self::GROUP, 'group', 1)], published: true);
+        $csrfToken = self::openBuilder($client, $page);
+        self::saveChanges($page, [['op' => 'move_block', 'key' => self::EMBED_CODE, 'parent' => self::GROUP, 'index' => 0]]);
+
+        self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/publish', $page->getUuid()), null, $csrfToken);
+
+        self::assertResponseIsSuccessful();
+        $client->request('GET', '/en_US/reviews');
+        self::assertSelectorExists('.cms-tree .cms-group .cms-embed-code > #reviews');
+
+        self::saveChanges(self::reloadPage($page), [['op' => 'remove_block', 'key' => self::EMBED_CODE]]);
+        self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/publish', $page->getUuid()), null, $csrfToken);
+
+        self::assertResponseIsSuccessful();
+        $client->request('GET', '/en_US/reviews');
+        self::assertSelectorNotExists('.cms-embed-code');
     }
 
     private static function embedCode(): StoredBlock

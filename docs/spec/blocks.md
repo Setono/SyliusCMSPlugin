@@ -338,7 +338,7 @@ Raw HTML, scripts included, printed unescaped in the shop ([ADR 0018](../adr/001
 | --- | --- | --- |
 | `code` | Code | no |
 
-- **It's off until a project sets `setono_sylius_cms.embed_code: true`.** While it's off, editors can't add it, and publish and import refuse an `embed_code` block that isn't already in the entry's published tree, with the same key. So neither a hand-made draft save nor an import can bring one in ([Publishing](publishing.md#validation), [Transfer](transfer.md#code-the-target-must-have)). Blocks published while it was on keep rendering ([ADR 0018](../adr/0018-raw-html-is-an-opt-in-embed-code-block.md)).
+- **It's off until a project sets `setono_sylius_cms.embed_code: true`.** While it's off, editors can't add it, and publish and import refuse an `embed_code` block that isn't already in the entry's published tree, with the same key. So neither a hand-made draft save nor an import can bring one in ([Publishing](publishing.md#validation), [Transfer](transfer.md#code-the-target-must-have)). Blocks published while it was on keep rendering, and can be moved or removed, but publish refuses one whose `code` differs from the published one's with that key, so an embed can't be rewritten while it's off ([ADR 0018](../adr/0018-raw-html-is-an-opt-in-embed-code-block.md)).
 - **The builder's preview and the preset browser** show a placeholder, `cms-embed-code cms-embed-code--placeholder`, in its place, so third-party scripts never run inside the builder.
 - In the shop it renders `<div class="cms-embed-code">` around the code.
 
