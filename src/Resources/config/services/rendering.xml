@@ -103,6 +103,15 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Rendering\LayoutRendererInterface" alias="Setono\SyliusCMSPlugin\Rendering\LayoutRenderer"/>
 
+        <!-- An entry's fields as cms_field() and cms_value() read them, the content type's own hydrated -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\EntryFieldValues" class="Setono\SyliusCMSPlugin\Rendering\EntryFieldValues">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
+        </service>
+
         <!--
         Loads every reference a tree holds before it renders, with one query per type. A project can decorate it to cache
         references. Each type loads through the service tagged setono_sylius_cms.reference_type_loader with its type

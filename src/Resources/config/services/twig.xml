@@ -9,7 +9,7 @@
         <service id="Setono\SyliusCMSPlugin\Twig\CMSRuntime" class="Setono\SyliusCMSPlugin\Twig\CMSRuntime">
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\FieldMarker"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\EntryFieldValues"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewContext"/>
 
             <tag name="twig.runtime"/>

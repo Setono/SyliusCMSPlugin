@@ -10,7 +10,9 @@ use Setono\SyliusCMSPlugin\Block\Button;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\RichText;
 use Setono\SyliusCMSPlugin\Builder\Search\SearchInterface;
+use Setono\SyliusCMSPlugin\Field\DateHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Link\ResolvedLink;
 use Setono\SyliusCMSPlugin\Link\Target\EntryLinkTarget;
 use Setono\SyliusCMSPlugin\Link\Target\TaxonLinkTarget;
@@ -27,10 +29,13 @@ use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
+use Setono\SyliusCMSPlugin\Rendering\EntryFieldValues;
+use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
@@ -40,6 +45,8 @@ use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
 use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGenerator;
 use Setono\SyliusCMSPlugin\Seo\MetaValues;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\Faq;
 use Setono\SyliusCMSPlugin\Tests\Unit\Twig\Fixture\NotABlock;
@@ -143,8 +150,15 @@ final class CMSExtensionTest extends IntegrationTestCase
 
         $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class, 'button' => Button::class, 'quote' => Quote::class, 'faq' => Faq::class], new FieldReader());
         // de_CH falls back to de_DE, and then to en_US
-        $fallbackValues = new FallbackValues(new FieldHandlerLocator(new ServiceLocator([])), new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'), ['de_CH' => ['de_DE']]));
-        $contentTypes = new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]);
+        $fieldHandlers = new FieldHandlerLocator(new ServiceLocator([
+            TextHandler::class => static fn (): TextHandler => new TextHandler(),
+            DateHandler::class => static fn (): DateHandler => new DateHandler(),
+        ]));
+        $fallbackValues = new FallbackValues($fieldHandlers, new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'), ['de_CH' => ['de_DE']]));
+        $contentTypes = new ContentTypeRegistry([
+            'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+            'shop' => ['model' => Shop::class, 'translation' => ShopTranslation::class, 'resource' => 'app.shop'],
+        ]);
         $shopRoutes = new RouteCollection();
         $shopRoutes->add('setono_sylius_cms_shop_entry', new Route('/{_locale}/{path}', requirements: ['path' => '.+(?<!/)']));
         $shopRoutes->add('sylius_shop_product_index', new Route('/{_locale}/taxons/{slug}', requirements: ['slug' => '.+(?<!/)']));
@@ -154,7 +168,7 @@ final class CMSExtensionTest extends IntegrationTestCase
             CMSRuntime::class => fn (): CMSRuntime => new CMSRuntime(
                 new TwigBlockRenderer($blockTwig, $blockTypes),
                 new FieldMarker($blockTypes),
-                $fallbackValues,
+                new EntryFieldValues($contentTypes, new ContentTypeFields(new FieldReader()), $fieldHandlers, $fallbackValues, new ReferenceLoader(new ServiceLocator([]))),
                 new PreviewContext($this->requestStack, self::signer(), $this->shareLinks(...)),
             ),
             HeadTagsRuntime::class => static fn (): HeadTagsRuntime => new HeadTagsRuntime(
@@ -413,6 +427,27 @@ final class CMSExtensionTest extends IntegrationTestCase
         }
 
         return $page;
+    }
+
+    /**
+     * A shop, an entry of a project's own content type, in a city, opened on a date, with directions by locale
+     *
+     * @param array<string, string> $directions by locale
+     */
+    public function shop(?string $city, ?string $openedOn = null, array $directions = []): Shop
+    {
+        $shop = new Shop();
+        $shop->setCity($city);
+        $shop->setOpenedOn(null === $openedOn ? null : new \DateTimeImmutable($openedOn, new \DateTimeZone('UTC')));
+        foreach ($directions as $locale => $text) {
+            $translation = new ShopTranslation();
+            $translation->setLocale($locale);
+            $translation->setTitle('Shop');
+            $translation->setDirections($text);
+            $shop->addTranslation($translation);
+        }
+
+        return $shop;
     }
 
     /**
