@@ -104,6 +104,20 @@ final class PricePropertyTest extends TestCase
     }
 
     /**
+     * As Sylius's sylius_has_discount decides whether the shop shows the original price, struck through
+     *
+     * @test
+     */
+    public function it_gives_an_empty_original_price_when_it_is_not_above_the_price(): void
+    {
+        $this->priceIn($this->channel, 1500, 1500);
+        self::assertNull($this->property(original: true)->resolve($this->product, new NoParams(), Rendering::context(channel: $this->channel)), 'The same as the price');
+
+        $this->variant->getChannelPricingForChannel($this->channel)?->setOriginalPrice(1000);
+        self::assertNull($this->property(original: true)->resolve($this->product, new NoParams(), Rendering::context(channel: $this->channel)), 'Below the price');
+    }
+
+    /**
      * @test
      */
     public function it_is_empty_without_a_price_in_the_channel(): void

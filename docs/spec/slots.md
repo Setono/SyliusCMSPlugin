@@ -169,7 +169,7 @@ A [binding](../../GLOSSARY.md#shop-pages) shows a property of the host-page cont
 | `product.short_description` | text | its short description |
 | `product.description` | text | its description |
 | `product.price` | text | the price of its first enabled variant in the channel, formatted in the current currency |
-| `product.original_price` | text | that variant's original price, formatted the same way, or empty when it has none |
+| `product.original_price` | text | that variant's original price, formatted the same way, or empty unless it's above the price, as Sylius's `sylius_has_discount` decides whether the shop shows it |
 | `product.code` | text | its code |
 | `product.url` | url | its shop URL |
 | `product.main_taxon_name` | text | its main taxon's name |

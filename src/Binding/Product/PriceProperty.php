@@ -17,8 +17,8 @@ use Sylius\Component\Product\Resolver\ProductVariantResolverInterface;
  * A product's price, or its original price: that of the variant Sylius's default variant resolver picks, its first
  * enabled one, in the channel, converted from the channel's base currency into the current currency and formatted in
  * it, as the shop's templates show prices. It's empty without such a variant or a price in the channel, and the
- * original price is empty when the variant has none. The shipped bindable properties product.price and
- * product.original_price are declared with it. See "Shipped bindable properties" in docs/spec/slots.md
+ * original price is empty unless it's above the price, as Sylius's sylius_has_discount decides whether the shop shows
+ * it. The shipped bindable properties product.price and product.original_price are declared with it. See "Shipped bindable properties" in docs/spec/slots.md
  *
  * @internal
  */
@@ -52,9 +52,15 @@ final readonly class PriceProperty implements BindablePropertyInterface
             return null;
         }
 
-        $amount = $this->original ? $channelPricing->getOriginalPrice() : $this->priceCalculator->calculate($variant, ['channel' => $context->channel]);
-        if (null === $amount) {
-            return null;
+        $amount = $this->priceCalculator->calculate($variant, ['channel' => $context->channel]);
+        if ($this->original) {
+            // As sylius_has_discount decides: only an original price above the price shows
+            $originalAmount = $channelPricing->getOriginalPrice();
+            if (null === $originalAmount || $originalAmount <= $amount) {
+                return null;
+            }
+
+            $amount = $originalAmount;
         }
 
         $baseCurrency = $context->channel->getBaseCurrency()?->getCode();
