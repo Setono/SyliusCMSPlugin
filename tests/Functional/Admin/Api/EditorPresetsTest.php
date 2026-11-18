@@ -65,6 +65,11 @@ final class EditorPresetsTest extends BuilderApiTestCase
         self::assertSame(['id' => $preset['id'], 'fromCode' => false, 'name' => 'Promo', 'category' => 'Campaigns', 'description' => null, 'thumbnail' => null], array_intersect_key($listed, array_flip(['id', 'fromCode', 'name', 'category', 'description', 'thumbnail'])));
         self::assertSame(['heading', 'button', 'rich_text'], array_column($listed['blocks'], 'type'));
 
+        // Its category is suggested from now on, beside the code presets'
+        $index = self::json($client, 'GET', sprintf('/admin/cms/api/presets?entry=%s', $other->getUuid()));
+        self::assertIsArray($index);
+        self::assertSame(['Banners', 'Campaigns', 'Layout', 'Products'], $index['categories'] ?? null);
+
         // The page it was saved from is left as it is
         self::assertSame([self::HEADING, self::COLUMNS, self::RICH_TEXT], array_map(static fn (StoredBlock $block): string => $block->key, self::reloadPage($page)->getBlockTree()->blocks));
     }
