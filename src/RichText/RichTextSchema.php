@@ -22,6 +22,12 @@ final readonly class RichTextSchema
     /** The heading levels rich text has. A page's own headings are Heading blocks */
     public const HEADING_LEVELS = [2, 3, 4];
 
+    /** The nodes that sit in a line of text, in a paragraph or a heading */
+    private const INLINE_NODES = ['text', 'hardBreak', CMSBinding::NAME];
+
+    /** The nodes other than the document that hold blocks, and so a line of text only in a paragraph */
+    private const BLOCK_CONTAINERS = ['listItem', 'blockquote'];
+
     /**
      * @var list<Extension> the nodes and the marks but the binding and the link, which each render adds with how its
      *                      bindings and links resolve
@@ -114,15 +120,16 @@ final readonly class RichTextSchema
 
     /**
      * Reads HTML, or plain text, into a sanitised document with tiptap-php, such as the translation of a translation key
-     * in a code preset's rich text field. What the schema doesn't have is dropped, and plain text becomes a paragraph
+     * in a code preset's rich text field. What the schema doesn't have is dropped, and text outside a block, such as
+     * plain text, is put in a paragraph
      *
      * @return array{type: 'doc', content: list<array<string, mixed>>}
      */
     public function fromHtml(string $html): array
     {
-        $document = (new DOMParser(new Schema([...$this->extensions, new CMSBinding(), new CMSLink()])))->process($html);
+        $document = $this->sanitize((new DOMParser(new Schema([...$this->extensions, new CMSBinding(), new CMSLink()])))->process($html));
 
-        return $this->sanitize($document) ?? ['type' => 'doc', 'content' => []];
+        return ['type' => 'doc', 'content' => $this->inParagraphs($document['content'] ?? [])];
     }
 
     /**
@@ -208,6 +215,72 @@ final readonly class RichTextSchema
         }
 
         return $bindings;
+    }
+
+    /**
+     * Puts each run of inline nodes that sits among blocks in a paragraph, as a browser does. tiptap-php keeps the text
+     * it reads outside a block as it is, and so does libxml's HTML parser, but for the text before the first element,
+     * which older versions of libxml wrap in an implied <p> and newer ones don't. A run of nothing but whitespace is the
+     * space between two blocks, and is dropped
+     *
+     * @param list<array<string, mixed>> $content
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function inParagraphs(array $content): array
+    {
+        $blocks = [];
+        $run = [];
+        foreach ($content as $node) {
+            if (in_array($node['type'] ?? null, self::INLINE_NODES, true)) {
+                $run[] = $node;
+
+                continue;
+            }
+
+            $blocks = [...$blocks, ...$this->paragraph($run), $this->withParagraphs($node)];
+            $run = [];
+        }
+
+        return [...$blocks, ...$this->paragraph($run)];
+    }
+
+    /**
+     * A block with the runs of inline nodes in the blocks it holds put in paragraphs
+     *
+     * @param array<string, mixed> $block
+     *
+     * @return array<string, mixed>
+     */
+    private function withParagraphs(array $block): array
+    {
+        if (!is_array($block['content'] ?? null)) {
+            return $block;
+        }
+
+        /** @var list<array<string, mixed>> $content a sanitised node's content */
+        $content = $block['content'];
+        $block['content'] = in_array($block['type'] ?? null, self::BLOCK_CONTAINERS, true)
+            ? $this->inParagraphs($content)
+            : array_map($this->withParagraphs(...), $content);
+
+        return $block;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $run
+     *
+     * @return list<array<string, mixed>> the run in a paragraph, or nothing when it's empty or only whitespace
+     */
+    private function paragraph(array $run): array
+    {
+        foreach ($run as $node) {
+            if ('text' !== ($node['type'] ?? null) || !$this->isEmpty($node)) {
+                return [['type' => 'paragraph', 'content' => $run]];
+            }
+        }
+
+        return [];
     }
 
     /**

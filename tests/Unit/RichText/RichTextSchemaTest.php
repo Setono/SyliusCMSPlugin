@@ -51,6 +51,29 @@ final class RichTextSchemaTest extends TestCase
     }
 
     /**
+     * libxml's HTML parser leaves text after an element outside a block, and only older versions of it put the text
+     * before the first element in an implied <p>, so the trailing runs here are bare whichever version parses them
+     *
+     * @test
+     */
+    public function it_puts_each_run_of_text_outside_a_block_in_a_paragraph_when_reading_html(): void
+    {
+        $document = (new RichTextSchema())->fromHtml(
+            'Leading <strong>bold</strong><p>Middle</p>Trailing<br>text<!-- a note --><ul><li>One</li></ul>'
+            . '<p>Last</p> <!-- a gap --><blockquote>Quoted</blockquote>',
+        );
+
+        self::assertSame(self::doc(
+            ['type' => 'paragraph', 'content' => [self::text('Leading '), self::text('bold', [['type' => 'bold']])]],
+            ['type' => 'paragraph', 'content' => [self::text('Middle')]],
+            ['type' => 'paragraph', 'content' => [self::text('Trailing'), ['type' => 'hardBreak'], self::text('text')]],
+            ['type' => 'bulletList', 'content' => [['type' => 'listItem', 'content' => [['type' => 'paragraph', 'content' => [self::text('One')]]]]]],
+            ['type' => 'paragraph', 'content' => [self::text('Last')]],
+            ['type' => 'blockquote', 'content' => [['type' => 'paragraph', 'content' => [self::text('Quoted')]]]],
+        ), $document);
+    }
+
+    /**
      * @test
      */
     public function it_drops_an_unknown_node_with_everything_in_it_when_sanitising(): void
