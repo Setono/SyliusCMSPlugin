@@ -257,7 +257,16 @@ setono_sylius_cms:
             not_allowed: '%block% isn''t allowed here'
             nothing_to_insert: 'Nothing in it can be inserted'
             too_many: 'At most %count% %block% blocks fit here'
-        newer_version: 'A "%type%" block in the preset was saved with version %version%, but this store has version %code_version%, so the preset can''t be inserted.'
+        # What setono:cms:preset:validate reports and the Presets tab marks a preset for. See "Presets with invalid blocks"
+        issue:
+            disabled_block_type: '%block% blocks are switched off, so inserting it leaves them out.'
+            not_allowed: '%block% isn''t allowed in %parent%.'
+            removed_block_type: 'It has blocks of the type "%type%", which the code no longer has, so inserting it leaves them out.'
+            too_few: '%parent% needs at least %count% %block% blocks.'
+            too_many: '%parent% holds at most %count% %block% blocks.'
+            unknown_content_type: 'Its starting point is for the content type "%content_type%", which the code doesn''t have.'
+            unknown_layout: 'Its starting point''s layout "%layout%" isn''t a layout of %content_type%.'
+        newer_version: '"%type%" in the preset was saved with version %version%, but this store has version %code_version%, so the preset can''t be inserted.'
         removed_block_type: 'Blocks of the type "%type%", which the code no longer has, were left out.'
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
