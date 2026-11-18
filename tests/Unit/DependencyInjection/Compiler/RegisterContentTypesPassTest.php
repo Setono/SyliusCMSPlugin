@@ -12,9 +12,13 @@ use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\InvalidCode;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Location;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\OrderedByMissing;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\OrderedUpwards;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Untagged;
 use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\Post;
@@ -179,6 +183,108 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
     {
         yield 'translations without it' => [['translation' => ['classes' => ['model' => EntryTranslation::class]]]];
         yield 'no translation model' => [[]];
+    }
+
+    /**
+     * @test
+     */
+    public function it_fails_the_build_for_an_order_that_is_neither_position_nor_properties_with_a_direction(): void
+    {
+        $this->setParameter('sylius.resources', ['app.ordered_upwards' => ['classes' => ['model' => OrderedUpwards::class]]]);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('The content type "ordered_upwards" has an invalid order: The order orders "createdAt" by "UP", which must be \'ASC\' or \'DESC\'');
+
+        $this->compile();
+    }
+
+    /**
+     * @test
+     */
+    public function it_fails_the_build_for_an_order_by_a_property_the_entries_do_not_have(): void
+    {
+        $this->setParameter('sylius.resources', ['app.ordered_by_missing' => ['classes' => ['model' => OrderedByMissing::class]]]);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('The content type "ordered_by_missing" orders its entries by "missing", which must be a property of OrderedByMissing');
+
+        $this->compile();
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_content_type_name_another_content_type_as_its_category_type(): void
+    {
+        $this->setParameter('sylius.resources', [
+            'app.location' => ['classes' => ['model' => Location::class], 'translation' => ['classes' => ['model' => EntryTranslation::class]]],
+            'app.recipe' => ['classes' => ['model' => Recipe::class]],
+        ]);
+
+        $this->compile();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ContentTypeRegistry::class, 0, [
+            'location' => ['model' => Location::class, 'translation' => EntryTranslation::class, 'resource' => 'app.location'],
+            'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_fails_the_build_for_a_category_type_that_is_no_content_type(): void
+    {
+        $this->setParameter('sylius.resources', ['app.location' => ['classes' => ['model' => Location::class], 'translation' => ['classes' => ['model' => EntryTranslation::class]]]]);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf('The content type "location" names %s in categoryType, which must be the model of a content type', Recipe::class));
+
+        $this->compile();
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_the_registry_the_content_types_switched_off_in_config(): void
+    {
+        $this->setParameter('sylius.resources', [
+            'setono_sylius_cms.page' => self::PAGE,
+            'setono_sylius_cms.post' => ['classes' => ['model' => Post::class], 'translation' => ['classes' => ['model' => PostTranslation::class]]],
+        ]);
+        $this->setParameter(RegisterContentTypesPass::DISABLED_PARAMETER, ['post']);
+
+        $this->compile();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ContentTypeRegistry::class, 2, ['post']);
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideContentTypesThatCannotBeSwitchedOff
+     */
+    public function it_fails_the_build_for_switching_off_a_built_in_content_type_or_a_code_no_content_type_has(string $code, string $message): void
+    {
+        $this->setParameter('sylius.resources', [
+            'setono_sylius_cms.page' => self::PAGE,
+            'setono_sylius_cms.snippet' => ['classes' => ['model' => Snippet::class]],
+        ]);
+        $this->setParameter(RegisterContentTypesPass::DISABLED_PARAMETER, [$code]);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage($message);
+
+        $this->compile();
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideContentTypesThatCannotBeSwitchedOff(): iterable
+    {
+        yield 'page' => ['page', 'setono_sylius_cms.disabled.content_types switches off "page", a built-in content type, which can\'t be switched off'];
+        yield 'snippet' => ['snippet', 'setono_sylius_cms.disabled.content_types switches off "snippet", a built-in content type, which can\'t be switched off'];
+        yield 'unknown' => ['blog_post', 'setono_sylius_cms.disabled.content_types switches off "blog_post", which is no content type'];
     }
 
     /**

@@ -92,7 +92,7 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             [],
         ], [
-            'disabled' => ['block_types' => [], 'layouts' => [], 'sources' => []],
+            'disabled' => ['block_types' => [], 'layouts' => [], 'sources' => [], 'content_types' => []],
             'embed_code' => false,
             'assets' => true,
             'content_types' => [],
@@ -409,7 +409,7 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             ['disabled' => ['block_types' => ['spacer']]],
             ['disabled' => ['block_types' => ['group']]],
-        ], ['disabled' => ['block_types' => ['spacer', 'group'], 'layouts' => [], 'sources' => []]], 'disabled');
+        ], ['disabled' => ['block_types' => ['spacer', 'group'], 'layouts' => [], 'sources' => [], 'content_types' => []]], 'disabled');
     }
 
     /**
@@ -420,7 +420,18 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             ['disabled' => ['layouts' => ['page.landing']]],
             ['disabled' => ['layouts' => ['blog_post.wide']]],
-        ], ['disabled' => ['block_types' => [], 'layouts' => ['page.landing', 'blog_post.wide'], 'sources' => []]], 'disabled');
+        ], ['disabled' => ['block_types' => [], 'layouts' => ['page.landing', 'blog_post.wide'], 'sources' => [], 'content_types' => []]], 'disabled');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_switch_off_content_types_by_code(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['disabled' => ['content_types' => ['blog_post']]],
+            ['disabled' => ['content_types' => ['faq_item']]],
+        ], ['disabled' => ['block_types' => [], 'layouts' => [], 'sources' => [], 'content_types' => ['blog_post', 'faq_item']]], 'disabled');
     }
 
     /**
@@ -431,7 +442,7 @@ final class ConfigurationTest extends TestCase
         $this->assertProcessedConfigurationEquals([
             ['disabled' => ['sources' => ['newest_products']]],
             ['disabled' => ['sources' => ['taxon_children']]],
-        ], ['disabled' => ['block_types' => [], 'layouts' => [], 'sources' => ['newest_products', 'taxon_children']]], 'disabled');
+        ], ['disabled' => ['block_types' => [], 'layouts' => [], 'sources' => ['newest_products', 'taxon_children'], 'content_types' => []]], 'disabled');
     }
 
     /**

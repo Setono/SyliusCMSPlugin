@@ -289,6 +289,16 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_hands_the_disabled_content_types_to_the_pass_that_registers_the_content_types(): void
+    {
+        $this->load(['disabled' => ['content_types' => ['blog_post']]]);
+
+        $this->assertContainerBuilderHasParameter(RegisterContentTypesPass::DISABLED_PARAMETER, ['blog_post']);
+    }
+
+    /**
+     * @test
+     */
     public function it_hands_the_disabled_sources_to_the_source_registry(): void
     {
         $this->load(['disabled' => ['sources' => ['newest_products']]]);

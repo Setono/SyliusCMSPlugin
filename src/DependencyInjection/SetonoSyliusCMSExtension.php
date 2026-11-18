@@ -72,7 +72,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>}, embed_code: bool, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, slots: array<string, array{label: string, provides: list<string>, cap: int|null, template_event?: array{name: string, priority: int}}>, context_keys: array<string, array{class: class-string, label: string}>, bindable_properties: array<string, array<string, array{label: string, type: string, path: string}>>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, builder: array{scripts: list<string>}, resources: array<string, array<string, mixed>>} $config */
+        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>, content_types: list<string>}, embed_code: bool, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, slots: array<string, array{label: string, provides: list<string>, cap: int|null, template_event?: array{name: string, priority: int}}>, context_keys: array<string, array{class: class-string, label: string}>, bindable_properties: array<string, array<string, array{label: string, type: string, path: string}>>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, builder: array{scripts: list<string>}, resources: array<string, array<string, mixed>>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         // The Embed code block is switched off like a disabled block type until a project opts in (ADR 0018)
@@ -83,6 +83,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         // RegisterLayoutsPass checks them against the layouts the code has
         $container->setParameter('setono_sylius_cms.disabled.layouts', $config['disabled']['layouts']);
         $container->setParameter('setono_sylius_cms.disabled.sources', $config['disabled']['sources']);
+        // RegisterContentTypesPass checks them against the content types the code has, and hands them to the registry
+        $container->setParameter(RegisterContentTypesPass::DISABLED_PARAMETER, $config['disabled']['content_types']);
         $container->setParameter('setono_sylius_cms.default_layouts', array_filter(array_map(
             static fn (array $contentType): ?string => $contentType['default_layout'] ?? null,
             $config['content_types'],

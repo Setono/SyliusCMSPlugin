@@ -9,7 +9,9 @@ use Setono\SyliusCMSPlugin\Factory\EntryFactory;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Registry\Code;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\EntryOrder;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -30,6 +32,9 @@ final class RegisterContentTypesPass implements CompilerPassInterface
     /** What the project changes about content types, by code: setono_sylius_cms.content_types */
     public const CONFIG_PARAMETER = 'setono_sylius_cms.content_types';
 
+    /** The codes of the content types switched off: setono_sylius_cms.disabled.content_types */
+    public const DISABLED_PARAMETER = 'setono_sylius_cms.disabled.content_types';
+
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasDefinition(ContentTypeRegistry::class) || !$container->hasParameter('sylius.resources')) {
@@ -41,6 +46,8 @@ final class RegisterContentTypesPass implements CompilerPassInterface
         $factories = [];
         /** @var array<string, string|null> $prefixes the attributes' prefixes, by content type code */
         $prefixes = [];
+        /** @var array<string, class-string> $categoryTypes the category content types the attributes name, by content type code */
+        $categoryTypes = [];
 
         /** @var array<string, array{classes?: array{model?: mixed}, translation?: array{classes?: array{model?: mixed}}}> $resources */
         $resources = $container->getParameter('sylius.resources');
@@ -59,11 +66,17 @@ final class RegisterContentTypesPass implements CompilerPassInterface
                 throw new \LogicException(sprintf('The content type code "%s" of %s must match %s', $code, $model, Code::PATTERN));
             }
 
+            self::assertOrder($code, $model, $attribute->order);
+
             if (isset($contentTypes[$code])) {
                 throw new \LogicException(sprintf('The content type code "%s" is used by both the resources "%s" and "%s"', $code, $contentTypes[$code]['resource'], $alias));
             }
 
             $prefixes[$code] = $attribute->prefix;
+            if (null !== $attribute->categoryType) {
+                $categoryTypes[$code] = $attribute->categoryType;
+            }
+
             $translation = $resource['translation']['classes']['model'] ?? null;
             $translation = is_string($translation) && class_exists($translation) ? $translation : null;
 
@@ -96,9 +109,12 @@ final class RegisterContentTypesPass implements CompilerPassInterface
             ;
         }
 
+        self::assertCategoryTypes($categoryTypes, $contentTypes);
+
         $container->getDefinition(ContentTypeRegistry::class)
             ->replaceArgument(0, $contentTypes)
             ->setArgument(1, self::configuredPrefixes($container, $prefixes))
+            ->setArgument(2, self::disabled($container, $contentTypes))
         ;
         $container->getDefinition(DiscriminatorMapListener::class)->replaceArgument(0, $contentTypes);
         $container->setAlias(self::ENTRY_FACTORIES, (string) ServiceLocatorTagPass::register($container, $factories));
@@ -134,5 +150,67 @@ final class RegisterContentTypesPass implements CompilerPassInterface
         }
 
         return $configured;
+    }
+
+    /**
+     * The order sources list the entries in is 'position', or properties of the entries, each 'ASC' or 'DESC'
+     *
+     * @param class-string $model
+     */
+    private static function assertOrder(string $code, string $model, mixed $order): void
+    {
+        try {
+            $parsed = EntryOrder::parse($order);
+        } catch (\InvalidArgumentException $e) {
+            throw new \LogicException(sprintf('The content type "%s" has an invalid order: %s', $code, $e->getMessage()), previous: $e);
+        }
+
+        foreach (array_keys($parsed->fields) as $property) {
+            if (!property_exists($model, $property)) {
+                throw new \LogicException(sprintf('The content type "%s" orders its entries by "%s", which must be a property of %s', $code, $property, (new \ReflectionClass($model))->getShortName()));
+            }
+        }
+    }
+
+    /**
+     * A collection's category content type is a content type of its own (docs/spec/collections.md#categories)
+     *
+     * @param array<string, class-string> $categoryTypes the category content type each content type names, by code
+     * @param array<string, array{model: class-string, translation: class-string|null, resource: string}> $contentTypes
+     */
+    private static function assertCategoryTypes(array $categoryTypes, array $contentTypes): void
+    {
+        $models = array_column($contentTypes, 'model');
+        foreach ($categoryTypes as $code => $categoryType) {
+            if (!in_array($categoryType, $models, true)) {
+                throw new \LogicException(sprintf('The content type "%s" names %s in categoryType, which must be the model of a content type', $code, $categoryType));
+            }
+        }
+    }
+
+    /**
+     * The codes of the content types switched off in setono_sylius_cms.disabled.content_types. Any content type but
+     * the built-in ones can be, such as the shipped collections' blog_post or faq_item
+     *
+     * @param array<string, mixed> $contentTypes by code
+     *
+     * @return list<string>
+     */
+    private static function disabled(ContainerBuilder $container, array $contentTypes): array
+    {
+        /** @var list<string> $disabled */
+        $disabled = $container->hasParameter(self::DISABLED_PARAMETER) ? $container->getParameter(self::DISABLED_PARAMETER) : [];
+
+        foreach ($disabled as $code) {
+            if (in_array($code, ContentTypeMetadata::BUILT_IN, true)) {
+                throw new \LogicException(sprintf('setono_sylius_cms.disabled.content_types switches off "%s", a built-in content type, which can\'t be switched off', $code));
+            }
+
+            if (!isset($contentTypes[$code])) {
+                throw new \LogicException(sprintf('setono_sylius_cms.disabled.content_types switches off "%s", which is no content type', $code));
+            }
+        }
+
+        return array_values(array_unique($disabled));
     }
 }
