@@ -76,7 +76,8 @@ final class BlogPublishingTest extends KernelTestCase
         $deleter = self::getContainer()->get(EntryDeleterInterface::class);
         $deleter->delete($post);
 
-        self::assertSame(0, (int) self::entityManager()->getConnection()->fetchOne('SELECT COUNT(*) FROM setono_sylius_cms__entry_reference WHERE entry_id = ?', [$id]));
+        // The database deletes the rows with the entry, so they're counted in SQL
+        self::assertEquals(0, self::entityManager()->getConnection()->fetchOne('SELECT COUNT(*) FROM setono_sylius_cms__entry_reference WHERE entry_id = ?', [$id]));
     }
 
     /**
