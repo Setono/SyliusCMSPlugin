@@ -7,6 +7,7 @@
         <import resource="services/binding.xml"/>
         <import resource="services/block_type.xml"/>
         <import resource="services/builder.xml"/>
+        <import resource="services/collection.xml"/>
         <import resource="services/command.xml"/>
         <import resource="services/condition.xml"/>
         <import resource="services/context.xml"/>

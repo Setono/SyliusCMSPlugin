@@ -1,0 +1,22 @@
+{#
+ # Blog category's Standard layout (Setono\SyliusCMSPlugin\Layout\BlogCategory\Standard): the title and the
+ # description above the tree, which holds the category's post list. See "Shipped layouts" in
+ # docs/spec/layouts-and-presets.md
+ #}
+{% extends '@SetonoSyliusCMSPlugin/layout/base.html.twig' %}
+
+{% block cms_content %}
+    {% set description = cms_field(entry, 'description') %}
+
+    <header class="cms-category-header">
+        <h1 class="cms-category-header__title">{{ cms_field(entry, 'title') }}</h1>
+
+        {% if description is not empty %}
+            <p class="cms-category-header__description">{{ description|nl2br }}</p>
+        {% endif %}
+    </header>
+
+    <div class="cms-tree">
+        {{ cms_blocks(blocks) }}
+    </div>
+{% endblock %}

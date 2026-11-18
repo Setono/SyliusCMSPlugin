@@ -22,7 +22,9 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Location;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\OrderedByMissing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\OrderedUpwards;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\SeasonalRecipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Untagged;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Workshop;
 use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\Post;
 use Setono\SyliusCMSPlugin\Tests\Unit\Seo\Fixture\PostTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\Article;
@@ -243,7 +245,47 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
         $this->setParameter('sylius.resources', ['app.location' => ['classes' => ['model' => Location::class], 'translation' => ['classes' => ['model' => EntryTranslation::class]]]]);
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage(sprintf('The content type "location" names %s in categoryType, which must be the model of a content type', Recipe::class));
+        $this->expectExceptionMessage(sprintf('The content type "location" names %s in categoryType, which must be the model of a content type, or a class or interface one extends', Recipe::class));
+
+        $this->compile();
+    }
+
+    /**
+     * A project overrides a shipped category content type's model with its own subclass, which the collection's
+     * categoryType still names
+     *
+     * @test
+     */
+    public function it_lets_a_category_type_name_a_class_the_category_content_type_s_model_extends(): void
+    {
+        $this->setParameter('sylius.resources', [
+            'app.location' => ['classes' => ['model' => Location::class], 'translation' => ['classes' => ['model' => EntryTranslation::class]]],
+            'app.recipe' => ['classes' => ['model' => SeasonalRecipe::class]],
+        ]);
+
+        $this->compile();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ContentTypeRegistry::class, 0, [
+            'location' => ['model' => Location::class, 'translation' => EntryTranslation::class, 'resource' => 'app.location'],
+            'recipe' => ['model' => SeasonalRecipe::class, 'translation' => null, 'resource' => 'app.recipe'],
+        ]);
+    }
+
+    /**
+     * Listings filter a collection's entries by category on the reference table, so its category field is indexed
+     * (docs/spec/extending.md#content-types)
+     *
+     * @test
+     */
+    public function it_fails_the_build_for_a_category_type_without_an_indexed_entries_field_of_it(): void
+    {
+        $this->setParameter('sylius.resources', [
+            'app.workshop' => ['classes' => ['model' => Workshop::class], 'translation' => ['classes' => ['model' => EntryTranslation::class]]],
+            'app.recipe' => ['classes' => ['model' => Recipe::class]],
+        ]);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf('The content type "workshop" names %s in categoryType, so it must have one Entries field of its own with that contentType and indexed: true, which holds its categories', Recipe::class));
 
         $this->compile();
     }

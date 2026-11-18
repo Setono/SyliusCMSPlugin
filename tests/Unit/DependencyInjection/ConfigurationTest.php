@@ -14,6 +14,16 @@ use Setono\SyliusCMSPlugin\Factory\PlacementFactory;
 use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
 use Setono\SyliusCMSPlugin\Model\BestsellerScore;
 use Setono\SyliusCMSPlugin\Model\BestsellerScoreInterface;
+use Setono\SyliusCMSPlugin\Model\BlogCategory;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryInterface;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryTranslation;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\BlogPost;
+use Setono\SyliusCMSPlugin\Model\BlogPostInterface;
+use Setono\SyliusCMSPlugin\Model\BlogPostTranslation;
+use Setono\SyliusCMSPlugin\Model\BlogPostTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\EntryReference;
+use Setono\SyliusCMSPlugin\Model\EntryReferenceInterface;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
@@ -55,6 +65,7 @@ use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
 use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
+use Setono\SyliusCMSPlugin\Repository\EntryReferenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepository;
@@ -237,6 +248,14 @@ final class ConfigurationTest extends TestCase
                         'factory' => Factory::class,
                     ],
                 ],
+                'entry_reference' => [
+                    'classes' => [
+                        'model' => EntryReference::class,
+                        'interface' => EntryReferenceInterface::class,
+                        'repository' => EntryReferenceRepository::class,
+                        'factory' => Factory::class,
+                    ],
+                ],
                 'bestseller_score' => [
                     'classes' => [
                         'model' => BestsellerScore::class,
@@ -280,6 +299,38 @@ final class ConfigurationTest extends TestCase
                         'classes' => [
                             'model' => EntryTranslation::class,
                             'interface' => EntryTranslationInterface::class,
+                            'controller' => ResourceController::class,
+                            'factory' => Factory::class,
+                        ],
+                    ],
+                ],
+                'blog_post' => [
+                    'classes' => [
+                        'model' => BlogPost::class,
+                        'interface' => BlogPostInterface::class,
+                        'controller' => ResourceController::class,
+                        'factory' => TranslatableFactory::class,
+                    ],
+                    'translation' => [
+                        'classes' => [
+                            'model' => BlogPostTranslation::class,
+                            'interface' => BlogPostTranslationInterface::class,
+                            'controller' => ResourceController::class,
+                            'factory' => Factory::class,
+                        ],
+                    ],
+                ],
+                'blog_category' => [
+                    'classes' => [
+                        'model' => BlogCategory::class,
+                        'interface' => BlogCategoryInterface::class,
+                        'controller' => ResourceController::class,
+                        'factory' => TranslatableFactory::class,
+                    ],
+                    'translation' => [
+                        'classes' => [
+                            'model' => BlogCategoryTranslation::class,
+                            'interface' => BlogCategoryTranslationInterface::class,
                             'controller' => ResourceController::class,
                             'factory' => Factory::class,
                         ],

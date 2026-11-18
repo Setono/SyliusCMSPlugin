@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!-- Its excerpt is blog_post_excerpt (Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener) -->
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\BlogPostTranslation">
+        <field name="excerpt" type="text" nullable="true"/>
+    </mapped-superclass>
+</doctrine-mapping>

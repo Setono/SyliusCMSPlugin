@@ -9,5 +9,13 @@
         <service id="Setono\SyliusCMSPlugin\Layout\Page\Standard" class="Setono\SyliusCMSPlugin\Layout\Page\Standard">
             <tag name="setono_sylius_cms.layout"/>
         </service>
+
+        <service id="Setono\SyliusCMSPlugin\Layout\BlogPost\Article" class="Setono\SyliusCMSPlugin\Layout\BlogPost\Article">
+            <tag name="setono_sylius_cms.layout"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Layout\BlogCategory\Standard" class="Setono\SyliusCMSPlugin\Layout\BlogCategory\Standard">
+            <tag name="setono_sylius_cms.layout"/>
+        </service>
     </services>
 </container>

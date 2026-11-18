@@ -6,8 +6,10 @@ namespace Setono\SyliusCMSPlugin\Publishing;
 
 use Doctrine\Persistence\ObjectManager;
 use Psr\Clock\ClockInterface;
+use Setono\SyliusCMSPlugin\Collection\EntryReferenceIndexerInterface;
 use Setono\SyliusCMSPlugin\Event\EntryPublished;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\FillsOnPublishInterface;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
@@ -18,7 +20,7 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Publishes now, and runs scheduled publishes. See "Publishing now" and "Scheduled publishes" in
- * docs/spec/publishing.md. The reference table and the media usage index join the steps with their tickets
+ * docs/spec/publishing.md. The media usage index (step 6) is written by a Doctrine listener, when the rows are
  */
 final readonly class EntryPublisher implements EntryPublisherInterface
 {
@@ -36,6 +38,7 @@ final readonly class EntryPublisher implements EntryPublisherInterface
         private OldSlugRecorderInterface $oldSlugs,
         private ScheduledPublishRepositoryInterface $scheduledPublishes,
         private ObjectManager $manager,
+        private EntryReferenceIndexerInterface $referenceIndexer,
     ) {
     }
 
@@ -94,7 +97,8 @@ final readonly class EntryPublisher implements EntryPublisherInterface
     }
 
     /**
-     * Steps 3 to 8, once the working copy passed the checks
+     * Steps 3 to 8, once the working copy passed the checks, but 6, the media usage index, which a Doctrine listener
+     * writes when the rows are flushed
      *
      * @param ScheduledPublishInterface|null $scheduledPublish the scheduled publish this runs, or null for a publish now
      *
@@ -103,15 +107,22 @@ final readonly class EntryPublisher implements EntryPublisherInterface
     private function apply(EntryInterface $entry, EntryInterface $workingCopy, ?ScheduledPublishInterface $scheduledPublish): array
     {
         $oldSlugs = $entry->isPublished() ? Slug::of($entry) : [];
+        $now = $this->clock->now()->setTimezone(new \DateTimeZone('UTC'));
 
-        // 3. Copy the working copy onto the rows and delete the draft
+        // 3. Copy the working copy onto the rows and delete the draft. The content type fills its values, such as a blog
+        // post's date on its first publish, so the revision and shoppers see them
         $this->workingCopies->applyToRows($entry, $workingCopy);
+        if ($entry instanceof FillsOnPublishInterface) {
+            $entry->fillOnPublish($now);
+        }
 
         // 4. Record the old slug of every translation whose slug changed, so it redirects
         $this->oldSlugs->record($entry, $oldSlugs, Slug::of($entry));
 
+        // 5. Write the UUIDs of the indexed Entries fields, such as a post's categories, to the reference table
+        $this->referenceIndexer->index($entry);
+
         // 7. Store what the rows hold now as a revision. A scheduled one names who scheduled it, since no one is signed in to the worker
-        $now = $this->clock->now()->setTimezone(new \DateTimeZone('UTC'));
         $this->revisions->record($entry, $now, null !== $scheduledPublish, $scheduledPublish?->getScheduledBy());
 
         // 8. Bump changedAt

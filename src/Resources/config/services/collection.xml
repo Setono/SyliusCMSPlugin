@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- The indexed Entries fields of the content types, and the one that holds a collection's categories -->
+        <service id="Setono\SyliusCMSPlugin\Collection\IndexedFields" class="Setono\SyliusCMSPlugin\Collection\IndexedFields">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
+        </service>
+
+        <!-- Writes the reference table on publish (step 5), and when an import rebuilds it -->
+        <service id="Setono\SyliusCMSPlugin\Collection\EntryReferenceIndexer" class="Setono\SyliusCMSPlugin\Collection\EntryReferenceIndexer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\IndexedFields"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryReferenceRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.factory.entry_reference"/>
+            <argument type="service" id="setono_sylius_cms.manager.entry_reference"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Collection\EntryReferenceIndexerInterface" alias="Setono\SyliusCMSPlugin\Collection\EntryReferenceIndexer"/>
+    </services>
+</container>

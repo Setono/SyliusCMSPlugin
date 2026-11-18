@@ -87,11 +87,14 @@ setono_sylius_cms:
         customer_group: Customer group
         date_window: Date window
         entry: Entry
+        entry_in_category: Entry in category
         locale: Locale
         product: Product
         product_in_taxon: Product in taxon
         taxon: Taxon
     content_type:
+        blog_category: Blog category
+        blog_post: Blog post
         page: Page
         snippet: Snippet
     # The context keys' labels, naming the pages that provide them. See "Context keys" in docs/spec/slots.md
@@ -101,8 +104,13 @@ setono_sylius_cms:
         taxon: Taxon page
     # A content type's list is named by its plural. One without a plural here is named by its label
     content_type_plural:
+        blog_category: Categories
+        blog_post: Posts
         page: Pages
         snippet: Snippets
+    # A collection is named by its content type's code here, in the hub and its list, or else by its plural or its label
+    collection:
+        blog_post: Blog
     field:
         accordion_item:
             content: Content
@@ -121,6 +129,13 @@ setono_sylius_cms:
         bestsellers_source:
             include_children: Include the taxons below it
             taxon: Taxon
+        blog_category:
+            description: Description
+        blog_post:
+            categories: Categories
+            excerpt: Excerpt
+            featured_image: Featured image
+            published_at: Date
         button:
             link: Link
         carousel:
@@ -140,6 +155,8 @@ setono_sylius_cms:
             heading: Heading
         entry_condition:
             entries: Entries
+        entry_in_category_condition:
+            categories: Categories
         embed_code:
             code: Code
             code_help: 'HTML, scripts included, such as a review widget or a newsletter form. It runs in the shop as it is, but not in the builder''s preview.'
@@ -198,6 +215,10 @@ setono_sylius_cms:
             poster_help: Shown before the video plays. Leave it empty to use the video's own poster from the media library.
             video: Video
     layout:
+        blog_category:
+            standard: Standard
+        blog_post:
+            article: Article
         page:
             standard: Standard
     # The link targets' labels. See "Link targets" in docs/spec/extending.md
