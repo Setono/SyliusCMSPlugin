@@ -119,7 +119,7 @@ A [snippet](../../GLOSSARY.md#entries) declares the host-page context it needs, 
 
 A [placement](../../GLOSSARY.md#shop-pages) shows one snippet in one slot. It has a UUID, the slot's identifier, a [page scope](#page-scopes) and a position in the slot. A snippet can have many placements, such as one in `shop.footer` with an empty scope and one in `product.sidebar` scoped to the Shoes taxon.
 
-- **Placements take effect on save** ([ADR 0005](../adr/0005-placements-take-effect-on-save.md)). They don't go through drafts, and adding, editing, removing or reordering them fires `PlacementsChanged` ([Extending](extending.md#events)) and bumps the snippet's `changedAt`.
+- **Placements take effect on save** ([ADR 0005](../adr/0005-placements-take-effect-on-save.md)). They don't go through drafts, and adding, editing, removing or reordering them fires `PlacementsChanged` ([Extending](extending.md#events)) and bumps the snippet's `changedAt`. Deleting a snippet deletes its placements with it, and fires `PlacementsChanged` with the slots they were in after `EntryDeleted`.
 - **The snippet decides when its content shows.** A placement shows its snippet only while the snippet is visible ([Content model](content-model.md#when-an-entry-shows)): a placement of an unpublished, disabled or expired snippet shows nothing.
 - **Editors manage placements on the snippet's overview page**, not in the builder, where they're read-only. There's no Slots screen ([Admin](admin.md#entry-overview-page)).
 - **Position.** Each slot's placements have one order across all snippets, which editors set. A slot shows its matching placements in that order.

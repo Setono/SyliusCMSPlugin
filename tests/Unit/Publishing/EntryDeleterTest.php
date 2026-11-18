@@ -14,12 +14,17 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Event\BeforeEntryDelete;
 use Setono\SyliusCMSPlugin\Event\EntryDeleted;
+use Setono\SyliusCMSPlugin\Event\PlacementsChanged;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Placement;
+use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Publishing\DeleteVetoedException;
 use Setono\SyliusCMSPlugin\Publishing\EntryDeleter;
 use Setono\SyliusCMSPlugin\Publishing\EntryLock;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 final class EntryDeleterTest extends TestCase
@@ -31,6 +36,9 @@ final class EntryDeleterTest extends TestCase
 
     /** @var ObjectProphecy<ManagerRegistry> */
     private ObjectProphecy $managerRegistry;
+
+    /** @var ObjectProphecy<PlacementRepositoryInterface> */
+    private ObjectProphecy $placements;
 
     private EventDispatcher $eventDispatcher;
 
@@ -59,8 +67,11 @@ final class EntryDeleterTest extends TestCase
         $this->managerRegistry = $this->prophesize(ManagerRegistry::class);
         $this->managerRegistry->getManagerForClass(Page::class)->willReturn($this->manager->reveal());
 
+        $this->placements = $this->prophesize(PlacementRepositoryInterface::class);
+        $this->placements->findBySnippet(Argument::any())->willReturn([]);
+
         $this->eventDispatcher = new EventDispatcher();
-        foreach ([BeforeEntryDelete::class, EntryDeleted::class] as $event) {
+        foreach ([BeforeEntryDelete::class, EntryDeleted::class, PlacementsChanged::class] as $event) {
             $this->eventDispatcher->addListener($event, function (object $event): void {
                 $this->events[] = $event;
                 $this->calls[] = $event::class;
@@ -90,6 +101,52 @@ final class EntryDeleterTest extends TestCase
     /**
      * @test
      */
+    public function it_tells_listeners_after_the_commit_which_slots_a_deleted_snippet_was_placed_in_reading_them_before_the_delete(): void
+    {
+        $snippet = $this->snippet();
+        $placements = [new Placement($snippet, 'product.after_price', 0), new Placement($snippet, 'shop.footer', 2), new Placement($snippet, 'shop.footer', 5)];
+        $calls = &$this->calls;
+        $this->placements->findBySnippet($snippet)->will(static function () use ($placements, &$calls): array {
+            $calls[] = 'read placements';
+
+            return $placements;
+        })->shouldBeCalledOnce();
+
+        $this->deleter()->delete($snippet);
+
+        self::assertSame(['begin', 'lock to write', 'read again', BeforeEntryDelete::class, 'read placements', 'remove', 'flush', 'commit', EntryDeleted::class, PlacementsChanged::class], $this->calls);
+
+        $placementsChanged = $this->events[2];
+        self::assertInstanceOf(PlacementsChanged::class, $placementsChanged);
+        self::assertSame([$snippet->getUuid()], $placementsChanged->snippetUuids);
+        self::assertSame(['product.after_price', 'shop.footer'], $placementsChanged->slots);
+    }
+
+    /**
+     * @test
+     */
+    public function it_tells_no_one_about_placements_when_the_deleted_snippet_was_placed_nowhere(): void
+    {
+        $snippet = $this->snippet();
+
+        $this->deleter()->delete($snippet);
+
+        self::assertSame([BeforeEntryDelete::class, EntryDeleted::class], array_map(static fn (object $event): string => $event::class, $this->events));
+    }
+
+    /**
+     * @test
+     */
+    public function it_reads_no_placements_of_an_entry_that_is_not_a_snippet(): void
+    {
+        $this->placements->findBySnippet(Argument::any())->shouldNotBeCalled();
+
+        $this->deleter()->delete($this->page);
+    }
+
+    /**
+     * @test
+     */
     public function it_keeps_the_entry_when_a_listener_vetoes_the_delete(): void
     {
         $this->manager->remove(Argument::any())->shouldNotBeCalled();
@@ -105,6 +162,20 @@ final class EntryDeleterTest extends TestCase
         self::assertSame(['begin', 'lock to write', 'read again', 'roll back'], $this->calls);
     }
 
+    /**
+     * A snippet the entity manager deletes as it deletes the page
+     */
+    private function snippet(): Snippet
+    {
+        $snippet = new Snippet();
+        $this->manager->lock($snippet, LockMode::PESSIMISTIC_WRITE)->will($this->record('lock to write'));
+        $this->manager->refresh($snippet)->will($this->record('read again'));
+        $this->manager->remove($snippet)->will($this->record('remove'));
+        $this->managerRegistry->getManagerForClass(Snippet::class)->willReturn($this->manager->reveal());
+
+        return $snippet;
+    }
+
     private function deleter(): EntryDeleter
     {
         return new EntryDeleter(
@@ -113,7 +184,9 @@ final class EntryDeleterTest extends TestCase
             $this->eventDispatcher,
             new ContentTypeRegistry([
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+                'snippet' => ['model' => Snippet::class, 'translation' => EntryTranslation::class, 'resource' => 'setono_sylius_cms.snippet'],
             ]),
+            $this->placements->reveal(),
         );
     }
 

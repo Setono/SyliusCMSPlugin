@@ -180,6 +180,6 @@ Share links don't travel in a transfer ([Transfer](transfer.md)).
 | A scheduled publish running | `BeforeEntryPublish`, then `EntryPublished`, or `EntryPublishFailed` |
 | Saving an on-save setting | `EntrySettingsChanged` |
 | Saving placements | `PlacementsChanged` |
-| Deleting an entry | `BeforeEntryDelete`, then `EntryDeleted` |
+| Deleting an entry | `BeforeEntryDelete`, then `EntryDeleted`, then for a snippet that was placed `PlacementsChanged` with the slots it was in |
 
 Saving a draft fires no event, because it doesn't change what shoppers see.

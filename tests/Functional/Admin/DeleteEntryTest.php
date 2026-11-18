@@ -7,9 +7,11 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 use Doctrine\DBAL\Connection;
 use Setono\SyliusCMSPlugin\Event\BeforeEntryDelete;
 use Setono\SyliusCMSPlugin\Event\EntryDeleted;
+use Setono\SyliusCMSPlugin\Event\PlacementsChanged;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\Placements;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -19,6 +21,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 final class DeleteEntryTest extends WebTestCase
 {
     use Entries;
+    use Placements;
 
     /**
      * @test
@@ -76,6 +79,66 @@ final class DeleteEntryTest extends WebTestCase
         self::assertSame('page', $event->contentType);
         self::assertSame($outside, $level);
         self::assertEquals(0, $count);
+    }
+
+    /**
+     * @test
+     */
+    public function it_dispatches_placements_changed_with_the_slots_a_deleted_snippet_was_placed_in(): void
+    {
+        $client = self::signedInClient();
+        $client->disableReboot();
+        $snippet = self::createSnippet('Free shipping');
+        $uuid = $snippet->getUuid();
+        self::place($snippet, 'shop.footer');
+        self::place($snippet, 'shop.top');
+        self::place($snippet, 'shop.footer');
+        self::place(self::createSnippet('Opening hours'), 'shop.before_content');
+        $client->request('GET', '/admin/cms/entries/snippet');
+
+        /** @var Connection $connection */
+        $connection = self::getContainer()->get('doctrine.dbal.default_connection');
+        $outside = $connection->getTransactionNestingLevel();
+
+        /** @var list<array{object, int}> $dispatched the event and the transaction nesting level */
+        $dispatched = [];
+        /** @var EventDispatcherInterface $eventDispatcher */
+        $eventDispatcher = self::getContainer()->get('event_dispatcher');
+        foreach ([EntryDeleted::class, PlacementsChanged::class] as $class) {
+            $eventDispatcher->addListener($class, static function (object $event) use (&$dispatched, $connection): void {
+                $dispatched[] = [$event, $connection->getTransactionNestingLevel()];
+            });
+        }
+
+        $client->submit(self::row($client, $uuid)->filter('form')->form());
+
+        self::assertCount(2, $dispatched);
+        [[$deleted], [$placementsChanged, $level]] = $dispatched;
+        self::assertInstanceOf(EntryDeleted::class, $deleted);
+        self::assertInstanceOf(PlacementsChanged::class, $placementsChanged);
+        self::assertSame([$uuid], $placementsChanged->snippetUuids);
+        self::assertSame(['shop.footer', 'shop.top'], $placementsChanged->slots);
+        self::assertSame($outside, $level);
+        self::assertEquals(0, $connection->fetchOne('SELECT COUNT(*) FROM setono_sylius_cms__placement WHERE slot IN (?, ?)', ['shop.footer', 'shop.top']));
+    }
+
+    /**
+     * @test
+     */
+    public function it_dispatches_no_placements_changed_for_a_snippet_that_was_placed_nowhere(): void
+    {
+        $client = self::signedInClient();
+        $client->disableReboot();
+        $snippet = self::createSnippet('Free shipping');
+        $client->request('GET', '/admin/cms/entries/snippet');
+
+        /** @var EventDispatcherInterface $eventDispatcher */
+        $eventDispatcher = self::getContainer()->get('event_dispatcher');
+        $eventDispatcher->addListener(PlacementsChanged::class, static fn () => self::fail('Deleting a snippet placed nowhere dispatched PlacementsChanged'));
+
+        $client->submit(self::row($client, $snippet->getUuid())->filter('form')->form());
+
+        self::assertResponseRedirects();
     }
 
     /**
