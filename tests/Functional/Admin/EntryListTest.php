@@ -260,6 +260,7 @@ final class EntryListTest extends BuilderApiTestCase
 
         self::assertSame([$draft->getUuid()], self::listedUuids(self::filter($client, ['status' => 'unpublished_changes'])));
         self::assertSame([$never->getUuid()], self::listedUuids(self::filter($client, ['status' => 'never_published'])));
+        self::assertEqualsCanonicalizing([$draft->getUuid(), $never->getUuid()], self::listedUuids(self::filter($client, ['status' => 'in_progress'])));
         self::assertEqualsCanonicalizing(
             [$disabled->getUuid(), $upcoming->getUuid(), $ended->getUuid()],
             self::listedUuids(self::filter($client, ['status' => 'disabled_or_outside_date_window'])),

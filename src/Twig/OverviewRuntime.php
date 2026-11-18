@@ -77,13 +77,13 @@ final readonly class OverviewRuntime implements RuntimeExtensionInterface
     }
 
     /**
-     * The entries with unpublished changes, the one edited last first
+     * The entries with unpublished changes and those never published, the one edited last first
      *
      * @return list<EntryInterface>
      */
     public function draftsInProgress(): array
     {
-        $entries = $this->entries->findWithDraft(self::DRAFTS_IN_PROGRESS);
+        $entries = $this->entries->findDraftsInProgress(self::DRAFTS_IN_PROGRESS);
         $this->entryRows->load($entries);
 
         return $entries;

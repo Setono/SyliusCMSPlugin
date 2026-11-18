@@ -54,6 +54,11 @@ final readonly class StatusFilter implements FilterInterface
                 DraftInterface::class,
                 $entry,
             )),
+            EntryStatusFilter::InProgress => $queryBuilder->andWhere(sprintf(
+                '%2$s.lastPublishedAt IS NULL OR EXISTS (SELECT cms_status_draft.id FROM %1$s cms_status_draft WHERE cms_status_draft.entry = %2$s)',
+                DraftInterface::class,
+                $entry,
+            )),
             EntryStatusFilter::NeverPublished => $queryBuilder->andWhere(sprintf('%s.lastPublishedAt IS NULL', $entry)),
             EntryStatusFilter::Scheduled => $queryBuilder->andWhere(sprintf(
                 'EXISTS (SELECT cms_status_scheduled.id FROM %s cms_status_scheduled WHERE cms_status_scheduled.entry = %s AND cms_status_scheduled.failureReason IS NULL)',

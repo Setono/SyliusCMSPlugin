@@ -47,6 +47,7 @@ final class EntryFilterTypesTest extends TypeTestCase
         self::assertSame(
             [
                 'needs_attention' => 'setono_sylius_cms.ui.status_filter.needs_attention',
+                'in_progress' => 'setono_sylius_cms.ui.status_filter.in_progress',
                 'unpublished_changes' => 'setono_sylius_cms.ui.status_filter.unpublished_changes',
                 'never_published' => 'setono_sylius_cms.ui.status_filter.never_published',
                 'scheduled' => 'setono_sylius_cms.ui.status_filter.scheduled',

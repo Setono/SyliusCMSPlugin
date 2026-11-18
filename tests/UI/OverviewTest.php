@@ -24,7 +24,7 @@ final class OverviewTest extends UITestCase
     /**
      * @test
      */
-    public function it_shows_a_scheduled_publish_under_coming_up_and_a_draft_under_drafts_in_progress_and_follows_what_needs_attention_to_its_entry(): void
+    public function it_shows_a_scheduled_publish_under_coming_up_and_drafts_under_drafts_in_progress_and_follows_what_needs_attention_to_its_entry(): void
     {
         self::mockTime('2030-01-01 10:00:00');
         self::forgetSentMessages();
@@ -48,8 +48,12 @@ final class OverviewTest extends UITestCase
         Expect::locator($comingUp->locator('[data-event]'))->toContainText('Publishes');
         Expect::locator($comingUp->locator('[data-event] time'))->toHaveText('2030-01-02 09:00');
 
+        // Both a published entry with unpublished changes and one never published
         $drafts = $browser->getByRole('region', ['name' => 'Drafts in progress']);
         Expect::locator($drafts->getByRole('link', ['name' => 'About us, edited']))->toBeVisible();
+        Expect::locator($drafts->locator(sprintf('[data-entry="%s"] [data-entry-status]', $about->getUuid())))->toContainText('Unpublished changes');
+        Expect::locator($drafts->getByRole('link', ['name' => 'Contact']))->toBeVisible();
+        Expect::locator($drafts->locator(sprintf('[data-entry="%s"] [data-entry-status]', $contact->getUuid())))->toContainText('Never published');
 
         // A problem leads to its entry
         $needsAttention = $browser->getByRole('region', ['name' => 'Needs attention']);

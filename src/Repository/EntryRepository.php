@@ -189,11 +189,11 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         return $paginator;
     }
 
-    public function findWithDraft(int $limit): array
+    public function findDraftsInProgress(int $limit): array
     {
         /** @var list<EntryInterface> $entries */
         $entries = $this->createQueryBuilder('o')
-            ->andWhere(sprintf('EXISTS (SELECT cms_draft.id FROM %s cms_draft WHERE cms_draft.entry = o)', DraftInterface::class))
+            ->andWhere(sprintf('o.lastPublishedAt IS NULL OR EXISTS (SELECT cms_draft.id FROM %s cms_draft WHERE cms_draft.entry = o)', DraftInterface::class))
             ->addOrderBy('o.lastEditedAt', 'DESC')
             ->addOrderBy('o.id', 'DESC')
             ->setMaxResults($limit)

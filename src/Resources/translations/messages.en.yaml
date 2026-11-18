@@ -347,7 +347,7 @@ setono_sylius_cms:
         add_placement: Add placement
         all_entries: All entries
         all_needing_attention: '{1} The entry that needs attention|]1,Inf[ All %count% entries that need attention'
-        all_unpublished_changes: All entries with unpublished changes
+        all_drafts_in_progress: All drafts in progress
         any_channel: Any channel
         any_translation: Any
         any_status: Any status
@@ -407,7 +407,7 @@ setono_sylius_cms:
         no_slots_offered: No slot provides the host-page context it needs.
         no_urls: It has no URL yet, because it has no slug.
         missing_alt_text: '{1} 1 image has no alt text in one or more languages|]1,Inf[ %count% images have no alt text in one or more languages'
-        no_drafts_in_progress: No published entry has unpublished changes.
+        no_drafts_in_progress: No entry has unpublished changes or waits for its first publish.
         no_entries_in_channel: No entries are in this channel.
         nothing_coming_up: No scheduled publishes, and no date windows that start or end.
         not_complete_count: '%count% not complete'
@@ -483,6 +483,7 @@ setono_sylius_cms:
             no_catch_all: None of its placements is a catch-all, with no page scope and a published, enabled snippet for everyone, so some pages or shoppers may see nothing there.
         status: Status
         status_filter:
+            in_progress: Unpublished changes or never published
             needs_attention: Needs attention
             disabled_or_outside_date_window: Disabled or outside its date window
             never_published: Never published

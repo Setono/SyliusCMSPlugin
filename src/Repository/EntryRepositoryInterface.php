@@ -78,12 +78,13 @@ interface EntryRepositoryInterface
     public function findEndingAfter(\DateTimeImmutable $now, int $limit): array;
 
     /**
-     * The entries with a draft, which are published entries with unpublished changes, the one edited last first, which
-     * the Overview's Drafts in progress lists
+     * The entries a draft is in progress for: those with a draft, which are published entries with unpublished changes,
+     * and those never published, which are their own working copy. The one edited last first, which the Overview's
+     * Drafts in progress lists
      *
      * @return list<EntryInterface>
      */
-    public function findWithDraft(int $limit): array;
+    public function findDraftsInProgress(int $limit): array;
 
     /**
      * The entries the lists' Needs attention filter finds, those with an error or a warning by the counts stored with

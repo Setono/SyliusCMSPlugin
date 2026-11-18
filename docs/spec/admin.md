@@ -24,7 +24,7 @@ The hub's home page has four panels:
 - **Needs attention:** the errors and warnings across the store ([Problems](#problems)), grouped by kind. Each links to the place where it's fixed.
 - **Coming up:** scheduled publishes, and date windows that start or end, in time order.
 - **Translations:** completeness per channel and locale, with a link to the entries that aren't complete ([Localization](localization.md#completeness-and-outdated-flags)).
-- **Drafts in progress:** entries with unpublished changes, newest first.
+- **Drafts in progress:** the 10 entries edited last, of those with unpublished changes and those never published, each labelled "Unpublished changes" or "Never published", with a link to all of them in All entries, filtered on both states.
 
 ## Entry lists
 
@@ -39,7 +39,7 @@ Every list (All entries, Pages, Snippets and each collection) has the same colum
 | Last edited | When and by whom. |
 | Problems | A marker when the entry has an error or warning. |
 
-- **Filters:** search, status and channel. The status filter offers Needs attention, Unpublished changes, Never published, Scheduled, and Disabled or outside its date window.
+- **Filters:** search, status and channel. The status filter offers Needs attention, Unpublished changes or never published, Unpublished changes, Never published, Scheduled, and Disabled or outside its date window.
 - **Ordered content types**, such as FAQ items, are dragged into order in their list. The position takes effect on save ([Content model](content-model.md#whats-drafted-and-what-takes-effect-on-save)).
 - **A row** opens the entry's overview page.
 - A draft's values, such as a changed title, are read from its JSON, so lists can't sort or filter on them in SQL ([ADR 0009](../adr/0009-published-content-stays-in-the-rows-and-a-draft-is-json-beside-it.md)).

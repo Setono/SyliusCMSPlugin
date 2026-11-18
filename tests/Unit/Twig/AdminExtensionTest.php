@@ -273,11 +273,11 @@ final class AdminExtensionTest extends IntegrationTestCase
     }
 
     /**
-     * Published pages with unpublished changes, the one edited last first
+     * Pages the repository finds a draft in progress for, the one edited last first: here, pages never published
      *
      * @return array{}
      */
-    public function pagesWithADraft(string ...$titles): array
+    public function draftsInProgress(string ...$titles): array
     {
         $this->withDraft = array_map(fn (string $title): Page => $this->aPage($title)['page'], array_values($titles));
 
@@ -519,7 +519,7 @@ final class AdminExtensionTest extends IntegrationTestCase
             return self::paginator($needingAttention);
         });
         $withDraft = &$this->withDraft;
-        $entries->findWithDraft(OverviewRuntime::DRAFTS_IN_PROGRESS)->will(static function () use (&$withDraft): array {
+        $entries->findDraftsInProgress(OverviewRuntime::DRAFTS_IN_PROGRESS)->will(static function () use (&$withDraft): array {
             return $withDraft;
         });
         $dated = &$this->dated;
