@@ -223,6 +223,30 @@ final class EditorPresetsTest extends BuilderApiTestCase
     }
 
     /**
+     * @test
+     */
+    public function it_downloads_an_editor_preset_as_a_code_preset_file_named_by_its_name(): void
+    {
+        $client = self::signedIn();
+        $page = self::createPageWithBlocks('About us', 'about-us', [...self::blocks(), new StoredBlock('0193a5be-0000-7000-8000-000000000006', 'image', 1, fields: ['image' => '0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60', 'caption' => ['en_US' => 'Our shop']])]);
+        $uuid = self::savePreset($client, self::openBuilder($client, $page), $page->getUuid(), [self::HEADING, '0193a5be-0000-7000-8000-000000000006'], 'Spring promo', 'Campaigns');
+
+        $client->request('GET', sprintf('/admin/cms/api/presets/%s/export', $uuid));
+
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('Content-Disposition', 'attachment; filename=spring_promo.json');
+        $content = (string) $client->getInternalResponse()->getContent();
+        self::assertStringEndsWith("}\n", $content);
+        /** @var array{blocks: list<array{fields: array<string, mixed>}>} $file */
+        $file = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame(['format', 'name', 'category', 'description', 'thumbnail', 'startingPoint', 'blocks'], array_keys($file));
+        self::assertSame(['caption' => ['en_US' => 'Our shop']], $file['blocks'][1]['fields']);
+
+        $client->request('GET', '/admin/cms/api/presets/0193a5be-0000-7000-8000-00000000ffff/export');
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    /**
      * @param list<string> $blocks
      *
      * @return string the new preset's UUID

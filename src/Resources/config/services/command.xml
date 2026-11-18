@@ -21,6 +21,13 @@
             <tag name="console.command"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Command\ExportPresetCommand" class="Setono\SyliusCMSPlugin\Command\ExportPresetCommand">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\CodePresetExporter"/>
+
+            <tag name="console.command"/>
+        </service>
+
         <!-- RegisterProblemKindsPass hands it the problem kinds it reports -->
         <service id="Setono\SyliusCMSPlugin\Command\LintCommand" class="Setono\SyliusCMSPlugin\Command\LintCommand">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
