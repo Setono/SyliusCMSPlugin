@@ -8,6 +8,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateMediaFolderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreatePresetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateShareLinkAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DeleteMediaItemAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\DeletePresetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DiscardEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\InsertPresetAction;
@@ -23,6 +24,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewSnippetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewTokenAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PublishEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RegistryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\ReplacePresetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ReplaceMediaFileAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RestoreRevisionAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RevisionIndexAction;
@@ -38,6 +40,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\SnippetBlocksAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SourceCountAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaFolderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaItemAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdatePresetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UploadMediaAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ValidateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
@@ -262,6 +265,25 @@ return static function (RoutingConfigurator $routes): void {
     $routes->add('setono_sylius_cms_admin_api_preset_create', '/cms/api/presets')
         ->controller(CreatePresetAction::class)
         ->methods(['POST'])
+    ;
+
+    // "Replace <name>", a rename or a new category, and Delete, of an editor preset. Code presets are read-only
+    $routes->add('setono_sylius_cms_admin_api_preset_replace', '/cms/api/presets/{uuid}')
+        ->controller(ReplacePresetAction::class)
+        ->methods(['PUT'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_preset_update', '/cms/api/presets/{uuid}')
+        ->controller(UpdatePresetAction::class)
+        ->methods(['PATCH'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_preset_delete', '/cms/api/presets/{uuid}')
+        ->controller(DeletePresetAction::class)
+        ->methods(['DELETE'])
+        ->requirements(['uuid' => Requirement::UUID])
     ;
 
     // A preset's blocks ready to insert into an entry. A code preset is named by its code, an editor preset by its UUID

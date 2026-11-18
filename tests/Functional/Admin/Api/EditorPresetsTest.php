@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 /**
  * Editors save blocks as presets of their own from the builder, replace their blocks, rename and recategorise them, and
@@ -14,6 +15,8 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
  */
 final class EditorPresetsTest extends BuilderApiTestCase
 {
+    use ClockSensitiveTrait;
+
     private const HEADING = '0193a5be-0000-7000-8000-000000000001';
 
     private const COLUMNS = '0193a5be-0000-7000-8000-000000000002';
@@ -120,6 +123,103 @@ final class EditorPresetsTest extends BuilderApiTestCase
         self::json($client, 'POST', '/admin/cms/api/presets', ['entry' => $page->getUuid(), 'blocks' => [self::HEADING], 'name' => 'Promo']);
 
         self::assertResponseStatusCodeSame(403);
+    }
+
+    /**
+     * @test
+     */
+    public function it_replaces_an_editor_preset_s_blocks_keeping_its_name_and_category_and_leaves_the_entries_it_was_inserted_into_as_they_are(): void
+    {
+        self::mockTime('2026-11-20 10:00:00');
+        $client = self::signedIn();
+        $page = self::createPageWithBlocks('About us', 'about-us', self::blocks());
+        $csrfToken = self::openBuilder($client, $page);
+        $uuid = self::savePreset($client, $csrfToken, $page->getUuid(), [self::HEADING], 'Promo', 'Campaigns');
+
+        // Inserted into another page, and saved there
+        $inserted = self::json($client, 'POST', sprintf('/admin/cms/api/presets/%s/insert', $uuid), ['entry' => $page->getUuid()]);
+        self::assertIsArray($inserted);
+        self::assertIsArray($inserted['blocks'] ?? null);
+        self::assertIsArray($inserted['blocks'][0] ?? null);
+        self::assertIsString($inserted['blocks'][0]['key'] ?? null);
+        $other = self::createPageWithBlocks('Contact', 'contact', [self::heading($inserted['blocks'][0]['key'], 'Winter sale')]);
+
+        self::mockTime('2026-11-21 09:30:00');
+        $response = self::json($client, 'PUT', sprintf('/admin/cms/api/presets/%s', $uuid), ['entry' => $page->getUuid(), 'blocks' => [self::RICH_TEXT, self::COLUMNS]], $csrfToken);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['preset' => ['id' => $uuid, 'name' => 'Promo', 'category' => 'Campaigns', 'description' => null, 'changedAt' => '2026-11-21T09:30:00Z']], $response);
+        $listed = self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s', $other->getUuid()))[$uuid] ?? null;
+        self::assertIsArray($listed);
+        self::assertSame(['columns', 'rich_text'], array_column($listed['blocks'], 'type'));
+        self::assertSame(['heading'], array_map(static fn (StoredBlock $block): string => $block->type, self::reloadPage($other)->getBlockTree()->blocks));
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_to_replace_a_code_preset_or_one_that_does_not_exist(): void
+    {
+        $client = self::signedIn();
+        $page = self::createPageWithBlocks('About us', 'about-us', self::blocks());
+        $csrfToken = self::openBuilder($client, $page);
+
+        self::json($client, 'PUT', '/admin/cms/api/presets/0193a5be-0000-7000-8000-00000000ffff', ['entry' => $page->getUuid(), 'blocks' => [self::HEADING]], $csrfToken);
+        self::assertResponseStatusCodeSame(404);
+
+        // Code presets are read-only
+        self::json($client, 'PUT', '/admin/cms/api/presets/hero', ['entry' => $page->getUuid(), 'blocks' => [self::HEADING]], $csrfToken);
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    /**
+     * @test
+     */
+    public function it_renames_and_recategorises_an_editor_preset_at_once_bumping_its_changed_at(): void
+    {
+        self::mockTime('2026-11-20 10:00:00');
+        $client = self::signedIn();
+        $page = self::createPageWithBlocks('About us', 'about-us', self::blocks());
+        $csrfToken = self::openBuilder($client, $page);
+        $uuid = self::savePreset($client, $csrfToken, $page->getUuid(), [self::HEADING], 'Promo', 'Campaigns');
+
+        self::mockTime('2026-11-20 10:05:00');
+        $renamed = self::json($client, 'PATCH', sprintf('/admin/cms/api/presets/%s', $uuid), ['name' => 'Spring promo'], $csrfToken);
+        $recategorised = self::json($client, 'PATCH', sprintf('/admin/cms/api/presets/%s', $uuid), ['category' => 'Seasonal', 'description' => 'For the spring sale'], $csrfToken);
+
+        self::assertSame(['preset' => ['id' => $uuid, 'name' => 'Spring promo', 'category' => 'Campaigns', 'description' => null, 'changedAt' => '2026-11-20T10:05:00Z']], $renamed);
+        self::assertSame(['preset' => ['id' => $uuid, 'name' => 'Spring promo', 'category' => 'Seasonal', 'description' => 'For the spring sale', 'changedAt' => '2026-11-20T10:05:00Z']], $recategorised);
+
+        // Without a category
+        self::json($client, 'PATCH', sprintf('/admin/cms/api/presets/%s', $uuid), ['category' => ''], $csrfToken);
+        $listed = self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s', $page->getUuid()))[$uuid] ?? null;
+        self::assertIsArray($listed);
+        self::assertSame(['Spring promo', null, ['heading']], [$listed['name'], $listed['category'], array_column($listed['blocks'], 'type')]);
+
+        self::json($client, 'PATCH', sprintf('/admin/cms/api/presets/%s', $uuid), ['name' => ''], $csrfToken);
+        self::assertResponseStatusCodeSame(400);
+        self::json($client, 'PATCH', sprintf('/admin/cms/api/presets/%s', $uuid), ['name' => 'Without a token']);
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    /**
+     * @test
+     */
+    public function it_deletes_an_editor_preset_leaving_the_entries_it_was_inserted_into_as_they_are(): void
+    {
+        $client = self::signedIn();
+        $page = self::createPageWithBlocks('About us', 'about-us', self::blocks());
+        $csrfToken = self::openBuilder($client, $page);
+        $uuid = self::savePreset($client, $csrfToken, $page->getUuid(), [self::HEADING], 'Promo');
+
+        self::json($client, 'DELETE', sprintf('/admin/cms/api/presets/%s', $uuid), null, $csrfToken);
+
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame([], self::editorPresetIds($client, $page->getUuid()));
+        self::assertCount(3, self::reloadPage($page)->getBlockTree()->blocks);
+
+        self::json($client, 'DELETE', sprintf('/admin/cms/api/presets/%s', $uuid), null, $csrfToken);
+        self::assertResponseStatusCodeSame(404);
     }
 
     /**

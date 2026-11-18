@@ -316,6 +316,36 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\EditorPresetLookup" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\EditorPresetLookup">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetProviderInterface"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ReplacePresetAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ReplacePresetAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\EditorPresetLookup"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\PresetBlocksRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdatePresetAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdatePresetAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\EditorPresetLookup"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\DeletePresetAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\DeletePresetAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\EditorPresetDeleterInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>

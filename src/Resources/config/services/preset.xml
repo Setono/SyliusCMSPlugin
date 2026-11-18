@@ -38,6 +38,12 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface" alias="Setono\SyliusCMSPlugin\Preset\EditorPresetSaver"/>
 
+        <service id="Setono\SyliusCMSPlugin\Preset\EditorPresetDeleter" class="Setono\SyliusCMSPlugin\Preset\EditorPresetDeleter">
+            <argument type="service" id="setono_sylius_cms.repository.editor_preset"/>
+            <argument type="service" id="doctrine"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Preset\EditorPresetDeleterInterface" alias="Setono\SyliusCMSPlugin\Preset\EditorPresetDeleter"/>
+
         <!-- Makes a preset's blocks ready to insert into an entry: upgraded, new keys, the entry's locales, keys resolved -->
         <service id="Setono\SyliusCMSPlugin\Preset\InsertTransformer" class="Setono\SyliusCMSPlugin\Preset\InsertTransformer">
             <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
