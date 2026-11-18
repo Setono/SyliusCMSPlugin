@@ -216,6 +216,7 @@ setono_sylius_cms:
                 media: Media
                 overview: Overview
                 pages: Pages
+                presets: Presets
                 snippets: Snippets
             main:
                 content:
@@ -386,6 +387,7 @@ setono_sylius_cms:
             guests: Guests
             no_group: Signed in without a group
             only: 'Only %groups%'
+        block_presets: Block presets
         by: 'by %name%'
         cancel_schedule: Cancel the schedule
         channel: Channel
@@ -397,6 +399,24 @@ setono_sylius_cms:
             publishes: Publishes
             starts: Starts showing
         complete_of: '%complete% of %entries% complete'
+        delete: Delete
+        delete_preset: 'Delete %name%'
+        download: Download
+        download_preset: 'Download %name%'
+        edit: Edit
+        edit_preset: 'Edit %name%'
+        fix_in_presets: Open in Presets
+        no_block_presets: 'There are no block presets yet. Select blocks in the builder and save them with ★.'
+        no_starting_points: There are no starting points yet.
+        preset_category: Category
+        preset_content_type: Content type
+        preset_description: Description
+        preset_invalid: Invalid blocks
+        preset_name: Name
+        presets: Presets
+        presets_description: 'Blocks saved to insert anywhere, and starting points for new entries'
+        save: Save
+        starting_points: Starting points
         content: Content
         content_description: Pages and everything else shoppers read that isn't a product
         copied: Copied

@@ -67,17 +67,23 @@ final class HubMenuBuilderTest extends TestCase
     /**
      * @test
      */
-    public function its_library_has_the_media_library(): void
+    public function its_library_has_the_media_library_and_the_presets(): void
     {
         $library = self::child($this->menu(), 'library');
 
-        self::assertSame(['media'], array_keys($library->getChildren()));
+        self::assertSame(['media', 'presets'], array_keys($library->getChildren()));
 
         $media = self::child($library, 'media');
         self::assertSame('setono_sylius_cms.menu.admin.hub.media', $media->getLabel());
         self::assertSame('/admin/cms/media', $media->getUri());
         self::assertSame('images outline', $media->getLabelAttribute('icon'));
         self::assertTrue(MenuFactory::matcherOn('setono_sylius_cms_admin_media_index')->isCurrent($media));
+
+        $presets = self::child($library, 'presets');
+        self::assertSame('setono_sylius_cms.menu.admin.hub.presets', $presets->getLabel());
+        self::assertSame('/admin/cms/presets', $presets->getUri());
+        self::assertSame('clone outline', $presets->getLabelAttribute('icon'));
+        self::assertTrue(MenuFactory::matcherOn('setono_sylius_cms_admin_preset_index')->isCurrent($presets));
     }
 
     /**
@@ -157,7 +163,7 @@ final class HubMenuBuilderTest extends TestCase
             $event->getMenu()->getChild('library')?->addChild('brand_assets', ['uri' => '/brand-assets']);
         });
 
-        self::assertSame(['media', 'brand_assets'], array_keys(self::child($this->menu(), 'library')->getChildren()));
+        self::assertSame(['media', 'presets', 'brand_assets'], array_keys(self::child($this->menu(), 'library')->getChildren()));
     }
 
     private function menu(): ItemInterface

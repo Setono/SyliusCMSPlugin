@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\DeleteMediaItemAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DeletePresetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DiscardEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\ExportPresetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\InsertPresetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaFolderIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaIndexAction;
@@ -48,11 +49,13 @@ use Setono\SyliusCMSPlugin\Controller\Admin\CancelScheduleAction as CancelSchedu
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateShareLinkAction as CreateShareLinkPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\DeletePresetAction as DeletePresetPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction as DiscardEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\MediaLibraryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OrderEntriesAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OrderPlacementsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\PresetsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PreviewRevisionAction as PreviewRevisionPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PublishEntryAction as PublishEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction;
@@ -60,6 +63,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\RestoreRevisionAction as RestoreRevi
 use Setono\SyliusCMSPlugin\Controller\Admin\RevokeShareLinkAction as RevokeShareLinkPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\ScheduleEntryAction as ScheduleEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\SetPlacementPageScopeAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\UpdatePresetAction as UpdatePresetPageAction;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Routing\Requirement\Requirement;
 
@@ -224,6 +228,24 @@ return static function (RoutingConfigurator $routes): void {
         ->methods(['GET'])
     ;
 
+    // The Presets screen (docs/spec/admin.md#presets), and its Edit and Delete of an editor preset
+    $routes->add('setono_sylius_cms_admin_preset_index', '/cms/presets')
+        ->controller(PresetsAction::class)
+        ->methods(['GET'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_preset_update', '/cms/presets/{uuid}')
+        ->controller(UpdatePresetPageAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_preset_delete', '/cms/presets/{uuid}/delete')
+        ->controller(DeletePresetPageAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
     // The builder's JSON endpoints are internal: their paths, names and bodies can change in any release (docs/spec/builder.md#json-endpoints)
     $routes->add('setono_sylius_cms_admin_api_registry', '/cms/api/registry')
         ->controller(RegistryAction::class)
@@ -283,6 +305,13 @@ return static function (RoutingConfigurator $routes): void {
     $routes->add('setono_sylius_cms_admin_api_preset_delete', '/cms/api/presets/{uuid}')
         ->controller(DeletePresetAction::class)
         ->methods(['DELETE'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    // An editor preset as a code preset file, which the Presets tab and the Presets screen download
+    $routes->add('setono_sylius_cms_admin_api_preset_export', '/cms/api/presets/{uuid}/export')
+        ->controller(ExportPresetAction::class)
+        ->methods(['GET'])
         ->requirements(['uuid' => Requirement::UUID])
     ;
 

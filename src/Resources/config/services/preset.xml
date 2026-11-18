@@ -44,6 +44,12 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Preset\EditorPresetDeleterInterface" alias="Setono\SyliusCMSPlugin\Preset\EditorPresetDeleter"/>
 
+        <!-- Turns a preset into a code preset file, with its media fields left empty -->
+        <service id="Setono\SyliusCMSPlugin\Preset\CodePresetExporter" class="Setono\SyliusCMSPlugin\Preset\CodePresetExporter">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+        </service>
+
         <!-- Makes a preset's blocks ready to insert into an entry: upgraded, new keys, the entry's locales, keys resolved -->
         <service id="Setono\SyliusCMSPlugin\Preset\InsertTransformer" class="Setono\SyliusCMSPlugin\Preset\InsertTransformer">
             <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
