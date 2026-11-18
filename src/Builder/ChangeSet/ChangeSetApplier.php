@@ -14,10 +14,12 @@ use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\EntryFields;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
@@ -25,7 +27,7 @@ use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 /**
  * Applies a change set to a working copy, all or nothing: to its block tree and its layout, to its shared entry fields,
- * and to its translations' values, shown switches and translation state. The values themselves aren't validated, because invalid content saves: publish validates. They're
+ * the content type's own included, and to its translations' values, shown switches and translation state. The values themselves aren't validated, because invalid content saves: publish validates. They're
  * sanitised by field types that sanitise, such as rich text, and so are the parameter values of visibility conditions
  *
  * @internal
@@ -38,6 +40,7 @@ final readonly class ChangeSetApplier
         private ContentTypeRegistryInterface $contentTypes,
         private ConditionKindRegistryInterface $conditionKinds,
         private LayoutRegistryInterface $layouts,
+        private ContentTypeFields $contentTypeFields = new ContentTypeFields(new FieldReader()),
     ) {
     }
 
@@ -50,6 +53,8 @@ final readonly class ChangeSetApplier
     public function apply(ChangeSet $changeSet, EntryInterface $workingCopy, ?array $locales = null): void
     {
         $contentType = $this->contentTypes->getByEntry($workingCopy);
+        $sharedFields = $this->contentTypeFields->shared($contentType);
+        $translatableFields = $this->contentTypeFields->translatable($contentType);
         // A copy, so nothing changes until every change is known to apply
         $tree = clone $workingCopy->getBlockTree();
         /** @var list<array{string, \Closure(EntryTranslationInterface): void}> $translationChanges the locale, and the change to its translation */
@@ -66,10 +71,12 @@ final readonly class ChangeSetApplier
                 $change instanceof SetStyle => $this->setStyle($change, $tree),
                 $change instanceof SetConditions => $this->setConditions($change, $tree),
                 $change instanceof SetEntryValue && in_array($change->field, EntryFields::shared($contentType), true) => $entryChanges[] = self::sharedEntryValue($change),
+                $change instanceof SetEntryValue && isset($sharedFields[$change->field]) => $entryChanges[] = $this->ownSharedValue($change, $sharedFields[$change->field]),
+                $change instanceof SetEntryValue && isset($translatableFields[$change->field]) => $translationChanges[] = $this->ownTranslatableValue($change, $translatableFields[$change->field]),
                 $change instanceof SetEntryValue => $translationChanges[] = self::entryValue($change, $contentType),
                 $change instanceof SetShown => $translationChanges[] = [$change->locale, static fn (EntryTranslationInterface $translation) => $translation->setShown($change->shown)],
                 $change instanceof SetTranslated => $this->setTranslated($change, $tree),
-                $change instanceof SetEntryTranslated => $translationChanges[] = self::entryTranslated($change, $contentType),
+                $change instanceof SetEntryTranslated => $translationChanges[] = self::entryTranslated($change, $contentType, $sharedFields, $translatableFields),
                 $change instanceof SetLayout => $this->setLayout($change, $tree, $contentType),
                 $change instanceof SetLayoutValue => $this->setLayoutValue($change, $tree, $contentType),
                 $change instanceof SetLayoutTranslated => $this->setLayoutTranslated($change, $tree, $contentType),
@@ -139,18 +146,65 @@ final readonly class ChangeSetApplier
     }
 
     /**
-     * The locale of where an entry value was translated from and the change to its translation, once the field is
-     * known to be one of the entry fields
+     * The change to one of the content type's own fields shared by all translations, sanitised by its field type. An
+     * empty value removes it, which gives the property its default
+     *
+     * @return \Closure(EntryInterface): void
+     */
+    private function ownSharedValue(SetEntryValue $change, FieldMetadata $field): \Closure
+    {
+        if (null !== $change->locale) {
+            throw new InvalidChangeSetException(sprintf('The entry field "%s" is shared by all translations, so a value takes no locale', $change->field));
+        }
+
+        $value = $this->ownValue($field, $change->value);
+
+        return fn (EntryInterface $entry) => $this->contentTypeFields->write($entry, $change->field, $value);
+    }
+
+    /**
+     * The locale of a value of one of the content type's own translatable fields and the change to its translation,
+     * sanitised by its field type
      *
      * @return array{string, \Closure(EntryTranslationInterface): void}
      */
-    private static function entryTranslated(SetEntryTranslated $change, ContentTypeMetadata $contentType): array
+    private function ownTranslatableValue(SetEntryValue $change, FieldMetadata $field): array
     {
-        if (in_array($change->field, EntryFields::shared($contentType), true)) {
+        if (null === $change->locale) {
+            throw new InvalidChangeSetException(sprintf('The entry field "%s" is translatable, so a value needs a locale', $change->field));
+        }
+
+        $value = $this->ownValue($field, $change->value);
+
+        return [$change->locale, fn (EntryTranslationInterface $translation) => $this->contentTypeFields->write($translation, $change->field, $value)];
+    }
+
+    /**
+     * A value of one of the content type's own fields, sanitised, or null for a missing one
+     */
+    private function ownValue(FieldMetadata $field, mixed $value): mixed
+    {
+        return null === $value || '' === $value || [] === $value ? null : $this->sanitize($field, $value);
+    }
+
+    /**
+     * The locale of where an entry value was translated from and the change to its translation, once the field is
+     * known to be one of the translatable entry fields
+     *
+     * @param array<string, FieldMetadata> $sharedFields the content type's own shared fields
+     * @param array<string, FieldMetadata> $translatableFields the content type's own translatable fields
+     *
+     * @return array{string, \Closure(EntryTranslationInterface): void}
+     */
+    private static function entryTranslated(SetEntryTranslated $change, ContentTypeMetadata $contentType, array $sharedFields, array $translatableFields): array
+    {
+        if (in_array($change->field, EntryFields::shared($contentType), true) || isset($sharedFields[$change->field])) {
             throw new InvalidChangeSetException(sprintf('The entry field "%s" is shared by all translations, so it has no translation state', $change->field));
         }
 
-        self::assertEntryField($change->field, $contentType);
+        if (!isset($translatableFields[$change->field])) {
+            self::assertEntryField($change->field, $contentType);
+        }
 
         return [$change->locale, static function (EntryTranslationInterface $translation) use ($change): void {
             $translated = $translation->getTranslated();
@@ -165,8 +219,8 @@ final readonly class ChangeSetApplier
     }
 
     /**
-     * The translatable entry fields are a translation's title, and its slug, meta title and meta description for a
-     * content type with its own URL. The content type's own fields come with #265
+     * The translatable base fields are a translation's title, and its slug, meta title and meta description for a
+     * content type with its own URL
      */
     private static function assertEntryField(string $field, ContentTypeMetadata $contentType): void
     {

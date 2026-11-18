@@ -13,8 +13,12 @@ use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
@@ -61,6 +65,61 @@ final class EntryDenormalizerTest extends TestCase
         self::assertTrue($rows->isNoindex());
         self::assertInstanceOf(PageTranslation::class, $rows->getTranslations()->get('da_DK'));
         self::assertSame($rows, $rows->getTranslation('da_DK')->getTranslatable());
+    }
+
+    /**
+     * A content type's own fields are drafted, so publishing copies them onto the rows, as Doctrine maps them
+     *
+     * @test
+     */
+    public function it_round_trips_a_content_types_own_fields(): void
+    {
+        $rows = new Shop();
+        $rows->setCurrentLocale('en_US');
+        $rows->setTitle('Aarhus');
+        $rows->setCity('Aarhus');
+        $rows->setParking(true);
+
+        $draft = clone $rows;
+        $draft->setCity('Odense');
+        $draft->setParking(false);
+        $draft->setOpenedOn(new \DateTimeImmutable('2026-11-13', new \DateTimeZone('UTC')));
+        $translation = $draft->getTranslation('en_US');
+        self::assertInstanceOf(ShopTranslation::class, $translation);
+        $translation->setDirections('Turn left');
+        $json = CanonicalJson::encode($this->normalizer()->normalize($draft));
+
+        $this->denormalizer()->denormalize(CanonicalJson::decode($json), $rows);
+
+        self::assertSame($json, CanonicalJson::encode($this->normalizer()->normalize($rows)));
+        self::assertSame('Odense', $rows->getCity());
+        self::assertFalse($rows->hasParking());
+        self::assertEquals(new \DateTimeImmutable('2026-11-13T00:00:00Z'), $rows->getOpenedOn());
+        $rowsTranslation = $rows->getTranslation('en_US');
+        self::assertInstanceOf(ShopTranslation::class, $rowsTranslation);
+        self::assertSame('Turn left', $rowsTranslation->getDirections());
+    }
+
+    /**
+     * A field an entry in the entry format leaves out has no value, and one that doesn't fit counts as missing
+     *
+     * @test
+     */
+    public function it_gives_a_content_types_own_field_without_a_value_or_with_one_that_does_not_fit_its_default(): void
+    {
+        $shop = new Shop();
+        $shop->setCurrentLocale('en_US');
+        $shop->setTitle('Aarhus');
+        $shop->setCity('Aarhus');
+        $shop->setParking(true);
+        $data = CanonicalJson::decode(CanonicalJson::encode($this->normalizer()->normalize($shop)));
+        self::assertIsArray($data);
+        $data['fields'] = ['city' => ['Aarhus'], 'noindex' => false];
+
+        $this->denormalizer()->denormalize($data, $shop);
+
+        self::assertNull($shop->getCity());
+        self::assertFalse($shop->hasParking());
     }
 
     /**
@@ -338,12 +397,12 @@ final class EntryDenormalizerTest extends TestCase
 
     private function normalizer(): EntryNormalizer
     {
-        return new EntryNormalizer($this->registry());
+        return new EntryNormalizer($this->registry(), new ContentTypeFields(new FieldReader()));
     }
 
     private function denormalizer(): EntryDenormalizer
     {
-        return new EntryDenormalizer($this->registry());
+        return new EntryDenormalizer($this->registry(), new ContentTypeFields(new FieldReader()));
     }
 
     private function registry(): ContentTypeRegistry
@@ -352,6 +411,7 @@ final class EntryDenormalizerTest extends TestCase
             'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
             'snippet' => ['model' => Snippet::class, 'translation' => null, 'resource' => 'setono_sylius_cms.snippet'],
+            'shop' => ['model' => Shop::class, 'translation' => ShopTranslation::class, 'resource' => 'app.shop'],
         ]);
     }
 }

@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
@@ -298,7 +299,7 @@ final class EntryValidatorTest extends TestCase
         return new EntryValidator(
             new BlockTreeValidator($blockTypes, new NestingRules($blockTypes, $contentTypes), $fieldValidator, $translator),
             $fieldValidator,
-            new FieldReader(),
+            new ContentTypeFields(new FieldReader()),
             $contentTypes,
             $validator,
             $this->urlValidator->reveal(),
