@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\UI;
 
 use Playwright\Assertions\Expect;
-use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
 /**
  * An editor finds the test application's Hero code preset in the block picker's Presets tab, sees it rendered live, and
@@ -55,10 +55,8 @@ final class PresetsTest extends UITestCase
         Expect::locator($preview->locator('.cms-tree > .cms-rich-text strong'))->toHaveText('50%');
 
         // Saved to the page with new keys, not the preset's
-        $saved = self::reloadPage($page);
-        self::assertInstanceOf(PageInterface::class, $saved);
-        $blocks = $saved->getBlockTree()->blocks;
-        self::assertSame(['heading', 'rich_text'], array_map(static fn ($block): string => $block->type, $blocks));
+        $blocks = self::reloadPage($page)->getBlockTree()->blocks;
+        self::assertSame(['heading', 'rich_text'], array_map(static fn (StoredBlock $block): string => $block->type, $blocks));
         self::assertNotSame('0193a5be-0000-7000-8000-00000000a001', $blocks[0]->key);
         self::assertSame(['en_US' => 'Winter sale'], $blocks[0]->fields['text'] ?? null);
     }

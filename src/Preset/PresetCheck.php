@@ -201,6 +201,11 @@ final readonly class PresetCheck
      */
     private function values(iterable $values): array
     {
-        return [...$values];
+        $list = [];
+        foreach ($values as $value) {
+            $list[] = $value;
+        }
+
+        return $list;
     }
 }

@@ -52,7 +52,11 @@ final class CodePresetFiles
             throw new \LogicException(sprintf('The directory %s in setono_sylius_cms.presets.paths doesn\'t exist', $directory));
         }
 
-        $paths = glob($real . '/*.json') ?: [];
+        $paths = glob($real . '/*.json');
+        if (false === $paths) {
+            $paths = [];
+        }
+
         sort($paths, \SORT_STRING);
 
         $files = [];
@@ -83,7 +87,8 @@ final class CodePresetFiles
     {
         $unique = [];
         foreach ($directories as $directory) {
-            $unique[realpath($directory) ?: $directory] ??= $directory;
+            $real = realpath($directory);
+            $unique[false === $real ? $directory : $real] ??= $directory;
         }
 
         return array_values($unique);

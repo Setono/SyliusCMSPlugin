@@ -64,7 +64,7 @@ final readonly class PresetFitCheck
     {
         $tree = $workingCopy->getBlockTree();
         $parentBlock = null === $parent ? null : $tree->findBlock($parent);
-        $siblings = null === $parent ? $tree->blocks : ($parentBlock?->children ?? []);
+        $siblings = $parentBlock->children ?? (null === $parent ? $tree->blocks : []);
         $allowed = [];
         foreach ($this->allowed($workingCopy, $parent, $parentBlock) as $type) {
             $allowed[$type->code] = $type;

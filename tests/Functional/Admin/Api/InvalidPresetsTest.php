@@ -26,12 +26,8 @@ final class InvalidPresetsTest extends BuilderApiTestCase
         $client = self::signedIn();
         $page = self::createPage('About us', 'about-us');
 
-        $response = self::json($client, 'GET', sprintf('/admin/cms/api/presets?entry=%s', $page->getUuid()));
+        $presets = self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s', $page->getUuid()));
 
-        self::assertResponseIsSuccessful();
-        self::assertIsArray($response);
-        self::assertIsArray($response['presets'] ?? null);
-        $presets = array_column($response['presets'], null, 'id');
         // The fixture kernel's directory comes first, as a bundle's prepended one does
         self::assertSame(['future', 'misfit', 'retired', 'column_pair', 'hero'], array_keys($presets));
 

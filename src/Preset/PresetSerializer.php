@@ -16,7 +16,7 @@ use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
  * thumbnail; one without is a code preset, which always has a thumbnail and whose starting point says whether it's the
  * default. See "Preset file format" in docs/spec/layouts-and-presets.md
  */
-final class PresetSerializer
+final readonly class PresetSerializer
 {
     private const DATE_TIME_FORMAT = 'Y-m-d\TH:i:s\Z';
 

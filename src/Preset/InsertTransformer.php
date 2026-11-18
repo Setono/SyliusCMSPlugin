@@ -206,7 +206,7 @@ final readonly class InsertTransformer
     /**
      * A map of locale codes to values. A special value, such as a binding or a source, isn't one
      *
-     * @phpstan-assert-if-true array<array-key, mixed> $value
+     * @phpstan-assert-if-true non-empty-array<string, mixed> $value
      */
     private static function isLocaleMap(mixed $value): bool
     {

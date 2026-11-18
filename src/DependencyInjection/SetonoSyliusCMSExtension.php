@@ -174,8 +174,11 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
      */
     private static function registerCodePresets(ContainerBuilder $container, array $paths, array $disabled): void
     {
-        /** @var list<string> $directories */
-        $directories = array_map(static fn (string $path): string => (string) $container->getParameterBag()->resolveValue($path), $paths);
+        $directories = array_map(static function (string $path) use ($container): string {
+            $resolved = $container->getParameterBag()->resolveValue($path);
+
+            return is_string($resolved) ? $resolved : throw new \LogicException(sprintf('The directory %s in setono_sylius_cms.presets.paths must be a path', $path));
+        }, $paths);
         $files = CodePresetFiles::in($directories);
         foreach ($directories as $directory) {
             $container->addResource(new DirectoryResource((string) realpath($directory), '/\.json$/'));

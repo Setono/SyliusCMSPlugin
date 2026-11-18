@@ -25,7 +25,7 @@ final class PresetsTest extends BuilderApiTestCase
         $client = self::signedIn();
         $page = self::createPage('About us', 'about-us');
 
-        $presets = self::presets($client, sprintf('/admin/cms/api/presets?entry=%s', $page->getUuid()));
+        $presets = self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s', $page->getUuid()));
 
         self::assertSame(['column_pair', 'hero', 'product_spotlight'], array_keys($presets));
         $hero = $presets['hero'];
@@ -36,9 +36,8 @@ final class PresetsTest extends BuilderApiTestCase
         self::assertSame(['Layout', null], [$presets['column_pair']['category'], $presets['column_pair']['description']]);
 
         // Its blocks are ready to render in the live preview: the entry's locales, the translation keys resolved
-        self::assertIsArray($hero['blocks']);
         self::assertSame(['heading', 'rich_text'], array_column($hero['blocks'], 'type'));
-        self::assertSame(['level' => 'h2', 'text' => ['en_US' => 'Winter sale']], $hero['blocks'][0]['fields']);
+        self::assertSame(['level' => 'h2', 'text' => ['en_US' => 'Winter sale']], ($hero['blocks'][0] ?? [])['fields'] ?? null);
     }
 
     /**
@@ -50,8 +49,8 @@ final class PresetsTest extends BuilderApiTestCase
         $roomy = self::createPageWithBlocks('Roomy', 'roomy', [self::columns(2)]);
         $full = self::createPageWithBlocks('Full', 'full', [self::columns(3)]);
 
-        $inRoomy = self::presets($client, sprintf('/admin/cms/api/presets?entry=%s&parent=%s', $roomy->getUuid(), self::COLUMNS));
-        $inFull = self::presets($client, sprintf('/admin/cms/api/presets?entry=%s&parent=%s', $full->getUuid(), self::COLUMNS));
+        $inRoomy = self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s&parent=%s', $roomy->getUuid(), self::COLUMNS));
+        $inFull = self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s&parent=%s', $full->getUuid(), self::COLUMNS));
 
         self::assertTrue($inRoomy['column_pair']['fits']);
         self::assertSame(['Heading isn\'t allowed here', 'Rich text isn\'t allowed here'], $inRoomy['hero']['reasons']);
@@ -66,7 +65,7 @@ final class PresetsTest extends BuilderApiTestCase
         $client = self::signedIn();
         $snippet = self::createSnippet('Product notes', context: ['product']);
 
-        $presets = self::presets($client, sprintf('/admin/cms/api/presets?entry=%s', $snippet->getUuid()));
+        $presets = self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s', $snippet->getUuid()));
 
         self::assertTrue($presets['product_spotlight']['fits']);
         self::assertSame([], $presets['product_spotlight']['reasons']);
@@ -107,6 +106,7 @@ final class PresetsTest extends BuilderApiTestCase
         [$heading, $richText] = $response['blocks'];
         self::assertIsArray($heading);
         self::assertIsArray($richText);
+        self::assertIsString($heading['key'] ?? null);
         self::assertMatchesRegularExpression(self::UUID_PATTERN, $heading['key']);
         self::assertNotSame('0193a5be-0000-7000-8000-00000000a001', $heading['key']);
         // German has no translation of the key, so it stays empty and counts as untranslated
@@ -129,8 +129,10 @@ final class PresetsTest extends BuilderApiTestCase
         $response = self::json($client, 'POST', '/admin/cms/api/presets/product_spotlight/insert', ['entry' => $snippet->getUuid()]);
 
         self::assertIsArray($response);
-        self::assertIsArray($response['blocks'][0] ?? null);
-        self::assertSame(['text' => ['en_US' => 'Made to last']], $response['blocks'][0]['fields']);
+        self::assertIsArray($response['blocks'] ?? null);
+        $note = $response['blocks'][0] ?? null;
+        self::assertIsArray($note);
+        self::assertSame(['text' => ['en_US' => 'Made to last']], $note['fields'] ?? null);
     }
 
     /**
@@ -146,26 +148,6 @@ final class PresetsTest extends BuilderApiTestCase
 
         self::json($client, 'POST', '/admin/cms/api/presets/hero/insert', []);
         self::assertResponseStatusCodeSame(400);
-    }
-
-    /**
-     * @return array<string, array<string, mixed>> the presets by id
-     */
-    private static function presets(\Symfony\Bundle\FrameworkBundle\KernelBrowser $client, string $uri): array
-    {
-        $response = self::json($client, 'GET', $uri);
-        self::assertResponseIsSuccessful();
-        self::assertIsArray($response);
-        self::assertIsArray($response['presets'] ?? null);
-
-        $presets = [];
-        foreach ($response['presets'] as $preset) {
-            self::assertIsArray($preset);
-            self::assertIsString($preset['id'] ?? null);
-            $presets[$preset['id']] = $preset;
-        }
-
-        return $presets;
     }
 
     private static function columns(int $columns): StoredBlock
