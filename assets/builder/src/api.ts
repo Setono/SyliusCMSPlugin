@@ -1,6 +1,6 @@
 import type { Change } from './changeSet';
 import { withUuid, type BuilderConfig, type ShownToAndDate } from './config';
-import type { EntryResponse, EntrySettings, EntryStatus, EntryUrlsResponse, PresenceResponse, Registry, SaveResponse, StoredBlock, ValidationError } from './types';
+import type { EntryResponse, EntrySettings, EntryStatus, EntryUrlsResponse, InsertedPreset, PresenceResponse, PresetListing, Registry, SaveResponse, StoredBlock, ValidationError } from './types';
 
 /** The builder's JSON endpoints. They're internal, and change together with the app. */
 export interface BuilderApi {
@@ -41,6 +41,10 @@ export interface BuilderApi {
     renderPreview(token: string, blocks: readonly StoredBlock[]): Promise<Record<string, string>>;
     /** The blocks a snippet shows, from its published content, which Detach to edit here copies. Absent without its endpoint. */
     snippetBlocks?(snippet: string): Promise<StoredBlock[]>;
+    /** The block presets at a spot in the working copy as the server has it: the top level, or a block's children. Absent without its endpoint. */
+    presets?(parent: string | null): Promise<PresetListing[]>;
+    /** A preset's blocks ready to insert into the entry. Fails with an ApiError of status 422 and why when it refuses. Absent without its endpoint. */
+    insertPreset?(id: string): Promise<InsertedPreset>;
 }
 
 /** What the preview shows the working copy in, to whom and when, and for a snippet, where and with which sample object. */
@@ -221,6 +225,39 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = defaultFetch):
         },
 
         ...(config.endpoints.snippetBlocks === undefined ? {} : { snippetBlocks: snippetBlocksOf(fetchFn, config.endpoints.snippetBlocks) }),
+        ...presetsOf(fetchFn, config.entryUuid, config.endpoints.presets, config.endpoints.presetInsert),
+    };
+}
+
+/** The Presets tab's endpoints, both or neither. Inserting changes nothing on the server, so it needs no CSRF token. */
+function presetsOf(fetchFn: Fetch, entry: string, index: string | undefined, insert: string | undefined): Pick<BuilderApi, 'presets' | 'insertPreset'> {
+    if (index === undefined || insert === undefined) {
+        return {};
+    }
+
+    return {
+        async presets(parent) {
+            const body = await send(fetchFn, parent === null ? index : `${index}${index.includes('?') ? '&' : '?'}parent=${encodeURIComponent(parent)}`);
+            const presets = isObject(body) ? body.presets : undefined;
+            if (!Array.isArray(presets)) {
+                throw new ApiError('The answer has no presets.', 200);
+            }
+
+            return presets as PresetListing[];
+        },
+
+        async insertPreset(id) {
+            const body = await send(fetchFn, withUuid(insert, id), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ entry }),
+            });
+            if (!isObject(body) || !Array.isArray(body.blocks) || !Array.isArray(body.notices)) {
+                throw new ApiError('The answer has no blocks.', 200);
+            }
+
+            return body as unknown as InsertedPreset;
+        },
     };
 }
 

@@ -83,6 +83,10 @@ export interface BuilderConfig {
         previewSnippet?: string;
         /** The sample objects a snippet's preview can show it with, under a preview token. Without it, the sample object can't be picked. */
         previewSamples?: string;
+        /** The block presets at a spot in the entry's tree, which takes &parent=<key> for a block's children. Without it, there's no Presets tab. */
+        presets?: string;
+        /** A preset's blocks ready to insert, with UUID_PLACEHOLDER for its id. Without it, there's no Presets tab. */
+        presetInsert?: string;
     };
     /** The store's channels. The settings pick the entry's channels from them, and the preview picks from the entry's. */
     channels: Channel[];

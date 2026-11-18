@@ -138,3 +138,144 @@
     clip: rect(0 0 0 0);
     white-space: nowrap;
 }
+
+/* The Blocks and Presets tabs, when the builder page gives the presets' endpoints */
+.tabs {
+    display: flex;
+    gap: var(--builder-space-1);
+    border-bottom: 1px solid var(--builder-color-border);
+}
+
+.tab {
+    padding: var(--builder-space-1) var(--builder-space-2);
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: var(--builder-color-text-muted);
+    font: inherit;
+    cursor: pointer;
+}
+
+.tab[aria-selected='true'] {
+    border-bottom-color: var(--builder-color-accent);
+    color: var(--builder-color-text);
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.tab:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: -2px;
+}
+
+/* The presets of one category */
+.presetGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+}
+
+.presets {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.preset {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    padding: var(--builder-space-2);
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-md);
+}
+
+.presetName {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--builder-space-1);
+    align-items: center;
+    margin: 0;
+    font-size: var(--builder-font-size-md);
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.badge {
+    padding: 0 var(--builder-space-1);
+    border-radius: var(--builder-radius-pill);
+    background: var(--builder-color-neutral-subtle);
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+    font-weight: normal;
+}
+
+.issues {
+    margin: 0;
+    padding: var(--builder-space-1) var(--builder-space-2);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-warning-subtle);
+    color: var(--builder-color-text);
+    font-size: var(--builder-font-size-sm);
+    list-style: none;
+}
+
+/* A live render of the preset, a quarter of its size, which can't be clicked into */
+.render {
+    position: relative;
+    overflow: hidden;
+    height: 8rem;
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-neutral-subtle);
+}
+
+.render iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 400%;
+    height: 400%;
+    border: 0;
+    background: var(--builder-color-surface);
+    transform: scale(0.25);
+    transform-origin: 0 0;
+    pointer-events: none;
+}
+
+.insert {
+    align-self: flex-start;
+    min-height: var(--builder-control-height);
+    padding: var(--builder-space-1) var(--builder-space-3);
+    border: 1px solid var(--builder-color-accent);
+    border-radius: var(--builder-radius-sm);
+    background: var(--builder-color-accent);
+    color: var(--builder-color-accent-text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.insert:hover {
+    background: var(--builder-color-accent-hover);
+}
+
+.insert:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}
+
+.notice,
+.alert {
+    margin: 0;
+    padding: var(--builder-space-1) var(--builder-space-2);
+    border-radius: var(--builder-radius-sm);
+    font-size: var(--builder-font-size-sm);
+}
+
+.notice {
+    background: var(--builder-color-warning-subtle);
+}
+
+.alert {
+    background: var(--builder-color-danger-subtle);
+}

@@ -3,6 +3,7 @@ import { envelope, openEnvelope, type FromBridge } from '../bridge/protocol';
 import { useBuilder, useBuilderState, usePreviewState, useSettingsState } from '../context';
 import { useTranslator } from '../i18n';
 import { hasTranslation } from '../locales';
+import { stylesheetsOf } from '../presets';
 import { createPreviewSync, type PreviewSync } from '../previewSync';
 import type { BlockSpot } from '../tree';
 import { BlockPickerAt, soleBlockType } from './BlockPicker';
@@ -157,6 +158,9 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
 
             if (message.type === 'ready') {
                 sync.current?.connect((reply) => target.postMessage(envelope(reply), url.origin), token);
+                // The Presets tab renders presets with the page's stylesheets, which it reads here, from the same origin
+                const page = iframe.current?.contentDocument ?? null;
+                preview.getState().setPage(page === null ? null : stylesheetsOf(page));
             } else {
                 sync.current?.receive(message);
             }
@@ -167,7 +171,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
         return () => {
             window.removeEventListener('message', onMessage);
         };
-    }, [frame]);
+    }, [preview, frame]);
 
     return (
         <main className={[className, styles.preview].filter(Boolean).join(' ')} data-width={width}>

@@ -4,6 +4,7 @@
  */
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import type { Channel, ShownToAndDate } from './config';
+import type { PreviewPage } from './presets';
 
 export type PreviewWidth = 'desktop' | 'mobile';
 
@@ -21,6 +22,8 @@ export interface PreviewState {
     unresolvedLinks: string[];
     /** The token of the page the preview shows, which counts what sources yield there, or null while none is shown. */
     token: string | null;
+    /** The address and stylesheets of the page the preview shows, which the Presets tab renders presets with, or null until it loads. */
+    page: PreviewPage | null;
     /** For a snippet, the placement whose host page the preview shows, or null for a plain page. */
     placement: string | null;
     /** For a snippet, the ref of the sample object the editor picked, or null for the one the preview starts with. */
@@ -33,6 +36,7 @@ export interface PreviewState {
     setDate(date: string | null): void;
     setUnresolvedLinks(keys: string[]): void;
     setToken(token: string | null): void;
+    setPage(page: PreviewPage | null): void;
     /** Shows another placement, with the sample object a preview of it starts with. */
     setPlacement(placement: string | null): void;
     setSample(sample: string | null): void;
@@ -53,6 +57,7 @@ export function createPreviewStore(channels: Channel[], start: ShownToAndDate = 
         date: start.date,
         unresolvedLinks: [],
         token: null,
+        page: null,
         placement,
         sample: null,
 
@@ -85,6 +90,10 @@ export function createPreviewStore(channels: Channel[], start: ShownToAndDate = 
 
         setToken(token) {
             set({ token });
+        },
+
+        setPage(page) {
+            set({ page });
         },
 
         setPlacement(shown) {

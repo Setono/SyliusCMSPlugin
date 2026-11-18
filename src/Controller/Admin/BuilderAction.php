@@ -107,6 +107,10 @@ final readonly class BuilderAction
                     // the preview's token
                     'previewSnippet' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_snippet'),
                     'previewSamples' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_samples'),
+                    // The block presets at a spot in the entry's tree, for the Presets tab, and a preset's blocks ready to
+                    // insert, with UUID_PLACEHOLDER for the preset's id, a code preset's code or an editor preset's UUID
+                    'presets' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preset_index', ['entry' => $entry->getUuid()]),
+                    'presetInsert' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preset_insert', ['preset' => self::UUID_PLACEHOLDER]),
                 ],
                 'channels' => array_map(static fn (array $channel): array => [
                     'code' => $channel['channel']->getCode(),

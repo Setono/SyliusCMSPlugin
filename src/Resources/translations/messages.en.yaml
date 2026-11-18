@@ -619,6 +619,19 @@ setono_sylius_cms:
         context_removed_key: '%key%, which the code no longer declares'
         needs_context: 'Needs: %context%'
         not_available_here: Not available here
+        # The block picker's Presets tab. See "Presets" in docs/spec/layouts-and-presets.md
+        blocks_tab: Blocks
+        presets_tab: Presets
+        search_presets: Search presets
+        loading_presets: Loading presets…
+        presets_failed: 'The presets couldn''t be loaded.'
+        no_matching_presets: No presets match.
+        preset_uncategorised: Other
+        preset_from_code: From code
+        preset_invalid: Invalid blocks
+        preset_preview: Preview of %name%
+        insert_preset: Insert %name%
+        preset_does_not_fit: 'It doesn''t fit here any more.'
         condition_match: Matches when it
         copy_it_here: Copy it here
         clash: A colleague changed this too
