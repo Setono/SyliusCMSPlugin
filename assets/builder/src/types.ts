@@ -111,6 +111,11 @@ export interface EntrySettings {
     audience: { mode: AudienceMode; groups: string[] };
     /** "Homepage of": the codes of the channels a page is the homepage of. Empty for every content type but Page. */
     homepageOf: string[];
+    /**
+     * Where the entry sits among the entries of a content type ordered by position, which editors drag into order in
+     * the admin list, or null for a content type ordered otherwise. The builder leaves it as it is.
+     */
+    position?: number | null;
 }
 
 /** Someone else who has the entry open in the builder. */
