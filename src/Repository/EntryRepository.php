@@ -9,6 +9,7 @@ use Doctrine\ORM\QueryBuilder;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Setono\SyliusCMSPlugin\Attribute\ContentType;
+use Setono\SyliusCMSPlugin\Collection\ReferenceTable;
 use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
@@ -113,10 +114,13 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         }
 
         $queryBuilder = $this->createQueryBuilder('o');
+        $conditions = $this->holdingJsonStrings($queryBuilder, $ids);
+        // An indexed field's UUIDs are on the reference table, where the published ones are, such as a post's categories
+        $conditions[] = ReferenceTable::holding($queryBuilder, 'o', null, $ids);
 
         /** @var list<EntryInterface> $entries */
         $entries = $queryBuilder
-            ->andWhere(implode(' OR ', $this->holdingJsonStrings($queryBuilder, $ids)))
+            ->andWhere(implode(' OR ', $conditions))
             ->orderBy('o.id')
             ->getQuery()
             ->getResult()

@@ -115,8 +115,10 @@ interface EntryRepositoryInterface
 
     /**
      * The entries that may refer to one of the records, by their codes or UUIDs, in their rows' block tree or their
-     * draft. As both are JSON, it's the entries that hold one of them as a JSON string anywhere, which can be more than
-     * those that refer to it
+     * draft, or, for an entry, in an indexed field of their published content, such as a post's categories, through the
+     * reference table. As the tree and the draft are JSON, it's the entries that hold one of them as a JSON string
+     * anywhere, which can be more than those that refer to it. Other fields of a content type's own, on its rows' columns,
+     * aren't searched
      *
      * @param list<string> $ids
      *
