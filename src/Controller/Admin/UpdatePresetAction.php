@@ -31,12 +31,12 @@ final readonly class UpdatePresetAction
             try {
                 $details = PresetDetails::of($preset)->changedBy(array_intersect_key($request->request->all(), array_flip(['name', 'category', 'description'])));
             } catch (InvalidPresetDetailsException $e) {
-                return ['error', $e->translatable->trans($this->translator), true];
+                return ['error', $e->translatable->trans($this->translator)];
             }
 
             $this->saver->save($details->applyTo($preset));
 
-            return ['success', 'setono_sylius_cms.preset_saved', true];
+            return ['success', 'setono_sylius_cms.preset_saved'];
         });
     }
 }

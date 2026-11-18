@@ -40,8 +40,8 @@ final readonly class PresetsScreenRequest
      * Changes the editor preset the URL names, and goes back to the Presets screen with the flash message the change
      * returns
      *
-     * @param callable(Preset): array{'success'|'error', string, bool} $change returns the flash message's type, the
-     *        message, a key of the flashes domain or a text, and whether the preset is still there to go back to
+     * @param callable(Preset): array{'success'|'error', string} $change returns the flash message's type and the message,
+     *        a key of the flashes domain or a text
      *
      * @throws AccessDeniedException for anyone but an admin user
      * @throws NotFoundHttpException when there's no such editor preset
@@ -60,18 +60,16 @@ final readonly class PresetsScreenRequest
             throw new AccessDeniedHttpException('Invalid CSRF token');
         }
 
-        [$type, $message, $kept] = $change($preset);
+        [$type, $message] = $change($preset);
 
         $session = $request->getSession();
         if ($session instanceof FlashBagAwareSessionInterface) {
             $session->getFlashBag()->add($type, $message);
         }
 
-        $parameters = ['tab' => null === $preset->startingPoint ? PresetsAction::TAB_BLOCK_PRESETS : PresetsAction::TAB_STARTING_POINTS];
-        if ($kept) {
-            $parameters['_fragment'] = 'cms-preset-' . $preset->id();
-        }
-
-        return new RedirectResponse($this->urlGenerator->generate('setono_sylius_cms_admin_preset_index', $parameters));
+        // Without a fragment: a browser takes a redirect to the page it's on with only a fragment more as a move on that page
+        return new RedirectResponse($this->urlGenerator->generate('setono_sylius_cms_admin_preset_index', [
+            'tab' => null === $preset->startingPoint ? PresetsAction::TAB_BLOCK_PRESETS : PresetsAction::TAB_STARTING_POINTS,
+        ]));
     }
 }

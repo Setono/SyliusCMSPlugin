@@ -26,7 +26,7 @@ final readonly class DeletePresetAction
         return $this->screenRequest->submit($request, $uuid, function (Preset $preset): array {
             $this->deleter->delete($preset->id());
 
-            return ['success', 'setono_sylius_cms.preset_deleted', false];
+            return ['success', 'setono_sylius_cms.preset_deleted'];
         });
     }
 }

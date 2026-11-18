@@ -90,7 +90,7 @@ final class PresetsScreenTest extends WebTestCase
         $form = $crawler->filter(sprintf('form[action="/admin/cms/presets/%s"]', $promo->id()))->form(['name' => 'Spring promo', 'category' => 'Seasonal', 'description' => '']);
         $client->submit($form);
 
-        self::assertResponseRedirects(sprintf('/admin/cms/presets?tab=block_presets#cms-preset-%s', $promo->id()));
+        self::assertResponseRedirects('/admin/cms/presets?tab=block_presets');
         $crawler = $client->followRedirect();
         self::assertSelectorTextContains('.sylius-flash-message.positive', 'The preset has been saved.');
         self::assertSame('Spring promo', trim($crawler->filter(sprintf('[data-preset="%s"] [data-name]', $promo->id()))->text()));
