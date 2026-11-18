@@ -8,6 +8,7 @@ use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractCompilerPassTestCase
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener;
 use Setono\SyliusCMSPlugin\Doctrine\DiscriminatorMapListener;
+use Setono\SyliusCMSPlugin\Doctrine\RootAssociationsListener;
 use Setono\SyliusCMSPlugin\Factory\EntryFactory;
 use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
@@ -44,6 +45,7 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
         $this->setDefinition(ContentTypeRegistry::class, new Definition(ContentTypeRegistry::class, [[], []]));
         $this->setDefinition(DiscriminatorMapListener::class, new Definition(DiscriminatorMapListener::class, [[]]));
         $this->setDefinition(ColumnPrefixListener::class, new Definition(ColumnPrefixListener::class, [[]]));
+        $this->setDefinition(RootAssociationsListener::class, new Definition(RootAssociationsListener::class, [[]]));
     }
 
     protected function registerCompilerPass(ContainerBuilder $container): void
@@ -75,6 +77,7 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(ContentTypeRegistry::class, 1, []);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(DiscriminatorMapListener::class, 0, $contentTypes);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(ColumnPrefixListener::class, 0, $contentTypes);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(RootAssociationsListener::class, 0, $contentTypes);
 
         $locator = $this->container->getDefinition((string) $this->container->getAlias('setono_sylius_cms.entry_factories'));
         self::assertEquals([

@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\DependencyInjection\Compiler;
 
 use Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener;
 use Setono\SyliusCMSPlugin\Doctrine\DiscriminatorMapListener;
+use Setono\SyliusCMSPlugin\Doctrine\RootAssociationsListener;
 use Setono\SyliusCMSPlugin\Factory\EntryFactory;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
@@ -22,8 +23,8 @@ use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * Content types are the Sylius resources whose model is an entry carrying #[ContentType] (ADR 0020).
- * This pass finds them in the registered resources and hands them to the content type registry, the column prefix listener,
- * the discriminator map listener and the create action's factory locator, and decorates their factories.
+ * This pass finds them in the registered resources and hands them to the content type registry, the Doctrine listeners
+ * that map them and the create action's factory locator, and decorates their factories.
  * It hands the registry the URL prefixes set in setono_sylius_cms.content_types too, which override the attribute's
  */
 final class RegisterContentTypesPass implements CompilerPassInterface
@@ -118,8 +119,10 @@ final class RegisterContentTypesPass implements CompilerPassInterface
             ->setArgument(2, self::disabled($container, $contentTypes))
         ;
         $container->getDefinition(DiscriminatorMapListener::class)->replaceArgument(0, $contentTypes);
-        if ($container->hasDefinition(ColumnPrefixListener::class)) {
-            $container->getDefinition(ColumnPrefixListener::class)->replaceArgument(0, $contentTypes);
+        foreach ([ColumnPrefixListener::class, RootAssociationsListener::class] as $listener) {
+            if ($container->hasDefinition($listener)) {
+                $container->getDefinition($listener)->replaceArgument(0, $contentTypes);
+            }
         }
         $container->setAlias(self::ENTRY_FACTORIES, (string) ServiceLocatorTagPass::register($container, $factories));
     }

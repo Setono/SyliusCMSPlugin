@@ -16,6 +16,13 @@
             <tag name="doctrine.event_listener" event="prePersist"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Doctrine\RootAssociationsListener" class="Setono\SyliusCMSPlugin\Doctrine\RootAssociationsListener">
+            <!-- Replaced by RegisterContentTypesPass with the registered content types -->
+            <argument type="collection"/>
+
+            <tag name="doctrine.event_listener" event="loadClassMetadata"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener" class="Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener">
             <!-- Replaced by RegisterContentTypesPass with the registered content types -->
             <argument type="collection"/>
