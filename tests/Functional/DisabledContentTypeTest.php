@@ -48,7 +48,6 @@ final class DisabledContentTypeTest extends WebTestCase
         $crawler = $client->request('GET', '/admin/cms/entries');
 
         self::assertResponseIsSuccessful();
-        /** @var array<mixed> $items */
         $items = $crawler->filter('[data-hub-menu] a.item')->each(static fn (Crawler $item): string => (string) preg_replace('/\s+/', ' ', trim($item->text())));
         self::assertSame(['Overview', 'All entries 1', 'Pages 0', 'Snippets 0', 'Announcements 1', 'Media'], $items);
         self::assertSelectorTextNotContains('table', 'Aarhus');

@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Event\EntrySettingsChanged;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\StoreLocations;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -127,7 +128,9 @@ final class EntryOrderTest extends WebTestCase
         $manager = self::getContainer()->get('doctrine.orm.entity_manager');
         $manager->clear();
 
-        $reloaded = self::getContainer()->get('setono_sylius_cms.repository.entry')->findOneBy(['uuid' => $entry->getUuid()]);
+        /** @var EntryRepositoryInterface $repository */
+        $repository = self::getContainer()->get('setono_sylius_cms.repository.entry');
+        $reloaded = $repository->findOneByUuid($entry->getUuid());
         self::assertInstanceOf(EntryInterface::class, $reloaded);
 
         return $reloaded;

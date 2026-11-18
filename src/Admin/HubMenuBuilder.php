@@ -102,7 +102,7 @@ final readonly class HubMenuBuilder
     private function collections(): array
     {
         $enabled = $this->contentTypes->enabled();
-        $categoryTypes = array_filter(array_map(static fn (ContentTypeMetadata $contentType): ?string => $contentType->categoryType, $enabled));
+        $categoryTypes = array_filter(array_map(static fn (ContentTypeMetadata $contentType): ?string => $contentType->categoryType, $enabled), static fn (?string $categoryType): bool => null !== $categoryType);
         $collections = array_filter($enabled, static fn (ContentTypeMetadata $contentType): bool => !$contentType->isBuiltIn() && !in_array($contentType->modelClass, $categoryTypes, true));
 
         return [

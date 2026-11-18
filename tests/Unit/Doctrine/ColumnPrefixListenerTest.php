@@ -106,10 +106,10 @@ final class ColumnPrefixListenerTest extends TestCase
         $this->load($metadata);
 
         $mapping = $metadata->getAssociationMapping('channel');
-        self::assertSame('store_location_channel_id', $mapping['joinColumns'][0]['name']);
-        self::assertSame(['store_location_channel_id' => 'id'], $mapping['sourceToTargetKeyColumns']);
-        self::assertSame(['id' => 'store_location_channel_id'], $mapping['targetToSourceKeyColumns']);
-        self::assertSame(['store_location_channel_id' => 'store_location_channel_id'], $mapping['joinColumnFieldNames']);
+        self::assertSame('store_location_channel_id', $mapping['joinColumns'][0]['name'] ?? null);
+        self::assertSame(['store_location_channel_id' => 'id'], $mapping['sourceToTargetKeyColumns'] ?? null);
+        self::assertSame(['id' => 'store_location_channel_id'], $mapping['targetToSourceKeyColumns'] ?? null);
+        self::assertSame(['store_location_channel_id' => 'store_location_channel_id'], $mapping['joinColumnFieldNames'] ?? null);
         self::assertSame('channel', $metadata->getFieldForColumn('store_location_channel_id'));
     }
 

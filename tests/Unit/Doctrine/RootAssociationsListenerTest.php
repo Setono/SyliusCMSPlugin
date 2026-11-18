@@ -52,7 +52,7 @@ final class RootAssociationsListenerTest extends TestCase
         $root->mapOneToMany(['fieldName' => 'channels', 'targetEntity' => EntryChannel::class, 'mappedBy' => 'entry']);
 
         $page = new ClassMetadata(Page::class);
-        $page->addInheritedAssociationMapping(['fieldName' => 'channels', 'targetEntity' => EntryChannel::class, 'mappedBy' => 'entry', 'type' => ClassMetadata::ONE_TO_MANY, 'inherited' => Entry::class, 'sourceEntity' => Entry::class, 'isOwningSide' => false]);
+        $page->mapOneToMany(['fieldName' => 'channels', 'targetEntity' => EntryChannel::class, 'mappedBy' => 'entry']);
         $this->load($page, $root);
         self::assertSame(['channels'], array_keys($page->associationMappings));
 

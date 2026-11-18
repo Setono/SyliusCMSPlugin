@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Application\Entity\StoreLocation;
 use Setono\SyliusCMSPlugin\Tests\Application\Entity\StoreLocationTranslation;
 use Setono\SyliusCMSPlugin\Tests\Support\StoreLocations;
+use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
 /**
@@ -43,6 +44,7 @@ final class ContentTypeFieldsTest extends BuilderApiTestCase
 
         $workingCopy = self::json($client, 'GET', '/admin/cms/api/entries/' . $storeLocation->getUuid());
         self::assertIsArray($workingCopy);
+        self::assertIsArray($workingCopy['entry'] ?? null);
         self::assertSame(['city' => 'Aarhus C', 'noindex' => false], $workingCopy['entry']['fields'] ?? null);
 
         self::json($client, 'POST', sprintf('/admin/cms/api/entries/%s/publish', $storeLocation->getUuid()), null, $csrfToken);
@@ -69,7 +71,10 @@ final class ContentTypeFieldsTest extends BuilderApiTestCase
 
         self::assertResponseStatusCodeSame(422);
         self::assertIsArray($response);
-        self::assertSame(['block' => null, 'field' => 'city', 'locale' => null], array_intersect_key($response['errors'][0] ?? [], ['block' => true, 'field' => true, 'locale' => true]));
+        self::assertIsArray($response['errors'] ?? null);
+        $error = $response['errors'][0] ?? null;
+        self::assertIsArray($error);
+        self::assertSame(['block' => null, 'field' => 'city', 'locale' => null], array_intersect_key($error, ['block' => true, 'field' => true, 'locale' => true]));
     }
 
     private static function entryLockToken(KernelBrowser $client, EntryInterface $entry): int
@@ -95,7 +100,9 @@ final class ContentTypeFieldsTest extends BuilderApiTestCase
         $manager = self::getContainer()->get('app.manager.store_location');
         $manager->clear();
 
-        $reloaded = self::getContainer()->get('app.repository.store_location')->findOneBy(['uuid' => $storeLocation->getUuid()]);
+        /** @var RepositoryInterface<StoreLocation> $repository */
+        $repository = self::getContainer()->get('app.repository.store_location');
+        $reloaded = $repository->findOneBy(['uuid' => $storeLocation->getUuid()]);
         self::assertInstanceOf(StoreLocation::class, $reloaded);
 
         return $reloaded;

@@ -68,13 +68,13 @@ final readonly class ColumnPrefixListener
             $metadata->fieldNames[$prefixed] = $field;
         }
 
+        $mappings = [];
         foreach ($metadata->associationMappings as $field => $mapping) {
-            if (isset($mapping['inherited']) || !isset($mapping['joinColumns'])) {
-                continue;
-            }
-
-            $metadata->associationMappings[$field] = self::prefixJoinColumns($mapping, $prefix);
+            $mappings[$field] = isset($mapping['inherited']) || !isset($mapping['joinColumns']) ? $mapping : self::prefixJoinColumns($mapping, $prefix);
         }
+
+        // Written whole, as Doctrine's mapping types differ between its versions
+        (new \ReflectionProperty($metadata, 'associationMappings'))->setValue($metadata, $mappings);
     }
 
     /**

@@ -14,6 +14,7 @@ use Setono\SyliusCMSPlugin\Tests\Application\Entity\StoreLocation;
 use Setono\SyliusCMSPlugin\Tests\Application\Entity\StoreLocationTranslation;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\StoreLocations;
+use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 /**
@@ -56,7 +57,9 @@ final class ContentTypesTest extends KernelTestCase
     public function it_stores_a_store_location_and_its_translation_under_its_code(): void
     {
         $storeLocation = self::createStoreLocation('Copenhagen', 'copenhagen', 'Copenhagen', 'Take the metro to Kongens Nytorv');
-        self::getContainer()->get('doctrine.orm.entity_manager')->clear();
+        /** @var EntityManagerInterface $manager */
+        $manager = self::getContainer()->get('doctrine.orm.entity_manager');
+        $manager->clear();
 
         /** @var Connection $connection */
         $connection = self::getContainer()->get('doctrine.dbal.default_connection');
@@ -68,7 +71,9 @@ final class ContentTypesTest extends KernelTestCase
         $translation = $connection->fetchAssociative('SELECT content_type, store_location_directions FROM setono_sylius_cms__entry_translation WHERE translatable_id = ?', [$row['id']]);
         self::assertSame(['content_type' => 'store_location', 'store_location_directions' => 'Take the metro to Kongens Nytorv'], $translation);
 
-        $reloaded = self::getContainer()->get('app.repository.store_location')->findOneBy(['uuid' => $storeLocation->getUuid()]);
+        /** @var RepositoryInterface<StoreLocation> $repository */
+        $repository = self::getContainer()->get('app.repository.store_location');
+        $reloaded = $repository->findOneBy(['uuid' => $storeLocation->getUuid()]);
         self::assertInstanceOf(StoreLocation::class, $reloaded);
         self::assertSame('Copenhagen', $reloaded->getCity());
         self::assertInstanceOf(StoreLocationTranslation::class, $reloaded->getTranslation('en_US'));

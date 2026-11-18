@@ -197,8 +197,9 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertSame(['code' => 'announcement', 'label' => 'Announcement', 'blocks' => $all, 'prefix' => null, 'homepage' => false, 'provides' => ['entry'], 'layouts' => [], 'fields' => [$subtitle]], $registry['contentTypes'][0]);
         $storeLocation = $registry['contentTypes'][1];
         self::assertIsArray($storeLocation);
-        self::assertIsArray($storeLocation['fields']);
-        self::assertSame([null, 'stores', [['city', false], ['directions', true]]], [$storeLocation['blocks'], $storeLocation['prefix'], array_map(static fn (array $field): array => [$field['name'], $field['schema']['x-cms-translatable']], $storeLocation['fields'])]);
+        /** @var list<array{name: string, schema: array{'x-cms-translatable': bool}}> $fields */
+        $fields = $storeLocation['fields'];
+        self::assertSame([null, 'stores', [['city', false], ['directions', true]]], [$storeLocation['blocks'], $storeLocation['prefix'], array_map(static fn (array $field): array => [$field['name'], $field['schema']['x-cms-translatable']], $fields)]);
         $page = $registry['contentTypes'][2];
         self::assertIsArray($page);
         self::assertSame(['page', 'Page', $all, '', true], [$page['code'], $page['label'], $page['blocks'], $page['prefix'], $page['homepage']]);

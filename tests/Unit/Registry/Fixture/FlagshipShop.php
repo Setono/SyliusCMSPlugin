@@ -18,4 +18,9 @@ class FlagshipShop extends Shop
     {
         return $this->manager;
     }
+
+    public function setManager(?string $manager): void
+    {
+        $this->manager = $manager;
+    }
 }

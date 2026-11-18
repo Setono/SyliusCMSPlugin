@@ -12,7 +12,7 @@ use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 /**
  * A content type ordered in a direction that's neither ASC nor DESC
  */
-#[ContentType(code: 'ordered_upwards', label: 'app.ordered_upwards', order: ['createdAt' => 'UP'])]
+#[ContentType(code: 'ordered_upwards', label: 'app.ordered_upwards', order: ['createdAt' => 'UP'])] // @phpstan-ignore argument.type
 class OrderedUpwards extends Entry
 {
     protected function createTranslation(): EntryTranslationInterface
