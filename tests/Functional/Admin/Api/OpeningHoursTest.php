@@ -134,7 +134,7 @@ final class OpeningHoursTest extends MediaApiTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame(['uses' => [
-            ['entry' => $page->getUuid(), 'title' => 'Visit us', 'contentType' => 'Page', 'url' => '/admin/cms/entry/' . $page->getUuid(), 'draft' => true, 'published' => true],
+            ['entry' => $page->getUuid(), 'preset' => null, 'title' => 'Visit us', 'contentType' => 'Page', 'url' => '/admin/cms/entry/' . $page->getUuid(), 'draft' => true, 'published' => true],
         ]], $answer);
     }
 
