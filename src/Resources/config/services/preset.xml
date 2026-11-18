@@ -29,6 +29,15 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\RichText\RichTextSchema"/>
         </service>
 
+        <!-- Where a preset is offered, asking the same context dependency finders publish asks what its blocks need -->
+        <service id="Setono\SyliusCMSPlugin\Preset\PresetFitCheck" class="Setono\SyliusCMSPlugin\Preset\PresetFitCheck">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\NestingRulesInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="tagged_iterator" tag="setono_sylius_cms.context_dependency_finder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Preset\TranslationKeyResolver" class="Setono\SyliusCMSPlugin\Preset\TranslationKeyResolver">
             <argument type="service" id="translator"/>
         </service>
