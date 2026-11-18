@@ -269,7 +269,9 @@ setono_sylius_cms:
         scheduled_publish_failed: 'The publish scheduled for %at% was stopped: %reason%'
         scheduled_publish_overdue: 'The publish scheduled for %at% hasn''t run. The Messenger worker may not be running.'
         snippet_inside_itself: 'The %block% block shows this snippet inside itself, directly or through other snippets, so it''s skipped there.'
+        unknown_bindable_property: '%field% in the %block% block is bound to "%property%", which the code no longer has, so it shows its fallback.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
+        unknown_layout_bindable_property: '%field% in the layout is bound to "%property%", which the code no longer has, so it shows its fallback.'
         unknown_layout_source: '%field% in the layout is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unknown_source: '%field% in the %block% block is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unreadable: 'This content can''t be read: %reason%'
@@ -287,6 +289,7 @@ setono_sylius_cms:
         scheduled_publish_failed: Failed scheduled publishes
         scheduled_publish_overdue: Overdue scheduled publishes
         snippet_inside_itself: Snippets inside themselves
+        unknown_bindable_property: Bindings of removed properties
         unknown_block_type: Blocks of removed types
         unknown_source: Lists filled by removed sources
         url_taken_by_route: URLs taken by Sylius routes

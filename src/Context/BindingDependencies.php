@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Context;
 
-use Setono\SyliusCMSPlugin\Binding\BoundValue;
 use Setono\SyliusCMSPlugin\Binding\StoredBinding;
-use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
-use Setono\SyliusCMSPlugin\Field\InnerBindingFieldHandlerInterface;
+use Setono\SyliusCMSPlugin\Binding\StoredValueBindings;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\BindablePropertyMetadata;
 use Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface;
@@ -28,7 +26,7 @@ final readonly class BindingDependencies implements ContextDependencyFinderInter
     public function __construct(
         private TreeValues $treeValues,
         private ContentTypeRegistryInterface $contentTypes,
-        private FieldHandlerLocator $fieldHandlers,
+        private StoredValueBindings $bindings,
         private BindablePropertyRegistryInterface $properties,
     ) {
     }
@@ -37,7 +35,7 @@ final readonly class BindingDependencies implements ContextDependencyFinderInter
     {
         $found = [];
         foreach ($this->treeValues->inTree($workingCopy->getBlockTree(), $this->contentTypes->getByEntry($workingCopy)->code) as $value) {
-            foreach ($this->bindings($value) as $binding) {
+            foreach ($this->bindings->of($value) as $binding) {
                 $needs = $this->needs($binding);
                 $id = implode("\0", [$value->block?->key, $value->field->name, $binding->property]);
                 if ([] === $needs || isset($found[$id])) {
@@ -49,21 +47,6 @@ final readonly class BindingDependencies implements ContextDependencyFinderInter
                 yield new ContextDependency($this->name($binding, $value), $needs, block: $value->block?->key);
             }
         }
-    }
-
-    /**
-     * @return iterable<StoredBinding>
-     */
-    private function bindings(StoredValue $value): iterable
-    {
-        $binding = BoundValue::of($value->field, $value->value);
-        if (null !== $binding) {
-            return [$binding];
-        }
-
-        $handler = $this->fieldHandlers->get($value->field->field);
-
-        return $handler instanceof InnerBindingFieldHandlerInterface && !$value->isNotByLocale() ? $handler->bindings($value->field->field, $value->value) : [];
     }
 
     /**

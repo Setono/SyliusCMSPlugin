@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Problem;
 
+use Setono\SyliusCMSPlugin\Registry\BindablePropertyMetadata;
+use Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ConditionKindMetadata;
 use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface;
@@ -18,9 +20,8 @@ use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * A hash of the problem kinds whose problems are stored and of the registries they read: the block types, content
- * types, layouts, condition kinds and sources, each with its fields, and so the field types, the slots and the context
- * keys. A deploy that adds or
- * removes any of them, or switches one off, changes it. The routes aren't in it: setono:cms:check-routes counts again
+ * types, layouts, condition kinds and sources, each with its fields, and so the field types, the slots, the context
+ * keys and the bindable properties. A deploy that adds or removes any of them, or switches one off, changes it. The routes aren't in it: setono:cms:check-routes counts again
  * the entries it checks. It's read once a request
  */
 final class ProblemCountFingerprint implements ProblemCountFingerprintInterface, ResetInterface
@@ -46,6 +47,7 @@ final class ProblemCountFingerprint implements ProblemCountFingerprintInterface,
         private readonly ?SourceRegistryInterface $sources = null,
         private readonly ?SlotRegistryInterface $slots = null,
         private readonly ?ContextKeyRegistryInterface $contextKeys = null,
+        private readonly ?BindablePropertyRegistryInterface $bindableProperties = null,
     ) {
     }
 
@@ -63,6 +65,8 @@ final class ProblemCountFingerprint implements ProblemCountFingerprintInterface,
             array_map(static fn (SourceMetadata $source): array => [$source->code, $source->of, $source->needs, $source->params, $source->fields, $source->disabled], $this->sources?->all() ?? []),
             $this->slots?->all() ?? [],
             $this->contextKeys?->all() ?? [],
+            // The bindings of the bindable properties, without their services
+            array_map(static fn (BindablePropertyMetadata $property): string => $property->binding(), $this->bindableProperties?->all() ?? []),
         ]));
     }
 

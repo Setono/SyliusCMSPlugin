@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Problem;
 
 use PHPUnit\Framework\TestCase;
+use Setono\SyliusCMSPlugin\Binding\BindablePropertyInterface;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\Spacer;
@@ -27,7 +28,10 @@ use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
 use Setono\SyliusCMSPlugin\Source\SourceInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
+use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
+use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductBrand;
+use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\StockLevel;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\RecipeLanding;
@@ -98,6 +102,7 @@ final class ProblemCountFingerprintTest extends TestCase
         yield 'the condition kinds removed' => [self::fingerprint(conditionKinds: new ConditionKindRegistry([], new FieldReader(), new ServiceLocator([])))];
         yield 'a source removed' => [self::fingerprint(sources: ['clearance' => new Clearance()])];
         yield 'a source switched off' => [self::fingerprint(disabledSources: ['clearance'])];
+        yield 'a bindable property removed' => [self::fingerprint(bindableProperties: [new ProductBrand()])];
         yield 'a slot removed' => [self::fingerprint(slots: ['shop.top' => self::SLOTS['shop.top']])];
         yield 'a slot capped' => [self::fingerprint(slots: ['shop.top' => self::SLOTS['shop.top'], 'shop.footer' => ['cap' => 1] + self::SLOTS['shop.footer']])];
         yield 'a context key removed' => [self::fingerprint(contextKeys: ['product' => self::CONTEXT_KEYS['product']])];
@@ -152,6 +157,7 @@ final class ProblemCountFingerprintTest extends TestCase
      * @param list<string> $disabledSources
      * @param array<string, array{label: string, provides: list<string>, cap: int|null}> $slots
      * @param array<string, array{class: class-string, label: string}> $contextKeys
+     * @param list<BindablePropertyInterface>|null $bindableProperties each carrying #[AsBindableProperty]
      */
     private static function fingerprint(
         array $kinds = self::KINDS,
@@ -165,6 +171,7 @@ final class ProblemCountFingerprintTest extends TestCase
         array $disabledSources = [],
         array $slots = self::SLOTS,
         array $contextKeys = self::CONTEXT_KEYS,
+        ?array $bindableProperties = null,
     ): ProblemCountFingerprint {
         return new ProblemCountFingerprint(
             $kinds,
@@ -175,6 +182,7 @@ final class ProblemCountFingerprintTest extends TestCase
             Sources::registry($sources ?? ['on_sale' => new OnSale(), 'clearance' => new Clearance()], $disabledSources),
             new SlotRegistry($slots),
             new ContextKeyRegistry($contextKeys),
+            Bindings::registry($bindableProperties ?? [new ProductBrand(), new StockLevel()]),
         );
     }
 }

@@ -149,6 +149,7 @@ The admin flags problems on the entry, in the lists' problem marker, on the Over
 - a capped slot without a catch-all placement, one with an empty page scope whose snippet is published, enabled and for everyone, on each snippet placed in it ([Targeting](targeting.md#capped-slots))
 - a placement in a slot on Sylius's own homepage, such as `store_homepage`, in a channel whose homepage is a CMS page, published or not ([URLs and SEO](urls-and-seo.md#homepage))
 - a placement or slot that the code no longer declares, or a block type, context key or layout that was removed
+- a field of a block or of the layout bound to a property the code no longer declares (`unknown_bindable_property`), which shows its fallback ([Slots](slots.md#bindings)), and a list filled by a source the code no longer has (`unknown_source`) ([Sources](sources.md))
 - a preset with blocks of removed types
 
 Missing translations and missing alt text are shown by the translation chips and the missing-alt flags, and aren't counted as problems.

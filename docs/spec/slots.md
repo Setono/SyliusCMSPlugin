@@ -159,6 +159,7 @@ A [binding](../../GLOSSARY.md#shop-pages) shows a property of the host-page cont
 - **Binding types** are `text`, `number` and `url`. Text and Textarea fields accept `text` and `number`, Number fields accept `number`, and Link fields accept `url`, bound inside the link's `ref`, so the link keeps its own label and anchor ([Content model](content-model.md#links)). Rich text tokens accept `text` and `number`. There are no image bindings in v2.0.
 - **Fallback.** A binding can carry a fallback for when its value is empty, such as "Hi there" for a guest's first name. The fallback follows the field's translatability. Without one, the field renders empty. This is different from the [fallback chain](localization.md#fallback-chain), which is about locales.
 - **Bound values can't be typed in place** in the builder's preview ([Builder](builder.md)).
+- **A property the code no longer declares,** such as one a deploy removed, shows the binding's fallback. Publish refuses it, and the admin flags each field bound to one, in a block or in the layout, with the warning `unknown_bindable_property` ([Admin](admin.md#problems)).
 
 ### Shipped bindable properties
 

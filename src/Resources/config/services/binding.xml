@@ -12,6 +12,11 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistry"/>
 
+        <!-- The bindings a stored value of a block's or the layout's field holds -->
+        <service id="Setono\SyliusCMSPlugin\Binding\StoredValueBindings" class="Setono\SyliusCMSPlugin\Binding\StoredValueBindings">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Binding\BindingResolver" class="Setono\SyliusCMSPlugin\Binding\BindingResolver">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ParamsHydrator"/>

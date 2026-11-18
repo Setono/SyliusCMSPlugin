@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Shop;
 
+use Setono\SyliusCMSPlugin\Problem\ProblemCount;
 use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Customers;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
@@ -142,6 +143,29 @@ final class BindingsTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSame('About us', $crawler->filter('.cms-tree .cms-heading')->text());
         self::assertSame('Welcome to Setono CMS Test Store', $crawler->filter('.cms-tree .cms-rich-text')->text());
+    }
+
+    /**
+     * Such as one a deploy removed. Publish refuses it, so it's in content published before
+     *
+     * @test
+     */
+    public function it_shows_the_fallback_of_a_binding_of_a_property_the_code_no_longer_has_and_flags_it(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        $page = self::createPageWithBlocks('About us', 'about-us', [
+            new StoredBlock(self::HEADING, 'heading', 1, fields: ['text' => self::binding('channel.slogan', ['en_US' => 'Welcome'])]),
+        ], published: true);
+
+        self::assertSame('Welcome', $client->request('GET', '/en_US/about-us')->filter('.cms-tree .cms-heading')->text());
+
+        self::assertEquals(new ProblemCount(0, 1), self::storedCount($page));
+        $problems = $client->request('GET', sprintf('/admin/cms/entry/%s', $page->getUuid()))->filter('[data-section="problems"] [data-problem]');
+        self::assertSame(
+            [['unknown_bindable_property', 'warning', self::HEADING, 'Text in the Heading block is bound to "channel.slogan", which the code no longer has, so it shows its fallback.']],
+            $problems->each(static fn (Crawler $problem): array => [$problem->attr('data-problem'), $problem->attr('data-severity'), $problem->attr('data-block'), $problem->filter('.description')->text()]),
+        );
     }
 
     /**

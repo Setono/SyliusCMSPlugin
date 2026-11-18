@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Context;
 
 use PHPUnit\Framework\TestCase;
+use Setono\SyliusCMSPlugin\Binding\StoredValueBindings;
 use Setono\SyliusCMSPlugin\Block\Button;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\RichText;
@@ -104,12 +105,12 @@ final class BindingDependenciesTest extends TestCase
         return new BindingDependencies(
             new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())),
             new ContentTypeRegistry(['snippet' => ['model' => Snippet::class, 'translation' => null, 'resource' => 'setono_sylius_cms.snippet']]),
-            new FieldHandlerLocator(new ServiceLocator([
+            new StoredValueBindings(new FieldHandlerLocator(new ServiceLocator([
                 TextHandler::class => static fn (): TextHandler => new TextHandler(),
                 ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler(new IdentityTranslator()),
                 LinkHandler::class => static fn (): LinkHandler => Links::handler(),
                 RichTextHandler::class => Links::richTextHandler(...),
-            ])),
+            ]))),
             Bindings::registry([new ProductBrand(), new ProductPage()]),
         );
     }
