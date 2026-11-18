@@ -20,7 +20,7 @@ A slot renders where its template event fires, or where a template calls `cms_sl
 3. **Filters them**, in editor order, keeping a placement when:
    - its page scope matches the host-page context ([Slots](slots.md#page-scopes))
    - its snippet is [visible](content-model.md#when-an-entry-shows): published, enabled, inside its date window, in the channel, translated and not held back, and in the shopper's audience
-4. **Applies its cap**, keeping the first matching placements up to the cap. This needs no rendering: a snippet whose blocks are all hidden still wins and shows nothing ([Targeting](targeting.md)).
+4. **Applies its cap**, keeping the first matching placements up to the cap. This needs no rendering: a snippet whose blocks are all hidden still wins and shows nothing ([Targeting](targeting.md)). Steps 3 and 4 are `PlacementPickerInterface`'s, which answers every placement with whether it wins and, if not, the first reason why, for the preview and the profiler panel.
 5. **Renders the winners in order**, each snippet's block tree with the slot's context.
 
 A slot with nothing to show prints nothing, not even a wrapper. A placement whose slot or context key was removed from code is kept, not rendered, and flagged ([Slots](slots.md)).
@@ -58,12 +58,12 @@ The template gets the block type's hydrated object ([Extending](extending.md#blo
 
 - **Values are hydrated lazily**, when a template reads them, by the field type's handler.
 - **Translatable values** are read in the current locale and fall back through the [fallback chain](../../GLOSSARY.md#entries) ([Localization](localization.md)).
-- **Bindings** resolve the bindable property against the host-page context, the channel or the customer. When the bound value is empty, the binding's fallback shows, and without a fallback the field is empty. Rich text binding tokens resolve the same way ([Slots](slots.md#bindings)).
+- **Bindings** resolve the bindable property against the host-page context, the channel or the customer. When the bound value is empty, or fails the field's own constraints, the binding's fallback shows, and without a fallback the field is empty. Rich text binding tokens resolve the same way ([Slots](slots.md#bindings)).
 - **Rich text** is rendered to HTML by `ueberdosis/tiptap-php`, with its links resolved through link targets.
 
 ## Failures
 
-- **In production,** a block that throws while rendering drops out and is logged at `error`, with the entry's UUID, the block's key and its block type. Each block renders into its own string, so no half-printed markup is left behind, and the rest of the snippet and the page still show. A slot whose snippet throws is handled the same way.
+- **In production,** a block that throws while rendering drops out and is logged at `error`, with the entry's UUID, the block's key and its block type. Each block renders into its own string, so no half-printed markup is left behind, and the rest of the snippet and the page still show. A slot whose snippet throws is handled the same way, and so is a placement whose page scope condition throws, such as a project's condition kind: that placement doesn't show and is logged with the snippet's UUID, the placement's UUID and the condition's kind, while the slot's other placements still do. A slot the code doesn't declare, such as one a `cms_slot()` call misspells, prints nothing and is logged with its identifier, while the page still shows.
 - **In dev** (`kernel.debug` on), the exception is thrown.
 - **In the builder's preview,** in dev and in production alike, the error shows on that block, with its message, and the rest of the preview still renders. Share links render like the shop.
 

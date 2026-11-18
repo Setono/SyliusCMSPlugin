@@ -76,6 +76,19 @@ final class ConditionKindRegistryTest extends TestCase
     }
 
     /**
+     * Such as one stored in a condition, whose kind a deploy may have removed
+     *
+     * @test
+     */
+    public function it_finds_a_kind_by_its_code_or_nothing_for_an_unknown_one(): void
+    {
+        $registry = $this->registry(['signed_in' => new SignedIn()]);
+
+        self::assertSame($registry->get('signed_in'), $registry->find('signed_in'));
+        self::assertNull($registry->find('removed'));
+    }
+
+    /**
      * @test
      */
     public function it_refuses_an_unknown_code(): void

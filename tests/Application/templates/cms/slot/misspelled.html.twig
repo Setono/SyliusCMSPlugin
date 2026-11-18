@@ -1,0 +1,4 @@
+{# A project's own template that renders a slot no one declares with cms_slot(), a misspelled identifier, as BrokenBlockKernel adds it to the login page #}
+<section class="app-misspelled-slot">
+    {{- cms_slot('app.store_locatr.top') -}}
+</section>

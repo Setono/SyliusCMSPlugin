@@ -17,9 +17,12 @@ use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\ShareLink;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
+use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
 use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
+use Setono\SyliusCMSPlugin\Tests\Support\SnippetPreviews;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Sylius\Component\Channel\Model\ChannelInterface as BaseChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
@@ -191,10 +194,19 @@ final class EntryShareLinksTest extends TestCase
 
         return new EntryShareLinks(
             $this->shareLinks->reveal(),
-            new ShareLinkUrlGenerator($workingCopies->reveal(), $contentTypes, $this->channels->reveal(), new UrlGenerator($routes, new RequestContext('', 'GET', 'admin.example.com', 'https'))),
+            new ShareLinkUrlGenerator(
+                $workingCopies->reveal(),
+                $contentTypes,
+                $this->channels->reveal(),
+                new UrlGenerator($routes, new RequestContext('', 'GET', 'admin.example.com', 'https')),
+                SnippetPreviews::hostPages($this->prophesize(PlacementRepositoryInterface::class)->reveal()),
+                SnippetPreviews::samples(),
+                SnippetPreviews::renderContexts(),
+            ),
             $this->channels->reveal(),
             $workingCopies->reveal(),
             $contentTypes,
+            new SlotRegistry([]),
         );
     }
 

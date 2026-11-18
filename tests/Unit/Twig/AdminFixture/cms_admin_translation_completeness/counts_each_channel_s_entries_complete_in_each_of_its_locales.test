@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_translation_completeness() counts, per channel, its entries and those complete in each of its locales
+--TEMPLATE--
+{% for channel in cms_admin_translation_completeness() %}{{ channel.channelName }} {{ channel.entries }}:{% for locale in channel.locales %} {{ locale.localeCode }} {{ locale.complete }}/{{ locale.incomplete }}{% endfor %}; {% endfor %}
+--DATA--
+return $this->entriesCompleteIn(4, ['en_US' => 4, 'da_DK' => 1], 2, ['en_US' => 2])
+--EXPECT--
+Web store 4: en_US 4/0 da_DK 1/3; Wholesale 2: en_US 2/0;

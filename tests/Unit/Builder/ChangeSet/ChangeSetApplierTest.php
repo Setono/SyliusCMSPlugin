@@ -35,6 +35,7 @@ use Setono\SyliusCMSPlugin\Json\ListedObject;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
@@ -211,6 +212,47 @@ final class ChangeSetApplierTest extends TestCase
         );
 
         self::assertSame(['text' => ['en_US' => 'Hello'], 'level' => 'h3'], $tree->blocks[0]->fields);
+    }
+
+    /**
+     * A binding is the whole value of a field that can be bound, also a translatable one. See "Field values" in
+     * docs/spec/content-model.md
+     *
+     * @test
+     */
+    public function it_sets_a_binding_as_a_translatable_field_s_whole_value_without_a_locale_and_removes_it_again(): void
+    {
+        $binding = ['$bind' => 'product.name', '$params' => new \stdClass(), '$fallback' => ['en_US' => 'this product']];
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1, fields: ['text' => ['en_US' => 'Hello']])]);
+
+        $tree = $this->apply($tree, new SetValue(self::A, 'text', null, $binding));
+        self::assertEquals(['text' => $binding], $tree->blocks[0]->fields);
+
+        $tree = $this->apply($tree, new SetValue(self::A, 'text', null, null), new SetValue(self::A, 'text', 'da_DK', 'Hej'));
+        self::assertSame(['text' => ['da_DK' => 'Hej']], $tree->blocks[0]->fields);
+    }
+
+    /**
+     * @test
+     */
+    public function it_replaces_a_binding_with_a_value_set_in_a_locale(): void
+    {
+        $tree = new StoredTree(null, [new StoredBlock(self::A, 'heading', 1, fields: ['text' => ['$bind' => 'product.name', '$params' => [], '$fallback' => null]])]);
+
+        $tree = $this->apply($tree, new SetValue(self::A, 'text', 'en_US', 'Hello'));
+
+        self::assertSame(['text' => ['en_US' => 'Hello']], $tree->blocks[0]->fields);
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_translatable_value_without_a_locale_that_is_no_binding(): void
+    {
+        $this->expectException(InvalidChangeSetException::class);
+        $this->expectExceptionMessage('The field "text" is translatable, so a value needs a locale');
+
+        $this->apply(new StoredTree(null, [new StoredBlock(self::A, 'heading', 1)]), new SetValue(self::A, 'text', null, ['en_US' => 'Hello']));
     }
 
     /**
@@ -415,6 +457,23 @@ final class ChangeSetApplierTest extends TestCase
         $page->setNoindex(true);
         self::applier()->apply(new ChangeSet([new SetEntryValue('noindex', null, null)]), $page);
         self::assertFalse($page->isNoindex(), 'Removing the value switches it off');
+    }
+
+    /**
+     * A snippet's declared context is a drafted field shared by all translations. See "Snippets and their context" in
+     * docs/spec/slots.md
+     *
+     * @test
+     */
+    public function it_sets_a_snippet_s_declared_context(): void
+    {
+        $snippet = new Snippet();
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('context', null, ['product'])]), $snippet);
+        self::assertSame(['product'], $snippet->getContext());
+
+        self::applier()->apply(new ChangeSet([new SetEntryValue('context', null, null)]), $snippet);
+        self::assertSame([], $snippet->getContext(), 'Removing the value declares no context: any page');
     }
 
     /**
@@ -712,6 +771,9 @@ final class ChangeSetApplierTest extends TestCase
         yield 'hide from search engines in a locale' => [$page, new SetEntryValue('noindex', 'en_US', true), 'The entry field "noindex" is shared by all translations, so a value takes no locale'];
         yield 'hide from search engines that is not true or false' => [$page, new SetEntryValue('noindex', null, 'yes'), 'The entry field "noindex" must be true, false or null'];
         yield 'the translation state of hide from search engines' => [$page, new SetEntryTranslated('noindex', 'en_US', null), 'The entry field "noindex" is shared by all translations, so it has no translation state'];
+        yield 'a context of an entry that is not a snippet' => [$page, new SetEntryValue('context', null, ['product']), 'The content type "page" has no entry field "context"'];
+        yield 'a context in a locale' => [new Snippet(), new SetEntryValue('context', 'en_US', ['product']), 'The entry field "context" is shared by all translations, so a value takes no locale'];
+        yield 'a context that is not a list of context keys' => [new Snippet(), new SetEntryValue('context', null, 'product'), 'The entry field "context" must be a list of context keys or null'];
     }
 
     /**
@@ -821,6 +883,7 @@ final class ChangeSetApplierTest extends TestCase
             new ContentTypeRegistry([
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
                 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
+                'snippet' => ['model' => Snippet::class, 'translation' => null, 'resource' => 'setono_sylius_cms.snippet'],
             ]),
             Conditions::registry(),
             new LayoutRegistry(['page' => ['standard' => Standard::class, 'banner' => Banner::class]], new FieldReader()),

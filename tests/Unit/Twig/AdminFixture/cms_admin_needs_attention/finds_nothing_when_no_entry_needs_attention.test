@@ -1,0 +1,9 @@
+--TEST--
+cms_admin_needs_attention() finds nothing when no entry needs attention
+--TEMPLATE--
+{% set found = cms_admin_needs_attention() %}
+{{ found.total }} {{ found.groups|length }} {{ found.entries|length }}
+--DATA--
+return []
+--EXPECT--
+0 0 0

@@ -22,26 +22,38 @@ use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Media\MediaLimits;
 use Setono\SyliusCMSPlugin\Media\MediaTypes;
 use Setono\SyliusCMSPlugin\Media\UploadLimit;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
+use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
+use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
+use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductBrand;
+use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\StockLevel;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\OpeningHoursHandler;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Store;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Titled;
+use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\OnProductPage;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ProductBadge;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\RatingHandler;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Review;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Standard;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Wide;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\Clearance;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\ProductTaxons;
+use Sylius\Component\Core\Model\ProductInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Component\Translation\TranslatorBagInterface;
@@ -67,6 +79,7 @@ final class RegistryExporterTest extends TestCase
                 'disabled' => false,
                 'parents' => null,
                 'children' => [],
+                'needs' => [],
                 'styles' => [],
                 'fields' => [
                     [
@@ -79,6 +92,7 @@ final class RegistryExporterTest extends TestCase
                             'x-cms-help' => null,
                             'x-cms-required' => true,
                             'x-cms-translatable' => true,
+                            'x-cms-bindable' => ['text', 'number'],
                         ],
                     ],
                     [
@@ -129,6 +143,61 @@ final class RegistryExporterTest extends TestCase
         self::assertIsArray($fields['name']);
         self::assertSame('text', $fields['name']['x-cms-type']);
         self::assertArrayNotHasKey('x-cms-control', $fields['name']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_adds_the_x_cms_keywords_around_a_project_field_types_own_schema_with_the_binding_types_it_accepts(): void
+    {
+        $blockTypes = array_column($this->exporter(blockTypes: ['review' => Review::class])->export()['blockTypes'], null, 'code');
+        self::assertIsArray($blockTypes['review']['fields']);
+        $fields = array_column($blockTypes['review']['fields'], 'schema', 'name');
+
+        self::assertSame([
+            'type' => 'integer',
+            'minimum' => 1,
+            'maximum' => 5,
+            'x-cms-options' => ['stars' => 5],
+            'x-cms-type' => 'app_rating',
+            'x-cms-control' => 'app-rating',
+            'x-cms-label' => '[app.rating]',
+            'x-cms-help' => null,
+            'x-cms-required' => false,
+            'x-cms-translatable' => false,
+            'x-cms-bindable' => ['number'],
+        ], $fields['rating']);
+        self::assertIsArray($fields['quote']);
+        self::assertSame(['text', 'number'], $fields['quote']['x-cms-bindable']);
+        self::assertArrayNotHasKey('x-cms-binds-inside', $fields['quote'], 'A binding is its whole value');
+
+        self::assertIsArray($blockTypes['heading']['fields']);
+        $headingFields = array_column($blockTypes['heading']['fields'], 'schema', 'name');
+        self::assertIsArray($headingFields['level']);
+        self::assertArrayNotHasKey('x-cms-bindable', $headingFields['level'], 'A field type that accepts no binding leaves it out');
+    }
+
+    /**
+     * @test
+     */
+    public function it_exports_the_bindable_properties_with_their_types_needs_and_parameter_fields_which_are_never_bound(): void
+    {
+        $properties = $this->exporter()->export()['bindableProperties'];
+
+        self::assertSame(['product.brand', 'product.stock_level'], array_column($properties, 'binding'));
+        self::assertSame([
+            'binding' => 'product.brand',
+            'label' => '[app.binding.brand]',
+            'type' => 'text',
+            'needs' => ['product'],
+            'fields' => [],
+        ], $properties[0]);
+        self::assertSame('number', $properties[1]['type']);
+        self::assertIsArray($properties[1]['fields']);
+        self::assertSame(['includeReserved', 'warehouse'], array_column($properties[1]['fields'], 'name'));
+        self::assertIsArray($properties[1]['fields'][0]);
+        self::assertIsArray($properties[1]['fields'][0]['schema']);
+        self::assertFalse($properties[1]['fields'][0]['schema']['x-cms-translatable']);
     }
 
     /**
@@ -186,12 +255,71 @@ final class RegistryExporterTest extends TestCase
     {
         $contentTypes = $this->exporter()->export()['contentTypes'];
 
-        self::assertSame(['code', 'label', 'blocks', 'prefix', 'homepage', 'layouts'], array_keys($contentTypes[0]));
+        self::assertSame(['code', 'label', 'blocks', 'prefix', 'homepage', 'provides', 'layouts'], array_keys($contentTypes[0]));
         self::assertSame(['page', '[setono_sylius_cms.content_type.page]', [
             ['type' => 'columns', 'min' => null, 'max' => null],
             ['type' => 'heading', 'min' => null, 'max' => null],
         ], '', true], [$contentTypes[0]['code'], $contentTypes[0]['label'], $contentTypes[0]['blocks'], $contentTypes[0]['prefix'], $contentTypes[0]['homepage']]);
-        self::assertSame(['code' => 'recipe', 'label' => '[app.recipe]', 'blocks' => null, 'prefix' => null, 'homepage' => false, 'layouts' => []], $contentTypes[1]);
+        self::assertSame(['code' => 'recipe', 'label' => '[app.recipe]', 'blocks' => null, 'prefix' => null, 'homepage' => false, 'provides' => ['entry'], 'layouts' => []], $contentTypes[1]);
+    }
+
+    /**
+     * An entry provides itself to its tree, and a snippet the context it declares, which the builder reads from it
+     *
+     * @test
+     */
+    public function it_exports_the_context_keys_an_entry_of_each_content_type_provides_or_none_for_a_snippet_which_declares_its_own(): void
+    {
+        /** @var array<string, array{provides: list<string>|null}> $contentTypes */
+        $contentTypes = array_column($this->exporter()->export()['contentTypes'], null, 'code');
+
+        self::assertSame(['page' => ['entry'], 'recipe' => ['entry'], 'snippet' => null], array_map(static fn (array $contentType): ?array => $contentType['provides'], $contentTypes));
+    }
+
+    /**
+     * @test
+     */
+    public function it_exports_the_context_keys_each_block_type_and_condition_kind_needs(): void
+    {
+        $registry = $this->exporter(blockTypes: ['product_badge' => ProductBadge::class], conditionKinds: ['on_product_page' => new OnProductPage()])->export();
+
+        self::assertSame(['columns' => [], 'column' => [], 'heading' => [], 'product_badge' => ['product']], array_column($registry['blockTypes'], 'needs', 'code'));
+        self::assertSame(['on_product_page' => ['product'], 'locale_is' => [], 'signed_in' => [], 'date_window' => []], array_column($registry['conditionKinds'], 'needs', 'code'));
+    }
+
+    /**
+     * What the page scope editor on a snippet's overview page gets: only the kinds a page scope can hold, as the builder
+     * gets them
+     *
+     * @test
+     */
+    public function it_exports_the_condition_kinds_that_read_the_host_page_and_the_context_keys_for_page_scopes(): void
+    {
+        $exporter = $this->exporter(conditionKinds: ['on_product_page' => new OnProductPage()]);
+        $registry = $exporter->export();
+
+        self::assertSame([
+            'conditionKinds' => array_values(array_filter($registry['conditionKinds'], static fn (array $kind): bool => 'on_product_page' === $kind['code'])),
+            'contextKeys' => $registry['contextKeys'],
+        ], $exporter->exportForPageScopes());
+        self::assertCount(1, $exporter->exportForPageScopes()['conditionKinds']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_exports_the_context_keys_with_their_labels_and_the_slots_with_the_keys_they_provide(): void
+    {
+        $registry = $this->exporter()->export();
+
+        self::assertSame([
+            ['key' => 'product', 'label' => '[setono_sylius_cms.context_key.product]'],
+            ['key' => 'entry', 'label' => '[setono_sylius_cms.context_key.entry]'],
+        ], $registry['contextKeys']);
+        self::assertSame([
+            ['identifier' => 'shop.footer', 'label' => '[setono_sylius_cms.slot.shop.footer]', 'provides' => []],
+            ['identifier' => 'product.after_price', 'label' => '[setono_sylius_cms.slot.product.after_price]', 'provides' => ['product']],
+        ], $registry['slots']);
     }
 
     /**
@@ -432,6 +560,7 @@ final class RegistryExporterTest extends TestCase
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator->reveal()),
             OpeningHoursHandler::class => static fn (): OpeningHoursHandler => new OpeningHoursHandler(),
+            RatingHandler::class => static fn (): RatingHandler => new RatingHandler(),
             DateTimeHandler::class => static fn (): DateTimeHandler => new DateTimeHandler(),
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
             TaxonHandler::class => static fn (): TaxonHandler => new TaxonHandler(),
@@ -441,6 +570,7 @@ final class RegistryExporterTest extends TestCase
         $contentTypes = new ContentTypeRegistry([
             'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
+            'snippet' => ['model' => Snippet::class, 'translation' => null, 'resource' => 'setono_sylius_cms.snippet'],
         ]);
 
         return new RegistryExporter(
@@ -456,6 +586,15 @@ final class RegistryExporterTest extends TestCase
             new MediaLimits(new UploadLimit(2 * 1024 * 1024, 8 * 1024 * 1024), new MediaTypes(['image' => ['image/jpeg', 'image/png'], 'document' => ['application/pdf']])),
             Links::registry(),
             Sources::registry(['on_sale' => new OnSale(), 'clearance' => new Clearance(), 'product_taxons' => new ProductTaxons()], ['clearance']),
+            new ContextKeyRegistry([
+                'product' => ['class' => ProductInterface::class, 'label' => 'setono_sylius_cms.context_key.product'],
+                'entry' => ['class' => EntryInterface::class, 'label' => 'setono_sylius_cms.context_key.entry'],
+            ]),
+            new SlotRegistry([
+                'shop.footer' => ['label' => 'setono_sylius_cms.slot.shop.footer', 'provides' => [], 'cap' => null],
+                'product.after_price' => ['label' => 'setono_sylius_cms.slot.product.after_price', 'provides' => ['product'], 'cap' => null],
+            ]),
+            Bindings::registry([new ProductBrand(), new StockLevel()]),
         );
     }
 }

@@ -109,3 +109,60 @@
     overflow-x: auto;
     margin-bottom: 1em;
 }
+
+/* The Overview's panels: a kind of problem under Needs attention, and a channel under Translations, each with room above */
+.cms-overview .cms-problem-group + .cms-problem-group,
+.cms-overview [data-channel] + [data-channel] {
+    margin-top: 1.5em;
+}
+
+.cms-overview .cms-problem-group {
+    margin-bottom: 1em;
+}
+
+/* The Order… dialog of a capped slot: its placements, each dragged by its row, the snippet's own marked */
+.cms-dialog__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.cms-slot-order {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0 0 1em;
+    padding-left: 1.75rem;
+}
+
+.cms-slot-order__item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgba(34, 36, 38, 0.15);
+    border-radius: 0.28571429rem;
+    background: #fff;
+    cursor: grab;
+}
+
+.cms-slot-order__item--this-snippet {
+    border-color: #00b5ad;
+}
+
+.cms-slot-order__item--dragged {
+    opacity: 0.5;
+}
+
+.cms-slot-order__handle {
+    color: rgba(0, 0, 0, 0.4);
+}
+
+.cms-slot-order__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.cms-slot-order__details {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.92857143em;
+}

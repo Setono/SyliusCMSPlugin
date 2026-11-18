@@ -5,15 +5,24 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\DependencyInjection;
 
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
+use Setono\SyliusCMSPlugin\Attribute\AsBindableProperty;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
+use Setono\SyliusCMSPlugin\Attribute\AsContextResolver;
 use Setono\SyliusCMSPlugin\Attribute\AsSource;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
 use Setono\SyliusCMSPlugin\Bestsellers\BestsellersCalculatorInterface;
 use Setono\SyliusCMSPlugin\Bestsellers\CompletedOrdersCalculator;
+use Setono\SyliusCMSPlugin\Binding\BindingType;
+use Setono\SyliusCMSPlugin\Binding\PropertyPathProperty;
+use Setono\SyliusCMSPlugin\Context\ProductContextResolver;
+use Setono\SyliusCMSPlugin\Context\TaxonContextResolver;
+use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\SetonoSyliusCMSExtension;
+use Setono\SyliusCMSPlugin\Factory\PlacementFactory;
+use Setono\SyliusCMSPlugin\Factory\PlacementFactoryInterface;
 use Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackChain;
@@ -24,26 +33,44 @@ use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
+use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\Placement;
+use Setono\SyliusCMSPlugin\Model\PlacementInterface;
+use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
+use Setono\SyliusCMSPlugin\Profiler\CMSDataCollector;
+use Setono\SyliusCMSPlugin\Profiler\TraceableSlotRenderer;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\SlotRegistry;
+use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistry;
+use Setono\SyliusCMSPlugin\Rendering\SlotRendererInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Repository\PlacementRepository;
+use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 use Setono\SyliusCMSPlugin\Revision\RevisionPruner;
+use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductBrand;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\SignedIn;
+use Setono\SyliusCMSPlugin\Tests\Unit\Context\Fixture\StoreLocationResolver;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
 use Setono\SyliusCMSPlugin\Tests\Unit\Upgrade\Fixture\LandingFromOne;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Component\Core\Model\ProductInterface;
+use Sylius\Component\Core\Model\TaxonInterface;
 use Sylius\Resource\Factory\Factory;
 use Sylius\Resource\Factory\TranslatableFactory;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
@@ -74,6 +101,39 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $resources = array_map(static fn (ResourceInterface $resource): string => (string) $resource, $this->container->getResources());
 
         self::assertContains(dirname(__DIR__, 3) . '/src/Resources/config/services.xml', $resources);
+    }
+
+    /**
+     * The profiler panel and what records it, which decorate the rendering services. See "Profiler panel" in
+     * docs/spec/rendering.md
+     *
+     * @test
+     */
+    public function it_registers_the_profiler_panel_in_debug(): void
+    {
+        $this->setParameter('kernel.debug', true);
+
+        $this->load();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithTag(CMSDataCollector::class, 'data_collector', [
+            'id' => CMSDataCollector::NAME,
+            'template' => '@SetonoSyliusCMSPlugin/profiler/cms.html.twig',
+            'priority' => -10,
+        ]);
+        self::assertSame(SlotRendererInterface::class, $this->container->getDefinition(TraceableSlotRenderer::class)->getDecoratedService()[0] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function it_registers_no_profiler_panel_without_debug(): void
+    {
+        $this->setParameter('kernel.debug', false);
+
+        $this->load();
+
+        $this->assertContainerBuilderNotHasService(CMSDataCollector::class);
+        $this->assertContainerBuilderNotHasService(TraceableSlotRenderer::class);
     }
 
     /**
@@ -202,6 +262,33 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_autoconfigures_context_resolvers_by_their_attribute(): void
+    {
+        $this->load();
+
+        $configurators = $this->container->getAutoconfiguredAttributes();
+        self::assertArrayHasKey(AsContextResolver::class, $configurators);
+
+        $definition = new ChildDefinition('');
+        $configurators[AsContextResolver::class]($definition, new AsContextResolver('store_location'), new \ReflectionClass(StoreLocationResolver::class));
+
+        self::assertSame(['setono_sylius_cms.context_resolver' => [[]]], $definition->getTags());
+    }
+
+    /**
+     * @test
+     */
+    public function it_registers_the_product_and_taxon_resolvers_with_a_low_priority_so_a_project_s_replace_them(): void
+    {
+        $this->load();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithTag(ProductContextResolver::class, 'setono_sylius_cms.context_resolver', ['priority' => -100]);
+        $this->assertContainerBuilderHasServiceDefinitionWithTag(TaxonContextResolver::class, 'setono_sylius_cms.context_resolver', ['priority' => -100]);
+    }
+
+    /**
+     * @test
+     */
     public function it_hands_the_disabled_sources_to_the_source_registry(): void
     {
         $this->load(['disabled' => ['sources' => ['newest_products']]]);
@@ -213,11 +300,203 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_prepends_the_stock_slots_to_the_slots_config(): void
+    {
+        $this->load();
+
+        /** @var array<string, array{label: string, provides: list<string>, template_event: array{name: string, priority: int}}>|null $slots */
+        $slots = $this->container->getExtensionConfig('setono_sylius_cms')[0]['slots'] ?? null;
+        self::assertIsArray($slots);
+        self::assertSame([
+            'shop.top' => ['sylius.shop.layout.header', 30, []],
+            'shop.before_content' => ['sylius.shop.layout.before_content', 0, []],
+            'shop.after_content' => ['sylius.shop.layout.after_content', 0, []],
+            'shop.footer' => ['sylius.shop.layout.footer', -10, []],
+            'store_homepage' => ['sylius.shop.homepage', 100, []],
+            'product.top' => ['sylius.shop.layout.before_content', -10, ['product']],
+            'product.sidebar' => ['sylius.shop.product.show.right_sidebar', 1, ['product']],
+            'product.after_price' => ['sylius.shop.product.show.right_sidebar', 28, ['product']],
+            'product.before_tabs' => ['sylius.shop.product.show.content', 22, ['product']],
+            'product.details_tab' => ['sylius.shop.product.show.tab_details', 5, ['product']],
+            'product.after_associations' => ['sylius.shop.product.show.content', 5, ['product']],
+            'taxon.header' => ['sylius.shop.taxon.header', 1, ['taxon']],
+            'taxon.before_grid' => ['sylius.shop.product.index.before_list', 0, ['taxon']],
+            'taxon.after_grid' => ['sylius.shop.product.index.before_pagination', -10, ['taxon']],
+            'taxon.sidebar' => ['sylius.shop.product.index.after_vertical_menu', 0, ['taxon']],
+            'cart.after_summary' => ['sylius.shop.cart.suggestions', 100, []],
+            'checkout.sidebar' => ['sylius.shop.checkout.sidebar', 0, []],
+            'order.thank_you' => ['sylius.shop.order.thank_you.after_message', 0, []],
+            'account.dashboard' => ['sylius.shop.account.dashboard.after_information', 0, []],
+        ], array_map(static fn (array $slot): array => [$slot['template_event']['name'], $slot['template_event']['priority'], $slot['provides']], $slots));
+
+        foreach ($slots as $identifier => $slot) {
+            self::assertSame('setono_sylius_cms.slot.' . $identifier, $slot['label']);
+            self::assertArrayNotHasKey('cap', $slot, 'No stock slot is capped');
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_the_slots_to_the_slot_registry(): void
+    {
+        $slots = ['app.store_locator.top' => ['label' => 'app.cms.slot.store_locator_top', 'provides' => ['store_location'], 'cap' => 1]];
+
+        $this->load(['slots' => $slots, 'context_keys' => ['store_location' => ['class' => \stdClass::class, 'label' => 'app.cms.context_key.store_location']]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.slots', $slots);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(SlotRegistry::class, 0, '%setono_sylius_cms.slots%');
+        $this->assertContainerBuilderHasAlias(SlotRegistryInterface::class, SlotRegistry::class);
+    }
+
+    /**
+     * @test
+     */
+    public function it_prepends_the_product_taxon_and_entry_context_keys_to_the_context_keys_config(): void
+    {
+        $this->load();
+
+        self::assertSame([
+            'product' => ['class' => ProductInterface::class, 'label' => 'setono_sylius_cms.context_key.product'],
+            'taxon' => ['class' => TaxonInterface::class, 'label' => 'setono_sylius_cms.context_key.taxon'],
+            'entry' => ['class' => EntryInterface::class, 'label' => 'setono_sylius_cms.context_key.entry'],
+        ], $this->container->getExtensionConfig('setono_sylius_cms')[0]['context_keys'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function it_autoconfigures_bindable_properties_by_their_attribute(): void
+    {
+        $this->load();
+
+        $configurators = $this->container->getAutoconfiguredAttributes();
+        self::assertArrayHasKey(AsBindableProperty::class, $configurators);
+
+        $definition = new ChildDefinition('');
+        $configurators[AsBindableProperty::class]($definition, new AsBindableProperty('product', 'brand', 'app.binding.brand', BindingType::Text), new \ReflectionClass(ProductBrand::class));
+
+        self::assertSame(['setono_sylius_cms.bindable_property' => [[]]], $definition->getTags());
+    }
+
+    /**
+     * @test
+     */
+    public function it_registers_a_bindable_property_per_property_path_the_config_declares_with_its_declaration_in_its_tag(): void
+    {
+        $this->load(['bindable_properties' => ['product' => ['brand' => ['label' => 'app.cms.binding.brand', 'type' => 'text', 'path' => 'brand.name']]]]);
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('setono_sylius_cms.bindable_property.product.brand', 0, 'brand.name');
+        $this->assertContainerBuilderHasServiceDefinitionWithTag('setono_sylius_cms.bindable_property.product.brand', 'setono_sylius_cms.bindable_property', [
+            'context_key' => 'product',
+            'code' => 'brand',
+            'label' => 'app.cms.binding.brand',
+            'type' => 'text',
+        ]);
+        self::assertSame(PropertyPathProperty::class, $this->container->getDefinition('setono_sylius_cms.bindable_property.product.brand')->getClass());
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_the_context_keys_to_the_context_key_registry(): void
+    {
+        $contextKeys = ['store_location' => ['class' => \stdClass::class, 'label' => 'app.cms.context_key.store_location']];
+
+        $this->load(['context_keys' => $contextKeys]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.context_keys', $contextKeys);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(ContextKeyRegistry::class, 0, '%setono_sylius_cms.context_keys%');
+        $this->assertContainerBuilderHasAlias(ContextKeyRegistryInterface::class, ContextKeyRegistry::class);
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_slot_that_provides_a_context_key_the_code_does_not_declare(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('The slot "app.store_locator.top" provides the context key "store_location", which isn\'t declared under setono_sylius_cms.context_keys');
+
+        $this->load(['slots' => ['app.store_locator.top' => ['label' => 'app.cms.slot.store_locator_top', 'provides' => ['store_location']]]]);
+    }
+
+    /**
+     * @test
+     */
+    public function it_adds_one_block_that_renders_the_slot_to_the_template_event_of_each_slot_tied_to_one_at_its_priority(): void
+    {
+        $this->container->loadFromExtension('setono_sylius_cms', ['slots' => [
+            'app.store_locator.top' => ['label' => 'app.cms.slot.store_locator_top', 'template_event' => ['name' => 'app.store_locator.top', 'priority' => 5]],
+            'page.landing.after_hero' => ['label' => 'app.cms.slot.after_hero'],
+            'shop.footer' => ['template_event' => ['priority' => -20]],
+        ]]);
+
+        $this->load();
+
+        $events = $this->templateEvents();
+        self::assertSame(['blocks' => [
+            'setono_sylius_cms.slot.shop.before_content' => self::slotBlock('shop.before_content', 0),
+            'setono_sylius_cms.slot.product.top' => self::slotBlock('product.top', -10),
+        ]], $events['sylius.shop.layout.before_content'] ?? null);
+        self::assertSame(['blocks' => [
+            'setono_sylius_cms.slot.product.sidebar' => self::slotBlock('product.sidebar', 1),
+            'setono_sylius_cms.slot.product.after_price' => self::slotBlock('product.after_price', 28),
+        ]], $events['sylius.shop.product.show.right_sidebar'] ?? null);
+        self::assertSame(['blocks' => ['setono_sylius_cms.slot.shop.footer' => self::slotBlock('shop.footer', -20)]], $events['sylius.shop.layout.footer'] ?? null);
+        self::assertSame(['blocks' => ['setono_sylius_cms.slot.app.store_locator.top' => self::slotBlock('app.store_locator.top', 5)]], $events['app.store_locator.top'] ?? null);
+
+        // The 19 stock slots and the project's slot tied to a template event, but not the one rendered with cms_slot()
+        $blocks = [];
+        foreach ($events as $event) {
+            self::assertIsArray($event);
+            self::assertIsArray($event['blocks'] ?? null);
+            $blocks = [...$blocks, ...array_filter(array_keys($event['blocks']), static fn (int|string $name): bool => str_starts_with((string) $name, 'setono_sylius_cms.slot.'))];
+        }
+        self::assertCount(20, $blocks);
+        self::assertNotContains('setono_sylius_cms.slot.page.landing.after_hero', $blocks);
+    }
+
+    /**
+     * @test
+     */
     public function it_hands_the_disabled_block_types_to_the_block_type_registry(): void
+    {
+        $this->load(['disabled' => ['block_types' => ['spacer']], 'embed_code' => true]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.block_types', ['spacer']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_disables_the_embed_code_block_type_until_a_project_opts_in(): void
     {
         $this->load(['disabled' => ['block_types' => ['spacer']]]);
 
-        $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.block_types', ['spacer']);
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.block_types', ['spacer', 'embed_code']);
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.embed_code', false);
+    }
+
+    /**
+     * @test
+     */
+    public function it_disables_the_embed_code_block_type_once_when_a_project_also_lists_it_as_disabled(): void
+    {
+        $this->load(['disabled' => ['block_types' => ['embed_code']]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.block_types', ['embed_code']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_enables_the_embed_code_block_type_when_a_project_opts_in(): void
+    {
+        $this->load(['embed_code' => true]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.disabled.block_types', []);
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.embed_code', true);
     }
 
     /**
@@ -415,13 +694,32 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
             'blocks' => [
                 'publishing' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_publishing.html.twig', 'priority' => 100],
                 'problems' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_problems.html.twig', 'priority' => 90],
+                'placements' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_placements.html.twig', 'priority' => 80],
                 'where_it_shows' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_where_it_shows.html.twig', 'priority' => 70],
                 'revisions' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_revisions.html.twig', 'priority' => 60],
                 'share_links' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_share_links.html.twig', 'priority' => 50],
                 'urls' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_urls.html.twig', 'priority' => 40],
+                'used_in' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_used_in.html.twig', 'priority' => 30],
                 'translations' => ['template' => '@SetonoSyliusCMSPlugin/admin/entry/show/_translations.html.twig', 'priority' => 20],
             ],
         ], $events['setono_sylius_cms.admin.entry.show.sections'] ?? null);
+    }
+
+    /**
+     * @test
+     */
+    public function it_builds_the_overview_from_a_template_event_whose_blocks_are_its_panels_in_the_specs_order(): void
+    {
+        $this->load();
+
+        self::assertSame([
+            'blocks' => [
+                'needs_attention' => ['template' => '@SetonoSyliusCMSPlugin/admin/overview/_needs_attention.html.twig', 'priority' => 40],
+                'coming_up' => ['template' => '@SetonoSyliusCMSPlugin/admin/overview/_coming_up.html.twig', 'priority' => 30],
+                'translations' => ['template' => '@SetonoSyliusCMSPlugin/admin/overview/_translations.html.twig', 'priority' => 20],
+                'drafts_in_progress' => ['template' => '@SetonoSyliusCMSPlugin/admin/overview/_drafts_in_progress.html.twig', 'priority' => 10],
+            ],
+        ], $this->templateEvents()['setono_sylius_cms.admin.overview.panels'] ?? null);
     }
 
     /**
@@ -443,6 +741,17 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->load(['media' => ['grace_period' => 'PT6H']]);
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.media.grace_period', 'PT6H');
+    }
+
+    /**
+     * @test
+     */
+    public function it_hands_the_field_control_scripts_to_the_builder_page(): void
+    {
+        $this->load(['builder' => ['scripts' => ['/build/app/cms/controls.js']]]);
+
+        $this->assertContainerBuilderHasParameter('setono_sylius_cms.builder.scripts', ['/build/app/cms/controls.js']);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BuilderAction::class, 13, '%setono_sylius_cms.builder.scripts%');
     }
 
     /**
@@ -548,6 +857,62 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_registers_snippet_as_a_sylius_resource_whose_translations_are_entry_translations(): void
+    {
+        $this->load();
+
+        $resources = $this->container->getParameter('sylius.resources');
+        self::assertIsArray($resources);
+        self::assertSame([
+            'driver' => 'doctrine/orm',
+            'classes' => [
+                'model' => Snippet::class,
+                'interface' => SnippetInterface::class,
+                'controller' => ResourceController::class,
+                'factory' => TranslatableFactory::class,
+            ],
+            'translation' => [
+                'classes' => [
+                    'model' => EntryTranslation::class,
+                    'interface' => EntryTranslationInterface::class,
+                    'controller' => ResourceController::class,
+                    'factory' => Factory::class,
+                ],
+            ],
+        ], $resources['setono_sylius_cms.snippet'] ?? null);
+
+        $this->assertContainerBuilderHasService('setono_sylius_cms.factory.snippet');
+        $this->assertContainerBuilderHasService('setono_sylius_cms.repository.snippet');
+    }
+
+    /**
+     * @test
+     */
+    public function it_registers_the_placement_as_a_sylius_resource_whose_factory_creates_placements_of_the_configured_model(): void
+    {
+        $this->load();
+
+        $resources = $this->container->getParameter('sylius.resources');
+        self::assertIsArray($resources);
+        self::assertSame([
+            'driver' => 'doctrine/orm',
+            'classes' => [
+                'model' => Placement::class,
+                'interface' => PlacementInterface::class,
+                'repository' => PlacementRepository::class,
+                'factory' => PlacementFactory::class,
+            ],
+        ], $resources['setono_sylius_cms.placement'] ?? null);
+
+        $this->assertContainerBuilderHasService('setono_sylius_cms.repository.placement', PlacementRepository::class);
+        $this->assertContainerBuilderHasAlias(PlacementRepositoryInterface::class, 'setono_sylius_cms.repository.placement');
+        $this->assertContainerBuilderHasService('setono_sylius_cms.factory.placement', PlacementFactory::class);
+        $this->assertContainerBuilderHasAlias(PlacementFactoryInterface::class, 'setono_sylius_cms.factory.placement');
+    }
+
+    /**
+     * @test
+     */
     public function it_registers_the_draft_as_a_sylius_resource(): void
     {
         $this->load();
@@ -633,6 +998,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
             ],
             'status' => ['type' => 'setono_sylius_cms_entry_status', 'label' => 'setono_sylius_cms.ui.status'],
             'channel' => ['type' => 'setono_sylius_cms_entry_channel', 'label' => 'setono_sylius_cms.ui.channel'],
+            'translation' => ['type' => 'setono_sylius_cms_entry_translation', 'label' => 'setono_sylius_cms.ui.translations'],
         ], $grid['filters']);
         self::assertSame([
             'main' => [
@@ -655,6 +1021,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         self::assertSame([
             'setono_sylius_cms_entry_status' => '@SyliusUi/Grid/Filter/select.html.twig',
             'setono_sylius_cms_entry_channel' => '@SyliusUi/Grid/Filter/select.html.twig',
+            'setono_sylius_cms_entry_translation' => '@SyliusUi/Grid/Filter/select.html.twig',
         ], $config['templates']['filter']);
     }
 
@@ -689,6 +1056,14 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         }
 
         return $events;
+    }
+
+    /**
+     * @return array{template: string, priority: int, context: array{_cms_slot: string}}
+     */
+    private static function slotBlock(string $slot, int $priority): array
+    {
+        return ['template' => '@SetonoSyliusCMSPlugin/slot/template_event.html.twig', 'priority' => $priority, 'context' => ['_cms_slot' => $slot]];
     }
 
     /**

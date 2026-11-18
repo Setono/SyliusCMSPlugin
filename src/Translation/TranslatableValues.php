@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Translation;
 
+use Setono\SyliusCMSPlugin\Binding\BoundValue;
 use Setono\SyliusCMSPlugin\Condition\Kind\LocaleKind;
 use Setono\SyliusCMSPlugin\Field\Field;
 use Setono\SyliusCMSPlugin\Field\LinkLocaleParts;
@@ -108,33 +109,34 @@ final readonly class TranslatableValues
     /**
      * @param array<string, FieldMetadata> $fields
      *
-     * @return array<string, Field>
+     * @return array<string, FieldMetadata>
      */
     private function translatable(array $fields): array
     {
-        return array_map(
-            static fn (FieldMetadata $field): Field => $field->field,
-            array_filter($fields, static fn (FieldMetadata $field): bool => $field->translatable || LinkLocaleParts::areKeptBy($field->field)),
-        );
+        return array_filter($fields, static fn (FieldMetadata $field): bool => $field->translatable || LinkLocaleParts::areKeptBy($field->field));
     }
 
     /**
      * Adds a field's value at the path. A Link that keeps its label and URL per locale inside its one value has those
-     * as its value in each locale
+     * as its value in each locale, and a bound field has its fallback, which is what's translated
      *
      * @param list<TranslatableValue> $values
      * @param mixed $stored what the field stores: a map from locale to value, or a link
      * @param mixed $translated where each locale's value was translated from
      */
-    private function addField(array &$values, string $path, Field $field, mixed $stored, mixed $translated, string $localeCode): void
+    private function addField(array &$values, string $path, FieldMetadata $field, mixed $stored, mixed $translated, string $localeCode): void
     {
-        if (LinkLocaleParts::areKeptBy($field)) {
+        if (BoundValue::isBound($field, $stored)) {
+            $stored = BoundValue::of($field, $stored)?->fallback;
+        }
+
+        if (LinkLocaleParts::areKeptBy($field->field)) {
             $this->add($values, $path, null, LinkLocaleParts::byLocale($stored), $translated, $localeCode);
 
             return;
         }
 
-        $this->add($values, $path, $field, $stored, $translated, $localeCode);
+        $this->add($values, $path, $field->field, $stored, $translated, $localeCode);
     }
 
     /**

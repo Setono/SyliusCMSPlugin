@@ -296,7 +296,7 @@ final class ScheduledPublishOverviewTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertEqualsCanonicalizing([$waiting->getUuid(), $overdue->getUuid()], self::listedUuids($crawler));
         self::assertSame(
-            ['Any status', 'Needs attention', 'Unpublished changes', 'Never published', 'Scheduled', 'Disabled or outside its date window'],
+            ['Any status', 'Needs attention', 'Unpublished changes or never published', 'Unpublished changes', 'Never published', 'Scheduled', 'Disabled or outside its date window'],
             $crawler->filter('#criteria_status option')->each(static fn (Crawler $option): string => $option->text()),
         );
 

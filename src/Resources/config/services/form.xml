@@ -20,5 +20,14 @@
 
             <tag name="form.type"/>
         </service>
+
+        <service id="Setono\SyliusCMSPlugin\Form\Type\Filter\EntryTranslationFilterType" class="Setono\SyliusCMSPlugin\Form\Type\Filter\EntryTranslationFilterType">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\ChannelLocales"/>
+            <argument type="service" id="sylius.repository.locale"/>
+            <!-- In the admin, the admin user's locale -->
+            <argument type="service" id="sylius.context.locale"/>
+
+            <tag name="form.type"/>
+        </service>
     </services>
 </container>

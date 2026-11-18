@@ -137,6 +137,17 @@
     line-height: var(--builder-line-height);
 }
 
+/* Code, such as an embed's HTML: monospace, on lines as long as they're typed, scrolling sideways */
+.code {
+    min-height: calc(var(--builder-control-height) * 6);
+    font-family: var(--builder-font-family-mono);
+    font-size: var(--builder-font-size-sm);
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: auto;
+    tab-size: 4;
+}
+
 .select[multiple] {
     min-height: calc(var(--builder-control-height) * 3);
 }
@@ -227,6 +238,18 @@
 
 .richTextEditor > :last-child {
     margin-bottom: 0;
+}
+
+/* A binding token, which shows its property's label and can't be typed in */
+.richTextEditor :global(.cms-binding-token) {
+    padding: 0 var(--builder-space-1);
+    border-radius: var(--builder-radius-pill);
+    background: var(--builder-color-selected);
+    white-space: nowrap;
+}
+
+.richTextEditor :global(.cms-binding-token.ProseMirror-selectednode) {
+    outline: 2px solid var(--builder-color-focus);
 }
 
 .richTextEditor p,

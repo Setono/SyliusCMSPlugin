@@ -28,17 +28,21 @@ export interface PreviewProps {
 /**
  * The centre pane: the real shop page with the working copy, in an iframe from the admin's own host. It loads with a
  * new preview token when the channel, the locale, Shown to or Date changes, or whether the page is the channel's
- * homepage, which moves it to the channel's root. Edits are patched into the page by the bridge in it, and the
+ * homepage, which moves it to the channel's root, and a snippet's when its placement or sample object changes. Edits are patched into the page by the bridge in it, and the
  * page reloads only for what the bridge can't patch in. In a locale the entry has no translation in, a banner shows
  * instead, because the entry has no page there.
  */
 export function Preview({ className, onOpenSettings }: PreviewProps) {
     const t = useTranslator();
-    const { store, preview, createPreviewUrl, renderPreview, leave } = useBuilder();
+    const { store, preview, createPreviewUrl, renderPreview, leave, placements } = useBuilder();
     const channel = usePreviewState((state) => state.channel);
     const width = usePreviewState((state) => state.width);
     const shownTo = usePreviewState((state) => state.shownTo);
     const date = usePreviewState((state) => state.date);
+    const placement = usePreviewState((state) => state.placement);
+    const sample = usePreviewState((state) => state.sample);
+    // A snippet shows on the host page of a placement, with a sample object
+    const snippet = placements !== null;
     const locale = useBuilderState((state) => state.locale);
     const translated = useBuilderState((state) => hasTranslation(state.entry, state.locale));
     // A page lives at its channel's root while it's the channel's homepage, so the preview moves when that changes
@@ -74,7 +78,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
             reload: () => setReloads((count) => count + 1),
             openBlockPicker: (spot, at) => {
                 const { rules, entry } = store.getState();
-                const only = soleBlockType(rules, entry.tree.blocks, spot.parent);
+                const only = soleBlockType(rules, entry, spot.parent);
                 if (only !== undefined) {
                     store.getState().addBlock(only.code, spot.parent, spot.index);
 
@@ -110,7 +114,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
 
         let active = true;
 
-        createPreviewUrl({ channel, locale, shownTo, date }).then(
+        createPreviewUrl({ channel, locale, shownTo, date, ...(snippet ? { placement, sample } : {}) }).then(
             (url) => {
                 if (active) {
                     // A new version remounts the iframe, so it reloads even when the URL is the same.
@@ -127,7 +131,7 @@ export function Preview({ className, onOpenSettings }: PreviewProps) {
         return () => {
             active = false;
         };
-    }, [createPreviewUrl, channel, locale, shownTo, date, translated, homepage, reloads]);
+    }, [createPreviewUrl, channel, locale, shownTo, date, snippet, placement, sample, translated, homepage, reloads]);
 
     // Sources count what they yield under the token of the page shown, so in its channel, locale, Shown to and Date
     useEffect(() => {

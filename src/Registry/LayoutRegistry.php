@@ -97,6 +97,7 @@ final class LayoutRegistry implements LayoutRegistryInterface
             $attribute->thumbnail,
             $attribute->shows,
             $this->isDisabled($contentType, $code),
+            $attribute->slots,
         );
     }
 

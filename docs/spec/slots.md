@@ -111,11 +111,15 @@ A [snippet](../../GLOSSARY.md#entries) declares the host-page context it needs, 
 
 **The declared context can't change while something depends on it.** A block, a binding, a source, a condition, a placement or a reference that needs a key blocks removing it, and adding a key is blocked while a placement or reference sits where that key isn't provided. The admin lists what's in the way.
 
+- The builder's entry settings offer "Any page", each context key alone, named by its label such as "Product page", and the keys each slot provides together. A change something is in the way of isn't made, and the setting lists what's in the way.
+- An autosave holds the change against its working copy with the rest of the save in it. When something is in the way, as a placement added in another tab may be, the rest saves, the context keeps its last saved value, and the save lists what's in the way, as it does for a slug another route takes.
+- The context is drafted, but placements take effect on save, so a snippet is placed only in a slot that provides what both its published content and its working copy declare.
+
 ## Placements
 
 A [placement](../../GLOSSARY.md#shop-pages) shows one snippet in one slot. It has a UUID, the slot's identifier, a [page scope](#page-scopes) and a position in the slot. A snippet can have many placements, such as one in `shop.footer` with an empty scope and one in `product.sidebar` scoped to the Shoes taxon.
 
-- **Placements take effect on save** ([ADR 0005](../adr/0005-placements-take-effect-on-save.md)). They don't go through drafts, and adding, editing, removing or reordering them fires `PlacementsChanged` ([Extending](extending.md#events)) and bumps the snippet's `changedAt`.
+- **Placements take effect on save** ([ADR 0005](../adr/0005-placements-take-effect-on-save.md)). They don't go through drafts, and adding, editing, removing or reordering them fires `PlacementsChanged` ([Extending](extending.md#events)) and bumps the snippet's `changedAt`. Deleting a snippet deletes its placements with it, and fires `PlacementsChanged` with the slots they were in after `EntryDeleted`.
 - **The snippet decides when its content shows.** A placement shows its snippet only while the snippet is visible ([Content model](content-model.md#when-an-entry-shows)): a placement of an unpublished, disabled or expired snippet shows nothing.
 - **Editors manage placements on the snippet's overview page**, not in the builder, where they're read-only. There's no Slots screen ([Admin](admin.md#entry-overview-page)).
 - **Position.** Each slot's placements have one order across all snippets, which editors set. A slot shows its matching placements in that order.
@@ -137,7 +141,7 @@ Rules:
 
 - Conditions combine with AND, and the values within one condition with OR. Every kind offers "is one of" and "is not one of".
 - An empty scope means every page the slot appears on.
-- A condition kind can sit in a placement's scope only when the slot provides the keys it needs.
+- A condition kind can sit in a placement's scope only when the slot provides the keys it needs. The scope reads the context the slot provides, not what the snippet declares, so a snippet for any page can be in `shop.footer` and scoped to the Shoes taxon in `product.sidebar`. A scope's needs don't limit the snippet's declared context.
 - Who sees it (channel, locale, customer group, dates) stays on the snippet: its channels, translations, audience and date window. Visibility conditions on the snippet's blocks handle the rest.
 
 ## Capped slots
@@ -155,6 +159,7 @@ A [binding](../../GLOSSARY.md#shop-pages) shows a property of the host-page cont
 - **Binding types** are `text`, `number` and `url`. Text and Textarea fields accept `text` and `number`, Number fields accept `number`, and Link fields accept `url`, bound inside the link's `ref`, so the link keeps its own label and anchor ([Content model](content-model.md#links)). Rich text tokens accept `text` and `number`. There are no image bindings in v2.0.
 - **Fallback.** A binding can carry a fallback for when its value is empty, such as "Hi there" for a guest's first name. The fallback follows the field's translatability. Without one, the field renders empty. This is different from the [fallback chain](localization.md#fallback-chain), which is about locales.
 - **Bound values can't be typed in place** in the builder's preview ([Builder](builder.md)).
+- **A property the code no longer declares,** such as one a deploy removed, shows the binding's fallback. Publish refuses it, and the admin flags each field bound to one, in a block or in the layout, with the warning `unknown_bindable_property` ([Admin](admin.md#problems)).
 
 ### Shipped bindable properties
 
@@ -164,7 +169,7 @@ A [binding](../../GLOSSARY.md#shop-pages) shows a property of the host-page cont
 | `product.short_description` | text | its short description |
 | `product.description` | text | its description |
 | `product.price` | text | the price of its first enabled variant in the channel, formatted in the current currency |
-| `product.original_price` | text | that variant's original price, formatted the same way, or empty when it has none |
+| `product.original_price` | text | that variant's original price, formatted the same way, or empty unless it's above the price, as Sylius's `sylius_has_discount` decides whether the shop shows it |
 | `product.code` | text | its code |
 | `product.url` | url | its shop URL |
 | `product.main_taxon_name` | text | its main taxon's name |

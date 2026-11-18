@@ -27,6 +27,7 @@ final class HubMenuBuilderTest extends TestCase
         $this->entryRepository = $this->prophesize(EntryRepositoryInterface::class);
         $this->entryRepository->countEntries()->willReturn(7);
         $this->entryRepository->countEntries('page')->willReturn(3);
+        $this->entryRepository->countEntries('snippet')->willReturn(4);
 
         $this->eventDispatcher = new EventDispatcher();
     }
@@ -69,11 +70,11 @@ final class HubMenuBuilderTest extends TestCase
     /**
      * @test
      */
-    public function it_lists_all_entries_and_the_pages_with_how_many_there_are(): void
+    public function it_lists_all_entries_the_pages_and_the_snippets_with_how_many_there_are(): void
     {
         $entries = self::child($this->menu(), 'entries');
 
-        self::assertSame(['all', 'page'], array_keys($entries->getChildren()));
+        self::assertSame(['all', 'page', 'snippet'], array_keys($entries->getChildren()));
 
         $all = self::child($entries, 'all');
         self::assertSame('setono_sylius_cms.menu.admin.hub.all_entries', $all->getLabel());
@@ -86,6 +87,12 @@ final class HubMenuBuilderTest extends TestCase
         self::assertSame('/admin/cms/entries/page', $pages->getUri());
         self::assertSame('file alternate outline', $pages->getLabelAttribute('icon'));
         self::assertSame(3, $pages->getExtra('count'));
+
+        $snippets = self::child($entries, 'snippet');
+        self::assertSame('setono_sylius_cms.menu.admin.hub.snippets', $snippets->getLabel());
+        self::assertSame('/admin/cms/entries/snippet', $snippets->getUri());
+        self::assertSame('puzzle piece', $snippets->getLabelAttribute('icon'));
+        self::assertSame(4, $snippets->getExtra('count'));
     }
 
     /**

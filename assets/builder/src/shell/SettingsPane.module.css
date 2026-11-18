@@ -111,6 +111,16 @@
     font-size: var(--builder-font-size-sm);
 }
 
+/* What's in the way of changing a snippet's host-page context, inside a warning */
+.inTheWay {
+    margin: 0;
+}
+
+.inTheWayList {
+    margin: var(--builder-space-1) 0 0;
+    padding-left: var(--builder-space-4);
+}
+
 /* The layout picker: a card per layout, with its thumbnail, the picked one outlined */
 .layouts {
     display: grid;
@@ -205,6 +215,17 @@
     margin: 0;
     padding: 0;
     font-size: var(--builder-font-size-sm);
+    list-style: none;
+    overflow-wrap: anywhere;
+}
+
+/* A snippet's placements in the More tab, which it lists without a way to change them */
+.placements {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    margin: 0;
+    padding: 0;
     list-style: none;
     overflow-wrap: anywhere;
 }

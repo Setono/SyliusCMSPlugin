@@ -7,3 +7,11 @@ setono_sylius_cms:
     # Swiss German falls back to German before the store's fallback locale
     fallback_locales:
         de_CH: [de_DE]
+
+    # The field control of the test application's own opening hours field type, a custom element, as an asset path,
+    # which asset() resolves. VersionedAssetsKernel gives it a versioned URL
+    builder:
+        scripts: ['cms/opening-hours.js']
+
+    # The Embed code block, opted in to as a project opts in (ADR 0018). EmbedCodeOffKernel switches it off again
+    embed_code: true

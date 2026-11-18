@@ -14,7 +14,10 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\InvalidCode;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\InvalidStyleCode;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\NotABlockType;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Plain;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ProductBadge;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\SameStyleTwice;
+use Sylius\Component\Core\Model\ProductInterface;
+use Sylius\Component\Core\Model\TaxonInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
@@ -193,6 +196,33 @@ final class RegisterBlockTypesPassTest extends AbstractCompilerPassTestCase
         $this->expectExceptionMessage('"app.missing" must have an existing class');
 
         $this->compile();
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_block_type_that_needs_a_context_key_the_config_does_not_declare(): void
+    {
+        $this->setParameter('setono_sylius_cms.context_keys', ['taxon' => ['class' => TaxonInterface::class, 'label' => 'setono_sylius_cms.context_key.taxon']]);
+        $this->setDefinition('app.product_badge', (new Definition(ProductBadge::class))->addTag('setono_sylius_cms.block_type'));
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf('The block type %s needs the context key "product", which isn\'t declared under setono_sylius_cms.context_keys', ProductBadge::class));
+
+        $this->compile();
+    }
+
+    /**
+     * @test
+     */
+    public function it_accepts_a_block_type_that_needs_declared_context_keys(): void
+    {
+        $this->setParameter('setono_sylius_cms.context_keys', ['product' => ['class' => ProductInterface::class, 'label' => 'setono_sylius_cms.context_key.product']]);
+        $this->setDefinition('app.product_badge', (new Definition(ProductBadge::class))->addTag('setono_sylius_cms.block_type'));
+
+        $this->compile();
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BlockTypeRegistry::class, 0, ['product_badge' => ProductBadge::class]);
     }
 
     /**

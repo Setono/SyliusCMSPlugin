@@ -14,6 +14,9 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaLimits"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface"/>
         </service>
 
         <!-- What the media library app needs to reach the library, on its own screen and as the builder's media picker -->
@@ -43,6 +46,13 @@
             <tag name="setono_sylius_cms.search" kind="customer_group"/>
         </service>
 
+        <!-- The store's product attributes, which the Product attribute binding shows one of -->
+        <service id="setono_sylius_cms.search.product_attribute" class="Setono\SyliusCMSPlugin\Builder\Search\ChoicesSearch">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Binding\Product\ProductAttributeChoicesProvider"/>
+
+            <tag name="setono_sylius_cms.search" kind="product_attribute"/>
+        </service>
+
         <!-- Products, taxons and entries are searched by these, which their link targets search with too. A link target without a search of its kind is searched under its code (RegisterLinkTargetsPass) -->
         <service id="Setono\SyliusCMSPlugin\Builder\Search\ProductSearch" class="Setono\SyliusCMSPlugin\Builder\Search\ProductSearch">
             <argument type="service" id="doctrine"/>
@@ -67,6 +77,16 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
 
             <tag name="setono_sylius_cms.search" kind="entry"/>
+        </service>
+
+        <!-- The snippets a Snippet field's picker offers: those whose declared context the edited entry provides -->
+        <service id="Setono\SyliusCMSPlugin\Builder\Search\SnippetSearch" class="Setono\SyliusCMSPlugin\Builder\Search\SnippetSearch">
+            <argument type="service" id="doctrine"/>
+            <argument>%setono_sylius_cms.model.snippet.class%</argument>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+            <argument type="service" id="request_stack"/>
+
+            <tag name="setono_sylius_cms.search" kind="snippet"/>
         </service>
 
         <!-- The documents and videos the media link target links to, which the search under its code finds -->

@@ -4,6 +4,19 @@
     <services>
         <defaults public="true"/>
 
+        <!-- The plain shop page the builder previews a snippet on -->
+        <service id="Setono\SyliusCMSPlugin\Controller\Shop\SnippetPreviewAction" class="Setono\SyliusCMSPlugin\Controller\Shop\SnippetPreviewAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedSnippetProvider"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder"/>
+            <argument type="service" id="twig"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedHostPageContext"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Shop\ShowEntryAction" class="Setono\SyliusCMSPlugin\Controller\Shop\ShowEntryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Routing\EntryUrlMatcher"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface"/>
@@ -70,6 +83,42 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <!-- The overview page's Placements section (docs/spec/admin.md#placements) -->
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\SnippetPlacementRequest" class="Setono\SyliusCMSPlugin\Controller\Admin\SnippetPlacementRequest">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\AddPlacementAction" class="Setono\SyliusCMSPlugin\Controller\Admin\AddPlacementAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Slot\PlacementEditorInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\OrderPlacementsAction" class="Setono\SyliusCMSPlugin\Controller\Admin\OrderPlacementsAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Slot\PlacementEditorInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction" class="Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\SnippetPlacementRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Slot\PlacementEditorInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\SetPlacementPageScopeAction" class="Setono\SyliusCMSPlugin\Controller\Admin\SetPlacementPageScopeAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\SnippetPlacementRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Slot\PlacementEditorInterface"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\EntryOverviewRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\AutosaveInterface"/>
@@ -122,6 +171,8 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\StartingValuesInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\MediaLibraryConfig"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryPlacements"/>
+            <argument>%setono_sylius_cms.builder.scripts%</argument>
 
             <tag name="controller.service_arguments"/>
         </service>
@@ -166,6 +217,14 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
             <argument type="service" id="clock"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\SnippetBlocksAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\SnippetBlocksAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+
+            <tag name="controller.service_arguments"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction">
@@ -260,6 +319,8 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\SnippetHostPages"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewRenderContextFactory"/>
 
             <tag name="controller.service_arguments"/>
         </service>
@@ -272,6 +333,34 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedHostPageContext"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewSnippetAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewSnippetAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedSnippetProvider"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedHostPageContext"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\SampleObjects"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\PlacementProviderInterface"/>
+            <!-- Picks as for shoppers: the alias PlacementPickerInterface is the preview's, which lets the draft win -->
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\PlacementPicker"/>
+            <argument type="tagged_locator" tag="setono_sylius_cms.search" index-by="kind"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewSamplesAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewSamplesAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedSnippetProvider"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\SnippetHostPages"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\SampleObjects"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
+            <argument type="tagged_locator" tag="setono_sylius_cms.search" index-by="kind"/>
 
             <tag name="controller.service_arguments"/>
         </service>
@@ -283,6 +372,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Source\SourceResolver"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preview\PreviewedHostPageContext"/>
 
             <tag name="controller.service_arguments"/>
         </service>

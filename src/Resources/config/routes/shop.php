@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Setono\SyliusCMSPlugin\Controller\Shop\ShowEntryAction;
+use Setono\SyliusCMSPlugin\Controller\Shop\SnippetPreviewAction;
 use Setono\SyliusCMSPlugin\Routing\RouteChecker;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
@@ -20,6 +21,13 @@ use Symfony\Component\Routing\RouteCollection;
  * the priority of -1000 that makes this route match after every other route, whatever order the files load in (ADR 0015)
  */
 $routes = new RouteCollection();
+
+// The plain shop page the builder previews a snippet on, which answers 404 to anyone but the builder's preview of one
+$routes->add(SnippetPreviewAction::ROUTE, new Route(
+    path: '/_cms/snippet-preview',
+    defaults: ['_controller' => SnippetPreviewAction::class],
+    methods: ['GET'],
+));
 
 $routes->add(RouteChecker::ENTRY_ROUTE, new Route(
     path: '/{path}',

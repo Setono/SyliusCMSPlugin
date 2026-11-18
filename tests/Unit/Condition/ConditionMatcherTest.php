@@ -11,9 +11,12 @@ use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\OnProductPage;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ProductAvailable;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
+use Sylius\Component\Core\Model\Product;
 use Sylius\Component\Core\Model\ProductInterface;
 
 final class ConditionMatcherTest extends TestCase
@@ -90,6 +93,26 @@ final class ConditionMatcherTest extends TestCase
         self::assertFalse($this->matcher()->matches(['kind' => 'removed', 'negate' => true, 'params' => []], $this->context('en_US')));
         self::assertFalse($this->matcher()->matches(['kind' => null, 'negate' => true, 'params' => []], $this->context('en_US')));
         self::assertFalse($this->matcher()->matchesAll([self::localeIs(['en_US']), ['kind' => 'removed', 'negate' => true, 'params' => []]], $this->context('en_US')));
+    }
+
+    /**
+     * Such as on a snippet's plain preview page, where its tree has no host-page context, or in a slot whose code no
+     * longer provides the key: the condition can't be answered, so it hides its block as a removed kind does, and a
+     * source yields nothing
+     *
+     * @test
+     */
+    public function it_never_matches_a_condition_whose_kind_needs_a_context_key_the_render_context_does_not_hold_even_negated(): void
+    {
+        $matcher = Conditions::matcher(['on_product_page' => new OnProductPage()]);
+        $onProductPage = Rendering::context(hostPageContext: ['product' => new Product()]);
+
+        self::assertTrue($matcher->matches(['kind' => 'on_product_page', 'negate' => false, 'params' => []], $onProductPage));
+        self::assertFalse($matcher->matches(['kind' => 'on_product_page', 'negate' => true, 'params' => []], $onProductPage));
+
+        self::assertFalse($matcher->matches(['kind' => 'on_product_page', 'negate' => false, 'params' => []], Rendering::context()));
+        self::assertFalse($matcher->matches(['kind' => 'on_product_page', 'negate' => true, 'params' => []], Rendering::context()));
+        self::assertFalse($matcher->matchesAll([['kind' => 'on_product_page', 'negate' => true, 'params' => []]], Rendering::context(hostPageContext: ['taxon' => new Product()])));
     }
 
     /**

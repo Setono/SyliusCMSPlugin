@@ -12,7 +12,8 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 interface EntryDeleterInterface
 {
     /**
-     * Dispatches BeforeEntryDelete, deletes the entry, and dispatches EntryDeleted after the transaction commits
+     * Dispatches BeforeEntryDelete, deletes the entry, and dispatches EntryDeleted after the transaction commits, then
+     * PlacementsChanged with the slots a deleted snippet was placed in, if any
      *
      * @throws DeleteVetoedException when a BeforeEntryDelete listener vetoes the delete
      */

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- Everything that changes placements goes through it. They take effect on save (ADR 0005) -->
+        <service id="Setono\SyliusCMSPlugin\Slot\PlacementEditor" class="Setono\SyliusCMSPlugin\Slot\PlacementEditor">
+            <argument type="service" id="doctrine"/>
+            <argument>%setono_sylius_cms.model.placement.class%</argument>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Factory\PlacementFactoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="clock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Context\DeclaredContextInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Slot\PageScopeValidatorInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Slot\PlacementEditorInterface" alias="Setono\SyliusCMSPlugin\Slot\PlacementEditor"/>
+
+        <!-- What a placement's page scope may hold, in its slot -->
+        <service id="Setono\SyliusCMSPlugin\Slot\PageScopeValidator" class="Setono\SyliusCMSPlugin\Slot\PageScopeValidator">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\FieldValidator"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Slot\PageScopeValidatorInterface" alias="Setono\SyliusCMSPlugin\Slot\PageScopeValidator"/>
+    </services>
+</container>

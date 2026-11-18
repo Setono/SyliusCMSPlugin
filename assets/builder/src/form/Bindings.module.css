@@ -1,0 +1,120 @@
+/* Bindings: the ⚡ button and its list of properties, and a bound field's chip, parameters and fallback */
+.bind {
+    composes: button from '../ui/Buttons.module.css';
+    min-height: auto;
+    padding: 0 var(--builder-space-2);
+    line-height: var(--builder-line-height);
+}
+
+.labelRowBind {
+    margin-left: auto;
+}
+
+/* Rendered in a portal at the end of the body, outside the shell, so it sets its own type and box model. */
+.popover {
+    box-sizing: border-box;
+    width: var(--builder-popover-width);
+    max-width: calc(100vw - 2 * var(--builder-space-2));
+    max-height: min(24rem, var(--radix-popover-content-available-height));
+    overflow-y: auto;
+    padding: var(--builder-space-2);
+    border: 1px solid var(--builder-color-border);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-surface);
+    box-shadow: var(--builder-shadow-popover);
+    color: var(--builder-color-text);
+    font-family: var(--builder-font-family);
+    font-size: var(--builder-font-size-md);
+    line-height: var(--builder-line-height);
+}
+
+.popover *,
+.popover *::before,
+.popover *::after {
+    box-sizing: border-box;
+}
+
+.heading {
+    margin: 0 0 var(--builder-space-1);
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.option {
+    width: 100%;
+    padding: var(--builder-space-1) var(--builder-space-2);
+    border: 0;
+    border-radius: var(--builder-radius-sm);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.option:hover,
+.option:focus-visible {
+    background: var(--builder-color-selected);
+    outline: none;
+}
+
+.none {
+    margin: 0;
+    color: var(--builder-color-text-muted);
+}
+
+.bound {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+    padding: var(--builder-space-2);
+    border: 1px dashed var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-sm);
+}
+
+.chipRow {
+    display: flex;
+    gap: var(--builder-space-1);
+    align-items: center;
+}
+
+.chip {
+    display: inline-flex;
+    gap: var(--builder-space-1);
+    align-items: center;
+    padding: 0 var(--builder-space-2);
+    border-radius: var(--builder-radius-pill);
+    background: var(--builder-color-selected);
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.unbind {
+    composes: bind;
+}
+
+.part {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+}
+
+.partLabel {
+    font-size: var(--builder-font-size-sm);
+    font-weight: var(--builder-font-weight-medium);
+}
+
+/* Rich text's panel that inserts a binding token: the property, its parameters and the fallback */
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+}

@@ -21,6 +21,10 @@ export interface PreviewState {
     unresolvedLinks: string[];
     /** The token of the page the preview shows, which counts what sources yield there, or null while none is shown. */
     token: string | null;
+    /** For a snippet, the placement whose host page the preview shows, or null for a plain page. */
+    placement: string | null;
+    /** For a snippet, the ref of the sample object the editor picked, or null for the one the preview starts with. */
+    sample: string | null;
     setChannel(code: string): void;
     /** Follows the entry's channels as they change, keeping the channel shown while the entry is still in it. */
     setChannels(channels: Channel[]): void;
@@ -29,12 +33,18 @@ export interface PreviewState {
     setDate(date: string | null): void;
     setUnresolvedLinks(keys: string[]): void;
     setToken(token: string | null): void;
+    /** Shows another placement, with the sample object a preview of it starts with. */
+    setPlacement(placement: string | null): void;
+    setSample(sample: string | null): void;
 }
 
 export type PreviewStore = StoreApi<PreviewState>;
 
-/** Starts in the entry's first channel, at desktop width, shown to guests now unless the starting values say otherwise. */
-export function createPreviewStore(channels: Channel[], start: ShownToAndDate = { shownTo: '@guest', date: null }): PreviewStore {
+/**
+ * Starts in the entry's first channel, at desktop width, shown to guests now unless the starting values say otherwise,
+ * and a snippet in the placement given, with the sample object its preview starts with.
+ */
+export function createPreviewStore(channels: Channel[], start: ShownToAndDate = { shownTo: '@guest', date: null }, placement: string | null = null): PreviewStore {
     return createStore<PreviewState>()((set) => ({
         channels,
         channel: channels[0]?.code ?? null,
@@ -43,6 +53,8 @@ export function createPreviewStore(channels: Channel[], start: ShownToAndDate = 
         date: start.date,
         unresolvedLinks: [],
         token: null,
+        placement,
+        sample: null,
 
         setChannel(channel) {
             set({ channel });
@@ -73,6 +85,14 @@ export function createPreviewStore(channels: Channel[], start: ShownToAndDate = 
 
         setToken(token) {
             set({ token });
+        },
+
+        setPlacement(shown) {
+            set({ placement: shown, sample: null });
+        },
+
+        setSample(sample) {
+            set({ sample });
         },
     }));
 }

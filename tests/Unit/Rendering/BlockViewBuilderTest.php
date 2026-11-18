@@ -11,36 +11,47 @@ use Setono\SyliusCMSPlugin\Block\FirstMatch;
 use Setono\SyliusCMSPlugin\Block\Group;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Block\RichText;
+use Setono\SyliusCMSPlugin\Block\Snippet as SnippetBlock;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\MediaHandler;
 use Setono\SyliusCMSPlugin\Field\MediaListHandler;
 use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
+use Setono\SyliusCMSPlugin\Field\SnippetHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
+use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
-use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
+use Setono\SyliusCMSPlugin\Rendering\BlockReferences;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
+use Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Tests\Support\Blocks;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ProductAvailable;
+use Setono\SyliusCMSPlugin\Tests\Unit\Rendering\Fixture\Unbuildable;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Tree\TreeValues;
+use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Setono\SyliusCMSPlugin\Value\RichText as RichTextValue;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\ProductInterface;
@@ -64,6 +75,27 @@ final class BlockViewBuilderTest extends TestCase
     private const IMAGE = '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d02';
 
     private const DELETED = '0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d03';
+
+    /**
+     * Bound values can't be typed in place, so the view says which fields show one. See "Working in the preview" in
+     * docs/spec/builder.md
+     *
+     * @test
+     */
+    public function it_names_the_fields_that_show_a_binding(): void
+    {
+        $bound = new StoredBlock(self::A, 'heading', 1);
+        $bound->fields = ['text' => ['$bind' => 'product.name', '$params' => [], '$fallback' => ['en_US' => 'this product']]];
+        $typed = new StoredBlock(self::B, 'heading', 1);
+        $typed->fields = ['text' => ['en_US' => 'Hello']];
+
+        $views = $this->builder()->build([$bound, $typed], $this->context('en_US'));
+
+        self::assertSame(['text'], $views[0]->bound);
+        self::assertInstanceOf(Heading::class, $views[0]->block);
+        self::assertSame('this product', $views[0]->block->text);
+        self::assertSame([], $views[1]->bound);
+    }
 
     /**
      * @test
@@ -388,6 +420,147 @@ final class BlockViewBuilderTest extends TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_builds_a_snippet_block_s_children_from_the_referenced_snippet_s_blocks_with_the_tree_s_context(): void
+    {
+        $footer = self::snippet(self::heading(self::B, 'Opening hours'));
+        $context = $this->context('en_US');
+
+        $views = $this->builder()->build([Blocks::snippet(self::A, $footer)], $context, self::snippetsMap($footer));
+
+        self::assertSame([self::A], self::keys($views));
+        self::assertSame('snippet', $views[0]->type);
+        self::assertInstanceOf(SnippetBlock::class, $views[0]->block);
+        self::assertSame($footer, $views[0]->block->snippet);
+        self::assertSame([self::B], self::keys($views[0]->children));
+        self::assertInstanceOf(Heading::class, $views[0]->children[0]->block);
+        self::assertSame('Opening hours', $views[0]->children[0]->block->text);
+    }
+
+    /**
+     * @test
+     */
+    public function it_builds_no_children_for_a_snippet_block_whose_snippet_the_shopper_may_not_see(): void
+    {
+        $unpublished = self::snippet(self::heading(self::B, 'Opening hours'));
+
+        $views = $this->builder()->build([Blocks::snippet(self::A, $unpublished)], $this->context('en_US'), self::snippetsMap());
+
+        self::assertSame([self::A], self::keys($views));
+        self::assertInstanceOf(SnippetBlock::class, $views[0]->block);
+        self::assertNull($views[0]->block->snippet);
+        self::assertSame([], $views[0]->children);
+    }
+
+    /**
+     * @test
+     */
+    public function it_skips_a_snippet_the_second_time_it_would_render_inside_itself(): void
+    {
+        $a = self::snippet(self::heading(self::B, 'A'));
+        $b = self::snippet(self::heading(self::D, 'B'));
+        $a->setBlockTree(new StoredTree(null, [self::heading(self::B, 'A'), Blocks::snippet(self::C, $b)]));
+        $b->setBlockTree(new StoredTree(null, [self::heading(self::D, 'B'), Blocks::snippet(self::A, $a)]));
+
+        // A page showing A shows A, B inside it, and A inside that no more
+        $views = $this->builder()->build([Blocks::snippet('page-a', $a)], $this->context('en_US'), self::snippetsMap($a, $b));
+
+        $inA = $views[0]->children;
+        self::assertSame([self::B, self::C], self::keys($inA));
+        $inB = $inA[1]->children;
+        self::assertSame([self::D, self::A], self::keys($inB));
+        self::assertSame([], $inB[1]->children, 'A inside B inside A is skipped');
+    }
+
+    /**
+     * @test
+     */
+    public function it_skips_a_snippet_inside_the_snippet_whose_tree_it_builds(): void
+    {
+        $a = self::snippet();
+        $b = self::snippet();
+        $a->setBlockTree(new StoredTree(null, [self::heading(self::B, 'A'), Blocks::snippet(self::C, $b), Blocks::snippet(self::D, $a)]));
+        $b->setBlockTree(new StoredTree(null, [Blocks::snippet(self::A, $a)]));
+
+        // A in a slot: B inside it shows, but A doesn't show inside B, nor inside itself
+        $views = $this->builder()->build($a->getBlockTree()->blocks, $this->context('en_US'), self::snippetsMap($a, $b), $a->getUuid());
+
+        self::assertSame([self::B, self::C, self::D], self::keys($views));
+        self::assertSame([self::A], self::keys($views[1]->children));
+        self::assertSame([], $views[1]->children[0]->children);
+        self::assertSame([], $views[2]->children);
+    }
+
+    /**
+     * So a block that throws while rendering is logged with the entry an editor fixes it in
+     *
+     * @test
+     */
+    public function it_gives_each_view_the_uuid_of_the_entry_whose_tree_holds_its_block_including_inside_a_snippet_block(): void
+    {
+        $footer = self::snippet(self::heading(self::C, 'Opening hours'));
+        $page = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e40';
+
+        $views = $this->builder()->build([self::heading(self::A, 'About us'), Blocks::snippet(self::B, $footer)], $this->context('en_US'), self::snippetsMap($footer), $page);
+
+        self::assertSame([$page, $page], array_map(static fn (BlockView $view): ?string => $view->entry, $views));
+        self::assertSame($footer->getUuid(), $views[1]->children[0]->entry);
+    }
+
+    /**
+     * Its fields are hydrated before any template renders, so a field handler or a condition kind that throws makes the
+     * block throw while it renders, as a template would. Its neighbours still get views
+     *
+     * @test
+     */
+    public function it_hands_a_block_that_throws_while_its_view_is_built_to_the_failure_handler_and_builds_the_others(): void
+    {
+        $page = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e40';
+        $failures = $this->prophesize(FailureHandlerInterface::class);
+        $failures->blockFailed(self::B, 'unbuildable', $page, Argument::which('getMessage', Unbuildable::MESSAGE))->shouldBeCalledOnce();
+
+        $views = $this->builder(failures: $failures->reveal())->build(
+            [self::heading(self::A, 'Before'), new StoredBlock(self::B, 'unbuildable', 1), new StoredBlock(self::C, 'group', 1, children: [self::heading(self::D, 'After')])],
+            $this->context('en_US'),
+            entry: $page,
+        );
+
+        self::assertSame([self::A, self::C], self::keys($views));
+        self::assertSame([self::D], self::keys($views[1]->children));
+    }
+
+    /**
+     * The builder's preview shows a block's error on the block when it renders (Preview\PreviewBlockRenderer)
+     *
+     * @test
+     */
+    public function it_throws_what_a_block_threw_while_its_view_was_built_in_the_builders_preview(): void
+    {
+        $failures = $this->prophesize(FailureHandlerInterface::class);
+        $failures->blockFailed(Argument::cetera())->shouldNotBeCalled();
+
+        $this->expectExceptionMessage(Unbuildable::MESSAGE);
+
+        $this->builder(failures: $failures->reveal())->build(
+            [new StoredBlock(self::B, 'unbuildable', 1)],
+            $this->context('en_US')->withPreviewMode(RenderContext::PREVIEW_MODE_BUILDER),
+        );
+    }
+
+    /**
+     * Such as the blocks the builder sends to be previewed
+     *
+     * @test
+     */
+    public function it_gives_views_of_blocks_that_are_no_entry_s_no_entry(): void
+    {
+        $views = $this->builder()->build([self::heading(self::A, 'About us')], $this->context('en_US'));
+
+        self::assertNull($views[0]->entry);
+    }
+
+    /**
      * @param iterable<mixed> $references
      *
      * @return list<array{string, string, bool}>
@@ -401,6 +574,32 @@ final class BlockViewBuilderTest extends TestCase
         }
 
         return $found;
+    }
+
+    private static function snippet(StoredBlock ...$blocks): SnippetInterface
+    {
+        $snippet = new Snippet();
+        $snippet->setBlockTree(new StoredTree(null, array_values($blocks)));
+
+        return $snippet;
+    }
+
+    private static function heading(string $key, string $text): StoredBlock
+    {
+        return new StoredBlock($key, 'heading', 1, fields: ['text' => ['en_US' => $text]]);
+    }
+
+    /**
+     * The references of the snippets the shopper may see, as the reference loader loads them
+     */
+    private static function snippetsMap(SnippetInterface ...$snippets): ReferenceMap
+    {
+        $entries = [];
+        foreach ($snippets as $snippet) {
+            $entries[$snippet->getUuid()] = $snippet;
+        }
+
+        return new ReferenceMap(['entry' => $entries]);
     }
 
     private static function image(): MediaItemInterface
@@ -436,7 +635,7 @@ final class BlockViewBuilderTest extends TestCase
         return array_map(static fn (BlockView $view): string => $view->key, $views);
     }
 
-    private function builder(?ReferenceLoaderInterface $referenceLoader = null): BlockViewBuilder
+    private function builder(?ReferenceLoaderInterface $referenceLoader = null, ?FailureHandlerInterface $failures = null): BlockViewBuilder
     {
         $fallbackChain = $this->prophesize(FallbackChainInterface::class);
         $fallbackChain->localesFor('da_DK')->willReturn(['da_DK', 'en_US']);
@@ -451,21 +650,40 @@ final class BlockViewBuilderTest extends TestCase
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
             MediaHandler::class => static fn (): MediaHandler => new MediaHandler(),
             MediaListHandler::class => static fn (): MediaListHandler => new MediaListHandler(),
+            SnippetHandler::class => static fn (): SnippetHandler => new SnippetHandler(),
         ]));
 
         $blockTypes = new BlockTypeRegistry(
-            ['heading' => Heading::class, 'rich_text' => RichText::class, 'group' => Group::class, 'first_match' => FirstMatch::class, 'gallery' => Gallery::class],
+            ['heading' => Heading::class, 'rich_text' => RichText::class, 'group' => Group::class, 'first_match' => FirstMatch::class, 'gallery' => Gallery::class, 'snippet' => SnippetBlock::class, 'unbuildable' => Unbuildable::class],
             new FieldReader(),
             styles: ['group' => ['brand' => ['label' => 'app.cms.block_style.brand', 'class' => 'app-group--brand']]],
         );
 
         return new BlockViewBuilder(
             $blockTypes,
-            new BlockHydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal())),
-            Conditions::matcher(['product_available' => new ProductAvailable()]),
-            new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())), $handlers),
+            Rendering::hydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal())),
+            $conditions = Conditions::matcher(['product_available' => new ProductAvailable()]),
+            new BlockReferences($blockTypes, $conditions, new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry([], new FieldReader())), $handlers)),
             $referenceLoader ?? new ReferenceLoader(new ServiceLocator([])),
+            $this->upgrader(),
+            $failures ?? $this->prophesize(FailureHandlerInterface::class)->reveal(),
         );
+    }
+
+    /**
+     * Reads an entry's tree as it's stored, which is up to date
+     */
+    private function upgrader(): StoredDataUpgraderInterface
+    {
+        $upgrader = $this->prophesize(StoredDataUpgraderInterface::class);
+        $upgrader->readBlockTree(Argument::type(EntryInterface::class))->will(static function (array $arguments): StoredTree {
+            $entry = $arguments[0];
+            self::assertInstanceOf(EntryInterface::class, $entry);
+
+            return $entry->getBlockTree();
+        });
+
+        return $upgrader->reveal();
     }
 
     private function context(string $localeCode): RenderContext

@@ -19,6 +19,8 @@ final readonly class Layout
      * @param string|null $thumbnail the wireframe card in the create dialog and the entry settings
      * @param bool $default marks the content type's default layout
      * @param list<string> $shows the entry fields its template prints, by property name
+     * @param list<string> $slots the slots its template renders with cms_slot(), by identifier, so a snippet placed in
+     *                            one previews on the page of an entry in this layout
      */
     public function __construct(
         public string $code,
@@ -29,6 +31,7 @@ final readonly class Layout
         public ?string $thumbnail = null,
         public bool $default = false,
         public array $shows = [],
+        public array $slots = [],
     ) {
     }
 }

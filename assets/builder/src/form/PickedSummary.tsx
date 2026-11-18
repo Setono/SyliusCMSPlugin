@@ -3,11 +3,11 @@ import type { SearchResult } from '../search/api';
 import styles from './Picked.module.css';
 
 /**
- * A product or taxon a field holds, by its thumbnail and name as the search names it: undefined while it's looked up,
- * and null for one the search doesn't find, such as a deleted product, which the shop doesn't show. That one is flagged
- * by its code.
+ * What a field holds by its ref, such as a product, a taxon or a snippet, by its thumbnail and name as the search names
+ * it: undefined while it's looked up, and null for one the search doesn't find, such as a deleted product, which the
+ * shop doesn't show. That one is flagged by its ref.
  */
-export function CatalogSummary({ code, item }: { code: string; item: SearchResult | null | undefined }) {
+export function PickedSummary({ code, item }: { code: string; item: SearchResult | null | undefined }) {
     const t = useTranslator();
 
     if (item === undefined) {

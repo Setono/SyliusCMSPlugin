@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tree;
 
+use Setono\SyliusCMSPlugin\Binding\StoredBinding;
+
 /**
  * Writes the field values and translation state of a block or a layout, which store them the same way: a shared
  * field's one value, a translatable field's value by locale, and where each translated value came from.
@@ -32,8 +34,9 @@ trait StoredValuesTrait
             return;
         }
 
+        // A locale's value replaces a binding, which is the whole field's
         $values = $this->fields[$field] ?? [];
-        if (!is_array($values)) {
+        if (!is_array($values) || StoredBinding::isBinding($values)) {
             $values = [];
         }
 

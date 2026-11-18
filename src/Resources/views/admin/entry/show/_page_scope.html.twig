@@ -1,0 +1,19 @@
+{#
+ # A placement's page scope in words: `page_scope` is its list of Admin\PageScopeCondition, empty for every page its
+ # slot appears on. See "Page scopes" in docs/spec/slots.md
+ #}
+{% if page_scope is empty %}
+    <span data-every-page>{{ 'setono_sylius_cms.ui.every_page_the_slot_appears_on'|trans }}</span>
+{% else %}
+    <div class="ui list">
+        {% for condition in page_scope %}
+            <div class="item" data-page-scope-condition="{{ condition.kind }}">
+                {%- if condition.label is null -%}
+                    {{ 'setono_sylius_cms.ui.page_scope_removed_kind'|trans({'%kind%': condition.kind}) }}
+                {%- else -%}
+                    {{ condition.label }} {{ condition.matches }}{% if condition.values is not empty %}: {{ condition.values|join(', ') }}{% endif %}
+                {%- endif -%}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}

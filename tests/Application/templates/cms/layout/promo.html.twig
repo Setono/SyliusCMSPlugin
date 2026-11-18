@@ -1,0 +1,10 @@
+{# The template of the Promo layout (tests/Functional/Fixture/Promo.php), which renders its own slot with the entry being shown, as SlotsKernel declares it #}
+{% extends '@SetonoSyliusCMSPlugin/layout/base.html.twig' %}
+
+{% block cms_content %}
+    <div class="cms-tree">
+        {{ cms_blocks(blocks) }}
+    </div>
+
+    {{ cms_slot('app.promo.after_blocks', { entry: entry }) }}
+{% endblock %}

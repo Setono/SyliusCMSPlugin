@@ -91,3 +91,11 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* A note after a result's name, such as whether a sample object is inside a placement's page scope */
+.description {
+    flex: none;
+    margin-left: auto;
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}

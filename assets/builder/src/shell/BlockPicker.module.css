@@ -98,6 +98,35 @@
     color: var(--builder-color-text-muted);
 }
 
+/* The block types the spot would take but for the host-page context they need, named with what they need */
+.leftOutHeading {
+    margin: 0;
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+    font-weight: var(--builder-font-weight-medium);
+}
+
+.leftOut {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.leftOutItem {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--builder-space-1) var(--builder-space-2);
+    justify-content: space-between;
+    color: var(--builder-color-text-muted);
+}
+
+.reason {
+    font-size: var(--builder-font-size-sm);
+}
+
 .visuallyHidden {
     position: absolute;
     overflow: hidden;

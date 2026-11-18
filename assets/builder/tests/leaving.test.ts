@@ -72,4 +72,19 @@ describe('leaving', () => {
 
         expect(go).toHaveBeenCalledOnce();
     });
+
+    it('should leave for another page, such as a snippet\'s builder, and leave anyway for that page too', async () => {
+        const store = storeWith([block('a')]);
+        store.getState().setFieldValue('a', 'text', 'Hello');
+        const go = vi.fn();
+        const leaving = createLeaving(store, { flush: async () => false }, go);
+
+        await leaving.getState().leave('/admin/cms/entry/footer/builder');
+
+        expect(go).not.toHaveBeenCalled();
+
+        leaving.getState().leaveAnyway();
+
+        expect(go).toHaveBeenCalledExactlyOnceWith('/admin/cms/entry/footer/builder');
+    });
 });

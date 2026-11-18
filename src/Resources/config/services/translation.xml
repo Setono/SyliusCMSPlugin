@@ -11,6 +11,17 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackChainInterface"/>
         </service>
 
+        <!-- The locales an entry's working copy is complete in, which are stored with it whenever its problems are counted -->
+        <service id="Setono\SyliusCMSPlugin\Translation\CompleteLocales" class="Setono\SyliusCMSPlugin\Translation\CompleteLocales">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Translation\TranslatableValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Translation\CompletenessCounter" class="Setono\SyliusCMSPlugin\Translation\CompletenessCounter">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Translation\CompleteLocales"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\CompletenessQueryInterface"/>
+        </service>
+
         <!-- The seam a future translator fills -->
         <service id="Setono\SyliusCMSPlugin\Translation\TranslationState" class="Setono\SyliusCMSPlugin\Translation\TranslationState">
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>

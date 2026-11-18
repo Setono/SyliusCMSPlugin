@@ -1,3 +1,4 @@
+import { readDataConfig } from './dataConfig';
 import type { MediaLibraryConfig } from './media/config';
 
 /** A channel of the store. */
@@ -29,6 +30,17 @@ export interface ShownToAndDate {
     shownTo: string;
     /** A UTC date and time, such as 2026-12-01T00:00:00Z, or null for now. */
     date: string | null;
+}
+
+/** One of a snippet's placements, which are managed on its overview page and only listed in the builder. */
+export interface SnippetPlacement {
+    uuid: string;
+    /** The slot's identifier, such as shop.footer. */
+    slot: string;
+    /** The slot's label in the admin user's locale, or its identifier when the code no longer declares it. */
+    label: string;
+    /** Whether the code no longer declares the slot, so the placement shows nothing. */
+    removed: boolean;
 }
 
 /** What the builder page passes to the app, as JSON in the data-config attribute of #cms-builder. */
@@ -63,6 +75,14 @@ export interface BuilderConfig {
         search?: string;
         /** How many items a source yields for a list field's parameters, under a preview token. Without it, no count shows. */
         sourceCount?: string;
+        /** The blocks a snippet shows, with UUID_PLACEHOLDER for its UUID, which Detach to edit here copies. Without it, there's no Detach. */
+        snippetBlocks?: string;
+        /** Another entry's builder, with UUID_PLACEHOLDER for its UUID, which Edit snippet opens. Without it, there's no Edit snippet. */
+        builder?: string;
+        /** What the top bar shows of a snippet's preview, under a preview token. Without it, the top bar shows nothing of it. */
+        previewSnippet?: string;
+        /** The sample objects a snippet's preview can show it with, under a preview token. Without it, the sample object can't be picked. */
+        previewSamples?: string;
     };
     /** The store's channels. The settings pick the entry's channels from them, and the preview picks from the entry's. */
     channels: Channel[];
@@ -72,6 +92,8 @@ export interface BuilderConfig {
     customerGroups: CustomerGroup[];
     /** Where the preview's Shown to and Date start, from the entry's audience and date window. Guests and now without it. */
     preview?: ShownToAndDate;
+    /** A snippet's placements, by slot, which the More tab lists. Null or absent for an entry that isn't a snippet. */
+    placements?: SnippetPlacement[] | null;
     /** UI strings needed before the registry arrives, such as the loading text. Optional. */
     strings?: Record<string, string>;
     /**
@@ -81,11 +103,14 @@ export interface BuilderConfig {
     media?: Pick<MediaLibraryConfig, 'endpoints' | 'locales'>;
 }
 
-export function readConfig(element: HTMLElement): BuilderConfig {
-    const json = element.dataset.config;
-    if (json === undefined || json === '') {
-        throw new Error('The builder needs its configuration in the data-config attribute.');
-    }
+/** What the endpoints that name another entry hold in place of its UUID. */
+export const UUID_PLACEHOLDER = '00000000-0000-4000-8000-000000000000';
 
-    return JSON.parse(json) as BuilderConfig;
+/** An endpoint that names another entry, for the entry with the UUID. */
+export function withUuid(endpoint: string, uuid: string): string {
+    return endpoint.replace(UUID_PLACEHOLDER, encodeURIComponent(uuid));
+}
+
+export function readConfig(element: HTMLElement): BuilderConfig {
+    return readDataConfig<BuilderConfig>(element, 'The builder needs its configuration in the data-config attribute.');
 }

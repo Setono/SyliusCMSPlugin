@@ -11,9 +11,12 @@ use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetApplier;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\ChangeSetMerger;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\Merge;
 use Setono\SyliusCMSPlugin\Builder\ChangeSet\SetEntryValue;
+use Setono\SyliusCMSPlugin\Context\ContextCheck;
+use Setono\SyliusCMSPlugin\Context\ContextCheckInterface;
 use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
 use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 use Setono\SyliusCMSPlugin\Validation\EntryUrlValidator;
@@ -22,7 +25,9 @@ use Setono\SyliusCMSPlugin\Validation\ValidationError;
 
 /**
  * A save holds back a slug whose URL another route takes, the one exception to a draft saving while invalid: the rest
- * saves, the slug keeps its last saved value, and the save says why (docs/spec/urls-and-seo.md#reserved-urls).
+ * saves, the slug keeps its last saved value, and the save says why (docs/spec/urls-and-seo.md#reserved-urls). A
+ * snippet's declared context is held back the same way while something depends on it, which the save lists, held
+ * against the working copy with the rest of the save in it (docs/spec/slots.md#snippets-and-their-context).
  * Saves are kept for a day for merging onto. Each one runs with the entry's row locked (EntryLock), so saves of one entry
  * wait for each other, and loading waits for a save in flight, so a lock token always matches the working copy it came with.
  * A save that changes something, a discard and a replace record on the entry who made it and when. While a scheduled
@@ -48,6 +53,7 @@ final readonly class Autosave implements AutosaveInterface
         private EntryUrlValidatorInterface $urlValidator,
         private ScheduledPublishRepositoryInterface $scheduledPublishes,
         private ChannelLocales $channelLocales,
+        private ContextCheckInterface $contextCheck,
     ) {
     }
 
@@ -83,15 +89,24 @@ final readonly class Autosave implements AutosaveInterface
                 static fn (Change $change): bool => !isset($refused[self::slug($change)[0] ?? '']),
             )));
 
+            $refusedContext = [];
             if ([] !== $changes->changes) {
+                $declared = $workingCopy instanceof SnippetInterface ? $workingCopy->getContext() : null;
                 $this->applier->apply($changes, $workingCopy, $this->channelLocales->ofChannels($workingCopy->getChannelCodes()));
 
+                $refusedContext = $this->refusedContext($workingCopy, $declared);
+                if ([] !== $refusedContext) {
+                    $changes = new ChangeSet(array_values(array_filter($changes->changes, static fn (Change $change): bool => !self::isContext($change))));
+                }
+            }
+
+            if ([] !== $changes->changes) {
                 $this->number($entry, ++$latest, $changes);
                 $this->editRecorder->record($entry);
                 $this->workingCopies->save($entry, $workingCopy);
             }
 
-            return new SaveResult(new LoadedWorkingCopy($workingCopy, $latest), [] !== $theirs, $merge->clashes, array_values($refused));
+            return new SaveResult(new LoadedWorkingCopy($workingCopy, $latest), [] !== $theirs, $merge->clashes, [...array_values($refused), ...$refusedContext], [] !== $refusedContext);
         });
     }
 
@@ -138,6 +153,33 @@ final readonly class Autosave implements AutosaveInterface
         if (null !== $scheduledPublish && !$scheduledPublish->isFailed()) {
             throw new DraftLockedException($scheduledPublish);
         }
+    }
+
+    /**
+     * What's in the way of the change the save made to a snippet's declared context, which then keeps its last saved
+     * value
+     *
+     * @param list<string>|null $declared what the snippet declared before the save, or null for an entry that isn't one
+     *
+     * @return list<ValidationError>
+     */
+    private function refusedContext(EntryInterface $workingCopy, ?array $declared): array
+    {
+        if (null === $declared || !$workingCopy instanceof SnippetInterface || $workingCopy->getContext() === $declared) {
+            return [];
+        }
+
+        $blockers = $this->contextCheck->blockers($workingCopy, $declared, $workingCopy->getContext());
+        if ([] !== $blockers) {
+            $workingCopy->setContext($declared);
+        }
+
+        return $blockers;
+    }
+
+    private static function isContext(Change $change): bool
+    {
+        return $change instanceof SetEntryValue && ContextCheck::FIELD === $change->field && null === $change->locale;
     }
 
     /**

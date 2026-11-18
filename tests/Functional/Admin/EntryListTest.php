@@ -60,7 +60,7 @@ final class EntryListTest extends BuilderApiTestCase
         // Creating from All entries opens the create dialog, which starts by picking a content type
         self::assertSame('cms-create-entry', $crawler->selectButton('Create')->attr('aria-controls'));
         self::assertSame(
-            [['Announcement', '/admin/cms/entries/announcement/new'], ['Page', '/admin/cms/entries/page/new']],
+            [['Announcement', '/admin/cms/entries/announcement/new'], ['Page', '/admin/cms/entries/page/new'], ['Snippet', '/admin/cms/entries/snippet/new']],
             $crawler->filter('dialog#cms-create-entry [data-cms-create-entry-type]')->each(static fn (Crawler $type): array => [trim($type->text()), $type->attr('href')]),
         );
 
@@ -260,6 +260,7 @@ final class EntryListTest extends BuilderApiTestCase
 
         self::assertSame([$draft->getUuid()], self::listedUuids(self::filter($client, ['status' => 'unpublished_changes'])));
         self::assertSame([$never->getUuid()], self::listedUuids(self::filter($client, ['status' => 'never_published'])));
+        self::assertEqualsCanonicalizing([$draft->getUuid(), $never->getUuid()], self::listedUuids(self::filter($client, ['status' => 'in_progress'])));
         self::assertEqualsCanonicalizing(
             [$disabled->getUuid(), $upcoming->getUuid(), $ended->getUuid()],
             self::listedUuids(self::filter($client, ['status' => 'disabled_or_outside_date_window'])),

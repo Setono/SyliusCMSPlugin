@@ -1,0 +1,9 @@
+--TEST--
+cms_admin_page_scope_editor() shares the condition kinds that read the host page, the context keys, the search endpoint, the admin user's locale and the builder's strings
+--TEMPLATE--
+{% set config = cms_admin_page_scope_editor('da_DK') %}
+{% for kind in config.conditionKinds %}{{ kind.code }} {{ kind.needs|join(',') }}; {% endfor %}| {% for key in config.contextKeys %}{{ key.key }}; {% endfor %}| {{ config.endpoints.search }} | {{ config.locale }} | {% for key, string in config.strings %}{{ key }}: {{ string }}; {% endfor %}
+--DATA--
+return []
+--EXPECT--
+on_product_page product; | product; | /admin/cms/api/search/__kind__ | da_DK | setono_sylius_cms.builder.page_scope.edit: Edit page scope;

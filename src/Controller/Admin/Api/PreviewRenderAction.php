@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
+use Setono\SyliusCMSPlugin\Preview\PreviewedHostPageContext;
 use Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
@@ -34,6 +35,7 @@ final readonly class PreviewRenderAction
         private BlockViewBuilder $blockViewBuilder,
         private BlockRendererInterface $blockRenderer,
         private StoredDataUpgraderInterface $upgrader,
+        private PreviewedHostPageContext $hostPageContext,
     ) {
     }
 
@@ -67,14 +69,15 @@ final readonly class PreviewRenderAction
         }
 
         $workingCopy = $this->previewedEntry->getPreviewedContent($preview->localeCode) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $preview->entryUuid));
-        $renderContext = $this->renderContextFactory->create(['entry' => $workingCopy]);
+        $renderContext = $this->renderContextFactory->create($this->hostPageContext->of($workingCopy));
 
         $html = [];
         foreach ($blocks as $block) {
             $html[$block->key] = '';
         }
 
-        foreach ($this->blockViewBuilder->build($blocks, $renderContext) as $view) {
+        // The edited entry's blocks, inside which a snippet doesn't show itself
+        foreach ($this->blockViewBuilder->build($blocks, $renderContext, entry: $workingCopy->getUuid()) as $view) {
             $html[$view->key] = $this->blockRenderer->render($view, $renderContext);
         }
 

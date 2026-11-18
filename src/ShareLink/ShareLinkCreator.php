@@ -7,6 +7,11 @@ namespace Setono\SyliusCMSPlugin\ShareLink;
 use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
+use Setono\SyliusCMSPlugin\Preview\Preview;
+use Setono\SyliusCMSPlugin\Preview\PreviewRenderContextFactory;
+use Setono\SyliusCMSPlugin\Preview\SampleObjects;
+use Setono\SyliusCMSPlugin\Preview\SnippetHostPages;
 use Setono\SyliusCMSPlugin\Preview\StartingValuesInterface;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
@@ -35,10 +40,12 @@ final readonly class ShareLinkCreator implements ShareLinkCreatorInterface
         private StartingValuesInterface $startingValues,
         private TokenStorageInterface $tokenStorage,
         private ClockInterface $clock,
+        private SnippetHostPages $snippetHostPages,
+        private PreviewRenderContextFactory $renderContextFactory,
     ) {
     }
 
-    public function create(EntryInterface $entry, string $channelCode, string $localeCode): ShareLinkInterface
+    public function create(EntryInterface $entry, string $channelCode, string $localeCode, ?string $placementUuid = null, ?string $sampleRef = null): ShareLinkInterface
     {
         $channel = $this->channelRepository->findOneByCode($channelCode);
         if (!$channel instanceof ChannelInterface) {
@@ -53,9 +60,9 @@ final readonly class ShareLinkCreator implements ShareLinkCreatorInterface
             throw new ShareLinkUnavailableException(sprintf('The channel %s has no locale %s', $channelCode, $localeCode));
         }
 
-        // The link opens the draft at the draft's URL
+        // The link opens the draft at the draft's URL, and a snippet's on the host page of a placement
         $workingCopy = $this->workingCopyProvider->getWorkingCopy($entry);
-        if (null === EntryPath::of($this->contentTypes->getByEntry($workingCopy), $workingCopy, $localeCode)) {
+        if (!$workingCopy instanceof SnippetInterface && null === EntryPath::of($this->contentTypes->getByEntry($workingCopy), $workingCopy, $localeCode)) {
             throw new ShareLinkUnavailableException(sprintf('The entry has no URL in %s', $localeCode));
         }
 
@@ -68,8 +75,31 @@ final readonly class ShareLinkCreator implements ShareLinkCreatorInterface
         $shareLink->setCreatedAt($this->clock->now());
         $shareLink->setCreatedBy(EditorName::signedIn($this->tokenStorage));
 
+        if ($workingCopy instanceof SnippetInterface) {
+            $this->placeSnippet($shareLink, $workingCopy, $channel, $placementUuid, $sampleRef);
+        }
+
         $this->shareLinks->add($shareLink);
 
         return $shareLink;
+    }
+
+    /**
+     * Fixes the placement whose host page shows the snippet and the sample object, picked as the link's preview shows it
+     */
+    private function placeSnippet(ShareLinkInterface $shareLink, SnippetInterface $workingCopy, ChannelInterface $channel, ?string $placementUuid, ?string $sampleRef): void
+    {
+        try {
+            $placement = null === $placementUuid ? null : $this->snippetHostPages->placement($workingCopy, $placementUuid);
+        } catch (\InvalidArgumentException $e) {
+            throw new ShareLinkUnavailableException($e->getMessage(), previous: $e);
+        }
+
+        $preview = new Preview($workingCopy->getUuid(), $shareLink->getChannelCode(), $shareLink->getLocaleCode(), null, $shareLink->getShownTo(), $shareLink->getDate(), true);
+        $key = $this->snippetHostPages->sampleKey($workingCopy, $placement);
+        $sample = $this->snippetHostPages->sample($workingCopy, $placement, $sampleRef, $this->renderContextFactory->create($preview, $channel));
+
+        $shareLink->setPlacement($placement);
+        $shareLink->setSample(null === $key || null === $sample ? null : SampleObjects::of($key, $sample));
     }
 }

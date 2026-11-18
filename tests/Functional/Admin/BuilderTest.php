@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Support\Customers;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\Placements;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -17,6 +18,7 @@ final class BuilderTest extends WebTestCase
 {
     use Customers;
     use Entries;
+    use Placements;
 
     /**
      * @test
@@ -72,6 +74,10 @@ final class BuilderTest extends WebTestCase
             'urls' => sprintf('/admin/cms/api/entries/%s/urls', $uuid),
             'search' => '/admin/cms/api/search/__kind__',
             'sourceCount' => '/admin/cms/api/sources/count',
+            'snippetBlocks' => '/admin/cms/api/snippets/00000000-0000-4000-8000-000000000000/blocks',
+            'builder' => '/admin/cms/entry/00000000-0000-4000-8000-000000000000/builder',
+            'previewSnippet' => '/admin/cms/api/preview/snippet',
+            'previewSamples' => '/admin/cms/api/preview/samples',
         ], $config['endpoints']);
         self::assertSame([['code' => 'WEB', 'name' => 'Setono CMS Test Store', 'locales' => ['en_US']]], $config['channels'], "The store's channels, for the settings' channel picker and the preview's");
         self::assertSame([['code' => 'en_US', 'name' => 'English (United States)', 'fallbackChain' => ['en_US']]], $config['locales']);
@@ -80,6 +86,27 @@ final class BuilderTest extends WebTestCase
             'setono_sylius_cms.builder.loading' => 'Loading…',
             'setono_sylius_cms.builder.load_failed' => 'Couldn\'t load the entry',
         ], $config['strings'], 'The strings the app shows before the registry has loaded');
+    }
+
+    /**
+     * The test application lists the script of its opening hours field control under setono_sylius_cms.builder.scripts.
+     * Scripts load as ES modules, before the app, so their custom elements are defined when it renders their fields
+     *
+     * @test
+     */
+    public function it_loads_the_field_control_scripts_as_es_modules_before_the_builder_app(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        $page = self::createPage('About us', 'about-us');
+
+        $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(
+            ['/cms/opening-hours.js', '/bundles/setonosyliuscmsplugin/builder/builder.js'],
+            $crawler->filter('script[type="module"]')->each(static fn (Crawler $script): ?string => $script->attr('src')),
+        );
     }
 
     /**
@@ -156,6 +183,30 @@ final class BuilderTest extends WebTestCase
         $builder = static fn (PageInterface $page): Crawler => $client->request('GET', sprintf('/admin/cms/entry/%s/builder', $page->getUuid()));
         self::assertSame(['shownTo' => '@guest', 'date' => null], self::config($builder($everyone))['preview'] ?? null);
         self::assertSame(['shownTo' => 'wholesale', 'date' => $nextWeek->format('Y-m-d\TH:i:s\Z')], self::config($builder($wholesale))['preview'] ?? null);
+    }
+
+    /**
+     * Placements are managed on the snippet's overview page, and the builder only lists them. See "Snippet preview" in
+     * docs/spec/builder.md
+     *
+     * @test
+     */
+    public function it_gives_the_builder_a_snippet_s_placements_to_list_and_nothing_for_another_entry(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        $snippet = self::createSnippet('Free shipping');
+        $footer = self::place($snippet, 'shop.footer');
+        $removed = self::placeInUndeclaredSlot($snippet, 'shop.removed');
+        $top = self::place($snippet, 'shop.top');
+        $page = self::createPage('About us', 'about-us');
+
+        self::assertSame([
+            ['uuid' => $top->getUuid(), 'slot' => 'shop.top', 'label' => 'Every page: the top of the header', 'removed' => false],
+            ['uuid' => $footer->getUuid(), 'slot' => 'shop.footer', 'label' => 'Every page: the footer', 'removed' => false],
+            ['uuid' => $removed->getUuid(), 'slot' => 'shop.removed', 'label' => 'shop.removed', 'removed' => true],
+        ], self::config($client->request('GET', sprintf('/admin/cms/entry/%s/builder', $snippet->getUuid())))['placements'] ?? null);
+        self::assertNull(self::config($client->request('GET', sprintf('/admin/cms/entry/%s/builder', $page->getUuid())))['placements'] ?? null);
     }
 
     /**

@@ -139,6 +139,43 @@ final class TranslatableValuesTest extends TestCase
     }
 
     /**
+     * A bound field's fallback follows its translatability. See "Bindings" in docs/spec/slots.md
+     *
+     * @test
+     */
+    public function it_gives_a_bound_field_s_fallback_as_its_value_to_translate_and_nothing_for_a_binding_without_one(): void
+    {
+        $page = self::page([
+            self::heading(self::A, ['$bind' => 'product.name', '$params' => [], '$fallback' => ['en_US' => 'this product']]),
+            self::heading(self::B, ['$bind' => 'product.name', '$params' => [], '$fallback' => null]),
+        ]);
+
+        self::assertEquals(
+            [new TranslatableValue('block.' . self::A . '.text', ValueState::Untranslated, 'en_US', 'this product', Fingerprint::of('this product'), null)],
+            $this->blockValues($page, 'da_DK'),
+        );
+    }
+
+    /**
+     * Its translation state is kept as a value's, which the builder records as the fallback is typed in a locale
+     *
+     * @test
+     */
+    public function it_gives_a_bound_field_s_fallback_whose_source_has_changed_since_as_outdated(): void
+    {
+        $page = self::page([self::heading(
+            self::A,
+            ['$bind' => 'product.name', '$params' => [], '$fallback' => ['en_US' => 'this item', 'da_DK' => 'dette produkt']],
+            ['da_DK' => ['from' => 'en_US', 'fingerprint' => Fingerprint::of('this product')]],
+        )]);
+
+        self::assertEquals(
+            [new TranslatableValue('block.' . self::A . '.text', ValueState::Outdated, 'en_US', 'this item', Fingerprint::of('this item'), 'dette produkt')],
+            $this->blockValues($page, 'da_DK'),
+        );
+    }
+
+    /**
      * @test
      */
     public function it_gives_a_value_whose_source_has_changed_since_as_outdated(): void

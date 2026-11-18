@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    The placements of snippets in slots, by the slot's identifier (ADR 0004), each with its page scope and its position
+    among the slot's placements. They take effect on save (ADR 0005), and deleting the snippet deletes its placements.
+    The shop reads every placement of a channel's snippets in one query, in slot and position order
+    -->
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\Placement" table="setono_sylius_cms__placement">
+        <indexes>
+            <index name="setono_sylius_cms__placement_slot_position_idx" columns="slot,position"/>
+        </indexes>
+
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="uuid" type="guid" unique="true"/>
+        <field name="slot" type="string"/>
+        <!-- Conditions on host-page context in the stored condition format. Empty means every page the slot appears on -->
+        <field name="pageScope" column="page_scope" type="json"/>
+        <field name="position" type="integer"/>
+
+        <many-to-one field="snippet" target-entity="Setono\SyliusCMSPlugin\Model\SnippetInterface">
+            <join-column name="snippet_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
+        </many-to-one>
+    </mapped-superclass>
+</doctrine-mapping>

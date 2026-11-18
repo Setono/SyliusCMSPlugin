@@ -1,4 +1,31 @@
 setono_sylius_cms:
+    # The shipped bindable properties, by context key. See "Shipped bindable properties" in docs/spec/slots.md
+    bindable_property:
+        channel:
+            contact_email: Channel contact email
+            contact_phone: Channel contact phone
+            name: Channel name
+        customer:
+            first_name: Customer first name
+            full_name: Customer full name
+            last_name: Customer last name
+        entry:
+            title: Entry title
+            url: Entry URL
+        product:
+            attribute: Product attribute
+            code: Product code
+            description: Product description
+            main_taxon_name: Product main taxon
+            name: Product name
+            original_price: Product original price
+            price: Product price
+            short_description: Product short description
+            url: Product URL
+        taxon:
+            description: Taxon description
+            name: Taxon name
+            url: Taxon URL
     block_style:
         dark: Dark
         muted: Muted
@@ -13,6 +40,7 @@ setono_sylius_cms:
         column: Column
         columns: Columns
         downloads: Downloads
+        embed_code: Embed code
         first_match: First match
         group: Group
         heading: Heading
@@ -21,6 +49,7 @@ setono_sylius_cms:
         link_list: Link list
         products: Products
         rich_text: Rich text
+        snippet: Snippet
         spacer: Spacer
         taxons: Taxons
         video: Video
@@ -57,12 +86,23 @@ setono_sylius_cms:
         channel: Channel
         customer_group: Customer group
         date_window: Date window
+        entry: Entry
         locale: Locale
+        product: Product
+        product_in_taxon: Product in taxon
+        taxon: Taxon
     content_type:
         page: Page
+        snippet: Snippet
+    # The context keys' labels, naming the pages that provide them. See "Context keys" in docs/spec/slots.md
+    context_key:
+        entry: Entry page
+        product: Product page
+        taxon: Taxon page
     # A content type's list is named by its plural. One without a plural here is named by its label
     content_type_plural:
         page: Pages
+        snippet: Snippets
     field:
         accordion_item:
             content: Content
@@ -98,6 +138,11 @@ setono_sylius_cms:
         downloads:
             documents: Documents
             heading: Heading
+        entry_condition:
+            entries: Entries
+        embed_code:
+            code: Code
+            code_help: 'HTML, scripts included, such as a review widget or a newsletter form. It runs in the shop as it is, but not in the builder''s preview.'
         group:
             full_width: Full width
         heading:
@@ -115,6 +160,16 @@ setono_sylius_cms:
             heading: Heading
         locale_condition:
             locales: Locales
+        product_associations_source:
+            association_type: Association type
+            association_type_help: Leave it empty to list the products of every association type.
+        product_attribute_binding:
+            attribute: Attribute
+        product_condition:
+            products: Products
+        product_in_taxon_condition:
+            include_children: Include the taxons below them
+            taxons: Taxons
         products:
             display: Display
             products: Products
@@ -124,12 +179,16 @@ setono_sylius_cms:
             taxon: Taxon
         rich_text:
             content: Content
+        snippet:
+            snippet: Snippet
         spacer:
             size: Size
         standard:
             show_title: Show title
         taxon_children_source:
             taxon: Taxon
+        taxon_condition:
+            taxons: Taxons
         taxons:
             taxons: Taxons
         video:
@@ -157,6 +216,7 @@ setono_sylius_cms:
                 media: Media
                 overview: Overview
                 pages: Pages
+                snippets: Snippets
             main:
                 content:
                     content: Content
@@ -185,6 +245,7 @@ setono_sylius_cms:
             unreadable: '%filename% couldn''t be read as a %type% file.'
     # What the builder's preview shows editors and shoppers don't see
     preview:
+        embed_code: 'Embed code runs in the shop, not in the builder''s preview.'
         unresolved_link: '%field% isn''t shown here: what it links to isn''t visible in this channel and locale, or was deleted.'
         unresolved_rich_text_link: 'A link in %field% shows as plain text here: what it links to isn''t visible in this channel and locale, or was deleted.'
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
@@ -193,19 +254,45 @@ setono_sylius_cms:
         broken_layout_rich_text_reference: 'A link in %field% in the layout leads to %type% that was deleted, so it shows as plain text.'
         broken_reference: '%field% in the %block% block refers to %type% that was deleted, so it isn''t shown.'
         broken_rich_text_reference: 'A link in %field% in the %block% block leads to %type% that was deleted, so it shows as plain text.'
+        capped_slot_without_catch_all: '"%slot%" is capped at %cap% and has no catch-all placement, with no page scope and a published, enabled snippet for everyone, so some pages or shoppers may see nothing there.'
         deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
         deleted_customer_group_negated: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer excludes anyone through it.'
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
+        page_scope_removed_kind: 'The page scope of the placement in "%slot%" has a condition of the kind "%kind%", which the code no longer has, so the placement shows nothing.'
+        page_scope_unprovided: 'The page scope of the placement in "%slot%" has a condition, %kind%, that needs the host-page context "%context%", which the slot no longer provides, so the placement shows nothing.'
+        placement_hidden_by_homepage: 'The placement in "%slot%" doesn''t show in %channels%, whose homepage is a CMS page, as Sylius''s own homepage doesn''t render there.'
         removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
+        removed_context_key: 'It needs the context key "%key%", which the code no longer has, so none of its placements shows it.'
+        removed_slot: 'A placement in the slot "%slot%", which the code no longer has, shows nothing.'
         scheduled_publish_failed: 'The publish scheduled for %at% was stopped: %reason%'
         scheduled_publish_overdue: 'The publish scheduled for %at% hasn''t run. The Messenger worker may not be running.'
+        snippet_inside_itself: 'The %block% block shows this snippet inside itself, directly or through other snippets, so it''s skipped there.'
+        unknown_bindable_property: '%field% in the %block% block is bound to "%property%", which the code no longer has, so it shows its fallback.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
+        unknown_layout_bindable_property: '%field% in the layout is bound to "%property%", which the code no longer has, so it shows its fallback.'
         unknown_layout_source: '%field% in the layout is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unknown_source: '%field% in the %block% block is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unreadable: 'This content can''t be read: %reason%'
         url_taken_by_route: 'URL taken by a Sylius route: shoppers get the page of the route %route% at %url%.'
+    # Each kind of problem, by its code, as the Overview's Needs attention groups them. A project names its own kinds here
+    problem_kind:
+        broken_reference: Broken references
+        capped_slot_without_catch_all: Capped slots without a catch-all placement
+        deleted_customer_group: Deleted customer groups
+        misfit_value: Values that don't fit their field
+        page_scope_mismatch: Page scopes that don't fit their slots
+        placement_hidden_by_homepage: Placements a CMS homepage hides
+        removed_context_key: Removed context keys
+        removed_layout: Removed layouts
+        scheduled_publish_failed: Failed scheduled publishes
+        scheduled_publish_overdue: Overdue scheduled publishes
+        snippet_inside_itself: Snippets inside themselves
+        unknown_bindable_property: Bindings of removed properties
+        unknown_block_type: Blocks of removed types
+        unknown_source: Lists filled by removed sources
+        url_taken_by_route: URLs taken by Sylius routes
     publish:
         invalid: '{1} One error needs fixing|]1,Inf[ %count% errors need fixing'
     # What a reference refers to, by its type, with its article, as a broken reference names it. See "References" in docs/spec/content-model.md
@@ -217,18 +304,52 @@ setono_sylius_cms:
     # Why a scheduled publish was stopped when it ran, which the overview page shows and EntryPublishFailed carries
     scheduled_publish:
         invalid: '{1} Validation found an error to fix: %errors%|]1,Inf[ Validation found %count% errors to fix: %errors%'
+    # The stock slots' labels, which the placement editor shows. See "Stock slots" in docs/spec/slots.md
+    slot:
+        account:
+            dashboard: 'Account dashboard: after the customer''s information'
+        cart:
+            after_summary: 'Cart: below the summary'
+        checkout:
+            sidebar: 'Checkout: the sidebar'
+        order:
+            thank_you: 'Thank-you page: after the message'
+        product:
+            after_associations: 'Product page: below the associations'
+            after_price: 'Product page: under the price'
+            before_tabs: 'Product page: above the tabs'
+            details_tab: 'Product page: in the details tab, after the description'
+            sidebar: 'Product page: the bottom of the column beside the images'
+            top: 'Product page: above the main content'
+        shop:
+            after_content: 'Every page: below the main content'
+            before_content: 'Every page: above the main content'
+            footer: 'Every page: the footer'
+            top: 'Every page: the top of the header'
+        store_homepage: 'The store''s own homepage: above its blocks'
+        taxon:
+            after_grid: 'Taxon page: below the product grid'
+            before_grid: 'Taxon page: above the product grid'
+            header: 'Taxon page: the header'
+            sidebar: 'Taxon page: the sidebar, below the taxon menu'
     # The sources' labels. See "Sources" in docs/spec/sources.md
     source:
         bestsellers: Bestsellers
         newest_products: Newest
+        product_associations: Associations
         products_in_taxon: In taxon
+        same_taxon_products: Same taxon
         taxon_children: Children of a taxon
     # The Video block's embed, named to screen readers
     video:
         embed_title: Video
     ui:
+        add_placement: Add placement
         all_entries: All entries
+        all_needing_attention: '{1} The entry that needs attention|]1,Inf[ All %count% entries that need attention'
+        all_drafts_in_progress: All drafts in progress
         any_channel: Any channel
+        any_translation: Any
         any_status: Any status
         audience:
             everyone: Everyone
@@ -240,6 +361,13 @@ setono_sylius_cms:
         cancel_schedule: Cancel the schedule
         channel: Channel
         close: Close
+        coming_up: Coming up
+        # What happens to an entry in the Overview's Coming up
+        coming_up_event:
+            ends: Stops showing
+            publishes: Publishes
+            starts: Starts showing
+        complete_of: '%complete% of %entries% complete'
         content: Content
         content_description: Pages and everything else shoppers read that isn't a product
         copied: Copied
@@ -250,8 +378,11 @@ setono_sylius_cms:
         date: Date
         discard_changes: Discard changes
         dismiss: Dismiss
+        drafts_in_progress: Drafts in progress
         error_count: '{0} No errors|{1} 1 error|]1,Inf[ %count% errors'
+        every_page_the_slot_appears_on: Every page the slot appears on
         fix_in_builder: Fix in builder
+        fix_in_placements: Go to Placements
         fix_in_publishing: Go to Publishing
         homepage_now: Homepage now
         homepage_of: Homepage of
@@ -259,23 +390,48 @@ setono_sylius_cms:
         homepage_url: 'The homepage, where its own URL redirects in the channels it''s the homepage of'
         language: Language
         last_edited: Last edited
+        last_edited_at: 'Last edited %at%'
         last_published: 'Last published %date%'
         link: Link
         made_by: Made by
         media: Media
         media_description: Images, videos and documents for your content, shared by every channel
+        move_down: Move down
+        move_up: Move up
         new_entry: 'New %content_type%'
         new_entry_heading: New entry
         new_share_link: New
+        no_placements: 'It shows in no slot yet. Add a placement to show it on the shop''s pages.'
         no_revisions: Every publish stores a revision, which you can preview and restore. There are none yet.
         no_share_links: Share the draft with anyone, as a link that shows it in the shop without signing in. There are none yet.
+        no_slots_offered: No slot provides the host-page context it needs.
         no_urls: It has no URL yet, because it has no slug.
+        missing_alt_text: '{1} 1 image has no alt text in one or more languages|]1,Inf[ %count% images have no alt text in one or more languages'
+        no_drafts_in_progress: No entry has unpublished changes or waits for its first publish.
+        no_entries_in_channel: No entries are in this channel.
+        nothing_coming_up: No scheduled publishes, and no date windows that start or end.
+        not_complete_count: '%count% not complete'
+        not_complete_in: 'Not complete in %locale%'
+        nothing_needs_attention: Nothing needs attention.
         now: Now
         old_urls: 'Redirects from:'
         open_in_builder: Open in builder
+        order: Order…
+        # The Order… dialog of a slot on the overview page of a snippet placed in it. See "Placements" in docs/spec/admin.md
+        order_slot: 'Order of "%slot%"'
+        order_slot_help: '{1} Only the first placement that matches the page and the shopper shows, so put the most specific first, and last a catch-all, with no page scope and a published, enabled snippet for everyone. Drag them into order.|]1,Inf[ Only the first %count% placements that match the page and the shopper show, so put the most specific first, and last a catch-all, with no page scope and a published, enabled snippet for everyone. Drag them into order.'
+        order_slot_placements: 'The placements in "%slot%", in order'
+        order_uncapped_slot_help: Every placement that matches the page and the shopper shows, in this order. Drag them into order.
         other_content_type: Another content type
-        overview_placeholder: What needs attention, what's coming up, translations and drafts in progress will show here. Until then, find the entries in their lists.
+        page_scope: Page scope
+        page_scope_removed_kind: 'A condition of the kind "%kind%", which the code no longer has, so it shows nothing'
         pick_content_type: What do you want to create?
+        plain_page: A plain page
+        placements: Placements
+        placements_help: Placements take effect at once, without publishing, and show the snippet while it is published. A slot shows its placements, of every snippet, in this order.
+        position: Position
+        position_in_slot: '%position% of %count%'
+        position_in_capped_slot: '%position% of %count% · capped at %cap%'
         preview: Preview
         problem_severity:
             error: Error
@@ -290,10 +446,12 @@ setono_sylius_cms:
             never_published: Shoppers don't see it until it's published.
             published: Shoppers see what was published, and there are no changes since.
             unpublished_changes: The draft has changes that shoppers don't see yet. Publish them, or discard them to go back to what's published.
+        remove: Remove
         restore: Restore
         revisions: Revisions
         revisions_help: Every publish stores a revision. Preview one as it was, or restore it into the draft to review and publish it.
         revoke: Revoke
+        save_order: Save order
         schedule: Schedule
         schedule_again: Schedule again
         schedule_at: Publish at
@@ -313,11 +471,19 @@ setono_sylius_cms:
         share_link_without_url: The draft has no URL in this language anymore.
         share_links: Share links
         share_links_help: Anyone with a share link sees the draft in the shop, without signing in, until you revoke it.
+        shown_on: Shown on
         shown_to: Shown to
         shown_to_guest: Guest
         shown_to_no_group: Signed in without a group
+        slot: Slot
+        slot_removed: The code no longer has this slot, so the placement shows nothing. Remove it.
+        # A slot's warnings, in its Order… dialog. See "Problems" in docs/spec/admin.md
+        slot_warning:
+            hidden_by_homepage: 'It doesn''t show in %channels%, whose homepage is a CMS page, as Sylius''s own homepage doesn''t render there.'
+            no_catch_all: None of its placements is a catch-all, with no page scope and a published, enabled snippet for everyone, so some pages or shoppers may see nothing there.
         status: Status
         status_filter:
+            in_progress: Unpublished changes or never published
             needs_attention: Needs attention
             disabled_or_outside_date_window: Disabled or outside its date window
             never_published: Never published
@@ -339,6 +505,7 @@ setono_sylius_cms:
             shows_until: 'Shows until %until%'
             unpublished_changes: Unpublished changes
         this_page: This page
+        this_snippet: This snippet
         title: Title
         translation_chip:
             complete: complete
@@ -352,6 +519,12 @@ setono_sylius_cms:
         untitled: Untitled
         url: URL
         url_after_publishing: 'After publishing: %url%'
+        use_draft: Draft
+        use_published: Published
+        use_removed_in_draft: 'Published, removed in the draft'
+        used_in: Used in
+        used_in_state: Shows it in
+        used_nowhere: No entry shows it through a Snippet block yet.
         warning_count: '{0} no warnings|{1} 1 warning|]1,Inf[ %count% warnings'
         urls: URLs
         where_it_shows: Where it shows
@@ -370,6 +543,10 @@ setono_sylius_cms:
             publishes_at_a_time: 'Publishes %at%'
             shows_from_a_date: 'Shows from %from%'
         where_it_shows_help: Whether shoppers see it now in each channel and language, and if they don't, why.
+        # Who a placement wins its slot for: its snippet's audience, where the placements above it leave it room. See "Placements" in docs/spec/admin.md
+        wins_for: Wins for
+        wins_for_fewer_above_match: '{1} %audience%, where no placement above it shows|]1,Inf[ %audience%, where fewer than %count% placements above it show'
+        wins_for_never: '{1} No one: a placement above it shows on every page to everyone|]1,Inf[ No one: %count% placements above it show on every page to everyone'
 
     # The builder app's UI strings. Every key under setono_sylius_cms.builder reaches the app through the registry endpoint
     builder:
@@ -387,6 +564,16 @@ setono_sylius_cms:
         audience_except: Everyone except these
         audience_only: Only these
         back: Back
+        # A field that shows a property of the host page, the channel or the customer. See "Bindings" in docs/spec/builder.md
+        binding:
+            bind: Bind to a property
+            bound: 'Shows %property%'
+            fallback: Fallback
+            fallback_help: Shown when the property is empty, such as a guest''s first name. Without one, nothing shows.
+            none: Nothing can be shown in this field here.
+            pick: Show instead
+            removed: This property no longer exists, so the fallback shows.
+            unbind: 'Stop showing %property%'
         block_settings: Settings
         block_style: Style
         blocks: Blocks
@@ -398,6 +585,17 @@ setono_sylius_cms:
         children: Blocks inside
         condition: 'Condition %number%'
         condition_kind: Kind
+        # A snippet's host-page context, and why the picker and the condition kinds leave something out. See "Snippets and their context" in docs/spec/slots.md
+        context: Shown on
+        context_any_page: Any page
+        context_help: The pages it can be placed on. Blocks and conditions that need a product or a taxon are offered only where it has one.
+        context_in_the_way: 'This can''t change while these need it:'
+        context_block_needs: 'The block "%block%" needs the host-page context %context%.'
+        context_condition_needs: 'The condition "%kind%" on the block "%block%" needs the host-page context %context%.'
+        context_placement_does_not_provide: 'The placement in "%slot%" doesn''t provide the host-page context %context%.'
+        context_removed_key: '%key%, which the code no longer declares'
+        needs_context: 'Needs: %context%'
+        not_available_here: Not available here
         condition_match: Matches when it
         copy_it_here: Copy it here
         clash: A colleague changed this too
@@ -434,6 +632,7 @@ setono_sylius_cms:
         is_outside: is outside
         # The Product, Products, Taxon and Taxons fields' controls. See "List fields" in docs/spec/sources.md
         items:
+            add_entry: Add entry
             add_product: Add product
             add_taxon: Add taxon
             at_most: 'Up to %max%'
@@ -442,6 +641,7 @@ setono_sylius_cms:
             not_found: '%code% no longer exists, so it isn''t shown.'
             nothing_picked: Nothing chosen
             remove: Remove
+            search_entries: Search entries
             search_products: Search products
             search_taxons: Search taxons
         keep_mine: Keep mine
@@ -565,6 +765,7 @@ setono_sylius_cms:
         not_shown_in_layout: Not shown in this layout
         no_group: Signed in without a group
         no_matching_block_types: No block types match
+        no_placements: It shows in no slot yet. Placements are managed on the overview page.
         noindex: Hide from search engines
         noindex_help: Asks search engines not to list this page, in every language. It takes effect when you publish.
         no_style: None
@@ -572,6 +773,18 @@ setono_sylius_cms:
         old_urls: Redirects from
         old_urls_help: The URLs of the slugs this had before, which redirect here.
         open_overview: Open the overview page
+        # The page scope editor of a placement, on its snippet's overview page. See "Page scopes" in docs/spec/slots.md
+        page_scope:
+            cancel: Cancel
+            description: 'Limit the placement in "%slot%" to some of the pages the slot appears on. Its conditions all have to match.'
+            edit: Edit page scope
+            every_page: 'No conditions: it shows on every page the slot appears on.'
+            save: Save page scope
+            title: Page scope
+            unknown_condition_kind_help: 'The code no longer has this kind of condition, so the placement doesn''t show. Remove the condition to show it again.'
+        placement_removed: '%slot% (no longer in the code)'
+        placements: Placements
+        placements_help: Placements are managed on the overview page.
         outdated: 'The %locale% text it was translated from has changed. It now reads:'
         path: Path
         preview: Preview
@@ -590,6 +803,10 @@ setono_sylius_cms:
         reload: Reload
         remove_condition: Remove condition
         rich_text:
+            binding: Binding
+            binding_cancel: Cancel
+            binding_insert: Insert
+            binding_property: Shows
             blockquote: Quote
             bold: Bold
             bullet_list: Bulleted list
@@ -638,6 +855,25 @@ setono_sylius_cms:
         slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team. The URL: %url%'
         slug_help_homepage: 'Generated from the title until you change it. It may have slashes, such as about/team. As a homepage, it shows at %homepage%, and %url% redirects there in the channels it''s the homepage of.'
         slug_help_none: Generated from the title until you change it. It may have slashes, such as about/team.
+        # A Snippet block, which shows a snippet that stays the same wherever it's used. See "Snippet references" in docs/spec/builder.md
+        snippet:
+            detach: Detach to edit here
+            detach_failed: 'The snippet''s blocks couldn''t be copied here. Try again.'
+            edit: Edit snippet
+            search: Search snippets
+            shared: Shared
+            shared_help: 'It shows the snippet as it''s published, the same everywhere it''s used. Edit the snippet to change it everywhere, or detach it to edit a copy of its blocks here only.'
+        # A snippet's preview on the host page of one of its placements, with a sample object. See "Snippet preview" in docs/spec/builder.md
+        snippet_preview:
+            in_scope: In the page scope
+            label: Snippet preview
+            no_placements: Not placed yet, so it shows on a plain page
+            outside_scope: '%sample% is outside the placement''s page scope, so shoppers don''t see the snippet on its page.'
+            placement: Placement
+            plain_page: A plain page
+            sample: Sample
+            search_samples: Search samples
+            shown_instead: 'Shoppers like this see %snippets% here instead, as the slot is capped.'
         # List fields filled by a source. See "Sources" in docs/spec/builder.md
         sources:
             count: '%count% items now'

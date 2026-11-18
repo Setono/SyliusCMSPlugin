@@ -1,0 +1,8 @@
+--TEST--
+cms_slot() renders a slot that needs no context, and its HTML isn't escaped
+--TEMPLATE--
+{{ cms_slot('page.landing.after_hero') }}
+--DATA--
+return []
+--EXPECT--
+<div class="cms-slot cms-slot--page-landing-after-hero">page.landing.after_hero with nothing</div>

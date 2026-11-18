@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 use Setono\SyliusCMSPlugin\Field\HydrationContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
+use Setono\SyliusCMSPlugin\Preview\PreviewedHostPageContext;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
@@ -19,7 +20,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 /**
  * How many items a source yields right now for the parameters in the body, {"source": code, "params": {…}}, under the
  * preview token in the query parameter _cms_preview, so in the preview's channel, locale, Shown to and Date, with the
- * previewed working copy as the page's entry. Its parameters' references load as they do before rendering. A source
+ * previewed working copy as the page's entry, or a snippet's sample object. Its parameters' references load as they do before rendering. A source
  * the code no longer has yields nothing. It changes nothing, so it needs no CSRF token. See "Sources" and "JSON
  * endpoints" in docs/spec/builder.md
  */
@@ -32,6 +33,7 @@ final readonly class SourceCountAction
         private RenderContextFactoryInterface $renderContextFactory,
         private ReferenceLoaderInterface $referenceLoader,
         private SourceResolver $sourceResolver,
+        private PreviewedHostPageContext $hostPageContext,
     ) {
     }
 
@@ -57,7 +59,7 @@ final readonly class SourceCountAction
         }
 
         $workingCopy = $this->previewedEntry->getPreviewedContent($preview->localeCode) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $preview->entryUuid));
-        $renderContext = $this->renderContextFactory->create(['entry' => $workingCopy]);
+        $renderContext = $this->renderContextFactory->create($this->hostPageContext->of($workingCopy));
         $references = $this->referenceLoader->load($this->sourceResolver->references($code, $params), $renderContext);
 
         return new JsonResponse(['count' => $this->sourceResolver->resolve($code, $params, null, new HydrationContext($renderContext, $references))->getNbResults()]);

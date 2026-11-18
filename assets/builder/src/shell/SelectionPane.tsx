@@ -1,14 +1,16 @@
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { useBuilder, useBuilderState, useValidationState } from '../context';
 import { FieldRow } from '../form/FieldRow';
 import formStyles from '../form/Form.module.css';
 import { useTranslator } from '../i18n';
 import { fieldFallback, outdatedValue } from '../locales';
 import { canDuplicate } from '../nesting';
+import { isSnippetBlock, shownSnippet } from '../snippets';
 import { locks } from '../store';
 import { canShift, findBlock, pathTo, topmostBlocks } from '../tree';
 import type { BlockStyleDefinition, StoredBlock } from '../types';
 import { blockMessages, fieldMessages } from '../validation';
+import { translatedValues } from '../bindings';
 import { readFieldValue } from '../values';
 import { AddBlockButton } from './BlockPicker';
 import { blockHint, blockLabel } from './BlockTreePane';
@@ -58,6 +60,7 @@ export function SelectionPane() {
             <BlockErrors blockKey={block.key} />
             <fieldset className={styles.locked} disabled={locked}>
             <Actions keys={[block.key]} />
+            {isSnippetBlock(block) && <SharedSnippet block={block} />}
             {blockType !== undefined && blockType.styles.length > 0 && <StylePicker block={block} styles={blockType.styles} />}
             <div key={block.key} className={styles.fields}>
                 {blockType?.fields.map(({ name, schema }) => (
@@ -69,10 +72,12 @@ export function SelectionPane() {
                         value={readFieldValue(block.fields, name, schema['x-cms-translatable'], locale)}
                         onChange={(value) => store.getState().setFieldValue(block.key, name, value)}
                         errors={fieldMessages(errors, block.key, name, locale)}
-                        fallback={schema['x-cms-translatable'] ? fieldFallback(locales, block.fields[name], locale) : undefined}
+                        // A bound field's fallback is translated like its value
+                        fallback={schema['x-cms-translatable'] ? fieldFallback(locales, translatedValues(block.fields[name]), locale) : undefined}
+                        binding={{ stored: block.fields[name], set: (value) => store.getState().setFieldBinding(block.key, name, value) }}
                         outdated={
                             schema['x-cms-translatable']
-                                ? outdatedValue(locales, block.fields[name], block.translated[name], locale, () => store.getState().markValueUpToDate(block.key, name))
+                                ? outdatedValue(locales, translatedValues(block.fields[name]), block.translated[name], locale, () => store.getState().markValueUpToDate(block.key, name))
                                 : undefined
                         }
                     />
@@ -82,6 +87,61 @@ export function SelectionPane() {
             <VisibilityConditions key={`conditions-${block.key}`} block={block} />
             </fieldset>
         </div>
+    );
+}
+
+/**
+ * What a Snippet block shows is shared: it says so, and offers Edit snippet, which opens the snippet in the builder
+ * with a way back here, and Detach to edit here, which puts a copy of the snippet's blocks in the block's place. See
+ * "Snippet references" in docs/spec/builder.md
+ */
+function SharedSnippet({ block }: { block: StoredBlock }) {
+    const t = useTranslator();
+    const { store, editSnippet, snippetBlocks } = useBuilder();
+    const [detaching, setDetaching] = useState(false);
+    const [failed, setFailed] = useState(false);
+    const snippet = shownSnippet(block);
+
+    const detach = (shown: string, load: (snippet: string) => Promise<StoredBlock[]>): void => {
+        setDetaching(true);
+        setFailed(false);
+        load(shown).then(
+            (blocks) => {
+                setDetaching(false);
+                setFailed(store.getState().detachSnippet(block.key, blocks) === null);
+            },
+            () => {
+                setDetaching(false);
+                setFailed(true);
+            },
+        );
+    };
+
+    return (
+        <section className={styles.shared} aria-label={t('setono_sylius_cms.builder.snippet.shared')}>
+            <p className={styles.sharedHelp}>
+                <span className={styles.sharedBadge}>{t('setono_sylius_cms.builder.snippet.shared')}</span> {t('setono_sylius_cms.builder.snippet.shared_help')}
+            </p>
+            {snippet !== null && (editSnippet !== null || snippetBlocks !== null) && (
+                <div className={styles.sharedActions}>
+                    {editSnippet !== null && (
+                        <button type="button" className={formStyles.button} onClick={() => editSnippet(snippet, block.key)}>
+                            {t('setono_sylius_cms.builder.snippet.edit')}
+                        </button>
+                    )}
+                    {snippetBlocks !== null && (
+                        <button type="button" className={formStyles.button} disabled={detaching} onClick={() => detach(snippet, snippetBlocks)}>
+                            {t('setono_sylius_cms.builder.snippet.detach')}
+                        </button>
+                    )}
+                </div>
+            )}
+            {failed && (
+                <p role="alert" className={styles.sharedFailed}>
+                    {t('setono_sylius_cms.builder.snippet.detach_failed')}
+                </p>
+            )}
+        </section>
     );
 }
 

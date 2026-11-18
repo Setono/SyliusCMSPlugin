@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Shop;
 
+use Setono\SyliusCMSPlugin\Context\EntryContext;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Preview\PreviewedEntryProvider;
 use Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface;
@@ -54,7 +55,7 @@ final readonly class ShowEntryAction
         }
 
         // 3. and 4. The tree in the entry's layout, with the entry as host-page context
-        return new Response($this->layoutRenderer->render($entry, $this->renderContextFactory->create(['entry' => $entry])));
+        return new Response($this->layoutRenderer->render($entry, $this->renderContextFactory->create(EntryContext::objects($entry))));
     }
 
     /**

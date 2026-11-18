@@ -109,6 +109,7 @@ use Setono\SyliusCMSPlugin\Model\Page;
     version: 1,
     default: false,
     shows: ['title'],
+    slots: ['page.landing.after_hero'],
 )]
 final class Landing
 {
@@ -127,6 +128,7 @@ final class Landing
 | `version` | `int` | `1` | Versions its fields, like a block type's. |
 | `default` | `bool` | `false` | Marks the content type's default layout. Two defaults for one content type fail the container build, unless `content_types.<code>.default_layout` names one, which always wins ([Configuration](#configuration)). |
 | `shows` | `list<string>` | `[]` | The entry fields its template prints, by property name. The builder marks the others "Not shown in this layout". |
+| `slots` | `list<string>` | `[]` | The slots its template renders with `cms_slot()`, by identifier. A snippet placed in one previews on the page of an entry in this layout ([Builder](builder.md#snippet-preview)). |
 
 Layout fields are the class's typed properties, stored in the tree's `layout.fields` ([Layouts and presets](layouts-and-presets.md)).
 
@@ -293,9 +295,9 @@ final class OpeningHours extends Field
 | `code` | `string` | required | The field type's code. Unique, and never changes once content uses it. |
 | `translatable` | `bool` | `false` | Its default translatability, used when a field leaves `translatable:` at `null`. It decides whether the plugin stores one value or a locale map of values. A field type can still keep locale maps inside its one value: Link declares `false` and keeps its label per locale, and its handler reads the field's own `translatable` to pick the [link's shape](content-model.md#links). |
 | `bindable` | `list<BindingType>` | `[]` | The binding types a field of this type accepts. Empty means it can't be bound. |
-| `control` | `string\|null` | `null` | The custom element's tag name ([Field controls](#field-controls)). Required for a project's own field type. The shipped field types have none. |
+| `control` | `string\|null` | `null` | The custom element's tag name ([Field controls](#field-controls)), such as `app-opening-hours`: lowercase, starting with a letter, with a hyphen in it. Required for a project's own field type. The shipped field types have none. |
 
-The shipped field types carry it too, with the codes, defaults and binding types in the table above.
+The shipped field types carry it too, with the codes, defaults and binding types in the table above. A field attribute class that extends another inherits its field type, as the list fields share theirs. The container build fails on two field types with one code, a code that doesn't match `^[a-z][a-z0-9_]*$`, a project's own field type without a valid `control`, and a field attribute without `#[FieldType]`. It checks the shipped field types and those the fields of block types, layouts, content types, and the parameters of condition kinds and sources use.
 
 ```php
 namespace Setono\SyliusCMSPlugin\Field;
@@ -333,17 +335,22 @@ The schema's `x-cms-*` keywords. The plugin adds most of them around what the ha
 | `x-cms-required` | `true` or `false`. | the plugin, from the field's `required` |
 | `x-cms-translatable` | `true` or `false`. | the plugin, from the field's `translatable`, or the field type's default |
 | `x-cms-bindable` | The binding types the field accepts (`text`, `number`, `url`), or absent. | the plugin, from `#[FieldType(bindable:)]` |
+| `x-cms-binds-inside` | `true` when the field holds its bindings inside its values, as a Link's `ref` and rich text's tokens do, rather than as its whole value; absent otherwise. | the plugin, when the handler implements `InnerBindingFieldHandlerInterface` |
 | `x-cms-options` | The field type's own options, as JSON. | the handler |
 
 Everything else in the schema, the JSON Schema for one value, is the handler's.
 
 ### Field controls
 
-A project's own field type comes with a [field control](../../GLOSSARY.md#content-structure): a custom element, loaded from a script listed under `setono_sylius_cms.builder.scripts`. A block type built only from shipped field types needs no JS.
+A project's own field type comes with a [field control](../../GLOSSARY.md#content-structure): a custom element, loaded from a script listed under `setono_sylius_cms.builder.scripts`. Each script is resolved through Symfony's `asset()`, so a project whose build versions its files, with a JSON manifest, lists the asset path, such as `build/app/cms/controls.js`, and the builder loads the built file. A block type built only from shipped field types needs no JS.
 
-- The builder sets four properties on the element: `.value` (the stored value, for the current locale when the field is translatable), `.field` (its schema), `.locale` (the locale being edited) and `.builder`.
+- The builder sets four properties on the element: `.value` (the stored value, for the current locale when the field is translatable, or `null` when it has none), `.field` (its schema), `.locale` (the locale being edited) and `.builder`. It sets `.field`, `.locale` and `.builder` before `.value`, and each again only when it changes.
 - `.builder` has `search(kind, query)`, which resolves to `[{ref, name, thumbnail}]` for `product`, `taxon`, `entry`, `media` or a link target's code, `pickMedia({kinds, multiple})`, which resolves to UUIDs or `null`, and `trans(key, params)`.
-- The field control dispatches a bubbling `cms-change` `CustomEvent` with `detail.value` whenever its value changes.
+  - `pickMedia()` opens the media library as a picker, as a Media field does. `kinds` defaults to `['image']` and `multiple` to `false`, and it resolves to `null` when the editor cancels.
+  - `trans()` translates the builder's own UI strings, the `setono_sylius_cms.builder.*` keys, filling in placeholders such as `{'%count%': 3}`, and gives back the key it doesn't know. A field type's own strings reach its field control translated, in `x-cms-options`, from its handler's `schema()`, which can inject the translator.
+- The field control dispatches a bubbling `cms-change` `CustomEvent` with `detail.value` whenever its value changes. `null`, `''`, `[]` or no `value` removes it. The builder doesn't set a value back on the element that just gave it, so the element keeps its own state, such as the focus.
+- The builder renders the element as a group its field's label names, and creates it once its custom element is defined. Scripts load as ES modules before the builder app, in the order they're listed.
+- The builder's store freezes the values it keeps, so the element gets a copy in `.value` and the builder keeps a copy of `detail.value`.
 
 ## Sources
 
@@ -431,7 +438,7 @@ interface TimeDependentConditionKindInterface extends ConditionKindInterface
 
 `matches` and `matchesNot` are optional translation keys for how the builder words a condition and its negation: "is one of" and "is not one of". A kind that matches otherwise words them its own way, as the shipped date window does with "is inside" and "is outside".
 
-`matches()` answers the condition. The plugin provides the negation by negating it, so kinds never implement it. Kinds work in visibility conditions on blocks and in page scopes, never on entries ([ADR 0010](../adr/0010-entries-have-an-audience-not-visibility-conditions.md)). The shipped kinds are in [Targeting](targeting.md#condition-kinds).
+`matches()` answers the condition. The plugin provides the negation by negating it, so kinds never implement it. It's asked only when the render context holds every context key the kind `needs`: without one, the condition never matches, negated or not ([Targeting](targeting.md#condition-kinds)). Kinds work in visibility conditions on blocks and in page scopes, never on entries ([ADR 0010](../adr/0010-entries-have-an-audience-not-visibility-conditions.md)). The shipped kinds are in [Targeting](targeting.md#condition-kinds).
 
 ## Bindable properties
 
@@ -593,6 +600,18 @@ interface ReferenceLoaderInterface
 }
 ```
 
+A snippet's preview and share links show it on the host page of one of its placements ([Builder](builder.md#snippet-preview)). The plugin knows the pages of the stock context keys' objects and the slots of the shop's layout. A project decorates `HostPageUrlGeneratorInterface` for a slot of its own whose page it knows, such as a store locator's:
+
+```php
+namespace Setono\SyliusCMSPlugin\Preview;
+
+interface HostPageUrlGeneratorInterface
+{
+    /** An absolute URL of a page that renders the slot, with the sample object, or null for a plain page. */
+    public function generate(SlotMetadata $slot, ?object $sample, ChannelInterface $channel, string $localeCode): ?string;
+}
+```
+
 `PlacementData` is a serializable value object, so a decorator can cache it: the placement's UUID, the snippet's UUID, the slot identifier, the page scope's conditions and the position. `EntryUrlMatch` has the entry's UUID and content type code, and `redirectTo`: the current path when `$path` is an old slug, otherwise `null`.
 
 `RenderContext` (`Setono\SyliusCMSPlugin\Rendering\RenderContext`) carries the channel, the locale code, the currency code, the customer (or `null`), the customer group value (a group code, `@guest` or `@no_group`), the current time, the host-page context (`get(string $key): ?object`) and its preview mode: `null`, `builder` or `share` ([Rendering](rendering.md#preview-mode-and-share-links)). Preview mode's Shown to and Date set the customer group value and the time here, and nowhere else.
@@ -654,7 +673,7 @@ Every event that changes shopper output implements `StorefrontChangedInterface`,
 | `cms_value(subject, name)` | the hydrated value | Reads a field without printing it, such as an `ItemList` to loop over. |
 | `cms_block(view)` | safe HTML | Renders one `BlockView`, with its markers in preview mode. |
 | `cms_blocks(views)` | safe HTML | Renders `BlockView`s in order. |
-| `cms_slot(id, context = {})` | safe HTML | Renders a slot from a template, passing host-page context by key ([Slots](slots.md#rendering-a-slot)). |
+| `cms_slot(id, context = {})` | safe HTML | Renders a slot from a template, passing host-page context by key ([Slots](slots.md#rendering-a-slot)). A slot the code doesn't declare throws in dev, and in production prints nothing and is logged at `error` with its identifier ([Rendering](rendering.md#failures)). |
 | `cms_image(media, options = {})` | safe HTML | Renders an image media item ([Media](media.md#the-image-helper)). |
 | `cms_video(video, options = {})` | safe HTML | Renders a video as the Video block shows it. `video` is a video media item or its UUID, rendered as a `<video>` of its current file with `controls`, `playsinline` and `preload="metadata"`, or a YouTube or Vimeo URL, rendered as the provider's privacy-enhanced embed in a lazy `<iframe>`. Options: `poster` (an image media item or its UUID, over the video media item's own poster, shown as one WebP variant cropped to 16:9 and at most 1280 wide), `title` (the embed's `title`, which names it to screen readers) and `class`. It prints nothing for `null`, a broken reference, a media item that isn't a video or a URL it doesn't know, and in the builder's preview a grey 16:9 placeholder instead ([Blocks](blocks.md#video)). |
 | `cms_media_url(media)` | `?string` | The [permanent URL](media.md#permanent-urls) of a document or video media item, or of its UUID, which links to it lead to, such as the Downloads block's. `null` for `null`, a UUID no media item has, or an image, which has no permanent URL. |
@@ -752,7 +771,7 @@ setono_sylius_cms:
         # de_CH: [de_DE]
 
     builder:
-        scripts: []          # field control scripts, as public paths or absolute URLs, loaded as ES modules
+        scripts: []          # field control scripts, as asset paths, such as build/app/cms/controls.js, public paths or absolute http(s) URLs, each resolved through asset(), loaded as ES modules in this order
 
     presets:
         paths: []            # directories of code preset files; bundles prepend theirs

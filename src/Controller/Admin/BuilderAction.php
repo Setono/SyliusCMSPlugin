@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin;
 
+use Setono\SyliusCMSPlugin\Admin\EntryPlacement;
+use Setono\SyliusCMSPlugin\Admin\EntryPlacements;
 use Setono\SyliusCMSPlugin\Builder\MediaLibraryConfig;
 use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
@@ -31,12 +33,17 @@ use Twig\Environment;
  */
 final readonly class BuilderAction
 {
+    /** What the endpoints that name another entry hold in place of its UUID, which the builder replaces */
+    public const UUID_PLACEHOLDER = '00000000-0000-4000-8000-000000000000';
+
     /** A path and query of URL characters only (RFC 3986) */
     private const URL_CHARACTERS = '#^[A-Za-z0-9\-._~!$&\'()*+,;=:@/%?]*\z#';
 
     /**
      * @param ChannelRepositoryInterface<ChannelInterface> $channelRepository
      * @param RepositoryInterface<CustomerGroupInterface> $customerGroupRepository
+     * @param list<string> $scripts the scripts of the field controls of projects' own field types, from
+     *                              setono_sylius_cms.builder.scripts, which the template resolves through asset()
      */
     public function __construct(
         private AdminAccessChecker $adminAccessChecker,
@@ -51,6 +58,8 @@ final readonly class BuilderAction
         private FallbackChainInterface $fallbackChain,
         private StartingValuesInterface $startingValues,
         private MediaLibraryConfig $mediaLibraryConfig,
+        private EntryPlacements $entryPlacements,
+        private array $scripts = [],
     ) {
     }
 
@@ -64,6 +73,7 @@ final readonly class BuilderAction
 
         return new Response($this->twig->render('@SetonoSyliusCMSPlugin/admin/builder.html.twig', [
             'entry' => $entry,
+            'scripts' => $this->scripts,
             'config' => [
                 'entryUuid' => $entry->getUuid(),
                 'locale' => $this->editedLocale($request, $entry, $locales),
@@ -89,6 +99,14 @@ final readonly class BuilderAction
                     'search' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_search', ['kind' => '__kind__']),
                     // How many items a source yields for a list field's parameters, under the preview's token
                     'sourceCount' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_source_count'),
+                    // The blocks a Snippet block shows, which Detach copies, and the builder its Edit snippet opens,
+                    // each with UUID_PLACEHOLDER for the snippet's UUID
+                    'snippetBlocks' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_snippet_blocks', ['uuid' => self::UUID_PLACEHOLDER]),
+                    'builder' => $this->urlGenerator->generate('setono_sylius_cms_admin_builder', ['uuid' => self::UUID_PLACEHOLDER]),
+                    // What the top bar shows of a snippet's preview, and the sample objects it can show it with, under
+                    // the preview's token
+                    'previewSnippet' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_snippet'),
+                    'previewSamples' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_preview_samples'),
                 ],
                 'channels' => array_map(static fn (array $channel): array => [
                     'code' => $channel['channel']->getCode(),
@@ -100,6 +118,8 @@ final readonly class BuilderAction
                 // The media picker is the media library opened as a picker, with the library's endpoints, and the
                 // store's locales for the alt text. The registry gives it the upload limit and types
                 'media' => $this->mediaLibraryConfig->of($request->getLocale()),
+                // A snippet's placements, which the builder lists without changing them, or null for another entry
+                'placements' => $this->placements($entry),
                 // Where the preview's Shown to and Date start. Date is a UTC date and time, or null for now
                 'preview' => [
                     'shownTo' => $this->startingValues->shownTo($entry),
@@ -191,6 +211,27 @@ final readonly class BuilderAction
             static fn (CustomerGroupInterface $group): array => ['code' => $group->getCode(), 'name' => $group->getName()],
             $this->customerGroupRepository->findBy([], ['name' => 'ASC']),
         ));
+    }
+
+    /**
+     * A snippet's placements, by slot as its overview page lists them, each with its slot's label in the admin user's
+     * locale, or the slot's identifier when the code no longer declares it. Null for an entry that isn't a snippet
+     *
+     * @return list<array{uuid: string, slot: string, label: string, removed: bool}>|null
+     */
+    private function placements(EntryInterface $entry): ?array
+    {
+        $section = $this->entryPlacements->of($entry);
+        if (null === $section) {
+            return null;
+        }
+
+        return array_map(fn (EntryPlacement $placed): array => [
+            'uuid' => $placed->placement->getUuid(),
+            'slot' => $placed->placement->getSlot(),
+            'label' => null === $placed->slot ? $placed->placement->getSlot() : $this->translator->trans($placed->slot->label),
+            'removed' => null === $placed->slot,
+        ], $section->placements);
     }
 
     private static function query(Request $request, string $name): ?string

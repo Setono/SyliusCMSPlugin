@@ -209,6 +209,22 @@ final class StoredTreeTest extends TestCase
     /**
      * @test
      */
+    public function it_lists_every_block_depth_first(): void
+    {
+        $d = new StoredBlock('0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e4d', 'heading', 1);
+        $b = new StoredBlock(self::B, 'column', 1);
+        $b->children = [$d];
+        $a = new StoredBlock(self::A, 'columns', 1);
+        $a->children = [$b];
+        $c = new StoredBlock(self::C, 'heading', 1);
+
+        self::assertSame([$a, $b, $d, $c], (new StoredTree(null, [$a, $c]))->allBlocks());
+        self::assertSame([], (new StoredTree(null, []))->allBlocks());
+    }
+
+    /**
+     * @test
+     */
     public function its_clone_is_a_deep_copy(): void
     {
         $child = new StoredBlock(self::B, 'column', 1);

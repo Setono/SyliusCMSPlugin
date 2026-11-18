@@ -7,8 +7,10 @@ namespace Setono\SyliusCMSPlugin\Admin;
 use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
 use Setono\SyliusCMSPlugin\Routing\EntryPath;
 use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGeneratorInterface;
@@ -32,6 +34,7 @@ final readonly class EntryShareLinks
         private ChannelRepositoryInterface $channelRepository,
         private WorkingCopyProviderInterface $workingCopyProvider,
         private ContentTypeRegistryInterface $contentTypes,
+        private SlotRegistryInterface $slots,
     ) {
     }
 
@@ -44,12 +47,14 @@ final readonly class EntryShareLinks
             $shareLink,
             $this->urlGenerator->generate($shareLink),
             self::nameOf($this->channelRepository->findOneByCode($shareLink->getChannelCode()), $shareLink->getChannelCode()),
+            $this->slotLabelOf($shareLink),
         ), $this->shareLinks->findByEntry($entry));
     }
 
     /**
      * The channels and locales the entry's draft has a URL in: the entry's channels by code, each with its default
-     * locale first and then its other locales by code
+     * locale first and then its other locales by code. A snippet shows on the host page of a placement, or a plain
+     * page, in each of them
      *
      * @return list<ShareLinkTarget>
      */
@@ -67,13 +72,23 @@ final readonly class EntryShareLinks
             }
 
             foreach (ChannelLocales::of($channel) as $localeCode) {
-                if (null !== EntryPath::of($contentType, $workingCopy, $localeCode)) {
+                if ($workingCopy instanceof SnippetInterface || null !== EntryPath::of($contentType, $workingCopy, $localeCode)) {
                     $targets[] = new ShareLinkTarget($channelCode, self::nameOf($channel, $channelCode), $localeCode);
                 }
             }
         }
 
         return $targets;
+    }
+
+    private function slotLabelOf(ShareLinkInterface $shareLink): ?string
+    {
+        $slot = $shareLink->getPlacement()?->getSlot();
+        if (null === $slot) {
+            return null;
+        }
+
+        return $this->slots->find($slot)->label ?? $slot;
     }
 
     private static function nameOf(?ChannelInterface $channel, string $code): string

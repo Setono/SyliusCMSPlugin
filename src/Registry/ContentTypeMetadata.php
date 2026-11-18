@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Registry;
 use Setono\SyliusCMSPlugin\Attribute\Allow;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 
 /**
  * A content type as the registry knows it: its #[ContentType] options and its Sylius resource
@@ -35,6 +36,14 @@ final readonly class ContentTypeMetadata
     public function hasOwnUrl(): bool
     {
         return null !== $this->prefix;
+    }
+
+    /**
+     * Whether its entries are snippets, which show in slots and Snippet blocks rather than at a URL of their own
+     */
+    public function isSnippet(): bool
+    {
+        return is_a($this->modelClass, SnippetInterface::class, true);
     }
 
     /**

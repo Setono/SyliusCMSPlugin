@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_drafts_in_progress() lists the entries a draft is in progress for, those with unpublished changes and those never published, the one edited last first, each with its row's state
+--TEMPLATE--
+{% for entry in cms_admin_drafts_in_progress() %}{{ cms_admin_entry_row(entry).title }}: {{ cms_admin_entry_row(entry).status.value }}; {% endfor %}
+--DATA--
+return $this->draftsInProgress('Contact', 'About us')
+--EXPECT--
+Contact: never_published; About us: never_published;

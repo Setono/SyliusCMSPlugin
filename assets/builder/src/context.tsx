@@ -1,12 +1,15 @@
-import { createContext, useContext } from 'react';
+import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand';
 import type { BuilderApi, PreviewRequest } from './api';
-import type { Channel, CustomerGroup, Locale } from './config';
+import type { Channel, CustomerGroup, Locale, SnippetPlacement } from './config';
+import { providedContext } from './hostPageContext';
 import type { LeavingState, LeavingStore } from './leaving';
 import { localeOf } from './locales';
 import type { PresenceState, PresenceStore } from './presence';
 import type { PreviewState, PreviewStore } from './preview';
 import type { SettingsState, SettingsStore } from './settings';
+import type { SnippetPreviewApi } from './snippetPreview';
+import type { StoredBlock } from './types';
 import type { BuilderState, BuilderStore } from './store';
 import type { UrlsState, UrlsStore } from './urls';
 import type { ValidationState, ValidationStore } from './validation';
@@ -32,6 +35,17 @@ export interface BuilderSession {
     leaving: LeavingStore;
     /** The entry's overview page, for publishing history, revisions, share links and placements. */
     overviewUrl: string;
+    /** A snippet's placements, which are managed on its overview page, or null for an entry that isn't a snippet. */
+    placements: SnippetPlacement[] | null;
+    /** What the top bar shows of a snippet's preview and the sample objects it can show it with. Null without the endpoints. */
+    snippetPreview: SnippetPreviewApi | null;
+    /**
+     * Opens a snippet in the builder, once the unsaved changes are sent, with a way back to the Snippet block that shows
+     * it. Null when the builder page doesn't say where another entry's builder is.
+     */
+    editSnippet: ((snippet: string, block: string) => void) | null;
+    /** The blocks a snippet shows, which Detach to edit here copies. Null without the endpoint. */
+    snippetBlocks: ((snippet: string) => Promise<StoredBlock[]>) | null;
     preview: PreviewStore;
     /** Asks for a preview token, and answers with the URL of the preview it turns on. */
     createPreviewUrl: (preview: PreviewRequest) => Promise<string>;
@@ -61,6 +75,11 @@ const BuilderContext = createContext<BuilderSession | null>(null);
 
 export const BuilderProvider = BuilderContext.Provider;
 
+/** The open entry's session, or null outside the builder, such as a field control rendered on its own. */
+export function useBuilderSession(): BuilderSession | null {
+    return useContext(BuilderContext);
+}
+
 export function useBuilder(): BuilderSession {
     const session = useContext(BuilderContext);
     if (session === null) {
@@ -83,6 +102,28 @@ export function useFallbackChain(locale: string): readonly string[] {
 /** Selects from the builder's store. The selector must return state as it is, not a new object. */
 export function useBuilderState<T>(selector: (state: BuilderState) => T): T {
     return useStore(useBuilder().store, selector);
+}
+
+/**
+ * The context keys the edited entry provides its tree, or the snippet declares, which follows the snippet's context
+ * setting as the editor changes it. Null outside the builder, such as a field control rendered on its own, where
+ * nothing narrows what's offered.
+ */
+export function useProvidedContext(): readonly string[] | null {
+    const store = useContext(BuilderContext)?.store ?? null;
+    const subscribe = useCallback((changed: () => void) => store?.subscribe(changed) ?? (() => undefined), [store]);
+    // The keys joined, a string, so only a change of them renders again
+    const joined = useSyncExternalStore(subscribe, () => {
+        if (store === null) {
+            return null;
+        }
+
+        const { rules, entry } = store.getState();
+
+        return providedContext(rules.provides, entry).join(',');
+    });
+
+    return useMemo(() => (joined === null ? null : joined === '' ? [] : joined.split(',')), [joined]);
 }
 
 /** Selects from the on-save settings. The selector must return state as it is, not a new object. */

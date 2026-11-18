@@ -4,10 +4,12 @@
     <imports>
         <import resource="services/admin.xml"/>
         <import resource="services/bestsellers.xml"/>
+        <import resource="services/binding.xml"/>
         <import resource="services/block_type.xml"/>
         <import resource="services/builder.xml"/>
         <import resource="services/command.xml"/>
         <import resource="services/condition.xml"/>
+        <import resource="services/context.xml"/>
         <import resource="services/controller.xml"/>
         <import resource="services/doctrine.xml"/>
         <import resource="services/field.xml"/>
@@ -29,6 +31,7 @@
         <import resource="services/security.xml"/>
         <import resource="services/seo.xml"/>
         <import resource="services/share_link.xml"/>
+        <import resource="services/slot.xml"/>
         <import resource="services/source.xml"/>
         <import resource="services/targeting.xml"/>
         <import resource="services/translation.xml"/>

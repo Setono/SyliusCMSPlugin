@@ -6,12 +6,12 @@ namespace Setono\SyliusCMSPlugin\Builder\Search;
 
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Setono\SyliusCMSPlugin\Context\EntryTitle;
 use Setono\SyliusCMSPlugin\Doctrine\EntityManagers;
 use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
-use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Symfony\Component\Uid\Uuid;
@@ -92,25 +92,6 @@ final readonly class EntrySearch implements SearchInterface
         /** @var list<EntryInterface> $entries */
         $entries = $queryBuilder->getQuery()->getResult();
 
-        return array_map(fn (EntryInterface $entry): SearchResult => new SearchResult($entry->getUuid(), $this->title($entry, $localeCode)), $entries);
-    }
-
-    /**
-     * The title in the locale along its fallback chain, or else in any locale the entry has one in
-     */
-    private function title(EntryInterface $entry, string $localeCode): string
-    {
-        $title = $this->fallbackValues->entryValue($entry, 'title', $localeCode);
-        if (is_string($title)) {
-            return $title;
-        }
-
-        foreach ($entry->getTranslations() as $translation) {
-            if ($translation instanceof EntryTranslationInterface && null !== $translation->getTitle() && '' !== $translation->getTitle()) {
-                return $translation->getTitle();
-            }
-        }
-
-        return $entry->getUuid();
+        return array_map(fn (EntryInterface $entry): SearchResult => new SearchResult($entry->getUuid(), EntryTitle::inLocale($entry, $localeCode, $this->fallbackValues)), $entries);
     }
 }

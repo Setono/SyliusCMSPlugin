@@ -1,0 +1,6 @@
+{# The code, unescaped, as the editor entered it (ADR 0018). The builder's preview shows a placeholder in its place, so the code's scripts never run inside the builder #}
+{%- if cms_preview_mode() == 'builder' -%}
+    <div class="cms-embed-code cms-embed-code--placeholder{{ view.styleClass ? ' ' ~ view.styleClass }}">{{ 'setono_sylius_cms.preview.embed_code'|trans }}</div>
+{%- else -%}
+    <div class="cms-embed-code{{ view.styleClass ? ' ' ~ view.styleClass }}">{{ block.code|raw }}</div>
+{%- endif -%}

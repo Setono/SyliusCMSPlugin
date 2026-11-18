@@ -48,6 +48,7 @@ final class RegistryTest extends BuilderApiTestCase
                     'x-cms-help' => null,
                     'x-cms-required' => true,
                     'x-cms-translatable' => true,
+                    'x-cms-bindable' => ['text', 'number'],
                 ],
             ],
             [
@@ -80,6 +81,7 @@ final class RegistryTest extends BuilderApiTestCase
                     'x-cms-help' => null,
                     'x-cms-required' => true,
                     'x-cms-translatable' => true,
+                    'x-cms-bindable' => ['text', 'number'],
                 ],
             ],
             [
@@ -93,6 +95,8 @@ final class RegistryTest extends BuilderApiTestCase
                     'x-cms-help' => null,
                     'x-cms-required' => false,
                     'x-cms-translatable' => true,
+                    'x-cms-bindable' => ['text', 'number'],
+                    'x-cms-binds-inside' => true,
                 ],
             ],
         ], self::blockTypes($registry)['accordion_item']['fields']);
@@ -115,13 +119,17 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($registry);
         $blockTypes = self::blockTypes($registry);
 
-        self::assertSame(['group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'video', 'button', 'banner', 'accordion', 'accordion_item', 'link_list', 'link', 'downloads', 'products', 'taxons', 'carousel', 'first_match'], array_keys($blockTypes));
+        // The test application's own Store hours and Product note come first: an app's services are defined before a
+        // bundle's. Embed code comes last, opted in to in the test application's config
+        self::assertSame(['app_store_hours', 'app_product_note', 'group', 'columns', 'column', 'spacer', 'heading', 'rich_text', 'image', 'video', 'button', 'banner', 'accordion', 'accordion_item', 'link_list', 'link', 'downloads', 'products', 'taxons', 'carousel', 'first_match', 'snippet', 'embed_code'], array_keys($blockTypes));
 
         self::assertSame([['type' => 'column', 'min' => 2, 'max' => 4]], $blockTypes['columns']['children']);
         self::assertNull($blockTypes['columns']['parents']);
         self::assertSame(['columns'], $blockTypes['column']['parents']);
 
         $all = [
+            ['type' => 'app_store_hours', 'min' => null, 'max' => null],
+            ['type' => 'app_product_note', 'min' => null, 'max' => null],
             ['type' => 'group', 'min' => null, 'max' => null],
             ['type' => 'columns', 'min' => null, 'max' => null],
             ['type' => 'spacer', 'min' => null, 'max' => null],
@@ -138,6 +146,8 @@ final class RegistryTest extends BuilderApiTestCase
             ['type' => 'taxons', 'min' => null, 'max' => null],
             ['type' => 'carousel', 'min' => null, 'max' => null],
             ['type' => 'first_match', 'min' => null, 'max' => null],
+            ['type' => 'snippet', 'min' => null, 'max' => null],
+            ['type' => 'embed_code', 'min' => null, 'max' => null],
         ];
         self::assertSame($all, $blockTypes['group']['children']);
         self::assertSame($all, $blockTypes['column']['children']);
@@ -164,9 +174,24 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertSame('/bundles/setonosyliuscmsplugin/thumbnail/block/columns.svg', $blockTypes['columns']['thumbnail']);
         self::assertFalse($blockTypes['spacer']['disabled']);
 
+        // The Snippet block holds no blocks: it shows its snippet's
+        self::assertSame([], $blockTypes['snippet']['children']);
+        self::assertSame([[
+            'name' => 'snippet',
+            'schema' => [
+                'type' => 'string',
+                'format' => 'uuid',
+                'x-cms-type' => 'snippet',
+                'x-cms-label' => 'Snippet',
+                'x-cms-help' => null,
+                'x-cms-required' => true,
+                'x-cms-translatable' => false,
+            ],
+        ]], $blockTypes['snippet']['fields']);
+
         // The test application adds a content type of its own, without a URL and so without layouts, and a layout of its own to pages
         self::assertIsArray($registry['contentTypes']);
-        self::assertSame(['code' => 'announcement', 'label' => 'Announcement', 'blocks' => $all, 'prefix' => null, 'homepage' => false, 'layouts' => []], $registry['contentTypes'][0]);
+        self::assertSame(['code' => 'announcement', 'label' => 'Announcement', 'blocks' => $all, 'prefix' => null, 'homepage' => false, 'provides' => ['entry'], 'layouts' => []], $registry['contentTypes'][0]);
         $page = $registry['contentTypes'][1];
         self::assertIsArray($page);
         self::assertSame(['page', 'Page', $all, '', true], [$page['code'], $page['label'], $page['blocks'], $page['prefix'], $page['homepage']]);
@@ -181,6 +206,39 @@ final class RegistryTest extends BuilderApiTestCase
             ['standard', 'Standard', '/bundles/setonosyliuscmsplugin/thumbnail/layout/page/standard.svg', true, ['title'], ['showTitle']],
             ['landing', 'Landing', null, false, [], ['tagline', 'transparentHeader']],
         ], $layouts);
+    }
+
+    /**
+     * The builder leaves a block type out of the picker when its needs aren't provided: the test application's Product
+     * note needs the product, which a page doesn't provide, and names why. See "Block picker" in docs/spec/builder.md
+     *
+     * @test
+     */
+    public function it_answers_what_each_block_type_needs_what_each_content_type_provides_and_why_the_picker_leaves_one_out(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+
+        $registry = self::json($client, 'GET', '/admin/cms/api/registry');
+        self::assertIsArray($registry);
+        $blockTypes = self::blockTypes($registry);
+
+        self::assertSame(['product'], $blockTypes['app_product_note']['needs']);
+        self::assertSame([], $blockTypes['heading']['needs']);
+
+        self::assertIsArray($registry['contentTypes']);
+        self::assertSame(['announcement' => ['entry'], 'page' => ['entry'], 'snippet' => null], array_column($registry['contentTypes'], 'provides', 'code'));
+
+        self::assertSame([
+            ['key' => 'product', 'label' => 'Product page'],
+            ['key' => 'taxon', 'label' => 'Taxon page'],
+            ['key' => 'entry', 'label' => 'Entry page'],
+        ], $registry['contextKeys']);
+        self::assertIsArray($registry['slots']);
+        self::assertContains(['identifier' => 'product.after_price', 'label' => 'Product page: under the price', 'provides' => ['product']], $registry['slots']);
+
+        self::assertIsArray($registry['strings']);
+        self::assertSame('Needs: %context%', $registry['strings']['setono_sylius_cms.builder.needs_context'] ?? null);
     }
 
     /**
@@ -234,6 +292,7 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($schema);
         self::assertSame(['link', 'Link', true, false], [$schema['x-cms-type'], $schema['x-cms-label'], $schema['x-cms-required'], $schema['x-cms-translatable']]);
         self::assertSame(['targets' => ['entry', 'product', 'taxon', 'media', 'url', 'app_store'], 'translatable' => null], $schema['x-cms-options']);
+        self::assertSame([['url'], true], [$schema['x-cms-bindable'] ?? null, $schema['x-cms-binds-inside'] ?? null], 'A Link holds its binding in its ref');
     }
 
     /**
@@ -302,7 +361,7 @@ final class RegistryTest extends BuilderApiTestCase
                                 'additionalProperties' => false,
                             ],
                         ],
-                        'x-cms-options' => ['max' => null, 'sources' => ['products_in_taxon', 'bestsellers', 'newest_products'], 'limit' => 8],
+                        'x-cms-options' => ['max' => null, 'sources' => ['products_in_taxon', 'bestsellers', 'newest_products', 'product_associations', 'same_taxon_products'], 'limit' => 8],
                         'x-cms-type' => 'products',
                         'x-cms-label' => 'Products',
                         'x-cms-help' => null,
@@ -371,6 +430,7 @@ final class RegistryTest extends BuilderApiTestCase
                 'x-cms-required' => false,
                 'x-cms-translatable' => false,
                 'default' => 5,
+                'x-cms-bindable' => ['number'],
             ],
             $fields['interval'],
         );

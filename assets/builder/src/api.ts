@@ -1,5 +1,5 @@
 import type { Change } from './changeSet';
-import type { BuilderConfig, ShownToAndDate } from './config';
+import { withUuid, type BuilderConfig, type ShownToAndDate } from './config';
 import type { EntryResponse, EntrySettings, EntryStatus, EntryUrlsResponse, PresenceResponse, Registry, SaveResponse, StoredBlock, ValidationError } from './types';
 
 /** The builder's JSON endpoints. They're internal, and change together with the app. */
@@ -39,12 +39,18 @@ export interface BuilderApi {
     createPreviewUrl(preview: PreviewRequest): Promise<string>;
     /** Renders blocks of the working copy as the builder holds them, under a preview token, and answers their HTML by key. */
     renderPreview(token: string, blocks: readonly StoredBlock[]): Promise<Record<string, string>>;
+    /** The blocks a snippet shows, from its published content, which Detach to edit here copies. Absent without its endpoint. */
+    snippetBlocks?(snippet: string): Promise<StoredBlock[]>;
 }
 
-/** What the preview shows the working copy in, to whom and when. The sample object and the placement come later. */
+/** What the preview shows the working copy in, to whom and when, and for a snippet, where and with which sample object. */
 export interface PreviewRequest extends ShownToAndDate {
     channel: string;
     locale: string;
+    /** For a snippet, the placement whose host page shows it, or null for a plain page. */
+    placement?: string | null;
+    /** For a snippet, the ref of its sample object, or null for the one the preview starts with. */
+    sample?: string | null;
 }
 
 export class ApiError extends Error {
@@ -184,11 +190,11 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = defaultFetch):
             return settings as unknown as EntrySettings;
         },
 
-        async createPreviewUrl({ channel, locale, shownTo, date }) {
+        async createPreviewUrl({ channel, locale, shownTo, date, placement, sample }) {
             const body = await request(config.endpoints.previewToken, {
                 method: 'POST',
                 headers: { ...write, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ entry: config.entryUuid, channel, locale, shownTo, date }),
+                body: JSON.stringify({ entry: config.entryUuid, channel, locale, shownTo, date, placement, sample }),
             });
 
             const url = isObject(body) ? body.url : undefined;
@@ -213,6 +219,21 @@ export function createApi(config: BuilderConfig, fetchFn: Fetch = defaultFetch):
 
             return html as Record<string, string>;
         },
+
+        ...(config.endpoints.snippetBlocks === undefined ? {} : { snippetBlocks: snippetBlocksOf(fetchFn, config.endpoints.snippetBlocks) }),
+    };
+}
+
+/** The blocks a snippet shows, read from the endpoint, with UUID_PLACEHOLDER for the snippet's UUID. */
+function snippetBlocksOf(fetchFn: Fetch, endpoint: string): (snippet: string) => Promise<StoredBlock[]> {
+    return async (snippet) => {
+        const body = await send(fetchFn, withUuid(endpoint, snippet));
+        const blocks = isObject(body) ? body.blocks : undefined;
+        if (!Array.isArray(blocks)) {
+            throw new ApiError('The answer has no blocks.', 200);
+        }
+
+        return blocks as StoredBlock[];
     };
 }
 
@@ -279,6 +300,7 @@ function errorMessage(body: unknown): string | undefined {
     return isObject(body) && typeof body.error === 'string' ? body.error : undefined;
 }
 
-function isObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null;
+/** Whether an endpoint's answer, or a part of it, is a JSON object, which a list isn't. */
+export function isObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

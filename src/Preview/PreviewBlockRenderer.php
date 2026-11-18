@@ -6,10 +6,11 @@ namespace Setono\SyliusCMSPlugin\Preview;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Setono\SyliusCMSPlugin\Block\Snippet;
 use Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface;
 use Setono\SyliusCMSPlugin\Rendering\BlockView;
+use Setono\SyliusCMSPlugin\Rendering\ExceptionMessage;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
-use Twig\Error\RuntimeError;
 
 /**
  * In the builder's preview, brackets each block's output with HTML comment markers that carry its key and block type,
@@ -19,6 +20,8 @@ use Twig\Error\RuntimeError;
  * A block that throws while rendering in the preview shows its error message in place of its output, in dev and in
  * production alike, and is logged. Each block renders into its own string, so the rest of the preview still renders.
  * See "Failures" in docs/spec/rendering.md
+ *
+ * A Snippet block is marked, but the snippet's blocks it shows aren't: they're another entry's, edited there.
  *
  * The marker format is internal: only the bridge reads it (assets/builder/src/bridge/markers.ts)
  */
@@ -39,7 +42,9 @@ final readonly class PreviewBlockRenderer implements BlockRendererInterface
         }
 
         try {
-            $html = $this->renderer->render($view, $context);
+            // What a Snippet block shows is another entry's blocks, which the builder neither selects nor types in, so
+            // they render as shoppers see them, keeping Shown to and Date
+            $html = $this->renderer->render($view, $view->block instanceof Snippet ? $context->withPreviewMode(null) : $context);
         } catch (\Throwable $e) {
             $html = $this->error($view, $e);
         }
@@ -49,7 +54,7 @@ final readonly class PreviewBlockRenderer implements BlockRendererInterface
 
     private function error(BlockView $view, \Throwable $exception): string
     {
-        $message = self::message($exception);
+        $message = ExceptionMessage::of($exception);
 
         $this->logger->error('The block {key} of type {type} could not be rendered in the preview: {message}', [
             'key' => $view->key,
@@ -63,17 +68,5 @@ final readonly class PreviewBlockRenderer implements BlockRendererInterface
             self::ERROR_STYLE,
             htmlspecialchars($message, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8'),
         );
-    }
-
-    /**
-     * The message of what went wrong: Twig wraps an exception a template threw, so that's unwrapped
-     */
-    private static function message(\Throwable $exception): string
-    {
-        while ($exception instanceof RuntimeError && null !== $exception->getPrevious()) {
-            $exception = $exception->getPrevious();
-        }
-
-        return $exception->getMessage();
     }
 }

@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Problem;
 
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Problem\Fix;
 
 final class FixTest extends TestCase
@@ -34,6 +35,19 @@ final class FixTest extends TestCase
         self::assertEquals(
             new Fix('setono_sylius_cms.ui.fix_in_publishing', 'setono_sylius_cms_admin_entry_show', ['uuid' => $page->getUuid(), '_fragment' => 'cms-section-publishing']),
             Fix::inPublishing($page),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_goes_to_the_placements_section_of_the_entrys_overview_page(): void
+    {
+        $snippet = new Snippet();
+
+        self::assertEquals(
+            new Fix('setono_sylius_cms.ui.fix_in_placements', 'setono_sylius_cms_admin_entry_show', ['uuid' => $snippet->getUuid(), '_fragment' => 'cms-section-placements']),
+            Fix::inPlacements($snippet),
         );
     }
 }

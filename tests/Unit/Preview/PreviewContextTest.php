@@ -11,6 +11,7 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
+use Setono\SyliusCMSPlugin\Preview\SampleObject;
 use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\Request;
@@ -197,6 +198,22 @@ final class PreviewContextTest extends TestCase
     }
 
     /**
+     * A snippet's share link fixes the placement whose host page shows it and the sample object
+     *
+     * @test
+     */
+    public function it_shows_a_snippet_s_share_link_in_its_placement_with_its_sample_object(): void
+    {
+        $this->shareLinks->lookUpToken(self::SHARE_TOKEN)->willReturn(['placement' => '0193a5be-0000-7000-8000-0000000000c1', 'sampleKey' => 'product', 'sampleRef' => 'MUG'] + self::shareLink('@guest', null));
+        $this->requestStack->push(self::request(['_cms_share' => self::SHARE_TOKEN]));
+
+        $preview = $this->context()->getPreview();
+
+        self::assertSame('0193a5be-0000-7000-8000-0000000000c1', $preview?->placementUuid);
+        self::assertEquals(new SampleObject('product', 'MUG'), $preview->sample);
+    }
+
+    /**
      * @test
      */
     public function it_shows_a_share_link_at_the_time_it_is_opened_when_it_has_no_date(): void
@@ -325,7 +342,7 @@ final class PreviewContextTest extends TestCase
      */
     private static function shareLink(string $shownTo, ?\DateTimeImmutable $date): array
     {
-        return ['entry' => self::ENTRY, 'channel' => 'WEB', 'locale' => 'da_DK', 'shownTo' => $shownTo, 'date' => $date];
+        return ['entry' => self::ENTRY, 'channel' => 'WEB', 'locale' => 'da_DK', 'shownTo' => $shownTo, 'date' => $date, 'placement' => null, 'sampleKey' => null, 'sampleRef' => null];
     }
 
     private function token(): string

@@ -12,6 +12,9 @@ enum EntryStatusFilter: string
     /** With an error or a warning. See "Problems" in docs/spec/admin.md */
     case NeedsAttention = 'needs_attention';
 
+    /** A draft in progress: published with a draft, or never published, as the Overview's Drafts in progress lists them */
+    case InProgress = 'in_progress';
+
     /** Published, with a draft */
     case UnpublishedChanges = 'unpublished_changes';
 

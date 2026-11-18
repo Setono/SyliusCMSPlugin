@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
@@ -86,6 +87,42 @@ trait Entries
         $manager->flush();
 
         return $page;
+    }
+
+    /**
+     * Creates a snippet in en_US through the snippet resource's own factory, with these top-level blocks. Like any new
+     * entry, it's in every channel unless $channels says otherwise
+     *
+     * @param list<StoredBlock> $blocks
+     * @param list<string>|null $channels channel codes
+     * @param list<string> $context the context keys it needs
+     */
+    protected static function createSnippet(string $title, array $blocks = [], bool $published = false, ?array $channels = null, array $context = []): SnippetInterface
+    {
+        /** @var FactoryInterface<SnippetInterface> $factory */
+        $factory = self::getContainer()->get('setono_sylius_cms.factory.snippet');
+
+        $snippet = $factory->createNew();
+        $snippet->setCurrentLocale('en_US');
+        $snippet->setFallbackLocale('en_US');
+        $snippet->setTitle($title);
+        $snippet->setContext($context);
+        $snippet->setBlockTree(new StoredTree(null, $blocks));
+
+        if (null !== $channels) {
+            self::channelsAndAudience()->setChannels($snippet, $channels);
+        }
+
+        if ($published) {
+            $snippet->publish(new \DateTimeImmutable());
+        }
+
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.snippet');
+        $manager->persist($snippet);
+        $manager->flush();
+
+        return $snippet;
     }
 
     /**

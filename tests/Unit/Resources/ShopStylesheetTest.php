@@ -85,6 +85,19 @@ final class ShopStylesheetTest extends TestCase
     /**
      * @test
      */
+    public function it_spaces_a_slot_s_blocks_like_a_tree_s_without_containing_them(): void
+    {
+        $slot = self::declarations('.cms-slot');
+
+        self::assertSame('grid', $slot['display'] ?? null);
+        self::assertSame('var(--cms-block-spacing)', $slot['row-gap'] ?? null);
+        self::assertArrayNotHasKey('max-width', $slot);
+        self::assertStringNotContainsString('.cms-slot >', self::css(), 'Nothing contains its blocks to --cms-content-width');
+    }
+
+    /**
+     * @test
+     */
     public function it_gives_a_group_a_background_from_its_styles_custom_properties(): void
     {
         self::assertSame(['background' => 'var(--cms-muted-background)'], array_intersect_key(self::declarations('.cms-group--muted'), ['background' => true, 'color' => true]));
@@ -162,6 +175,15 @@ final class ShopStylesheetTest extends TestCase
         self::assertSame('var(--cms-banner-color)', self::declarations('.cms-banner__media ~ .cms-banner__content')['color'] ?? null);
         self::assertArrayNotHasKey('background', self::declarations('.cms-banner__content'), 'A banner without an image has no shade');
         self::assertArrayNotHasKey('color', self::declarations('.cms-banner__content'), 'A banner without an image has the shop\'s colours');
+    }
+
+    /**
+     * @test
+     */
+    public function it_shows_the_embed_code_placeholder_as_a_grey_box_like_an_empty_image_s(): void
+    {
+        self::assertSame('var(--cms-placeholder-background)', self::declarations('.cms-embed-code--placeholder')['background'] ?? null);
+        self::assertArrayNotHasKey('background', self::declarations('.cms-embed-code'), 'The code itself has the shop\'s colours');
     }
 
     /**

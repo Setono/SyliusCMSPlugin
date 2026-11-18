@@ -17,7 +17,7 @@ use Symfony\Component\DependencyInjection\Reference;
  * the builder offers them in: by their tag's priority, highest first, which puts the shipped ones before a project's,
  * and else in the order they're defined in. Two sources with the same code fail the container build, and so does a
  * source that doesn't implement SourceInterface, that lists a class that doesn't exist or whose parameters class
- * doesn't exist. See "Sources" in docs/spec/extending.md
+ * doesn't exist, or that needs a context key the config doesn't declare. See "Sources" in docs/spec/extending.md
  */
 final class RegisterSourcesPass implements CompilerPassInterface
 {
@@ -43,6 +43,8 @@ final class RegisterSourcesPass implements CompilerPassInterface
             if (null !== $attribute->params && !class_exists($attribute->params)) {
                 throw new \LogicException(sprintf('The parameters class %s of the source %s doesn\'t exist', $attribute->params, $class));
             }
+
+            DeclaredContextKeys::assert($container, $attribute->needs, sprintf('The source %s', $class));
 
             $classes[$code] = $class;
             $sources[$code] = new Reference($id);

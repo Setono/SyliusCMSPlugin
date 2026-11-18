@@ -20,6 +20,8 @@ final readonly class BlockType
      * @param list<class-string>|null $parents the only block types this one may sit inside; null means anywhere a parent allows it
      * @param list<Style> $styles the block styles it offers; projects add more in config
      * @param string|null $thumbnail a public path to the picker's preview image
+     * @param list<string> $needs the context keys it needs, such as "product". It's offered only where the entry provides
+     *                            them or the snippet declares them
      */
     public function __construct(
         public string $code,
@@ -30,6 +32,7 @@ final readonly class BlockType
         public ?array $parents = null,
         public array $styles = [],
         public ?string $thumbnail = null,
+        public array $needs = [],
     ) {
     }
 }

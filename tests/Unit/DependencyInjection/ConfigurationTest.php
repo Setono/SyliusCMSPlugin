@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\DependencyInjection\Configuration;
 use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Factory\HomepageFactory;
+use Setono\SyliusCMSPlugin\Factory\PlacementFactory;
 use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
 use Setono\SyliusCMSPlugin\Model\BestsellerScore;
 use Setono\SyliusCMSPlugin\Model\BestsellerScoreInterface;
@@ -23,6 +24,8 @@ use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
+use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Model\MediaFolder;
@@ -39,6 +42,8 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\Placement;
+use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Model\Revision;
 use Setono\SyliusCMSPlugin\Model\RevisionInterface;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
@@ -47,6 +52,8 @@ use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Model\ShareLink;
 use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
+use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
@@ -55,6 +62,7 @@ use Setono\SyliusCMSPlugin\Repository\MediaFolderRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaUsageRepository;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
+use Setono\SyliusCMSPlugin\Repository\PlacementRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepository;
@@ -79,14 +87,18 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
-    public function it_declares_the_entry_page_the_draft_and_the_rows_beside_an_entry_as_resources_by_default(): void
+    public function it_declares_the_entry_page_snippet_the_draft_and_the_rows_beside_an_entry_as_resources_by_default(): void
     {
         $this->assertProcessedConfigurationEquals([
             [],
         ], [
             'disabled' => ['block_types' => [], 'layouts' => [], 'sources' => []],
+            'embed_code' => false,
             'assets' => true,
             'content_types' => [],
+            'slots' => [],
+            'context_keys' => [],
+            'bindable_properties' => [],
             'block_styles' => [],
             'fallback_locales' => [],
             'revisions' => ['keep' => 50],
@@ -103,6 +115,7 @@ final class ConfigurationTest extends TestCase
                 'widths' => [320, 640, 960, 1280, 1600, 1920, 2560],
             ],
             'bestsellers' => ['window' => 'P30D'],
+            'builder' => ['scripts' => []],
             'resources' => [
                 'entry' => [
                     'classes' => [
@@ -232,6 +245,14 @@ final class ConfigurationTest extends TestCase
                         'factory' => Factory::class,
                     ],
                 ],
+                'placement' => [
+                    'classes' => [
+                        'model' => Placement::class,
+                        'interface' => PlacementInterface::class,
+                        'repository' => PlacementRepository::class,
+                        'factory' => PlacementFactory::class,
+                    ],
+                ],
                 'page' => [
                     'classes' => [
                         'model' => Page::class,
@@ -243,6 +264,22 @@ final class ConfigurationTest extends TestCase
                         'classes' => [
                             'model' => PageTranslation::class,
                             'interface' => PageTranslationInterface::class,
+                            'controller' => ResourceController::class,
+                            'factory' => Factory::class,
+                        ],
+                    ],
+                ],
+                'snippet' => [
+                    'classes' => [
+                        'model' => Snippet::class,
+                        'interface' => SnippetInterface::class,
+                        'controller' => ResourceController::class,
+                        'factory' => TranslatableFactory::class,
+                    ],
+                    'translation' => [
+                        'classes' => [
+                            'model' => EntryTranslation::class,
+                            'interface' => EntryTranslationInterface::class,
                             'controller' => ResourceController::class,
                             'factory' => Factory::class,
                         ],
@@ -460,6 +497,22 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
+    public function it_lets_a_project_opt_in_to_the_embed_code_block(): void
+    {
+        $this->assertProcessedConfigurationEquals([['embed_code' => true]], ['embed_code' => true], 'embed_code');
+    }
+
+    /**
+     * @test
+     */
+    public function it_takes_a_boolean_for_embed_code(): void
+    {
+        $this->assertConfigurationIsInvalid([['embed_code' => 'yes']], 'Invalid type for path "setono_sylius_cms.embed_code"');
+    }
+
+    /**
+     * @test
+     */
     public function it_lets_a_project_stop_loading_the_shipped_stylesheet_and_carousel_script(): void
     {
         $this->assertProcessedConfigurationEquals([['assets' => false]], ['assets' => false], 'assets');
@@ -641,6 +694,156 @@ final class ConfigurationTest extends TestCase
     /**
      * @test
      */
+    public function it_lets_a_project_declare_slots_by_identifier_with_a_label_the_context_keys_they_provide_a_cap_and_a_template_event(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['slots' => [
+                'app.store_locator.top' => [
+                    'label' => 'app.cms.slot.store_locator_top',
+                    'provides' => ['store_location'],
+                    'cap' => 1,
+                    'template_event' => ['name' => 'app.store_locator.top', 'priority' => 10],
+                ],
+                'page.landing.after_hero' => ['label' => 'app.cms.slot.after_hero'],
+                'app.header' => ['label' => 'app.cms.slot.header', 'template_event' => ['name' => 'sylius.shop.layout.header']],
+            ]],
+        ], ['slots' => [
+            'app.store_locator.top' => [
+                'label' => 'app.cms.slot.store_locator_top',
+                'provides' => ['store_location'],
+                'cap' => 1,
+                'template_event' => ['name' => 'app.store_locator.top', 'priority' => 10],
+            ],
+            'page.landing.after_hero' => ['label' => 'app.cms.slot.after_hero', 'provides' => [], 'cap' => null],
+            'app.header' => ['label' => 'app.cms.slot.header', 'template_event' => ['name' => 'sylius.shop.layout.header', 'priority' => 0], 'provides' => [], 'cap' => null],
+        ]], 'slots');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_later_config_cap_a_slot_an_earlier_one_declared_and_replace_the_keys_it_provides(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['slots' => ['shop.top' => ['label' => 'setono_sylius_cms.slot.shop.top', 'provides' => ['product'], 'template_event' => ['name' => 'sylius.shop.layout.header', 'priority' => 30]]]],
+            ['slots' => ['shop.top' => ['cap' => 1, 'provides' => ['taxon']]]],
+        ], ['slots' => [
+            'shop.top' => [
+                'label' => 'setono_sylius_cms.slot.shop.top',
+                'provides' => ['taxon'],
+                'template_event' => ['name' => 'sylius.shop.layout.header', 'priority' => 30],
+                'cap' => 1,
+            ],
+        ]], 'slots');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidSlots
+     *
+     * @param array<array-key, mixed> $slots
+     */
+    public function it_refuses_an_invalid_slot(array $slots, string $message): void
+    {
+        $this->assertConfigurationIsInvalid([['slots' => $slots]], $message);
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>, string}>
+     */
+    public function provideInvalidSlots(): iterable
+    {
+        yield 'an identifier with a capital' => [['Shop.top' => ['label' => 'a']], 'The slot identifier "Shop.top" must be codes joined by dots, such as product.after_price'];
+        yield 'an identifier with a hyphen' => [['shop.after-price' => ['label' => 'a']], 'The slot identifier "shop.after-price" must be codes joined by dots, such as product.after_price'];
+        yield 'an identifier ending in a dot' => [['shop.' => ['label' => 'a']], 'The slot identifier "shop." must be codes joined by dots, such as product.after_price'];
+        yield 'no label' => [['shop.top' => []], 'The child config "label" under "setono_sylius_cms.slots.shop.top" must be configured'];
+        yield 'a cap of none' => [['shop.top' => ['label' => 'a', 'cap' => 0]], 'The value 0 is too small for path "setono_sylius_cms.slots.shop.top.cap"'];
+        yield 'a context key that is no code' => [['shop.top' => ['label' => 'a', 'provides' => ['Product']]], 'The context key code "Product" must match'];
+        yield 'a template event without a name' => [['shop.top' => ['label' => 'a', 'template_event' => ['priority' => 1]]], 'The child config "name" under "setono_sylius_cms.slots.shop.top.template_event" must be configured'];
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_declare_context_keys_with_the_class_of_their_object_and_a_label(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['context_keys' => ['store_location' => ['class' => \stdClass::class, 'label' => 'app.cms.context_key.store_location']]],
+            ['context_keys' => ['brand' => ['class' => \Countable::class, 'label' => 'app.cms.context_key.brand']]],
+        ], ['context_keys' => [
+            'store_location' => ['class' => \stdClass::class, 'label' => 'app.cms.context_key.store_location'],
+            'brand' => ['class' => \Countable::class, 'label' => 'app.cms.context_key.brand'],
+        ]], 'context_keys');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidContextKeys
+     *
+     * @param array<array-key, mixed> $contextKeys
+     */
+    public function it_refuses_an_invalid_context_key(array $contextKeys, string $message): void
+    {
+        $this->assertConfigurationIsInvalid([['context_keys' => $contextKeys]], $message);
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>, string}>
+     */
+    public function provideInvalidContextKeys(): iterable
+    {
+        yield 'a key that is no code' => [['Brand' => ['class' => \stdClass::class, 'label' => 'a']], 'The context key code "Brand" must match'];
+        yield 'no class' => [['brand' => ['label' => 'a']], 'The child config "class" under "setono_sylius_cms.context_keys.brand" must be configured'];
+        yield 'a class that does not exist' => [['brand' => ['class' => 'App\\Entity\\Gone', 'label' => 'a']], 'The class "App\\Entity\\Gone" of a context key is no class or interface'];
+        yield 'no label' => [['brand' => ['class' => \stdClass::class]], 'The child config "label" under "setono_sylius_cms.context_keys.brand" must be configured'];
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_declare_bindable_properties_that_are_property_paths_by_context_key_and_code(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['bindable_properties' => ['product' => ['brand' => ['label' => 'app.cms.binding.brand', 'type' => 'text', 'path' => 'brand.name']]]],
+            ['bindable_properties' => ['product' => ['weight' => ['label' => 'app.cms.binding.weight', 'type' => 'number', 'path' => 'variants[0].weight']], 'channel' => ['slogan' => ['label' => 'app.cms.binding.slogan', 'type' => 'text', 'path' => 'slogan']]]],
+        ], ['bindable_properties' => [
+            'product' => [
+                'brand' => ['label' => 'app.cms.binding.brand', 'type' => 'text', 'path' => 'brand.name'],
+                'weight' => ['label' => 'app.cms.binding.weight', 'type' => 'number', 'path' => 'variants[0].weight'],
+            ],
+            'channel' => ['slogan' => ['label' => 'app.cms.binding.slogan', 'type' => 'text', 'path' => 'slogan']],
+        ]], 'bindable_properties');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidBindableProperties
+     *
+     * @param array<array-key, mixed> $properties
+     */
+    public function it_refuses_an_invalid_bindable_property(array $properties, string $message): void
+    {
+        $this->assertConfigurationIsInvalid([['bindable_properties' => $properties]], $message);
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>, string}>
+     */
+    public function provideInvalidBindableProperties(): iterable
+    {
+        yield 'a context key that is no code' => [['Product' => ['brand' => ['label' => 'a', 'type' => 'text', 'path' => 'brand']]], 'The context key code "Product" must match'];
+        yield 'a code that is no code' => [['product' => ['Brand' => ['label' => 'a', 'type' => 'text', 'path' => 'brand']]], 'The bindable property code "Brand" must match'];
+        yield 'a type that is no binding type' => [['product' => ['brand' => ['label' => 'a', 'type' => 'image', 'path' => 'brand']]], 'The value "image" is not allowed for path "setono_sylius_cms.bindable_properties.product.brand.type"'];
+        yield 'no label' => [['product' => ['brand' => ['type' => 'text', 'path' => 'brand']]], 'The child config "label" under "setono_sylius_cms.bindable_properties.product.brand" must be configured'];
+        yield 'no path' => [['product' => ['brand' => ['label' => 'a', 'type' => 'text']]], 'The child config "path" under "setono_sylius_cms.bindable_properties.product.brand" must be configured'];
+    }
+
+    /**
+     * @test
+     */
     public function it_lets_a_project_set_how_many_revisions_per_entry_are_kept(): void
     {
         $this->assertProcessedConfigurationEquals([['revisions' => ['keep' => 10]]], ['revisions' => ['keep' => 10]], 'revisions');
@@ -681,6 +884,38 @@ final class ConfigurationTest extends TestCase
     public function it_refuses_a_bestsellers_window_that_is_not_an_iso_8601_duration(): void
     {
         $this->assertConfigurationIsInvalid([['bestsellers' => ['window' => '30 days']]], '"30 days" isn\'t an ISO 8601 duration, such as P1D');
+    }
+
+    /**
+     * @test
+     */
+    public function it_lets_a_project_list_the_scripts_of_its_field_controls_as_asset_paths_public_paths_or_absolute_urls(): void
+    {
+        $this->assertProcessedConfigurationEquals([
+            ['builder' => ['scripts' => ['/build/app/cms/opening-hours.js', 'build/app/cms/rating.js']]],
+            ['builder' => ['scripts' => ['https://cdn.example.com/cms/map.js', '/build/app/cms/opening-hours.js']]],
+        ], ['builder' => ['scripts' => ['/build/app/cms/opening-hours.js', 'build/app/cms/rating.js', 'https://cdn.example.com/cms/map.js']]], 'builder');
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider provideInvalidScripts
+     */
+    public function it_refuses_a_script_that_is_neither_an_asset_path_a_public_path_nor_an_absolute_url(string $script): void
+    {
+        $this->assertConfigurationIsInvalid([['builder' => ['scripts' => [$script]]]], sprintf('"%s" is neither an asset path, such as build/app/cms/controls.js, a public path, such as /cms/controls.js, nor an absolute http(s) URL', $script));
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public function provideInvalidScripts(): iterable
+    {
+        yield 'empty' => [''];
+        yield 'with a space' => ['build/app/cms controls.js'];
+        yield 'another scheme' => ['javascript:alert(1)'];
+        yield 'a protocol-relative URL' => ['//cdn.example.com/controls.js'];
     }
 
     /**

@@ -6,6 +6,8 @@ namespace Setono\SyliusCMSPlugin\Twig;
 
 use Setono\SyliusCMSPlugin\Admin\ChannelHomepage;
 use Setono\SyliusCMSPlugin\Admin\ChannelHomepages;
+use Setono\SyliusCMSPlugin\Admin\EntryPlacements;
+use Setono\SyliusCMSPlugin\Admin\EntryPlacementsSection;
 use Setono\SyliusCMSPlugin\Admin\EntryRow;
 use Setono\SyliusCMSPlugin\Admin\EntryShareLink;
 use Setono\SyliusCMSPlugin\Admin\EntryShareLinks;
@@ -16,9 +18,12 @@ use Setono\SyliusCMSPlugin\Admin\WhereItShows;
 use Setono\SyliusCMSPlugin\Admin\WhereItShowsGrid;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\RevisionInterface;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tree\SnippetUse;
+use Setono\SyliusCMSPlugin\Tree\SnippetUses;
 use Twig\Extension\RuntimeExtensionInterface;
 
 /**
@@ -36,7 +41,27 @@ final readonly class EntryOverviewRuntime implements RuntimeExtensionInterface
         private RevisionRepositoryInterface $revisions,
         private EntryShareLinks $shareLinks,
         private WhereItShows $whereItShows,
+        private EntryPlacements $entryPlacements,
+        private SnippetUses $snippetUses,
     ) {
+    }
+
+    /**
+     * A snippet's placements and the slots it can be placed in, or null for an entry that isn't a snippet
+     */
+    public function entryPlacements(EntryInterface $entry): ?EntryPlacementsSection
+    {
+        return $this->entryPlacements->of($entry);
+    }
+
+    /**
+     * The entries whose trees show a snippet through a Snippet block, or null for an entry that isn't a snippet
+     *
+     * @return list<SnippetUse>|null
+     */
+    public function entryUsedIn(EntryInterface $entry): ?array
+    {
+        return $entry instanceof SnippetInterface ? $this->snippetUses->of($entry) : null;
     }
 
     /**

@@ -1,0 +1,8 @@
+--TEST--
+cms_admin_missing_alt_text() counts the images missing alt text in any of the store's locales, as the media library's filter finds them
+--TEMPLATE--
+{{ cms_admin_missing_alt_text() }}
+--DATA--
+return $this->imagesMissingAltText(3)
+--EXPECT--
+3

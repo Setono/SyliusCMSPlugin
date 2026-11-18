@@ -48,6 +48,8 @@ These kinds ship. Each declares the context keys it needs and what it reads ([Ex
 
 Kinds that read `HostPage` work in visibility conditions and in page scopes. The others work only in visibility conditions.
 
+**A condition whose kind needs a context key the page doesn't provide never matches**, negated or not, as a condition of a kind the code no longer has doesn't, and a source that needs a missing key yields nothing ([Sources](sources.md)). Its block stays hidden, and a placement it scopes doesn't show. The builder and the placement editor offer a kind only where its needs are provided, so this happens only where the code changed, or on a snippet's preview page without a sample object.
+
 **Not shipped:** cart contents or total (promotions cover that), device (CSS covers that), currency, URL or UTM parameters, recurring times such as a weekday or an hour, and order history. Developers can add any of these as their own condition kinds, which work on blocks and page scopes, never on entries.
 
 ## An entry's audience
@@ -79,7 +81,7 @@ A slot with a `cap` shows only the first `cap` matching placements, in editor or
 
 - **A placement matches** when its page scope matches the page and its snippet is visible to the shopper: published, enabled, inside its date window, in the channel, translated and not held back, and in the shopper's audience.
 - **Hidden blocks don't count.** A snippet whose only slide has expired still wins and shows nothing. The winners are therefore picked without rendering anything.
-- **The fallback is editor content, not code:** a last placement with an empty page scope whose snippet's audience is Everyone. The admin warns when a capped slot has no such catch-all placement ([Admin](admin.md#problems)).
+- **The fallback is editor content, not code:** a catch-all placement, one with an empty page scope whose snippet is published, enabled and for Everyone. Editors put it last, but it's a catch-all wherever it sits. The admin warns when a capped slot has no such catch-all placement, counting the slot's snippets again when a placement is written or a snippet's audience, publishing or enabled setting changes ([Admin](admin.md#problems)).
 - There's no "most specific scope wins" rule. Editor order is the only order.
 
 Inside a block tree, the **First match** block does the same for its children: it shows only its first child whose visibility conditions match. Its main use is a fallback that "is not one of" can't express, such as a dated campaign banner and then a default one ([Blocks](blocks.md)).

@@ -5,22 +5,30 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Builder;
 
 use Setono\SyliusCMSPlugin\Attribute\Style;
+use Setono\SyliusCMSPlugin\Binding\BindingType;
+use Setono\SyliusCMSPlugin\Context\EntryContext;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Media\MediaLimits;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Registry\AllowedBlockType;
+use Setono\SyliusCMSPlugin\Registry\BindablePropertyMetadata;
+use Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ConditionKindMetadata;
 use Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContextKeyMetadata;
+use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Registry\LayoutMetadata;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\LinkTargetMetadata;
 use Setono\SyliusCMSPlugin\Registry\LinkTargetRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\NestingRulesInterface;
+use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
+use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\SourceMetadata;
 use Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -28,7 +36,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * What the builder's registry endpoint answers: the block types with their field schemas, nesting rules and block styles,
  * what the top level of each content type may hold, the layouts editors can pick for it with their field schemas, the
- * condition kinds with their parameters' field schemas, the link targets, the sources editors may pick with their parameters' field schemas, the effective upload limit with the MIME types
+ * condition kinds with their parameters' field schemas, the link targets, the sources editors may pick with their parameters' field schemas, the context keys and the slots, the bindable properties with their parameters' field schemas, what each block type and
+ * condition kind needs and what each content type provides, the effective upload limit with the MIME types
  * of each kind of media item, and the UI strings, translated in the current locale, which in the admin is the admin user's locale. The
  * shape is internal to the builder
  */
@@ -48,11 +57,14 @@ final readonly class RegistryExporter
         private MediaLimits $mediaLimits,
         private LinkTargetRegistryInterface $linkTargets,
         private SourceRegistryInterface $sources,
+        private ContextKeyRegistryInterface $contextKeys,
+        private SlotRegistryInterface $slots,
+        private BindablePropertyRegistryInterface $bindableProperties,
     ) {
     }
 
     /**
-     * @return array{blockTypes: list<array<string, mixed>>, contentTypes: list<array<string, mixed>>, conditionKinds: list<array<string, mixed>>, linkTargets: list<array{code: string, label: string, translatableRef: bool}>, sources: list<array<string, mixed>>, media: array{maxUploadSize: int, types: array<string, list<string>>}, strings: array<string, string>}
+     * @return array{blockTypes: list<array<string, mixed>>, contentTypes: list<array<string, mixed>>, conditionKinds: list<array<string, mixed>>, linkTargets: list<array{code: string, label: string, translatableRef: bool}>, sources: list<array<string, mixed>>, contextKeys: list<array{key: string, label: string}>, slots: list<array{identifier: string, label: string, provides: list<string>}>, bindableProperties: list<array<string, mixed>>, media: array{maxUploadSize: int, types: array<string, list<string>>}, strings: array<string, string>}
      */
     public function export(): array
     {
@@ -68,9 +80,50 @@ final readonly class RegistryExporter
             ], $this->linkTargets->all()),
             // In the order the "Filled by" select offers them, after Hand-picked. Each list field's schema names those it offers
             'sources' => $this->sources(),
+            // What a snippet's context is picked from: the keys, named by the pages that provide them, and the slots
+            'contextKeys' => $this->contextKeys(),
+            'slots' => array_map(fn (SlotMetadata $slot): array => [
+                'identifier' => $slot->identifier,
+                'label' => $this->translator->trans($slot->label),
+                'provides' => $slot->provides,
+            ], $this->slots->all()),
+            // What the binding picker lists, in this order, for a field that accepts the type where the entry provides the needs
+            'bindableProperties' => array_map(fn (BindablePropertyMetadata $property): array => [
+                'binding' => $property->binding(),
+                'label' => $this->translator->trans($property->label),
+                'type' => $property->type->value,
+                'needs' => $property->needs(),
+                'fields' => $this->sharedFields($property->fields),
+            ], $this->bindableProperties->all()),
             'media' => $this->mediaLimits->toArray(),
             'strings' => $this->uiStrings->withPrefix(self::STRINGS_PREFIX),
         ];
+    }
+
+    /**
+     * What the page scope editor on a snippet's overview page needs: the condition kinds a page scope can hold, those
+     * that read the host page, as export() has them, and the context keys they need. See "Page scopes" in
+     * docs/spec/slots.md
+     *
+     * @return array{conditionKinds: list<array<string, mixed>>, contextKeys: list<array{key: string, label: string}>}
+     */
+    public function exportForPageScopes(): array
+    {
+        return [
+            'conditionKinds' => array_values(array_map(
+                $this->conditionKind(...),
+                array_filter($this->conditionKinds->all(), static fn (ConditionKindMetadata $kind): bool => $kind->readsHostPage()),
+            )),
+            'contextKeys' => $this->contextKeys(),
+        ];
+    }
+
+    /**
+     * @return list<array{key: string, label: string}>
+     */
+    private function contextKeys(): array
+    {
+        return array_map(fn (ContextKeyMetadata $key): array => ['key' => $key->key, 'label' => $this->translator->trans($key->label)], $this->contextKeys->all());
     }
 
     /**
@@ -87,6 +140,8 @@ final readonly class RegistryExporter
             'disabled' => $blockType->disabled,
             'parents' => null === $blockType->parents ? null : array_map(fn (string $class): string => $this->blockTypes->getByClass($class)->code, $blockType->parents),
             'children' => self::allowed($this->nestingRules->children($blockType->code)),
+            // The picker offers it only where the entry provides these context keys or the snippet declares them
+            'needs' => $blockType->needs,
             // The style picker stores a style's code in the block's style; its class only matters to rendering
             'styles' => array_values(array_map(fn (Style $style): array => ['code' => $style->code, 'label' => $this->translator->trans($style->label)], $blockType->styles)),
             'fields' => $this->fields($blockType->fields),
@@ -116,6 +171,8 @@ final readonly class RegistryExporter
             'prefix' => $contentType->prefix,
             // Whether its entries can be a channel's homepage, which only pages can, so the settings offer "Homepage of"
             'homepage' => is_a($contentType->modelClass, PageInterface::class, true),
+            // The context keys its entries provide their tree, or null for a snippet, whose context field declares them
+            'provides' => EntryContext::keysOf($contentType),
             'layouts' => $this->layouts($contentType->code),
         ];
     }
@@ -156,10 +213,9 @@ final readonly class RegistryExporter
             'label' => $this->translator->trans($conditionKind->label),
             'matches' => $this->translator->trans($conditionKind->matches),
             'matchesNot' => $this->translator->trans($conditionKind->matchesNot),
-            'fields' => array_values(array_map(
-                fn (FieldMetadata $field): array => ['name' => $field->name, 'schema' => array_replace($this->schema($field), ['x-cms-translatable' => false])],
-                $conditionKind->fields,
-            )),
+            // Offered only where the entry provides these context keys or the snippet declares them
+            'needs' => $conditionKind->needs,
+            'fields' => $this->sharedFields($conditionKind->fields),
         ];
     }
 
@@ -182,7 +238,7 @@ final readonly class RegistryExporter
     }
 
     /**
-     * Parameter fields, shared by all translations whatever their field type's default
+     * Parameter fields, shared by all translations whatever their field type's default, and never bound
      *
      * @param array<string, FieldMetadata> $fields
      *
@@ -191,7 +247,7 @@ final readonly class RegistryExporter
     private function sharedFields(array $fields): array
     {
         return array_values(array_map(
-            fn (FieldMetadata $field): array => ['name' => $field->name, 'schema' => array_replace($this->schema($field), ['x-cms-translatable' => false])],
+            fn (FieldMetadata $field): array => ['name' => $field->name, 'schema' => array_diff_key(array_replace($this->schema($field), ['x-cms-translatable' => false]), ['x-cms-bindable' => true])],
             $fields,
         ));
     }
@@ -229,6 +285,13 @@ final readonly class RegistryExporter
         $schema['x-cms-help'] = null === $field->field->help ? null : $this->translator->trans($field->field->help);
         $schema['x-cms-required'] = $field->field->required;
         $schema['x-cms-translatable'] = $field->translatable;
+        if ([] !== $field->type->bindable) {
+            $schema['x-cms-bindable'] = array_map(static fn (BindingType $type): string => $type->value, $field->type->bindable);
+        }
+
+        if ($field->bindsInside()) {
+            $schema['x-cms-binds-inside'] = true;
+        }
 
         return $schema;
     }

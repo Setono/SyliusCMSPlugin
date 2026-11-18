@@ -10,8 +10,9 @@ use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGeneratorInterface;
 
 /**
  * A share link as the share_link_* endpoints answer with it: its id, its URL (null once the entry's draft has no URL in
- * its locale), its channel and locale, its fixed Shown to and Date (null for the time the link is opened), and when and
- * by whom it was made. Times are in UTC
+ * its locale), its channel and locale, its fixed Shown to and Date (null for the time the link is opened), when and by
+ * whom it was made, and for a snippet the UUID of its placement and the ref of its sample object, or null. Times are in
+ * UTC
  *
  * @internal
  */
@@ -34,6 +35,8 @@ final readonly class ShareLinkAnswer
             'date' => $shareLink->getDate()?->format(self::DATE_FORMAT),
             'createdAt' => $shareLink->getCreatedAt()->format(self::DATE_FORMAT),
             'createdBy' => $shareLink->getCreatedBy(),
+            'placement' => $shareLink->getPlacement()?->getUuid(),
+            'sample' => $shareLink->getSample()?->ref,
         ]);
     }
 }

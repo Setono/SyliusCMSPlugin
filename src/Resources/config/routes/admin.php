@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Setono\SyliusCMSPlugin\Controller\Admin\AddPlacementAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CancelScheduleAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateMediaFolderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateShareLinkAction;
@@ -14,6 +15,8 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\MediaUsesAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PresenceAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRenderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewRevisionAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewSamplesAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewSnippetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PreviewTokenAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\PublishEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\RegistryAction;
@@ -28,6 +31,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\SearchAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShareLinkIndexAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SlugAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\SnippetBlocksAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SourceCountAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaFolderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaItemAction;
@@ -40,12 +44,15 @@ use Setono\SyliusCMSPlugin\Controller\Admin\CreateShareLinkAction as CreateShare
 use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction as DiscardEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\MediaLibraryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\OrderPlacementsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PreviewRevisionAction as PreviewRevisionPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PublishEntryAction as PublishEntryPageAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\RestoreRevisionAction as RestoreRevisionPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\RevokeShareLinkAction as RevokeShareLinkPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\ScheduleEntryAction as ScheduleEntryPageAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\SetPlacementPageScopeAction;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Routing\Requirement\Requirement;
 
@@ -159,6 +166,32 @@ return static function (RoutingConfigurator $routes): void {
         ->requirements(['uuid' => Requirement::UUID, 'id' => Requirement::DIGITS])
     ;
 
+    // The Placements section of a snippet's overview page: Add placement, the Order… dialog of a capped slot, and Move
+    // up, Move down, Remove and Edit page scope of a placement
+    $routes->add('setono_sylius_cms_admin_entry_placement_add', '/cms/entry/{uuid}/placements')
+        ->controller(AddPlacementAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_entry_placement_order', '/cms/entry/{uuid}/placements/order')
+        ->controller(OrderPlacementsAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_entry_placement_remove', '/cms/entry/{uuid}/placements/{placement}/remove')
+        ->controller(RemovePlacementAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID, 'placement' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_entry_placement_page_scope', '/cms/entry/{uuid}/placements/{placement}/page-scope')
+        ->controller(SetPlacementPageScopeAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID, 'placement' => Requirement::UUID])
+    ;
+
     $routes->add('setono_sylius_cms_admin_entry_delete', '/cms/entry/{uuid}')
         ->controller(DeleteEntryAction::class)
         ->methods(['DELETE'])
@@ -197,6 +230,13 @@ return static function (RoutingConfigurator $routes): void {
 
     $routes->add('setono_sylius_cms_admin_api_entry_show', '/cms/api/entries/{uuid}')
         ->controller(ShowEntryAction::class)
+        ->methods(['GET'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    // The blocks a Snippet block shows, which "Detach to edit here" copies in its place
+    $routes->add('setono_sylius_cms_admin_api_snippet_blocks', '/cms/api/snippets/{uuid}/blocks')
+        ->controller(SnippetBlocksAction::class)
         ->methods(['GET'])
         ->requirements(['uuid' => Requirement::UUID])
     ;
@@ -263,6 +303,17 @@ return static function (RoutingConfigurator $routes): void {
     $routes->add('setono_sylius_cms_admin_api_preview_render', '/cms/api/preview/render')
         ->controller(PreviewRenderAction::class)
         ->methods(['POST'])
+    ;
+
+    // What the top bar says of a snippet's preview, and the sample objects its picker finds, under a preview token
+    $routes->add('setono_sylius_cms_admin_api_preview_snippet', '/cms/api/preview/snippet')
+        ->controller(PreviewSnippetAction::class)
+        ->methods(['GET'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_api_preview_samples', '/cms/api/preview/samples')
+        ->controller(PreviewSamplesAction::class)
+        ->methods(['GET'])
     ;
 
     // How many items a source yields for the builder's parameters, under a preview token

@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { missingContext } from '../hostPageContext';
 import { useTranslator } from '../i18n';
 import { useSourceCount, useSources } from '../sources/context';
 import { filledBy, limitOf, offeredSources, withLimit, withSourceParam, type SourceDefinition, type SourceValue } from '../sources/sources';
@@ -21,18 +22,19 @@ export interface FilledByProps {
 }
 
 /**
- * How a list field is filled: Hand-picked, first, or one of the sources the field offers, as the "Filled by" select
- * picks it. A source's parameters are filled in inline, the number of items to show sits beside the select, starting at
+ * How a list field is filled: Hand-picked, first, or one of the sources the field offers whose needed context the entry
+ * provides or the snippet declares, as the "Filled by" select picks it. A source's parameters are filled in inline, the number of items to show sits beside the select, starting at
  * the field's limit, and how many items the source yields right now in the preview shows next to "Filled by". A source
  * the registry no longer gives, disabled or removed, stays picked and flagged until another way is picked. See
  * "Sources" in docs/spec/builder.md
  */
 export function FilledBy({ id, schema, source, onChange, locale, describedBy, children }: FilledByProps) {
     const t = useTranslator();
-    const { sources } = useSources();
+    const { sources, provided } = useSources();
     const offered = offeredSources(schema)
         .map((code) => sources.find((definition) => definition.code === code))
-        .filter((definition): definition is SourceDefinition => definition !== undefined);
+        .filter((definition): definition is SourceDefinition => definition !== undefined)
+        .filter((definition) => provided === undefined || missingContext(definition.needs, provided).length === 0);
     const current = source === null ? undefined : sources.find(({ code }) => code === source.$source);
 
     const pick = (code: string): void => {

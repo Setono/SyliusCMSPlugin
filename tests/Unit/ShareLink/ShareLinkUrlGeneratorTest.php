@@ -11,14 +11,23 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Placement;
 use Setono\SyliusCMSPlugin\Model\ShareLink;
+use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Preview\SampleObject;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
+use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
+use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUrlGenerator;
+use Setono\SyliusCMSPlugin\Tests\Support\SnippetPreviews;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Sylius\Component\Channel\Model\ChannelInterface as BaseChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\Channel;
+use Sylius\Component\Core\Model\Product;
 use Symfony\Component\Routing\Generator\UrlGenerator;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\Route;
@@ -39,6 +48,9 @@ final class ShareLinkUrlGeneratorTest extends TestCase
 
     private UrlGenerator $urlGenerator;
 
+    /** @var ObjectProphecy<PlacementRepositoryInterface> */
+    private ObjectProphecy $placements;
+
     protected function setUp(): void
     {
         /** @var ObjectProphecy<ChannelRepositoryInterface<BaseChannelInterface>> $channels */
@@ -50,7 +62,39 @@ final class ShareLinkUrlGeneratorTest extends TestCase
 
         $routes = new RouteCollection();
         $routes->add('setono_sylius_cms_shop_entry', new Route('/{_locale}/{path}', requirements: ['path' => '.+(?<!/)']));
+        $routes->add('sylius_shop_product_show', new Route('/{_locale}/products/{slug}'));
+        $routes->add('setono_sylius_cms_shop_snippet_preview', new Route('/{_locale}/_cms/snippet-preview'));
         $this->urlGenerator = new UrlGenerator($routes, new RequestContext('', 'GET', 'admin.example.com', 'https'));
+
+        $this->placements = $this->prophesize(PlacementRepositoryInterface::class);
+    }
+
+    /**
+     * A snippet's link is on the host page of its placement: the page of its sample object, on the channel's hostname.
+     * See "Share links" in docs/spec/publishing.md
+     *
+     * @test
+     */
+    public function it_is_the_host_page_of_a_snippet_s_placement_with_its_sample_object(): void
+    {
+        $snippet = new Snippet();
+        $shareLink = self::shareLink($snippet, 'WEB', 'en_US');
+        $shareLink->setPlacement(new Placement($snippet, 'product.after_price', 0));
+        $shareLink->setSample(new SampleObject('product', 'MUG'));
+
+        self::assertSame('https://shop.example.com/en_US/products/mug?_cms_share=' . self::TOKEN, $this->generator()->generate($shareLink));
+        self::assertSame('admin.example.com', $this->urlGenerator->getContext()->getHost());
+    }
+
+    /**
+     * @test
+     */
+    public function it_is_a_plain_page_for_a_snippet_without_a_placement(): void
+    {
+        self::assertSame(
+            'https://shop.example.com/en_US/_cms/snippet-preview?_cms_share=' . self::TOKEN,
+            $this->generator()->generate(self::shareLink(new Snippet(), 'WEB', 'en_US')),
+        );
     }
 
     /**
@@ -132,7 +176,32 @@ final class ShareLinkUrlGeneratorTest extends TestCase
             ]),
             $this->channels->reveal(),
             $this->urlGenerator,
+            SnippetPreviews::hostPages($this->placements->reveal(), urlGenerator: $this->urlGenerator),
+            SnippetPreviews::samples(self::mug()),
+            SnippetPreviews::renderContexts(),
         );
+    }
+
+    /**
+     * Loads the product MUG, whose slug is mug
+     */
+    private static function mug(): ReferenceLoaderInterface
+    {
+        $mug = new Product();
+        $mug->setCode('MUG');
+        $mug->setCurrentLocale('en_US');
+        $mug->setSlug('mug');
+
+        return new class($mug) implements ReferenceLoaderInterface {
+            public function __construct(private readonly Product $mug)
+            {
+            }
+
+            public function load(iterable $references, RenderContext $context): ReferenceMap
+            {
+                return new ReferenceMap(['product' => ['MUG' => $this->mug]]);
+            }
+        };
     }
 
     private static function shareLink(EntryInterface $entry, string $channelCode, string $localeCode): ShareLink

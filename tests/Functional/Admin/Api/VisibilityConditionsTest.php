@@ -32,12 +32,12 @@ final class VisibilityConditionsTest extends BuilderApiTestCase
         self::assertResponseIsSuccessful();
         self::assertIsArray($registry);
         self::assertIsArray($registry['conditionKinds'] ?? null);
-        /** @var list<array{code: string, label: string, fields: list<array{name: string, schema: array<string, mixed>}>}> $exported */
+        /** @var list<array{code: string, label: string, needs: list<string>, fields: list<array{name: string, schema: array<string, mixed>}>}> $exported */
         $exported = $registry['conditionKinds'];
         $kinds = array_column($exported, null, 'code');
         // The test application adds a kind of its own
-        self::assertSame(['app_product_available', 'channel', 'locale', 'date_window', 'customer_group'], array_keys($kinds));
-        self::assertSame(['Product is available', 'Channel', 'Locale', 'Date window', 'Customer group'], array_column($exported, 'label'));
+        self::assertSame(['app_product_available', 'channel', 'locale', 'date_window', 'customer_group', 'product', 'product_in_taxon', 'taxon', 'entry'], array_keys($kinds));
+        self::assertSame(['Product is available', 'Channel', 'Locale', 'Date window', 'Customer group', 'Product', 'Product in taxon', 'Taxon', 'Entry'], array_column($exported, 'label'));
 
         self::assertSame([
             'name' => 'channels',
@@ -59,6 +59,17 @@ final class VisibilityConditionsTest extends BuilderApiTestCase
         self::assertSame(['from', 'until'], array_column($kinds['date_window']['fields'], 'name'));
         self::assertSame('date_time', $kinds['date_window']['fields'][0]['schema']['x-cms-type']);
         self::assertSame('product', $kinds['app_product_available']['fields'][0]['schema']['x-cms-type']);
+
+        // The kinds that read the host page need its key, and pick what they name by hand
+        self::assertSame([['product'], ['product'], ['taxon'], ['entry']], [$kinds['product']['needs'], $kinds['product_in_taxon']['needs'], $kinds['taxon']['needs'], $kinds['entry']['needs']]);
+        self::assertSame(['products', 'taxons', 'taxons', 'entries'], [
+            $kinds['product']['fields'][0]['schema']['x-cms-type'],
+            $kinds['product_in_taxon']['fields'][0]['schema']['x-cms-type'],
+            $kinds['taxon']['fields'][0]['schema']['x-cms-type'],
+            $kinds['entry']['fields'][0]['schema']['x-cms-type'],
+        ]);
+        self::assertSame(['taxons', 'includeChildren'], array_column($kinds['product_in_taxon']['fields'], 'name'));
+        self::assertSame(['max' => null, 'sources' => [], 'limit' => 8], $kinds['product']['fields'][0]['schema']['x-cms-options']);
     }
 
     /**

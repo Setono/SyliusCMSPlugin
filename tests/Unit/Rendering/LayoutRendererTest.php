@@ -26,14 +26,16 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
-use Setono\SyliusCMSPlugin\Rendering\BlockHydrator;
+use Setono\SyliusCMSPlugin\Rendering\BlockReferences;
 use Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder;
+use Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface;
 use Setono\SyliusCMSPlugin\Rendering\LayoutRenderer;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Tests\Support\Conditions;
+use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ProductAvailable;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
@@ -185,7 +187,7 @@ final class LayoutRendererTest extends TestCase
             MediaHandler::class => static fn (): MediaHandler => new MediaHandler(),
             MediaListHandler::class => static fn (): MediaListHandler => new MediaListHandler(),
         ]));
-        $hydrator = new BlockHydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal()));
+        $hydrator = Rendering::hydrator($handlers, new FallbackValues($handlers, $fallbackChain->reveal()));
         $blockTypes = new BlockTypeRegistry(['heading' => Heading::class, 'gallery' => Gallery::class], new FieldReader());
         $layouts = new LayoutRegistry(['page' => ['standard' => Standard::class, 'landing' => Landing::class, 'hero' => Hero::class]], new FieldReader(), disabled: $disabled);
         $referenceFinder = new ReferenceFinder(new TreeValues($blockTypes, $layouts), $handlers);
@@ -195,7 +197,7 @@ final class LayoutRendererTest extends TestCase
             $contentTypes->reveal(),
             $layouts,
             $upgrader->reveal(),
-            new BlockViewBuilder($blockTypes, $hydrator, Conditions::matcher(['product_available' => new ProductAvailable()]), $referenceFinder, $referenceLoader),
+            new BlockViewBuilder($blockTypes, $hydrator, $conditions = Conditions::matcher(['product_available' => new ProductAvailable()]), new BlockReferences($blockTypes, $conditions, $referenceFinder), $referenceLoader, $upgrader->reveal(), $this->prophesize(FailureHandlerInterface::class)->reveal()),
             $hydrator,
             new Environment(new ArrayLoader([
                 'standard.html.twig' => 'standard|{{ layout.showTitle ? "title" : "no title" }}',

@@ -6,15 +6,22 @@ namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
 use Setono\SyliusCMSPlugin\Admin\Grid\ChannelFilter;
 use Setono\SyliusCMSPlugin\Admin\Grid\StatusFilter;
+use Setono\SyliusCMSPlugin\Admin\Grid\TranslationFilter;
+use Setono\SyliusCMSPlugin\Attribute\AsBindableProperty;
 use Setono\SyliusCMSPlugin\Attribute\AsConditionKind;
+use Setono\SyliusCMSPlugin\Attribute\AsContextResolver;
 use Setono\SyliusCMSPlugin\Attribute\AsLinkTarget;
 use Setono\SyliusCMSPlugin\Attribute\AsSource;
 use Setono\SyliusCMSPlugin\Attribute\AsUpgrader;
 use Setono\SyliusCMSPlugin\Attribute\BlockType;
 use Setono\SyliusCMSPlugin\Attribute\Layout;
+use Setono\SyliusCMSPlugin\Binding\PropertyPathProperty;
+use Setono\SyliusCMSPlugin\Block\EmbedCode;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBindablePropertiesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBlockTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterConditionKindsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContextResolversPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLayoutsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLinkTargetsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterProblemKindsPass;
@@ -29,9 +36,11 @@ use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
 use Sylius\Bundle\ResourceBundle\SyliusResourceBundle;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 
@@ -58,12 +67,19 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     /** The grid action type of the entry lists' Create, which opens the create dialog */
     private const CREATE_ENTRY_ACTION = 'setono_sylius_cms_create_entry';
 
+    /** The template of the block a slot tied to a template event renders in, which gets the slot's identifier in _cms_slot */
+    private const SLOT_BLOCK_TEMPLATE = '@SetonoSyliusCMSPlugin/slot/template_event.html.twig';
+
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>}, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, resources: array<string, array<string, mixed>>} $config */
+        /** @var array{disabled: array{block_types: list<string>, layouts: list<string>, sources: list<string>}, embed_code: bool, block_styles: array<string, array<string, array{label: string, class: string}>>, content_types: array<string, array{prefix?: string, default_layout?: string}>, slots: array<string, array{label: string, provides: list<string>, cap: int|null, template_event?: array{name: string, priority: int}}>, context_keys: array<string, array{class: class-string, label: string}>, bindable_properties: array<string, array<string, array{label: string, type: string, path: string}>>, fallback_locales: array<string, list<string>>, revisions: array{keep: int}, media: array{storage: string, liip: array{loader: string, resolver: string}, types: array<string, list<string>>, max_upload_size: int|null, grace_period: string, widths: list<int>}, bestsellers: array{window: string}, builder: array{scripts: list<string>}, resources: array<string, array<string, mixed>>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
-        $container->setParameter('setono_sylius_cms.disabled.block_types', $config['disabled']['block_types']);
+        // The Embed code block is switched off like a disabled block type until a project opts in (ADR 0018)
+        $container->setParameter('setono_sylius_cms.disabled.block_types', $config['embed_code']
+            ? $config['disabled']['block_types']
+            : array_values(array_unique([...$config['disabled']['block_types'], EmbedCode::CODE])));
+        $container->setParameter('setono_sylius_cms.embed_code', $config['embed_code']);
         // RegisterLayoutsPass checks them against the layouts the code has
         $container->setParameter('setono_sylius_cms.disabled.layouts', $config['disabled']['layouts']);
         $container->setParameter('setono_sylius_cms.disabled.sources', $config['disabled']['sources']);
@@ -73,6 +89,10 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         ), static fn (?string $layout): bool => null !== $layout));
         $container->setParameter('setono_sylius_cms.block_styles', $config['block_styles']);
         $container->setParameter(RegisterContentTypesPass::CONFIG_PARAMETER, $config['content_types']);
+        // The slots and the context keys, the stock ones that prepend() prepends first
+        self::assertSlotsProvideDeclaredContextKeys($config['slots'], $config['context_keys']);
+        $container->setParameter('setono_sylius_cms.slots', $config['slots']);
+        $container->setParameter('setono_sylius_cms.context_keys', $config['context_keys']);
         $container->setParameter('setono_sylius_cms.fallback_locales', $config['fallback_locales']);
         $container->setParameter('setono_sylius_cms.revisions.keep', $config['revisions']['keep']);
         $container->setParameter('setono_sylius_cms.media.types', $config['media']['types']);
@@ -80,9 +100,17 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $container->setParameter('setono_sylius_cms.media.grace_period', $config['media']['grace_period']);
         $container->setParameter('setono_sylius_cms.media.widths', $config['media']['widths']);
         $container->setParameter('setono_sylius_cms.bestsellers.window', $config['bestsellers']['window']);
+        $container->setParameter('setono_sylius_cms.builder.scripts', $config['builder']['scripts']);
 
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.xml');
+
+        // The profiler panel, whose decorators record what each slot does, only where errors are shown too
+        if ($container->hasParameter('kernel.debug') && true === $container->getParameter('kernel.debug')) {
+            $loader->load('services/profiler.xml');
+        }
+
+        self::registerPropertyPaths($container, $config['bindable_properties']);
 
         // The Flysystem storage media items are stored in: the plugin's own local one, setono_sylius_cms.storage, which
         // prepend() defines, unless a project configures another, which then goes by that one name
@@ -121,6 +149,35 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $container->registerAttributeForAutoconfiguration(AsSource::class, static function (ChildDefinition $definition): void {
             $definition->addTag(RegisterSourcesPass::TAG);
         });
+        $container->registerAttributeForAutoconfiguration(AsContextResolver::class, static function (ChildDefinition $definition): void {
+            $definition->addTag(RegisterContextResolversPass::TAG);
+        });
+        $container->registerAttributeForAutoconfiguration(AsBindableProperty::class, static function (ChildDefinition $definition): void {
+            $definition->addTag(RegisterBindablePropertiesPass::TAG);
+        });
+    }
+
+    /**
+     * One bindable property per property path setono_sylius_cms.bindable_properties declares, which carries its
+     * declaration in its tag, as there's no #[AsBindableProperty] to read
+     *
+     * @param array<string, array<string, array{label: string, type: string, path: string}>> $properties
+     */
+    private static function registerPropertyPaths(ContainerBuilder $container, array $properties): void
+    {
+        foreach ($properties as $contextKey => $byCode) {
+            foreach ($byCode as $code => $property) {
+                $container->setDefinition(
+                    sprintf('setono_sylius_cms.bindable_property.%s.%s', $contextKey, $code),
+                    (new Definition(PropertyPathProperty::class, [$property['path']]))->addTag(RegisterBindablePropertiesPass::TAG, [
+                        'context_key' => $contextKey,
+                        'code' => $code,
+                        'label' => $property['label'],
+                        'type' => $property['type'],
+                    ]),
+                );
+            }
+        }
     }
 
     /**
@@ -132,11 +189,16 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     {
         $this->prependGrids($container);
         $this->prependEntryOverviewEvents($container);
+        $this->prependOverviewEvents($container);
         $this->prependProblems($container);
         $this->prependMessenger($container);
+        // Before the config is read, so the slots it reads hold them
+        $container->prependExtensionConfig($this->getAlias(), ['context_keys' => StockContextKeys::config(), 'slots' => StockSlots::config()]);
 
-        /** @var array{assets: bool, media: array{storage: string, liip: array{loader: string, resolver: string}}} $config */
+        /** @var array{assets: bool, media: array{storage: string, liip: array{loader: string, resolver: string}}, slots: array<string, array{template_event?: array{name: string, priority: int}}>} $config */
         $config = $this->processConfiguration(new Configuration(), $container->getExtensionConfig($this->getAlias()));
+
+        $this->prependSlotBlocks($container, $config['slots']);
 
         if (self::STORAGE === $config['media']['storage']) {
             $this->prependStorage($container);
@@ -163,6 +225,51 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 ],
             ],
         ]);
+    }
+
+    /**
+     * A slot provides only context keys the code declares, so whatever needs a key finds it declared
+     *
+     * @param array<string, array{provides: list<string>}> $slots
+     * @param array<string, mixed> $contextKeys
+     */
+    private static function assertSlotsProvideDeclaredContextKeys(array $slots, array $contextKeys): void
+    {
+        foreach ($slots as $identifier => $slot) {
+            foreach ($slot['provides'] as $key) {
+                if (!isset($contextKeys[$key])) {
+                    throw new InvalidConfigurationException(sprintf('The slot "%s" provides the context key "%s", which isn\'t declared under setono_sylius_cms.context_keys', $identifier, $key));
+                }
+            }
+        }
+    }
+
+    /**
+     * One block on the template event of each slot tied to one, at its priority, which renders the slot. The block
+     * template gets the event's context with the slot's identifier in _cms_slot. A project switches a block off, or
+     * moves it, in its own sylius_ui config, though it moves a slot by changing its template_event.
+     * See "Slots" in docs/spec/slots.md
+     *
+     * @param array<string, array{template_event?: array{name: string, priority: int}}> $slots
+     */
+    private function prependSlotBlocks(ContainerBuilder $container, array $slots): void
+    {
+        $events = [];
+        foreach ($slots as $identifier => $slot) {
+            if (!isset($slot['template_event'])) {
+                continue;
+            }
+
+            $events[$slot['template_event']['name']]['blocks']['setono_sylius_cms.slot.' . $identifier] = [
+                'template' => self::SLOT_BLOCK_TEMPLATE,
+                'priority' => $slot['template_event']['priority'],
+                'context' => ['_cms_slot' => $identifier],
+            ];
+        }
+
+        if ([] !== $events) {
+            $container->prependExtensionConfig('sylius_ui', ['events' => $events]);
+        }
     }
 
     /**
@@ -265,11 +372,41 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                     'blocks' => [
                         'publishing' => $block('_publishing', 100),
                         'problems' => $block('_problems', 90),
+                        'placements' => $block('_placements', 80),
                         'where_it_shows' => $block('_where_it_shows', 70),
                         'revisions' => $block('_revisions', 60),
                         'share_links' => $block('_share_links', 50),
                         'urls' => $block('_urls', 40),
+                        'used_in' => $block('_used_in', 30),
                         'translations' => $block('_translations', 20),
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * The Overview, the Content hub's home, is built from the Sylius template event
+     * setono_sylius_cms.admin.overview.panels, whose blocks are its panels in the spec's order, which the priorities
+     * leave room in: needs_attention (40), coming_up (30), translations (20) and drafts_in_progress (10). A panel reads
+     * what it shows itself, through a cms_admin_* function, and projects add, reorder or switch off panels in their own
+     * sylius_ui config. See "Overview" in docs/spec/admin.md
+     */
+    private function prependOverviewEvents(ContainerBuilder $container): void
+    {
+        $block = static fn (string $template, int $priority): array => [
+            'template' => sprintf('@SetonoSyliusCMSPlugin/admin/overview/%s.html.twig', $template),
+            'priority' => $priority,
+        ];
+
+        $container->prependExtensionConfig('sylius_ui', [
+            'events' => [
+                'setono_sylius_cms.admin.overview.panels' => [
+                    'blocks' => [
+                        'needs_attention' => $block('_needs_attention', 40),
+                        'coming_up' => $block('_coming_up', 30),
+                        'translations' => $block('_translations', 20),
+                        'drafts_in_progress' => $block('_drafts_in_progress', 10),
                     ],
                 ],
             ],
@@ -321,6 +458,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                         ],
                         'status' => ['type' => StatusFilter::TYPE, 'label' => 'setono_sylius_cms.ui.status'],
                         'channel' => ['type' => ChannelFilter::TYPE, 'label' => 'setono_sylius_cms.ui.channel'],
+                        // The entries not complete in a locale, which the Overview's Translations links to
+                        'translation' => ['type' => TranslationFilter::TYPE, 'label' => 'setono_sylius_cms.ui.translations'],
                     ],
                     'actions' => [
                         'main' => [
@@ -355,6 +494,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                 'filter' => [
                     StatusFilter::TYPE => '@SyliusUi/Grid/Filter/select.html.twig',
                     ChannelFilter::TYPE => '@SyliusUi/Grid/Filter/select.html.twig',
+                    TranslationFilter::TYPE => '@SyliusUi/Grid/Filter/select.html.twig',
                 ],
             ],
         ]);

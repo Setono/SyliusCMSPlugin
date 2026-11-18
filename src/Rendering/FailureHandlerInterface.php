@@ -1,0 +1,51 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Setono\SyliusCMSPlugin\Rendering;
+
+/**
+ * What happens when a block, a snippet in a slot, or a slot, fails while it renders for the shop: in production it
+ * drops out and is logged, and in dev (kernel.debug on) the exception is thrown. The builder's preview shows a block's error on
+ * the block instead (Preview\PreviewBlockRenderer). See "Failures" in docs/spec/rendering.md
+ */
+interface FailureHandlerInterface
+{
+    /**
+     * The block shows nothing, nor do the blocks inside it, when it throws while its view is built
+     *
+     * @param string $key the block's key
+     * @param string $type its block type's code
+     * @param string|null $entry the UUID of the entry whose tree holds it, or null for blocks that are no entry's
+     *
+     * @throws \Throwable the exception, in dev
+     */
+    public function blockFailed(string $key, string $type, ?string $entry, \Throwable $exception): void;
+
+    /**
+     * The slot prints nothing, such as one the code doesn't declare, which a cms_slot() call with a misspelled
+     * identifier names
+     *
+     * @param string $identifier the slot's identifier, as it was asked for
+     *
+     * @throws \Throwable the exception, in dev
+     */
+    public function slotFailed(string $identifier, \Throwable $exception): void;
+
+    /**
+     * The placement's snippet shows nothing in its slot, such as when its tree can't be read
+     *
+     * @throws \Throwable the exception, in dev
+     */
+    public function snippetFailed(PlacementData $placement, \Throwable $exception): void;
+
+    /**
+     * The placement doesn't show when a condition of its page scope throws, such as a project's condition kind, while
+     * the slot's other placements still do
+     *
+     * @param string $kind the code of the condition's kind
+     *
+     * @throws \Throwable the exception, in dev
+     */
+    public function pageScopeFailed(PlacementData $placement, string $kind, \Throwable $exception): void;
+}

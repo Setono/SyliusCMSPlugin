@@ -11,8 +11,10 @@ use Setono\SyliusCMSPlugin\Publishing\EntryDeleterInterface;
 use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 use Setono\SyliusCMSPlugin\Tests\Application\Entity\Announcement;
+use Setono\SyliusCMSPlugin\Tests\Support\Catalog;
 use Setono\SyliusCMSPlugin\Tests\Support\Customers;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\Placements;
 use Setono\SyliusCMSPlugin\Tests\Support\ShareLinks;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -26,8 +28,10 @@ use Symfony\Component\DomCrawler\Crawler;
  */
 final class EntryShareLinksTest extends WebTestCase
 {
+    use Catalog;
     use Customers;
     use Entries;
+    use Placements;
     use ShareLinks;
 
     /**
@@ -62,6 +66,41 @@ final class EntryShareLinksTest extends WebTestCase
             'John Doe',
             'http://localhost/en_US/about-us?_cms_share=' . $shareLinks[0]->getToken(),
         ]], self::rows($crawler));
+    }
+
+    /**
+     * A snippet's link shows it on the host page of the placement picked, or a plain page, with the sample object a
+     * preview of the placement starts with. See "Share links" in docs/spec/publishing.md
+     *
+     * @test
+     */
+    public function it_shares_a_snippet_s_draft_on_the_host_page_of_the_placement_picked_in_share_draft(): void
+    {
+        $client = self::signedInClient();
+        self::createProduct('MUG', 'Mug');
+        $snippet = self::createSnippet('Mug care', [self::heading('0193a5be-0000-7000-8000-000000000001', 'Rinse after use')], context: ['product']);
+        $placement = self::place($snippet, 'product.after_price');
+        $overview = sprintf('/admin/cms/entry/%s', $snippet->getUuid());
+
+        $crawler = $client->request('GET', $overview);
+        self::assertSame(['WEB|en_US' => 'Setono CMS Test Store · English (United States)'], self::targets($crawler));
+        self::assertSame(
+            [$placement->getUuid() => 'Product page: under the price', '' => 'A plain page'],
+            self::options($crawler->filter('#cms-share-draft select[name="placement"] option')),
+        );
+
+        $client->submitForm('Create link', ['target' => 'WEB|en_US', 'placement' => $placement->getUuid()]);
+        self::assertResponseRedirects($overview);
+        $crawler = $client->followRedirect();
+
+        $shareLinks = self::shareLinksOf($snippet);
+        self::assertCount(1, $shareLinks);
+        self::assertSame('Product page: under the price · MUG', trim($crawler->filter('[data-share-link] [data-shown-on]')->text()));
+        self::assertSame('http://localhost/en_US/products/mug?_cms_share=' . $shareLinks[0]->getToken(), $crawler->filter('[data-share-link] input[data-url]')->attr('value'));
+
+        $client->submitForm('Create link', ['target' => 'WEB|en_US', 'placement' => '']);
+        $crawler = $client->followRedirect();
+        self::assertSame(['A plain page · MUG', 'Product page: under the price · MUG'], $crawler->filter('[data-share-link] [data-shown-on]')->each(static fn (Crawler $cell): string => trim($cell->text())));
     }
 
     /**
@@ -234,7 +273,7 @@ final class EntryShareLinksTest extends WebTestCase
     }
 
     /**
-     * A content type without URLs of its own has no page to share. Snippets get share links of their own (#260)
+     * A content type without URLs of its own has no page to share. A snippet has, on the host page of a placement
      *
      * @test
      */
@@ -299,6 +338,20 @@ final class EntryShareLinksTest extends WebTestCase
         }
 
         return $targets;
+    }
+
+    /**
+     * @return array<string, string> value => label
+     */
+    private static function options(Crawler $options): array
+    {
+        $values = [];
+        foreach ($options as $option) {
+            self::assertInstanceOf(\DOMElement::class, $option);
+            $values[$option->getAttribute('value')] = trim($option->textContent);
+        }
+
+        return $values;
     }
 
     /**

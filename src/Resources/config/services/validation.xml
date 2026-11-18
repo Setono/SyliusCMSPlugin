@@ -2,11 +2,17 @@
 <container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <service id="Setono\SyliusCMSPlugin\Validation\FieldValidator" class="Setono\SyliusCMSPlugin\Validation\FieldValidator">
+        <service id="Setono\SyliusCMSPlugin\Validation\FieldConstraints" class="Setono\SyliusCMSPlugin\Validation\FieldConstraints">
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+            <argument type="service" id="validator"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Validation\FieldValidator" class="Setono\SyliusCMSPlugin\Validation\FieldValidator">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\FieldConstraints"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
             <argument type="service" id="validator"/>
             <argument type="service" id="translator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Binding\BindingValidator"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Validation\BlockTreeValidator" class="Setono\SyliusCMSPlugin\Validation\BlockTreeValidator">
@@ -27,6 +33,17 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface" alias="Setono\SyliusCMSPlugin\Validation\EntryUrlValidator"/>
 
+        <!-- The Embed code block's publish rule while setono_sylius_cms.embed_code is off (ADR 0018) -->
+        <service id="Setono\SyliusCMSPlugin\Validation\EmbedCodeValidator" class="Setono\SyliusCMSPlugin\Validation\EmbedCodeValidator">
+            <argument>%setono_sylius_cms.embed_code%</argument>
+            <argument type="service" id="translator"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Validation\SnippetCycleValidator" class="Setono\SyliusCMSPlugin\Validation\SnippetCycleValidator">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\SnippetCycles"/>
+            <argument type="service" id="translator"/>
+        </service>
+
         <!-- What publish validates, and entry_validate answers. Decorate it to add checks of your own -->
         <service id="Setono\SyliusCMSPlugin\Validation\EntryValidator" class="Setono\SyliusCMSPlugin\Validation\EntryValidator">
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\BlockTreeValidator"/>
@@ -36,6 +53,9 @@
             <argument type="service" id="validator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\Availability"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EmbedCodeValidator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Context\ContextCheckInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\SnippetCycleValidator"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Validation\EntryValidatorInterface" alias="Setono\SyliusCMSPlugin\Validation\EntryValidator"/>
     </services>

@@ -156,6 +156,15 @@ describe('updating the preview after an edit', () => {
         expect(planPreviewUpdate(before, heldBack, []).reload).toBe(true);
     });
 
+    it("should reload when a snippet's declared context changes, which gives its preview a sample object of another key", () => {
+        const before = entry([block('a')]);
+        const after = edit(before, (draft) => {
+            draft.fields.context = ['product'];
+        });
+
+        expect(planPreviewUpdate(before, after, []).reload).toBe(true);
+    });
+
     it('should not reload when only where a value was translated from changes', () => {
         const before = entry([block('a')]);
         const after = edit(before, (draft) => {

@@ -4,6 +4,7 @@
  */
 import type { LinkTargetDefinition } from './links';
 import type { MediaLimits } from './media/config';
+import type { BindablePropertyDefinition } from './bindings';
 import type { SourceDefinition } from './sources/sources';
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | JsonObject;
@@ -184,8 +185,9 @@ export interface SaveResponse {
     entry?: Entry;
     clashes?: Clash[];
     /**
-     * The slugs the server didn't save because another route takes their URL, with why, by locale. Each keeps its last
-     * saved value on the server.
+     * What the server didn't save, with why, each keeping its last saved value on the server: the slugs another route
+     * takes the URL of, by locale, and a snippet's declared context while something is in the way, in the field context.
+     * A refused context comes with the working copy in entry, which takes the change back.
      */
     refused?: ValidationError[];
 }
@@ -208,11 +210,17 @@ export interface PresenceResponse {
 /** JSON Schema for one value (one locale's value, for a translatable field), plus the x-cms-* keywords. */
 export interface FieldSchema {
     'x-cms-type': string;
+    /** The tag name of the custom element a project's own field type is entered with. The shipped field types have none. */
+    'x-cms-control'?: string;
     'x-cms-label': string;
     'x-cms-help': string | null;
     'x-cms-required': boolean;
     'x-cms-translatable': boolean;
     'x-cms-options'?: JsonObject;
+    /** The binding types a field of its field type accepts: text, number or url. Absent when it can't be bound. */
+    'x-cms-bindable'?: string[];
+    /** Set when its field type holds its bindings inside its values, as a Link's ref and rich text's tokens do, rather than as the whole value. */
+    'x-cms-binds-inside'?: boolean;
     default?: JsonValue;
     [keyword: string]: JsonValue | undefined;
 }
@@ -249,6 +257,11 @@ export interface BlockTypeDefinition {
     children: AllowedBlockType[];
     /** The block styles it offers, those it declares first and then those added in config. */
     styles: BlockStyleDefinition[];
+    /**
+     * The context keys it needs, such as product: the picker offers it only where the entry provides them or the snippet
+     * declares them. None without it.
+     */
+    needs?: string[];
     /** In display order. */
     fields: FieldDefinition[];
 }
@@ -279,8 +292,26 @@ export interface ContentTypeDefinition {
     prefix?: string | null;
     /** Whether its entries can be a channel's homepage, which only pages can. Without it, they can't. */
     homepage?: boolean;
+    /**
+     * The context keys its entries provide their own tree, or null for a snippet, which declares them in its context
+     * field. An entry provides itself, as entry, without it.
+     */
+    provides?: string[] | null;
     /** Its layouts, the default first, or none for a content type without its own URL. */
     layouts: LayoutDefinition[];
+}
+
+/** A key of host-page context, such as product, named by the pages that provide it, such as "Product page". */
+export interface ContextKeyDefinition {
+    key: string;
+    label: string;
+}
+
+/** A slot snippets are placed in, with the context keys it provides. */
+export interface SlotDefinition {
+    identifier: string;
+    label: string;
+    provides: string[];
 }
 
 /** A kind of visibility condition, whose parameters are fields shared by all translations. */
@@ -291,6 +322,8 @@ export interface ConditionKindDefinition {
     matches: string;
     /** How a negated one is worded, such as "is not one of" or "is outside". */
     matchesNot: string;
+    /** The context keys it needs: it's offered only where the entry provides them or the snippet declares them. None without it. */
+    needs?: string[];
     /** In display order. */
     fields: FieldDefinition[];
 }
@@ -304,6 +337,12 @@ export interface Registry {
     linkTargets?: LinkTargetDefinition[];
     /** The sources editors may pick, in the order the "Filled by" select offers them. A disabled one isn't given. */
     sources?: SourceDefinition[];
+    /** The context keys, in the order they're declared. */
+    contextKeys?: ContextKeyDefinition[];
+    /** The slots, in the order they're declared. */
+    slots?: SlotDefinition[];
+    /** The bindable properties, in the order the binding picker lists them. */
+    bindableProperties?: BindablePropertyDefinition[];
     /** The effective upload limit and the MIME types of each kind of media item, which the media picker checks a file against. */
     media?: MediaLimits;
     /** The UI strings, already translated, keyed by translation key. */

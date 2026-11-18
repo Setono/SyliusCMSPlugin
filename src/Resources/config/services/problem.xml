@@ -15,13 +15,17 @@
         <!--
         The errors and warnings of each entry, counted when the entry is written and stored with it, which the lists'
         marker, their Needs attention filter and the Content badge read. RegisterProblemKindsPass hands the updater
-        the kinds whose problems are stored, and the fingerprint their classes
+        the kinds whose problems are stored, and the fingerprint their classes. The working copies it reads go on to the
+        other counts stored with each entry: the locales it's complete in
         -->
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater" class="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater">
             <argument type="collection"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Query\ProblemCountsQueryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountFingerprintInterface"/>
+            <argument type="collection">
+                <argument type="service" id="Setono\SyliusCMSPlugin\Translation\CompletenessCounter"/>
+            </argument>
             <argument type="service" id="logger"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface" alias="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdater"/>
@@ -33,6 +37,9 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface"/>
 
             <tag name="kernel.reset" method="reset"/>
         </service>
@@ -86,10 +93,71 @@
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
         </service>
 
+        <!-- A field bound to a property the code no longer has, which shows its fallback -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\UnknownBindableProperty" class="Setono\SyliusCMSPlugin\Problem\Kind\UnknownBindableProperty">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\TreeValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Binding\StoredValueBindings"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+        </service>
+
         <!-- A layout a project removed or turned off on purpose: a warning in the admin, so lint leaves it out -->
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\RemovedLayout" class="Setono\SyliusCMSPlugin\Problem\Kind\RemovedLayout">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
+        <!-- A placement in a slot a project removed, on purpose or not: a warning in the admin, so lint leaves it out -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\RemovedSlot" class="Setono\SyliusCMSPlugin\Problem\Kind\RemovedSlot">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
+        <!--
+        A page-scope condition of a kind a project removed, or that needs context its slot no longer provides: a warning
+        in the admin, so lint leaves it out
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\PageScopeMismatch" class="Setono\SyliusCMSPlugin\Problem\Kind\PageScopeMismatch">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
+        <!--
+        A capped slot without a catch-all placement, on each snippet placed in it: a warning in the admin, so lint leaves
+        it out
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\CappedSlotWithoutCatchAll" class="Setono\SyliusCMSPlugin\Problem\Kind\CappedSlotWithoutCatchAll">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
+        <!--
+        A placement on Sylius's own homepage in a channel whose homepage is a CMS page: a warning in the admin, so lint
+        leaves it out
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\PlacementHiddenByHomepage" class="Setono\SyliusCMSPlugin\Problem\Kind\PlacementHiddenByHomepage">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Homepage\CMSHomepageChannels"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
+        <!-- A snippet that needs a context key a project removed: a warning in the admin, so lint leaves it out -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\RemovedContextKey" class="Setono\SyliusCMSPlugin\Problem\Kind\RemovedContextKey">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
 
             <tag name="setono_sylius_cms.problem_kind"/>
         </service>
@@ -119,6 +187,15 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="tagged_locator" tag="setono_sylius_cms.reference_type_loader" index-by="type"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+
+            <tag name="setono_sylius_cms.problem_kind" lint="true"/>
+        </service>
+
+        <!-- A snippet that would render inside itself, which setono:cms:lint reports -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\SnippetInsideItself" class="Setono\SyliusCMSPlugin\Problem\Kind\SnippetInsideItself">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\SnippetCycles"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
 
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>

@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Preview\Preview;
 use Setono\SyliusCMSPlugin\Preview\PreviewContext;
+use Setono\SyliusCMSPlugin\Preview\PreviewRenderContextFactory;
 use Setono\SyliusCMSPlugin\Preview\PreviewTokenSigner;
+use Setono\SyliusCMSPlugin\Preview\SampleObjects;
+use Setono\SyliusCMSPlugin\Preview\SnippetHostPages;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface;
@@ -22,8 +26,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Creates a preview token for an entry, a channel, a locale, Shown to and Date, and answers with the URL the builder
- * loads in its preview iframe: the working copy's canonical URL, on the admin's own host, which is the channel's root for
- * its homepage. The sample object and the placement join it with their tickets. See "Preview mode" in docs/spec/builder.md
+ * loads in its preview iframe, on the admin's own host: the working copy's canonical URL, which is the channel's root for
+ * its homepage. A snippet's token also carries one of its placements, `placement`, or none, and a sample object, by its
+ * ref in `sample`, or the one the preview starts with when that's null or the shopper can't see it, and its URL is the
+ * host page's, or a plain shop page's. See "Preview mode" and "Snippet preview" in docs/spec/builder.md
  */
 final readonly class PreviewTokenAction
 {
@@ -39,6 +45,8 @@ final readonly class PreviewTokenAction
         private WorkingCopyProviderInterface $workingCopyProvider,
         private PreviewTokenSigner $signer,
         private CanonicalUrlGeneratorInterface $canonicalUrls,
+        private SnippetHostPages $snippetHostPages,
+        private PreviewRenderContextFactory $renderContextFactory,
     ) {
     }
 
@@ -89,14 +97,55 @@ final readonly class PreviewTokenAction
             return BuilderRequest::badRequest(sprintf('The date must be null or a UTC date and time such as 2026-12-01T00:00:00Z, got %s', json_encode($date)));
         }
 
+        $preview = new Preview($entry->getUuid(), $channelCode, $localeCode, null, $shownTo, $at);
+        $workingCopy = $this->workingCopyProvider->getWorkingCopy($entry);
+        if ($workingCopy instanceof SnippetInterface) {
+            return $this->snippetPreview($workingCopy, $preview, $channel, $body);
+        }
+
         // Where the working copy's page lives in the channel and locale, such as a homepage's channel's root
-        $url = $this->canonicalUrls->generate($this->workingCopyProvider->getWorkingCopy($entry), $channel, $localeCode);
+        $url = $this->canonicalUrls->generate($workingCopy, $channel, $localeCode);
         if (null === $url) {
             return BuilderRequest::badRequest(sprintf('The entry has no URL in %s', $localeCode));
         }
 
-        return new JsonResponse(['url' => $url . '?' . http_build_query([
-            PreviewContext::QUERY_PARAMETER => $this->signer->sign(new Preview($entry->getUuid(), $channelCode, $localeCode, null, $shownTo, $at)),
+        return new JsonResponse(['url' => $url . '?' . http_build_query([PreviewContext::QUERY_PARAMETER => $this->signer->sign($preview)])]);
+    }
+
+    /**
+     * A snippet shows in the placement, on the page of the sample object, or on a plain page
+     *
+     * @param array<array-key, mixed> $body
+     */
+    private function snippetPreview(SnippetInterface $workingCopy, Preview $preview, ChannelInterface $channel, array $body): JsonResponse
+    {
+        $placementUuid = $body['placement'] ?? null;
+        $sampleRef = $body['sample'] ?? null;
+        if ((null !== $placementUuid && !is_string($placementUuid)) || (null !== $sampleRef && !is_string($sampleRef))) {
+            return BuilderRequest::badRequest('The placement and the sample must each be a string or null');
+        }
+
+        try {
+            $placement = null === $placementUuid ? null : $this->snippetHostPages->placement($workingCopy, $placementUuid);
+        } catch (\InvalidArgumentException $e) {
+            return BuilderRequest::badRequest($e->getMessage());
+        }
+
+        $key = $this->snippetHostPages->sampleKey($workingCopy, $placement);
+        $sample = $this->snippetHostPages->sample($workingCopy, $placement, $sampleRef, $this->renderContextFactory->create($preview, $channel));
+
+        $preview = new Preview(
+            $preview->entryUuid,
+            $preview->channelCode,
+            $preview->localeCode,
+            shownTo: $preview->shownTo,
+            date: $preview->date,
+            placementUuid: $placement?->getUuid(),
+            sample: null === $key || null === $sample ? null : SampleObjects::of($key, $sample),
+        );
+
+        return new JsonResponse(['url' => $this->snippetHostPages->url($placement, $sample, $channel, $preview->localeCode, [
+            PreviewContext::QUERY_PARAMETER => $this->signer->sign($preview),
         ])]);
     }
 

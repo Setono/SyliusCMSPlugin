@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { createUrlsApi, type BuilderApi, type UrlsApi } from './api';
 import styles from './App.module.css';
 import { createAutosave, type Autosave } from './autosave';
-import type { BuilderConfig } from './config';
+import type { BindablePropertyDefinition } from './bindings';
+import { BuilderBindingsProvider } from './bindingsContext';
+import { withUuid, type BuilderConfig } from './config';
 import { BuilderProvider, type BuilderSession } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
 import type { LinkTargetDefinition } from './links';
@@ -21,6 +23,7 @@ import type { SourceDefinition } from './sources/sources';
 import { createCancelSchedule, createDiscard, createPublish, createReload, createSchedule } from './publishing';
 import { createSettingsStore } from './settings';
 import { createSlugFollower, type SlugFollower } from './slugs';
+import { createSnippetPreviewApi, startingPlacement, type SnippetPreviewApi } from './snippetPreview';
 import { Shell } from './shell/Shell';
 import { createBuilderStore } from './store';
 import { findBlock } from './tree';
@@ -42,14 +45,31 @@ export interface AppProps {
     searchApi?: SearchApi;
     /** The source_count endpoint, made from the config's when left out. */
     sourcesApi?: SourcesApi;
+    /** The endpoints of a snippet's preview, made from the config's when left out. */
+    snippetPreviewApi?: SnippetPreviewApi;
 }
 
 const goTo = (url: string): void => window.location.assign(url);
 
-type Phase = { name: 'loading' } | { name: 'failed' } | { name: 'ready'; session: BuilderSession; translate: Translate; media: MediaLimits | null; linkTargets: LinkTargetDefinition[]; sources: SourceDefinition[] };
+/**
+ * The builder as it's open now, which another entry's builder comes back to: its path and query, with the block to
+ * select and the locale to edit on the way back.
+ */
+function backHere(block: string, locale: string): string {
+    const query = new URLSearchParams(window.location.search);
+    query.set('block', block);
+    query.set('locale', locale);
+
+    return `${window.location.pathname}?${query.toString()}`;
+}
+
+type Phase =
+    | { name: 'loading' }
+    | { name: 'failed' }
+    | { name: 'ready'; session: BuilderSession; translate: Translate; media: MediaLimits | null; linkTargets: LinkTargetDefinition[]; sources: SourceDefinition[]; bindableProperties: BindablePropertyDefinition[] };
 
 /** Loads the registry and the entry, then opens the entry in the builder. */
-export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, mediaApi, searchApi, sourcesApi }: AppProps) {
+export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, mediaApi, searchApi, sourcesApi, snippetPreviewApi }: AppProps) {
     const [phase, setPhase] = useState<Phase>({ name: 'loading' });
     const initialTranslate = useMemo(() => createTranslator(config.strings ?? {}), [config]);
     const urlsEndpoints = useMemo(() => (urlsApi === undefined ? createUrlsApi(config) : urlsApi), [config, urlsApi]);
@@ -65,6 +85,11 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
         () => sourcesApi ?? (config.endpoints.sourceCount === undefined ? null : createSourcesApi(config.endpoints.sourceCount)),
         [config, sourcesApi],
     );
+    const snippetPreviewEndpoints = useMemo(() => {
+        const { previewSnippet, previewSamples } = config.endpoints;
+
+        return snippetPreviewApi ?? (previewSnippet === undefined || previewSamples === undefined ? null : createSnippetPreviewApi({ snippet: previewSnippet, samples: previewSamples }));
+    }, [config, snippetPreviewApi]);
 
     useEffect(() => {
         let active = true;
@@ -88,6 +113,8 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                     blockTypes: registry.blockTypes,
                     contentTypes: registry.contentTypes,
                     conditionKinds: registry.conditionKinds,
+                    contextKeys: registry.contextKeys ?? [],
+                    slots: registry.slots ?? [],
                     entry,
                     status,
                     lockToken,
@@ -122,15 +149,18 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                 // The preview shows the entry in one of its own channels, which follow the settings as they change.
                 const settings = createSettingsStore(entrySettings, (changes) => api.saveSettings(changes));
                 const entryChannels = (codes: string[]) => config.channels.filter(({ code }) => codes.includes(code));
-                const preview = createPreviewStore(entryChannels(entrySettings.channels), config.preview);
+                // A snippet's preview starts in its first placement, on the host page of a sample object
+                const preview = createPreviewStore(entryChannels(entrySettings.channels), config.preview, startingPlacement(config.placements ?? null));
                 unsubscribeSettings = settings.subscribe((state, previous) => {
                     if (state.settings.channels !== previous.settings.channels) {
                         preview.getState().setChannels(entryChannels(state.settings.channels));
                     }
                 });
 
-                // Back and Esc leave once the unsaved changes are sent, and stay when they can't be
-                const leaving = createLeaving(store, autosave, () => navigate(config.backUrl));
+                // Back and Esc leave once the unsaved changes are sent, and stay when they can't be, and so does Edit snippet
+                const leaving = createLeaving(store, autosave, (to) => navigate(to ?? config.backUrl));
+                const builderEndpoint = config.endpoints.builder;
+                const snippetBlocks = api.snippetBlocks?.bind(api);
 
                 // A save refused because a colleague scheduled a publish loads the working copy again, read-only
                 const reload = createReload(store, () => api.fetchEntry());
@@ -146,6 +176,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                     media: registry.media ?? null,
                     linkTargets: registry.linkTargets ?? [],
                     sources: registry.sources ?? [],
+                    bindableProperties: registry.bindableProperties ?? [],
                     session: {
                         store,
                         validation: validationStore,
@@ -153,6 +184,13 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                         leave: () => void leaving.getState().leave(),
                         leaving,
                         overviewUrl: config.overviewUrl,
+                        placements: config.placements ?? null,
+                        snippetPreview: snippetPreviewEndpoints,
+                        editSnippet:
+                            builderEndpoint === undefined
+                                ? null
+                                : (snippet, block) => void leaving.getState().leave(`${withUuid(builderEndpoint, snippet)}?${new URLSearchParams({ back: backHere(block, store.getState().locale) }).toString()}`),
+                        snippetBlocks: snippetBlocks === undefined ? null : (snippet) => snippetBlocks(snippet),
                         publish: createPublish(store, autosave, () => api.publish(), validationStore),
                         discard: createDiscard(store, autosave, () => api.discard()),
                         schedule: createSchedule(store, autosave, (at) => api.schedule(at), validationStore),
@@ -197,7 +235,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
             unsubscribeSettings?.();
             unsubscribeLock?.();
         };
-    }, [api, urlsEndpoints, config, autosaveDelay, navigate]);
+    }, [api, urlsEndpoints, snippetPreviewEndpoints, config, autosaveDelay, navigate]);
 
     if (phase.name !== 'ready') {
         return (
@@ -217,7 +255,10 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
         <LinkTargetsProvider value={phase.linkTargets}>
             {/* List fields offer the sources, and count what they yield in the preview */}
             <PreviewSourcesProvider sources={phase.sources} api={sourcesEndpoint}>
-                <Shell />
+                {/* Bindable fields offer the properties that fit the context the entry provides or the snippet declares */}
+                <BuilderBindingsProvider properties={phase.bindableProperties}>
+                    <Shell />
+                </BuilderBindingsProvider>
             </PreviewSourcesProvider>
         </LinkTargetsProvider>
     );

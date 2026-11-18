@@ -106,7 +106,7 @@ final class RegisterProblemKindsPass implements CompilerPassInterface
                 $field = $byClass[$class] ?? null;
                 $fields[$class] = null === $field || (array_key_exists($class, $fields) && null === $fields[$class])
                     ? null
-                    : array_values(array_unique([...$fields[$class] ?? [], $field]));
+                    : array_values(array_unique([...$fields[$class] ?? [], ...(array) $field]));
             }
         }
 

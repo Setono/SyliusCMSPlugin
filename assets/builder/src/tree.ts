@@ -107,6 +107,11 @@ export function topmostBlocks<B extends TreeBlock<B>>(blocks: readonly B[], keys
     return blocks.flatMap((block) => (wanted.has(block.key) ? [block] : topmostBlocks(block.children, keys)));
 }
 
+/** Every block in the tree, depth first. */
+export function allBlocks<B extends TreeBlock<B>>(blocks: readonly B[]): B[] {
+    return blocks.flatMap((block) => [block, ...allBlocks(block.children)]);
+}
+
 /** The blocks from the top level down to the block, the block last, or nothing when the tree doesn't have it. */
 export function pathTo<B extends TreeBlock<B>>(blocks: readonly B[], key: string): B[] {
     for (const block of blocks) {

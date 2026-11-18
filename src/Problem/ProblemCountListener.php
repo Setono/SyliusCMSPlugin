@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
 use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Symfony\Contracts\Service\ResetInterface;
 
@@ -132,7 +133,7 @@ final class ProblemCountListener implements ResetInterface
     {
         foreach ($this->referenceKinds as $kind) {
             $classes = $kind::getReferencedClasses();
-            $fields = array_map(static fn (string $field): array => [$field], $kind::getReferenceFields());
+            $fields = array_map(static fn (string|array $field): array => (array) $field, $kind::getReferenceFields());
 
             $written = $formerValues = [];
             foreach ($referenced as $write) {
@@ -199,6 +200,7 @@ final class ProblemCountListener implements ResetInterface
             $entity instanceof EntryInterface => $entity,
             $entity instanceof EntryTranslationInterface => self::translatableOf($entity),
             $entity instanceof DraftInterface, $entity instanceof EntryChannelInterface, $entity instanceof EntryAudienceGroupInterface, $entity instanceof ScheduledPublishInterface => $entity->getEntry(),
+            $entity instanceof PlacementInterface => $entity->getSnippet(),
             default => null,
         };
     }

@@ -15,9 +15,11 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\LocaleIs;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\LocaleIsParams;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\MissingParams;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\NotAKind;
+use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\OnProductPage;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\ReadsTimeWithoutNextChange;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\SameCodeAsLocaleIs;
 use Setono\SyliusCMSPlugin\Tests\Unit\Condition\Fixture\SignedIn;
+use Sylius\Component\Core\Model\TaxonInterface;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -151,6 +153,20 @@ final class RegisterConditionKindsPassTest extends AbstractCompilerPassTestCase
 
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage(sprintf('The parameters class App\Condition\MissingParams of the condition kind %s doesn\'t exist', MissingParams::class));
+
+        $this->compile();
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_kind_that_needs_a_context_key_the_config_does_not_declare(): void
+    {
+        $this->setParameter('setono_sylius_cms.context_keys', ['taxon' => ['class' => TaxonInterface::class, 'label' => 'setono_sylius_cms.context_key.taxon']]);
+        $this->setKind('app.on_product_page', OnProductPage::class);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf('The condition kind %s needs the context key "product", which isn\'t declared under setono_sylius_cms.context_keys', OnProductPage::class));
 
         $this->compile();
     }

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Validation;
 
-use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Binding\BindingValidator;
+use Setono\SyliusCMSPlugin\Binding\BoundValue;
+use Setono\SyliusCMSPlugin\Binding\StoredBinding;
+use Setono\SyliusCMSPlugin\Field\LinkLocaleParts;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Symfony\Component\Validator\Constraints\Callback;
@@ -15,18 +18,20 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Validates one field's values as publish does, whether the field is a block's, a layout's or an entry's: required,
- * the field type handler's validate(), and the Symfony Validator constraints on its property. See "Validation" in
- * docs/spec/publishing.md
+ * the field type handler's validate(), and the Symfony Validator constraints on its property. A bound field has a value in
+ * every locale, so it's never missing: its binding is checked, and its fallback, when it has one, as the field's value.
+ * See "Validation" in docs/spec/publishing.md
  *
  * @internal
  */
 final readonly class FieldValidator
 {
     public function __construct(
-        private FieldHandlerLocator $fieldHandlers,
+        private FieldConstraints $constraints,
         private FallbackValues $fallbackValues,
         private ValidatorInterface $validator,
         private TranslatorInterface $translator,
+        private BindingValidator $bindingValidator,
     ) {
     }
 
@@ -38,6 +43,10 @@ final readonly class FieldValidator
      */
     public function validateShared(string $class, FieldMetadata $field, mixed $value, ?string $block = null): array
     {
+        if (BoundValue::isBound($field, $value)) {
+            return $this->validateBound($class, $field, $value, [], $block);
+        }
+
         return array_map(
             static fn (string|\Stringable $message): ValidationError => new ValidationError($block, $field->name, null, $message),
             $this->validateValue($class, $field, $value),
@@ -57,6 +66,10 @@ final readonly class FieldValidator
      */
     public function validateTranslatable(string $class, FieldMetadata $field, mixed $stored, array $locales, ?string $block = null): array
     {
+        if (BoundValue::isBound($field, $stored)) {
+            return $this->validateBound($class, $field, $stored, $locales, $block);
+        }
+
         $errors = [];
         $found = [];
         foreach ($locales as $locale) {
@@ -98,7 +111,8 @@ final readonly class FieldValidator
         }
 
         $labels = array_map(fn (FieldMetadata $field): string => $this->translator->trans($field->field->label), $fields);
-        $translatable = [] !== array_filter($fields, static fn (FieldMetadata $field): bool => $field->translatable);
+        // A link keeps its label per locale inside its one value
+        $translatable = [] !== array_filter($fields, static fn (FieldMetadata $field): bool => $field->translatable || LinkLocaleParts::areKeptBy($field->field));
         $checkedIn = $translatable && [] !== $locales ? $locales : [null];
 
         /** @var array<string, array{field: string|null, message: string|\Stringable, locales: list<string|null>}> $found */
@@ -111,7 +125,8 @@ final readonly class FieldValidator
                 }
             }
 
-            foreach ($this->validator->validate(new FieldValues($values, $labels, $locale), $constraints) as $violation) {
+            $fallbackLocales = null === $locale ? [] : $this->fallbackValues->localesFor($locale);
+            foreach ($this->validator->validate(new FieldValues($values, $labels, $locale, $fallbackLocales), $constraints) as $violation) {
                 $path = $violation->getPropertyPath();
                 $key = $path . "\0" . $violation->getMessage();
                 $found[$key] ??= ['field' => '' === $path ? null : $path, 'message' => $violation->getMessage(), 'locales' => []];
@@ -137,6 +152,13 @@ final readonly class FieldValidator
      */
     private function rendered(FieldMetadata $field, mixed $stored, ?string $locale): iterable
     {
+        // A binding renders a value in every locale, or its fallback
+        if (BoundValue::isBound($field, $stored)) {
+            yield $stored;
+
+            return;
+        }
+
         if (!$field->translatable) {
             if (!$this->fallbackValues->isMissing($field->field, $stored) && $this->fallbackValues->fits($field->field, $stored)) {
                 yield $stored;
@@ -156,6 +178,55 @@ final readonly class FieldValidator
                 return;
             }
         }
+    }
+
+    /**
+     * A bound field's binding, reported without a locale, and its fallback, which isn't required, as the field's value: a
+     * translatable field's in each locale, with the value that renders there
+     *
+     * @param class-string $class
+     * @param list<string> $locales the locales a translatable field's fallback is validated in
+     *
+     * @return list<ValidationError>
+     */
+    private function validateBound(string $class, FieldMetadata $field, mixed $stored, array $locales, ?string $block): array
+    {
+        $binding = BoundValue::of($field, $stored);
+        if (null === $binding) {
+            return [new ValidationError($block, $field->name, null, $this->translator->trans('setono_sylius_cms.field.not_binding', [], 'validators'))];
+        }
+
+        $violations = $this->validator->validate($binding, new Callback(
+            fn (StoredBinding $value, ExecutionContextInterface $context) => $this->bindingValidator->validate($value, $field->type->bindable, $context),
+        ));
+        $errors = array_map(static fn (string|\Stringable $message): ValidationError => new ValidationError($block, $field->name, null, $message), self::messages($violations));
+
+        if (!$field->translatable) {
+            $fallback = $binding->fallback;
+            if ($this->fallbackValues->isMissing($field->field, $fallback)) {
+                return $errors;
+            }
+
+            return [...$errors, ...array_map(static fn (string|\Stringable $message): ValidationError => new ValidationError($block, $field->name, null, $message), $this->validateValue($class, $field, $fallback))];
+        }
+
+        $found = [];
+        foreach ($locales as $locale) {
+            [$source, $value] = $this->resolve($field, $binding->fallback, $locale);
+            if ($this->fallbackValues->isMissing($field->field, $value)) {
+                continue;
+            }
+
+            foreach ($this->validateValue($class, $field, $value) as $message) {
+                $error = new ValidationError($block, $field->name, $source, $message);
+                if (!in_array([$source, $error->message], $found, true)) {
+                    $found[] = [$source, $error->message];
+                    $errors[] = $error;
+                }
+            }
+        }
+
+        return $errors;
     }
 
     /**
@@ -190,14 +261,7 @@ final readonly class FieldValidator
 
             $violations = $this->validator->validatePropertyValue($class, $field->name, null);
         } else {
-            $handler = $this->fieldHandlers->get($field->field);
-            $violations = $this->validator->validate($value, new Callback(
-                static fn (mixed $value, ExecutionContextInterface $context) => $handler->validate($field->field, $value, $context),
-            ));
-
-            if (0 === count($violations)) {
-                $violations = $this->validator->validatePropertyValue($class, $field->name, $value);
-            }
+            $violations = $this->constraints->validate($class, $field, $value);
         }
 
         return self::messages($violations);

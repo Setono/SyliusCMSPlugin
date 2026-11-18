@@ -35,12 +35,15 @@ final class LayoutRegistryTest extends TestCase
         self::assertSame('/build/app/standard.svg', $layout->thumbnail);
         self::assertSame(['title'], $layout->shows);
         self::assertFalse($layout->disabled);
+        self::assertTrue($layout->renders('app.standard.after_title'));
+        self::assertFalse($layout->renders('shop.footer'), 'A slot of the shop\'s own layout isn\'t its');
         self::assertSame($layout, $registry->get('page', 'standard'), 'It reads each layout once');
 
         $landing = $registry->get('page', 'landing');
         self::assertSame(2, $landing->version);
         self::assertNull($landing->thumbnail);
         self::assertSame([], $landing->shows);
+        self::assertSame([], $landing->slots);
     }
 
     /**

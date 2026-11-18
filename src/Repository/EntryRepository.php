@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Repository;
 
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\QueryBuilder;
+use Pagerfanta\Doctrine\ORM\QueryAdapter;
+use Pagerfanta\Pagerfanta;
 use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
 /**
@@ -158,6 +163,76 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
     public function countEntries(?string $contentType = null): int
     {
         return (int) $this->entries($contentType)->select('COUNT(o.id)')->getQuery()->getSingleScalarResult();
+    }
+
+    public function findStartingAfter(\DateTimeImmutable $now, int $limit): array
+    {
+        return $this->findByDateWindowBoundaryAfter('showFrom', $now, $limit);
+    }
+
+    public function findEndingAfter(\DateTimeImmutable $now, int $limit): array
+    {
+        return $this->findByDateWindowBoundaryAfter('showUntil', $now, $limit);
+    }
+
+    public function createNeedingAttentionPaginator(ProblemCountProviderInterface $problemCounts): Pagerfanta
+    {
+        $queryBuilder = $this->createListQueryBuilder();
+        $queryBuilder
+            ->andWhere($problemCounts->getNeedsAttentionCondition($queryBuilder, 'o'))
+            ->addOrderBy('o.lastEditedAt', 'DESC')
+            ->addOrderBy('o.id', 'DESC')
+        ;
+
+        /** @var Pagerfanta<EntryInterface> $paginator */
+        $paginator = new Pagerfanta(new QueryAdapter($queryBuilder));
+
+        return $paginator;
+    }
+
+    public function findDraftsInProgress(int $limit): array
+    {
+        /** @var list<EntryInterface> $entries */
+        $entries = $this->createQueryBuilder('o')
+            ->andWhere(sprintf('o.lastPublishedAt IS NULL OR EXISTS (SELECT cms_draft.id FROM %s cms_draft WHERE cms_draft.entry = o)', DraftInterface::class))
+            ->addOrderBy('o.lastEditedAt', 'DESC')
+            ->addOrderBy('o.id', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $entries;
+    }
+
+    /**
+     * The entries whose date window's start or end, $boundary, comes after $now, the first first, of those whose
+     * boundary changes what shoppers see: enabled, and published, or with a publish scheduled for it or before that
+     * hasn't failed. The columns hold UTC
+     *
+     * @return list<EntryInterface>
+     */
+    private function findByDateWindowBoundaryAfter(string $boundary, \DateTimeImmutable $now, int $limit): array
+    {
+        /** @var list<EntryInterface> $entries */
+        $entries = $this->createQueryBuilder('o')
+            ->andWhere(sprintf('o.%s > :now', $boundary))
+            ->andWhere('o.enabled = :enabled')
+            ->andWhere(sprintf(
+                'o.lastPublishedAt IS NOT NULL OR EXISTS (SELECT cms_scheduled.id FROM %s cms_scheduled WHERE cms_scheduled.entry = o AND cms_scheduled.failureReason IS NULL AND cms_scheduled.publishAt <= o.%s)',
+                ScheduledPublishInterface::class,
+                $boundary,
+            ))
+            ->setParameter('now', $now->setTimezone(new \DateTimeZone('UTC')), Types::DATETIME_IMMUTABLE)
+            ->setParameter('enabled', true, Types::BOOLEAN)
+            ->addOrderBy(sprintf('o.%s', $boundary), 'ASC')
+            ->addOrderBy('o.id', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $entries;
     }
 
     /**

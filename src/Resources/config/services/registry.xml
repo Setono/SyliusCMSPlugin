@@ -51,6 +51,18 @@
         </service>
         <service id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\SourceRegistry"/>
 
+        <!-- The slots setono_sylius_cms.slots declares, the stock slots first -->
+        <service id="Setono\SyliusCMSPlugin\Registry\SlotRegistry" class="Setono\SyliusCMSPlugin\Registry\SlotRegistry">
+            <argument>%setono_sylius_cms.slots%</argument>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\SlotRegistry"/>
+
+        <!-- The context keys setono_sylius_cms.context_keys declares, product, taxon and entry first -->
+        <service id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry" class="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry">
+            <argument>%setono_sylius_cms.context_keys%</argument>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry"/>
+
         <service id="Setono\SyliusCMSPlugin\Registry\NestingRules" class="Setono\SyliusCMSPlugin\Registry\NestingRules">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>

@@ -1,6 +1,7 @@
 import { ApiError } from './api';
 import { mergeChanges, type Change } from './changeSet';
 import type { BuilderStore } from './store';
+import { CONTEXT_FIELD } from './hostPageContext';
 import type { SaveResponse, ValidationError } from './types';
 
 export interface Autosave {
@@ -61,7 +62,12 @@ export function createAutosave(
         inFlight = send(changes, lockToken)
             .then(
                 (answer) => {
-                    store.setState((state) => ({ status: answer.status, lockToken: answer.lockToken, refusedSlugs: refusedSlugs(state.refusedSlugs, changes, answer.refused ?? []) }));
+                    store.setState((state) => ({
+                        status: answer.status,
+                        lockToken: answer.lockToken,
+                        refusedSlugs: refusedSlugs(state.refusedSlugs, changes, answer.refused ?? []),
+                        refusedContext: refusedContext(state.refusedContext, changes, answer.refused ?? []),
+                    }));
                     if (answer.entry !== undefined) {
                         // Edits made while the save was in flight were made on the working copy as it was sent
                         store.getState().pullIn(answer.entry, answer.clashes ?? [], sent);
@@ -131,6 +137,17 @@ export function createAutosave(
             unsubscribe();
         },
     };
+}
+
+/**
+ * What was in the way of a snippet's declared context after a save: a change of it the save sent replaces the refusal,
+ * which stands when the server refused that one too. A refusal stands while the save sent no change of it.
+ */
+function refusedContext(before: string[], sent: readonly Change[], refused: readonly ValidationError[]): string[] {
+    const messages = refused.filter(({ block, field, locale }) => block === null && field === CONTEXT_FIELD && locale === null).map(({ message }) => message);
+    const sentContext = sent.some((change) => change.op === 'set_entry_value' && change.field === CONTEXT_FIELD && change.locale === null);
+
+    return sentContext || messages.length > 0 ? messages : before;
 }
 
 /**

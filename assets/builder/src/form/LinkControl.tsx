@@ -1,3 +1,5 @@
+import { acceptedTypes } from '../bindings';
+import { useOfferedProperties } from '../bindingsContext';
 import { useFallbackChain } from '../context';
 import { useTranslator } from '../i18n';
 import { useLinkRef, useLinkTargets } from '../linkTargets';
@@ -21,11 +23,13 @@ export function LinkControl({ id, value, onChange, schema, locale, describedBy }
     const first = offered[0]?.code ?? '';
     const link = readLink(value, shape, chain, first);
     const { found } = useLinkRef(link);
+    // A link to a URL can show a binding of type url in its ref, and keeps its own label and anchor
+    const bindable = useOfferedProperties(acceptedTypes(schema));
     const change = (made: LinkChange): void => onChange(writeLink(value, shape, locale, made, linkTargets, first));
 
     return (
         <div className={styles.control}>
-            <LinkTargetFields id={id} offered={offered} link={link} onChange={change} required={schema['x-cms-required']} describedBy={describedBy} />
+            <LinkTargetFields id={id} offered={offered} link={link} onChange={change} required={schema['x-cms-required']} describedBy={describedBy} bindable={bindable} />
             <div className={styles.part}>
                 <label htmlFor={`${id}-label`} className={styles.label}>
                     {t('setono_sylius_cms.builder.link.label')}

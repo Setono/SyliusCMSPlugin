@@ -15,6 +15,12 @@
             <tag name="twig.runtime"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Twig\SlotRuntime" class="Setono\SyliusCMSPlugin\Twig\SlotRuntime">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\SlotRendererInterface"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
         <!-- What the cms_* runtimes share: the render context of a template, and a media item given by its UUID -->
         <service id="Setono\SyliusCMSPlugin\Twig\RenderContexts" class="Setono\SyliusCMSPlugin\Twig\RenderContexts">
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
@@ -90,6 +96,28 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\RevisionRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryShareLinks"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\WhereItShows"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryPlacements"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\SnippetUses"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Twig\PageScopeEditorRuntime" class="Setono\SyliusCMSPlugin\Twig\PageScopeEditorRuntime">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\RegistryExporter"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Builder\UiStrings"/>
+            <argument type="service" id="router"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Twig\OverviewRuntime" class="Setono\SyliusCMSPlugin\Twig\OverviewRuntime">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\ComingUp"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryRows"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\NeedsAttention"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaLocales"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\TranslationCompleteness"/>
 
             <tag name="twig.runtime"/>
         </service>

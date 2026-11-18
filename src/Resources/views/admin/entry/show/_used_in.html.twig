@@ -1,0 +1,44 @@
+{#
+ # The overview page's Used in section, a block of setono_sylius_cms.admin.entry.show.sections, for a snippet: the
+ # entries whose block trees show it through a Snippet block, each linking to its overview page, with where it shows the
+ # snippet: in its published content, in its draft, or in its published content but no longer in its draft.
+ # See "Entry overview page" in docs/spec/admin.md
+ #}
+{% set uses = cms_admin_entry_used_in(entry) %}
+{% if uses is not null %}
+    <section class="ui segment" data-section="used_in" aria-labelledby="cms-section-used-in">
+        <h2 class="ui dividing header" id="cms-section-used-in">{{ 'setono_sylius_cms.ui.used_in'|trans }}</h2>
+
+        {% if uses is empty %}
+            <p>{{ 'setono_sylius_cms.ui.used_nowhere'|trans }}</p>
+        {% else %}
+            <table class="ui very basic table">
+                <thead>
+                    <tr>
+                        <th>{{ 'setono_sylius_cms.ui.title'|trans }}</th>
+                        <th>{{ 'setono_sylius_cms.ui.type'|trans }}</th>
+                        <th>{{ 'setono_sylius_cms.ui.used_in_state'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for use in uses %}
+                        {% set used_row = cms_admin_entry_row(use.entry) %}
+                        <tr data-used-in="{{ use.entry.uuid }}">
+                            <td><a href="{{ path('setono_sylius_cms_admin_entry_show', {'uuid': use.entry.uuid}) }}">{{ used_row.title ?? 'setono_sylius_cms.ui.untitled'|trans }}</a></td>
+                            <td>{{ used_row.contentType.label|trans }}</td>
+                            <td data-use>
+                                {%- if not use.published -%}
+                                    {{ 'setono_sylius_cms.ui.use_draft'|trans }}
+                                {%- elseif use.workingCopy is null -%}
+                                    {{ 'setono_sylius_cms.ui.use_removed_in_draft'|trans }}
+                                {%- else -%}
+                                    {{ 'setono_sylius_cms.ui.use_published'|trans }}
+                                {%- endif -%}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </section>
+{% endif %}

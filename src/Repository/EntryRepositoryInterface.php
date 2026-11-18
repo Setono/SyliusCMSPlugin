@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Repository;
 
 use Doctrine\ORM\QueryBuilder;
+use Pagerfanta\Pagerfanta;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 
 /**
  * Finds entries of any content type. It's the repository of the setono_sylius_cms.entry resource, whose grids are the
@@ -60,6 +62,41 @@ interface EntryRepositoryInterface
      * @param string|null $contentType a content type code
      */
     public function countEntries(?string $contentType = null): int;
+
+    /**
+     * The entries whose date window starts after $now, the first to start first, which the Overview's Coming up lists:
+     * those enabled, and published or with a publish that hasn't failed scheduled for their start or before, as only
+     * their start changes what shoppers see
+     *
+     * @return list<EntryInterface>
+     */
+    public function findStartingAfter(\DateTimeImmutable $now, int $limit): array;
+
+    /**
+     * The entries whose date window ends after $now, the first to end first, which the Overview's Coming up lists:
+     * those enabled, and published or with a publish that hasn't failed scheduled for their end or before, as only
+     * their end changes what shoppers see
+     *
+     * @return list<EntryInterface>
+     */
+    public function findEndingAfter(\DateTimeImmutable $now, int $limit): array;
+
+    /**
+     * The entries a draft is in progress for: those with a draft, which are published entries with unpublished changes,
+     * and those never published, which are their own working copy. The one edited last first, which the Overview's
+     * Drafts in progress lists
+     *
+     * @return list<EntryInterface>
+     */
+    public function findDraftsInProgress(int $limit): array;
+
+    /**
+     * The entries the lists' Needs attention filter finds, those with an error or a warning by the counts stored with
+     * each, the one edited last first, which the Overview's Needs attention pages through
+     *
+     * @return Pagerfanta<EntryInterface>
+     */
+    public function createNeedingAttentionPaginator(ProblemCountProviderInterface $problemCounts): Pagerfanta;
 
     /**
      * The entries that may name one of the customer groups in their audience or in a customer group condition, in

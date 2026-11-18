@@ -14,6 +14,7 @@ use Setono\SyliusCMSPlugin\Event\EntryPublished;
 use Setono\SyliusCMSPlugin\Event\EntrySettingsChanged;
 use Setono\SyliusCMSPlugin\Event\MediaItemDeleted;
 use Setono\SyliusCMSPlugin\Event\MediaItemReplaced;
+use Setono\SyliusCMSPlugin\Event\PlacementsChanged;
 use Setono\SyliusCMSPlugin\Event\StorefrontChangedInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -92,6 +93,19 @@ final class EventsTest extends TestCase
         self::assertSame([self::UUID], self::storefrontChange($event)?->getAffectedUuids());
         self::assertSame(self::UUID, $event->uuid);
         self::assertSame(['enabled', 'audience'], $event->changed);
+    }
+
+    /**
+     * @test
+     */
+    public function it_changes_shopper_output_for_the_snippets_whose_placements_changed_and_says_in_which_slots(): void
+    {
+        $other = '0193a5be-6f1c-7d2e-9b41-6a8f0c2d3e50';
+        $event = new PlacementsChanged([self::UUID, $other], ['shop.footer']);
+
+        self::assertSame([self::UUID, $other], self::storefrontChange($event)?->getAffectedUuids());
+        self::assertSame([self::UUID, $other], $event->snippetUuids);
+        self::assertSame(['shop.footer'], $event->slots);
     }
 
     /**

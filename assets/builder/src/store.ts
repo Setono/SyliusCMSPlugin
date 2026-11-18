@@ -4,31 +4,35 @@
  */
 import { enablePatches, produceWithPatches, type Patch } from 'immer';
 import { createStore, type StoreApi } from 'zustand/vanilla';
+import { translatedValues } from './bindings';
 import { applyChanges, changesFromPatches, mergeChanges, type Change, type LayoutTranslatableLookup, type TranslatableLookup } from './changeSet';
 import { emptyHistory, rebaseHistory, recordEdit, redoEdit, undoEdit, type History, type Step } from './history';
-import { canDuplicate, canMoveBlocks, createNestingRules, initialChildren, insertableIn, type NestingRules } from './nesting';
+import { providedContext } from './hostPageContext';
+import { canDuplicate, canMoveBlocks, canReplace, createNestingRules, initialChildren, insertableIn, type NestingRules } from './nesting';
 import { holdClashes, reconcile, splitValueClashes, withoutKeysIn, type HeldClash } from './pullIn';
 import { copyWithNewKeys, findBlock, generateBlockKey, insertBlock, listOf, locateBlock, moveBlocksTo, removeBlockFrom, shiftWithin, topmostBlocks } from './tree';
 import type { Locale } from './config';
 import { isRemovedLayout, layoutOf, renderedLayout, switchLayout } from './layouts';
 import { localeOf } from './locales';
-import { entryValues, sourceOfTyped, upToDate } from './translationState';
+import { entryValues, fallbackSource, sourceOfTyped, upToDate } from './translationState';
 import type {
     BlockTypeDefinition,
     Clash,
     ConditionKindDefinition,
     ContentTypeDefinition,
+    ContextKeyDefinition,
     Entry,
     EntryStatus,
     FieldValues,
     JsonValue,
     LayoutDefinition,
     Schedule,
+    SlotDefinition,
     StoredBlock,
     TranslationSource,
     VisibilityCondition,
 } from './types';
-import { normalizeValue, writeEntryTranslated, writeEntryValue, writeFieldValue, writeTranslated } from './values';
+import { normalizeValue, writeEntryTranslated, writeEntryValue, writeFieldValue, writeTranslated, writeWholeValue } from './values';
 
 enablePatches();
 
@@ -61,6 +65,10 @@ export interface BuilderData {
     blockTypes: BlockTypeDefinition[];
     /** The kinds of visibility conditions a block can carry. */
     conditionKinds: ConditionKindDefinition[];
+    /** The context keys, which a snippet's context is picked from and named by. */
+    contextKeys: ContextKeyDefinition[];
+    /** The slots, with the context keys each provides, which a snippet's placements are in. */
+    slots: SlotDefinition[];
     /** What each spot in the tree may hold. */
     rules: NestingRules;
     /** The entry's content type's layouts, the default first, disabled ones too, or none for a content type without its own URL. */
@@ -95,6 +103,11 @@ export interface BuilderData {
      * the server, and the refusal stands until a save of another slug in the locale goes through.
      */
     refusedSlugs: Record<string, string>;
+    /**
+     * What was in the way, as the server said, of the last change of a snippet's declared context it didn't save, which
+     * took the change back. It stands until a save of another change of it goes through.
+     */
+    refusedContext: string[];
     discardState: DiscardState;
     /** The entry's scheduled publish, or null. While it waits, the working copy is read-only: edits are refused. */
     schedule: Schedule | null;
@@ -133,6 +146,12 @@ export interface BuilderActions {
      * when the nesting rules have no room for one of them.
      */
     duplicateBlocks(keys: readonly string[]): string[] | null;
+    /**
+     * Detaches a Snippet block: puts a copy of the snippet's blocks in its place, with a new key for each and every
+     * block inside them, in one edit, and selects the first. Returns the copies' keys, or null when the block's spot
+     * can't hold them. See "Snippet references" in docs/spec/builder.md
+     */
+    detachSnippet(key: string, blocks: readonly StoredBlock[]): string[] | null;
     /** Selects only this block, or nothing when the key is null. */
     selectBlock(key: string | null): void;
     /** Adds a block to the selection, or takes it out when it's selected already, as ⌘-click does. */
@@ -144,6 +163,12 @@ export interface BuilderActions {
      * updating a value that has a source brings it up to date. See "Translation state" in docs/spec/content-model.md
      */
     setFieldValue(key: string, field: string, value: JsonValue | null): void;
+    /**
+     * Sets what a block's field stores, whole and in every locale: a binding, or what it stores once it's unbound.
+     * null removes it. Changes one after another to the same field's binding, such as typing its fallback, are undone
+     * in one step.
+     */
+    setFieldBinding(key: string, field: string, value: JsonValue | null): void;
     /** Records that a block's outdated value in the edited locale is up to date with the value it was translated from. */
     markValueUpToDate(key: string, field: string): void;
     /** Picks one of the block type's styles for a block, by its code, or none when the style is null. */
@@ -165,6 +190,11 @@ export interface BuilderActions {
      * translated from as for a block's value. It does nothing in a layout that was removed or disabled.
      */
     setLayoutValue(field: string, value: JsonValue | null): void;
+    /**
+     * Sets a layout field's whole stored value, as setFieldBinding does a block's: binding it, unbinding it, or changing
+     * its binding. It does nothing in a layout that was removed or disabled.
+     */
+    setLayoutBinding(field: string, value: JsonValue | null): void;
     /** Records that a layout field's outdated value in the edited locale is up to date with the value it was translated from. */
     markLayoutValueUpToDate(field: string): void;
     /** Edits another locale. It isn't an edit to the working copy: nothing is saved or undone. */
@@ -228,6 +258,8 @@ export interface BuilderStoreOptions {
     blockTypes: BlockTypeDefinition[];
     contentTypes: ContentTypeDefinition[];
     conditionKinds?: ConditionKindDefinition[];
+    contextKeys?: ContextKeyDefinition[];
+    slots?: SlotDefinition[];
     entry: Entry;
     status: EntryStatus;
     lockToken?: number;
@@ -242,6 +274,8 @@ export function createBuilderStore({
     blockTypes,
     contentTypes,
     conditionKinds = [],
+    contextKeys = [],
+    slots = [],
     entry,
     status,
     lockToken = 0,
@@ -251,7 +285,7 @@ export function createBuilderStore({
     const chainOf = (code: string): string[] => localeOf(locales, code).fallbackChain;
     const blockTypesByCode = new Map(blockTypes.map((blockType) => [blockType.code, blockType]));
     const contentType = contentTypes.find((candidate) => candidate.code === entry.contentType);
-    const rules = createNestingRules(blockTypes, contentType?.blocks ?? null);
+    const rules = createNestingRules(blockTypes, contentType?.blocks ?? null, contentType?.provides);
     const layouts = contentType?.layouts ?? [];
     const createBlock = (type: string): StoredBlock => ({
         key: generateKey(),
@@ -333,6 +367,8 @@ export function createBuilderStore({
             locale,
             blockTypes,
             conditionKinds,
+            contextKeys,
+            slots,
             rules,
             layouts,
             entry,
@@ -349,6 +385,7 @@ export function createBuilderStore({
             publishState: 'idle',
             publishRefusal: null,
             refusedSlugs: {},
+            refusedContext: [],
             discardState: 'idle',
             schedule,
             scheduleState: 'idle',
@@ -356,7 +393,8 @@ export function createBuilderStore({
             cancelScheduleState: 'idle',
 
             addBlock(code, parent = null, index) {
-                if (locks(get().schedule) || !insertableIn(rules, get().entry.tree.blocks, parent).some((blockType) => blockType.code === code)) {
+                const { schedule: locked, entry: working } = get();
+                if (locks(locked) || !insertableIn(rules, working.tree.blocks, parent, providedContext(rules.provides, working)).some((blockType) => blockType.code === code)) {
                     return null;
                 }
 
@@ -499,6 +537,25 @@ export function createBuilderStore({
                 return copied;
             },
 
+            detachSnippet(key, blocks) {
+                const { schedule: locked, entry: working } = get();
+                if (locks(locked) || !canReplace(rules, working.tree.blocks, key, blocks)) {
+                    return null;
+                }
+
+                const copies = blocks.map((original) => copyWithNewKeys(original, generateKey));
+                const copied = copies.map((copy) => copy.key);
+
+                edit((draft) => {
+                    const spot = locateBlock(draft.tree.blocks, key);
+                    if (spot !== undefined) {
+                        listOf(draft.tree.blocks, spot.parent)?.splice(spot.index, 1, ...copies);
+                    }
+                }, only(copied[0] ?? null));
+
+                return copied;
+            },
+
             selectBlock(key) {
                 set(only(key));
             },
@@ -528,8 +585,9 @@ export function createBuilderStore({
                     unsaved: [],
                     clashes: [],
                     resolvedClashes: 0,
-                    // The slugs shown are the server's now
+                    // The slugs and the context shown are the server's now
                     refusedSlugs: {},
+                    refusedContext: [],
                 });
             },
 
@@ -621,11 +679,37 @@ export function createBuilderStore({
                 );
             },
 
+            setFieldBinding(key, field, value) {
+                const block = findBlock(get().entry.tree.blocks, key);
+                if (block === undefined) {
+                    return;
+                }
+
+                const edited = get().locale;
+                const normalized = normalizeValue(value ?? undefined);
+                const source = isTranslatable(block.type, field) ? fallbackSource(block.fields[field], block.translated[field]?.[edited], normalized, chainOf(edited)) : undefined;
+                edit(
+                    (working) => {
+                        const target = findBlock(working.tree.blocks, key);
+                        if (target === undefined) {
+                            return;
+                        }
+
+                        writeWholeValue(target.fields, field, normalized);
+                        if (source !== undefined) {
+                            writeTranslated(target.translated, field, edited, source);
+                        }
+                    },
+                    {},
+                    JSON.stringify(['set_binding', key, field]),
+                );
+            },
+
             markValueUpToDate(key, field) {
                 const edited = get().locale;
                 const block = findBlock(get().entry.tree.blocks, key);
                 const current = block?.translated[field]?.[edited];
-                const source = current === undefined ? undefined : upToDate(block?.fields[field], current);
+                const source = current === undefined ? undefined : upToDate(translatedValues(block?.fields[field]), current);
                 if (source === undefined) {
                     return;
                 }
@@ -676,11 +760,35 @@ export function createBuilderStore({
                 );
             },
 
+            setLayoutBinding(field, value) {
+                const { entry: before, locale: edited } = get();
+                const schema = layoutField(before, field);
+                const definition = fieldsLayout(before);
+                if (schema === undefined || definition === undefined) {
+                    return;
+                }
+
+                const stored = before.tree.layout;
+                const normalized = normalizeValue(value ?? undefined);
+                const source = schema['x-cms-translatable'] ? fallbackSource(stored?.fields[field], stored?.translated[field]?.[edited], normalized, chainOf(edited)) : undefined;
+                edit(
+                    (working) => {
+                        const layout = (working.tree.layout ??= { code: definition.code, version: definition.version, fields: {}, translated: {} });
+                        writeWholeValue(layout.fields, field, normalized);
+                        if (source !== undefined) {
+                            writeTranslated(layout.translated, field, edited, source);
+                        }
+                    },
+                    {},
+                    JSON.stringify(['set_layout_binding', field]),
+                );
+            },
+
             markLayoutValueUpToDate(field) {
                 const { entry: before, locale: edited } = get();
                 const stored = before.tree.layout;
                 const current = stored?.translated[field]?.[edited];
-                const source = current === undefined || layoutField(before, field) === undefined ? undefined : upToDate(stored?.fields[field], current);
+                const source = current === undefined || layoutField(before, field) === undefined ? undefined : upToDate(translatedValues(stored?.fields[field]), current);
                 if (source === undefined) {
                     return;
                 }

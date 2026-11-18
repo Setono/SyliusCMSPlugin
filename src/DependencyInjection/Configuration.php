@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\DependencyInjection;
 
+use Setono\SyliusCMSPlugin\Binding\BindingType;
 use Setono\SyliusCMSPlugin\Factory\EntryAudienceGroupFactory;
 use Setono\SyliusCMSPlugin\Factory\EntryChannelFactory;
 use Setono\SyliusCMSPlugin\Factory\HomepageFactory;
+use Setono\SyliusCMSPlugin\Factory\PlacementFactory;
 use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
 use Setono\SyliusCMSPlugin\Media\FileSize;
 use Setono\SyliusCMSPlugin\Media\GracePeriod;
@@ -23,6 +25,8 @@ use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
+use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Homepage;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
 use Setono\SyliusCMSPlugin\Model\MediaFolder;
@@ -39,6 +43,8 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\PageTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\Placement;
+use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Model\Revision;
 use Setono\SyliusCMSPlugin\Model\RevisionInterface;
 use Setono\SyliusCMSPlugin\Model\SavedChangeSet;
@@ -47,7 +53,10 @@ use Setono\SyliusCMSPlugin\Model\ScheduledPublish;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Model\ShareLink;
 use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
+use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\Code;
+use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
@@ -56,6 +65,7 @@ use Setono\SyliusCMSPlugin\Repository\MediaFolderRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaUsageRepository;
 use Setono\SyliusCMSPlugin\Repository\OldSlugRepository;
+use Setono\SyliusCMSPlugin\Repository\PlacementRepository;
 use Setono\SyliusCMSPlugin\Repository\RevisionRepository;
 use Setono\SyliusCMSPlugin\Repository\SavedChangeSetRepository;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepository;
@@ -101,6 +111,10 @@ final class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+                ->booleanNode('embed_code')
+                    ->info('true enables the Embed code block, which prints raw HTML and scripts unescaped in the shop. A compromised admin account could use it to inject scripts into checkout, so it\'s off until a project accepts that risk (ADR 0018)')
+                    ->defaultFalse()
+                ->end()
                 ->booleanNode('assets')
                     ->info('false stops loading the shipped stylesheet and carousel script, for projects that bundle them into their own build')
                     ->defaultTrue()
@@ -110,10 +124,14 @@ final class Configuration implements ConfigurationInterface
 
         $this->addBlockStylesSection($rootNode);
         $this->addContentTypesSection($rootNode);
+        $this->addSlotsSection($rootNode);
+        $this->addContextKeysSection($rootNode);
+        $this->addBindablePropertiesSection($rootNode);
         $this->addFallbackLocalesSection($rootNode);
         $this->addRevisionsSection($rootNode);
         $this->addMediaSection($rootNode);
         $this->addBestsellersSection($rootNode);
+        $this->addBuilderSection($rootNode);
         $this->addResourcesSection($rootNode);
 
         return $treeBuilder;
@@ -182,6 +200,128 @@ final class Configuration implements ConfigurationInterface
                 ->end()
             ->end()
         ;
+    }
+
+    /**
+     * The slots editors show snippets in, by identifier, with the stock slots prepended (see SetonoSyliusCMSExtension).
+     * A later config deep merges into an earlier one, so a project caps a stock slot with slots.<identifier>.cap, and
+     * the context keys it sets replace the earlier ones. See "Slots" in docs/spec/slots.md
+     */
+    private function addSlotsSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('slots')
+                    ->info('The slots editors show snippets in: slot identifier, such as product.after_price => {label, provides, cap, template_event}')
+                    ->useAttributeAsKey('identifier')
+                    ->normalizeKeys(false)
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('label')->info('A translation key, shown in the placement editor')->isRequired()->cannotBeEmpty()->end()
+                            ->arrayNode('provides')
+                                ->info('The context keys the slot provides')
+                                ->performNoDeepMerging()
+                                ->scalarPrototype()
+                                    ->validate()->always(static fn (mixed $key): string => self::assertCode('context key', is_scalar($key) ? (string) $key : ''))->end()
+                                ->end()
+                            ->end()
+                            ->integerNode('cap')
+                                ->info('The number of placements that show at most, or null for no cap')
+                                ->min(1)
+                                ->defaultNull()
+                            ->end()
+                            ->arrayNode('template_event')
+                                ->info('The Sylius template event the slot renders in, with the priority of its block. Leave it out for a slot rendered with cms_slot()')
+                                ->children()
+                                    ->scalarNode('name')->isRequired()->cannotBeEmpty()->end()
+                                    ->integerNode('priority')->defaultValue(0)->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                    ->validate()->always(self::assertSlotIdentifiers(...))->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * The context keys of host-page context, by key, with product, taxon and entry prepended (see
+     * SetonoSyliusCMSExtension). Slots provide them, and block types, sources, condition kinds and bindable properties
+     * need them. See "Context keys" in docs/spec/slots.md
+     */
+    private function addContextKeysSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('context_keys')
+                    ->info('The keys of host-page context, which slots provide and block types, sources and condition kinds need: key, such as brand => {class, label}')
+                    ->useAttributeAsKey('key')
+                    ->normalizeKeys(false)
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('class')
+                                ->info('The class or interface of the object the key holds')
+                                ->isRequired()
+                                ->cannotBeEmpty()
+                                ->validate()->always(self::assertContextKeyClass(...))->end()
+                            ->end()
+                            ->scalarNode('label')->info('A translation key, naming the pages that provide it, such as "Product page"')->isRequired()->cannotBeEmpty()->end()
+                        ->end()
+                    ->end()
+                    ->validate()->always(self::assertContextKeyCodes(...))->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * Bindable properties that are plain property paths, by context key (or channel or customer) and code, such as
+     * product.brand reading brand.name. A property that needs more is a service carrying #[AsBindableProperty]. See
+     * "Bindable properties" in docs/spec/extending.md
+     */
+    private function addBindablePropertiesSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('bindable_properties')
+                    ->info('Bindable properties that are plain property paths: context key, channel or customer => code => {label, type, path}')
+                    ->useAttributeAsKey('context_key')
+                    ->normalizeKeys(false)
+                    ->arrayPrototype()
+                        ->useAttributeAsKey('code')
+                        ->normalizeKeys(false)
+                        ->arrayPrototype()
+                            ->children()
+                                ->scalarNode('label')->info('A translation key')->isRequired()->cannotBeEmpty()->end()
+                                ->enumNode('type')
+                                    ->info('What the path reads, which decides the fields it can be bound to')
+                                    ->values(array_map(static fn (BindingType $type): string => $type->value, BindingType::cases()))
+                                    ->isRequired()
+                                ->end()
+                                ->scalarNode('path')->info('A property path on the object, such as brand.name')->isRequired()->cannotBeEmpty()->end()
+                            ->end()
+                        ->end()
+                        ->validate()->always(static fn (array $properties): array => self::assertCodes('bindable property', $properties))->end()
+                    ->end()
+                    ->validate()->always(static fn (array $contextKeys): array => self::assertCodes('context key', $contextKeys))->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * @param array<array-key, mixed> $values
+     *
+     * @return array<array-key, mixed>
+     */
+    private static function assertCodes(string $kind, array $values): array
+    {
+        foreach (array_keys($values) as $code) {
+            self::assertCode($kind, (string) $code);
+        }
+
+        return $values;
     }
 
     /**
@@ -309,6 +449,56 @@ final class Configuration implements ConfigurationInterface
     }
 
     /**
+     * The scripts the builder loads as ES modules, which define the field controls of a project's own field types: the
+     * custom elements named in #[FieldType(control:)]. See "Field controls" in docs/spec/extending.md
+     */
+    private function addBuilderSection(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->children()
+                ->arrayNode('builder')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->arrayNode('scripts')
+                            ->info('Field control scripts, as asset paths, such as build/app/cms/controls.js, which asset() resolves, public paths or absolute URLs, loaded as ES modules in this order')
+                            ->scalarPrototype()
+                                ->validate()->always(self::assertScript(...))->end()
+                            ->end()
+                            ->validate()->always(self::eachOnce(...))->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    /**
+     * @param list<string> $scripts
+     *
+     * @return list<string> in their order, each once
+     */
+    private static function eachOnce(array $scripts): array
+    {
+        return array_values(array_unique($scripts));
+    }
+
+    /**
+     * An asset path, which asset() resolves through the default asset package, so a versioned manifest gives the built
+     * file's URL, a public path, or an absolute http(s) URL, which asset() leaves as they are. A protocol-relative URL
+     * and other schemes, such as javascript:, are refused
+     *
+     * @throws \InvalidArgumentException when it's neither an asset path, a public path nor an absolute http(s) URL
+     */
+    private static function assertScript(mixed $script): string
+    {
+        if (!is_string($script) || 1 !== preg_match('#^(https?://|/(?!/)|(?![a-z][a-z0-9+.-]*:)(?!/))\S+$#i', $script)) {
+            throw new \InvalidArgumentException(sprintf('%s is neither an asset path, such as build/app/cms/controls.js, a public path, such as /cms/controls.js, nor an absolute http(s) URL', is_scalar($script) ? sprintf('"%s"', (string) $script) : get_debug_type($script)));
+        }
+
+        return $script;
+    }
+
+    /**
      * @param list<int> $widths
      *
      * @return list<int> in ascending order, each once
@@ -417,6 +607,45 @@ final class Configuration implements ConfigurationInterface
         return $contentTypes;
     }
 
+    /**
+     * @param array<array-key, array<string, mixed>> $slots
+     *
+     * @return array<array-key, array<string, mixed>>
+     */
+    private static function assertSlotIdentifiers(array $slots): array
+    {
+        foreach (array_keys($slots) as $identifier) {
+            if (!SlotMetadata::isIdentifier((string) $identifier)) {
+                throw new \InvalidArgumentException(sprintf('The slot identifier "%s" must be codes joined by dots, such as product.after_price', $identifier));
+            }
+        }
+
+        return $slots;
+    }
+
+    /**
+     * @param array<array-key, array<string, mixed>> $contextKeys
+     *
+     * @return array<array-key, array<string, mixed>>
+     */
+    private static function assertContextKeyCodes(array $contextKeys): array
+    {
+        foreach (array_keys($contextKeys) as $key) {
+            self::assertCode('context key', (string) $key);
+        }
+
+        return $contextKeys;
+    }
+
+    private static function assertContextKeyClass(mixed $class): string
+    {
+        if (!is_string($class) || (!class_exists($class) && !interface_exists($class))) {
+            throw new \InvalidArgumentException(sprintf('The class "%s" of a context key is no class or interface', is_scalar($class) ? (string) $class : get_debug_type($class)));
+        }
+
+        return $class;
+    }
+
     private static function assertDisabledLayout(mixed $layout): string
     {
         $layout = is_scalar($layout) ? (string) $layout : '';
@@ -439,8 +668,9 @@ final class Configuration implements ConfigurationInterface
 
     /**
      * The shipped Sylius resources. The draft and the rows beside an entry (its channels, its audience groups, who has
-     * it open, its saves, its revisions, its old slugs, its scheduled publish, its share links and the channels a
-     * page is the homepage of), and the bestseller scores, have no admin screens of their own, so they have no controller.
+     * it open, its saves, its revisions, its old slugs, its scheduled publish, its share links, the channels a
+     * page is the homepage of and a snippet's placements), and the bestseller scores, have no admin screens of their own,
+     * so they have no controller.
      * A project extends a shipped content type the way it extends any Sylius model:
      * by overriding classes.model, and translation.classes.model, with its own subclasses.
      * The channel and audience group rows always belong to an entry, and the homepage rows to a page, so their
@@ -467,40 +697,9 @@ final class Configuration implements ConfigurationInterface
                     ->append(self::resourceWithoutController('media_folder', MediaFolder::class, MediaFolderInterface::class, MediaFolderRepository::class))
                     ->append(self::resourceWithoutController('media_usage', MediaUsage::class, MediaUsageInterface::class, MediaUsageRepository::class))
                     ->append(self::resourceWithoutController('bestseller_score', BestsellerScore::class, BestsellerScoreInterface::class))
-                    ->children()
-                        ->arrayNode('page')
-                            ->addDefaultsIfNotSet()
-                            ->children()
-                                ->variableNode('options')->end()
-                                ->arrayNode('classes')
-                                    ->addDefaultsIfNotSet()
-                                    ->children()
-                                        ->scalarNode('model')->defaultValue(Page::class)->cannotBeEmpty()->end()
-                                        ->scalarNode('interface')->defaultValue(PageInterface::class)->cannotBeEmpty()->end()
-                                        ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
-                                        ->scalarNode('repository')->cannotBeEmpty()->end()
-                                        ->scalarNode('factory')->defaultValue(TranslatableFactory::class)->cannotBeEmpty()->end()
-                                    ->end()
-                                ->end()
-                                ->arrayNode('translation')
-                                    ->addDefaultsIfNotSet()
-                                    ->children()
-                                        ->variableNode('options')->end()
-                                        ->arrayNode('classes')
-                                            ->addDefaultsIfNotSet()
-                                            ->children()
-                                                ->scalarNode('model')->defaultValue(PageTranslation::class)->cannotBeEmpty()->end()
-                                                ->scalarNode('interface')->defaultValue(PageTranslationInterface::class)->cannotBeEmpty()->end()
-                                                ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
-                                                ->scalarNode('repository')->cannotBeEmpty()->end()
-                                                ->scalarNode('factory')->defaultValue(Factory::class)->cannotBeEmpty()->end()
-                                            ->end()
-                                        ->end()
-                                    ->end()
-                                ->end()
-                            ->end()
-                        ->end()
-                    ->end()
+                    ->append(self::resourceWithoutController('placement', Placement::class, PlacementInterface::class, PlacementRepository::class, PlacementFactory::class))
+                    ->append(self::contentTypeResource('page', Page::class, PageInterface::class, PageTranslation::class, PageTranslationInterface::class))
+                    ->append(self::contentTypeResource(SnippetInterface::CONTENT_TYPE, Snippet::class, SnippetInterface::class, EntryTranslation::class, EntryTranslationInterface::class))
                 ->end()
             ->end()
         ;
@@ -525,6 +724,53 @@ final class Configuration implements ConfigurationInterface
                         ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
                         ->scalarNode('repository')->defaultValue(EntryRepository::class)->cannotBeEmpty()->end()
                         ->scalarNode('factory')->defaultValue(Factory::class)->cannotBeEmpty()->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
+
+        return $node;
+    }
+
+    /**
+     * A shipped content type, whose model and translation model a project overrides with its own subclasses
+     *
+     * @param class-string $model
+     * @param class-string $interface
+     * @param class-string $translationModel
+     * @param class-string $translationInterface
+     */
+    private static function contentTypeResource(string $name, string $model, string $interface, string $translationModel, string $translationInterface): ArrayNodeDefinition
+    {
+        $node = new ArrayNodeDefinition($name);
+        $node
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->variableNode('options')->end()
+                ->arrayNode('classes')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('model')->defaultValue($model)->cannotBeEmpty()->end()
+                        ->scalarNode('interface')->defaultValue($interface)->cannotBeEmpty()->end()
+                        ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
+                        ->scalarNode('repository')->cannotBeEmpty()->end()
+                        ->scalarNode('factory')->defaultValue(TranslatableFactory::class)->cannotBeEmpty()->end()
+                    ->end()
+                ->end()
+                ->arrayNode('translation')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->variableNode('options')->end()
+                        ->arrayNode('classes')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->scalarNode('model')->defaultValue($translationModel)->cannotBeEmpty()->end()
+                                ->scalarNode('interface')->defaultValue($translationInterface)->cannotBeEmpty()->end()
+                                ->scalarNode('controller')->defaultValue(ResourceController::class)->cannotBeEmpty()->end()
+                                ->scalarNode('repository')->cannotBeEmpty()->end()
+                                ->scalarNode('factory')->defaultValue(Factory::class)->cannotBeEmpty()->end()
+                            ->end()
+                        ->end()
                     ->end()
                 ->end()
             ->end()

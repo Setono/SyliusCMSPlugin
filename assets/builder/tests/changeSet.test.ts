@@ -97,6 +97,31 @@ describe('building the change set', () => {
         expect(store.getState().unsaved).toEqual([{ op: 'add_block', parent: null, index: 1, after: 'a', block: store.getState().entry.tree.blocks[1] }]);
     });
 
+    it("should send a binding as a translatable field's whole value with no locale, each change of it whole, and its unbinding before the locales' values", () => {
+        const store = storeWith([block('a', { text: { en_US: 'Hello' } })]);
+        const binding = { $bind: 'product.name', $params: {}, $fallback: { en_US: 'Hello' } };
+
+        store.getState().setFieldBinding('a', 'text', binding);
+        expect(store.getState().unsaved).toEqual([{ op: 'set_value', key: 'a', field: 'text', locale: null, value: binding }]);
+
+        store.getState().setFieldBinding('a', 'text', { ...binding, $fallback: { en_US: 'Hello', da_DK: 'Hej' } });
+        expect(store.getState().unsaved).toEqual([{ op: 'set_value', key: 'a', field: 'text', locale: null, value: { ...binding, $fallback: { en_US: 'Hello', da_DK: 'Hej' } } }]);
+
+        const before = store.getState().entry;
+        const changes = changesOf(before, (working) => {
+            const target = working.tree.blocks[0];
+            if (target !== undefined) {
+                target.fields.text = { en_US: 'Hello', da_DK: 'Hej' };
+            }
+        });
+        expect(changes).toEqual([
+            { op: 'set_value', key: 'a', field: 'text', locale: null, value: null },
+            { op: 'set_value', key: 'a', field: 'text', locale: 'en_US', value: 'Hello' },
+            { op: 'set_value', key: 'a', field: 'text', locale: 'da_DK', value: 'Hej' },
+        ]);
+        expect(replay(before.tree.blocks, changes)[0]?.fields.text).toEqual({ en_US: 'Hello', da_DK: 'Hej' });
+    });
+
     it('should send a translatable value with the edited locale and a shared value with no locale', () => {
         const store = storeWith([block('a')]);
 

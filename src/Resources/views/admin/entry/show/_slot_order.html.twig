@@ -1,0 +1,59 @@
+{#
+ # The Order… dialog of a slot, capped or not, on the overview page of `entry`, a snippet placed in it: `order` is its
+ # Admin\SlotOrder, and `dialog_id` the id its rows' Order… buttons open it by. It lists every placement in the slot, of
+ # every snippet, with its snippet, page scope and audience, to drag into order or move with the arrows, and the slot's
+ # warnings. Save order posts their UUIDs in order, and comes back to the overview page. admin/slot-order.js runs it.
+ # See "Placements" in docs/spec/admin.md
+ #}
+{% set slot_label = order.slot.label|trans %}
+<dialog id="{{ dialog_id }}" class="cms-dialog" aria-labelledby="{{ dialog_id }}-heading" data-cms-slot-order data-slot="{{ order.slot.identifier }}">
+    <button type="button" class="cms-dialog__close" data-cms-dialog-close aria-label="{{ 'setono_sylius_cms.ui.close'|trans }}"><i class="close icon"></i></button>
+    <h2 class="ui header" id="{{ dialog_id }}-heading">{{ 'setono_sylius_cms.ui.order_slot'|trans({'%slot%': slot_label}) }}</h2>
+    {% if order.slot.cap is null %}
+        <p>{{ 'setono_sylius_cms.ui.order_uncapped_slot_help'|trans }}</p>
+    {% else %}
+        <p>{{ 'setono_sylius_cms.ui.order_slot_help'|trans({'%count%': order.slot.cap}) }}</p>
+    {% endif %}
+
+    {% if order.withoutCatchAll %}
+        <div class="ui warning message" data-slot-warning="no_catch_all">{{ 'setono_sylius_cms.ui.slot_warning.no_catch_all'|trans }}</div>
+    {% endif %}
+    {% if order.hiddenByHomepageIn is not empty %}
+        <div class="ui warning message" data-slot-warning="hidden_by_homepage">{{ 'setono_sylius_cms.ui.slot_warning.hidden_by_homepage'|trans({'%channels%': order.hiddenByHomepageIn|join(', ')}) }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ path('setono_sylius_cms_admin_entry_placement_order', {'uuid': entry.uuid}) }}" class="ui form">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token(entry.id) }}">
+        <input type="hidden" name="slot" value="{{ order.slot.identifier }}">
+        <ol class="cms-slot-order" aria-label="{{ 'setono_sylius_cms.ui.order_slot_placements'|trans({'%slot%': slot_label}) }}" data-cms-slot-order-list>
+            {% for placed in order.placements %}
+                {% set snippet = placed.placement.snippet %}
+                {% set title = cms_admin_entry_row(snippet).title|default('setono_sylius_cms.ui.untitled'|trans) %}
+                <li class="cms-slot-order__item{% if snippet.uuid == entry.uuid %} cms-slot-order__item--this-snippet{% endif %}" draggable="true" data-ordered-placement="{{ placed.placement.uuid }}">
+                    <input type="hidden" name="placements[]" value="{{ placed.placement.uuid }}">
+                    <i class="grip vertical icon cms-slot-order__handle" aria-hidden="true"></i>
+                    <div class="cms-slot-order__content">
+                        <strong data-snippet-title>{{ title }}</strong>
+                        {% if snippet.uuid == entry.uuid %}
+                            <span class="ui mini teal label" data-this-snippet>{{ 'setono_sylius_cms.ui.this_snippet'|trans }}</span>
+                        {% endif %}
+                        <div class="cms-slot-order__details" data-page-scope>
+                            {% include '@SetonoSyliusCMSPlugin/admin/entry/show/_page_scope.html.twig' with {'page_scope': placed.pageScope} only %}
+                        </div>
+                        <div class="cms-slot-order__details" data-audience>
+                            {{ 'setono_sylius_cms.ui.where_it_shows_audience'|trans }} {% include '@SetonoSyliusCMSPlugin/admin/entry/show/_audience.html.twig' with {'audience': snippet.audience} only %}
+                        </div>
+                    </div>
+                    <div class="ui mini icon buttons">
+                        <button type="button" class="ui button" data-cms-slot-order-move="up" title="{{ 'setono_sylius_cms.ui.move_up'|trans }}" aria-label="{{ 'setono_sylius_cms.ui.move_up'|trans }}: {{ title }}"><i class="arrow up icon"></i></button>
+                        <button type="button" class="ui button" data-cms-slot-order-move="down" title="{{ 'setono_sylius_cms.ui.move_down'|trans }}" aria-label="{{ 'setono_sylius_cms.ui.move_down'|trans }}: {{ title }}"><i class="arrow down icon"></i></button>
+                    </div>
+                </li>
+            {% endfor %}
+        </ol>
+        <div class="cms-dialog__actions">
+            <button type="button" class="ui button" data-cms-dialog-close>{{ 'sylius.ui.cancel'|trans }}</button>
+            <button type="submit" class="ui primary button">{{ 'setono_sylius_cms.ui.save_order'|trans }}</button>
+        </div>
+    </form>
+</dialog>

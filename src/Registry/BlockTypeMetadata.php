@@ -20,6 +20,7 @@ final readonly class BlockTypeMetadata
      * @param bool $disabled switched off in setono_sylius_cms.disabled.block_types: editors can't add it,
      *                       but blocks of the type already in trees keep rendering
      * @param array<string, Style> $styles the block styles it offers, by code: those it declares, then those added in config
+     * @param list<string> $needs the context keys it needs
      */
     public function __construct(
         public string $code,
@@ -33,6 +34,7 @@ final readonly class BlockTypeMetadata
         public ?string $thumbnail,
         public bool $disabled,
         public array $styles = [],
+        public array $needs = [],
     ) {
     }
 

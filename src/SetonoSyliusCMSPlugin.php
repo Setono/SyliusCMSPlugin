@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin;
 
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\CheckFieldTypesPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBindablePropertiesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterBlockTypesPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterConditionKindsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContentTypesPass;
+use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterContextResolversPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLayoutsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterLinkTargetsPass;
 use Setono\SyliusCMSPlugin\DependencyInjection\Compiler\RegisterProblemKindsPass;
@@ -43,5 +46,9 @@ final class SetonoSyliusCMSPlugin extends AbstractResourceBundle
         $container->addCompilerPass(new RegisterConditionKindsPass());
         $container->addCompilerPass(new RegisterLinkTargetsPass());
         $container->addCompilerPass(new RegisterSourcesPass());
+        $container->addCompilerPass(new RegisterContextResolversPass());
+        $container->addCompilerPass(new RegisterBindablePropertiesPass());
+        // After the passes above, which register the classes whose fields it checks
+        $container->addCompilerPass(new CheckFieldTypesPass());
     }
 }

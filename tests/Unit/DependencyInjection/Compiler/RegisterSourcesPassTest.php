@@ -17,6 +17,7 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSaleParams;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\ProductTaxons;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\SameCodeAsOnSale;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\UnknownOf;
+use Sylius\Component\Core\Model\TaxonInterface;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -169,6 +170,20 @@ final class RegisterSourcesPassTest extends AbstractCompilerPassTestCase
 
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage(sprintf('The source %s lists App\Entity\Recipe, which is no class or interface', UnknownOf::class));
+
+        $this->compile();
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_source_that_needs_a_context_key_the_config_does_not_declare(): void
+    {
+        $this->setParameter('setono_sylius_cms.context_keys', ['taxon' => ['class' => TaxonInterface::class, 'label' => 'setono_sylius_cms.context_key.taxon']]);
+        $this->setSource('app.product_taxons', ProductTaxons::class);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf('The source %s needs the context key "product", which isn\'t declared under setono_sylius_cms.context_keys', ProductTaxons::class));
 
         $this->compile();
     }

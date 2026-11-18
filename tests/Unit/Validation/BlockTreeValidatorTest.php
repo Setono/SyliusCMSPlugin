@@ -6,11 +6,13 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Validation;
 
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Setono\SyliusCMSPlugin\Block\Button;
 use Setono\SyliusCMSPlugin\Block\Column;
 use Setono\SyliusCMSPlugin\Block\Columns;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
+use Setono\SyliusCMSPlugin\Field\LinkHandler;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
@@ -21,7 +23,10 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\NestingRules;
+use Setono\SyliusCMSPlugin\Tests\Support\Bindings;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
+use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductBrand;
+use Setono\SyliusCMSPlugin\Tests\Unit\Binding\Fixture\ProductPage;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Landing;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\LandingTranslation;
@@ -30,6 +35,7 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Testimonial;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Validation\BlockTreeValidator;
+use Setono\SyliusCMSPlugin\Validation\FieldConstraints;
 use Setono\SyliusCMSPlugin\Validation\FieldValidator;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Symfony\Component\DependencyInjection\ServiceLocator;
@@ -303,6 +309,92 @@ final class BlockTreeValidatorTest extends TestCase
     }
 
     /**
+     * A bound field has a value in every locale, and its fallback is optional. See "Bindings" in docs/spec/slots.md
+     *
+     * @test
+     */
+    public function it_finds_a_required_field_that_is_bound_filled_without_a_fallback(): void
+    {
+        $bound = new StoredBlock(self::A, 'heading', 1);
+        $bound->fields['text'] = ['$bind' => 'product.brand', '$params' => [], '$fallback' => null];
+
+        self::assertSame([], $this->validator()->validate(new StoredTree(null, [$bound]), 'page', ['en_US', 'da_DK']));
+    }
+
+    /**
+     * @test
+     */
+    public function it_finds_a_binding_of_a_property_the_code_no_longer_has_or_of_a_type_the_field_does_not_accept_without_a_locale(): void
+    {
+        $unknown = new StoredBlock(self::A, 'heading', 1);
+        $unknown->fields['text'] = ['$bind' => 'product.colour', '$params' => [], '$fallback' => null];
+        $url = new StoredBlock(self::B, 'heading', 1);
+        $url->fields['text'] = ['$bind' => 'product.page', '$params' => [], '$fallback' => null];
+        $malformed = new StoredBlock(self::C, 'heading', 1);
+        $malformed->fields['text'] = ['$bind' => 'product.brand'];
+
+        self::assertEquals([
+            new ValidationError(self::A, 'text', null, 'The bindable property "product.colour" no longer exists, so its fallback shows.'),
+            new ValidationError(self::B, 'text', null, 'app.binding.product_page can\'t be shown in this field.'),
+            new ValidationError(self::C, 'text', null, 'This value should be a binding, with its parameters and fallback.'),
+        ], $this->validator()->validate(new StoredTree(null, [$unknown, $url, $malformed]), 'page', ['en_US']));
+    }
+
+    /**
+     * @test
+     */
+    public function it_validates_a_bound_field_s_fallback_as_its_value_in_the_locale_whose_fallback_it_is(): void
+    {
+        $block = self::testimonial(self::A);
+        $block->fields['quote'] = ['$bind' => 'product.brand', '$params' => [], '$fallback' => ['en_US' => 'Great', 'da_DK' => 'fantastiske sko']];
+
+        self::assertEquals(
+            [new ValidationError(self::A, 'quote', 'da_DK', 'This value is not valid.')],
+            $this->validator()->validate(new StoredTree(null, [$block]), 'page', ['en_US', 'da_DK']),
+        );
+    }
+
+    /**
+     * A bound link has no target name to show. See "Button" in docs/spec/blocks.md
+     *
+     * @test
+     */
+    public function it_finds_a_button_whose_link_is_bound_without_a_label_at_its_link(): void
+    {
+        self::assertEquals(
+            [new ValidationError(self::A, 'link', null, 'A button that shows a binding, such as the product\'s URL, needs a label.')],
+            $this->validator()->validate(new StoredTree(null, [self::button(self::A, [])]), 'page', ['en_US', 'da_DK']),
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_finds_a_bound_button_s_label_in_each_locale_along_its_fallback_chain(): void
+    {
+        $labelledInEnglish = self::button(self::A, ['en_US' => 'View product']);
+        $labelledInDanish = self::button(self::B, ['da_DK' => 'Se produktet']);
+        $notBound = new StoredBlock(self::C, 'button', 1);
+        $notBound->fields['link'] = ['target' => 'url', 'ref' => ['en_US' => '/sale'], 'anchor' => null, 'label' => []];
+
+        self::assertEquals(
+            [new ValidationError(self::B, 'link', 'en_US', 'A button that shows a binding, such as the product\'s URL, needs a label.')],
+            $this->validator()->validate(new StoredTree(null, [$labelledInEnglish, $labelledInDanish, $notBound]), 'page', ['en_US', 'da_DK']),
+        );
+    }
+
+    /**
+     * @param array<string, string> $label
+     */
+    private static function button(string $key, array $label): StoredBlock
+    {
+        $block = new StoredBlock($key, 'button', 1);
+        $block->fields['link'] = ['target' => 'url', 'ref' => ['$bind' => 'product.page', '$params' => [], '$fallback' => null], 'anchor' => null, 'label' => $label];
+
+        return $block;
+    }
+
+    /**
      * A testimonial with every field filled in en_US
      */
     private static function testimonial(string $key): StoredBlock
@@ -357,13 +449,17 @@ final class BlockTreeValidatorTest extends TestCase
             'columns' => Columns::class,
             'column' => Column::class,
             'testimonial' => Testimonial::class,
+            'button' => Button::class,
             'offer' => Offer::class,
         ], new FieldReader());
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
             RichTextHandler::class => Links::richTextHandler(...),
+            LinkHandler::class => static fn (): LinkHandler => Links::handler(properties: [new ProductPage()]),
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator),
         ]));
+
+        $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator();
 
         return new BlockTreeValidator(
             $blockTypes,
@@ -373,10 +469,11 @@ final class BlockTreeValidatorTest extends TestCase
                 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
             ])),
             new FieldValidator(
-                $handlers,
+                new FieldConstraints($handlers, $validator),
                 new FallbackValues($handlers, $fallbackChain->reveal()),
-                Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator(),
+                $validator,
                 $translator,
+                Bindings::validator([new ProductBrand(), new ProductPage()]),
             ),
             $translator,
         );

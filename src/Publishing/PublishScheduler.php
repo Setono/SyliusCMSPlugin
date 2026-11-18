@@ -53,7 +53,7 @@ final readonly class PublishScheduler implements PublishSchedulerInterface
         }
 
         $scheduledPublish = $this->entryLock->write($entry, function () use ($entry, $at, $now): ScheduledPublishInterface {
-            $this->check->check($this->workingCopies->getWorkingCopy($entry), true);
+            $this->check->check($entry, $this->workingCopies->getWorkingCopy($entry), true);
 
             $scheduledPublish = $this->scheduledPublishes->findOneByEntry($entry);
             if (null === $scheduledPublish) {

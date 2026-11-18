@@ -1,8 +1,10 @@
-import { useId } from 'react';
+import { useId, useState } from 'react';
+import { translatedValues } from '../../bindings';
 import { useBuilder, useBuilderState, useSettingsState } from '../../context';
 import { FieldRow } from '../../form/FieldRow';
 import formStyles from '../../form/Form.module.css';
 import { LocalDateTimeInput } from '../../form/LocalDateTimeInput';
+import { CONTEXT_FIELD, contextBlockerMessage, contextBlockers, contextChoices, contextNames, declaredContext, sameContext } from '../../hostPageContext';
 import { useTranslator, type MessageKey } from '../../i18n';
 import { isRemovedLayout, layoutOf, pickableLayouts, renderedLayout } from '../../layouts';
 import { fieldFallback, localeOf, outdatedValue } from '../../locales';
@@ -23,6 +25,7 @@ export function SettingsTab() {
                 <Title />
                 <Shown />
                 <Layout />
+                <HostPageContext />
             </fieldset>
             <Enabled />
             <DateWindow />
@@ -150,10 +153,12 @@ function Layout() {
                             locale={locale}
                             value={readFieldValue(values, field, schema['x-cms-translatable'], locale)}
                             onChange={(value) => store.getState().setLayoutValue(field, value)}
-                            fallback={schema['x-cms-translatable'] ? fieldFallback(locales, values[field], locale) : undefined}
+                            // A bound field's fallback is translated like its value
+                            fallback={schema['x-cms-translatable'] ? fieldFallback(locales, translatedValues(values[field]), locale) : undefined}
+                            binding={{ stored: values[field], set: (value) => store.getState().setLayoutBinding(field, value) }}
                             outdated={
                                 schema['x-cms-translatable']
-                                    ? outdatedValue(locales, values[field], translated[field], locale, () => store.getState().markLayoutValueUpToDate(field))
+                                    ? outdatedValue(locales, translatedValues(values[field]), translated[field], locale, () => store.getState().markLayoutValueUpToDate(field))
                                     : undefined
                             }
                         />
@@ -161,6 +166,84 @@ function Layout() {
                 </div>
             )}
         </>
+    );
+}
+
+/**
+ * A snippet's host-page context, which it declares: the pages it can be placed on, such as "Product page", or "Any page",
+ * which decides the block types and condition kinds offered. It can't change while something depends on it, so a
+ * change something is in the way of isn't made, and what's in the way is listed, as the server lists it when it refuses
+ * one. It's drafted. See "Snippets and their context" in docs/spec/slots.md
+ */
+function HostPageContext() {
+    const t = useTranslator();
+    const { store, placements } = useBuilder();
+    const rules = useBuilderState((state) => state.rules);
+    const entry = useBuilderState((state) => state.entry);
+    const contextKeys = useBuilderState((state) => state.contextKeys);
+    const slots = useBuilderState((state) => state.slots);
+    const blockTypes = useBuilderState((state) => state.blockTypes);
+    const conditionKinds = useBuilderState((state) => state.conditionKinds);
+    const refused = useBuilderState((state) => state.refusedContext);
+    const [inTheWay, setInTheWay] = useState<string[]>([]);
+    const id = useId();
+
+    // Only a snippet declares its context: an entry of any other content type provides itself
+    if (rules.provides !== null) {
+        return null;
+    }
+
+    const declared = declaredContext(entry);
+    const choices = contextChoices(contextKeys, slots, declared);
+    const current = choices.find((choice) => sameContext(choice, declared)) ?? declared;
+    const shown = inTheWay.length > 0 ? inTheWay : refused;
+
+    const pick = (keys: string[]): void => {
+        const blockers = contextBlockers(declared, keys, {
+            blocks: entry.tree.blocks,
+            blockTypes: new Map(blockTypes.map((blockType) => [blockType.code, blockType])),
+            conditionKinds,
+            placements: placements ?? [],
+            slots,
+        });
+        setInTheWay(blockers.map((blocker) => contextBlockerMessage(blocker, contextKeys, t)));
+        if (blockers.length === 0) {
+            store.getState().setSharedEntryValue(CONTEXT_FIELD, keys.length === 0 ? null : keys);
+        }
+    };
+
+    return (
+        <div className={styles.setting}>
+            <label htmlFor={id} className={formStyles.label}>
+                {t('setono_sylius_cms.builder.context')}
+            </label>
+            <select
+                id={id}
+                className={formStyles.select}
+                value={current.join(',')}
+                aria-describedby={`${id}-help`}
+                onChange={(event) => pick(choices.find((choice) => choice.join(',') === event.currentTarget.value) ?? [])}
+            >
+                {choices.map((choice) => (
+                    <option key={choice.join(',')} value={choice.join(',')}>
+                        {choice.length === 0 ? t('setono_sylius_cms.builder.context_any_page') : contextNames(choice, contextKeys, t).join(', ')}
+                    </option>
+                ))}
+            </select>
+            <p id={`${id}-help`} className={formStyles.help}>
+                {t('setono_sylius_cms.builder.context_help')}
+            </p>
+            {shown.length > 0 && (
+                <div role="alert" className={styles.warning}>
+                    <p className={styles.inTheWay}>{t('setono_sylius_cms.builder.context_in_the_way')}</p>
+                    <ul className={styles.inTheWayList}>
+                        {shown.map((message) => (
+                            <li key={message}>{message}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
     );
 }
 

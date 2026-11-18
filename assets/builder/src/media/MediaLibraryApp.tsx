@@ -17,7 +17,7 @@ export interface MediaLibraryAppProps {
 export function MediaLibraryApp({ config, api }: MediaLibraryAppProps) {
     const translate = useMemo(() => createTranslator(config.strings), [config]);
     const mediaApi = useMemo(() => api ?? createMediaApi(config), [api, config]);
-    const value = useMemo(() => ({ store: createMediaLibraryStore(mediaApi, config.media), config }), [mediaApi, config]);
+    const value = useMemo(() => ({ store: createMediaLibraryStore(mediaApi, config.media, null, config.filters), config }), [mediaApi, config]);
 
     // The picker a video's poster is picked with
     return (

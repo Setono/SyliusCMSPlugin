@@ -13,14 +13,27 @@ export function normalizeValue(value: JsonValue | undefined): JsonValue | null {
     return value;
 }
 
-/** A field's value in the edited locale, or its one value when it's shared. */
+/** A field's value in the edited locale, or its one value when it's shared. A binding is a translatable field's whole value, so it has none in a locale. */
 export function readFieldValue(fields: FieldValues, field: string, translatable: boolean, locale: string): JsonValue | undefined {
     const stored = fields[field];
     if (!translatable) {
         return stored;
     }
 
-    return isJsonObject(stored) ? stored[locale] : undefined;
+    return isJsonObject(stored) && typeof stored.$bind !== 'string' ? stored[locale] : undefined;
+}
+
+/**
+ * Writes a field's whole stored value, such as a binding, or once it's unbound the values it fell back to, leaving out
+ * what's empty. Called on a working copy inside an Immer recipe, so it changes only what it has to.
+ */
+export function writeWholeValue(fields: FieldValues, field: string, value: JsonValue | null): void {
+    const normalized = normalizeValue(value ?? undefined);
+    if (normalized === null) {
+        delete fields[field];
+    } else if (!jsonEqual(fields[field], normalized)) {
+        fields[field] = normalized;
+    }
 }
 
 /**
@@ -40,10 +53,13 @@ export function writeFieldValue(fields: FieldValues, field: string, translatable
         return;
     }
 
+    // A locale's value replaces a binding, which is the whole field's
     const values = fields[field];
-    if (!isJsonObject(values)) {
+    if (!isJsonObject(values) || typeof values.$bind === 'string') {
         if (normalized !== null) {
             fields[field] = { [locale]: normalized };
+        } else {
+            delete fields[field];
         }
 
         return;

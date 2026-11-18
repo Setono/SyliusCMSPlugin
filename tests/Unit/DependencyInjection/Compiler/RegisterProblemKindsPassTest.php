@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\ChannelAndTaxonReferences;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\CustomerGroupReferences;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\ProductAndTaxonCodeReferences;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\ProductCodeAndStateReferences;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Customer\Model\CustomerGroupInterface;
 use Sylius\Component\Product\Model\ProductInterface;
@@ -124,6 +125,22 @@ final class RegisterProblemKindsPassTest extends AbstractCompilerPassTestCase
         $listener = $this->container->getDefinition(ProblemCountListener::class);
         self::assertSame([ProductInterface::class, TaxonInterface::class, ChannelInterface::class], $listener->getArgument(2));
         self::assertSame([ProductInterface::class => ['code']], $listener->getArgument(3));
+    }
+
+    /**
+     * Such as a kind whose problems depend on a snippet's audience, whether it's enabled and whether it's published
+     *
+     * @test
+     */
+    public function it_hands_the_count_listener_every_field_a_kind_refers_to_a_class_by(): void
+    {
+        $this->setDefinition(ProblemCountListener::class, new Definition(ProblemCountListener::class, [null, [], [], []]));
+        $this->setDefinition('app.codes', (new Definition(ProductAndTaxonCodeReferences::class))->addTag('setono_sylius_cms.problem_kind'));
+        $this->setDefinition('app.codes_and_states', (new Definition(ProductCodeAndStateReferences::class))->addTag('setono_sylius_cms.problem_kind'));
+
+        $this->compile();
+
+        self::assertSame([ProductInterface::class => ['code', 'enabled'], TaxonInterface::class => ['code']], $this->container->getDefinition(ProblemCountListener::class)->getArgument(3));
     }
 
     /**

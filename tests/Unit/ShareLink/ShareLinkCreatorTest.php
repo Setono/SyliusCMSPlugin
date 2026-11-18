@@ -12,21 +12,30 @@ use Setono\SyliusCMSPlugin\Factory\ShareLinkFactory;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\Placement;
 use Setono\SyliusCMSPlugin\Model\ShareLink;
 use Setono\SyliusCMSPlugin\Model\ShareLinkInterface;
+use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Preview\SampleObject;
 use Setono\SyliusCMSPlugin\Preview\StartingValuesInterface;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface;
+use Setono\SyliusCMSPlugin\Rendering\ReferenceMap;
+use Setono\SyliusCMSPlugin\Rendering\RenderContext;
+use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ShareLinkRepositoryInterface;
 use Setono\SyliusCMSPlugin\ShareLink\ShareLinkCreator;
 use Setono\SyliusCMSPlugin\ShareLink\ShareLinkUnavailableException;
 use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
+use Setono\SyliusCMSPlugin\Tests\Support\SnippetPreviews;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Sylius\Component\Channel\Model\ChannelInterface as BaseChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\AdminUser;
 use Sylius\Component\Core\Model\AdminUserInterface;
 use Sylius\Component\Core\Model\Channel;
+use Sylius\Component\Core\Model\Product;
 use Sylius\Component\Locale\Model\Locale;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
@@ -52,6 +61,9 @@ final class ShareLinkCreatorTest extends TestCase
 
     private TokenStorage $tokenStorage;
 
+    /** @var ObjectProphecy<PlacementRepositoryInterface> */
+    private ObjectProphecy $placements;
+
     /** @var list<ShareLinkInterface> */
     private array $added = [];
 
@@ -76,6 +88,69 @@ final class ShareLinkCreatorTest extends TestCase
         $this->startingValues->date(Argument::any())->willReturn(null);
 
         $this->tokenStorage = new TokenStorage();
+
+        $this->placements = $this->prophesize(PlacementRepositoryInterface::class);
+        $this->placements->findOneOfSnippet(Argument::cetera())->willReturn(null);
+    }
+
+    /**
+     * A snippet's link fixes the placement whose host page shows it and the sample object its preview starts with. See
+     * "Share links" in docs/spec/publishing.md
+     *
+     * @test
+     */
+    public function it_fixes_a_snippet_s_placement_and_the_sample_object_a_preview_of_it_starts_with(): void
+    {
+        $snippet = self::snippet();
+        $placement = new Placement($snippet, 'product.after_price', 0);
+        $this->placements->findOneOfSnippet($snippet, $placement->getUuid())->willReturn($placement);
+
+        $shareLink = $this->creator()->create($snippet, 'WEB', 'en_US', $placement->getUuid());
+
+        self::assertSame([$shareLink], $this->added);
+        self::assertSame($placement, $shareLink->getPlacement());
+        self::assertEquals(new SampleObject('product', 'MUG'), $shareLink->getSample());
+    }
+
+    /**
+     * @test
+     */
+    public function it_fixes_the_sample_object_picked_for_a_snippet(): void
+    {
+        $snippet = self::snippet();
+        $placement = new Placement($snippet, 'product.after_price', 0);
+        $this->placements->findOneOfSnippet($snippet, $placement->getUuid())->willReturn($placement);
+
+        $shareLink = $this->creator()->create($snippet, 'WEB', 'en_US', $placement->getUuid(), 'T_SHIRT');
+
+        self::assertEquals(new SampleObject('product', 'T_SHIRT'), $shareLink->getSample());
+    }
+
+    /**
+     * A snippet has no URL of its own, and one without placements shows on a plain page with a sample object of its
+     * declared context
+     *
+     * @test
+     */
+    public function it_shares_a_snippet_without_a_placement_on_a_plain_page(): void
+    {
+        $shareLink = $this->creator()->create(self::snippet(), 'WEB', 'en_US');
+
+        self::assertNull($shareLink->getPlacement());
+        self::assertEquals(new SampleObject('product', 'MUG'), $shareLink->getSample());
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_placement_of_another_snippet(): void
+    {
+        $placement = new Placement(self::snippet(), 'product.after_price', 0);
+
+        $this->expectException(ShareLinkUnavailableException::class);
+        $this->expectExceptionMessage(sprintf('The snippet has no placement %s', $placement->getUuid()));
+
+        $this->creator()->create(self::snippet(), 'WEB', 'en_US', $placement->getUuid());
     }
 
     /**
@@ -220,7 +295,47 @@ final class ShareLinkCreatorTest extends TestCase
             $this->startingValues->reveal(),
             $this->tokenStorage,
             new MockClock('2026-11-14 10:00:00 UTC'),
+            SnippetPreviews::hostPages($this->placements->reveal(), self::products('MUG', 'T_SHIRT'), candidates: ['MUG']),
+            SnippetPreviews::renderContexts(),
         );
+    }
+
+    /**
+     * A snippet for product pages in WEB
+     */
+    private static function snippet(): Snippet
+    {
+        $snippet = new Snippet();
+        $snippet->setContext(['product']);
+        ChannelsAndAudience::modifier()->setChannels($snippet, ['WEB']);
+
+        return $snippet;
+    }
+
+    /**
+     * Loads the products with the codes, as the shopper sees them
+     */
+    private static function products(string ...$codes): ReferenceLoaderInterface
+    {
+        $products = [];
+        foreach ($codes as $code) {
+            $products[$code] = new Product();
+            $products[$code]->setCode($code);
+        }
+
+        return new class($products) implements ReferenceLoaderInterface {
+            /**
+             * @param array<string, Product> $products
+             */
+            public function __construct(private readonly array $products)
+            {
+            }
+
+            public function load(iterable $references, RenderContext $context): ReferenceMap
+            {
+                return new ReferenceMap(['product' => $this->products]);
+            }
+        };
     }
 
     /**

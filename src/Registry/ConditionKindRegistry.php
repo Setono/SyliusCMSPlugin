@@ -32,6 +32,11 @@ final class ConditionKindRegistry implements ConditionKindRegistryInterface
         return isset($this->classes[$code]);
     }
 
+    public function find(string $code): ?ConditionKindMetadata
+    {
+        return $this->has($code) ? $this->get($code) : null;
+    }
+
     public function get(string $code): ConditionKindMetadata
     {
         if (!isset($this->classes[$code])) {

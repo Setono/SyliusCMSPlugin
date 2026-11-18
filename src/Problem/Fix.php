@@ -42,4 +42,12 @@ final readonly class Fix
     {
         return new self('setono_sylius_cms.ui.fix_in_publishing', 'setono_sylius_cms_admin_entry_show', ['uuid' => $entry->getUuid(), '_fragment' => 'cms-section-publishing']);
     }
+
+    /**
+     * Goes to the Placements section of the snippet's overview page, where its placements are added, moved and removed
+     */
+    public static function inPlacements(EntryInterface $entry): self
+    {
+        return new self('setono_sylius_cms.ui.fix_in_placements', 'setono_sylius_cms_admin_entry_show', ['uuid' => $entry->getUuid(), '_fragment' => 'cms-section-placements']);
+    }
 }

@@ -1,0 +1,9 @@
+--TEST--
+cms_admin_entry_placements() gives a snippet's placements, each with its place in its slot, and the slots it can be placed in
+--TEMPLATE--
+{% set section = cms_admin_entry_placements(snippet) %}
+{% for placed in section.placements %}{{ placed.slot.identifier }} {{ placed.position }}/{{ placed.count }}; {% endfor %}| {% for slot in section.offeredSlots %}{{ slot.identifier }}; {% endfor %}
+--DATA--
+return $this->aSnippetPlacedInTheFooter()
+--EXPECT--
+shop.footer 1/1; | shop.footer;

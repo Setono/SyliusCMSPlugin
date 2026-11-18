@@ -15,6 +15,8 @@
         <service id="Setono\SyliusCMSPlugin\Rendering\BlockHydrator" class="Setono\SyliusCMSPlugin\Rendering\BlockHydrator">
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Binding\BindingResolver"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Validation\FieldConstraints"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\ParamsHydrator" class="Setono\SyliusCMSPlugin\Rendering\ParamsHydrator">
@@ -34,12 +36,35 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
         </service>
 
+        <!-- The entries whose trees show a snippet, in their published content or their working copy -->
+        <service id="Setono\SyliusCMSPlugin\Tree\SnippetUses" class="Setono\SyliusCMSPlugin\Tree\SnippetUses">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+        </service>
+
+        <!-- The Snippet fields through which a snippet would show inside itself -->
+        <service id="Setono\SyliusCMSPlugin\Tree\SnippetCycles" class="Setono\SyliusCMSPlugin\Tree\SnippetCycles">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+        </service>
+
+        <!-- The references in blocks' fields and their visibility conditions' parameters -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\BlockReferences" class="Setono\SyliusCMSPlugin\Rendering\BlockReferences">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Condition\ConditionMatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder" class="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockHydrator"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Condition\ConditionMatcher"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockReferences"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer" class="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer">
@@ -47,6 +72,23 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface" alias="Setono\SyliusCMSPlugin\Rendering\TwigBlockRenderer"/>
+
+        <!--
+        Outside the preview's decorators (decoration priority 0 and 10), so a block that throws for the shop or a share
+        link drops out, with its preview markers, while the builder's preview shows the error on the block
+        -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\FailSafeBlockRenderer" class="Setono\SyliusCMSPlugin\Rendering\FailSafeBlockRenderer"
+                 decorates="Setono\SyliusCMSPlugin\Rendering\BlockRendererInterface" decoration-priority="-10">
+            <argument type="service" id=".inner"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface"/>
+        </service>
+
+        <!-- Throws what a block or a snippet in a slot threw in dev, and logs it in production -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\FailureHandler" class="Setono\SyliusCMSPlugin\Rendering\FailureHandler">
+            <argument type="service" id="logger"/>
+            <argument>%kernel.debug%</argument>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface" alias="Setono\SyliusCMSPlugin\Rendering\FailureHandler"/>
 
         <!-- Renders an entry with its own URL in its layout: at its URL, and as a homepage -->
         <service id="Setono\SyliusCMSPlugin\Rendering\LayoutRenderer" class="Setono\SyliusCMSPlugin\Rendering\LayoutRenderer">
@@ -68,7 +110,14 @@
         <service id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoader" class="Setono\SyliusCMSPlugin\Rendering\ReferenceLoader">
             <argument type="tagged_locator" tag="setono_sylius_cms.reference_type_loader" index-by="type"/>
         </service>
-        <service id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface" alias="Setono\SyliusCMSPlugin\Rendering\ReferenceLoader"/>
+
+        <!-- Includes the trees of the snippets references show, and their references, in the same pass -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\SnippetTreesReferenceLoader" class="Setono\SyliusCMSPlugin\Rendering\SnippetTreesReferenceLoader">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoader"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockReferences"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface" alias="Setono\SyliusCMSPlugin\Rendering\SnippetTreesReferenceLoader"/>
 
         <!-- The entries, products and taxons references name, those the shopper may see through the visible queries -->
         <service id="Setono\SyliusCMSPlugin\Rendering\EntryReferenceLoader" class="Setono\SyliusCMSPlugin\Rendering\EntryReferenceLoader">
@@ -94,6 +143,57 @@
 
             <tag name="setono_sylius_cms.reference_type_loader" type="taxon"/>
         </service>
+
+        <!--
+        Renders a slot where its template event fires or a template calls cms_slot(). It reads the channel's placements
+        once a request, when the first slot renders
+        -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\SlotRenderer" class="Setono\SyliusCMSPlugin\Rendering\SlotRenderer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Context\HostPageContextResolverInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\RenderContextFactoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\PlacementProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\PlacementPickerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\BlockViewBuilder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
+            <argument type="service" id="twig"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface"/>
+
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\SlotRendererInterface" alias="Setono\SyliusCMSPlugin\Rendering\SlotRenderer"/>
+
+        <!--
+        Which of a slot's placements show, before anything renders: those whose page scope matches and whose snippet is
+        visible, and in a capped slot only the first ones. It answers every placement with its outcome
+        -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\PlacementPicker" class="Setono\SyliusCMSPlugin\Rendering\PlacementPicker">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcherInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\VisibleSnippetsInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\PlacementPickerInterface" alias="Setono\SyliusCMSPlugin\Rendering\PlacementPicker"/>
+
+        <!-- Which of a slot's placements show on the page by their page scopes, before anything renders -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher" class="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Condition\ConditionMatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcherInterface" alias="Setono\SyliusCMSPlugin\Rendering\PageScopeMatcher"/>
+
+        <!-- Where the shop reads a channel's placements. A project can decorate it to cache placements -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\PlacementProvider" class="Setono\SyliusCMSPlugin\Rendering\PlacementProvider">
+            <argument type="service" id="doctrine"/>
+            <argument>%setono_sylius_cms.model.placement.class%</argument>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\PlacementProviderInterface" alias="Setono\SyliusCMSPlugin\Rendering\PlacementProvider"/>
+
+        <!-- The snippets a slot may show: the visible ones -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\VisibleSnippets" class="Setono\SyliusCMSPlugin\Rendering\VisibleSnippets">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Rendering\VisibleSnippetsInterface" alias="Setono\SyliusCMSPlugin\Rendering\VisibleSnippets"/>
 
         <service id="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookup" class="Setono\SyliusCMSPlugin\Rendering\EntryUrlLookup">
             <argument type="service" id="doctrine"/>

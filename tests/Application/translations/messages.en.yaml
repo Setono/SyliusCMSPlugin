@@ -4,6 +4,8 @@ app:
             brand: Brand
         block_type:
             gallery: Gallery
+            product_note: Product note
+            store_hours: Store hours
         condition_kind:
             product_available: Product is available
         greeting: Hello
@@ -11,6 +13,9 @@ app:
             announcement: Announcement
         field:
             image: Image
+            opening_hours: Opening hours
+            opening_hours_help: Days without hours are closed.
+            product_note: Note
             product_available:
                 product: Product
             subtitle: Subtitle
@@ -18,5 +23,21 @@ app:
             transparent_header: Transparent header
         layout:
             landing: Landing
+            promo: Promo
+        opening_hours:
+            monday: Monday
+            tuesday: Tuesday
+            wednesday: Wednesday
+            thursday: Thursday
+            friday: Friday
+            saturday: Saturday
+            sunday: Sunday
+            opens: Opens
+            closes: Closes
+            photo: Photo
         link_target:
             store: Store
+        slot:
+            announcements: Announcements, above the header
+            promo_after_blocks: 'Promo pages: after the blocks'
+            store_locator_top: Store locator, at the top
