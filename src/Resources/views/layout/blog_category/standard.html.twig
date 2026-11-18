@@ -6,7 +6,7 @@
 {% extends '@SetonoSyliusCMSPlugin/layout/base.html.twig' %}
 
 {% block cms_content %}
-    {% set description = cms_field(entry, 'description') %}
+    {% set description = cms_value(entry, 'description') %}
 
     <header class="cms-category-header">
         <h1 class="cms-category-header__title">{{ cms_field(entry, 'title') }}</h1>
