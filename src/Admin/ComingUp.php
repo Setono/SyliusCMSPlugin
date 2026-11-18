@@ -9,8 +9,9 @@ use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 
 /**
- * The Overview's Coming up: the scheduled publishes that wait, and the date windows that start or end after now, in
- * time order. Each source gives its first ones in SQL, so the first ones of all of them are among those. An overdue
+ * The Overview's Coming up: the scheduled publishes that wait, and the date windows that start or end after now, of
+ * the entries whose start or end changes what shoppers see (EntryRepositoryInterface::findStartingAfter()), in time
+ * order. Each source gives its first ones in SQL, so the first ones of all of them are among those. An overdue
  * scheduled publish needs attention instead. See "Overview" in docs/spec/admin.md
  */
 final readonly class ComingUp

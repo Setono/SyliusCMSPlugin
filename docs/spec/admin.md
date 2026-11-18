@@ -22,7 +22,7 @@ The routes are in [Extending](extending.md#routes). Every admin user can do ever
 The hub's home page has four panels:
 
 - **Needs attention:** the errors and warnings across the store ([Problems](#problems)), grouped by kind. Each links to the place where it's fixed.
-- **Coming up:** scheduled publishes, and date windows that start or end, in time order.
+- **Coming up:** scheduled publishes that wait, and the starts and ends of date windows, in time order, the first 10. A start or end is listed only for an entry that's enabled, and published or scheduled to publish by then (a scheduled publish that hasn't failed, at the start or end or before it), as only those change what shoppers see.
 - **Translations:** completeness per channel and locale, with a link to the entries that aren't complete ([Localization](localization.md#completeness-and-outdated-flags)).
 - **Drafts in progress:** the 10 entries edited last, of those with unpublished changes and those never published, each labelled "Unpublished changes" or "Never published", with a link to all of them in All entries, filtered on both states.
 

@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
@@ -205,7 +206,9 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
     }
 
     /**
-     * The entries whose date window's start or end, $boundary, comes after $now, the first first. The columns hold UTC
+     * The entries whose date window's start or end, $boundary, comes after $now, the first first, of those whose
+     * boundary changes what shoppers see: enabled, and published, or with a publish scheduled for it or before that
+     * hasn't failed. The columns hold UTC
      *
      * @return list<EntryInterface>
      */
@@ -214,7 +217,14 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         /** @var list<EntryInterface> $entries */
         $entries = $this->createQueryBuilder('o')
             ->andWhere(sprintf('o.%s > :now', $boundary))
+            ->andWhere('o.enabled = :enabled')
+            ->andWhere(sprintf(
+                'o.lastPublishedAt IS NOT NULL OR EXISTS (SELECT cms_scheduled.id FROM %s cms_scheduled WHERE cms_scheduled.entry = o AND cms_scheduled.failureReason IS NULL AND cms_scheduled.publishAt <= o.%s)',
+                ScheduledPublishInterface::class,
+                $boundary,
+            ))
             ->setParameter('now', $now->setTimezone(new \DateTimeZone('UTC')), Types::DATETIME_IMMUTABLE)
+            ->setParameter('enabled', true, Types::BOOLEAN)
             ->addOrderBy(sprintf('o.%s', $boundary), 'ASC')
             ->addOrderBy('o.id', 'ASC')
             ->setMaxResults($limit)

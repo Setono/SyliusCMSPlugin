@@ -64,14 +64,18 @@ interface EntryRepositoryInterface
     public function countEntries(?string $contentType = null): int;
 
     /**
-     * The entries whose date window starts after $now, the first to start first, which the Overview's Coming up lists
+     * The entries whose date window starts after $now, the first to start first, which the Overview's Coming up lists:
+     * those enabled, and published or with a publish that hasn't failed scheduled for their start or before, as only
+     * their start changes what shoppers see
      *
      * @return list<EntryInterface>
      */
     public function findStartingAfter(\DateTimeImmutable $now, int $limit): array;
 
     /**
-     * The entries whose date window ends after $now, the first to end first, which the Overview's Coming up lists
+     * The entries whose date window ends after $now, the first to end first, which the Overview's Coming up lists:
+     * those enabled, and published or with a publish that hasn't failed scheduled for their end or before, as only
+     * their end changes what shoppers see
      *
      * @return list<EntryInterface>
      */

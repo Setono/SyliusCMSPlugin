@@ -285,6 +285,43 @@ final class OverviewTest extends WebTestCase
     }
 
     /**
+     * Only those change what shoppers see: a disabled entry or one never published shows nothing when its window starts
+     * or ends, unless a publish scheduled before that makes it show
+     *
+     * @test
+     */
+    public function it_lists_the_date_windows_only_of_enabled_entries_that_are_published_or_scheduled_to_publish_before_they_start_or_end(): void
+    {
+        $client = self::signedInClient();
+        self::mockTime('2026-11-20 10:00:00');
+
+        $shown = self::withDateWindow(self::createPage('Shown', 'shown', published: true), '2026-11-21 09:00:00', null);
+        $disabled = self::withDateWindow(self::createPage('Disabled', 'disabled', published: true), '2026-11-21 09:00:00', null);
+        $disabled->setEnabled(false);
+        self::entityManager()->flush();
+        self::withDateWindow(self::createPage('Never published', 'never-published'), '2026-11-21 09:00:00', '2026-11-23 18:00:00');
+        $publishedFirst = self::withDateWindow(self::createPage('Published first', 'published-first'), '2026-11-21 10:00:00', '2026-11-23 18:00:00');
+        self::schedule($publishedFirst, '2026-11-21 10:00:00');
+        $publishedLater = self::withDateWindow(self::createPage('Published later', 'published-later'), '2026-11-21 11:00:00', '2026-11-23 19:00:00');
+        self::schedule($publishedLater, '2026-11-22 12:00:00');
+
+        $crawler = $client->request('GET', '/admin/cms');
+
+        self::assertSame([
+            ['starts', '2026-11-21 09:00', 'Shown'],
+            ['publishes', '2026-11-21 10:00', 'Published first'],
+            ['starts', '2026-11-21 10:00', 'Published first'],
+            ['publishes', '2026-11-22 12:00', 'Published later'],
+            ['ends', '2026-11-23 18:00', 'Published first'],
+            ['ends', '2026-11-23 19:00', 'Published later'],
+        ], $crawler->filter('[data-panel="coming_up"] [data-event]')->each(static fn (Crawler $event): array => [
+            $event->attr('data-event'),
+            $event->filter('time')->text(),
+            $event->filter('a')->text(),
+        ]));
+    }
+
+    /**
      * @test
      */
     public function it_says_when_nothing_is_coming_up(): void
