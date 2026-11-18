@@ -77,6 +77,8 @@
             <argument>%setono_sylius_cms.model.entry.class%</argument>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+            <!-- The picker narrows the search to the content type its field names with the query parameter contentType -->
+            <argument type="service" id="request_stack"/>
 
             <tag name="setono_sylius_cms.search" kind="entry"/>
         </service>

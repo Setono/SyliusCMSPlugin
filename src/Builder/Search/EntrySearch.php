@@ -14,12 +14,16 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Uid\Uuid;
 
 /**
  * Searches the entries of the content types with a URL of their own, which links lead to, by their title and slug in
- * any locale, ignoring case, published or not: an editor may link to an entry before it's out. Each is named by its
- * title in the admin user's locale, along its fallback chain, newest first
+ * any locale, ignoring case, published or not: an editor may link to an entry before it's out. The picker of an Entry
+ * or Entries field that names a content type narrows the search to its entries, with or without a URL of their own,
+ * with the request's query parameter `contentType`, its code, such as a blog post's categories picker. Looking entries
+ * up by UUID finds those of every content type, so a field names what it holds. Each is named by its title in the
+ * admin user's locale, along its fallback chain, newest first. A disabled content type's entries are never found
  *
  * @internal
  */
@@ -36,12 +40,20 @@ final readonly class EntrySearch implements SearchInterface
         private string $entryClass,
         private ContentTypeRegistryInterface $contentTypes,
         private FallbackValues $fallbackValues,
+        private RequestStack $requestStack,
     ) {
     }
 
     public function search(string $query, string $localeCode): array
     {
-        $entries = $this->entries()
+        $contentType = $this->requestStack->getCurrentRequest()?->query->all()['contentType'] ?? null;
+        $contentTypes = match (true) {
+            null === $contentType => array_filter($this->contentTypes->enabled(), static fn (ContentTypeMetadata $contentType): bool => $contentType->hasOwnUrl()),
+            is_string($contentType) && $this->contentTypes->isEnabled($contentType) => [$this->contentTypes->get($contentType)],
+            default => [],
+        };
+
+        $entries = $this->entries($contentTypes)
             ->andWhere(sprintf(
                 'EXISTS (SELECT matched.id FROM %1$s matched WHERE matched.translatable = entry AND (LOWER(matched.title) LIKE :query %2$s OR LOWER(matched.slug) LIKE :query %2$s))',
                 EntryTranslation::class,
@@ -61,19 +73,18 @@ final readonly class EntrySearch implements SearchInterface
             return [];
         }
 
-        return $this->results($this->entries()->andWhere('entry.uuid IN (:uuids)')->setParameter('uuids', $uuids), $localeCode);
+        // A disabled content type is hidden from the builder
+        return $this->results($this->entries($this->contentTypes->enabled())->andWhere('entry.uuid IN (:uuids)')->setParameter('uuids', $uuids), $localeCode);
     }
 
     /**
-     * The entries of the enabled content types with a URL of their own, newest first
+     * The entries of the content types, newest first
+     *
+     * @param array<array-key, ContentTypeMetadata> $contentTypes
      */
-    private function entries(): QueryBuilder
+    private function entries(array $contentTypes): QueryBuilder
     {
-        $classes = array_map(
-            static fn (ContentTypeMetadata $contentType): string => $contentType->modelClass,
-            // A disabled content type is hidden from the builder
-            array_filter($this->contentTypes->enabled(), static fn (ContentTypeMetadata $contentType): bool => $contentType->hasOwnUrl()),
-        );
+        $classes = array_map(static fn (ContentTypeMetadata $contentType): string => $contentType->modelClass, $contentTypes);
 
         $queryBuilder = EntityManagers::of($this->managerRegistry, $this->entryClass)->createQueryBuilder()
             ->select('entry')

@@ -7,6 +7,8 @@ import { fakeSearch, renderField } from './fixtures';
 const strings = {
     'setono_sylius_cms.builder.items.add_product': 'Add product',
     'setono_sylius_cms.builder.items.add_taxon': 'Add taxon',
+    'setono_sylius_cms.builder.items.add_entry': 'Add entry',
+    'setono_sylius_cms.builder.items.search_entries': 'Search entries',
     'setono_sylius_cms.builder.items.at_most': 'Up to %max%',
     'setono_sylius_cms.builder.items.change': 'Change…',
     'setono_sylius_cms.builder.items.choose': 'Choose…',
@@ -22,7 +24,7 @@ const strings = {
     'setono_sylius_cms.builder.search.failed': 'The search failed. Try again.',
 };
 
-function schema(type: 'product' | 'products' | 'taxon' | 'taxons', label: string, options?: JsonObject): FieldSchema {
+function schema(type: 'product' | 'products' | 'taxon' | 'taxons' | 'entry' | 'entries', label: string, options?: JsonObject): FieldSchema {
     return {
         ...(type.endsWith('s') ? { type: 'array', items: { type: 'string', minLength: 1 } } : { type: 'string', minLength: 1 }),
         'x-cms-type': type,
@@ -46,7 +48,15 @@ const catalog: Record<string, SearchResult[]> = {
         { ref: 'T_SHIRTS', name: 'Category / T-shirts', thumbnail: null },
         { ref: 'MUGS', name: 'Category / Mugs', thumbnail: null },
     ],
+    entry: [
+        { ref: '0193a5be-7255-7f00-8a1b-2c3d4e5f6a7b', name: 'News', thumbnail: null },
+        { ref: '0193a5be-7255-7f00-8a1b-2c3d4e5f6a7c', name: 'Recipes', thumbnail: null },
+    ],
 };
+
+const NEWS = '0193a5be-7255-7f00-8a1b-2c3d4e5f6a7b';
+const RECIPES = '0193a5be-7255-7f00-8a1b-2c3d4e5f6a7c';
+const GONE = '0193a5be-7255-7f00-8a1b-2c3d4e5f6a7d';
 
 function renderCatalogField(schema: FieldSchema, initial?: JsonValue) {
     const search = fakeSearch(catalog);
@@ -188,5 +198,51 @@ describe('a taxon field', () => {
         expect(await screen.findByText('Category / T-shirts')).toBeInTheDocument();
         await pick('Category', 'Category / Mugs');
         expect(search.search).toHaveBeenCalledWith('taxon', '');
+    });
+});
+
+describe('an entries field', () => {
+    it('should search only the entries of the content type it names, such as a blog post\'s categories', async () => {
+        const { onChange, search } = renderCatalogField(schema('entries', 'Categories', { max: null, sources: [], limit: 8, contentType: 'blog_category' }));
+
+        expect(screen.getByRole('button', { name: 'Categories' })).toHaveTextContent('Add entry');
+        await pick('Categories', 'Recipes');
+
+        expect(search.search).toHaveBeenCalledWith('entry', '', { contentType: 'blog_category' });
+        expect(onChange).toHaveBeenLastCalledWith([RECIPES]);
+    });
+
+    it('should search every entry when it names no content type', async () => {
+        const { search } = renderCatalogField(schema('entries', 'Entries', { max: null, sources: [], limit: 8, contentType: null }));
+
+        await pick('Entries', 'News');
+
+        expect(search.search).toHaveBeenCalledWith('entry', '');
+    });
+
+    it('should name the categories it holds in the editor\'s order, and flag a deleted one', async () => {
+        const { search } = renderCatalogField(schema('entries', 'Categories', { max: null, sources: [], limit: 8, contentType: 'blog_category' }), [RECIPES, GONE, NEWS]);
+
+        expect(await screen.findByText(`${GONE} no longer exists, so it isn’t shown.`)).toBeInTheDocument();
+        expect(listed('Categories')).toEqual([expect.stringContaining('Recipes'), expect.stringContaining('no longer exists'), expect.stringContaining('News')]);
+        expect(search.find).toHaveBeenCalledWith('entry', [RECIPES, GONE, NEWS]);
+    });
+});
+
+describe('an entry field', () => {
+    it('should choose one entry of the content type it names', async () => {
+        const { onChange, search } = renderCatalogField(schema('entry', 'Category', { contentType: 'blog_category' }));
+
+        expect(screen.getByRole('button', { name: 'Category' })).toHaveTextContent('Choose…');
+        await pick('Category', 'News');
+
+        expect(search.search).toHaveBeenCalledWith('entry', '', { contentType: 'blog_category' });
+        expect(onChange).toHaveBeenLastCalledWith(NEWS);
+    });
+
+    it('should flag an entry that no longer exists', async () => {
+        renderCatalogField(schema('entry', 'Category', { contentType: 'blog_category' }), GONE);
+
+        expect(await screen.findByText(`${GONE} no longer exists, so it isn’t shown.`)).toBeInTheDocument();
     });
 });
