@@ -118,6 +118,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Media\MediaLocales"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\TranslationCompleteness"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\PresetProblemFinderInterface"/>
 
             <tag name="twig.runtime"/>
         </service>

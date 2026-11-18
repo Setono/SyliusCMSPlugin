@@ -10,10 +10,12 @@ use Setono\SyliusCMSPlugin\Admin\ComingUpEvent;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\NeedsAttention;
 use Setono\SyliusCMSPlugin\Admin\NeedsAttentionGroups;
+use Setono\SyliusCMSPlugin\Admin\PresetProblemGroup;
 use Setono\SyliusCMSPlugin\Admin\TranslationCompleteness;
 use Setono\SyliusCMSPlugin\Media\MediaFilter;
 use Setono\SyliusCMSPlugin\Media\MediaLocales;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Problem\PresetProblemFinderInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Twig\Extension\RuntimeExtensionInterface;
@@ -37,7 +39,18 @@ final readonly class OverviewRuntime implements RuntimeExtensionInterface
         private MediaItemRepositoryInterface $mediaItems,
         private MediaLocales $mediaLocales,
         private TranslationCompleteness $translationCompleteness,
+        private PresetProblemFinderInterface $presetProblems,
     ) {
+    }
+
+    /**
+     * The problems of presets, which aren't entries, grouped by kind, which Needs attention lists below the entries'
+     *
+     * @return list<PresetProblemGroup>
+     */
+    public function presetProblems(): array
+    {
+        return PresetProblemGroup::byKind($this->presetProblems->findAll());
     }
 
     /**

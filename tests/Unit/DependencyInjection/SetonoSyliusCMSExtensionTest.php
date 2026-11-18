@@ -44,6 +44,7 @@ use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Preset\CodePresetProvider;
+use Setono\SyliusCMSPlugin\Problem\PresetProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Profiler\CMSDataCollector;
 use Setono\SyliusCMSPlugin\Profiler\TraceableSlotRenderer;
@@ -181,6 +182,18 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $instanceof = $this->container->getAutoconfiguredInstanceof();
         self::assertArrayHasKey(ProblemKindInterface::class, $instanceof);
         self::assertSame(['setono_sylius_cms.problem_kind' => [[]]], $instanceof[ProblemKindInterface::class]->getTags());
+    }
+
+    /**
+     * @test
+     */
+    public function it_autoconfigures_preset_problem_kinds(): void
+    {
+        $this->load();
+
+        $instanceof = $this->container->getAutoconfiguredInstanceof();
+        self::assertArrayHasKey(PresetProblemKindInterface::class, $instanceof);
+        self::assertSame(['setono_sylius_cms.preset_problem_kind' => [[]]], $instanceof[PresetProblemKindInterface::class]->getTags());
     }
 
     /**

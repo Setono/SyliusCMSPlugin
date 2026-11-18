@@ -49,7 +49,13 @@ use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Problem\Kind\UnknownBlockType;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
+use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\TranslationKey;
+use Setono\SyliusCMSPlugin\Problem\Fix;
+use Setono\SyliusCMSPlugin\Problem\PresetProblem;
+use Setono\SyliusCMSPlugin\Problem\PresetProblemFinderInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinder;
+use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Query\CompletenessQueryInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
@@ -111,6 +117,7 @@ use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Translation\IdentityTranslator;
 use Symfony\Component\Translation\Loader\ArrayLoader;
+use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Component\Translation\Translator;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\Test\IntegrationTestCase;
@@ -146,6 +153,9 @@ final class AdminExtensionTest extends IntegrationTestCase
 
     /** How many images miss alt text */
     private int $missingAltText = 0;
+
+    /** @var list<PresetProblem> */
+    private array $presetProblems = [];
 
     /** @var array<string, array{entries: int, complete: array<string, int>}> the completeness query's counts, by channel */
     private array $completeness = [];
@@ -295,6 +305,21 @@ final class AdminExtensionTest extends IntegrationTestCase
         $utc = new \DateTimeZone('UTC');
         $page->setDateWindow(new DateWindow(null === $from ? null : new \DateTimeImmutable($from, $utc), null === $until ? null : new \DateTimeImmutable($until, $utc)));
         $this->dated[] = $page;
+
+        return [];
+    }
+
+    /**
+     * A code preset with blocks of a removed type, and an editor preset with a problem fixed somewhere
+     *
+     * @return array{}
+     */
+    public function presetsWithProblems(): array
+    {
+        $this->presetProblems = [
+            new PresetProblem('preset_removed_block_type', Severity::Warning, new Preset(new TranslationKey('app.preset.retired'), [], code: 'retired'), new TranslatableMessage('It has blocks of a removed type.')),
+            new PresetProblem('preset_removed_block_type', Severity::Warning, new Preset('Promo', [], uuid: '0193a5be-7255-7f00-8a1b-2c3d4e5f6a7b', changedAt: new \DateTimeImmutable()), new TranslatableMessage('It has blocks of another removed type.'), new Fix('Fix it', 'app_presets')),
+        ];
 
         return [];
     }
@@ -567,6 +592,12 @@ final class AdminExtensionTest extends IntegrationTestCase
             return $completeness;
         });
 
+        $presetProblems = &$this->presetProblems;
+        $presetProblemFinder = $this->prophesize(PresetProblemFinderInterface::class);
+        $presetProblemFinder->findAll()->will(static function () use (&$presetProblems): array {
+            return $presetProblems;
+        });
+
         return new OverviewRuntime(
             new ComingUp($scheduledPublishes->reveal(), $entries->reveal(), new MockClock('2026-11-17 12:00:00 UTC')),
             $entryRows,
@@ -575,6 +606,7 @@ final class AdminExtensionTest extends IntegrationTestCase
             $mediaItems->reveal(),
             new MediaLocales(new ChannelLocales($channels->reveal()), $translationLocaleProvider->reveal(), $this->prophesize(RepositoryInterface::class)->reveal()),
             new TranslationCompleteness($channels->reveal(), $completenessQuery->reveal()),
+            $presetProblemFinder->reveal(),
         );
     }
 

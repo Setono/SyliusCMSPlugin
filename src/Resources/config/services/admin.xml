@@ -5,6 +5,7 @@
         <!-- The Content item in the Sylius admin menu -->
         <service id="Setono\SyliusCMSPlugin\Admin\MainMenuListener" class="Setono\SyliusCMSPlugin\Admin\MainMenuListener">
             <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Problem\PresetProblemFinderInterface"/>
             <argument type="service" id="translator"/>
 
             <tag name="kernel.event_listener" event="sylius.menu.admin.main"/>

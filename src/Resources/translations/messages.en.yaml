@@ -282,6 +282,7 @@ setono_sylius_cms:
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
         page_scope_removed_kind: 'The page scope of the placement in "%slot%" has a condition of the kind "%kind%", which the code no longer has, so the placement shows nothing.'
         page_scope_unprovided: 'The page scope of the placement in "%slot%" has a condition, %kind%, that needs the host-page context "%context%", which the slot no longer provides, so the placement shows nothing.'
+        preset_removed_block_type: 'It has blocks of the type %types%, which the code no longer has, so inserting it leaves them out.'
         placement_hidden_by_homepage: 'The placement in "%slot%" doesn''t show in %channels%, whose homepage is a CMS page, as Sylius''s own homepage doesn''t render there.'
         removed_layout: 'Its layout "%layout%" was removed from the code or disabled, so it shows in the default layout, %default%, until you pick one.'
         removed_context_key: 'It needs the context key "%key%", which the code no longer has, so none of its placements shows it.'
@@ -304,6 +305,7 @@ setono_sylius_cms:
         misfit_value: Values that don't fit their field
         page_scope_mismatch: Page scopes that don't fit their slots
         placement_hidden_by_homepage: Placements a CMS homepage hides
+        preset_removed_block_type: Presets with blocks of removed types
         removed_context_key: Removed context keys
         removed_layout: Removed layouts
         scheduled_publish_failed: Failed scheduled publishes
@@ -404,6 +406,7 @@ setono_sylius_cms:
         fix_in_builder: Fix in builder
         fix_in_placements: Go to Placements
         fix_in_publishing: Go to Publishing
+        from_code: From code
         homepage_now: Homepage now
         homepage_of: Homepage of
         homepage_of_help: The page each channel shows at its root URL in place of the store's own homepage. Choose the channels in the builder's settings.

@@ -33,6 +33,7 @@ use Setono\SyliusCMSPlugin\Media\DeleteReplacedFile;
 use Setono\SyliusCMSPlugin\Media\Liip\FilterSets;
 use Setono\SyliusCMSPlugin\Media\Liip\LocalVariants;
 use Setono\SyliusCMSPlugin\Preset\CodePresetFiles;
+use Setono\SyliusCMSPlugin\Problem\PresetProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemKindInterface;
 use Setono\SyliusCMSPlugin\Publishing\ScheduledPublishDue;
 use Sylius\Bundle\ResourceBundle\DependencyInjection\Extension\AbstractResourceExtension;
@@ -51,6 +52,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     public const FIELD_HANDLER_TAG = 'setono_sylius_cms.field_handler';
 
     public const CHOICES_PROVIDER_TAG = 'setono_sylius_cms.choices_provider';
+
+    public const PRESET_PROBLEM_KIND_TAG = 'setono_sylius_cms.preset_problem_kind';
 
     /** The service id of the storage media items are stored in, which media.storage defaults to */
     public const STORAGE = 'setono_sylius_cms.storage';
@@ -133,6 +136,7 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
 
         $container->registerForAutoconfiguration(FieldHandlerInterface::class)->addTag(self::FIELD_HANDLER_TAG);
         $container->registerForAutoconfiguration(ProblemKindInterface::class)->addTag(RegisterProblemKindsPass::TAG);
+        $container->registerForAutoconfiguration(PresetProblemKindInterface::class)->addTag(self::PRESET_PROBLEM_KIND_TAG);
         $container->registerForAutoconfiguration(ChoicesProviderInterface::class)->addTag(self::CHOICES_PROVIDER_TAG);
         $container->registerAttributeForAutoconfiguration(AsConditionKind::class, static function (ChildDefinition $definition): void {
             $definition->addTag(RegisterConditionKindsPass::TAG);
