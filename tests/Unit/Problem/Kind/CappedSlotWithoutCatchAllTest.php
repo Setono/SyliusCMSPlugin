@@ -24,8 +24,8 @@ use Setono\SyliusCMSPlugin\Tests\Support\ChannelsAndAudience;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
- * A capped slot without a catch-all placement, one with an empty page scope whose snippet's audience is everyone, so
- * some pages or shoppers may get nothing there. See "Capped slots" in docs/spec/targeting.md and "Problems" in
+ * A capped slot without a catch-all placement, one with an empty page scope whose snippet is published, enabled and for
+ * everyone, so some pages or shoppers may get nothing there. See "Capped slots" in docs/spec/targeting.md and "Problems" in
  * docs/spec/admin.md
  */
 final class CappedSlotWithoutCatchAllTest extends TestCase
@@ -47,6 +47,8 @@ final class CappedSlotWithoutCatchAllTest extends TestCase
     {
         $snippet = new Snippet();
         $forWholesale = self::snippetFor(Audience::only('wholesale'));
+        $disabled = self::published(new Snippet());
+        $disabled->setEnabled(false);
         $inTop = self::scoped(new Placement($snippet, 'shop.top', 0));
         $againInTop = self::scoped(new Placement($snippet, 'shop.top', 2));
         $inHero = self::scoped(new Placement($snippet, 'app.hero', 0));
@@ -54,8 +56,11 @@ final class CappedSlotWithoutCatchAllTest extends TestCase
         $this->placements->findBySlots(['app.hero', 'shop.top'])->willReturn([
             $inHero,
             // A catch-all of another snippet, anywhere in the slot
-            new Placement(new Snippet(), 'app.hero', 1),
+            new Placement(self::published(new Snippet()), 'app.hero', 1),
             new Placement($forWholesale, 'shop.top', 1),
+            // Nor is a snippet for everyone a catch-all while it's unpublished or disabled
+            new Placement(new Snippet(), 'shop.top', 3),
+            new Placement($disabled, 'shop.top', 4),
             $inTop,
             $againInTop,
         ]);
@@ -85,12 +90,12 @@ final class CappedSlotWithoutCatchAllTest extends TestCase
     }
 
     /**
-     * A placement written, or a snippet's audience changed or deleted, may give or take the catch-all of a capped slot
-     * other snippets are placed in too
+     * A placement written, or a snippet's audience changed, its publishing, enabling or disabling, or its delete, may give
+     * or take the catch-all of a capped slot other snippets are placed in too
      *
      * @test
      */
-    public function it_has_every_snippet_placed_in_a_capped_slot_counted_again_when_a_placement_or_an_audience_is_written(): void
+    public function it_has_every_snippet_placed_in_a_capped_slot_counted_again_when_a_placement_or_what_makes_a_snippet_a_catch_all_is_written(): void
     {
         $first = new Snippet();
         $second = new Snippet();
@@ -101,7 +106,7 @@ final class CappedSlotWithoutCatchAllTest extends TestCase
         ]);
 
         self::assertSame([PlacementInterface::class, EntryInterface::class], CappedSlotWithoutCatchAll::getReferencedClasses());
-        self::assertSame([EntryInterface::class => 'audienceMode'], CappedSlotWithoutCatchAll::getReferenceFields());
+        self::assertSame([EntryInterface::class => ['audienceMode', 'enabled', 'lastPublishedAt']], CappedSlotWithoutCatchAll::getReferenceFields());
         self::assertSame([$first, $second], [...$this->kind()->findEntriesReferencing([new Placement(new Snippet(), 'shop.footer', 0)])]);
     }
 
@@ -116,8 +121,15 @@ final class CappedSlotWithoutCatchAllTest extends TestCase
 
     private static function snippetFor(Audience $audience): Snippet
     {
-        $snippet = new Snippet();
+        $snippet = self::published(new Snippet());
         ChannelsAndAudience::modifier()->setAudience($snippet, $audience);
+
+        return $snippet;
+    }
+
+    private static function published(Snippet $snippet): Snippet
+    {
+        $snippet->publish(new \DateTimeImmutable('2026-11-18 10:00:00'));
 
         return $snippet;
     }

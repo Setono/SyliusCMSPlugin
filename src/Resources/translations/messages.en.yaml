@@ -254,7 +254,7 @@ setono_sylius_cms:
         broken_layout_rich_text_reference: 'A link in %field% in the layout leads to %type% that was deleted, so it shows as plain text.'
         broken_reference: '%field% in the %block% block refers to %type% that was deleted, so it isn''t shown.'
         broken_rich_text_reference: 'A link in %field% in the %block% block leads to %type% that was deleted, so it shows as plain text.'
-        capped_slot_without_catch_all: '"%slot%" is capped at %cap% and has no catch-all placement, with no page scope and a snippet for everyone, so some pages or shoppers may see nothing there.'
+        capped_slot_without_catch_all: '"%slot%" is capped at %cap% and has no catch-all placement, with no page scope and a published, enabled snippet for everyone, so some pages or shoppers may see nothing there.'
         deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
         deleted_customer_group_negated: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer excludes anyone through it.'
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
@@ -416,7 +416,7 @@ setono_sylius_cms:
         order: Order…
         # The Order… dialog of a slot on the overview page of a snippet placed in it. See "Placements" in docs/spec/admin.md
         order_slot: 'Order of "%slot%"'
-        order_slot_help: '{1} Only the first placement that matches the page and the shopper shows, so put the most specific first, and last a catch-all, with no page scope and a snippet for everyone. Drag them into order.|]1,Inf[ Only the first %count% placements that match the page and the shopper show, so put the most specific first, and last a catch-all, with no page scope and a snippet for everyone. Drag them into order.'
+        order_slot_help: '{1} Only the first placement that matches the page and the shopper shows, so put the most specific first, and last a catch-all, with no page scope and a published, enabled snippet for everyone. Drag them into order.|]1,Inf[ Only the first %count% placements that match the page and the shopper show, so put the most specific first, and last a catch-all, with no page scope and a published, enabled snippet for everyone. Drag them into order.'
         order_slot_placements: 'The placements in "%slot%", in order'
         order_uncapped_slot_help: Every placement that matches the page and the shopper shows, in this order. Drag them into order.
         other_content_type: Another content type
@@ -477,7 +477,7 @@ setono_sylius_cms:
         # A slot's warnings, in its Order… dialog. See "Problems" in docs/spec/admin.md
         slot_warning:
             hidden_by_homepage: 'It doesn''t show in %channels%, whose homepage is a CMS page, as Sylius''s own homepage doesn''t render there.'
-            no_catch_all: None of its placements is a catch-all, with no page scope and a snippet for everyone, so some pages or shoppers may see nothing there.
+            no_catch_all: None of its placements is a catch-all, with no page scope and a published, enabled snippet for everyone, so some pages or shoppers may see nothing there.
         status: Status
         status_filter:
             needs_attention: Needs attention

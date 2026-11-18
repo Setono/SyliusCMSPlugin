@@ -35,8 +35,8 @@ final class SlotOrderTest extends WebTestCase
         $wholesale = self::createSnippet('Wholesale prices');
         self::channelsAndAudience()->setAudience($wholesale, Audience::only('wholesale', '@guest'));
         self::entityManager()->flush();
-        $welcome = self::createSnippet('Welcome');
-        $sale = self::createSnippet('Winter sale');
+        $welcome = self::createSnippet('Welcome', published: true);
+        $sale = self::createSnippet('Winter sale', published: true);
         self::place($wholesale, 'shop.top');
         self::place($welcome, 'shop.top');
         self::place($sale, 'shop.top');
@@ -131,7 +131,7 @@ final class SlotOrderTest extends WebTestCase
         $dialog = $client->request('GET', self::overview($snippet))->filter('dialog[data-slot="store_homepage"]');
 
         self::assertSame([
-            'no_catch_all' => 'None of its placements is a catch-all, with no page scope and a snippet for everyone, so some pages or shoppers may see nothing there.',
+            'no_catch_all' => 'None of its placements is a catch-all, with no page scope and a published, enabled snippet for everyone, so some pages or shoppers may see nothing there.',
             'hidden_by_homepage' => 'It doesn\'t show in Setono CMS Test Store, whose homepage is a CMS page, as Sylius\'s own homepage doesn\'t render there.',
         ], self::warnings($dialog));
     }

@@ -25,14 +25,15 @@ interface ReferenceProblemKindInterface extends ProblemKindInterface
     public static function getReferencedClasses(): array;
 
     /**
-     * The field that entries refer to the records of a referenced class by, by class, such as a product's code. An
-     * entry can only start or stop referring to such a record when it's deleted or that field changes, so only a flush
-     * that does either counts the entries again: not inserting one, nor changing anything else, so writing products
-     * runs no query. A referenced class it leaves out counts on every insert, update and delete, as a customer group
-     * does, since an entry may name a group's code before the group is added again. RegisterProblemKindsPass reads them
-     * while the container builds
+     * The field that entries refer to the records of a referenced class by, by class, such as a product's code, or the
+     * fields, when its problems depend on more than one, such as a snippet's audience and whether it's enabled. An
+     * entry can only start or stop referring to such a record when it's deleted or one of those fields changes, so only
+     * a flush that does either counts the entries again: not inserting one, nor changing anything else, so writing
+     * products runs no query. A referenced class it leaves out counts on every insert, update and delete, as a customer
+     * group does, since an entry may name a group's code before the group is added again. RegisterProblemKindsPass
+     * reads them while the container builds
      *
-     * @return array<class-string, string>
+     * @return array<class-string, string|non-empty-list<string>>
      */
     public static function getReferenceFields(): array;
 

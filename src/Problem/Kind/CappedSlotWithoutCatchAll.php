@@ -17,12 +17,13 @@ use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
- * A capped slot with no catch-all placement, of any snippet: no placement with an empty page scope whose snippet's
- * audience is everyone, so pages or shoppers none of its placements match get nothing there. A warning on each snippet
- * placed in the slot, once a slot, fixed in the Placements section of its overview page, whose Order… dialog shows it
- * too. Writing a placement, or changing or deleting a snippet's audience, may give or take a slot its catch-all, so it
- * has every snippet placed in a capped slot counted again. A project may cap a slot on purpose, so setono:cms:lint
- * doesn't report it. See "Capped slots" in docs/spec/targeting.md and "Problems" in docs/spec/admin.md
+ * A capped slot with no catch-all placement, of any snippet (PlacementInterface::isCatchAll(): an empty page scope and
+ * a published, enabled snippet for everyone), so pages or shoppers none of its placements match get nothing there. A
+ * warning on each snippet placed in the slot, once a slot, fixed in the Placements section of its overview page, whose
+ * Order… dialog shows it too. Writing a placement, or changing a snippet's audience, publishing it, enabling or
+ * disabling it, or deleting it, may give or take a slot its catch-all, so it has every snippet placed in a capped slot
+ * counted again. A project may cap a slot on purpose, so setono:cms:lint doesn't report it. See "Capped slots" in
+ * docs/spec/targeting.md and "Problems" in docs/spec/admin.md
  */
 final readonly class CappedSlotWithoutCatchAll implements ReferenceProblemKindInterface
 {
@@ -40,11 +41,12 @@ final readonly class CappedSlotWithoutCatchAll implements ReferenceProblemKindIn
     }
 
     /**
-     * Of an entry, only its audience makes its placements catch-alls or not, and every write of a placement counts
+     * Of an entry, only its audience, whether it's enabled and whether it's published make its placements catch-alls or
+     * not, and every write of a placement counts
      */
     public static function getReferenceFields(): array
     {
-        return [EntryInterface::class => 'audienceMode'];
+        return [EntryInterface::class => ['audienceMode', 'enabled', 'lastPublishedAt']];
     }
 
     public function findEntriesReferencing(array $referenced, array $formerValues = []): iterable

@@ -133,7 +133,7 @@ final class ProblemCountListener implements ResetInterface
     {
         foreach ($this->referenceKinds as $kind) {
             $classes = $kind::getReferencedClasses();
-            $fields = array_map(static fn (string $field): array => [$field], $kind::getReferenceFields());
+            $fields = array_map(static fn (string|array $field): array => (array) $field, $kind::getReferenceFields());
 
             $written = $formerValues = [];
             foreach ($referenced as $write) {

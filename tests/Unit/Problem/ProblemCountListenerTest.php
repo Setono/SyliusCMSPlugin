@@ -29,6 +29,7 @@ use Setono\SyliusCMSPlugin\Problem\ReferenceProblemKindInterface;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\ChannelAndTaxonReferences;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\CustomerGroupReferences;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\ProductAndTaxonCodeReferences;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\ProductCodeAndStateReferences;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\Taxon;
@@ -273,6 +274,29 @@ final class ProblemCountListenerTest extends TestCase
         $listener->postFlush();
 
         self::assertSame(0, $kinds->built, 'No kind is even built');
+        self::assertSame([[$page]], $this->updated);
+    }
+
+    /**
+     * Such as a snippet's audience, whether it's enabled and whether it's published, which make its placements
+     * catch-alls or not
+     *
+     * @test
+     */
+    public function it_asks_a_kind_that_refers_to_a_class_by_several_fields_about_a_change_of_any_of_them(): void
+    {
+        $page = new Page();
+        $disabled = self::product('MUG');
+        $renamed = self::product('CAP');
+        $kind = new ProductCodeAndStateReferences([$page]);
+        $listener = new ProblemCountListener($this->updater->reveal(), [$kind], [ProductInterface::class], [ProductInterface::class => ['code', 'enabled']]);
+
+        $listener->onFlush($this->flushing([], [$disabled, $renamed], []));
+        $listener->preUpdate($this->updating($disabled, ['enabled' => [true, false]]));
+        $listener->preUpdate($this->updating($renamed, ['updatedAt' => [null, new \DateTime()]]));
+        $listener->postFlush();
+
+        self::assertSame([[$disabled]], $kind->asked);
         self::assertSame([[$page]], $this->updated);
     }
 

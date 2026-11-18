@@ -81,7 +81,7 @@ A slot with a `cap` shows only the first `cap` matching placements, in editor or
 
 - **A placement matches** when its page scope matches the page and its snippet is visible to the shopper: published, enabled, inside its date window, in the channel, translated and not held back, and in the shopper's audience.
 - **Hidden blocks don't count.** A snippet whose only slide has expired still wins and shows nothing. The winners are therefore picked without rendering anything.
-- **The fallback is editor content, not code:** a last placement with an empty page scope whose snippet's audience is Everyone. The admin warns when a capped slot has no such catch-all placement ([Admin](admin.md#problems)).
+- **The fallback is editor content, not code:** a catch-all placement, one with an empty page scope whose snippet is published, enabled and for Everyone. Editors put it last, but it's a catch-all wherever it sits. The admin warns when a capped slot has no such catch-all placement, counting the slot's snippets again when a placement is written or a snippet's audience, publishing or enabled setting changes ([Admin](admin.md#problems)).
 - There's no "most specific scope wins" rule. Editor order is the only order.
 
 Inside a block tree, the **First match** block does the same for its children: it shows only its first child whose visibility conditions match. Its main use is a fallback that "is not one of" can't express, such as a dated campaign banner and then a default one ([Blocks](blocks.md)).

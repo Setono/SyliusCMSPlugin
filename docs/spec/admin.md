@@ -146,7 +146,7 @@ The admin flags problems on the entry, in the lists' problem marker, on the Over
 - an entry whose layout was removed from code or disabled
 - an entry URL that a Sylius or app route takes ([URLs and SEO](urls-and-seo.md#routing))
 - a category archive whose block tree no longer holds an Entries block ([Collections](collections.md))
-- a capped slot without a catch-all placement, on each snippet placed in it ([Targeting](targeting.md))
+- a capped slot without a catch-all placement, one with an empty page scope whose snippet is published, enabled and for everyone, on each snippet placed in it ([Targeting](targeting.md#capped-slots))
 - a placement in a slot on Sylius's own homepage, such as `store_homepage`, in a channel whose homepage is a CMS page, published or not ([URLs and SEO](urls-and-seo.md#homepage))
 - a placement or slot that the code no longer declares, or a block type, context key or layout that was removed
 - a preset with blocks of removed types

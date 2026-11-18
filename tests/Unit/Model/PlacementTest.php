@@ -68,21 +68,32 @@ final class PlacementTest extends TestCase
     }
 
     /**
-     * A capped slot's fallback: a placement with an empty page scope whose snippet's audience is everyone. See "Capped
-     * slots" in docs/spec/targeting.md
+     * A capped slot's fallback: a placement with an empty page scope whose snippet is published, enabled and for
+     * everyone, wherever it sits in the slot. See "Capped slots" in docs/spec/targeting.md
      *
      * @test
      */
-    public function it_is_a_catch_all_with_an_empty_page_scope_and_a_snippet_for_everyone(): void
+    public function it_is_a_catch_all_with_an_empty_page_scope_and_a_published_enabled_snippet_for_everyone(): void
     {
-        $forEveryone = new Snippet();
-        $forWholesale = new Snippet();
+        $forEveryone = self::published(new Snippet());
+        $forWholesale = self::published(new Snippet());
         ChannelsAndAudience::modifier()->setAudience($forWholesale, Audience::only('wholesale'));
         $scoped = new Placement($forEveryone, 'product.after_price', 0);
         $scoped->setPageScope([['kind' => 'product', 'negate' => true, 'params' => ['products' => ['MUG']]]]);
+        $disabled = self::published(new Snippet());
+        $disabled->setEnabled(false);
 
-        self::assertTrue((new Placement($forEveryone, 'shop.top', 0))->isCatchAll());
+        self::assertTrue((new Placement($forEveryone, 'shop.top', 3))->isCatchAll());
         self::assertFalse((new Placement($forWholesale, 'shop.top', 0))->isCatchAll());
         self::assertFalse($scoped->isCatchAll());
+        self::assertFalse((new Placement(new Snippet(), 'shop.top', 0))->isCatchAll(), 'Its snippet was never published');
+        self::assertFalse((new Placement($disabled, 'shop.top', 0))->isCatchAll(), 'Its snippet is disabled');
+    }
+
+    private static function published(Snippet $snippet): Snippet
+    {
+        $snippet->publish(new \DateTimeImmutable('2026-11-18 10:00:00'));
+
+        return $snippet;
     }
 }

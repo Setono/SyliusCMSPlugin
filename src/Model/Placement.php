@@ -66,6 +66,9 @@ class Placement implements PlacementInterface
 
     public function isCatchAll(): bool
     {
-        return [] === $this->pageScope && AudienceMode::Everyone === $this->snippet->getAudience()->mode;
+        return [] === $this->pageScope
+            && $this->snippet->isPublished()
+            && $this->snippet->isEnabled()
+            && AudienceMode::Everyone === $this->snippet->getAudience()->mode;
     }
 }

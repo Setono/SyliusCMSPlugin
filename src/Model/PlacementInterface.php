@@ -46,8 +46,10 @@ interface PlacementInterface extends ResourceInterface
     public function setPosition(int $position): void;
 
     /**
-     * Whether it's a capped slot's fallback: its page scope is empty and its snippet's audience is everyone, so it
-     * matches every page and every shopper its snippet shows to. See "Capped slots" in docs/spec/targeting.md
+     * Whether it's a capped slot's fallback: its page scope is empty and its snippet is published, enabled and for
+     * everyone, so it matches every page and every shopper, wherever it sits in the slot. The one definition the
+     * capped_slot_without_catch_all warning, who a placement wins for and the Order… dialog read. See "Capped slots" in
+     * docs/spec/targeting.md
      */
     public function isCatchAll(): bool;
 }

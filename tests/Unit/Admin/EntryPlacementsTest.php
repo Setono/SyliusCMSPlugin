@@ -171,28 +171,31 @@ final class EntryPlacementsTest extends TestCase
 
     /**
      * In a capped slot, a placement within the first `cap` wins wherever it matches, one after them wins where fewer
-     * than `cap` placements above it match, and one after `cap` catch-alls never wins. In a slot that isn't capped,
-     * every placement shows wherever it matches. Each wins for its snippet's audience. See "Placements" in
-     * docs/spec/admin.md
+     * than `cap` placements above it match, and one after `cap` catch-alls never wins: placements with an empty page
+     * scope whose snippet is published, enabled and for everyone. In a slot that isn't capped, every placement shows
+     * wherever it matches. Each wins for its snippet's audience. See "Placements" in docs/spec/admin.md
      *
      * @test
      */
     public function it_says_who_each_placement_wins_for_by_its_snippet_s_audience_and_the_catch_all_placements_above_it(): void
     {
         $snippet = self::snippetFor(Audience::only('wholesale'));
-        $everyone = new Snippet();
+        $everyone = self::snippetFor(Audience::everyone());
         $first = new Placement($snippet, 'shop.top', 0);
         $catchAll = new Placement($everyone, 'shop.top', 1);
         $afterCatchAll = new Placement($snippet, 'shop.top', 2);
         $scoped = new Placement($everyone, 'product.after_price', 0);
         $scoped->setPageScope([['kind' => 'product', 'negate' => false, 'params' => ['products' => ['MUG']]]]);
         $afterScoped = new Placement($snippet, 'product.after_price', 1);
+        $unpublished = new Placement(new Snippet(), 'store_homepage', 0);
+        $afterUnpublished = new Placement($snippet, 'store_homepage', 1);
         $inFooter = new Placement($snippet, 'shop.footer', 5);
         $removed = new Placement($snippet, 'shop.removed', 0);
-        $this->placements->findBySnippet($snippet)->willReturn([$afterScoped, $inFooter, $removed, $first, $afterCatchAll]);
-        $this->placements->findBySlots(['product.after_price', 'shop.footer', 'shop.removed', 'shop.top'])->willReturn([$scoped, $afterScoped, $inFooter, $removed, $first, $catchAll, $afterCatchAll]);
+        $this->placements->findBySnippet($snippet)->willReturn([$afterScoped, $inFooter, $removed, $first, $afterCatchAll, $afterUnpublished]);
+        $this->placements->findBySlots(['product.after_price', 'shop.footer', 'shop.removed', 'shop.top', 'store_homepage'])->willReturn([$scoped, $afterScoped, $inFooter, $removed, $first, $catchAll, $afterCatchAll, $unpublished, $afterUnpublished]);
+        $this->channels->findAll()->willReturn([]);
 
-        $section = $this->entryPlacements(['shop.top' => 1, 'product.after_price' => 1])->of($snippet);
+        $section = $this->entryPlacements(['shop.top' => 1, 'product.after_price' => 1, 'store_homepage' => 1])->of($snippet);
 
         self::assertNotNull($section);
         $wholesale = Audience::only('wholesale');
@@ -200,6 +203,8 @@ final class EntryPlacementsTest extends TestCase
             [$first, new WinsFor($wholesale, WinsWhen::Matching, 1)],
             [$afterCatchAll, new WinsFor($wholesale, WinsWhen::Never, 1)],
             [$inFooter, new WinsFor($wholesale, WinsWhen::Matching, null)],
+            // Its snippet for everyone above it is no catch-all while it's unpublished
+            [$afterUnpublished, new WinsFor($wholesale, WinsWhen::FewerAboveMatch, 1)],
             [$afterScoped, new WinsFor($wholesale, WinsWhen::FewerAboveMatch, 1)],
             [$removed, null],
         ], array_map(static fn (EntryPlacement $placement): array => [$placement->placement, $placement->winsFor], $section->placements));
@@ -214,7 +219,7 @@ final class EntryPlacementsTest extends TestCase
     public function it_gives_each_slot_the_snippet_is_placed_in_its_order_of_every_snippet_s_placements_and_its_warnings(): void
     {
         $snippet = self::snippetFor(Audience::only('wholesale'));
-        $other = new Snippet();
+        $other = self::snippetFor(Audience::everyone());
         $othersFirst = new Placement($other, 'store_homepage', 0);
         $othersFirst->setPageScope([['kind' => 'removed', 'negate' => false, 'params' => []]]);
         $inHomepage = new Placement($snippet, 'store_homepage', 1);
@@ -339,9 +344,13 @@ final class EntryPlacementsTest extends TestCase
         );
     }
 
+    /**
+     * A published snippet for the audience
+     */
     private static function snippetFor(Audience $audience): Snippet
     {
         $snippet = new Snippet();
+        $snippet->publish(new \DateTimeImmutable('2026-11-18 10:00:00'));
         ChannelsAndAudience::modifier()->setAudience($snippet, $audience);
 
         return $snippet;
