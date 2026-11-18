@@ -50,18 +50,22 @@ interface EntryRepositoryInterface
     /**
      * The entries of an admin list: of the content type, or of every content type when it's null. Entries are "o", and
      * the grids' filters reach their translations as "translation". The translations and audience groups are fetched
-     * with them, for the rows (see "Entry lists" in docs/spec/admin.md)
+     * with them, for the rows (see "Entry lists" in docs/spec/admin.md). A content type ordered by position lists its
+     * entries in that order, before the sorting a grid adds
      *
      * @param string|null $contentType a content type code
+     * @param list<string> $hiddenContentTypes the codes of content types whose entries every content type's list leaves
+     *                                         out, such as those switched off in setono_sylius_cms.disabled.content_types
      */
-    public function createListQueryBuilder(?string $contentType = null): QueryBuilder;
+    public function createListQueryBuilder(?string $contentType = null, array $hiddenContentTypes = []): QueryBuilder;
 
     /**
      * How many entries the content type has, or every content type when it's null
      *
      * @param string|null $contentType a content type code
+     * @param list<string> $hiddenContentTypes the codes of content types whose entries every content type's count leaves out
      */
-    public function countEntries(?string $contentType = null): int;
+    public function countEntries(?string $contentType = null, array $hiddenContentTypes = []): int;
 
     /**
      * The entries whose date window starts after $now, the first to start first, which the Overview's Coming up lists:

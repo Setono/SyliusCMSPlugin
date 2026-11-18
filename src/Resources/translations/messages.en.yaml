@@ -383,6 +383,8 @@ setono_sylius_cms:
         discard_changes: Discard changes
         dismiss: Dismiss
         drafts_in_progress: Drafts in progress
+        # The list of a content type ordered by position, whose entries editors drag into order. See "Entry lists" in docs/spec/admin.md
+        drag_to_order: Drag the entries into the order they're listed in, or move them with the arrows. The new order takes effect at once, without publishing.
         error_count: '{0} No errors|{1} 1 error|]1,Inf[ %count% errors'
         every_page_the_slot_appears_on: Every page the slot appears on
         fix_in_builder: Fix in builder
@@ -426,6 +428,9 @@ setono_sylius_cms:
         order_slot_help: '{1} Only the first placement that matches the page and the shopper shows, so put the most specific first, and last a catch-all, with no page scope and a published, enabled snippet for everyone. Drag them into order.|]1,Inf[ Only the first %count% placements that match the page and the shopper show, so put the most specific first, and last a catch-all, with no page scope and a published, enabled snippet for everyone. Drag them into order.'
         order_slot_placements: 'The placements in "%slot%", in order'
         order_uncapped_slot_help: Every placement that matches the page and the shopper shows, in this order. Drag them into order.
+        order_not_saved: The order couldn't be saved. Reload the page and try again.
+        order_saved: The order is saved.
+        order_saving: Saving the order…
         other_content_type: Another content type
         page_scope: Page scope
         page_scope_removed_kind: 'A condition of the kind "%kind%", which the code no longer has, so it shows nothing'

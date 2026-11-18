@@ -13,11 +13,12 @@ use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 
 /**
- * The test application's own content type, as a project adds one: no URL of its own, a block tree, and a required
- * shared field. It has no translatable fields, so its translations are EntryTranslation itself
+ * The test application's announcements, a content type of its own, as a project adds one: no URL of its own, a block
+ * tree, and a required shared field. It has no translatable fields, so its translations are EntryTranslation itself.
+ * Editors drag announcements into order in the admin list, which sources list them in
  */
 #[ORM\Entity]
-#[ContentType(code: 'announcement', label: 'app.cms.content_type.announcement', blocks: [new Allow('*')])]
+#[ContentType(code: 'announcement', label: 'app.cms.content_type.announcement', blocks: [new Allow('*')], order: 'position')]
 class Announcement extends Entry
 {
     #[ORM\Column(type: 'string', nullable: true)]

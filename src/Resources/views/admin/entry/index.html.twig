@@ -10,6 +10,8 @@
 
 {% set definition = resources.definition %}
 {% set content_type_code = app.request.attributes.get('contentType') %}
+{# Editors drag the entries of a content type ordered by position into order in its list, which saves it at once #}
+{% set ordered_by_position = content_type_code is not null and cms_admin_content_type(content_type_code).order.byPosition %}
 
 {% if content_type_code is null %}
     {% set heading = 'setono_sylius_cms.ui.all_entries'|trans %}
@@ -43,5 +45,27 @@
         </div>
     </div>
 
+    {% if ordered_by_position %}
+        <div class="ui info message cms-entry-order"
+             data-cms-entry-order
+             data-url="{{ path('setono_sylius_cms_admin_entry_order', {'contentType': content_type_code}) }}"
+             data-csrf-token="{{ csrf_token('setono_sylius_cms_entry_order') }}"
+             data-move-up="{{ 'setono_sylius_cms.ui.move_up'|trans }}"
+             data-move-down="{{ 'setono_sylius_cms.ui.move_down'|trans }}"
+             data-saving="{{ 'setono_sylius_cms.ui.order_saving'|trans }}"
+             data-saved="{{ 'setono_sylius_cms.ui.order_saved'|trans }}"
+             data-failed="{{ 'setono_sylius_cms.ui.order_not_saved'|trans }}">
+            <p>{{ 'setono_sylius_cms.ui.drag_to_order'|trans }}</p>
+            <p class="cms-entry-order__status" role="status" aria-live="polite" data-cms-entry-order-status></p>
+        </div>
+    {% endif %}
+
     {{ sylius_grid_render(resources, '@SyliusAdmin/Grid/_default.html.twig') }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% if ordered_by_position %}
+        <script type="module" src="{{ asset('bundles/setonosyliuscmsplugin/admin/entry-order.js') }}"></script>
+    {% endif %}
 {% endblock %}

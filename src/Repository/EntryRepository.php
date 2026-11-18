@@ -8,6 +8,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\QueryBuilder;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
+use Setono\SyliusCMSPlugin\Attribute\ContentType;
 use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
@@ -15,6 +16,7 @@ use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
+use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
 /**
@@ -146,12 +148,19 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         ];
     }
 
-    public function createListQueryBuilder(?string $contentType = null): QueryBuilder
+    public function createListQueryBuilder(?string $contentType = null, array $hiddenContentTypes = []): QueryBuilder
     {
+        $queryBuilder = $this->entries($contentType, $hiddenContentTypes);
+
+        // Before the sorting the grid adds, which then sorts entries in the same position
+        if (null !== $contentType && ContentType::ORDER_BY_POSITION === AttributeReader::contentType($this->classOf($contentType))?->order) {
+            $queryBuilder->addOrderBy('o.position', 'ASC');
+        }
+
         // "translation" is for the filters, and joined apart from the translations fetched, so a filter on it never
         // leaves an entry with only the translations that matched. It's joined first, because Sylius's grid filters
         // reach a field of an association through the first join of it
-        return $this->entries($contentType)
+        return $queryBuilder
             ->addSelect('fetched_translation')
             ->addSelect('audience_group')
             ->leftJoin('o.translations', 'translation')
@@ -160,9 +169,9 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         ;
     }
 
-    public function countEntries(?string $contentType = null): int
+    public function countEntries(?string $contentType = null, array $hiddenContentTypes = []): int
     {
-        return (int) $this->entries($contentType)->select('COUNT(o.id)')->getQuery()->getSingleScalarResult();
+        return (int) $this->entries($contentType, $hiddenContentTypes)->select('COUNT(o.id)')->getQuery()->getSingleScalarResult();
     }
 
     public function findStartingAfter(\DateTimeImmutable $now, int $limit): array
@@ -236,20 +245,39 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
     }
 
     /**
-     * The entries of the content type, or of every content type, as "o". A content type code is the value of the
-     * entries' discriminator (ADR 0001), so it names the class that INSTANCE OF filters on, with its subclasses
+     * The entries of the content type, or of every content type but the hidden ones, as "o". A content type code is
+     * the value of the entries' discriminator (ADR 0001), so it names the class that INSTANCE OF filters on, with its
+     * subclasses
+     *
+     * @param list<string> $hiddenContentTypes
      */
-    private function entries(?string $contentType): QueryBuilder
+    private function entries(?string $contentType, array $hiddenContentTypes = []): QueryBuilder
     {
         $queryBuilder = $this->createQueryBuilder('o');
-        if (null === $contentType) {
-            return $queryBuilder;
-        }
-
-        $class = $this->getClassMetadata()->discriminatorMap[$contentType] ?? throw new \InvalidArgumentException(sprintf('There is no content type "%s"', $contentType));
 
         // The class goes in the DQL, not in a parameter, because Doctrine's paginator counts without resolving an
         // INSTANCE OF parameter to the discriminator values. It comes from the discriminator map, never from the request
-        return $queryBuilder->andWhere(sprintf('o INSTANCE OF %s', $class));
+        if (null !== $contentType) {
+            return $queryBuilder->andWhere(sprintf('o INSTANCE OF %s', $this->classOf($contentType)));
+        }
+
+        foreach ($hiddenContentTypes as $hidden) {
+            $class = $this->getClassMetadata()->discriminatorMap[$hidden] ?? null;
+            if (null !== $class) {
+                $queryBuilder->andWhere(sprintf('o NOT INSTANCE OF %s', $class));
+            }
+        }
+
+        return $queryBuilder;
+    }
+
+    /**
+     * The model of the content type, which its code maps to as the entries' discriminator value
+     *
+     * @return class-string
+     */
+    private function classOf(string $contentType): string
+    {
+        return $this->getClassMetadata()->discriminatorMap[$contentType] ?? throw new \InvalidArgumentException(sprintf('There is no content type "%s"', $contentType));
     }
 }

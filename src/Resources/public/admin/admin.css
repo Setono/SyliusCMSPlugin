@@ -166,3 +166,20 @@
     color: rgba(0, 0, 0, 0.6);
     font-size: 0.92857143em;
 }
+
+/* The list of a content type ordered by position, whose rows editors drag into order (admin/entry-order.js) */
+.cms-entry-order__row {
+    cursor: grab;
+}
+
+.cms-entry-order__row--dragged {
+    opacity: 0.5;
+}
+
+.cms-entry-order__arrows {
+    float: right;
+}
+
+.cms-entry-order__status:empty {
+    display: none;
+}

@@ -438,8 +438,9 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                         'name' => 'doctrine/orm',
                         'options' => [
                             'class' => '%setono_sylius_cms.model.entry.class%',
-                            // The route's content type code, which All entries' route doesn't have
-                            'repository' => ['method' => 'createListQueryBuilder', 'arguments' => ['$contentType']],
+                            // The route's content type code, which All entries' route doesn't have, and the content types
+                            // switched off, whose entries All entries leaves out
+                            'repository' => ['method' => 'createListQueryBuilder', 'arguments' => ['$contentType', '%' . RegisterContentTypesPass::DISABLED_PARAMETER . '%']],
                         ],
                     ],
                     'sorting' => self::GRID_SORTING,

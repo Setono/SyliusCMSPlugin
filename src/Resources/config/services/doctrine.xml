@@ -9,6 +9,13 @@
             <tag name="doctrine.event_listener" event="loadClassMetadata"/>
         </service>
 
+        <!-- A new entry of a content type ordered by position goes last -->
+        <service id="Setono\SyliusCMSPlugin\Doctrine\EntryPositionListener" class="Setono\SyliusCMSPlugin\Doctrine\EntryPositionListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+
+            <tag name="doctrine.event_listener" event="prePersist"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener" class="Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener">
             <!-- Replaced by RegisterContentTypesPass with the registered content types -->
             <argument type="collection"/>

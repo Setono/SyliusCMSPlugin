@@ -12,6 +12,9 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Event\EntrySettingsChanged;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Model\PageTranslation;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Publishing\EditRecorder;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettings;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver;
@@ -127,6 +130,34 @@ final class EntrySettingsSaverTest extends TestCase
         self::assertSame(['B2B', 'WEB'], $page->getChannelCodes());
         self::assertTrue($page->getAudience()->equals(Audience::except('retail')));
         self::assertSame(['MOBILE'], $page->getHomepageChannelCodes());
+    }
+
+    /**
+     * An entry of a content type ordered by position has one, which takes effect on save
+     *
+     * @test
+     */
+    public function it_changes_the_position_of_an_entry_of_a_content_type_ordered_by_position(): void
+    {
+        $announcement = new Announcement();
+        $announcement->setPosition(0);
+        $this->managerRegistry->getManagerForClass(Announcement::class)->willReturn($this->manager->reveal());
+
+        $this->saver()->save($announcement, new EntrySettings(true, new DateWindow(), [], Audience::everyone(), position: 2));
+
+        self::assertSame(2, $announcement->getPosition());
+        self::assertSame(['begin', 'commit', $announcement->getUuid() . ': position'], $this->calls);
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_position_for_an_entry_of_a_content_type_ordered_otherwise(): void
+    {
+        $this->expectException(InvalidEntrySettingsException::class);
+        $this->expectExceptionMessage('Only an entry of a content type ordered by position has a position');
+
+        $this->saver()->save(new Page(), new EntrySettings(true, new DateWindow(), [], Audience::everyone(), position: 2));
     }
 
     /**
@@ -318,6 +349,10 @@ final class EntrySettingsSaverTest extends TestCase
             new EditRecorder($tokenStorage, $clock),
             $this->urlValidator->reveal(),
             Homepages::modifier($this->homepageRepository->reveal()),
+            new ContentTypeRegistry([
+                'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+                'announcement' => ['model' => Announcement::class, 'translation' => EntryTranslation::class, 'resource' => 'app.announcement'],
+            ]),
         );
     }
 }

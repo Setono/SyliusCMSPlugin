@@ -68,6 +68,9 @@ abstract class Entry implements EntryInterface
     /** @see AudienceMode */
     protected string $audienceMode = 'everyone';
 
+    /** For a content type ordered by position, where it sits among its entries, the first first */
+    protected ?int $position = null;
+
     /** @var Collection<array-key, EntryAudienceGroupInterface> */
     protected Collection $audienceGroups;
 
@@ -290,6 +293,16 @@ abstract class Entry implements EntryInterface
     public function setNoindex(bool $noindex): void
     {
         $this->noindex = $noindex;
+    }
+
+    public function getPosition(): ?int
+    {
+        return $this->position;
+    }
+
+    public function setPosition(?int $position): void
+    {
+        $this->position = $position;
     }
 
     public function getTitle(): ?string

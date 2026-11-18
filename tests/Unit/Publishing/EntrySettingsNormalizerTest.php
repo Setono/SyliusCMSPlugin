@@ -28,10 +28,11 @@ final class EntrySettingsNormalizerTest extends TestCase
             ['WEB', 'B2B'],
             Audience::only('wholesale', '@guest'),
             ['WEB'],
+            2,
         );
 
         self::assertSame(
-            '{"enabled":false,"showFrom":"2026-11-27T00:00:00Z","showUntil":"2026-12-01T00:00:00Z","channels":["B2B","WEB"],"audience":{"mode":"only","groups":["@guest","wholesale"]},"homepageOf":["WEB"]}',
+            '{"enabled":false,"showFrom":"2026-11-27T00:00:00Z","showUntil":"2026-12-01T00:00:00Z","channels":["B2B","WEB"],"audience":{"mode":"only","groups":["@guest","wholesale"]},"homepageOf":["WEB"],"position":2}',
             CanonicalJson::encode((new EntrySettingsNormalizer())->normalize($settings)),
         );
     }
@@ -42,7 +43,7 @@ final class EntrySettingsNormalizerTest extends TestCase
     public function it_writes_an_open_date_window_and_an_audience_of_everyone_as_null_and_an_empty_list(): void
     {
         self::assertSame(
-            '{"enabled":true,"showFrom":null,"showUntil":null,"channels":[],"audience":{"mode":"everyone","groups":[]},"homepageOf":[]}',
+            '{"enabled":true,"showFrom":null,"showUntil":null,"channels":[],"audience":{"mode":"everyone","groups":[]},"homepageOf":[],"position":null}',
             CanonicalJson::encode((new EntrySettingsNormalizer())->normalize(self::current())),
         );
     }
@@ -59,6 +60,7 @@ final class EntrySettingsNormalizerTest extends TestCase
             'channels' => ['WEB', 'B2B'],
             'audience' => ['mode' => 'except', 'groups' => ['retail', '@no_group']],
             'homepageOf' => ['WEB', 'B2B'],
+            'position' => 3,
         ], self::current());
 
         self::assertFalse($settings->enabled);
@@ -66,6 +68,7 @@ final class EntrySettingsNormalizerTest extends TestCase
         self::assertSame(['B2B', 'WEB'], $settings->channels);
         self::assertTrue($settings->audience->equals(Audience::except('@no_group', 'retail')));
         self::assertSame(['B2B', 'WEB'], $settings->homepageOf);
+        self::assertSame(3, $settings->position);
     }
 
     /**
@@ -136,6 +139,8 @@ final class EntrySettingsNormalizerTest extends TestCase
         yield 'an audience group that is no string' => [['audience' => ['mode' => 'only', 'groups' => [7]]], '"audience" must have a "mode" of everyone, only or except, and "groups" as a list of customer group values'];
         yield 'an audience group that is no customer group value' => [['audience' => ['mode' => 'only', 'groups' => ['@admin']]], '"@admin" is neither a customer group code, "@guest" nor "@no_group"'];
         yield 'groups for everyone' => [['audience' => ['mode' => 'everyone', 'groups' => ['wholesale']]], 'An audience of everyone has no groups'];
+        yield 'a position that is no integer' => [['position' => '1'], '"position" must be an integer from 0, or null'];
+        yield 'a negative position' => [['position' => -1], '"position" must be an integer from 0, or null'];
     }
 
     private static function current(): EntrySettings

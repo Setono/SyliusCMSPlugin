@@ -44,6 +44,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\CreateShareLinkAction as CreateShare
 use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction as DiscardEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\MediaLibraryAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\OrderEntriesAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OrderPlacementsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PreviewRevisionAction as PreviewRevisionPageAction;
@@ -93,6 +94,13 @@ return static function (RoutingConfigurator $routes): void {
             'grid' => 'setono_sylius_cms_admin_entry',
             'template' => '@SetonoSyliusCMSPlugin/admin/entry/index.html.twig',
         ]])
+    ;
+
+    // The positions editors drag the entries of a content type ordered by position into, in its list
+    $routes->add('setono_sylius_cms_admin_entry_order', '/cms/entries/{contentType}/order')
+        ->controller(OrderEntriesAction::class)
+        ->methods(['POST'])
+        ->requirements(['contentType' => '[a-z][a-z0-9_]*'])
     ;
 
     $routes->add('setono_sylius_cms_admin_entry_create', '/cms/entries/{contentType}/new')

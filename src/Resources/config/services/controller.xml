@@ -104,6 +104,15 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\OrderEntriesAction" class="Setono\SyliusCMSPlugin\Controller\Admin\OrderEntriesAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="security.csrf.token_manager"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryReordererInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction" class="Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\SnippetPlacementRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Slot\PlacementEditorInterface"/>

@@ -104,8 +104,19 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Validation\EntryUrlValidatorInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Homepage\HomepageModifierInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaverInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntrySettingsSaver"/>
+
+        <!-- The positions editors drag entries of a content type ordered by position into, in the admin list -->
+        <service id="Setono\SyliusCMSPlugin\Publishing\EntryReorderer" class="Setono\SyliusCMSPlugin\Publishing\EntryReorderer">
+            <argument type="service" id="doctrine"/>
+            <argument type="service" id="clock"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EditRecorder"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Publishing\EntryReordererInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntryReorderer"/>
 
         <!-- Everything that reads an entry's working copy goes through it, such as the builder's preview -->
         <service id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface" alias="Setono\SyliusCMSPlugin\Publishing\WorkingCopyManager"/>

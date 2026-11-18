@@ -31,6 +31,7 @@ final class EntrySettingsNormalizer
                 'groups' => $settings->audience->groups,
             ]),
             'homepageOf' => $settings->homepageOf,
+            'position' => $settings->position,
         ]);
     }
 
@@ -54,7 +55,13 @@ final class EntrySettingsNormalizer
             array_key_exists('channels', $data) ? self::channelCodes('channels', $data['channels']) : $current->channels,
             array_key_exists('audience', $data) ? self::audience($data['audience']) : $current->audience,
             array_key_exists('homepageOf', $data) ? self::channelCodes('homepageOf', $data['homepageOf']) : $current->homepageOf,
+            array_key_exists('position', $data) ? self::position($data['position']) : $current->position,
         );
+    }
+
+    private static function position(mixed $value): ?int
+    {
+        return null === $value || (is_int($value) && $value >= 0) ? $value : throw new InvalidEntrySettingsException('"position" must be an integer from 0, or null');
     }
 
     private static function enabled(mixed $value): bool

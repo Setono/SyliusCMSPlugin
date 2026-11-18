@@ -151,6 +151,14 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
     public function setNoindex(bool $noindex): void;
 
     /**
+     * Where it sits among the entries of its content type, for a content type ordered by position, which editors drag
+     * entries into in the admin list. An on-save setting. Null for an entry of a content type ordered otherwise
+     */
+    public function getPosition(): ?int;
+
+    public function setPosition(?int $position): void;
+
+    /**
      * The title in the current locale
      */
     public function getTitle(): ?string;
