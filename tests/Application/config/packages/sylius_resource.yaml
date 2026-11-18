@@ -1,4 +1,5 @@
-# The test application's own content type, registered as a project registers one (docs/spec/extending.md#content-types)
+# The test application's own content types, registered as a project registers one (docs/spec/extending.md#content-types),
+# with its translation model, which EntryTranslation itself is for one without translatable fields of its own
 sylius_resource:
     resources:
         app.announcement:
@@ -8,3 +9,10 @@ sylius_resource:
             translation:
                 classes:
                     model: Setono\SyliusCMSPlugin\Model\EntryTranslation
+        app.store_location:
+            classes:
+                model: Setono\SyliusCMSPlugin\Tests\Application\Entity\StoreLocation
+                factory: Sylius\Resource\Factory\TranslatableFactory
+            translation:
+                classes:
+                    model: Setono\SyliusCMSPlugin\Tests\Application\Entity\StoreLocationTranslation

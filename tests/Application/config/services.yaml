@@ -10,6 +10,9 @@ services:
     # The test application's own layout for pages, which #[Layout] registers through autoconfiguration
     Setono\SyliusCMSPlugin\Tests\Application\Layout\Landing: ~
 
+    # The layout of the test application's own store locations
+    Setono\SyliusCMSPlugin\Tests\Application\Layout\Store: ~
+
     # The test application's own link target, which #[AsLinkTarget] registers through autoconfiguration
     Setono\SyliusCMSPlugin\Tests\Application\Link\StoreLinkTarget: ~
 

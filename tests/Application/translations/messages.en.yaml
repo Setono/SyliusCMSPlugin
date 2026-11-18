@@ -11,7 +11,10 @@ app:
         greeting: Hello
         content_type:
             announcement: Announcement
+            store_location: Store location
         field:
+            city: City
+            directions: Directions
             image: Image
             opening_hours: Opening hours
             opening_hours_help: Days without hours are closed.
@@ -24,6 +27,7 @@ app:
         layout:
             landing: Landing
             promo: Promo
+            store: Store
         opening_hours:
             monday: Monday
             tuesday: Tuesday
