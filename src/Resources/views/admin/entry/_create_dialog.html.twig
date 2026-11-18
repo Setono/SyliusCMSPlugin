@@ -1,10 +1,12 @@
 {#
  # The create dialog and the button that opens it. With a content type (`content_type`, a code), as in a content type's
  # list, the button is a link to the content type's create form, which the dialog loads. Without one, as in All entries,
- # the dialog asks for the content type first. admin/create-entry-dialog.js runs it.
+ # the dialog asks for the content type first, among `content_types` when it's given, such as a collection's entries and
+ # its categories, or else among every content type. admin/create-entry-dialog.js runs it.
  # See "Create dialog" in docs/spec/admin.md
  #}
 {% set content_type = content_type|default(null) %}
+{% set content_types = content_types|default(null) is null ? cms_admin_content_types() : content_types %}
 {% set label = label|default('setono_sylius_cms.ui.create') %}
 
 {% if content_type is not null %}
@@ -27,7 +29,7 @@
                 <div class="sub header">{{ 'setono_sylius_cms.ui.pick_content_type'|trans }}</div>
             </h2>
             <div class="cms-dialog__choices">
-                {% for type in cms_admin_content_types() %}
+                {% for type in content_types %}
                     <a class="ui fluid basic button" href="{{ path('setono_sylius_cms_admin_entry_create', {'contentType': type.code}) }}" data-cms-create-entry-type>{{ type.label|trans }}</a>
                 {% endfor %}
             </div>

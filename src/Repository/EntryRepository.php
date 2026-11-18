@@ -161,9 +161,40 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
             $queryBuilder->addOrderBy('o.position', 'ASC');
         }
 
-        // "translation" is for the filters, and joined apart from the translations fetched, so a filter on it never
-        // leaves an entry with only the translations that matched. It's joined first, because Sylius's grid filters
-        // reach a field of an association through the first join of it
+        return self::listed($queryBuilder);
+    }
+
+    public function createCollectionListQueryBuilder(string $contentType, array $hiddenContentTypes = []): QueryBuilder
+    {
+        $class = $this->classOf($contentType);
+        $classes = [$class];
+
+        $categoryType = AttributeReader::contentType($class)?->categoryType;
+        if (null !== $categoryType) {
+            $discriminatorMap = array_diff_key($this->getClassMetadata()->discriminatorMap, array_flip($hiddenContentTypes));
+            // The category content type's model is the class it names, or a project's subclass of it
+            $categoryClass = in_array($categoryType, $discriminatorMap, true) ? $categoryType : null;
+            foreach ($discriminatorMap as $model) {
+                $categoryClass ??= is_a($model, $categoryType, true) ? $model : null;
+            }
+
+            if (null !== $categoryClass) {
+                $classes[] = $categoryClass;
+            }
+        }
+
+        // The classes go in the DQL, as in entries(), from the discriminator map, never from the request
+        return self::listed($this->createQueryBuilder('o')->andWhere(implode(' OR ', array_map(static fn (string $class): string => sprintf('o INSTANCE OF %s', $class), $classes))));
+    }
+
+    /**
+     * An admin list's query, with the translations and audience groups its rows show fetched. "translation" is for the
+     * filters, and joined apart from the translations fetched, so a filter on it never leaves an entry with only the
+     * translations that matched. It's joined first, because Sylius's grid filters reach a field of an association
+     * through the first join of it
+     */
+    private static function listed(QueryBuilder $queryBuilder): QueryBuilder
+    {
         return $queryBuilder
             ->addSelect('fetched_translation')
             ->addSelect('audience_group')

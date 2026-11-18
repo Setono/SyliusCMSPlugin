@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Admin;
 
 use Knp\Menu\FactoryInterface;
 use Knp\Menu\ItemInterface;
+use Setono\SyliusCMSPlugin\Collection\Collections;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
@@ -15,7 +16,7 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * The Content hub's own side menu, the KnpMenu menu "setono_sylius_cms.admin.hub": Overview, Entries, with an item
- * per collection after Pages and Snippets, and Library. Items show a count from their "count" extra. Later tickets
+ * per collection after Pages and Snippets, which lists its categories too, and Library. Items show a count from their "count" extra. Later tickets
  * and projects add their items in a listener of the event this dispatches, the way Sylius's admin menu is extended.
  * See "Navigation" in docs/spec/admin.md
  */
@@ -28,6 +29,7 @@ final readonly class HubMenuBuilder
         private EventDispatcherInterface $eventDispatcher,
         private EntryRepositoryInterface $entryRepository,
         private ContentTypeRegistryInterface $contentTypes,
+        private Collections $collections,
     ) {
     }
 
@@ -68,14 +70,29 @@ final readonly class HubMenuBuilder
             ->setExtra('count', $this->entryRepository->countEntries(SnippetInterface::CONTENT_TYPE))
         ;
 
-        foreach ($this->collections() as $contentType) {
+        foreach ($this->collections->all() as $collection) {
+            $code = $collection->code();
+            $categories = $collection->categories?->code;
+
             $entries
-                ->addChild($contentType->code, ['route' => 'setono_sylius_cms_admin_entry_index', 'routeParameters' => ['contentType' => $contentType->code]])
-                ->setLabel($contentType->label)
-                // Named by the plural, as its list is, when there's one, and otherwise by the label
-                ->setExtra('plural', sprintf('setono_sylius_cms.content_type_plural.%s', $contentType->code))
+                ->addChild($code, null === $categories ? [
+                    'route' => 'setono_sylius_cms_admin_entry_index',
+                    'routeParameters' => ['contentType' => $code],
+                ] : [
+                    // Its entries and its categories, switched by All and a button for each, in lists of their own
+                    'route' => 'setono_sylius_cms_admin_collection_index',
+                    'routeParameters' => ['contentType' => $code],
+                    'extras' => ['routes' => [
+                        ['route' => 'setono_sylius_cms_admin_entry_index', 'parameters' => ['contentType' => $code]],
+                        ['route' => 'setono_sylius_cms_admin_entry_index', 'parameters' => ['contentType' => $categories]],
+                    ]],
+                ])
+                ->setLabel($collection->entries->label)
+                // Named by the collection's name when there's one, such as Blog, or else by the plural, as its list
+                // is, and otherwise by the label
+                ->setExtra('names', [sprintf('setono_sylius_cms.collection.%s', $code), sprintf('setono_sylius_cms.content_type_plural.%s', $code)])
                 ->setLabelAttribute('icon', 'folder outline')
-                ->setExtra('count', $this->entryRepository->countEntries($contentType->code))
+                ->setExtra('count', $this->entryRepository->countEntries($code) + (null === $categories ? 0 : $this->entryRepository->countEntries($categories)))
             ;
         }
 
@@ -91,25 +108,6 @@ final readonly class HubMenuBuilder
         $this->eventDispatcher->dispatch(new MenuBuilderEvent($this->factory, $menu), self::EVENT);
 
         return $menu;
-    }
-
-    /**
-     * The collections, each the entries of a content type other than the built-in ones, the shipped ones first and then
-     * a project's own, each in the order they're registered. A content type switched off has none, and a collection's
-     * category content type is reached through its collection
-     *
-     * @return list<ContentTypeMetadata>
-     */
-    private function collections(): array
-    {
-        $enabled = $this->contentTypes->enabled();
-        $categoryTypes = array_filter(array_map(static fn (ContentTypeMetadata $contentType): ?string => $contentType->categoryType, $enabled), static fn (?string $categoryType): bool => null !== $categoryType);
-        $collections = array_filter($enabled, static fn (ContentTypeMetadata $contentType): bool => !$contentType->isBuiltIn() && !in_array($contentType->modelClass, $categoryTypes, true));
-
-        return [
-            ...array_filter($collections, static fn (ContentTypeMetadata $contentType): bool => $contentType->isShipped()),
-            ...array_filter($collections, static fn (ContentTypeMetadata $contentType): bool => !$contentType->isShipped()),
-        ];
     }
 
     /**

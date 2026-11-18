@@ -60,6 +60,16 @@ interface EntryRepositoryInterface
     public function createListQueryBuilder(?string $contentType = null, array $hiddenContentTypes = []): QueryBuilder;
 
     /**
+     * The entries of a collection's admin list, which lists its categories too, such as the blog's posts and
+     * categories: those of the content type and of the category content type it declares, unless that's hidden. As in
+     * createListQueryBuilder(), entries are "o", with their translations and audience groups fetched
+     *
+     * @param string $contentType the code of the collection's content type, such as blog_post
+     * @param list<string> $hiddenContentTypes the codes of content types whose entries it leaves out
+     */
+    public function createCollectionListQueryBuilder(string $contentType, array $hiddenContentTypes = []): QueryBuilder;
+
+    /**
      * How many entries the content type has, or every content type when it's null
      *
      * @param string|null $contentType a content type code

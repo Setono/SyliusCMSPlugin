@@ -370,6 +370,7 @@ setono_sylius_cms:
         embed_title: Video
     ui:
         add_placement: Add placement
+        all: All
         all_entries: All entries
         all_needing_attention: '{1} The entry that needs attention|]1,Inf[ All %count% entries that need attention'
         all_drafts_in_progress: All drafts in progress
