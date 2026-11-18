@@ -5,10 +5,15 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Setono\SyliusCMSPlugin\Query\NotVisibleReason;
+use Setono\SyliusCMSPlugin\Query\VisibleEntriesQueryInterface;
+use Setono\SyliusCMSPlugin\Rendering\RenderContext;
 use Setono\SyliusCMSPlugin\Tests\Application\Entity\StoreLocation;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\DisabledContentTypeKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\StoreLocations;
+use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
+use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpKernel\KernelInterface;
@@ -81,6 +86,28 @@ final class DisabledContentTypeTest extends WebTestCase
         /** @var array{contentTypes: list<array{code: string}>} $registry */
         $registry = json_decode((string) $client->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
         self::assertSame(['announcement', 'page', 'snippet'], array_column($registry['contentTypes'], 'code'));
+    }
+
+    /**
+     * Sources, links and Entries fields read entries through the visible-entries query, which shows none of a content
+     * type switched off, as if each were disabled
+     *
+     * @test
+     */
+    public function it_shows_no_entry_of_a_content_type_switched_off_to_sources_and_links(): void
+    {
+        self::bootKernel();
+        $storeLocation = self::createStoreLocation('Aarhus', 'aarhus', 'Aarhus C', published: true);
+        /** @var VisibleEntriesQueryInterface $query */
+        $query = self::getContainer()->get(VisibleEntriesQueryInterface::class);
+        /** @var ChannelRepositoryInterface<ChannelInterface> $channels */
+        $channels = self::getContainer()->get('sylius.repository.channel');
+        $channel = $channels->findOneByCode('WEB');
+        self::assertInstanceOf(ChannelInterface::class, $channel);
+        $context = new RenderContext($channel, 'en_US', 'USD', null, '@guest', new \DateTimeImmutable());
+
+        self::assertSame([], $query->createQueryBuilder('store_location', $context)->getQuery()->getResult());
+        self::assertSame([$storeLocation->getUuid() => NotVisibleReason::Disabled], $query->whyNotVisible('store_location', [$storeLocation->getUuid()], $context));
     }
 
     /**
