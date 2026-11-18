@@ -9,6 +9,7 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Block\Heading;
 use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Preset\PresetProviderInterface;
+use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\Kind\PresetWithRemovedBlockTypes;
 use Setono\SyliusCMSPlugin\Problem\PresetProblem;
 use Setono\SyliusCMSPlugin\Problem\PresetProblemFinder;
@@ -49,5 +50,22 @@ final class PresetProblemFinderTest extends TestCase
         self::assertEquals($expected, $finder->findIn($retired));
         self::assertSame([], $finder->findIn($hero));
         self::assertEquals(new ProblemCount(0, 1), $finder->count());
+    }
+
+    /**
+     * @test
+     */
+    public function it_links_an_editor_preset_s_problem_to_the_preset_on_the_presets_screen(): void
+    {
+        $old = new Preset('Old', [new StoredBlock('0193a5be-0000-7000-8000-000000000001', 'gallery', 1)], uuid: '0193a5be-7400-7d3e-8f4a-5b6c7d8e9f0a');
+        $presets = $this->prophesize(PresetProviderInterface::class);
+        $presets->all()->willReturn([$old]);
+
+        $finder = new PresetProblemFinder($presets->reveal(), [new PresetWithRemovedBlockTypes(new BlockTypeRegistry([], new FieldReader()))]);
+
+        self::assertEquals(
+            new Fix('setono_sylius_cms.ui.fix_in_presets', 'setono_sylius_cms_admin_preset_index', ['tab' => 'block_presets', '_fragment' => 'cms-preset-0193a5be-7400-7d3e-8f4a-5b6c7d8e9f0a']),
+            $finder->findAll()[0]->fix,
+        );
     }
 }
