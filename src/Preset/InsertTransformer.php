@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Preset;
 
 use Setono\SyliusCMSPlugin\Field\LinkLocaleParts;
-use Setono\SyliusCMSPlugin\Field\RichText;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
-use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 use Setono\SyliusCMSPlugin\Upgrade\NewerVersion;
@@ -39,7 +37,7 @@ final readonly class InsertTransformer
         private StoredDataUpgraderInterface $upgrader,
         private BlockTypeRegistryInterface $blockTypes,
         private TranslationKeyResolverInterface $translationKeys,
-        private RichTextSchema $richText,
+        private TranslationKeyValues $translationKeyValues,
     ) {
     }
 
@@ -119,7 +117,7 @@ final readonly class InsertTransformer
         foreach ($values as $name => $value) {
             $field = $blockType->fields[$name] ?? null;
             if (null !== $field) {
-                $value = self::inLocales($field, $this->resolveTranslationKeys($value, $field->field instanceof RichText, $locales), $locales);
+                $value = self::inLocales($field, $this->translationKeyValues->resolve($field, $value, $locales, $this->translationKeys->resolve(...)), $locales);
             }
 
             // A field left without a value in any locale has none
@@ -129,30 +127,6 @@ final readonly class InsertTransformer
         }
 
         return $fields;
-    }
-
-    /**
-     * Replaces each translation key in a value, wherever it sits, such as a Link's label or a binding's fallback, with a
-     * map of its translations in the locales that have one, which is {} when none has
-     *
-     * @param list<string> $locales
-     */
-    private function resolveTranslationKeys(mixed $value, bool $richText, array $locales): mixed
-    {
-        $key = TranslationKey::fromValue($value);
-        if (null === $key) {
-            return is_array($value) ? array_map(fn (mixed $inner): mixed => $this->resolveTranslationKeys($inner, $richText, $locales), $value) : $value;
-        }
-
-        $translations = [];
-        foreach ($locales as $locale) {
-            $translation = $this->translationKeys->resolve($key, $locale);
-            if (null !== $translation && '' !== $translation) {
-                $translations[$locale] = $richText ? $this->richText->fromHtml($translation) : $translation;
-            }
-        }
-
-        return [] === $translations ? new \stdClass() : $translations;
     }
 
     /**

@@ -26,6 +26,10 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preset\TranslationKeyResolverInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\TranslationKeyValues"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Preset\TranslationKeyValues" class="Setono\SyliusCMSPlugin\Preset\TranslationKeyValues">
             <argument type="service" id="Setono\SyliusCMSPlugin\RichText\RichTextSchema"/>
         </service>
 

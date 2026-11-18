@@ -20,6 +20,7 @@ use Setono\SyliusCMSPlugin\Preset\InsertTransformer;
 use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Preset\TranslationKey;
 use Setono\SyliusCMSPlugin\Preset\TranslationKeyResolverInterface;
+use Setono\SyliusCMSPlugin\Preset\TranslationKeyValues;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\RichText\RichTextSchema;
@@ -242,7 +243,7 @@ final class InsertTransformerTest extends TestCase
                 'embed_code' => EmbedCode::class,
             ], new FieldReader(), ['embed_code']),
             $this->translationKeys->reveal(),
-            new RichTextSchema(),
+            new TranslationKeyValues(new RichTextSchema()),
         );
     }
 }
