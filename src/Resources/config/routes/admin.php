@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Setono\SyliusCMSPlugin\Controller\Admin\AddPlacementAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CancelScheduleAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateMediaFolderAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreatePresetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateShareLinkAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DeleteMediaItemAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\DiscardEntryAction;
@@ -255,6 +256,12 @@ return static function (RoutingConfigurator $routes): void {
     $routes->add('setono_sylius_cms_admin_api_preset_index', '/cms/api/presets')
         ->controller(PresetIndexAction::class)
         ->methods(['GET'])
+    ;
+
+    // ★ in the builder: saves the selected blocks as an editor preset
+    $routes->add('setono_sylius_cms_admin_api_preset_create', '/cms/api/presets')
+        ->controller(CreatePresetAction::class)
+        ->methods(['POST'])
     ;
 
     // A preset's blocks ready to insert into an entry. A code preset is named by its code, an editor preset by its UUID

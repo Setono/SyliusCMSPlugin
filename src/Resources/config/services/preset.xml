@@ -4,7 +4,7 @@
     <services>
         <!--
         The presets editors are offered: every provider tagged setono_sylius_cms.preset_provider, by its priority. Code
-        presets come first; editor presets join with their ticket
+        presets come first, then editor presets
         -->
         <service id="Setono\SyliusCMSPlugin\Preset\CompositePresetProvider" class="Setono\SyliusCMSPlugin\Preset\CompositePresetProvider">
             <argument type="tagged_iterator" tag="setono_sylius_cms.preset_provider"/>
@@ -20,6 +20,23 @@
             <tag name="setono_sylius_cms.preset_provider" priority="100"/>
             <tag name="kernel.reset" method="reset"/>
         </service>
+
+        <!-- The presets editors saved, read from their rows -->
+        <service id="Setono\SyliusCMSPlugin\Preset\EditorPresetProvider" class="Setono\SyliusCMSPlugin\Preset\EditorPresetProvider">
+            <argument type="service" id="setono_sylius_cms.repository.editor_preset"/>
+            <argument type="service" id="logger"/>
+
+            <tag name="setono_sylius_cms.preset_provider" priority="50"/>
+        </service>
+
+        <!-- Saves editor presets at once: ★ in the builder, Replace, a rename, a new category and an import -->
+        <service id="Setono\SyliusCMSPlugin\Preset\EditorPresetSaver" class="Setono\SyliusCMSPlugin\Preset\EditorPresetSaver">
+            <argument type="service" id="setono_sylius_cms.repository.editor_preset"/>
+            <argument type="service" id="setono_sylius_cms.factory.editor_preset"/>
+            <argument type="service" id="doctrine"/>
+            <argument type="service" id="clock"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface" alias="Setono\SyliusCMSPlugin\Preset\EditorPresetSaver"/>
 
         <!-- Makes a preset's blocks ready to insert into an entry: upgraded, new keys, the entry's locales, keys resolved -->
         <service id="Setono\SyliusCMSPlugin\Preset\InsertTransformer" class="Setono\SyliusCMSPlugin\Preset\InsertTransformer">

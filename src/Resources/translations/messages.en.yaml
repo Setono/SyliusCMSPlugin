@@ -248,8 +248,10 @@ setono_sylius_cms:
         embed_code: 'Embed code runs in the shop, not in the builder''s preview.'
         unresolved_link: '%field% isn''t shown here: what it links to isn''t visible in this channel and locale, or was deleted.'
         unresolved_rich_text_link: 'A link in %field% shows as plain text here: what it links to isn''t visible in this channel and locale, or was deleted.'
-    # What inserting a preset tells editors. See "What inserting copies" in docs/spec/layouts-and-presets.md
+    # What inserting a preset tells editors, and why saving one is refused. See "What inserting copies" and "Editor
+    # presets" in docs/spec/layouts-and-presets.md
     preset:
+        details_not_text: 'A preset''s name, category and description must be text.'
         disabled_block_type: '%block% blocks are switched off, so the preset''s were left out.'
         # Why the block picker's Presets tab leaves a preset out at a spot. See "Where a preset is offered"
         fit:
@@ -266,6 +268,7 @@ setono_sylius_cms:
             too_many: '%parent% holds at most %count% %block% blocks.'
             unknown_content_type: 'Its starting point is for the content type "%content_type%", which the code doesn''t have.'
             unknown_layout: 'Its starting point''s layout "%layout%" isn''t a layout of %content_type%.'
+        name_required: 'A preset needs a name.'
         newer_version: '"%type%" in the preset was saved with version %version%, but this store has version %code_version%, so the preset can''t be inserted.'
         removed_block_type: 'Blocks of the type "%type%", which the code no longer has, were left out.'
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
