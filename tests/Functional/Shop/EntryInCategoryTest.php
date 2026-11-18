@@ -92,6 +92,11 @@ final class EntryInCategoryTest extends WebTestCase
     {
         self::assertResponseIsSuccessful();
 
-        return array_values(array_map(static fn (\DOMNode $heading): string => $heading->textContent, iterator_to_array($crawler->filter('.cms-tree .cms-heading'))));
+        $headings = [];
+        foreach ($crawler->filter('.cms-tree .cms-heading') as $heading) {
+            $headings[] = $heading->textContent;
+        }
+
+        return $headings;
     }
 }

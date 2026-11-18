@@ -115,15 +115,17 @@ final class BlogListsTest extends WebTestCase
     }
 
     /**
-     * @return list<array{string, string, bool}> each switch's name, link and whether it's the list shown
+     * Each switch's name, link and whether it's the list shown
+     *
+     * @return array<mixed>
      */
     private static function switches(Crawler $crawler): array
     {
-        return array_values($crawler->filter('[data-cms-collection-switch] a')->each(static fn (Crawler $link): array => [
+        return $crawler->filter('[data-cms-collection-switch] a')->each(static fn (Crawler $link): array => [
             trim($link->text()),
             (string) $link->attr('href'),
             'page' === $link->attr('aria-current'),
-        ]));
+        ]);
     }
 
     /**
@@ -138,10 +140,10 @@ final class BlogListsTest extends WebTestCase
     }
 
     /**
-     * @return list<string>
+     * @return array<mixed>
      */
     private static function listedUuids(Crawler $crawler): array
     {
-        return array_values($crawler->filter('table tbody [data-entry]')->each(static fn (Crawler $title): string => (string) $title->attr('data-entry')));
+        return $crawler->filter('table tbody [data-entry]')->each(static fn (Crawler $title): string => (string) $title->attr('data-entry'));
     }
 }
