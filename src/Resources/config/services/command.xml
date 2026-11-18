@@ -12,6 +12,15 @@
             <tag name="console.command"/>
         </service>
 
+        <!-- Validates the code preset files, every one registered or those given, for CI -->
+        <service id="Setono\SyliusCMSPlugin\Command\ValidatePresetsCommand" class="Setono\SyliusCMSPlugin\Command\ValidatePresetsCommand">
+            <argument>%setono_sylius_cms.presets.files%</argument>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetCheck"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="console.command"/>
+        </service>
+
         <!-- RegisterProblemKindsPass hands it the problem kinds it reports -->
         <service id="Setono\SyliusCMSPlugin\Command\LintCommand" class="Setono\SyliusCMSPlugin\Command\LintCommand">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
