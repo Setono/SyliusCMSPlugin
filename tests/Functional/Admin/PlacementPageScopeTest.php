@@ -44,10 +44,10 @@ final class PlacementPageScopeTest extends WebTestCase
         $crawler = $client->request('GET', self::overview($snippet));
 
         self::assertSame('Page scope', $crawler->filter('[data-section="placements"] th')->eq(1)->text());
-        self::assertSame('Every page the slot appears on', $crawler->filter('[data-slot="shop.footer"] [data-page-scope] [data-every-page]')->text());
+        self::assertSame('Every page the slot appears on', $crawler->filter('[data-placement][data-slot="shop.footer"] [data-page-scope] [data-every-page]')->text());
         self::assertSame(
             ['Product in taxon is one of: Shoes, Include the taxons below them', 'Product is not one of: T-shirt'],
-            $crawler->filter('[data-slot="product.after_price"] [data-page-scope-condition]')->each(static fn (Crawler $condition): string => $condition->text()),
+            $crawler->filter('[data-placement][data-slot="product.after_price"] [data-page-scope-condition]')->each(static fn (Crawler $condition): string => $condition->text()),
         );
     }
 

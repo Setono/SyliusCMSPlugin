@@ -58,7 +58,7 @@ final class PageScopesTest extends UITestCase
         $dialog->getByRole('button', ['name' => 'Save page scope'])->click();
 
         Expect::locator($browser->locator('.sylius-flash-message'))->toContainText('The page scope has been saved.');
-        Expect::locator($browser->getByRole('region', ['name' => 'Placements'])->locator('[data-page-scope-condition]'))->toHaveText('Product in taxon is one of: Shoes');
+        Expect::locator($browser->getByRole('region', ['name' => 'Placements'])->locator('tbody [data-page-scope-condition]'))->toHaveText('Product in taxon is one of: Shoes');
 
         // The shoe shows it, and the T-shirt doesn't
         $shop = $this->visit('/en_US/products/sneakers');
