@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    The reference table: the UUIDs the Entries fields declared indexed hold in each entry's published content, one row
+    per entry, field and UUID (ADR 0019). Entries are named by UUID, as content names them, so the table is written
+    without loading them, and a row can name one that's gone. Deleting the entry deletes its rows
+    -->
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\EntryReference" table="setono_sylius_cms__entry_reference">
+        <unique-constraints>
+            <unique-constraint name="setono_sylius_cms__entry_reference_uniq" columns="entry_id,field,uuid"/>
+        </unique-constraints>
+
+        <indexes>
+            <!-- A listing's filter, such as the posts in any of some categories, and the entries that refer to a deleted one -->
+            <index name="setono_sylius_cms__entry_reference_uuid_idx" columns="uuid,field"/>
+        </indexes>
+
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="field" type="string" length="64"/>
+        <field name="uuid" type="guid"/>
+
+        <many-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\EntryInterface">
+            <join-column name="entry_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
+        </many-to-one>
+    </mapped-superclass>
+</doctrine-mapping>

@@ -84,6 +84,7 @@
             <argument type="service" id="sylius.repository.customer_group"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryRows"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\TranslationChips"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\Collections"/>
 
             <tag name="twig.runtime"/>
             <tag name="kernel.reset" method="reset"/>

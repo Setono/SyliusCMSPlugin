@@ -64,6 +64,7 @@ final class ShopStylesheetTest extends TestCase
             '--cms-button-secondary-color' => ['--cms-button-secondary-color', 'inherit'],
             '--cms-radius' => ['--cms-radius', '0.25rem'],
             '--cms-placeholder-background' => ['--cms-placeholder-background', '#e0e0e0'],
+            '--cms-article-width' => ['--cms-article-width', '48rem'],
         ];
     }
 
@@ -184,6 +185,17 @@ final class ShopStylesheetTest extends TestCase
     {
         self::assertSame('var(--cms-placeholder-background)', self::declarations('.cms-embed-code--placeholder')['background'] ?? null);
         self::assertArrayNotHasKey('background', self::declarations('.cms-embed-code'), 'The code itself has the shop\'s colours');
+    }
+
+    /**
+     * @test
+     */
+    public function it_contains_a_blog_post_s_article_to_the_article_width_and_centres_it(): void
+    {
+        $article = self::declarations('.cms-article');
+
+        self::assertSame('var(--cms-article-width)', $article['max-width'] ?? null);
+        self::assertSame('auto', $article['margin-inline'] ?? null);
     }
 
     /**

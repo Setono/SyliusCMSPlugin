@@ -11,7 +11,8 @@ import styles from './Preview.module.css';
 import { ScheduleBanner } from './ScheduleBanner';
 import { TranslationBanner } from './TranslationBanner';
 
-type Frame = { state: 'waiting' } | { state: 'loaded'; url: string; version: number } | { state: 'failed' };
+/** A loaded frame shows the page-th page asked for. That keys the iframe, so a new page reloads it even at the same URL. */
+type Frame = { state: 'waiting' } | { state: 'loaded'; url: string; page: number } | { state: 'failed' };
 
 /** The block picker opened by + in the preview, at a point in the builder's viewport. */
 interface Picker {
@@ -51,6 +52,11 @@ export function Preview({ className, onOpenSettings, onSavePreset }: PreviewProp
     // A page lives at its channel's root while it's the channel's homepage, so the preview moves when that changes
     const homepage = useSettingsState((state) => channel !== null && state.settings.homepageOf.includes(channel));
     const [frame, setFrame] = useState<Frame>({ state: 'waiting' });
+    // Counts the pages asked for. The page shown stays until the next one is in place, but its bridge is connected
+    // only while it's the last one asked for. The next page renders what the server holds when it's asked for, and
+    // gets the changes made after that patched in once its bridge is ready, so a bridge that gets ready in the old
+    // page meanwhile, such as one slow to load, would take those changes to a page that's going away
+    const asked = useRef(0);
     const [reloads, setReloads] = useState(0);
     const [picker, setPicker] = useState<Picker | null>(null);
     const iframe = useRef<HTMLIFrameElement>(null);
@@ -114,6 +120,7 @@ export function Preview({ className, onOpenSettings, onSavePreset }: PreviewProp
         }
 
         sync.current?.disconnect();
+        const page = ++asked.current;
         if (!translated) {
             setFrame({ state: 'waiting' });
 
@@ -125,8 +132,7 @@ export function Preview({ className, onOpenSettings, onSavePreset }: PreviewProp
         createPreviewUrl({ channel, locale, shownTo, date, ...(snippet ? { placement, sample } : {}) }).then(
             (url) => {
                 if (active) {
-                    // A new version remounts the iframe, so it reloads even when the URL is the same.
-                    setFrame((previous) => ({ state: 'loaded', url, version: (previous.state === 'loaded' ? previous.version : 0) + 1 }));
+                    setFrame({ state: 'loaded', url, page });
                 }
             },
             () => {
@@ -164,6 +170,10 @@ export function Preview({ className, onOpenSettings, onSavePreset }: PreviewProp
             }
 
             if (message.type === 'ready') {
+                if (frame.page !== asked.current) {
+                    return;
+                }
+
                 sync.current?.connect((reply) => target.postMessage(envelope(reply), url.origin), token);
                 // The Presets tab renders presets with the page's stylesheets, which it reads here, from the same origin
                 const page = iframe.current?.contentDocument ?? null;
@@ -184,7 +194,7 @@ export function Preview({ className, onOpenSettings, onSavePreset }: PreviewProp
         <main className={[className, styles.preview].filter(Boolean).join(' ')} data-width={width}>
             <ScheduleBanner />
             <TranslationBanner />
-            {frame.state === 'loaded' && <iframe ref={iframe} key={frame.version} className={styles.frame} title={t('setono_sylius_cms.builder.preview')} src={frame.url} />}
+            {frame.state === 'loaded' && <iframe ref={iframe} key={frame.page} className={styles.frame} title={t('setono_sylius_cms.builder.preview')} src={frame.url} />}
             {frame.state === 'failed' && (
                 <p role="alert" className={styles.failed}>
                     {t('setono_sylius_cms.builder.preview_failed')}

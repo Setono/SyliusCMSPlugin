@@ -56,6 +56,7 @@ When a layout is removed from code, or disabled with `disabled.layouts`, its ent
 | Blog category | `standard` | Standard | none | `title`, `description` | The title and the description above the tree. |
 
 - Each is its content type's default. Their templates are `@SetonoSyliusCMSPlugin/layout/<content type code>/<layout code>.html.twig`, such as `layout/page/standard.html.twig`.
+- **Markup.** Article is a `cms-article`, contained to `--cms-article-width` and centred, with a `cms-article__header` holding `cms-article__title`, `cms-article__date` (a `<time>`), `cms-article__categories` (a list of links, each a `cms-article__category`) and `cms-article__image`, then the `cms-tree`. Blog category's Standard is a `cms-category-header` with `cms-category-header__title` and `cms-category-header__description`, then the `cms-tree`.
 - **Contained and full width on Page's standard layout.** The tree sits in `cms-tree`, inside the shop layout's own container, which keeps each top-level block to the shop's content width. A Group or a Banner with `fullWidth` on breaks out of that container to the edges of the viewport, so a page can mix full-width and contained blocks without a second layout ([Blocks](blocks.md#class-names)). In a slot on a Sylius page, a full-width block only reaches the edges of its surroundings.
 - The shipped layouts have no slots of their own. Agencies add layouts with slots.
 

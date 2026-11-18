@@ -1,0 +1,42 @@
+{#
+ # Blog post's Article layout (Setono\SyliusCMSPlugin\Layout\BlogPost\Article), at a contained width: the title, the
+ # date, links to the post's categories that the shopper may see and the featured image above the tree.
+ # See "Shipped layouts" in docs/spec/layouts-and-presets.md
+ #}
+{% extends '@SetonoSyliusCMSPlugin/layout/base.html.twig' %}
+
+{% block cms_content %}
+    {% set published_at = cms_value(entry, 'publishedAt') %}
+    {% set categories = cms_value(entry, 'categories') %}
+
+    <article class="cms-article">
+        <header class="cms-article__header">
+            <h1 class="cms-article__title">{{ cms_field(entry, 'title') }}</h1>
+
+            {% if published_at is not null %}
+                <time class="cms-article__date" datetime="{{ published_at|date('c') }}">{{ published_at|format_date('long') }}</time>
+            {% endif %}
+
+            {% if categories is not null and categories|length > 0 %}
+                <ul class="cms-article__categories">
+                    {% for category in categories %}
+                        {% set url = cms_url(category) %}
+                        <li class="cms-article__category">
+                            {%- if url is not null -%}
+                                <a href="{{ url }}">{{ cms_field(category, 'title') }}</a>
+                            {%- else -%}
+                                {{ cms_field(category, 'title') }}
+                            {%- endif -%}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            {{ cms_image(cms_value(entry, 'featuredImage'), {'priority': true, 'picture_class': 'cms-article__image'}) }}
+        </header>
+
+        <div class="cms-tree">
+            {{ cms_blocks(blocks) }}
+        </div>
+    </article>
+{% endblock %}

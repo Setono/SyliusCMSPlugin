@@ -5,4 +5,4 @@ cms_admin_content_types() gives every content type, which the create dialog offe
 --DATA--
 return []
 --EXPECT--
-page,recipe
+page,recipe,blog_post,blog_category

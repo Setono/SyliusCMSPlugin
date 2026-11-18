@@ -55,6 +55,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Routing\OldSlugRecorderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
             <argument type="service" id="setono_sylius_cms.manager.scheduled_publish"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\EntryReferenceIndexerInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Publishing\EntryPublisherInterface" alias="Setono\SyliusCMSPlugin\Publishing\EntryPublisher"/>
 

@@ -8,12 +8,15 @@ use Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener;
 use Setono\SyliusCMSPlugin\Doctrine\DiscriminatorMapListener;
 use Setono\SyliusCMSPlugin\Doctrine\RootAssociationsListener;
 use Setono\SyliusCMSPlugin\Factory\EntryFactory;
+use Setono\SyliusCMSPlugin\Field\Entries;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\EntryOrder;
+use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -180,19 +183,55 @@ final class RegisterContentTypesPass implements CompilerPassInterface
     }
 
     /**
-     * A collection's category content type is a content type of its own (docs/spec/collections.md#categories)
+     * A collection's category content type is a content type of its own, named by its model or a class or interface the
+     * model extends, as a project's model of a shipped one extends the shipped model. The collection holds its entries'
+     * categories in one Entries field of its own of that content type, which is indexed, so listings filter on it
+     * (docs/spec/collections.md#categories)
      *
      * @param array<string, class-string> $categoryTypes the category content type each content type names, by code
      * @param array<string, array{model: class-string, translation: class-string|null, resource: string}> $contentTypes
      */
     private static function assertCategoryTypes(array $categoryTypes, array $contentTypes): void
     {
-        $models = array_column($contentTypes, 'model');
+        $models = array_values(array_column($contentTypes, 'model'));
         foreach ($categoryTypes as $code => $categoryType) {
-            if (!in_array($categoryType, $models, true)) {
-                throw new \LogicException(sprintf('The content type "%s" names %s in categoryType, which must be the model of a content type', $code, $categoryType));
+            $categoryModel = self::modelNamedBy($categoryType, $models);
+            if (null === $categoryModel) {
+                throw new \LogicException(sprintf('The content type "%s" names %s in categoryType, which must be the model of a content type, or a class or interface one extends', $code, $categoryType));
+            }
+
+            $categoryFields = array_filter(
+                (new FieldReader())->readContentType($contentTypes[$code]['model'], false),
+                static fn (FieldMetadata $field): bool => $field->field instanceof Entries && $field->field->indexed && null !== $field->field->contentType && $categoryModel === self::modelNamedBy($field->field->contentType, $models),
+            );
+
+            if (1 !== count($categoryFields)) {
+                throw new \LogicException(sprintf('The content type "%s" names %s in categoryType, so it must have one Entries field of its own with that contentType and indexed: true, which holds its categories', $code, $categoryType));
             }
         }
+    }
+
+    /**
+     * The model a class names, as the content type registry finds it: the model that's the class, or else the first
+     * that extends or implements it
+     *
+     * @param list<class-string> $models
+     *
+     * @return class-string|null
+     */
+    private static function modelNamedBy(string $class, array $models): ?string
+    {
+        if (in_array($class, $models, true)) {
+            return $class;
+        }
+
+        foreach ($models as $model) {
+            if (is_a($model, $class, true)) {
+                return $model;
+            }
+        }
+
+        return null;
     }
 
     /**

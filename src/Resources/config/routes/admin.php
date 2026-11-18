@@ -106,6 +106,22 @@ return static function (RoutingConfigurator $routes): void {
         ]])
     ;
 
+    // A collection with categories, such as the blog: its entries and its categories in one list, beside their own
+    // lists, which its buttons switch between. Named by the code of its entries' content type, such as blog_post. Any
+    // other code fails the condition, so the request ends in a 404
+    $routes->add('setono_sylius_cms_admin_collection_index', '/cms/collections/{contentType}')
+        ->controller('setono_sylius_cms.controller.entry::indexAction')
+        ->methods(['GET'])
+        ->requirements(['contentType' => '[a-z][a-z0-9_]*'])
+        ->condition("service('setono_sylius_cms_collections').hasCategories(params['contentType'])")
+        ->defaults(['_sylius' => [
+            'section' => 'admin',
+            'permission' => true,
+            'grid' => 'setono_sylius_cms_admin_entry_collection',
+            'template' => '@SetonoSyliusCMSPlugin/admin/entry/index.html.twig',
+        ]])
+    ;
+
     // The positions editors drag the entries of a content type ordered by position into, in its list
     $routes->add('setono_sylius_cms_admin_entry_order', '/cms/entries/{contentType}/order')
         ->controller(OrderEntriesAction::class)

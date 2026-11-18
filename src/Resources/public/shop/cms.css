@@ -28,6 +28,7 @@
         --cms-button-secondary-color: inherit;
         --cms-radius: 0.25rem;
         --cms-placeholder-background: #e0e0e0;
+        --cms-article-width: 48rem;
     }
 
     /* Set on each carousel, not on :root. A theme overrides it on the element itself */
@@ -466,5 +467,39 @@
 
     .cms-carousel__dot[aria-current="true"]::before {
         opacity: 1;
+    }
+
+    /* Blog post's Article layout: contained to --cms-article-width and centred, with the header above the tree */
+    .cms-article {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: var(--cms-article-width);
+        margin-inline: auto;
+    }
+
+    .cms-article__header {
+        display: grid;
+        row-gap: var(--cms-gap);
+        margin-block-end: var(--cms-block-spacing);
+    }
+
+    .cms-article__categories {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--cms-gap);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .cms-article__image img {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+
+    /* Blog category's Standard layout: the title and the description above the tree */
+    .cms-category-header {
+        margin-block-end: var(--cms-block-spacing);
     }
 }

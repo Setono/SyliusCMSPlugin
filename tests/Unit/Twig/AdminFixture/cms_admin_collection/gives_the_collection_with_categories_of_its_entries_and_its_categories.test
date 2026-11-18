@@ -1,0 +1,14 @@
+--TEST--
+cms_admin_collection() gives the collection with categories that the content type's entries or categories belong to, and null for any other
+--TEMPLATE--
+{{ cms_admin_collection('blog_post').code }}:{{ cms_admin_collection('blog_post').categories.code }}
+{{ cms_admin_collection('blog_category').code }}
+{{ cms_admin_collection('recipe') is null ? 'none' }}
+{{ cms_admin_collection('page') is null ? 'none' }}
+--DATA--
+return []
+--EXPECT--
+blog_post:blog_category
+blog_post
+none
+none

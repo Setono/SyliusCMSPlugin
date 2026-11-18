@@ -44,5 +44,11 @@
         <service id="Setono\SyliusCMSPlugin\Condition\Kind\EntryKind" class="Setono\SyliusCMSPlugin\Condition\Kind\EntryKind">
             <tag name="setono_sylius_cms.condition_kind"/>
         </service>
+
+        <service id="Setono\SyliusCMSPlugin\Condition\Kind\EntryInCategoryKind" class="Setono\SyliusCMSPlugin\Condition\Kind\EntryInCategoryKind">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\IndexedFields"/>
+
+            <tag name="setono_sylius_cms.condition_kind"/>
+        </service>
     </services>
 </container>

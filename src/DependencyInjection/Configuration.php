@@ -15,6 +15,14 @@ use Setono\SyliusCMSPlugin\Media\GracePeriod;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Model\BestsellerScore;
 use Setono\SyliusCMSPlugin\Model\BestsellerScoreInterface;
+use Setono\SyliusCMSPlugin\Model\BlogCategory;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryInterface;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryTranslation;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryTranslationInterface;
+use Setono\SyliusCMSPlugin\Model\BlogPost;
+use Setono\SyliusCMSPlugin\Model\BlogPostInterface;
+use Setono\SyliusCMSPlugin\Model\BlogPostTranslation;
+use Setono\SyliusCMSPlugin\Model\BlogPostTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EditorPreset;
@@ -27,6 +35,8 @@ use Setono\SyliusCMSPlugin\Model\EntryChannelInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryPresence;
 use Setono\SyliusCMSPlugin\Model\EntryPresenceInterface;
+use Setono\SyliusCMSPlugin\Model\EntryReference;
+use Setono\SyliusCMSPlugin\Model\EntryReferenceInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Homepage;
@@ -62,6 +72,7 @@ use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
 use Setono\SyliusCMSPlugin\Repository\EditorPresetRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
+use Setono\SyliusCMSPlugin\Repository\EntryReferenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
 use Setono\SyliusCMSPlugin\Repository\HomepageRepository;
 use Setono\SyliusCMSPlugin\Repository\MediaFolderRepository;
@@ -702,8 +713,9 @@ final class Configuration implements ConfigurationInterface
     /**
      * The shipped Sylius resources. The draft and the rows beside an entry (its channels, its audience groups, who has
      * it open, its saves, its revisions, its old slugs, its scheduled publish, its share links, the channels a
-     * page is the homepage of and a snippet's placements), and the bestseller scores, have no admin screens of their own,
-     * so they have no controller. Nor have the editor presets, whose Presets screen lists code presets too.
+     * page is the homepage of and a snippet's placements), the bestseller scores, the media usage index and the reference
+     * table have no admin screens of their own, so they have no controller. Nor have the editor presets, whose Presets
+     * screen lists code presets too. The content types are Page and Snippet, and the blog's Blog post and Blog category.
      * A project extends a shipped content type the way it extends any Sylius model:
      * by overriding classes.model, and translation.classes.model, with its own subclasses.
      * The channel and audience group rows always belong to an entry, and the homepage rows to a page, so their
@@ -729,11 +741,14 @@ final class Configuration implements ConfigurationInterface
                     ->append(self::mediaItemResource())
                     ->append(self::resourceWithoutController('media_folder', MediaFolder::class, MediaFolderInterface::class, MediaFolderRepository::class))
                     ->append(self::resourceWithoutController('media_usage', MediaUsage::class, MediaUsageInterface::class, MediaUsageRepository::class))
+                    ->append(self::resourceWithoutController('entry_reference', EntryReference::class, EntryReferenceInterface::class, EntryReferenceRepository::class))
                     ->append(self::resourceWithoutController('editor_preset', EditorPreset::class, EditorPresetInterface::class, EditorPresetRepository::class))
                     ->append(self::resourceWithoutController('bestseller_score', BestsellerScore::class, BestsellerScoreInterface::class))
                     ->append(self::resourceWithoutController('placement', Placement::class, PlacementInterface::class, PlacementRepository::class, PlacementFactory::class))
                     ->append(self::contentTypeResource('page', Page::class, PageInterface::class, PageTranslation::class, PageTranslationInterface::class))
                     ->append(self::contentTypeResource(SnippetInterface::CONTENT_TYPE, Snippet::class, SnippetInterface::class, EntryTranslation::class, EntryTranslationInterface::class))
+                    ->append(self::contentTypeResource(BlogPostInterface::CONTENT_TYPE, BlogPost::class, BlogPostInterface::class, BlogPostTranslation::class, BlogPostTranslationInterface::class))
+                    ->append(self::contentTypeResource(BlogCategoryInterface::CONTENT_TYPE, BlogCategory::class, BlogCategoryInterface::class, BlogCategoryTranslation::class, BlogCategoryTranslationInterface::class))
                 ->end()
             ->end()
         ;

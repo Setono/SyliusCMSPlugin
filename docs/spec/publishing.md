@@ -98,7 +98,7 @@ A publish runs in one database transaction, under the draft's autosave lock, so 
 8. bumps `changedAt`, or, in an import, sets it to the export's value ([Transfer](transfer.md#what-an-import-does))
 9. after the transaction commits, dispatches `EntryPublished` with the old and new slugs
 
-A content type can fill values on publish, as Blog post fills its date on the first publish when it's empty ([Collections](collections.md)).
+A content type can fill values on publish, as Blog post fills its date on the first publish when it's empty ([Collections](collections.md)). Its model implements `Setono\SyliusCMSPlugin\Model\FillsOnPublishInterface`, whose `fillOnPublish()` a publish calls with the time of the publish, after step 3 copied the draft onto the rows, so the revision and shoppers see the values it fills.
 
 **Discard changes** deletes the draft, so the entry goes back to its published content. A never-published entry has no draft, so it has nothing to discard.
 

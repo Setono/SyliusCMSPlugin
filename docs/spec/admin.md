@@ -14,7 +14,7 @@ The routes are in [Extending](extending.md#routes). Every admin user can do ever
   - **Overview**, the hub's home.
   - **Entries:** All entries, Pages, Snippets, then one item per collection, each with a count. The shipped Blog and FAQ come first, then a project's own, such as Store locations. A disabled content type has no item.
   - **Library:** Media, Presets and Transfer.
-- **A collection's item** lists its entries and its categories, switched by buttons such as All, Posts and Categories.
+- **A collection's item** lists its entries and its categories, switched by buttons such as All, Posts and Categories. The item and its lists are named by the collection's name, `setono_sylius_cms.collection.<code>` such as Blog, or else by its plural, and the buttons by the content types' plurals.
 - **There's no Slots screen.** Slots are reached through a snippet's placements.
 
 ## Overview

@@ -520,6 +520,29 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
                         'type' => $field('setono_sylius_cms.ui.type', 'type', 20),
                     ],
                 ],
+                // A collection with categories, such as the blog: its entries and its categories, by type, and a create
+                // dialog that asks which of the two
+                'setono_sylius_cms_admin_entry_collection' => [
+                    'extends' => 'setono_sylius_cms_admin_entry',
+                    'driver' => [
+                        'options' => [
+                            'repository' => ['method' => 'createCollectionListQueryBuilder', 'arguments' => ['$contentType', '%' . RegisterContentTypesPass::DISABLED_PARAMETER . '%']],
+                        ],
+                    ],
+                    'sorting' => self::GRID_SORTING,
+                    'limits' => self::GRID_LIMITS,
+                    'fields' => [
+                        'type' => $field('setono_sylius_cms.ui.type', 'type', 20),
+                    ],
+                    'actions' => [
+                        'main' => [
+                            'create' => [
+                                'type' => self::CREATE_ENTRY_ACTION,
+                                'options' => ['contentType' => null, 'collection' => '$contentType'],
+                            ],
+                        ],
+                    ],
+                ],
             ],
             'templates' => [
                 'action' => [

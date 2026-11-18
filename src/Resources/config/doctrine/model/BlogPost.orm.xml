@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <!--
+    A mapped superclass, like every Sylius model: it becomes an entity when it's the model of its resource. Its columns
+    start with its content type's code, which Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener prefixes them with,
+    so publishedAt is blog_post_published_at. They're nullable, as the other content types' rows have none
+    -->
+    <mapped-superclass name="Setono\SyliusCMSPlugin\Model\BlogPost">
+        <!-- Its date, in UTC -->
+        <field name="publishedAt" column="published_at" type="datetime_immutable" nullable="true"/>
+        <!-- The UUID of a media item, in a plain string column, as a value that is not a UUID can be drafted -->
+        <field name="featuredImage" column="featured_image" type="string" nullable="true"/>
+        <!-- The UUIDs of its categories, in the editor's order. The reference table indexes those it's published with -->
+        <field name="categories" type="json" nullable="true"/>
+    </mapped-superclass>
+</doctrine-mapping>

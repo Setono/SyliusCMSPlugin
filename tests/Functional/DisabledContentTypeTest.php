@@ -54,7 +54,7 @@ final class DisabledContentTypeTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         $items = $crawler->filter('[data-hub-menu] a.item')->each(static fn (Crawler $item): string => (string) preg_replace('/\s+/', ' ', trim($item->text())));
-        self::assertSame(['Overview', 'All entries 1', 'Pages 0', 'Snippets 0', 'Announcements 1', 'Media'], $items);
+        self::assertSame(['Overview', 'All entries 1', 'Pages 0', 'Snippets 0', 'Blog 0', 'Announcements 1', 'Media'], $items);
         self::assertSelectorTextNotContains('table', 'Aarhus');
 
         $client->request('GET', '/admin/cms/entries/store_location');
@@ -85,7 +85,7 @@ final class DisabledContentTypeTest extends WebTestCase
         $client->request('GET', '/admin/cms/api/registry', server: ['HTTP_ACCEPT' => 'application/json']);
         /** @var array{contentTypes: list<array{code: string}>} $registry */
         $registry = json_decode((string) $client->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
-        self::assertSame(['announcement', 'page', 'snippet'], array_column($registry['contentTypes'], 'code'));
+        self::assertSame(['announcement', 'page', 'snippet', 'blog_post', 'blog_category'], array_column($registry['contentTypes'], 'code'));
     }
 
     /**

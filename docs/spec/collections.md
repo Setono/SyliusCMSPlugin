@@ -45,7 +45,7 @@ Their fields, beyond the base fields:
 
 A blog post's date is a field of its own, `publishedAt`, stored as a column:
 
-- The first publish fills it when it's empty. A later publish never changes it.
+- The first publish fills it when it's empty. A later publish never changes it, but fills it again when an editor emptied it.
 - Editors can change it, such as to backdate a post.
 - It moves with the entry in a transfer, so a post keeps its date when it's published in another environment.
 - It isn't the "Show from" date. The date window decides only when published content shows ([Publishing](publishing.md)).

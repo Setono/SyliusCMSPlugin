@@ -13,8 +13,11 @@ use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Clock\ClockInterface;
+use Setono\SyliusCMSPlugin\Collection\EntryReferenceIndexerInterface;
 use Setono\SyliusCMSPlugin\Event\BeforeEntryPublish;
 use Setono\SyliusCMSPlugin\Event\EntryPublished;
+use Setono\SyliusCMSPlugin\Model\BlogPost;
+use Setono\SyliusCMSPlugin\Model\BlogPostTranslation;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
@@ -57,6 +60,9 @@ final class EntryPublisherTest extends TestCase
 
     /** @var ObjectProphecy<OldSlugRecorderInterface> */
     private ObjectProphecy $oldSlugs;
+
+    /** @var ObjectProphecy<EntryReferenceIndexerInterface> */
+    private ObjectProphecy $referenceIndexer;
 
     private EventDispatcher $eventDispatcher;
 
@@ -114,6 +120,9 @@ final class EntryPublisherTest extends TestCase
         $this->oldSlugs = $this->prophesize(OldSlugRecorderInterface::class);
         $this->oldSlugs->record(Argument::cetera())->will($this->record('record old slugs'));
 
+        $this->referenceIndexer = $this->prophesize(EntryReferenceIndexerInterface::class);
+        $this->referenceIndexer->index(Argument::any())->will($this->record('write the reference table'));
+
         $this->eventDispatcher = new EventDispatcher();
         foreach ([BeforeEntryPublish::class, EntryPublished::class] as $event) {
             $this->eventDispatcher->addListener($event, function (object $event): void {
@@ -138,7 +147,7 @@ final class EntryPublisherTest extends TestCase
         $this->publisher()->publish($page);
 
         self::assertSame(
-            ['begin', 'lock to write', 'read again', 'get working copy', 'validate', BeforeEntryPublish::class, 'apply to rows', 'record old slugs', 'store a revision', 'flush', 'commit', EntryPublished::class],
+            ['begin', 'lock to write', 'read again', 'get working copy', 'validate', BeforeEntryPublish::class, 'apply to rows', 'record old slugs', 'write the reference table', 'store a revision', 'flush', 'commit', EntryPublished::class],
             $this->calls,
         );
 
@@ -163,6 +172,47 @@ final class EntryPublisherTest extends TestCase
         self::assertTrue($page->isPublished());
         self::assertSame('2026-11-14T11:30:00+00:00', $page->getLastPublishedAt()?->format(\DATE_ATOM));
         self::assertSame('2026-11-14T11:30:00+00:00', $page->getChangedAt()->format(\DATE_ATOM));
+    }
+
+    /**
+     * The reference table mirrors the published content, so it's written from the rows once the working copy is on them
+     *
+     * @test
+     */
+    public function it_writes_the_reference_table_from_the_rows_it_publishes(): void
+    {
+        $this->workingCopies->applyToRows($this->page, $this->workingCopy)->will($this->record('apply to rows'));
+
+        $this->publisher()->publish($this->page);
+
+        $this->referenceIndexer->index($this->page)->shouldHaveBeenCalledOnce();
+    }
+
+    /**
+     * A content type fills its values on publish, such as a blog post's date, before the revision stores the rows
+     *
+     * @test
+     */
+    public function it_has_the_content_type_fill_its_values_with_the_time_of_the_publish(): void
+    {
+        $post = new BlogPost();
+        $post->setCurrentLocale('en_US');
+        $post->setTitle('Ten ways to style a scarf');
+        $post->setSlug('ten-ways-to-style-a-scarf');
+        $this->managerRegistry->getManagerForClass(BlogPost::class)->willReturn($this->manager->reveal());
+        $this->manager->lock($post, LockMode::PESSIMISTIC_WRITE)->shouldBeCalled();
+        $this->manager->refresh($post)->shouldBeCalled();
+        $this->workingCopies->getWorkingCopy($post)->willReturn($post);
+        $this->workingCopies->applyToRows($post, $post)->shouldBeCalled();
+        $this->entryValidator->validate($post, $post)->willReturn([]);
+        $this->scheduledPublishes->findOneByEntry($post)->willReturn(null);
+        $this->revisions->record($post, Argument::cetera())->will(static function () use ($post): void {
+            self::assertSame('2026-11-14T11:30:00+00:00', $post->getPublishedAt()?->format(\DATE_ATOM), 'The revision stores the date');
+        });
+
+        $this->publisher()->publish($post);
+
+        self::assertSame('2026-11-14T11:30:00+00:00', $post->getPublishedAt()?->format(\DATE_ATOM));
     }
 
     /**
@@ -242,7 +292,7 @@ final class EntryPublisherTest extends TestCase
         $this->publisher()->publish($this->page);
 
         self::assertSame(
-            ['begin', 'lock to write', 'read again', 'get working copy', 'validate', BeforeEntryPublish::class, 'remove the scheduled publish', 'apply to rows', 'record old slugs', 'store a revision', 'flush', 'commit', EntryPublished::class],
+            ['begin', 'lock to write', 'read again', 'get working copy', 'validate', BeforeEntryPublish::class, 'remove the scheduled publish', 'apply to rows', 'record old slugs', 'write the reference table', 'store a revision', 'flush', 'commit', EntryPublished::class],
             $this->calls,
         );
         $this->manager->remove($scheduledPublish)->shouldHaveBeenCalledOnce();
@@ -261,7 +311,7 @@ final class EntryPublisherTest extends TestCase
         self::assertTrue($this->publisher()->publishScheduled($this->page, $scheduledPublish->getToken()));
 
         self::assertSame(
-            ['begin', 'lock to write', 'read again', 'get working copy', 'validate', BeforeEntryPublish::class, 'remove the scheduled publish', 'apply to rows', 'record old slugs', 'store a revision', 'flush', 'commit', EntryPublished::class],
+            ['begin', 'lock to write', 'read again', 'get working copy', 'validate', BeforeEntryPublish::class, 'remove the scheduled publish', 'apply to rows', 'record old slugs', 'write the reference table', 'store a revision', 'flush', 'commit', EntryPublished::class],
             $this->calls,
         );
         $this->manager->remove($scheduledPublish)->shouldHaveBeenCalledOnce();
@@ -390,12 +440,14 @@ final class EntryPublisherTest extends TestCase
             $this->eventDispatcher,
             new ContentTypeRegistry([
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+                'blog_post' => ['model' => BlogPost::class, 'translation' => BlogPostTranslation::class, 'resource' => 'setono_sylius_cms.blog_post'],
             ]),
             new PublishCheck($this->entryValidator->reveal(), $this->eventDispatcher),
             $this->revisions->reveal(),
             $this->oldSlugs->reveal(),
             $this->scheduledPublishes->reveal(),
             $this->manager->reveal(),
+            $this->referenceIndexer->reveal(),
         );
     }
 

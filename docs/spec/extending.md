@@ -270,7 +270,8 @@ Every field attribute extends `Setono\SyliusCMSPlugin\Field\Field`, which has th
 - **List fields.** `sources: true` offers every source of the right kind, a list offers only those codes, and `false` allows only hand-picking. `limit` is the default number of items shown when a source fills the list. A source's own parameter fields are always hand-picked.
 - **Dynamic choices.** A `Choice` field whose choices come from the store, such as the association types of the Associations source, names a service implementing `Setono\SyliusCMSPlugin\Field\ChoicesProviderInterface`, whose `getChoices(string $localeCode): array` returns value to label. It's used instead of `choices`.
 - **`ItemList`** (`Setono\SyliusCMSPlugin\Value\ItemList`) is iterable and countable over the items that show, resolved lazily on first read. `adapter()` returns the Pagerfanta adapter, and `pager(int $page)` returns a `Pagerfanta` for the paginated Entries block.
-- **`Entries(indexed: true)`** writes the field's UUIDs to the (entry, field, UUID) reference table on publish ([Collections](collections.md#categories)).
+- **`contentType`** on `Entry` and `Entries` names a content type by its model, or by a class or interface its model extends, so it still names a shipped content type whose model a project overrides, such as `BlogCategory::class`. The builder's picker searches only that content type's entries, and a picked entry of another content type isn't shown.
+- **`Entries(indexed: true)`** writes the field's UUIDs to the (entry, field, UUID) reference table on publish ([Collections](collections.md#categories)). Only a content type's own shared field is indexed.
 - **No colour, spacing or icon fields** ([ADR 0017](../adr/0017-shipped-blocks-are-theme-agnostic.md)), and no repeater ([ADR 0020](../adr/0020-extension-points-are-classes-whose-typed-properties-are-their-fields.md)).
 
 The stored value of each type is in [Content model](content-model.md#values-per-field-type).
@@ -720,6 +721,7 @@ The `_locale` requirement is the one `sylius_shop` uses. The admin prefix is Syl
 | `setono_sylius_cms_admin_overview` | GET | `/{admin}/cms` | [Admin](admin.md#overview) |
 | `setono_sylius_cms_admin_entry_index_all` | GET | `/{admin}/cms/entries` (All entries) | [Admin](admin.md#entry-lists) |
 | `setono_sylius_cms_admin_entry_index` | GET | `/{admin}/cms/entries/{contentType}`, where `{contentType}` is a content type code | [Admin](admin.md#entry-lists) |
+| `setono_sylius_cms_admin_collection_index` | GET | `/{admin}/cms/collections/{contentType}`, a collection with categories, such as the blog: its entries and its categories, where `{contentType}` is its entries' content type code, such as `blog_post` | [Admin](admin.md#entry-lists) |
 | `setono_sylius_cms_admin_entry_create` | GET, POST | `/{admin}/cms/entries/{contentType}/new` | [Admin](admin.md#create-dialog) |
 | `setono_sylius_cms_admin_entry_show` | GET | `/{admin}/cms/entry/{uuid}` | [Admin](admin.md#entry-overview-page) |
 | `setono_sylius_cms_admin_builder` | GET | `/{admin}/cms/entry/{uuid}/builder` | [Builder](builder.md) |

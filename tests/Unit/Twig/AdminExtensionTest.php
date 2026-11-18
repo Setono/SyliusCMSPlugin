@@ -24,6 +24,7 @@ use Setono\SyliusCMSPlugin\Admin\WhereItShows;
 use Setono\SyliusCMSPlugin\Block\Snippet as SnippetBlock;
 use Setono\SyliusCMSPlugin\Builder\RegistryExporter;
 use Setono\SyliusCMSPlugin\Builder\UiStrings;
+use Setono\SyliusCMSPlugin\Collection\Collections;
 use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\SnippetHandler;
@@ -37,6 +38,10 @@ use Setono\SyliusCMSPlugin\Media\MediaLimits;
 use Setono\SyliusCMSPlugin\Media\MediaLocales;
 use Setono\SyliusCMSPlugin\Media\MediaTypes;
 use Setono\SyliusCMSPlugin\Media\UploadLimit;
+use Setono\SyliusCMSPlugin\Model\BlogCategory;
+use Setono\SyliusCMSPlugin\Model\BlogCategoryTranslation;
+use Setono\SyliusCMSPlugin\Model\BlogPost;
+use Setono\SyliusCMSPlugin\Model\BlogPostTranslation;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\HomepageInterface;
@@ -409,7 +414,7 @@ final class AdminExtensionTest extends IntegrationTestCase
         $entryShareLinks = $this->entryShareLinks();
         $translationChips = $this->translationChips();
         $whereItShows = $this->whereItShows();
-        $runtime = new AdminRuntime(self::contentTypes(), $this->customerGroups->reveal(), $entryRows, $translationChips);
+        $runtime = new AdminRuntime(self::contentTypes(), $this->customerGroups->reveal(), $entryRows, $translationChips, new Collections(self::contentTypes()));
         $workingCopies = $this->prophesize(WorkingCopyProviderInterface::class);
         $workingCopies->getWorkingCopy(Argument::any())->willReturnArgument(0);
         $problemFinder = $this->problemFinder();
@@ -771,6 +776,7 @@ final class AdminExtensionTest extends IntegrationTestCase
                 $this->prophesize(ProblemCountProviderInterface::class)->reveal(),
             ),
             $this->translationChips(),
+            new Collections(self::contentTypes()),
         );
     }
 
@@ -779,6 +785,8 @@ final class AdminExtensionTest extends IntegrationTestCase
         return new ContentTypeRegistry([
             'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             'recipe' => ['model' => Recipe::class, 'translation' => EntryTranslation::class, 'resource' => 'app.recipe'],
+            'blog_post' => ['model' => BlogPost::class, 'translation' => BlogPostTranslation::class, 'resource' => 'setono_sylius_cms.blog_post'],
+            'blog_category' => ['model' => BlogCategory::class, 'translation' => BlogCategoryTranslation::class, 'resource' => 'setono_sylius_cms.blog_category'],
         ]);
     }
 

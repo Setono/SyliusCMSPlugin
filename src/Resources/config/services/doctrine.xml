@@ -43,6 +43,7 @@
         <service id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface" alias="setono_sylius_cms.repository.media_item"/>
         <service id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface" alias="setono_sylius_cms.repository.media_folder"/>
         <service id="Setono\SyliusCMSPlugin\Repository\MediaUsageRepositoryInterface" alias="setono_sylius_cms.repository.media_usage"/>
+        <service id="Setono\SyliusCMSPlugin\Repository\EntryReferenceRepositoryInterface" alias="setono_sylius_cms.repository.entry_reference"/>
         <service id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface" alias="setono_sylius_cms.repository.placement"/>
 
         <!-- The factory that creates placements of the configured model -->

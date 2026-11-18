@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Admin\HubMenuBuilder;
+use Setono\SyliusCMSPlugin\Collection\Collections;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Snippet;
@@ -41,6 +42,7 @@ final class HubMenuBuilderTest extends TestCase
         $this->entryRepository->countEntries('snippet')->willReturn(4);
         $this->entryRepository->countEntries('post')->willReturn(2);
         $this->entryRepository->countEntries('location')->willReturn(5);
+        $this->entryRepository->countEntries('recipe')->willReturn(6);
 
         $this->eventDispatcher = new EventDispatcher();
     }
@@ -127,16 +129,29 @@ final class HubMenuBuilderTest extends TestCase
 
         $posts = self::child($entries, 'post');
         self::assertSame('app.post', $posts->getLabel());
-        self::assertSame('setono_sylius_cms.content_type_plural.post', $posts->getExtra('plural'));
+        self::assertSame(['setono_sylius_cms.collection.post', 'setono_sylius_cms.content_type_plural.post'], $posts->getExtra('names'));
         self::assertSame('/admin/cms/entries/post', $posts->getUri());
         self::assertSame('folder outline', $posts->getLabelAttribute('icon'));
         self::assertSame(2, $posts->getExtra('count'));
+    }
 
-        $locations = self::child($entries, 'location');
+    /**
+     * A collection with categories lists both, switched by All, its entries and its categories, so its item counts both
+     * and is current on each of the three lists. See "Navigation" in docs/spec/admin.md
+     *
+     * @test
+     */
+    public function it_lists_a_collection_with_categories_with_its_categories(): void
+    {
+        $locations = self::child(self::child($this->menu(), 'entries'), 'location');
+
         self::assertSame('app.cms.content_type.location', $locations->getLabel());
-        self::assertSame('/admin/cms/entries/location', $locations->getUri());
-        self::assertSame(5, $locations->getExtra('count'));
+        self::assertSame('/admin/cms/collections/location', $locations->getUri());
+        self::assertSame(11, $locations->getExtra('count'));
+        self::assertTrue(MenuFactory::matcherOn('setono_sylius_cms_admin_collection_index', ['contentType' => 'location'])->isCurrent($locations));
         self::assertTrue(MenuFactory::matcherOn('setono_sylius_cms_admin_entry_index', ['contentType' => 'location'])->isCurrent($locations));
+        self::assertTrue(MenuFactory::matcherOn('setono_sylius_cms_admin_entry_index', ['contentType' => 'recipe'])->isCurrent($locations));
+        self::assertFalse(MenuFactory::matcherOn('setono_sylius_cms_admin_entry_index', ['contentType' => 'post'])->isCurrent($locations));
     }
 
     /**
@@ -178,7 +193,7 @@ final class HubMenuBuilderTest extends TestCase
             'shop' => ['model' => Shop::class, 'translation' => ShopTranslation::class, 'resource' => 'app.shop'],
         ], disabled: ['shop']);
 
-        return (new HubMenuBuilder(MenuFactory::create(), $this->eventDispatcher, $this->entryRepository->reveal(), $contentTypes))->createMenu([]);
+        return (new HubMenuBuilder(MenuFactory::create(), $this->eventDispatcher, $this->entryRepository->reveal(), $contentTypes, new Collections($contentTypes)))->createMenu([]);
     }
 
     private static function child(ItemInterface $item, string $name): ItemInterface

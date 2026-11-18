@@ -1017,7 +1017,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         self::assertCount(1, $configs);
         [$config] = $configs;
 
-        self::assertSame(['setono_sylius_cms_admin_entry', 'setono_sylius_cms_admin_entry_all'], array_keys($config['grids']));
+        self::assertSame(['setono_sylius_cms_admin_entry', 'setono_sylius_cms_admin_entry_all', 'setono_sylius_cms_admin_entry_collection'], array_keys($config['grids']));
         $grid = $config['grids']['setono_sylius_cms_admin_entry'];
         self::assertSame([
             'name' => 'doctrine/orm',
@@ -1061,6 +1061,16 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
             'limits' => [25, 50, 100],
             'fields' => ['type' => self::twigField('setono_sylius_cms.ui.type', 'type', 20)],
         ], $config['grids']['setono_sylius_cms_admin_entry_all']);
+
+        // A collection with categories lists both, by type, and its create dialog asks which of the two
+        self::assertSame([
+            'extends' => 'setono_sylius_cms_admin_entry',
+            'driver' => ['options' => ['repository' => ['method' => 'createCollectionListQueryBuilder', 'arguments' => ['$contentType', '%setono_sylius_cms.disabled.content_types%']]]],
+            'sorting' => ['lastEdited' => 'desc'],
+            'limits' => [25, 50, 100],
+            'fields' => ['type' => self::twigField('setono_sylius_cms.ui.type', 'type', 20)],
+            'actions' => ['main' => ['create' => ['type' => 'setono_sylius_cms_create_entry', 'options' => ['contentType' => null, 'collection' => '$contentType']]]],
+        ], $config['grids']['setono_sylius_cms_admin_entry_collection']);
 
         self::assertSame(['setono_sylius_cms_create_entry' => '@SetonoSyliusCMSPlugin/admin/entry/grid/action/create.html.twig'], $config['templates']['action']);
 

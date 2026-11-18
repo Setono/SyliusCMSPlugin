@@ -53,6 +53,7 @@ The stylesheet reads these, each with the default shown. Themes set them on `:ro
 | `--cms-button-secondary-background`, `--cms-button-secondary-color` | `transparent`, `inherit` | The Button's `secondary` style. |
 | `--cms-radius` | `0.25rem` | Rounded corners on buttons and tiles. |
 | `--cms-placeholder-background` | `#e0e0e0` | The empty-image placeholder. |
+| `--cms-article-width` | `48rem` | The contained width of Blog post's Article layout, `cms-article` ([Layouts and presets](layouts-and-presets.md#shipped-layouts)). |
 
 ### Loading the stylesheet and script
 
