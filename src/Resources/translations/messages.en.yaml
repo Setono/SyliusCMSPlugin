@@ -232,7 +232,7 @@ setono_sylius_cms:
             title: Title
     media:
         # Why a media item can't be deleted. See "Deleting" in docs/spec/media.md
-        in_use: '{1} It''s used in an entry, so it can''t be deleted.|]1,Inf[ It''s used in %count% entries, so it can''t be deleted.'
+        in_use: '{1} It''s used in one place, so it can''t be deleted.|]1,Inf[ It''s used in %count% places, so it can''t be deleted.'
         # Why the media library refused a file. See "Uploading" in docs/spec/media.md
         refused:
             not_allowed: '%filename% is a %type% file, which the media library doesn''t take. It takes %types%, up to %limit% each.'
@@ -414,6 +414,7 @@ setono_sylius_cms:
         preset_invalid: Invalid blocks
         preset_name: Name
         presets: Presets
+        preset: Preset
         presets_description: 'Blocks saved to insert anywhere, and starting points for new entries'
         save: Save
         starting_points: Starting points

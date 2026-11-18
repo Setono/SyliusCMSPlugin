@@ -7,6 +7,9 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Event\BeforeMediaItemDelete;
 use Setono\SyliusCMSPlugin\Event\MediaItemDeleted;
+use Setono\SyliusCMSPlugin\Preset\EditorPresetDeleterInterface;
+use Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface;
+use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\MediaFieldsKernel;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -43,8 +46,8 @@ final class MediaUsageTest extends MediaApiTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame(['uses' => [
-            ['entry' => $sale->getUuid(), 'title' => 'Summer sale', 'contentType' => 'Page', 'url' => '/admin/cms/entry/' . $sale->getUuid(), 'draft' => true, 'published' => true],
-            ['entry' => $story->getUuid(), 'title' => 'Our story', 'contentType' => 'Page', 'url' => '/admin/cms/entry/' . $story->getUuid(), 'draft' => true, 'published' => false],
+            ['entry' => $sale->getUuid(), 'preset' => null, 'title' => 'Summer sale', 'contentType' => 'Page', 'url' => '/admin/cms/entry/' . $sale->getUuid(), 'draft' => true, 'published' => true],
+            ['entry' => $story->getUuid(), 'preset' => null, 'title' => 'Our story', 'contentType' => 'Page', 'url' => '/admin/cms/entry/' . $story->getUuid(), 'draft' => true, 'published' => false],
         ]], $answer);
 
         // The library counts them
@@ -103,7 +106,7 @@ final class MediaUsageTest extends MediaApiTestCase
         $answer = self::json($client, 'DELETE', '/admin/cms/api/media/' . $uuid, null, $config['csrfToken']);
 
         self::assertResponseStatusCodeSame(409);
-        self::assertSame(['error' => 'It\'s used in an entry, so it can\'t be deleted.'], $answer);
+        self::assertSame(['error' => 'It\'s used in one place, so it can\'t be deleted.'], $answer);
         self::assertTrue(self::exists($uuid));
         self::assertFileExists(self::mediaDirectory() . '/' . $mediaItem->getPath());
 
@@ -117,6 +120,61 @@ final class MediaUsageTest extends MediaApiTestCase
         self::publishEntry(self::reloadPage($page));
         self::json($client, 'DELETE', '/admin/cms/api/media/' . $uuid, null, $config['csrfToken']);
         self::assertResponseStatusCodeSame(204);
+    }
+
+    /**
+     * @test
+     */
+    public function it_counts_the_media_items_an_editor_preset_uses_so_one_can_not_be_deleted_while_a_preset_uses_it(): void
+    {
+        $client = self::createClient();
+        $config = self::openMediaLibrary($client);
+        $uuid = $this->uploadMediaItem('summer.png', self::png())->getUuid();
+        $this->uploadMediaItem('unused.png', self::png(rgb: [0, 0, 0]));
+        $preset = self::presetSaver()->save(new Preset('Summer banner', [self::block($uuid)], 'Campaigns'));
+
+        self::assertSame(['uses' => [
+            ['entry' => null, 'preset' => $preset->uuid, 'title' => 'Summer banner', 'contentType' => 'Preset', 'url' => sprintf('/admin/cms/presets?tab=block_presets#cms-preset-%s', (string) $preset->uuid), 'draft' => false, 'published' => false],
+        ]], self::json($client, 'GET', sprintf('/admin/cms/api/media/%s/uses', $uuid)));
+        self::assertSame(['unused' => 0, 'summer' => 1], array_column(self::items($client, ''), 'usageCount', 'name'));
+        self::assertSame(['unused'], array_column(self::items($client, 'unused=1'), 'name'));
+
+        $answer = self::json($client, 'DELETE', '/admin/cms/api/media/' . $uuid, null, $config['csrfToken']);
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame(['error' => 'It\'s used in one place, so it can\'t be deleted.'], $answer);
+
+        // Its blocks replaced by ones that don't use it, nothing uses it
+        $replaced = self::presetSaver()->save(new Preset('Summer banner', [], uuid: $preset->uuid));
+        self::assertSame(['uses' => []], self::json($client, 'GET', sprintf('/admin/cms/api/media/%s/uses', $uuid)));
+
+        // Used again, the preset's delete takes its use with it
+        self::presetSaver()->save(new Preset('Summer banner', [self::block($uuid)], uuid: $replaced->uuid));
+        self::assertCount(1, (array) (self::json($client, 'GET', sprintf('/admin/cms/api/media/%s/uses', $uuid)) ?? [])['uses']);
+        /** @var EditorPresetDeleterInterface $deleter */
+        $deleter = self::getContainer()->get(EditorPresetDeleterInterface::class);
+        $deleter->delete((string) $preset->uuid);
+
+        self::json($client, 'DELETE', '/admin/cms/api/media/' . $uuid, null, $config['csrfToken']);
+        self::assertResponseStatusCodeSame(204);
+    }
+
+    /**
+     * @test
+     */
+    public function it_lists_an_entry_and_a_preset_that_use_a_media_item_and_counts_both(): void
+    {
+        $client = self::createClient();
+        $config = self::openMediaLibrary($client);
+        $uuid = $this->uploadMediaItem('summer.png', self::png())->getUuid();
+        $page = self::createPageWithBlocks('Summer sale', 'sale', [self::block($uuid)], published: true);
+        $preset = self::presetSaver()->save(new Preset('Summer banner', [self::block($uuid)]));
+
+        $uses = self::json($client, 'GET', sprintf('/admin/cms/api/media/%s/uses', $uuid));
+
+        self::assertIsArray($uses);
+        self::assertSame([[$page->getUuid(), null], [null, $preset->uuid]], array_map(static fn (array $use): array => [$use['entry'], $use['preset']], (array) $uses['uses']));
+        self::assertSame(['summer' => 2], array_column(self::items($client, ''), 'usageCount', 'name'));
+        self::assertSame(['error' => 'It\'s used in 2 places, so it can\'t be deleted.'], self::json($client, 'DELETE', '/admin/cms/api/media/' . $uuid, null, $config['csrfToken']));
     }
 
     /**
@@ -190,6 +248,14 @@ final class MediaUsageTest extends MediaApiTestCase
 
         self::assertResponseStatusCodeSame(403);
         self::assertTrue(self::exists($uuid));
+    }
+
+    private static function presetSaver(): EditorPresetSaverInterface
+    {
+        /** @var EditorPresetSaverInterface $saver */
+        $saver = self::getContainer()->get(EditorPresetSaverInterface::class);
+
+        return $saver;
     }
 
     private static function block(string $image): StoredBlock
