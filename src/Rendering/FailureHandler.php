@@ -7,9 +7,10 @@ namespace Setono\SyliusCMSPlugin\Rendering;
 use Psr\Log\LoggerInterface;
 
 /**
- * Throws what a block or a snippet threw in dev, so the developer sees it, and in production logs it at error with
- * what an editor needs to find it: the entry's UUID, and the block's key and its block type, or the snippet's slot and
- * placement, and for a page scope's condition, its kind. See "Failures" in docs/spec/rendering.md
+ * Throws what a block, a snippet or a slot threw in dev, so the developer sees it, and in production logs it at error
+ * with what an editor or a developer needs to find it: the entry's UUID, and the block's key and its block type, or the
+ * snippet's slot and placement, and for a page scope's condition, its kind, or the slot's identifier. See "Failures" in
+ * docs/spec/rendering.md
  */
 final readonly class FailureHandler implements FailureHandlerInterface
 {
@@ -32,6 +33,19 @@ final readonly class FailureHandler implements FailureHandlerInterface
             'entry' => $entry,
             'key' => $key,
             'type' => $type,
+            'message' => ExceptionMessage::of($exception),
+            'exception' => $exception,
+        ]);
+    }
+
+    public function slotFailed(string $identifier, \Throwable $exception): void
+    {
+        if ($this->debug) {
+            throw $exception;
+        }
+
+        $this->logger->error('The slot {slot} failed, so it printed nothing: {message}', [
+            'slot' => $identifier,
             'message' => ExceptionMessage::of($exception),
             'exception' => $exception,
         ]);

@@ -12,8 +12,9 @@ use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * The test application plus the Broken block type, whose template always throws, the Unbuildable one, which throws
- * when it's hydrated, the page-scope condition kind InStock, which always throws, and a logger that keeps what's
- * logged (RecordingLogger)
+ * when it's hydrated, the page-scope condition kind InStock, which always throws, a template on the login page that
+ * renders a slot no one declares with cms_slot() (cms/slot/misspelled.html.twig), and a logger that keeps what's logged
+ * (RecordingLogger)
  */
 final class BrokenBlockKernel extends FixtureKernel
 {
@@ -30,6 +31,12 @@ final class BrokenBlockKernel extends FixtureKernel
         $container->register(Broken::class, Broken::class)->setAutoconfigured(true);
         $container->register(Unbuildable::class, Unbuildable::class)->setAutoconfigured(true);
         $container->register(InStock::class, InStock::class)->setAutoconfigured(true);
+
+        $container->loadFromExtension('sylius_ui', ['events' => [
+            'sylius.shop.login.after_content_header' => ['blocks' => [
+                'app_misspelled_slot' => ['template' => 'cms/slot/misspelled.html.twig'],
+            ]],
+        ]]);
 
         $container->register(RecordingLogger::class, RecordingLogger::class)
             ->setDecoratedService('logger')

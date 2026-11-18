@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Log\LoggerInterface;
+use Setono\SyliusCMSPlugin\Registry\UnknownSlotException;
 use Setono\SyliusCMSPlugin\Rendering\FailureHandler;
 use Setono\SyliusCMSPlugin\Rendering\PlacementData;
 use Twig\Error\RuntimeError;
@@ -149,6 +150,38 @@ final class FailureHandlerTest extends TestCase
         $this->expectExceptionObject($exception);
 
         (new FailureHandler($logger->reveal(), true))->pageScopeFailed(self::placement(), 'in_stock', $exception);
+    }
+
+    /**
+     * Such as one cms_slot() names with a misspelled identifier
+     *
+     * @test
+     */
+    public function it_logs_a_slot_that_failed_at_error_with_its_identifier_when_debug_is_off(): void
+    {
+        $exception = new UnknownSlotException('app.store_locatr.top');
+        $logger = $this->prophesize(LoggerInterface::class);
+        $logger->error(Argument::containingString('{slot}'), [
+            'slot' => 'app.store_locatr.top',
+            'message' => 'There is no slot "app.store_locatr.top". Declare it under setono_sylius_cms.slots',
+            'exception' => $exception,
+        ])->shouldBeCalledOnce();
+
+        (new FailureHandler($logger->reveal(), false))->slotFailed('app.store_locatr.top', $exception);
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_what_made_a_slot_fail_when_debug_is_on(): void
+    {
+        $exception = new UnknownSlotException('app.store_locatr.top');
+        $logger = $this->prophesize(LoggerInterface::class);
+        $logger->error(Argument::cetera())->shouldNotBeCalled();
+
+        $this->expectExceptionObject($exception);
+
+        (new FailureHandler($logger->reveal(), true))->slotFailed('app.store_locatr.top', $exception);
     }
 
     private static function placement(): PlacementData

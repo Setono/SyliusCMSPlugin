@@ -122,6 +122,42 @@ final class RenderingFailuresTest extends WebTestCase
     }
 
     /**
+     * Such as a cms_slot() call with a misspelled identifier in a project's template
+     *
+     * @test
+     */
+    public function it_prints_nothing_for_a_slot_no_one_declares_and_logs_it_with_its_identifier_while_the_page_shows(): void
+    {
+        $client = self::createClient(['debug' => false]);
+
+        $crawler = $client->request('GET', '/en_US/login');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('', $crawler->filter('.app-misspelled-slot')->html());
+        self::assertSelectorExists('#footer');
+        self::assertSame([[
+            'slot' => 'app.store_locatr.top',
+            'message' => 'There is no slot "app.store_locatr.top". Declare it under setono_sylius_cms.slots',
+        ]], self::loggedSlotFailures());
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_for_a_slot_no_one_declares_with_debug_on(): void
+    {
+        $client = self::createClient(['debug' => true]);
+        $client->catchExceptions(false);
+
+        try {
+            $client->request('GET', '/en_US/login');
+            self::fail('The exception was thrown');
+        } catch (\Throwable $e) {
+            self::assertStringContainsString('There is no slot "app.store_locatr.top"', $e->getMessage());
+        }
+    }
+
+    /**
      * @test
      */
     public function it_drops_a_block_that_throws_from_a_snippet_in_a_slot_and_logs_it_with_the_snippet_while_the_rest_of_the_snippet_shows(): void
@@ -242,6 +278,26 @@ final class RenderingFailuresTest extends WebTestCase
      *
      * @return list<array<array-key, mixed>>
      */
+    /**
+     * What's logged at error about slots that failed, without the exception
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function loggedSlotFailures(): array
+    {
+        $logger = self::getContainer()->get(RecordingLogger::class);
+        self::assertInstanceOf(RecordingLogger::class, $logger);
+
+        return array_values(array_map(
+            static function (array $context): array {
+                unset($context['exception']);
+
+                return $context;
+            },
+            array_filter($logger->contextsAt('error'), static fn (array $context): bool => isset($context['slot']) && !isset($context['entry'])),
+        ));
+    }
+
     private static function loggedFailures(): array
     {
         $logger = self::getContainer()->get(RecordingLogger::class);

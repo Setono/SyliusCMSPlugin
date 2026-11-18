@@ -18,7 +18,8 @@ interface SlotRendererInterface
      * @param array<array-key, mixed> $context what the template event or the cms_slot() call passes. The slot takes the
      *                                         context keys it provides from it
      *
-     * @throws UnknownSlotException when the code doesn't declare the slot
+     * @throws UnknownSlotException in dev, when the code doesn't declare the slot, which in production prints nothing
+     *                               and is logged (FailureHandlerInterface::slotFailed())
      */
     public function render(string $identifier, array $context = []): string;
 }

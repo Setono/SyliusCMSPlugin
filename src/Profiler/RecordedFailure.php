@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Profiler;
 
 /**
- * A block, a snippet in a slot, or a condition of a placement's page scope, that threw while it rendered, as the
- * profiler shows it
+ * A block, a snippet in a slot, a condition of a placement's page scope, or the slot itself, that failed while it
+ * rendered, as the profiler shows it. A slot's own failure, such as a slot the code doesn't declare, has neither an
+ * entry, a block nor a placement
  *
  * @internal
  */

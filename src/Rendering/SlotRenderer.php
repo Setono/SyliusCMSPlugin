@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Rendering;
 use Setono\SyliusCMSPlugin\Context\HostPageContextResolverInterface;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\UnknownSlotException;
 use Setono\SyliusCMSPlugin\Twig\CMSRuntime;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -26,8 +27,9 @@ use Twig\Environment;
  *    rendering, so a snippet whose blocks are all hidden still wins and shows nothing
  * 5. each winning snippet's tree, rendered with the slot's context in the slot template, inside the slot's wrapper
  *
- * A winning snippet whose tree can't be read, such as one no upgrader brings up to date, goes to the failure handler,
- * and in production the others still show. A block that throws is BlockViewBuilder's and the block renderer's
+ * A slot the code doesn't declare, such as one a cms_slot() call misspells, goes to the failure handler, and in
+ * production prints nothing. A winning snippet whose tree can't be read, such as one no upgrader brings up to date,
+ * goes to the failure handler, and in production the others still show. A block that throws is BlockViewBuilder's and the block renderer's
  * (FailSafeBlockRenderer)
  *
  * It takes the placements before it resolves its context, so a slot without placements resolves nothing: a page
@@ -61,7 +63,12 @@ final class SlotRenderer implements SlotRendererInterface, ResetInterface
 
     public function render(string $identifier, array $context = []): string
     {
-        $slot = $this->slots->get($identifier);
+        $slot = $this->slots->find($identifier);
+        if (null === $slot) {
+            $this->failures->slotFailed($identifier, new UnknownSlotException($identifier));
+
+            return '';
+        }
 
         // 2. The channel's placements in it, before its context, which a slot without placements doesn't need
         $placements = $this->placementsIn($slot, $this->renderContextFactory->create()->channel);

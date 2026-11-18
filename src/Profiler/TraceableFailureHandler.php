@@ -9,7 +9,7 @@ use Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface;
 use Setono\SyliusCMSPlugin\Rendering\PlacementData;
 
 /**
- * Records the blocks and snippets that threw, in the slot rendering now or outside any slot, then hands them on.
+ * Records the blocks, snippets and slots that failed, in the slot rendering now or outside any slot, then hands them on.
  * In dev the handler throws an exception on, and each block it sits in gets it again, wrapped by Twig: only the block
  * that threw it first is recorded. Registered in debug only
  *
@@ -32,6 +32,13 @@ final readonly class TraceableFailureHandler implements FailureHandlerInterface
         $this->record($exception, new RecordedFailure($entry, $key, $type, null, ExceptionMessage::of($exception)));
 
         $this->handler->blockFailed($key, $type, $entry, $exception);
+    }
+
+    public function slotFailed(string $identifier, \Throwable $exception): void
+    {
+        $this->record($exception, new RecordedFailure(null, null, null, null, ExceptionMessage::of($exception)));
+
+        $this->handler->slotFailed($identifier, $exception);
     }
 
     public function snippetFailed(PlacementData $placement, \Throwable $exception): void

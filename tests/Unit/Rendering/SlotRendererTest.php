@@ -481,11 +481,34 @@ final class SlotRendererTest extends TestCase
     }
 
     /**
+     * Such as cms_slot() with a misspelled identifier. The failure handler logs it in production
+     *
      * @test
      */
-    public function it_throws_for_a_slot_the_code_does_not_declare(): void
+    public function it_hands_a_slot_the_code_does_not_declare_to_the_failure_handler_and_prints_nothing(): void
     {
+        $this->failures->slotFailed('shop.gone', Argument::type(UnknownSlotException::class))->shouldBeCalledOnce();
+        $this->placementProvider->getPlacements(Argument::cetera())->shouldNotBeCalled();
+
+        self::assertSame('', $this->renderer()->render('shop.gone'));
+    }
+
+    /**
+     * In dev, the handler throws it on
+     *
+     * @test
+     */
+    public function it_lets_what_the_failure_handler_throws_for_a_slot_the_code_does_not_declare_through(): void
+    {
+        $this->failures->slotFailed(Argument::cetera())->will(static function (array $arguments): never {
+            /** @var \Throwable $exception */
+            $exception = $arguments[1];
+
+            throw $exception;
+        });
+
         $this->expectException(UnknownSlotException::class);
+        $this->expectExceptionMessage('There is no slot "shop.gone"');
 
         $this->renderer()->render('shop.gone');
     }

@@ -179,8 +179,10 @@
                             The block <code>{{ failure.block }}</code> of type <code>{{ failure.blockType }}</code>
                         {% elseif failure.conditionKind is not null %}
                             A page scope condition of kind <code>{{ failure.conditionKind }}</code> of the placement <code>{{ failure.placement }}</code>
-                        {% else %}
+                        {% elseif failure.placement is not null %}
                             The snippet of the placement <code>{{ failure.placement }}</code>
+                        {% else %}
+                            The slot
                         {% endif %}
                     </td>
                     <td data-message>{{ failure.message }}</td>

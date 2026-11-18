@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Rendering;
 
 /**
- * What happens when a block, or a snippet in a slot, throws while it renders for the shop: in production it drops out
- * and is logged, and in dev (kernel.debug on) the exception is thrown. The builder's preview shows a block's error on
+ * What happens when a block, a snippet in a slot, or a slot, fails while it renders for the shop: in production it
+ * drops out and is logged, and in dev (kernel.debug on) the exception is thrown. The builder's preview shows a block's error on
  * the block instead (Preview\PreviewBlockRenderer). See "Failures" in docs/spec/rendering.md
  */
 interface FailureHandlerInterface
@@ -21,6 +21,16 @@ interface FailureHandlerInterface
      * @throws \Throwable the exception, in dev
      */
     public function blockFailed(string $key, string $type, ?string $entry, \Throwable $exception): void;
+
+    /**
+     * The slot prints nothing, such as one the code doesn't declare, which a cms_slot() call with a misspelled
+     * identifier names
+     *
+     * @param string $identifier the slot's identifier, as it was asked for
+     *
+     * @throws \Throwable the exception, in dev
+     */
+    public function slotFailed(string $identifier, \Throwable $exception): void;
 
     /**
      * The placement's snippet shows nothing in its slot, such as when its tree can't be read

@@ -10,6 +10,7 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Profiler\RecordedFailure;
 use Setono\SyliusCMSPlugin\Profiler\RenderedSlots;
 use Setono\SyliusCMSPlugin\Profiler\TraceableFailureHandler;
+use Setono\SyliusCMSPlugin\Registry\UnknownSlotException;
 use Setono\SyliusCMSPlugin\Rendering\FailureHandlerInterface;
 use Setono\SyliusCMSPlugin\Rendering\PlacementData;
 use Twig\Error\RuntimeError;
@@ -70,6 +71,22 @@ final class TraceableFailureHandlerTest extends TestCase
         (new TraceableFailureHandler($handler->reveal(), $slots))->pageScopeFailed($placement, 'in_stock', $exception);
 
         self::assertEquals([new RecordedFailure(self::SNIPPET, null, null, '0193a5be-0000-7000-8000-0000000000aa', 'The stock service is down', 'in_stock')], $slot->failures);
+    }
+
+    /**
+     * @test
+     */
+    public function it_records_a_slot_that_failed_as_the_slot_rendering_now_s_failure(): void
+    {
+        $exception = new UnknownSlotException('app.store_locatr.top');
+        $handler = $this->prophesize(FailureHandlerInterface::class);
+        $handler->slotFailed('app.store_locatr.top', $exception)->shouldBeCalledOnce();
+        $slots = new RenderedSlots();
+        $slot = $slots->start('app.store_locatr.top');
+
+        (new TraceableFailureHandler($handler->reveal(), $slots))->slotFailed('app.store_locatr.top', $exception);
+
+        self::assertEquals([new RecordedFailure(null, null, null, null, 'There is no slot "app.store_locatr.top". Declare it under setono_sylius_cms.slots')], $slot->failures);
     }
 
     /**
