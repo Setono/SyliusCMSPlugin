@@ -9,6 +9,13 @@
             <tag name="doctrine.event_listener" event="loadClassMetadata"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener" class="Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener">
+            <!-- Replaced by RegisterContentTypesPass with the registered content types -->
+            <argument type="collection"/>
+
+            <tag name="doctrine.event_listener" event="loadClassMetadata"/>
+        </service>
+
         <!-- The repositories of the shipped resources are registered with them -->
         <service id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface" alias="setono_sylius_cms.repository.entry"/>
         <service id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface" alias="setono_sylius_cms.repository.draft"/>

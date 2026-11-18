@@ -23,7 +23,9 @@
         <service id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\LayoutRegistry"/>
 
         <service id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry" class="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry">
-            <!-- Replaced by RegisterContentTypesPass with the content types' resources, and the URL prefixes set in config, by code -->
+            <!-- Replaced by RegisterContentTypesPass with the content types' resources, and the URL prefixes set in config,
+                 by code, and the codes of those switched off in config -->
+            <argument type="collection"/>
             <argument type="collection"/>
             <argument type="collection"/>
 

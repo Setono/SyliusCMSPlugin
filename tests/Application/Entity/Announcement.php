@@ -20,7 +20,7 @@ use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 #[ContentType(code: 'announcement', label: 'app.cms.content_type.announcement', blocks: [new Allow('*')])]
 class Announcement extends Entry
 {
-    #[ORM\Column(name: 'announcement_subtitle', type: 'string', nullable: true)]
+    #[ORM\Column(type: 'string', nullable: true)]
     #[Text(label: 'app.cms.field.subtitle', required: true)]
     private ?string $subtitle = null;
 
