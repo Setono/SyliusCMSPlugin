@@ -29,6 +29,7 @@
         <service id="Setono\SyliusCMSPlugin\Tree\TreeValues" class="Setono\SyliusCMSPlugin\Tree\TreeValues">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
         </service>
 
         <!-- Whether a stored value fits its field type, for the misfit_value problem kind and the preset validator -->
@@ -107,6 +108,15 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
         </service>
         <service id="Setono\SyliusCMSPlugin\Rendering\LayoutRendererInterface" alias="Setono\SyliusCMSPlugin\Rendering\LayoutRenderer"/>
+
+        <!-- An entry's fields as cms_field() and cms_value() read them, the content type's own hydrated -->
+        <service id="Setono\SyliusCMSPlugin\Rendering\EntryFieldValues" class="Setono\SyliusCMSPlugin\Rendering\EntryFieldValues">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Field\FieldHandlerLocator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ReferenceLoaderInterface"/>
+        </service>
 
         <!--
         Loads every reference a tree holds before it renders, with one query per type. A project can decorate it to cache

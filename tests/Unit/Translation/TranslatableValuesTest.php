@@ -27,6 +27,8 @@ use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Translation\Fixture\LinkShapes;
 use Setono\SyliusCMSPlugin\Tests\Unit\Translation\Fixture\Promo;
 use Setono\SyliusCMSPlugin\Translation\Completeness;
@@ -361,6 +363,27 @@ final class TranslatableValuesTest extends TestCase
     }
 
     /**
+     * A content type's own translatable fields are the entry's own fields, after the base fields
+     *
+     * @test
+     */
+    public function it_gives_the_values_of_a_content_types_own_translatable_fields_after_the_base_fields(): void
+    {
+        $shop = new Shop();
+        $shop->setCurrentLocale('en_US');
+        $shop->setTitle('Aarhus');
+        $shop->setCity('Aarhus');
+        $translation = $shop->getTranslation('en_US');
+        self::assertInstanceOf(ShopTranslation::class, $translation);
+        $translation->setDirections('Turn left');
+
+        self::assertEquals([
+            new TranslatableValue('entry.title', ValueState::Untranslated, 'en_US', 'Aarhus', Fingerprint::of('Aarhus'), null),
+            new TranslatableValue('entry.directions', ValueState::Untranslated, 'en_US', 'Turn left', Fingerprint::of('Turn left'), null),
+        ], $this->values()->of($shop, 'da_DK'));
+    }
+
+    /**
      * The entry renders in the default layout, which ignores the values of a disabled one
      *
      * @test
@@ -520,6 +543,7 @@ final class TranslatableValuesTest extends TestCase
             new ContentTypeRegistry([
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
                 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
+                'shop' => ['model' => Shop::class, 'translation' => ShopTranslation::class, 'resource' => 'app.shop'],
             ]),
             new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class, 'group' => Group::class, 'link_shapes' => LinkShapes::class], new FieldReader()),
             new LayoutRegistry(['page' => ['promo' => Promo::class]], new FieldReader(), disabled: $disabledLayouts),

@@ -65,7 +65,8 @@ final readonly class CreateEntryAction
     {
         $this->adminAccessChecker->denyUnlessAdmin();
 
-        if (!$this->contentTypes->has($contentType) || !$this->entryFactories->has($contentType)) {
+        // A content type switched off in setono_sylius_cms.disabled.content_types has no entries to create
+        if (!$this->contentTypes->isEnabled($contentType) || !$this->entryFactories->has($contentType)) {
             throw new NotFoundHttpException(sprintf('There is no content type "%s"', $contentType));
         }
 

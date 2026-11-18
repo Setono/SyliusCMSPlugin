@@ -63,13 +63,13 @@ final class AdminRuntime implements RuntimeExtensionInterface, ResetInterface
     }
 
     /**
-     * Every content type, which the create dialog offers to pick from
+     * Every content type that isn't switched off, which the create dialog offers to pick from
      *
      * @return list<ContentTypeMetadata>
      */
     public function contentTypes(): array
     {
-        return $this->contentTypes->all();
+        return $this->contentTypes->enabled();
     }
 
     /**

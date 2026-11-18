@@ -39,7 +39,8 @@ final readonly class EntryUrlLookup implements EntryUrlLookupInterface
 
     public function lookup(ChannelInterface $channel, string $localeCode, string $path): ?EntryUrlMatch
     {
-        $slugs = EntryPath::slugs($this->contentTypes->all(), $path);
+        // A content type switched off in setono_sylius_cms.disabled.content_types has no URLs
+        $slugs = EntryPath::slugs($this->contentTypes->enabled(), $path);
         if ([] === $slugs) {
             return null;
         }

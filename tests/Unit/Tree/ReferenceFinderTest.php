@@ -10,9 +10,13 @@ use Setono\SyliusCMSPlugin\Field\MediaHandler;
 use Setono\SyliusCMSPlugin\Field\MediaListHandler;
 use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
+use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Hero;
 use Setono\SyliusCMSPlugin\Tree\FoundReference;
@@ -104,6 +108,25 @@ final class ReferenceFinderTest extends TestCase
     }
 
     /**
+     * A content type's own fields hold references too, such as a shop's photo, before those of its tree
+     *
+     * @test
+     */
+    public function it_finds_the_references_of_an_entrys_own_fields_and_then_of_its_tree(): void
+    {
+        $shop = new Shop();
+        $shop->setPhoto(self::IMAGE);
+        $shop->setCity('Aarhus');
+        $shop->setBlockTree(new StoredTree(null, [new StoredBlock(self::A, 'gallery', 1, fields: ['cover' => self::COVER])]));
+        $contentType = new ContentTypeMetadata('shop', 'app.shop', 1, 'shops', null, Shop::class, ShopTranslation::class, 'app.shop');
+
+        self::assertEquals([
+            new FoundReference(new Reference('media_item', self::IMAGE, true), null, 'photo', null, true),
+            new FoundReference(new Reference('media_item', self::COVER, true), self::A, 'cover', null),
+        ], [...$this->finder()->inEntry($shop, $contentType)]);
+    }
+
+    /**
      * @test
      */
     public function it_gives_only_the_references(): void
@@ -124,6 +147,7 @@ final class ReferenceFinderTest extends TestCase
                 TextHandler::class => static fn (): TextHandler => new TextHandler(),
                 MediaHandler::class => static fn (): MediaHandler => new MediaHandler(),
                 MediaListHandler::class => static fn (): MediaListHandler => new MediaListHandler(),
+                ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
             ])),
         );
     }

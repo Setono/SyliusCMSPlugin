@@ -4,6 +4,11 @@
     <services>
         <service id="Setono\SyliusCMSPlugin\Registry\FieldReader" class="Setono\SyliusCMSPlugin\Registry\FieldReader"/>
 
+        <!-- A content type's own fields, which it reads and writes in the entry format's field value encoding -->
+        <service id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields" class="Setono\SyliusCMSPlugin\Registry\ContentTypeFields">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\FieldReader"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry" class="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry">
             <!-- Replaced by RegisterBlockTypesPass with the block type classes by code -->
             <argument type="collection"/>
@@ -23,7 +28,9 @@
         <service id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface" alias="Setono\SyliusCMSPlugin\Registry\LayoutRegistry"/>
 
         <service id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry" class="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry">
-            <!-- Replaced by RegisterContentTypesPass with the content types' resources, and the URL prefixes set in config, by code -->
+            <!-- Replaced by RegisterContentTypesPass with the content types' resources, and the URL prefixes set in config,
+                 by code, and the codes of those switched off in config -->
+            <argument type="collection"/>
             <argument type="collection"/>
             <argument type="collection"/>
 

@@ -270,6 +270,8 @@ setono_sylius_cms:
         removed_block_type: 'Blocks of the type "%type%", which the code no longer has, were left out.'
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
+        broken_entry_reference: '%field% refers to %type% that was deleted, so it isn''t shown.'
+        broken_entry_rich_text_reference: 'A link in %field% leads to %type% that was deleted, so it shows as plain text.'
         broken_layout_reference: '%field% in the layout refers to %type% that was deleted, so it isn''t shown.'
         broken_layout_rich_text_reference: 'A link in %field% in the layout leads to %type% that was deleted, so it shows as plain text.'
         broken_reference: '%field% in the %block% block refers to %type% that was deleted, so it isn''t shown.'
@@ -278,6 +280,7 @@ setono_sylius_cms:
         deleted_customer_group: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer matches anyone through it.'
         deleted_customer_group_negated: 'The customer group "%group%" in a condition of the %block% block was deleted, so the condition no longer excludes anyone through it.'
         deleted_customer_group_in_audience: 'The customer group "%group%" in the audience was deleted, so the audience no longer counts anyone through it.'
+        misfit_entry_value: '%field% holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_layout_value: '%field% in the layout holds a value that doesn''t fit its field type, so it counts as empty.'
         misfit_value: '%field% in the %block% block holds a value that doesn''t fit its field type, so it counts as empty.'
         page_scope_removed_kind: 'The page scope of the placement in "%slot%" has a condition of the kind "%kind%", which the code no longer has, so the placement shows nothing.'
@@ -293,6 +296,7 @@ setono_sylius_cms:
         unknown_bindable_property: '%field% in the %block% block is bound to "%property%", which the code no longer has, so it shows its fallback.'
         unknown_block_type: 'A block of the type "%type%", which the code no longer has, isn''t shown.'
         unknown_layout_bindable_property: '%field% in the layout is bound to "%property%", which the code no longer has, so it shows its fallback.'
+        unknown_entry_source: '%field% is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unknown_layout_source: '%field% in the layout is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unknown_source: '%field% in the %block% block is filled by the source "%source%", which the code no longer has, so it lists nothing.'
         unreadable: 'This content can''t be read: %reason%'
@@ -401,6 +405,8 @@ setono_sylius_cms:
         discard_changes: Discard changes
         dismiss: Dismiss
         drafts_in_progress: Drafts in progress
+        # The list of a content type ordered by position, whose entries editors drag into order. See "Entry lists" in docs/spec/admin.md
+        drag_to_order: Drag the entries into the order they're listed in, or move them with the arrows. The new order takes effect at once, without publishing.
         error_count: '{0} No errors|{1} 1 error|]1,Inf[ %count% errors'
         every_page_the_slot_appears_on: Every page the slot appears on
         fix_in_builder: Fix in builder
@@ -445,6 +451,9 @@ setono_sylius_cms:
         order_slot_help: '{1} Only the first placement that matches the page and the shopper shows, so put the most specific first, and last a catch-all, with no page scope and a published, enabled snippet for everyone. Drag them into order.|]1,Inf[ Only the first %count% placements that match the page and the shopper show, so put the most specific first, and last a catch-all, with no page scope and a published, enabled snippet for everyone. Drag them into order.'
         order_slot_placements: 'The placements in "%slot%", in order'
         order_uncapped_slot_help: Every placement that matches the page and the shopper shows, in this order. Drag them into order.
+        order_not_saved: The order couldn't be saved. Reload the page and try again.
+        order_saved: The order is saved.
+        order_saving: Saving the order…
         other_content_type: Another content type
         page_scope: Page scope
         page_scope_removed_kind: 'A condition of the kind "%kind%", which the code no longer has, so it shows nothing'

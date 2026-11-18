@@ -44,6 +44,8 @@
         <field name="showFrom" column="show_from" type="datetime_immutable" nullable="true"/>
         <field name="showUntil" column="show_until" type="datetime_immutable" nullable="true"/>
         <field name="audienceMode" column="audience_mode" type="string" length="16"/>
+        <!-- Where it sits among the entries of a content type ordered by position, or null for one ordered otherwise -->
+        <field name="position" type="integer" nullable="true"/>
 
         <!--
         How many errors and warnings the working copy has, of the problem kinds that don't depend on time, and the

@@ -17,6 +17,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContextKeyRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SlotRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
         </service>
 
         <!-- What the media library app needs to reach the library, on its own screen and as the builder's media picker -->
@@ -37,6 +38,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ConditionKindRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
         </service>
 
         <!-- What the search endpoint searches, by the kind tagged: what pickers pick from. Customer groups are searched among the choices their provider gives -->
@@ -106,10 +108,12 @@
 
         <service id="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer" class="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer" class="Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
         </service>
     </services>
 </container>

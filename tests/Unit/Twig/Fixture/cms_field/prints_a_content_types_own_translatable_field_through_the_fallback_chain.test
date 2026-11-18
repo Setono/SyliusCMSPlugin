@@ -1,0 +1,8 @@
+--TEST--
+cms_field() prints a field of an entry's content type that its translations declare from the first locale the fallback chain reaches that has it
+--TEMPLATE--
+{{ cms_field(entry, "directions") }}
+--DATA--
+return $this->rendering(['entry' => $this->shop('Aarhus', directions: ['en_US' => 'Turn left', 'de_DE' => 'Links abbiegen', 'de_CH' => ''])], locale: 'de_CH')
+--EXPECT--
+Links abbiegen

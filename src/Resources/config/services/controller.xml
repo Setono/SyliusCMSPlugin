@@ -104,6 +104,15 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\OrderEntriesAction" class="Setono\SyliusCMSPlugin\Controller\Admin\OrderEntriesAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="security.csrf.token_manager"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\EntryReordererInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction" class="Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\SnippetPlacementRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Slot\PlacementEditorInterface"/>
@@ -172,6 +181,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\StartingValuesInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\MediaLibraryConfig"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryPlacements"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument>%setono_sylius_cms.builder.scripts%</argument>
 
             <tag name="controller.service_arguments"/>
@@ -204,6 +214,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\BuilderCsrfToken"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
             <argument type="service" id="security.token_storage"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
 
         <!-- What entry_show and entry_discard answer with -->

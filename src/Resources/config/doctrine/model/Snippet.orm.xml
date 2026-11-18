@@ -6,10 +6,11 @@
                                       http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
     <!--
     A mapped superclass, like every Sylius model: it becomes an entity when it's the model of its resource. Its columns
-    start with its content type's code. Its placements are rows of their own that point to it (ADR 0005)
+    start with its content type's code, which Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener prefixes them with, so
+    context is snippet_context. Its placements are rows of their own that point to it (ADR 0005)
     -->
     <mapped-superclass name="Setono\SyliusCMSPlugin\Model\Snippet">
         <!-- The host-page context it needs, a list of context keys. Nullable, as the other content types' rows have none -->
-        <field name="context" column="snippet_context" type="json" nullable="true"/>
+        <field name="context" type="json" nullable="true"/>
     </mapped-superclass>
 </doctrine-mapping>

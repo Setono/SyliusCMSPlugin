@@ -6,9 +6,12 @@ namespace Setono\SyliusCMSPlugin\EntryFormat;
 
 use Setono\SyliusCMSPlugin\Json\ListedObject;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\EntryFields;
+use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
@@ -19,8 +22,10 @@ use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
  */
 final readonly class EntryNormalizer
 {
-    public function __construct(private ContentTypeRegistryInterface $contentTypes)
-    {
+    public function __construct(
+        private ContentTypeRegistryInterface $contentTypes,
+        private ContentTypeFields $contentTypeFields = new ContentTypeFields(new FieldReader()),
+    ) {
     }
 
     public function normalize(EntryInterface $entry): ListedObject
@@ -35,6 +40,8 @@ final readonly class EntryNormalizer
             foreach (EntryFields::translatable($contentType) as $field) {
                 $fields[$field] = EntryFields::read($translation, $field);
             }
+
+            $fields += $this->ownFields($translation, $this->contentTypeFields->translatable($contentType));
 
             $translations[$localeCode] = new ListedObject([
                 'shown' => $translation->isShown(),
@@ -51,11 +58,33 @@ final readonly class EntryNormalizer
             'contentType' => $contentType->code,
             'version' => $contentType->version,
             'createdAt' => $entry->getCreatedAt()->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z'),
-            // The shared base fields: "Hide from search engines" for a content type with its own URL, and a snippet's context
-            'fields' => (object) self::sharedFields($entry, $contentType),
+            // The shared base fields: "Hide from search engines" for a content type with its own URL, and a snippet's
+            // context, and the content type's own shared fields
+            'fields' => (object) (self::sharedFields($entry, $contentType) + $this->ownFields($entry, $this->contentTypeFields->shared($contentType))),
             'translations' => (object) $translations,
             'tree' => (new StoredTreeSerializer())->normalize($entry->getBlockTree()),
         ]);
+    }
+
+    /**
+     * The values of the content type's own fields on the entry or a translation, in the field value encoding. A field
+     * with no value is left out
+     *
+     * @param array<string, FieldMetadata> $fields
+     *
+     * @return array<string, mixed>
+     */
+    private function ownFields(object $subject, array $fields): array
+    {
+        $values = [];
+        foreach (array_keys($fields) as $name) {
+            $value = $this->contentTypeFields->read($subject, $name);
+            if (null !== $value) {
+                $values[$name] = $value;
+            }
+        }
+
+        return $values;
     }
 
     /**

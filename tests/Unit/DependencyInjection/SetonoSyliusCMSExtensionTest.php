@@ -304,6 +304,16 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function it_hands_the_disabled_content_types_to_the_pass_that_registers_the_content_types(): void
+    {
+        $this->load(['disabled' => ['content_types' => ['blog_post']]]);
+
+        $this->assertContainerBuilderHasParameter(RegisterContentTypesPass::DISABLED_PARAMETER, ['blog_post']);
+    }
+
+    /**
+     * @test
+     */
     public function it_hands_the_disabled_sources_to_the_source_registry(): void
     {
         $this->load(['disabled' => ['sources' => ['newest_products']]]);
@@ -766,7 +776,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
         $this->load(['builder' => ['scripts' => ['/build/app/cms/controls.js']]]);
 
         $this->assertContainerBuilderHasParameter('setono_sylius_cms.builder.scripts', ['/build/app/cms/controls.js']);
-        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BuilderAction::class, 13, '%setono_sylius_cms.builder.scripts%');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(BuilderAction::class, 14, '%setono_sylius_cms.builder.scripts%');
     }
 
     /**
@@ -1013,7 +1023,7 @@ final class SetonoSyliusCMSExtensionTest extends AbstractExtensionTestCase
             'name' => 'doctrine/orm',
             'options' => [
                 'class' => '%setono_sylius_cms.model.entry.class%',
-                'repository' => ['method' => 'createListQueryBuilder', 'arguments' => ['$contentType']],
+                'repository' => ['method' => 'createListQueryBuilder', 'arguments' => ['$contentType', '%setono_sylius_cms.disabled.content_types%']],
             ],
         ], $grid['driver']);
         self::assertSame(['lastEdited' => 'desc'], $grid['sorting']);

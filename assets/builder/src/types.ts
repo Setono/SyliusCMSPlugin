@@ -139,6 +139,11 @@ export interface EntrySettings {
     audience: { mode: AudienceMode; groups: string[] };
     /** "Homepage of": the codes of the channels a page is the homepage of. Empty for every content type but Page. */
     homepageOf: string[];
+    /**
+     * Where the entry sits among the entries of a content type ordered by position, which editors drag into order in
+     * the admin list, or null for a content type ordered otherwise. The builder leaves it as it is.
+     */
+    position?: number | null;
 }
 
 /** Someone else who has the entry open in the builder. */
@@ -327,6 +332,11 @@ export interface ContentTypeDefinition {
     provides?: string[] | null;
     /** Its layouts, the default first, or none for a content type without its own URL. */
     layouts: LayoutDefinition[];
+    /**
+     * Its own fields, in display order: those its model declares, shared by all translations, then those its
+     * translations declare, translatable. None without it.
+     */
+    fields?: FieldDefinition[];
 }
 
 /** A key of host-page context, such as product, named by the pages that provide it, such as "Product page". */

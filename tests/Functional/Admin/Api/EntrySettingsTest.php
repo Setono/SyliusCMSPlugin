@@ -43,7 +43,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame(
-            '{"settings":{"enabled":false,"showFrom":"2026-11-27T00:00:00Z","showUntil":"2026-12-01T00:00:00Z","channels":["B2B","WEB"],"audience":{"mode":"only","groups":["@guest","wholesale"]},"homepageOf":[]}}',
+            '{"settings":{"enabled":false,"showFrom":"2026-11-27T00:00:00Z","showUntil":"2026-12-01T00:00:00Z","channels":["B2B","WEB"],"audience":{"mode":"only","groups":["@guest","wholesale"]},"homepageOf":[],"position":null}}',
             $client->getResponse()->getContent(),
         );
         self::assertIsArray($response);
@@ -68,14 +68,14 @@ final class EntrySettingsTest extends BuilderApiTestCase
         self::saveSettings($client, $page, ['enabled' => false, 'showUntil' => '2026-12-01T00:00:00Z'], $csrfToken);
 
         self::assertSame(
-            '{"settings":{"enabled":false,"showFrom":"2026-11-27T00:00:00Z","showUntil":"2026-12-01T00:00:00Z","channels":["WEB"],"audience":{"mode":"except","groups":["retail"]},"homepageOf":[]}}',
+            '{"settings":{"enabled":false,"showFrom":"2026-11-27T00:00:00Z","showUntil":"2026-12-01T00:00:00Z","channels":["WEB"],"audience":{"mode":"except","groups":["retail"]},"homepageOf":[],"position":null}}',
             $client->getResponse()->getContent(),
         );
 
         self::saveSettings($client, $page, ['showFrom' => null, 'audience' => ['mode' => 'everyone', 'groups' => []]], $csrfToken);
 
         self::assertSame(
-            '{"settings":{"enabled":false,"showFrom":null,"showUntil":"2026-12-01T00:00:00Z","channels":["WEB"],"audience":{"mode":"everyone","groups":[]},"homepageOf":[]}}',
+            '{"settings":{"enabled":false,"showFrom":null,"showUntil":"2026-12-01T00:00:00Z","channels":["WEB"],"audience":{"mode":"everyone","groups":[]},"homepageOf":[],"position":null}}',
             $client->getResponse()->getContent(),
         );
     }
@@ -94,7 +94,7 @@ final class EntrySettingsTest extends BuilderApiTestCase
 
         self::assertIsArray($response);
         self::assertSame(['entry', 'lockToken', 'settings', 'status', 'schedule', 'editors', 'completeness'], array_keys($response));
-        self::assertSame(['enabled' => true, 'showFrom' => null, 'showUntil' => null, 'channels' => ['WEB'], 'audience' => ['mode' => 'only', 'groups' => ['wholesale']], 'homepageOf' => []], $response['settings']);
+        self::assertSame(['enabled' => true, 'showFrom' => null, 'showUntil' => null, 'channels' => ['WEB'], 'audience' => ['mode' => 'only', 'groups' => ['wholesale']], 'homepageOf' => [], 'position' => null], $response['settings']);
         self::assertSame('published', $response['status']);
     }
 

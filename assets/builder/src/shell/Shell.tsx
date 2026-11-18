@@ -9,11 +9,14 @@ import { SelectionPane } from './SelectionPane';
 import styles from './Shell.module.css';
 import { TopBar } from './TopBar';
 
-/** The builder's full-screen layout: a top bar over the block tree, the preview and the selection. */
+/**
+ * The builder's full-screen layout: a top bar over the block tree, the preview and the selection. An entry whose content
+ * type has no block tree is still edited here, with the tree pane hidden. See "Opening and leaving" in docs/spec/builder.md
+ */
 export function Shell() {
     const treeHeadingId = useId();
     const selection = useRef<HTMLElement>(null);
-    const { store, leave } = useBuilder();
+    const { store, leave, hasBlockTree } = useBuilder();
 
     // Undo and redo work on the working copy wherever the focus is, also in a field: its value is the working copy's.
     // A control with an undo of its own, such as rich text, handles the keys first. Esc leaves the builder, unless a
@@ -41,13 +44,15 @@ export function Shell() {
     };
 
     return (
-        <div className={styles.shell}>
+        <div className={hasBlockTree ? styles.shell : `${styles.shell} ${styles.withoutTree}`}>
             <header className={styles.topBar}>
                 <TopBar />
             </header>
-            <nav className={styles.tree} aria-labelledby={treeHeadingId}>
-                <BlockTreePane headingId={treeHeadingId} />
-            </nav>
+            {hasBlockTree && (
+                <nav className={styles.tree} aria-labelledby={treeHeadingId}>
+                    <BlockTreePane headingId={treeHeadingId} />
+                </nav>
+            )}
             <Preview className={styles.preview} onOpenSettings={openSettings} />
             <aside ref={selection} className={styles.selection}>
                 <SelectionPane />

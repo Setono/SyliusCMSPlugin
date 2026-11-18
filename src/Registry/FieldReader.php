@@ -21,35 +21,46 @@ final class FieldReader
      */
     public function read(string $class): array
     {
-        return self::fields($class, \ReflectionProperty::IS_PUBLIC);
+        return self::fields((new \ReflectionClass($class))->getProperties(\ReflectionProperty::IS_PUBLIC));
     }
 
     /**
      * The fields of a content type's entry or translation class: its Doctrine-mapped properties with a field attribute,
      * which can be private. Translatability follows where the property sits: it's shared on the entry class and
-     * translatable on the translation class. See "Fields" in docs/spec/content-model.md
+     * translatable on the translation class. A subclass, such as a project's of a shipped model, has the fields of the
+     * classes it extends, private ones included, before its own. See "Fields" in docs/spec/content-model.md
      *
      * @param class-string $class
      *
-     * @return array<string, FieldMetadata> property name => field, in declaration order
+     * @return array<string, FieldMetadata> property name => field, in declaration order, the parents' first
      */
     public function readContentType(string $class, bool $translation): array
     {
-        return self::fields($class, null, $translation);
+        $classes = [];
+        for ($reflection = new \ReflectionClass($class); false !== $reflection; $reflection = $reflection->getParentClass()) {
+            array_unshift($classes, $reflection);
+        }
+
+        $fields = [];
+        foreach ($classes as $reflection) {
+            $declared = array_filter($reflection->getProperties(), static fn (\ReflectionProperty $property): bool => $property->getDeclaringClass()->getName() === $reflection->getName());
+            $fields = [...$fields, ...self::fields($declared, $translation)];
+        }
+
+        return $fields;
     }
 
     /**
-     * @param class-string $class
-     * @param int|null $visibility a \ReflectionProperty::IS_* filter, or null for every property
+     * @param iterable<\ReflectionProperty> $properties
      * @param bool|null $translatable what every field is, or null to resolve it from the field or else the field type
      *
      * @return array<string, FieldMetadata>
      */
-    private static function fields(string $class, ?int $visibility, ?bool $translatable = null): array
+    private static function fields(iterable $properties, ?bool $translatable = null): array
     {
         $fields = [];
 
-        foreach ((new \ReflectionClass($class))->getProperties($visibility) as $property) {
+        foreach ($properties as $property) {
             if ($property->isStatic()) {
                 continue;
             }

@@ -6,8 +6,10 @@ namespace Setono\SyliusCMSPlugin\EntryFormat;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\EntryFields;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Translation\Fingerprint;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
@@ -18,14 +20,16 @@ use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
  * "Entry format" in docs/spec/content-model.md.
  *
  * The UUID, the content type and createdAt identify the entry and aren't drafted, so they're checked, not copied.
- * The content type's own fields come with their ticket
+ * The content type's own fields are copied onto their properties, where a value that doesn't fit counts as missing
  *
  * @internal
  */
 final readonly class EntryDenormalizer
 {
-    public function __construct(private ContentTypeRegistryInterface $contentTypes)
-    {
+    public function __construct(
+        private ContentTypeRegistryInterface $contentTypes,
+        private ContentTypeFields $contentTypeFields = new ContentTypeFields(new FieldReader()),
+    ) {
     }
 
     /**
@@ -42,7 +46,8 @@ final readonly class EntryDenormalizer
             throw new InvalidEntryFormatException(sprintf('The data is not the entry %s of the content type "%s"', $entry->getUuid(), $contentType->code));
         }
 
-        $shared = self::sharedFields(self::map($data['fields'] ?? [], 'The fields'), EntryFields::shared($contentType));
+        $sharedData = self::map($data['fields'] ?? [], 'The fields');
+        $shared = self::sharedFields($sharedData, EntryFields::shared($contentType));
         $translations = self::map($data['translations'] ?? null, 'The translations');
         // Translations are indexed by locale
         foreach ($entry->getTranslations()->toArray() as $localeCode => $translation) {
@@ -68,12 +73,21 @@ final readonly class EntryDenormalizer
             foreach ($values as $field => $value) {
                 EntryFields::write($translation, $field, $value);
             }
+
+            $translationFields = self::map($translationData['fields'] ?? [], sprintf('The fields of the translation %s', $localeCode));
+            foreach (array_keys($this->contentTypeFields->translatable($contentType)) as $field) {
+                $this->contentTypeFields->write($translation, $field, $translationFields[$field] ?? null);
+            }
             $translation->setShown($shown);
             $translation->setTranslated(self::translated($translationData['translated'] ?? [], $localeCode));
         }
 
         foreach ($shared as $field => $value) {
             EntryFields::writeShared($entry, $field, $value);
+        }
+
+        foreach (array_keys($this->contentTypeFields->shared($contentType)) as $field) {
+            $this->contentTypeFields->write($entry, $field, $sharedData[$field] ?? null);
         }
 
         try {

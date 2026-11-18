@@ -9,7 +9,7 @@ import type { PresenceState, PresenceStore } from './presence';
 import type { PreviewState, PreviewStore } from './preview';
 import type { SettingsState, SettingsStore } from './settings';
 import type { SnippetPreviewApi } from './snippetPreview';
-import type { InsertedPreset, PresetListing, StoredBlock } from './types';
+import type { FieldDefinition, InsertedPreset, PresetListing, StoredBlock } from './types';
 import type { BuilderState, BuilderStore } from './store';
 import type { UrlsState, UrlsStore } from './urls';
 import type { ValidationState, ValidationStore } from './validation';
@@ -67,6 +67,10 @@ export interface BuilderSession {
     urlPrefix: string | null;
     /** Whether the entry can be a channel's homepage, which only a page can. */
     homepage: boolean;
+    /** Whether the entry's content type has a block tree. Without one, the tree pane is hidden. */
+    hasBlockTree: boolean;
+    /** The content type's own fields, which the Settings tab renders, shared ones and translatable ones. */
+    entryFields: FieldDefinition[];
     /** The warnings about the entry's URLs and the URLs of its old slugs, as the server has them. */
     urls: UrlsStore;
     /** Says the editor changed the title in a locale, so the slug can follow it. */

@@ -227,6 +227,8 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                         customerGroups: config.customerGroups,
                         urlPrefix,
                         homepage: contentType?.homepage ?? false,
+                        hasBlockTree: contentType?.blocks !== null,
+                        entryFields: contentType?.fields ?? [],
                         urls: urlsStore,
                         titleChanged: (locale, before) => follower?.titleChanged(locale, before),
                     },

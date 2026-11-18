@@ -1,0 +1,8 @@
+--TEST--
+cms_value() reads a field of an entry's content type hydrated by its field type, such as a Date field's date, and a missing one as null
+--TEMPLATE--
+{{ cms_value(entry, "openedOn")|date("Y-m-d", "UTC") }} {{ cms_value(entry, "city") is null ? "no city" }}
+--DATA--
+return $this->rendering(['entry' => $this->shop(null, '2026-11-13')])
+--EXPECT--
+2026-11-13 no city

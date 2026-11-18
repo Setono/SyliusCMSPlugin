@@ -93,6 +93,11 @@ export function blockMessages(errors: readonly ValidationError[], key: string): 
     return errors.filter((error) => error.block === key && error.field === null).map((error) => error.message);
 }
 
+/** The messages about one of the entry's own fields, such as a content type's required field. */
+export function entryFieldMessages(errors: readonly ValidationError[], field: string, locale: string): string[] {
+    return errors.filter((error) => error.block === null && error.field === field).map((error) => messageIn(error, locale));
+}
+
 /** The entry's own messages, each naming the entry field it's in, if any. */
 export function entryMessages(errors: readonly ValidationError[], locale: string): string[] {
     return errors.filter((error) => error.block === null).map((error) => (error.field === null ? '' : `${error.field}: `) + messageIn(error, locale));

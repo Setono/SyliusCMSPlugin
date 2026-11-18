@@ -11,8 +11,8 @@ use Setono\SyliusCMSPlugin\Targeting\Audience;
 use Setono\SyliusCMSPlugin\Targeting\DateWindow;
 
 /**
- * An entry's on-save settings: they take effect as soon as they're saved, outside the draft. The position (#265) joins
- * them with its ticket. See "What takes effect on save" in docs/spec/publishing.md
+ * An entry's on-save settings: they take effect as soon as they're saved, outside the draft. See "What takes effect on
+ * save" in docs/spec/publishing.md
  */
 final readonly class EntrySettings
 {
@@ -34,6 +34,8 @@ final readonly class EntrySettings
     /**
      * @param iterable<string> $channels channel codes
      * @param iterable<string> $homepageOf channel codes
+     * @param int|null $position where it sits among the entries of a content type ordered by position, or null for an
+     *                           entry of a content type ordered otherwise
      */
     public function __construct(
         public bool $enabled,
@@ -41,6 +43,7 @@ final readonly class EntrySettings
         iterable $channels,
         public Audience $audience,
         iterable $homepageOf = [],
+        public ?int $position = null,
     ) {
         $this->channels = self::codes($channels);
         $this->homepageOf = self::codes($homepageOf);
@@ -54,13 +57,14 @@ final readonly class EntrySettings
             $entry->getChannelCodes(),
             $entry->getAudience(),
             $entry instanceof PageInterface ? $entry->getHomepageChannelCodes() : [],
+            $entry->getPosition(),
         );
     }
 
     /**
      * What differs from $before, as EntrySettingsChanged lists it
      *
-     * @return list<EntrySettingsChanged::ENABLED|EntrySettingsChanged::DATE_WINDOW|EntrySettingsChanged::CHANNELS|EntrySettingsChanged::AUDIENCE|EntrySettingsChanged::HOMEPAGE>
+     * @return list<EntrySettingsChanged::ENABLED|EntrySettingsChanged::DATE_WINDOW|EntrySettingsChanged::CHANNELS|EntrySettingsChanged::AUDIENCE|EntrySettingsChanged::HOMEPAGE|EntrySettingsChanged::POSITION>
      */
     public function changesFrom(self $before): array
     {
@@ -84,6 +88,10 @@ final readonly class EntrySettings
 
         if ($this->homepageOf !== $before->homepageOf) {
             $changes[] = EntrySettingsChanged::HOMEPAGE;
+        }
+
+        if ($this->position !== $before->position) {
+            $changes[] = EntrySettingsChanged::POSITION;
         }
 
         return $changes;

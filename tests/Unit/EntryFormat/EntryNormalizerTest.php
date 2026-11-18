@@ -10,8 +10,12 @@ use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
 
 final class EntryNormalizerTest extends TestCase
 {
@@ -130,6 +134,29 @@ final class EntryNormalizerTest extends TestCase
     }
 
     /**
+     * A content type's own fields are drafted with the base fields: its shared ones with the entry's, and its translatable
+     * ones with each translation's, in the field value encoding. A field with no value is left out
+     *
+     * @test
+     */
+    public function it_writes_a_content_types_own_fields_as_they_are_stored(): void
+    {
+        $shop = new Shop();
+        $shop->setCurrentLocale('en_US');
+        $shop->setTitle('Aarhus');
+        $shop->setCity('Aarhus');
+        $shop->setOpenedOn(new \DateTimeImmutable('2026-11-13', new \DateTimeZone('UTC')));
+        $translation = $shop->getTranslation('en_US');
+        self::assertInstanceOf(ShopTranslation::class, $translation);
+        $translation->setDirections('Turn left');
+
+        $json = CanonicalJson::encode($this->normalizer()->normalize($shop));
+
+        self::assertStringContainsString('"fields":{"city":"Aarhus","noindex":false,"openedOn":"2026-11-13","parking":false}', $json);
+        self::assertStringContainsString('"fields":{"directions":"Turn left","metaDescription":null,"metaTitle":null,"slug":null,"title":"Aarhus"}', $json);
+    }
+
+    /**
      * @test
      */
     public function it_writes_an_entry_without_translations_with_an_empty_map(): void
@@ -143,6 +170,7 @@ final class EntryNormalizerTest extends TestCase
             'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
             'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
             'snippet' => ['model' => Snippet::class, 'translation' => null, 'resource' => 'setono_sylius_cms.snippet'],
-        ]));
+            'shop' => ['model' => Shop::class, 'translation' => ShopTranslation::class, 'resource' => 'app.shop'],
+        ]), new ContentTypeFields(new FieldReader()));
     }
 }
