@@ -13,8 +13,6 @@ setono_sylius_cms:
     page_scope_not_a_list: The page scope wasn't saved. It should be a list of conditions.
     page_scope_saved: The page scope has been saved. The placement shows on the pages it matches at once.
     placement_added: The placement has been added. It shows in the shop at once.
-    placement_moved: The placement has been moved. The slot shows its placements in the new order at once.
-    placement_not_moved: The placement is at the end of its slot already.
     placement_removed: The placement has been removed. The snippet no longer shows there.
     placement_slot_not_offered: Pick a slot that provides the host-page context the snippet needs.
     placements_order_outdated: The slot's placements changed meanwhile, so the order wasn't saved. Order them again.

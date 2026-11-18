@@ -134,22 +134,25 @@ final class EntryPlacementsTest extends WebTestCase
     /**
      * @test
      */
-    public function it_moves_a_placement_up_past_another_snippet_s_placement_in_its_slot(): void
+    public function it_orders_a_placement_before_another_snippet_s_in_a_slot_that_is_not_capped_with_the_slot_s_order_dialog(): void
     {
         $client = self::signedInClient();
         $other = self::createSnippet('Opening hours');
-        self::place($other, 'shop.footer');
+        $others = self::place($other, 'shop.footer');
         $snippet = self::createSnippet('Free shipping');
-        self::place($snippet, 'shop.footer');
+        $placement = self::place($snippet, 'shop.footer');
         $crawler = $client->request('GET', self::overview($snippet));
-        self::assertNotNull($crawler->filter('[data-placement] button[name="direction"][value="down"]')->attr('disabled'), 'The last placement in its slot can\'t move down');
-        self::assertNull($crawler->filter('[data-placement] button[name="direction"][value="up"]')->attr('disabled'));
+        self::assertCount(0, $crawler->filter('[data-placement] button[name="direction"]'), 'There is no Move up or Move down');
+        $opener = $crawler->filter('[data-placement][data-slot="shop.footer"] [data-cms-slot-order-open]');
+        self::assertSame('Order…', trim($opener->text()));
+        $form = $crawler->filter('#' . $opener->attr('aria-controls') . ' form')->form();
+        $form->setValues(['placements' => [$placement->getUuid(), $others->getUuid()]]);
 
-        $client->submit($crawler->filter('[data-placement] button[name="direction"][value="up"]')->form());
+        $client->submit($form);
 
         self::assertResponseRedirects(self::overview($snippet));
         $crawler = $client->followRedirect();
-        self::assertSelectorTextContains('.sylius-flash-message.positive', 'The placement has been moved. The slot shows its placements in the new order at once.');
+        self::assertSelectorTextContains('.sylius-flash-message.positive', 'The order has been saved. The slot shows its placements in the new order at once.');
         self::assertSame([['shop.footer', 'Every page: the footer', '1 of 2']], self::rows($crawler));
         self::assertSame([['shop.footer', 0]], self::placementsOf($snippet));
         self::assertSame([['shop.footer', 1]], self::placementsOf($other));

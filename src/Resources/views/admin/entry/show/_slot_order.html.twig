@@ -1,5 +1,5 @@
 {#
- # The Order… dialog of a capped slot, on the overview page of `entry`, a snippet placed in it: `order` is its
+ # The Order… dialog of a slot, capped or not, on the overview page of `entry`, a snippet placed in it: `order` is its
  # Admin\SlotOrder, and `dialog_id` the id its rows' Order… buttons open it by. It lists every placement in the slot, of
  # every snippet, with its snippet, page scope and audience, to drag into order or move with the arrows, and the slot's
  # warnings. Save order posts their UUIDs in order, and comes back to the overview page. admin/slot-order.js runs it.
@@ -9,7 +9,11 @@
 <dialog id="{{ dialog_id }}" class="cms-dialog" aria-labelledby="{{ dialog_id }}-heading" data-cms-slot-order data-slot="{{ order.slot.identifier }}">
     <button type="button" class="cms-dialog__close" data-cms-dialog-close aria-label="{{ 'setono_sylius_cms.ui.close'|trans }}"><i class="close icon"></i></button>
     <h2 class="ui header" id="{{ dialog_id }}-heading">{{ 'setono_sylius_cms.ui.order_slot'|trans({'%slot%': slot_label}) }}</h2>
-    <p>{{ 'setono_sylius_cms.ui.order_slot_help'|trans({'%count%': order.slot.cap}) }}</p>
+    {% if order.slot.cap is null %}
+        <p>{{ 'setono_sylius_cms.ui.order_uncapped_slot_help'|trans }}</p>
+    {% else %}
+        <p>{{ 'setono_sylius_cms.ui.order_slot_help'|trans({'%count%': order.slot.cap}) }}</p>
+    {% endif %}
 
     {% if order.withoutCatchAll %}
         <div class="ui warning message" data-slot-warning="no_catch_all">{{ 'setono_sylius_cms.ui.slot_warning.no_catch_all'|trans }}</div>

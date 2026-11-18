@@ -44,7 +44,6 @@ use Setono\SyliusCMSPlugin\Controller\Admin\CreateShareLinkAction as CreateShare
 use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction as DiscardEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\MediaLibraryAction;
-use Setono\SyliusCMSPlugin\Controller\Admin\MovePlacementAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OrderPlacementsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PreviewRevisionAction as PreviewRevisionPageAction;
@@ -179,12 +178,6 @@ return static function (RoutingConfigurator $routes): void {
         ->controller(OrderPlacementsAction::class)
         ->methods(['POST'])
         ->requirements(['uuid' => Requirement::UUID])
-    ;
-
-    $routes->add('setono_sylius_cms_admin_entry_placement_move', '/cms/entry/{uuid}/placements/{placement}/move')
-        ->controller(MovePlacementAction::class)
-        ->methods(['POST'])
-        ->requirements(['uuid' => Requirement::UUID, 'placement' => Requirement::UUID])
     ;
 
     $routes->add('setono_sylius_cms_admin_entry_placement_remove', '/cms/entry/{uuid}/placements/{placement}/remove')

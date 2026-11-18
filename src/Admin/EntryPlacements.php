@@ -18,9 +18,9 @@ use Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface;
 /**
  * The placements of a snippet, which the Placements section of its overview page lists through
  * cms_admin_entry_placements(), each with its place among its slot's placements of every snippet, its page scope, the
- * condition kinds its page scope may hold and who it wins for, the slots Add placement offers, and for each capped slot
- * it's in, every placement in the slot and the slot's warnings, for its Order… dialog. See "Placements" in
- * docs/spec/admin.md
+ * condition kinds its page scope may hold and who it wins for, the slots Add placement offers, and for each slot it's
+ * in that the code declares, capped or not, every placement in the slot and the slot's warnings, for its Order…
+ * dialog. See "Placements" in docs/spec/admin.md
  */
 final readonly class EntryPlacements
 {
@@ -56,22 +56,22 @@ final readonly class EntryPlacements
             }
         }
 
-        $cappedSlots = array_values(array_filter(
+        $placedIn = array_values(array_filter(
             $this->slots->all(),
-            static fn (SlotMetadata $slot): bool => null !== $slot->cap && isset($inSlots[$slot->identifier]),
+            static fn (SlotMetadata $slot): bool => isset($inSlots[$slot->identifier]),
         ));
 
-        // The other snippets' placements in the capped slots are worded with the snippet's own, for the Order… dialogs
-        $pageScopes = $this->pageScopes->of([...$placements, ...array_merge(...array_map(static fn (SlotMetadata $slot): array => $inSlots[$slot->identifier] ?? [], $cappedSlots))]);
+        // The other snippets' placements in the slots are worded with the snippet's own, for the Order… dialogs
+        $pageScopes = $this->pageScopes->of([...$placements, ...array_merge(...array_map(static fn (SlotMetadata $slot): array => $inSlots[$slot->identifier] ?? [], $placedIn))]);
 
         $listed = array_map(fn (PlacementInterface $placement): EntryPlacement => $this->listed($placement, $inSlots[$placement->getSlot()] ?? [$placement], $pageScopes), $placements);
 
         $slotOrders = array_map(fn (SlotMetadata $slot): SlotOrder => new SlotOrder(
             $slot,
             array_map(fn (PlacementInterface $placement): EntryPlacement => $this->listed($placement, $inSlots[$slot->identifier] ?? [], $pageScopes), $inSlots[$slot->identifier] ?? []),
-            [] === array_filter($inSlots[$slot->identifier] ?? [], static fn (PlacementInterface $placement): bool => $placement->isCatchAll()),
+            null !== $slot->cap && [] === array_filter($inSlots[$slot->identifier] ?? [], static fn (PlacementInterface $placement): bool => $placement->isCatchAll()),
             $slot->isOnStoreHomepage() ? $this->cmsHomepageChannels->names() : [],
-        ), $cappedSlots);
+        ), $placedIn);
 
         return new EntryPlacementsSection(
             self::inDeclaredOrder($listed, $this->slots->all()),

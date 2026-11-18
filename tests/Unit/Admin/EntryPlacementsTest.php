@@ -87,10 +87,10 @@ final class EntryPlacementsTest extends TestCase
 
         self::assertNotNull($section);
         self::assertSame([
-            ['shop.top', 1, 1, true, true],
-            ['shop.footer', 2, 3, false, false],
-            ['shop.footer', 3, 3, false, true],
-        ], array_map(static fn (EntryPlacement $placement): array => [$placement->slot?->identifier, $placement->position, $placement->count, $placement->first, $placement->last], $section->placements));
+            ['shop.top', 1, 1],
+            ['shop.footer', 2, 3],
+            ['shop.footer', 3, 3],
+        ], array_map(static fn (EntryPlacement $placement): array => [$placement->slot?->identifier, $placement->position, $placement->count], $section->placements));
         self::assertSame($inTop, $section->placements[0]->placement);
     }
 
@@ -206,12 +206,12 @@ final class EntryPlacementsTest extends TestCase
     }
 
     /**
-     * The Order… dialog of each capped slot the snippet is in: every placement in the slot, of every snippet, with the
-     * slot's warnings. See "Placements" in docs/spec/admin.md
+     * The Order… dialog of each slot the snippet is in, capped or not: every placement in the slot, of every snippet,
+     * with the slot's warnings. See "Placements" in docs/spec/admin.md
      *
      * @test
      */
-    public function it_gives_each_capped_slot_the_snippet_is_placed_in_its_order_of_every_snippet_s_placements_and_its_warnings(): void
+    public function it_gives_each_slot_the_snippet_is_placed_in_its_order_of_every_snippet_s_placements_and_its_warnings(): void
     {
         $snippet = self::snippetFor(Audience::only('wholesale'));
         $other = new Snippet();
@@ -221,8 +221,9 @@ final class EntryPlacementsTest extends TestCase
         $inTop = new Placement($snippet, 'shop.top', 0);
         $othersCatchAll = new Placement($other, 'shop.top', 1);
         $againInTop = new Placement($snippet, 'shop.top', 2);
-        $this->placements->findBySnippet($snippet)->willReturn([$inTop, $againInTop, $inHomepage, new Placement($snippet, 'shop.footer', 0)]);
-        $this->placements->findBySlots(['shop.footer', 'shop.top', 'store_homepage'])->willReturn([$inTop, $othersCatchAll, $againInTop, $othersFirst, $inHomepage]);
+        $inFooter = new Placement($snippet, 'shop.footer', 0);
+        $this->placements->findBySnippet($snippet)->willReturn([$inTop, $againInTop, $inHomepage, $inFooter]);
+        $this->placements->findBySlots(['shop.footer', 'shop.top', 'store_homepage'])->willReturn([$inFooter, $inTop, $othersCatchAll, $againInTop, $othersFirst, $inHomepage]);
         $this->channels->findAll()->willReturn([self::channel('WEB', 'Web store'), self::channel('B2B', 'Wholesale')]);
         $this->homepages->findByChannelCodes(['B2B', 'WEB'])->willReturn([new Homepage(new Page(), 'WEB')]);
         $this->channels->findBy(['code' => ['WEB']])->willReturn([self::channel('WEB', 'Web store')]);
@@ -232,29 +233,47 @@ final class EntryPlacementsTest extends TestCase
         self::assertNotNull($section);
         self::assertSame([
             ['shop.top', [$inTop, $othersCatchAll, $againInTop], [1, 2, 3], false, []],
+            ['shop.footer', [$inFooter], [1], false, []],
             ['store_homepage', [$othersFirst, $inHomepage], [1, 2], true, ['Web store']],
-        ], array_map(static fn (SlotOrder $order): array => [
-            $order->slot->identifier,
-            array_map(static fn (EntryPlacement $placement): object => $placement->placement, $order->placements),
-            array_map(static fn (EntryPlacement $placement): int => $placement->position, $order->placements),
-            $order->withoutCatchAll,
-            $order->hiddenByHomepageIn,
-        ], $section->slotOrders));
-        self::assertSame(['removed'], array_map(static fn (PageScopeCondition $condition): string => $condition->kind, $section->slotOrders[1]->placements[0]->pageScope), "Another snippet's placement has its page scope worded");
+        ], self::orders($section->slotOrders));
+        self::assertSame(['removed'], array_map(static fn (PageScopeCondition $condition): string => $condition->kind, $section->slotOrders[2]->placements[0]->pageScope), "Another snippet's placement has its page scope worded");
     }
 
     /**
+     * A slot that isn't capped shows every placement that matches, so it can't lack a catch-all
+     *
      * @test
      */
-    public function it_gives_no_order_to_a_snippet_placed_in_no_capped_slot(): void
+    public function it_warns_of_no_missing_catch_all_in_a_slot_that_is_not_capped_but_of_a_cms_homepage_hiding_it(): void
+    {
+        $snippet = self::snippetFor(Audience::only('wholesale'));
+        $inHomepage = new Placement($snippet, 'store_homepage', 0);
+        $this->placements->findBySnippet($snippet)->willReturn([$inHomepage]);
+        $this->placements->findBySlots(['store_homepage'])->willReturn([$inHomepage]);
+        $this->channels->findAll()->willReturn([self::channel('WEB', 'Web store')]);
+        $this->homepages->findByChannelCodes(['WEB'])->willReturn([new Homepage(new Page(), 'WEB')]);
+        $this->channels->findBy(['code' => ['WEB']])->willReturn([self::channel('WEB', 'Web store')]);
+
+        $section = $this->entryPlacements()->of($snippet);
+
+        self::assertNotNull($section);
+        self::assertSame([['store_homepage', [$inHomepage], [1], false, ['Web store']]], self::orders($section->slotOrders));
+    }
+
+    /**
+     * Such a placement can only be removed
+     *
+     * @test
+     */
+    public function it_gives_no_order_to_a_slot_the_code_no_longer_declares(): void
     {
         $snippet = new Snippet();
-        $inFooter = new Placement($snippet, 'shop.footer', 0);
-        $this->placements->findBySnippet($snippet)->willReturn([$inFooter]);
-        $this->placements->findBySlots(['shop.footer'])->willReturn([$inFooter]);
+        $inRemovedSlot = new Placement($snippet, 'shop.gone', 0);
+        $this->placements->findBySnippet($snippet)->willReturn([$inRemovedSlot]);
+        $this->placements->findBySlots(['shop.gone'])->willReturn([$inRemovedSlot]);
         $this->homepages->findByChannelCodes(Argument::cetera())->shouldNotBeCalled();
 
-        self::assertSame([], $this->entryPlacements(['shop.top' => 1])->of($snippet)?->slotOrders);
+        self::assertSame([], $this->entryPlacements()->of($snippet)?->slotOrders);
     }
 
     /**
@@ -263,6 +282,24 @@ final class EntryPlacementsTest extends TestCase
     public function it_has_no_placements_section_for_an_entry_that_is_not_a_snippet(): void
     {
         self::assertNull($this->entryPlacements()->of(new Page()));
+    }
+
+    /**
+     * Each order's slot, placements, their positions and warnings
+     *
+     * @param list<SlotOrder> $orders
+     *
+     * @return list<array{string, list<object>, list<int>, bool, list<string>}>
+     */
+    private static function orders(array $orders): array
+    {
+        return array_map(static fn (SlotOrder $order): array => [
+            $order->slot->identifier,
+            array_map(static fn (EntryPlacement $placement): object => $placement->placement, $order->placements),
+            array_map(static fn (EntryPlacement $placement): int => $placement->position, $order->placements),
+            $order->withoutCatchAll,
+            $order->hiddenByHomepageIn,
+        ], $orders);
     }
 
     /**

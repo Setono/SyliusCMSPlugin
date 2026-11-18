@@ -1,5 +1,5 @@
 /*
- * The Order… dialogs of the capped slots in the Placements section of a snippet's overview page
+ * The Order… dialogs of the slots in the Placements section of a snippet's overview page
  * (admin/entry/show/_slot_order.html.twig). See "Placements" in docs/spec/admin.md
  *
  * A [data-cms-slot-order-open] button opens the dialog its aria-controls names, with the placements in the order the

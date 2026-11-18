@@ -256,67 +256,7 @@ final class PlacementEditorTest extends TestCase
     }
 
     /**
-     * @test
-     */
-    public function it_moves_a_placement_up_past_another_snippet_s_placement_numbering_the_slot_s_placements_in_their_new_order(): void
-    {
-        $footer = new Snippet();
-        $other = new Snippet();
-        $first = new Placement($footer, 'shop.footer', 0);
-        $second = new Placement($other, 'shop.footer', 4);
-        $third = new Placement($footer, 'shop.footer', 9);
-        $this->placements->findBySlots(['shop.footer'])->willReturn([$first, $second, $third]);
-
-        self::assertTrue($this->editor()->moveUp($third));
-
-        self::assertSame([[0, 0], [1, 2], [2, 1]], [[0, $first->getPosition()], [1, $second->getPosition()], [2, $third->getPosition()]]);
-        self::assertSame([
-            'begin',
-            'flush',
-            'commit',
-            sprintf('placements changed: %s, %s in shop.footer', $footer->getUuid(), $other->getUuid()),
-        ], $this->calls);
-        self::assertSame(self::NOW, $footer->getChangedAt()->format('Y-m-d\TH:i:sP'));
-        self::assertSame(self::NOW, $other->getChangedAt()->format('Y-m-d\TH:i:sP'));
-    }
-
-    /**
-     * @test
-     */
-    public function it_moves_a_placement_down_past_the_next_one(): void
-    {
-        $snippet = new Snippet();
-        $first = new Placement($snippet, 'shop.footer', 0);
-        $second = new Placement($snippet, 'shop.footer', 1);
-        $this->placements->findBySlots(['shop.footer'])->willReturn([$first, $second]);
-
-        self::assertTrue($this->editor()->moveDown($first));
-
-        self::assertSame([1, 0], [$first->getPosition(), $second->getPosition()]);
-        self::assertSame(sprintf('placements changed: %s in shop.footer', $snippet->getUuid()), $this->calls[3] ?? null);
-    }
-
-    /**
-     * @test
-     */
-    public function it_leaves_the_first_placement_first_and_the_last_last_and_changes_nothing(): void
-    {
-        $snippet = new Snippet();
-        $changedAt = $snippet->getChangedAt();
-        $first = new Placement($snippet, 'shop.footer', 0);
-        $last = new Placement($snippet, 'shop.footer', 1);
-        $this->placements->findBySlots(['shop.footer'])->willReturn([$first, $last]);
-
-        self::assertFalse($this->editor()->moveUp($first));
-        self::assertFalse($this->editor()->moveDown($last));
-
-        self::assertSame([0, 1], [$first->getPosition(), $last->getPosition()]);
-        self::assertSame([], $this->calls);
-        self::assertSame($changedAt, $snippet->getChangedAt());
-    }
-
-    /**
-     * Such as in the Order… dialog of a capped slot, which lists the placements of every snippet
+     * Such as in the Order… dialog of a slot, which lists the placements of every snippet
      *
      * @test
      */

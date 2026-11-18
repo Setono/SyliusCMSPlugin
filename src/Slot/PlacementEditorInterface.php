@@ -35,21 +35,7 @@ interface PlacementEditorInterface
     public function setPageScope(PlacementInterface $placement, array $pageScope): void;
 
     /**
-     * Swaps the placement with the one before it in its slot, which can be another snippet's
-     *
-     * @return bool false when it's first already, which changes nothing
-     */
-    public function moveUp(PlacementInterface $placement): bool;
-
-    /**
-     * Swaps the placement with the one after it in its slot, which can be another snippet's
-     *
-     * @return bool false when it's last already, which changes nothing
-     */
-    public function moveDown(PlacementInterface $placement): bool;
-
-    /**
-     * Puts the slot's placements, of every snippet, in this order, as the Order… dialog of a capped slot does
+     * Puts the slot's placements, of every snippet, in this order, as a slot's Order… dialog does
      *
      * @param list<string> $placementUuids the UUIDs of every placement in the slot, each once, in their new order
      *

@@ -414,10 +414,11 @@ setono_sylius_cms:
         old_urls: 'Redirects from:'
         open_in_builder: Open in builder
         order: Order…
-        # The Order… dialog of a capped slot on the overview page of a snippet placed in it. See "Placements" in docs/spec/admin.md
+        # The Order… dialog of a slot on the overview page of a snippet placed in it. See "Placements" in docs/spec/admin.md
         order_slot: 'Order of "%slot%"'
         order_slot_help: '{1} Only the first placement that matches the page and the shopper shows, so put the most specific first, and last a catch-all, with no page scope and a snippet for everyone. Drag them into order.|]1,Inf[ Only the first %count% placements that match the page and the shopper show, so put the most specific first, and last a catch-all, with no page scope and a snippet for everyone. Drag them into order.'
         order_slot_placements: 'The placements in "%slot%", in order'
+        order_uncapped_slot_help: Every placement that matches the page and the shopper shows, in this order. Drag them into order.
         other_content_type: Another content type
         page_scope: Page scope
         page_scope_removed_kind: 'A condition of the kind "%kind%", which the code no longer has, so it shows nothing'
@@ -473,7 +474,7 @@ setono_sylius_cms:
         shown_to_no_group: Signed in without a group
         slot: Slot
         slot_removed: The code no longer has this slot, so the placement shows nothing. Remove it.
-        # A capped slot's warnings, in its Order… dialog. See "Problems" in docs/spec/admin.md
+        # A slot's warnings, in its Order… dialog. See "Problems" in docs/spec/admin.md
         slot_warning:
             hidden_by_homepage: 'It doesn''t show in %channels%, whose homepage is a CMS page, as Sylius''s own homepage doesn''t render there.'
             no_catch_all: None of its placements is a catch-all, with no page scope and a snippet for everyone, so some pages or shoppers may see nothing there.

@@ -82,10 +82,10 @@ Every entry has one, between its list and the builder.
 
 A snippet's placements are managed here, not in the builder, and take effect on save ([ADR 0005](../adr/0005-placements-take-effect-on-save.md)).
 
-- **Each placement** shows its slot, its position, such as "1 of 3 · capped at 1", its page scope ([Slots](slots.md#page-scopes)) and who it wins for: its snippet's audience, "where no placement above it shows" once it's past the cap, or no one when as many catch-all placements as the cap come before it. Placements can be added, edited and removed, and in a slot that isn't capped moved up and down past the slot's other placements, of every snippet.
+- **Each placement** shows its slot, its position, such as "1 of 3 · capped at 1", its page scope ([Slots](slots.md#page-scopes)) and who it wins for: its snippet's audience, "where no placement above it shows" once it's past the cap, or no one when as many catch-all placements as the cap come before it. Placements can be added, edited, removed and put in order.
 - **Edit page scope** opens a dialog that edits the scope's conditions as the builder edits visibility conditions, offering only the kinds that read `HostPage` and whose needs the slot provides. Save takes effect at once and comes back to the overview page. A scope that can't be saved is kept as it was, and the page says why.
 - **Adding a placement** offers only slots that provide at least the snippet's declared context ([Slots](slots.md#snippets-and-their-context)).
-- **For a capped slot**, **Order…** opens a dialog with all the slot's placements, from every snippet, each with its snippet, page scope and audience, to drag into order or move with arrows. It also shows the slot's warnings: no catch-all placement, or hidden by a CMS homepage. Save order takes effect at once, and an order made before the slot's placements changed, such as in another tab, is refused.
+- **Order…**, on every placement in a slot the code declares, capped or not, opens a dialog with all the slot's placements, from every snippet, each with its snippet, page scope and audience, to drag into order or move with arrows. It also shows the slot's warnings: no catch-all placement (a capped slot only), or hidden by a CMS homepage. Save order takes effect at once, and an order made before the slot's placements changed, such as in another tab, is refused.
 
 ## Into and out of the builder
 

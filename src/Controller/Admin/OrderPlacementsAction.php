@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * The Save of a capped slot's Order… dialog on the overview page of a snippet placed in it, which puts every placement
+ * The Save of a slot's Order… dialog on the overview page of a snippet placed in it, which puts every placement
  * in the slot, posted as `slot` and `placements` (their UUIDs in their new order), of every snippet, in that order, and
  * comes back to the overview page. It takes effect at once (ADR 0005). An order made before the slot's placements
  * changed, such as in another tab, is refused. See "Placements" in docs/spec/admin.md

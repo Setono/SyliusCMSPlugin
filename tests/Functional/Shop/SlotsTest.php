@@ -53,11 +53,11 @@ final class SlotsTest extends WebTestCase
     {
         $client = self::createClient();
         $freeShipping = self::place(self::createSnippet('Free shipping', [self::heading(self::FREE_SHIPPING, 'Free shipping')], published: true), 'shop.footer');
-        self::place(self::createSnippet('Opening hours', [self::heading(self::OPENING_HOURS, 'Opening hours')], published: true), 'shop.footer');
+        $openingHours = self::place(self::createSnippet('Opening hours', [self::heading(self::OPENING_HOURS, 'Opening hours')], published: true), 'shop.footer');
 
         self::assertSame(['Free shipping', 'Opening hours'], self::headingsIn($client->request('GET', '/en_US/'), 'shop-footer'));
 
-        self::placementEditor()->moveDown($freeShipping);
+        self::placementEditor()->reorder('shop.footer', [$openingHours->getUuid(), $freeShipping->getUuid()]);
 
         self::assertSame(['Opening hours', 'Free shipping'], self::headingsIn($client->request('GET', '/en_US/'), 'shop-footer'));
     }

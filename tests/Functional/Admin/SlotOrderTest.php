@@ -15,9 +15,9 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
- * The placements of a capped slot on a snippet's overview page: each one's position and who it wins for, and the slot's
- * Order… dialog, which lists every snippet's placements in the slot to put in order. SlotsKernel caps shop.top and
- * store_homepage at 1. See "Placements" in docs/spec/admin.md and "Capped slots" in docs/spec/slots.md
+ * The placements of a slot on a snippet's overview page: each one's position and who it wins for, and the slot's Order…
+ * dialog, capped or not, which lists every snippet's placements in the slot to put in order. SlotsKernel caps shop.top
+ * and store_homepage at 1. See "Placements" in docs/spec/admin.md and "Capped slots" in docs/spec/slots.md
  */
 final class SlotOrderTest extends WebTestCase
 {
@@ -65,8 +65,7 @@ final class SlotOrderTest extends WebTestCase
 
         $crawler = $client->request('GET', self::overview($sale));
 
-        // Only the capped slot is ordered in a dialog, and its row opens it
-        self::assertCount(0, $crawler->filter('[data-placement][data-slot="shop.top"] form[data-move]'));
+        // The slot is ordered in a dialog, which its row opens
         $opener = $crawler->filter('[data-placement][data-slot="shop.top"] [data-cms-slot-order-open]');
         self::assertSame('Order…', trim($opener->text()));
         $dialog = $crawler->filter('#' . $opener->attr('aria-controls'));
@@ -77,7 +76,6 @@ final class SlotOrderTest extends WebTestCase
             [$second->getUuid(), 'Winter sale', 'This snippet'],
         ], self::orderedPlacements($dialog));
         self::assertCount(0, $dialog->filter('[data-slot-warning]'));
-        self::assertCount(1, $crawler->filter('[data-placement][data-slot="shop.footer"] form[data-move]'));
 
         $form = $dialog->filter('form')->form();
         $form->setValues(['placements' => [$second->getUuid(), $first->getUuid()]]);
@@ -91,6 +89,30 @@ final class SlotOrderTest extends WebTestCase
         self::assertSame([['shop.top', 1]], self::placementsOf($freeShipping));
 
         self::assertSame(['Winter sale'], self::headingsIn($client->request('GET', '/en_US/'), '.cms-slot--shop-top'));
+    }
+
+    /**
+     * A slot that isn't capped shows every placement that matches, so it can't lack a catch-all
+     *
+     * @test
+     */
+    public function it_gives_a_slot_that_is_not_capped_an_order_dialog_without_the_cap_s_help_and_warnings(): void
+    {
+        $client = self::signedInClient();
+        self::createCustomerGroup('wholesale', 'Wholesale');
+        $snippet = self::createSnippet('Wholesale prices');
+        self::channelsAndAudience()->setAudience($snippet, Audience::only('wholesale'));
+        self::entityManager()->flush();
+        $placement = self::place($snippet, 'shop.footer');
+        $others = self::place(self::createSnippet('Opening hours'), 'shop.footer');
+
+        $crawler = $client->request('GET', self::overview($snippet));
+
+        $dialog = $crawler->filter('#' . $crawler->filter('[data-placement][data-slot="shop.footer"] [data-cms-slot-order-open]')->attr('aria-controls'));
+        self::assertSame('shop.footer', $dialog->attr('data-slot'));
+        self::assertSame('Every placement that matches the page and the shopper shows, in this order. Drag them into order.', $dialog->filter('h2 + p')->text());
+        self::assertSame([[$placement->getUuid(), 'Wholesale prices', 'This snippet'], [$others->getUuid(), 'Opening hours', null]], self::orderedPlacements($dialog));
+        self::assertSame([], self::warnings($dialog));
     }
 
     /**

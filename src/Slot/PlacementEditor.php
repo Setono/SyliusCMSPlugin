@@ -92,16 +92,6 @@ final readonly class PlacementEditor implements PlacementEditorInterface
         });
     }
 
-    public function moveUp(PlacementInterface $placement): bool
-    {
-        return $this->move($placement, -1);
-    }
-
-    public function moveDown(PlacementInterface $placement): bool
-    {
-        return $this->move($placement, 1);
-    }
-
     public function reorder(string $slot, array $placementUuids): bool
     {
         $inSlot = [];
@@ -137,39 +127,6 @@ final readonly class PlacementEditor implements PlacementEditorInterface
         $this->write(array_map(static fn (PlacementInterface $placement): SnippetInterface => $placement->getSnippet(), $moved), $slot, static function () use ($ordered): void {
             foreach ($ordered as $position => $placement) {
                 $placement->setPosition($position);
-            }
-        });
-
-        return true;
-    }
-
-    /**
-     * @param -1|1 $by
-     */
-    private function move(PlacementInterface $placement, int $by): bool
-    {
-        $inSlot = $this->placements->findBySlots([$placement->getSlot()]);
-
-        $index = null;
-        foreach ($inSlot as $i => $candidate) {
-            if ($candidate->getUuid() === $placement->getUuid()) {
-                $index = $i;
-
-                break;
-            }
-        }
-
-        $neighbour = null === $index ? null : ($inSlot[$index + $by] ?? null);
-        if (null === $index || null === $neighbour) {
-            return false;
-        }
-
-        $inSlot[$index + $by] = $inSlot[$index];
-        $inSlot[$index] = $neighbour;
-
-        $this->write([$inSlot[$index + $by]->getSnippet(), $neighbour->getSnippet()], $placement->getSlot(), static function () use ($inSlot): void {
-            foreach ($inSlot as $position => $inOrder) {
-                $inOrder->setPosition($position);
             }
         });
 
