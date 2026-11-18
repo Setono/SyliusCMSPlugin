@@ -41,18 +41,19 @@ final readonly class MisfitValue implements ProblemKindInterface
      */
     public function findIn(EntryInterface $entry): iterable
     {
-        foreach ($this->treeValues->inTree($entry->getBlockTree(), $this->contentTypes->getByEntry($entry)->code) as $value) {
+        foreach ($this->treeValues->inEntry($entry, $this->contentTypes->getByEntry($entry)) as $value) {
             if (!$this->doesNotFit($value)) {
                 continue;
             }
 
             $field = $value->field;
             if (null === $value->block || null === $value->blockType) {
+                // In one of the content type's own fields, or in the layout
                 yield new Problem(
                     self::CODE,
                     Severity::Error,
                     $entry,
-                    new TranslatableMessage('setono_sylius_cms.problem.misfit_layout_value', ['%field%' => new TranslatableMessage($field->field->label)]),
+                    new TranslatableMessage($value->inEntry ? 'setono_sylius_cms.problem.misfit_entry_value' : 'setono_sylius_cms.problem.misfit_layout_value', ['%field%' => new TranslatableMessage($field->field->label)]),
                     Fix::inBuilder($entry, null, $value->locale),
                     null,
                     $field->name,

@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tree;
 
+use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 
 /**
- * Walks the stored values of a block tree the way it renders: the layout's, unless the code no longer has the layout or
+ * Walks the stored values of an entry's own fields, and of a block tree the way it renders: the layout's, unless the code no longer has the layout or
  * has disabled it, then each block's, depth first, leaving out a block of a type the code no longer has and what's
  * inside it. A translatable field's value is given per locale. The reference finder and the problem kinds that read
  * values go through it
@@ -22,7 +26,38 @@ final readonly class TreeValues
     public function __construct(
         private BlockTypeRegistryInterface $blockTypes,
         private LayoutRegistryInterface $layouts,
+        private ContentTypeFields $contentTypeFields = new ContentTypeFields(new FieldReader()),
     ) {
+    }
+
+    /**
+     * The values of the entry's own fields, those of its content type, shared ones first and then each translation's,
+     * then those of its tree
+     *
+     * @return \Generator<StoredValue>
+     */
+    public function inEntry(EntryInterface $entry, ContentTypeMetadata $contentType): \Generator
+    {
+        foreach ($this->contentTypeFields->shared($contentType) as $name => $field) {
+            $value = $this->contentTypeFields->read($entry, $name);
+            if (null !== $value) {
+                yield new StoredValue($field, $value, inEntry: true);
+            }
+        }
+
+        $fields = $this->contentTypeFields->translatable($contentType);
+        if ([] !== $fields) {
+            foreach ($entry->getTranslations() as $localeCode => $translation) {
+                foreach ($fields as $name => $field) {
+                    $value = $this->contentTypeFields->read($translation, $name);
+                    if (null !== $value) {
+                        yield new StoredValue($field, $value, (string) $localeCode, inEntry: true);
+                    }
+                }
+            }
+        }
+
+        yield from $this->inTree($entry->getBlockTree(), $contentType->code);
     }
 
     /**

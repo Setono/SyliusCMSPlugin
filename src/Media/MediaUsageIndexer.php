@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\MediaUsageInterface;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
@@ -89,7 +90,7 @@ final readonly class MediaUsageIndexer
      */
     private function uses(EntryInterface $entry, ?DraftInterface $draft): array
     {
-        $contentType = $this->contentTypes->getByEntry($entry)->code;
+        $contentType = $this->contentTypes->getByEntry($entry);
         $workingCopy = $this->workingCopies->getWorkingCopyWithDraft(clone $entry, $draft);
 
         $published = [];
@@ -110,15 +111,14 @@ final readonly class MediaUsageIndexer
     }
 
     /**
-     * The UUIDs of the media items an entry's content refers to, each once, lowercase. Entries' own fields join with
-     * content types' fields
+     * The UUIDs of the media items an entry's content refers to, in its own fields and its tree, each once, lowercase
      *
      * @return list<string>
      */
-    private function mediaItemsIn(EntryInterface $content, string $contentType): array
+    private function mediaItemsIn(EntryInterface $content, ContentTypeMetadata $contentType): array
     {
         $uuids = [];
-        foreach (ReferenceFinder::references($this->referenceFinder->inTree($content->getBlockTree(), $contentType)) as $reference) {
+        foreach (ReferenceFinder::references($this->referenceFinder->inEntry($content, $contentType)) as $reference) {
             if (MediaItemReferences::TYPE === $reference->type) {
                 $uuids[strtolower($reference->id)] = true;
             }

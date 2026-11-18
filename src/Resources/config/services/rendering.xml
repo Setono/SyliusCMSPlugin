@@ -29,6 +29,7 @@
         <service id="Setono\SyliusCMSPlugin\Tree\TreeValues" class="Setono\SyliusCMSPlugin\Tree\TreeValues">
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder" class="Setono\SyliusCMSPlugin\Tree\ReferenceFinder">

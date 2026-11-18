@@ -8,7 +8,7 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 
 /**
- * One stored value of a field of a block or of the layout, as TreeValues walks them: a shared field's value, or a
+ * One stored value of a field of a block, of the layout or of the entry, as TreeValues walks them: a shared field's value, or a
  * translatable field's value in one locale
  *
  * @internal
@@ -18,8 +18,9 @@ final readonly class StoredValue
     /**
      * @param string|null $locale the locale of a translatable field's value, or null for a shared field's, and for a
      *                            translatable field's that isn't a locale map, which doesn't fit
-     * @param StoredBlock|null $block the block whose value it is, or null for the layout's
-     * @param BlockTypeMetadata|null $blockType the block's type, or null for the layout's
+     * @param StoredBlock|null $block the block whose value it is, or null for the layout's or the entry's
+     * @param BlockTypeMetadata|null $blockType the block's type, or null for the layout's or the entry's
+     * @param bool $inEntry whether it's a value of one of the content type's own fields, on the entry or a translation
      */
     public function __construct(
         public FieldMetadata $field,
@@ -27,6 +28,7 @@ final readonly class StoredValue
         public ?string $locale = null,
         public ?StoredBlock $block = null,
         public ?BlockTypeMetadata $blockType = null,
+        public bool $inEntry = false,
     ) {
     }
 

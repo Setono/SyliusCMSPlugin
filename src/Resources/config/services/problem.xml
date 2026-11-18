@@ -188,6 +188,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="tagged_locator" tag="setono_sylius_cms.reference_type_loader" index-by="type"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeFields"/>
 
             <tag name="setono_sylius_cms.problem_kind" lint="true"/>
         </service>

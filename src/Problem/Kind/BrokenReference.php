@@ -13,7 +13,10 @@ use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\ReferenceProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceLoader;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
@@ -25,7 +28,7 @@ use Sylius\Component\Core\Model\TaxonInterface;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
- * A reference in a field of a block or of the layout to a record that was deleted, such as a media item, or the
+ * A reference in a field of a block, of the layout or of the entry itself to a record that was deleted, such as a media item, or the
  * product a link leads to: a broken reference, an error. Rendering skips it, so the field is empty, the list leaves it
  * out, the link isn't rendered or a link in rich text shows as plain text (ADR 0002). It's fixed in the builder, at the
  * block and in the locale of the value it's in. Each reference type with a loader is checked with one query per entry. A
@@ -47,6 +50,7 @@ final readonly class BrokenReference implements ReferenceProblemKindInterface
         private LayoutRegistryInterface $layouts,
         private ContainerInterface $typeLoaders,
         private EntryRepositoryInterface $entries,
+        private ContentTypeFields $contentTypeFields = new ContentTypeFields(new FieldReader()),
     ) {
     }
 
@@ -90,11 +94,11 @@ final readonly class BrokenReference implements ReferenceProblemKindInterface
 
     public function findIn(EntryInterface $entry): iterable
     {
-        $contentType = $this->contentTypes->getByEntry($entry)->code;
+        $contentType = $this->contentTypes->getByEntry($entry);
 
         /** @var list<FoundReference> $found */
         $found = array_values(array_filter(
-            iterator_to_array($this->referenceFinder->inTree($entry->getBlockTree(), $contentType), false),
+            iterator_to_array($this->referenceFinder->inEntry($entry, $contentType), false),
             fn (FoundReference $reference): bool => $this->typeLoaders->has($reference->reference->type),
         ));
 
@@ -115,13 +119,19 @@ final readonly class BrokenReference implements ReferenceProblemKindInterface
         }
     }
 
-    private function problem(EntryInterface $entry, string $contentType, FoundReference $reference): Problem
+    private function problem(EntryInterface $entry, ContentTypeMetadata $contentType, FoundReference $reference): Problem
     {
         $type = new TranslatableMessage(sprintf('setono_sylius_cms.reference_type.%s', $reference->reference->type));
 
         // A link in rich text that doesn't resolve still shows its text, as plain text
-        if (null === $reference->block) {
-            $layout = $this->layouts->get($contentType, (string) $entry->getBlockTree()->layout?->code);
+        if ($reference->inEntry) {
+            $field = ($this->contentTypeFields->shared($contentType) + $this->contentTypeFields->translatable($contentType))[$reference->field]->field;
+            $message = new TranslatableMessage($field instanceof RichText ? 'setono_sylius_cms.problem.broken_entry_rich_text_reference' : 'setono_sylius_cms.problem.broken_entry_reference', [
+                '%field%' => new TranslatableMessage($field->label),
+                '%type%' => $type,
+            ]);
+        } elseif (null === $reference->block) {
+            $layout = $this->layouts->get($contentType->code, (string) $entry->getBlockTree()->layout?->code);
             $field = $layout->fields[$reference->field]->field;
             $message = new TranslatableMessage($field instanceof RichText ? 'setono_sylius_cms.problem.broken_layout_rich_text_reference' : 'setono_sylius_cms.problem.broken_layout_reference', [
                 '%field%' => new TranslatableMessage($field->label),

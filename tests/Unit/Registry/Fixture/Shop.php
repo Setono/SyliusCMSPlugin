@@ -75,6 +75,11 @@ class Shop extends Entry
         $this->parking = $parking;
     }
 
+    public function setPhoto(?string $photo): void
+    {
+        $this->photo = $photo;
+    }
+
     protected function createTranslation(): EntryTranslationInterface
     {
         return new ShopTranslation();

@@ -40,7 +40,7 @@ final readonly class UnknownSource implements ProblemKindInterface
      */
     public function findIn(EntryInterface $entry): iterable
     {
-        foreach ($this->treeValues->inTree($entry->getBlockTree(), $this->contentTypes->getByEntry($entry)->code) as $value) {
+        foreach ($this->treeValues->inEntry($entry, $this->contentTypes->getByEntry($entry)) as $value) {
             $code = $this->unknownCode($value);
             if (null === $code) {
                 continue;
@@ -48,11 +48,12 @@ final readonly class UnknownSource implements ProblemKindInterface
 
             $field = $value->field;
             if (null === $value->block || null === $value->blockType) {
+                // In one of the content type's own fields, or in the layout
                 yield new Problem(
                     self::CODE,
                     Severity::Warning,
                     $entry,
-                    new TranslatableMessage('setono_sylius_cms.problem.unknown_layout_source', ['%field%' => new TranslatableMessage($field->field->label), '%source%' => $code]),
+                    new TranslatableMessage($value->inEntry ? 'setono_sylius_cms.problem.unknown_entry_source' : 'setono_sylius_cms.problem.unknown_layout_source', ['%field%' => new TranslatableMessage($field->field->label), '%source%' => $code]),
                     Fix::inBuilder($entry, null, $value->locale),
                     null,
                     $field->name,

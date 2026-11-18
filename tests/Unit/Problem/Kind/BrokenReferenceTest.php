@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Field\MediaHandler;
 use Setono\SyliusCMSPlugin\Field\MediaListHandler;
 use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
+use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
@@ -29,6 +30,8 @@ use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Hero;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
@@ -84,6 +87,32 @@ final class BrokenReferenceTest extends TestCase
             self::inBlock($page, self::A, 'images', 'Images', null),
             self::inBlock($page, self::B, 'poster', 'Poster', 'da_DK'),
         ], [...$this->kind($mediaItems->reveal())->findIn($page)]);
+    }
+
+    /**
+     * A content type's own fields hold references too, such as a shop's photo, and are fixed in the entry's settings
+     *
+     * @test
+     */
+    public function it_finds_a_reference_in_one_of_the_content_types_own_fields_that_no_longer_resolves(): void
+    {
+        $shop = new Shop();
+        $shop->setPhoto(self::DELETED);
+
+        $mediaItems = $this->prophesize(ReferenceTypeLoaderInterface::class);
+        $mediaItems->existing([self::DELETED])->willReturn([]);
+
+        self::assertEquals([
+            new Problem(
+                'broken_reference',
+                Severity::Error,
+                $shop,
+                new TranslatableMessage('setono_sylius_cms.problem.broken_entry_reference', ['%field%' => new TranslatableMessage('app.photo'), '%type%' => new TranslatableMessage('setono_sylius_cms.reference_type.media_item')]),
+                Fix::inBuilder($shop),
+                null,
+                'photo',
+            ),
+        ], [...$this->kind($mediaItems->reveal())->findIn($shop)]);
     }
 
     /**
@@ -250,6 +279,7 @@ final class BrokenReferenceTest extends TestCase
         $blockTypes = new BlockTypeRegistry(['gallery' => Gallery::class, 'rich_text' => RichText::class], new FieldReader());
         $handlers = new FieldHandlerLocator(new ServiceLocator([
             TextHandler::class => static fn (): TextHandler => new TextHandler(),
+            ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
             MediaHandler::class => static fn (): MediaHandler => new MediaHandler(),
             MediaListHandler::class => static fn (): MediaListHandler => new MediaListHandler(),
             RichTextHandler::class => Links::richTextHandler(...),
@@ -258,7 +288,10 @@ final class BrokenReferenceTest extends TestCase
 
         return new BrokenReference(
             new ReferenceFinder(new TreeValues($blockTypes, new LayoutRegistry(['page' => ['hero' => Hero::class]], new FieldReader())), $handlers),
-            new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
+            new ContentTypeRegistry([
+                'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+                'shop' => ['model' => Shop::class, 'translation' => ShopTranslation::class, 'resource' => 'app.shop'],
+            ]),
             $blockTypes,
             new LayoutRegistry(['page' => ['hero' => Hero::class]], new FieldReader()),
             new ServiceLocator([
