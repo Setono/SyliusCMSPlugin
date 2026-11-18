@@ -278,27 +278,27 @@ final class RenderingFailuresTest extends WebTestCase
      *
      * @return list<array<array-key, mixed>>
      */
+    private static function loggedFailures(): array
+    {
+        return self::loggedAtError(static fn (array $context): bool => isset($context['entry']));
+    }
+
     /**
-     * What's logged at error about slots that failed, without the exception
+     * What was logged at error about slots that failed, without the exceptions
      *
-     * @return list<array<string, mixed>>
+     * @return list<array<array-key, mixed>>
      */
     private static function loggedSlotFailures(): array
     {
-        $logger = self::getContainer()->get(RecordingLogger::class);
-        self::assertInstanceOf(RecordingLogger::class, $logger);
-
-        return array_values(array_map(
-            static function (array $context): array {
-                unset($context['exception']);
-
-                return $context;
-            },
-            array_filter($logger->contextsAt('error'), static fn (array $context): bool => isset($context['slot']) && !isset($context['entry'])),
-        ));
+        return self::loggedAtError(static fn (array $context): bool => isset($context['slot']) && !isset($context['entry']));
     }
 
-    private static function loggedFailures(): array
+    /**
+     * @param \Closure(array<array-key, mixed>): bool $which
+     *
+     * @return list<array<array-key, mixed>>
+     */
+    private static function loggedAtError(\Closure $which): array
     {
         $logger = self::getContainer()->get(RecordingLogger::class);
         self::assertInstanceOf(RecordingLogger::class, $logger);
@@ -309,7 +309,7 @@ final class RenderingFailuresTest extends WebTestCase
 
                 return $context;
             },
-            array_filter($logger->contextsAt('error'), static fn (array $context): bool => isset($context['entry'])),
+            array_filter($logger->contextsAt('error'), $which),
         ));
     }
 }

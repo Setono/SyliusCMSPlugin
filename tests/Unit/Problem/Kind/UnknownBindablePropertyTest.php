@@ -57,7 +57,8 @@ final class UnknownBindablePropertyTest extends TestCase
     {
         $token = ['type' => 'cmsBinding', 'attrs' => ['property' => 'product.stock', 'params' => [], 'fallback' => null]];
         $document = ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [$token, ['type' => 'text', 'text' => ' and '], $token]]]];
-        $page = self::page(null,
+        $page = self::page(
+            null,
             new StoredBlock(self::HEADING, 'heading', 1, fields: ['text' => self::binding('product.material')]),
             new StoredBlock(self::KNOWN, 'heading', 1, fields: ['text' => self::binding('product.brand')]),
             new StoredBlock(self::BUTTON, 'button', 1, fields: ['link' => ['target' => 'url', 'ref' => self::binding('product.page'), 'anchor' => null, 'label' => ['en_US' => 'View']]]),
@@ -77,7 +78,8 @@ final class UnknownBindablePropertyTest extends TestCase
      */
     public function it_finds_nothing_in_fields_bound_to_properties_the_code_has_or_without_bindings(): void
     {
-        $page = self::page(null,
+        $page = self::page(
+            null,
             new StoredBlock(self::HEADING, 'heading', 1, fields: ['text' => self::binding('product.brand')]),
             new StoredBlock(self::KNOWN, 'heading', 1, fields: ['text' => ['en_US' => 'Hello']]),
         );

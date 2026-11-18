@@ -372,7 +372,7 @@ final class OverviewTest extends WebTestCase
         self::assertSame('/admin/cms/entries?criteria%5Bstatus%5D=in_progress', $all);
 
         // The link lists the same entries, and those that didn't make the panel's first 10
-        $listed = $client->request('GET', (string) $all)->filter('table tbody [data-entry]')->each(static fn (Crawler $title): ?string => $title->attr('data-entry'));
+        $listed = $client->request('GET', $all)->filter('table tbody [data-entry]')->each(static fn (Crawler $title): ?string => $title->attr('data-entry'));
         self::assertEqualsCanonicalizing([$newer->getUuid(), $never->getUuid(), $older->getUuid()], $listed);
     }
 

@@ -14,6 +14,7 @@ use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\SnippetHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
@@ -137,7 +138,7 @@ final class SnippetCyclesTest extends TestCase
      *
      * @param list<SnippetCycle> $cycles
      *
-     * @return list<array{string|null, string, list<Snippet>}>
+     * @return list<array{string|null, string, list<SnippetInterface>}>
      */
     private static function described(array $cycles): array
     {
