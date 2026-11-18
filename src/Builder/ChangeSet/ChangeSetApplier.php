@@ -27,8 +27,9 @@ use Setono\SyliusCMSPlugin\Tree\StoredTree;
 
 /**
  * Applies a change set to a working copy, all or nothing: to its block tree and its layout, to its shared entry fields,
- * the content type's own included, and to its translations' values, shown switches and translation state. The values themselves aren't validated, because invalid content saves: publish validates. They're
- * sanitised by field types that sanitise, such as rich text, and so are the parameter values of visibility conditions
+ * the content type's own included, and to its translations' values, shown switches and translation state. The values
+ * themselves aren't validated, because invalid content saves: publish validates. They're sanitised by field types that
+ * sanitise, such as rich text, and so are the parameter values of visibility conditions
  *
  * @internal
  */

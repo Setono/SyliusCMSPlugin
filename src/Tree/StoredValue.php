@@ -8,8 +8,8 @@ use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 
 /**
- * One stored value of a field of a block, of the layout or of the entry, as TreeValues walks them: a shared field's value, or a
- * translatable field's value in one locale
+ * One stored value of a field of a block, of the layout or of the entry, as TreeValues walks them: a shared field's
+ * value, or a translatable field's value in one locale
  *
  * @internal
  */

@@ -16,7 +16,8 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 /**
  * The Content hub's own side menu, the KnpMenu menu "setono_sylius_cms.admin.hub": Overview, Entries, with an item
  * per collection after Pages and Snippets, and Library. Items show a count from their "count" extra. Later tickets
- * and projects add their items in a listener of the event this dispatches, the way Sylius's admin menu is extended. See "Navigation" in docs/spec/admin.md
+ * and projects add their items in a listener of the event this dispatches, the way Sylius's admin menu is extended.
+ * See "Navigation" in docs/spec/admin.md
  */
 final readonly class HubMenuBuilder
 {

@@ -28,10 +28,10 @@ use Sylius\Component\Core\Model\TaxonInterface;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
- * A reference in a field of a block, of the layout or of the entry itself to a record that was deleted, such as a media item, or the
- * product a link leads to: a broken reference, an error. Rendering skips it, so the field is empty, the list leaves it
- * out, the link isn't rendered or a link in rich text shows as plain text (ADR 0002). It's fixed in the builder, at the
- * block and in the locale of the value it's in. Each reference type with a loader is checked with one query per entry. A
+ * A reference in a field of a block, of the layout or of the entry itself to a record that was deleted, such as a media
+ * item, or the product a link leads to: a broken reference, an error. Rendering skips it, so the field is empty, the
+ * list leaves it out, the link isn't rendered or a link in rich text shows as plain text (ADR 0002). It's fixed in the
+ * builder, at the block and in the locale of the value it's in. Each reference type with a loader is checked with one query per entry. A
  * media item, entry, product or taxon deleted, or one whose UUID or code changes, has the entries that may refer to it
  * counted again; other writes of them run no query. See "References" in docs/spec/content-model.md and "Problems" in
  * docs/spec/admin.md

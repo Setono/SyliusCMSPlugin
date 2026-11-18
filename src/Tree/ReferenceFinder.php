@@ -12,10 +12,10 @@ use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 
 /**
  * Finds the references a stored block tree holds, through the field type handlers' references(): in each field of each
- * block and of the layout, and of the entry itself, in every locale of a translatable field. Reference loading before rendering reads them, and
- * so does the admin's broken references. A block of a type the code no longer has isn't rendered, so neither it nor
- * what's inside it is read, and nor is a layout the code no longer has or has disabled. See "References" in
- * docs/spec/content-model.md
+ * block and of the layout, and of the entry itself, in every locale of a translatable field. Reference loading before
+ * rendering reads them, and so does the admin's broken references. A block of a type the code no longer has isn't
+ * rendered, so neither it nor what's inside it is read, and nor is a layout the code no longer has or has disabled.
+ * See "References" in docs/spec/content-model.md
  *
  * @internal
  */

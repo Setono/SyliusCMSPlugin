@@ -14,9 +14,9 @@ use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 
 /**
- * Walks the stored values of an entry's own fields, and of a block tree the way it renders: the layout's, unless the code no longer has the layout or
- * has disabled it, then each block's, depth first, leaving out a block of a type the code no longer has and what's
- * inside it. A translatable field's value is given per locale. The reference finder and the problem kinds that read
+ * Walks the stored values of an entry's own fields, and of a block tree the way it renders: the layout's, unless the
+ * code no longer has the layout or has disabled it, then each block's, depth first, leaving out a block of a type the
+ * code no longer has and what's inside it. A translatable field's value is given per locale. The reference finder and the problem kinds that read
  * values go through it
  *
  * @internal
