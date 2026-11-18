@@ -68,7 +68,9 @@ final class ContentHubTest extends WebTestCase
                 ['All entries', '3', '/admin/cms/entries'],
                 ['Pages', '2', '/admin/cms/entries/page'],
                 ['Snippets', '0', '/admin/cms/entries/snippet'],
-                // An item per collection: the test application's own content types, named by their plurals
+                // An item per collection: the shipped blog, named by its name, which lists its posts and categories,
+                // then the test application's own content types, named by their plurals
+                ['Blog', '0', '/admin/cms/collections/blog_post'],
                 ['Announcements', '0', '/admin/cms/entries/announcement'],
                 ['Store locations', '1', '/admin/cms/entries/store_location'],
                 ['Media', null, '/admin/cms/media'],

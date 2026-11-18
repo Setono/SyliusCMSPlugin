@@ -721,6 +721,7 @@ The `_locale` requirement is the one `sylius_shop` uses. The admin prefix is Syl
 | `setono_sylius_cms_admin_overview` | GET | `/{admin}/cms` | [Admin](admin.md#overview) |
 | `setono_sylius_cms_admin_entry_index_all` | GET | `/{admin}/cms/entries` (All entries) | [Admin](admin.md#entry-lists) |
 | `setono_sylius_cms_admin_entry_index` | GET | `/{admin}/cms/entries/{contentType}`, where `{contentType}` is a content type code | [Admin](admin.md#entry-lists) |
+| `setono_sylius_cms_admin_collection_index` | GET | `/{admin}/cms/collections/{contentType}`, a collection with categories, such as the blog: its entries and its categories, where `{contentType}` is its entries' content type code, such as `blog_post` | [Admin](admin.md#entry-lists) |
 | `setono_sylius_cms_admin_entry_create` | GET, POST | `/{admin}/cms/entries/{contentType}/new` | [Admin](admin.md#create-dialog) |
 | `setono_sylius_cms_admin_entry_show` | GET | `/{admin}/cms/entry/{uuid}` | [Admin](admin.md#entry-overview-page) |
 | `setono_sylius_cms_admin_builder` | GET | `/{admin}/cms/entry/{uuid}/builder` | [Builder](builder.md) |
