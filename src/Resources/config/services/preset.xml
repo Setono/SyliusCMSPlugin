@@ -20,5 +20,18 @@
             <tag name="setono_sylius_cms.preset_provider" priority="100"/>
             <tag name="kernel.reset" method="reset"/>
         </service>
+
+        <!-- Makes a preset's blocks ready to insert into an entry: upgraded, new keys, the entry's locales, keys resolved -->
+        <service id="Setono\SyliusCMSPlugin\Preset\InsertTransformer" class="Setono\SyliusCMSPlugin\Preset\InsertTransformer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\TranslationKeyResolverInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\RichText\RichTextSchema"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Preset\TranslationKeyResolver" class="Setono\SyliusCMSPlugin\Preset\TranslationKeyResolver">
+            <argument type="service" id="translator"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Preset\TranslationKeyResolverInterface" alias="Setono\SyliusCMSPlugin\Preset\TranslationKeyResolver"/>
     </services>
 </container>

@@ -248,6 +248,11 @@ setono_sylius_cms:
         embed_code: 'Embed code runs in the shop, not in the builder''s preview.'
         unresolved_link: '%field% isn''t shown here: what it links to isn''t visible in this channel and locale, or was deleted.'
         unresolved_rich_text_link: 'A link in %field% shows as plain text here: what it links to isn''t visible in this channel and locale, or was deleted.'
+    # What inserting a preset tells editors. See "What inserting copies" in docs/spec/layouts-and-presets.md
+    preset:
+        disabled_block_type: '%block% blocks are switched off, so the preset''s were left out.'
+        newer_version: 'A "%type%" block in the preset was saved with version %version%, but this store has version %code_version%, so the preset can''t be inserted.'
+        removed_block_type: 'Blocks of the type "%type%", which the code no longer has, were left out.'
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
         broken_layout_reference: '%field% in the layout refers to %type% that was deleted, so it isn''t shown.'
