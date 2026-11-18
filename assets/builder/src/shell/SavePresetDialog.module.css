@@ -1,0 +1,62 @@
+/* The Save as preset dialog, made of the builder's dialog */
+.overlay {
+    composes: overlay from '../ui/Dialog.module.css';
+}
+
+.dialog {
+    composes: dialog from '../ui/Dialog.module.css';
+}
+
+.title {
+    composes: title from '../ui/Dialog.module.css';
+}
+
+.description {
+    composes: description from '../ui/Dialog.module.css';
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-3);
+}
+
+.actions {
+    composes: actions from '../ui/Dialog.module.css';
+}
+
+.primary {
+    composes: primary from '../ui/Buttons.module.css';
+}
+
+.secondary {
+    composes: secondary from '../ui/Buttons.module.css';
+}
+
+.error {
+    margin: 0;
+    color: var(--builder-color-danger);
+}
+
+.replace {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-2);
+    padding-top: var(--builder-space-3);
+    border-top: 1px solid var(--builder-color-border);
+}
+
+.subheading {
+    margin: 0;
+    font-size: var(--builder-font-size-md);
+    font-weight: var(--builder-font-weight-bold);
+}
+
+.replaceList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--builder-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}

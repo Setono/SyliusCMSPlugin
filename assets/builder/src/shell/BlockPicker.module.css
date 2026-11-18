@@ -279,3 +279,40 @@
 .alert {
     background: var(--builder-color-danger-subtle);
 }
+
+/* What an editor preset offers: Edit, Delete and Download, and the form Edit and Delete open */
+.presetActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--builder-space-1) var(--builder-space-3);
+}
+
+.presetAction {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--builder-color-accent);
+    font: inherit;
+    font-size: var(--builder-font-size-sm);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.presetAction:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}
+
+.presetForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--builder-space-1);
+    width: 100%;
+}
+
+.presetFormActions {
+    display: flex;
+    gap: var(--builder-space-3);
+    align-items: center;
+    justify-content: flex-end;
+}

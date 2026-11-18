@@ -5,7 +5,7 @@ import { createAutosave, type Autosave } from './autosave';
 import type { BindablePropertyDefinition } from './bindings';
 import { BuilderBindingsProvider } from './bindingsContext';
 import { withUuid, type BuilderConfig } from './config';
-import { BuilderProvider, type BuilderSession } from './context';
+import { BuilderProvider, type BuilderSession, type PresetEditing } from './context';
 import { createTranslator, TranslatorProvider, type Translate } from './i18n';
 import type { LinkTargetDefinition } from './links';
 import { LinkTargetsProvider } from './linkTargets';
@@ -163,6 +163,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                 const snippetBlocks = api.snippetBlocks?.bind(api);
                 const listPresets = api.presets?.bind(api);
                 const insertPreset = api.insertPreset?.bind(api);
+                const editing = presetEditing(api, () => autosave?.flush() ?? Promise.resolve());
 
                 // A save refused because a colleague scheduled a publish loads the working copy again, read-only
                 const reload = createReload(store, () => api.fetchEntry());
@@ -204,6 +205,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                                           return listPresets(parent);
                                       },
                                       insert: (id) => insertPreset(id),
+                                      editing,
                                   },
                         publish: createPublish(store, autosave, () => api.publish(), validationStore),
                         discard: createDiscard(store, autosave, () => api.discard()),
@@ -294,4 +296,35 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
             </BuilderProvider>
         </TranslatorProvider>
     );
+}
+
+/**
+ * What ★ and the Presets tab do with editor presets, with all of their endpoints or none. Saving blocks reads the working
+ * copy as the server has it, so the unsaved changes go first.
+ */
+function presetEditing(api: BuilderApi, flush: () => Promise<unknown>): PresetEditing | null {
+    const create = api.createPreset?.bind(api);
+    const replace = api.replacePreset?.bind(api);
+    const update = api.updatePreset?.bind(api);
+    const remove = api.deletePreset?.bind(api);
+    const exportUrl = api.presetExportUrl?.bind(api);
+    if (create === undefined || replace === undefined || update === undefined || remove === undefined || exportUrl === undefined) {
+        return null;
+    }
+
+    return {
+        create: async (blocks, details) => {
+            await flush();
+
+            return create(blocks, details);
+        },
+        replace: async (id, blocks) => {
+            await flush();
+
+            return replace(id, blocks);
+        },
+        update: (id, details) => update(id, details),
+        remove: (id) => remove(id),
+        exportUrl: (id) => exportUrl(id),
+    };
 }

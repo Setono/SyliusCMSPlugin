@@ -6,7 +6,7 @@ import { App } from '../src/App';
 import type { BuilderConfig } from '../src/config';
 import { createNestingRules, canInsert } from '../src/nesting';
 import { groupPresets, presetDocument, stylesheetsOf } from '../src/presets';
-import type { EntryResponse, EntryStatus, InsertedPreset, PresenceResponse, PresetListing, SaveResponse, StoredBlock, ValidationError } from '../src/types';
+import type { EntryResponse, EntryStatus, InsertedPreset, PresenceResponse, PresetIndex, PresetListing, SaveResponse, StoredBlock, ValidationError } from '../src/types';
 import { blockOf, blockTypes, entry, page, registry, settings, storeWith, strings } from './fixtures';
 
 function preset(id: string, overrides: Partial<PresetListing> = {}): PresetListing {
@@ -141,7 +141,7 @@ function fakeApi(presets: PresetListing[], insertPreset: (id: string) => Promise
         schedule: vi.fn(() => Promise.reject(new Error('Not scheduled in this test'))),
         cancelSchedule: vi.fn(() => Promise.reject(new Error('Not scheduled in this test'))),
         presence: vi.fn(async (): Promise<PresenceResponse> => ({ editors: [], lockToken: 0 })),
-        presets: vi.fn(async (_parent: string | null) => presets),
+        presets: vi.fn(async (_parent: string | null): Promise<PresetIndex> => ({ presets, categories: [] })),
         insertPreset: vi.fn(insertPreset),
     } satisfies BuilderApi;
 }

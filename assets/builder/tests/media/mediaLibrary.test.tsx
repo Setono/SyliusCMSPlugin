@@ -326,11 +326,12 @@ describe('the media library', () => {
         expect(grid().getByRole('button', { name: /bird/ })).toBeInTheDocument();
     });
 
-    it('should list the entries that use the selected media item with links, and keep Delete disabled while any do', async () => {
-        const api = fakeApi([mediaItem('logo', { usageCount: 2 })], undefined, {
+    it('should list the entries and the editor presets that use the selected media item with links, and keep Delete disabled while any do', async () => {
+        const api = fakeApi([mediaItem('logo', { usageCount: 3 })], undefined, {
             logo: [
-                { entry: 'e1', title: 'Summer sale', contentType: 'Page', url: '/admin/cms/entry/e1', draft: true, published: true },
-                { entry: 'e2', title: null, contentType: 'Blog post', url: '/admin/cms/entry/e2', draft: true, published: false },
+                { entry: 'e1', preset: null, title: 'Summer sale', contentType: 'Page', url: '/admin/cms/entry/e1', draft: true, published: true },
+                { entry: 'e2', preset: null, title: null, contentType: 'Blog post', url: '/admin/cms/entry/e2', draft: true, published: false },
+                { entry: null, preset: 'p1', title: 'Promo', contentType: 'Preset', url: '/admin/cms/presets?tab=block_presets#cms-preset-p1', draft: false, published: false },
             ],
         });
         await openLibrary(api);
@@ -344,13 +345,15 @@ describe('the media library', () => {
         expect(usedIn.getAllByRole('listitem')[0]).toHaveTextContent('Page · Published');
         expect(usedIn.getByRole('link', { name: 'Untitled' })).toHaveAttribute('href', '/admin/cms/entry/e2');
         expect(usedIn.getAllByRole('listitem')[1]).toHaveTextContent('Blog post · Draft');
+        expect(usedIn.getByRole('link', { name: 'Promo' })).toHaveAttribute('href', '/admin/cms/presets?tab=block_presets#cms-preset-p1');
+        expect(usedIn.getAllByRole('listitem')[2]).toHaveTextContent(/^PromoPreset$/);
         expect(details.getByRole('button', { name: 'Delete' })).toBeDisabled();
         expect(details.getByText("It can't be deleted while it's used.")).toBeInTheDocument();
     });
 
     it("should replace the selected media item's file after showing where it's used, and show why one is refused", async () => {
         const api = fakeApi([mediaItem('logo', { usageCount: 1 })], undefined, {
-            logo: [{ entry: 'e1', title: 'Summer sale', contentType: 'Page', url: '/admin/cms/entry/e1', draft: true, published: true }],
+            logo: [{ entry: 'e1', preset: null, title: 'Summer sale', contentType: 'Page', url: '/admin/cms/entry/e1', draft: true, published: true }],
         });
         await openLibrary(api);
         await waitFor(() => expect(grid().getAllByRole('listitem')).toHaveLength(1));

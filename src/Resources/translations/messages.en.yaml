@@ -665,6 +665,22 @@ setono_sylius_cms:
         preset_preview: Preview of %name%
         insert_preset: Insert %name%
         preset_does_not_fit: 'It doesn''t fit here any more.'
+        # Saving blocks as an editor preset (★), and changing one in the Presets tab. See "Editor presets" in docs/spec/layouts-and-presets.md
+        save_as_preset: Save as preset
+        save_as_preset_help: 'The blocks, with everything in them, are saved as a preset to insert anywhere. The entries it''s inserted into keep their own copy.'
+        preset_name: Name
+        preset_category: Category
+        preset_description: Description
+        save_preset: Save preset
+        replace_a_preset: Or replace the blocks of a preset
+        replace_preset: 'Replace %name%'
+        edit_preset: 'Edit %name%'
+        delete_preset: 'Delete %name%'
+        delete_preset_confirm: 'Delete %name%? The entries it was inserted into keep their blocks.'
+        download_preset: 'Download %name%'
+        preset_save: Save
+        preset_cancel: Cancel
+        preset_delete: Delete
         condition_match: Matches when it
         copy_it_here: Copy it here
         clash: A colleague changed this too

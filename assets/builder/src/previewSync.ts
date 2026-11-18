@@ -23,6 +23,8 @@ export interface PreviewSyncOptions {
     openBlockPicker(spot: BlockSpot, at: { x: number; y: number }): void;
     /** Takes the editor to the selected block's settings in the right pane. */
     openSettings(): void;
+    /** ★ in the toolbar: opens Save as preset for the blocks with these keys. */
+    savePreset?(keys: readonly string[]): void;
     /** Leaves the builder, on Esc pressed in the page. */
     leave(): void;
     /** Flags the blocks with a link that doesn't resolve in the page, none while no page is connected. */
@@ -38,7 +40,7 @@ export interface PreviewSync {
     dispose(): void;
 }
 
-export function createPreviewSync({ store, strings, render, reload, openBlockPicker, openSettings, leave, flagUnresolvedLinks }: PreviewSyncOptions): PreviewSync {
+export function createPreviewSync({ store, strings, render, reload, openBlockPicker, openSettings, savePreset, leave, flagUnresolvedLinks }: PreviewSyncOptions): PreviewSync {
     let bridge: { post: (message: ToBridge) => void; token: string } | null = null;
     // Counts the pages, so an answer for a page that's gone is dropped
     let page = 0;
@@ -215,6 +217,11 @@ export function createPreviewSync({ store, strings, render, reload, openBlockPic
                 case 'duplicate':
                     if (known) {
                         state.duplicateBlocks(actedOn(state.selection, message.key));
+                    }
+                    break;
+                case 'save_preset':
+                    if (known) {
+                        savePreset?.(actedOn(state.selection, message.key));
                     }
                     break;
                 case 'undo':

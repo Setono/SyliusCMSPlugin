@@ -91,13 +91,15 @@ export interface MediaFilters {
 
 /** An entry that uses a media item, as its Used in list shows it. See "Usage index" in docs/spec/media.md. */
 export interface MediaUse {
-    /** The entry's UUID. */
-    entry: string;
-    /** Its title as the admin's lists show it, or null when it has none. */
+    /** The entry's UUID, or null for an editor preset's use. */
+    entry: string | null;
+    /** The editor preset's UUID, or null for an entry's use. */
+    preset: string | null;
+    /** Its title as the admin's lists show it, or the preset's name, or null when it has none. */
     title: string | null;
-    /** Its content type, as editors call it. */
+    /** Its content type, as editors call it, or Preset. */
     contentType: string;
-    /** Its overview page in the admin. */
+    /** Its overview page in the admin, or the preset on the Presets screen. */
     url: string;
     /** Whether its draft uses the media item. */
     draft: boolean;
