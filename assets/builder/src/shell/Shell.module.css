@@ -14,6 +14,13 @@
     line-height: var(--builder-line-height);
 }
 
+.withoutTree {
+    grid-template-areas:
+        "top top"
+        "preview selection";
+    grid-template-columns: minmax(0, 1fr) var(--builder-selection-width);
+}
+
 .shell *,
 .shell *::before,
 .shell *::after {

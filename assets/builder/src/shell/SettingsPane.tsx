@@ -15,23 +15,28 @@ interface Tab {
     /** Whether the entry has the tab. Without it, every entry has it. */
     shown?: (session: BuilderSession) => boolean;
     /** The entry fields the panel shows with their errors, which the errors above the tabs leave out while it's open. */
-    fields?: readonly string[];
+    fields?: (session: BuilderSession) => readonly string[];
 }
 
 /**
- * The tabs of the entry's settings. The Settings tab holds the edited locale's title and its shown switch, and the
- * layout with its fields, which are drafted, and the on-save settings, which take effect as soon as they're saved,
+ * The tabs of the entry's settings. The Settings tab holds the edited locale's title and its shown switch, the content
+ * type's own fields, and the layout with its fields, which are drafted, and the on-save settings, which take effect as soon as they're saved,
  * outside the draft. The URL & SEO tab, for a content type with its own URL, holds the edited locale's slug, its old
  * URLs and the SEO fields, which are drafted. The More tab links to the overview page.
  */
 const tabs: Tab[] = [
-    { code: 'settings', label: 'setono_sylius_cms.builder.settings', panel: () => <SettingsTab /> },
+    {
+        code: 'settings',
+        label: 'setono_sylius_cms.builder.settings',
+        panel: () => <SettingsTab />,
+        fields: ({ entryFields }) => entryFields.map(({ name }) => name),
+    },
     {
         code: 'url_and_seo',
         label: 'setono_sylius_cms.builder.url_and_seo',
         panel: () => <UrlAndSeoTab />,
         shown: ({ urlPrefix }) => urlPrefix !== null,
-        fields: ['slug', 'metaTitle', 'metaDescription', 'noindex'],
+        fields: () => ['slug', 'metaTitle', 'metaDescription', 'noindex'],
     },
     { code: 'more', label: 'setono_sylius_cms.builder.more', panel: () => <MoreTab /> },
 ];
@@ -64,7 +69,7 @@ export function SettingsPane() {
 
     return (
         <div className={styles.pane}>
-            <EntryErrors shownElsewhere={tab?.fields ?? []} />
+            <EntryErrors shownElsewhere={tab?.fields?.(session) ?? []} />
             <div
                 ref={tabList}
                 role="tablist"
@@ -105,8 +110,7 @@ export function SettingsPane() {
 
 /**
  * What publish would refuse in the entry itself: its fields, and what its top level holds, except in the fields the open
- * tab shows with their errors. The entry's fields get forms of their own with their tickets, so each error names its
- * field for now
+ * tab shows with their errors, so each one names its field
  */
 function EntryErrors({ shownElsewhere }: { shownElsewhere: readonly string[] }) {
     const errors = useValidationState((state) => state.errors);

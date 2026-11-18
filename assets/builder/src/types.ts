@@ -299,6 +299,11 @@ export interface ContentTypeDefinition {
     provides?: string[] | null;
     /** Its layouts, the default first, or none for a content type without its own URL. */
     layouts: LayoutDefinition[];
+    /**
+     * Its own fields, in display order: those its model declares, shared by all translations, then those its
+     * translations declare, translatable. None without it.
+     */
+    fields?: FieldDefinition[];
 }
 
 /** A key of host-page context, such as product, named by the pages that provide it, such as "Product page". */
