@@ -53,6 +53,16 @@ abstract class ListField extends Field
     abstract public function itemClass(): string;
 
     /**
+     * Whether a hand-picked item of it shows: one of what it lists
+     */
+    public function accepts(mixed $item): bool
+    {
+        $class = $this->itemClass();
+
+        return $item instanceof $class;
+    }
+
+    /**
      * Whether editors may fill it with the source: one that lists what it lists and isn't disabled, and that its sources
      * option allows
      */

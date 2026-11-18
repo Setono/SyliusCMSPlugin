@@ -58,6 +58,23 @@ final class ContentTypeRegistry implements ContentTypeRegistryInterface
         throw new UnknownContentTypeException(sprintf('The entry class %s is no registered content type', $entry::class));
     }
 
+    public function getByClass(string $class): ContentTypeMetadata
+    {
+        foreach ($this->resources as $code => $resource) {
+            if ($class === $resource['model']) {
+                return $this->get($code);
+            }
+        }
+
+        foreach ($this->resources as $code => $resource) {
+            if (is_a($resource['model'], $class, true)) {
+                return $this->get($code);
+            }
+        }
+
+        throw new UnknownContentTypeException(sprintf('No content type\'s model is or extends %s', $class));
+    }
+
     public function all(): array
     {
         return array_map($this->get(...), array_keys($this->resources));

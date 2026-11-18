@@ -8,10 +8,12 @@ use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Attribute\Allow;
 use Setono\SyliusCMSPlugin\Attribute\Card;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\UnknownContentTypeException;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Location;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\OutletLocation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Untagged;
@@ -170,6 +172,51 @@ final class ContentTypeRegistryTest extends TestCase
         self::assertSame('page', $registry->getByEntry(new Page())->code);
         self::assertSame('page', $registry->getByEntry(new class() extends Page {
         })->code);
+    }
+
+    /**
+     * A content type is named by a class, such as a collection's category type, by its model, a class the model
+     * extends, as a project's model of a shipped content type extends the shipped one, or an interface it implements
+     *
+     * @test
+     */
+    public function it_finds_a_content_type_by_its_model_or_a_class_or_interface_its_model_extends(): void
+    {
+        $registry = new ContentTypeRegistry([
+            'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
+            'outlet' => ['model' => OutletLocation::class, 'translation' => null, 'resource' => 'app.outlet'],
+            'page' => self::PAGE,
+        ]);
+
+        self::assertSame('recipe', $registry->getByClass(Recipe::class)->code);
+        self::assertSame(OutletLocation::class, $registry->getByClass(OutletLocation::class)->modelClass);
+        self::assertSame(OutletLocation::class, $registry->getByClass(Location::class)->modelClass);
+        self::assertSame('page', $registry->getByClass(Page::class)->code);
+        self::assertSame('page', $registry->getByClass(PageInterface::class)->code);
+    }
+
+    /**
+     * @test
+     */
+    public function it_prefers_the_content_type_whose_model_is_the_class_over_one_whose_model_extends_it(): void
+    {
+        $registry = new ContentTypeRegistry([
+            'outlet' => ['model' => OutletLocation::class, 'translation' => null, 'resource' => 'app.outlet'],
+            'location' => ['model' => Location::class, 'translation' => null, 'resource' => 'app.location'],
+        ]);
+
+        self::assertSame(Location::class, $registry->getByClass(Location::class)->modelClass);
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_on_a_class_no_content_type_s_model_is_or_extends(): void
+    {
+        $this->expectException(UnknownContentTypeException::class);
+        $this->expectExceptionMessage(Snippet::class);
+
+        (new ContentTypeRegistry(['page' => self::PAGE]))->getByClass(Snippet::class);
     }
 
     /**

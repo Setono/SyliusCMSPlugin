@@ -32,6 +32,7 @@ setono_sylius_cms:
         not_code: This value should be HTML code.
         not_date: This value should be a date.
         not_date_time: This value should be a date and time.
+        not_entry: This value should be an entry.
         not_link: This value should be a link.
         not_link_anchor: 'An anchor is the part after the #, without spaces.'
         not_link_url: 'A link can''t lead to this URL. Start it with https://, http://, mailto:, tel: or /.'

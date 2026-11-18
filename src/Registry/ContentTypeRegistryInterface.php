@@ -30,6 +30,15 @@ interface ContentTypeRegistryInterface
     public function getByEntry(EntryInterface $entry): ContentTypeMetadata;
 
     /**
+     * The content type a class names, as a collection's categoryType or an Entries field's contentType does: the one
+     * whose model is the class, or else the first whose model extends or implements it, such as a project's model of a
+     * shipped content type, which extends the shipped model
+     *
+     * @throws UnknownContentTypeException
+     */
+    public function getByClass(string $class): ContentTypeMetadata;
+
+    /**
      * Every content type, the disabled ones included
      *
      * @return list<ContentTypeMetadata>
