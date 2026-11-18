@@ -12,7 +12,7 @@ use Setono\SyliusCMSPlugin\Model\EntryTranslation;
  */
 class ShopTranslation extends EntryTranslation
 {
-    #[Textarea(label: 'app.directions')]
+    #[Textarea(label: 'app.cms.field.directions')]
     private ?string $directions = null;
 
     public function getDirections(): ?string

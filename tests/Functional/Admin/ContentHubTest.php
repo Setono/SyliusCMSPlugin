@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\StoreLocations;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
 final class ContentHubTest extends WebTestCase
 {
     use Entries;
+    use StoreLocations;
 
     /**
      * @test
@@ -55,13 +57,22 @@ final class ContentHubTest extends WebTestCase
         $client->loginUser(self::admin(), 'admin');
         self::createPage('About us', 'about-us');
         self::createPage('Contact', 'contact');
+        self::createStoreLocation('Aarhus', 'aarhus');
 
         $crawler = $client->request('GET', '/admin/cms/entries/page');
 
         $menu = $crawler->filter('[data-hub-menu]');
         self::assertSame(['Overview', 'Entries', 'Library'], $menu->filter('.header, a.item[href="/admin/cms"]')->each(static fn (Crawler $item): string => self::label($item)));
         self::assertSame(
-            [['All entries', '2', '/admin/cms/entries'], ['Pages', '2', '/admin/cms/entries/page'], ['Snippets', '0', '/admin/cms/entries/snippet'], ['Media', null, '/admin/cms/media']],
+            [
+                ['All entries', '3', '/admin/cms/entries'],
+                ['Pages', '2', '/admin/cms/entries/page'],
+                ['Snippets', '0', '/admin/cms/entries/snippet'],
+                // An item per collection: the test application's own content types, named by their plurals
+                ['Announcements', '0', '/admin/cms/entries/announcement'],
+                ['Store locations', '1', '/admin/cms/entries/store_location'],
+                ['Media', null, '/admin/cms/media'],
+            ],
             $menu->filter('.item > .menu > a.item')->each(static fn (Crawler $item): array => [self::label($item), 0 === $item->filter('.label')->count() ? null : $item->filter('.label')->text(), (string) $item->attr('href')]),
         );
         self::assertSame('Pages', self::label($menu->filter('a.item.active')));

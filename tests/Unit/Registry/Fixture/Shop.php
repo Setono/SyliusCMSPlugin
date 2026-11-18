@@ -20,7 +20,7 @@ use Setono\SyliusCMSPlugin\Model\EntryTranslationInterface;
 #[ContentType(code: 'shop', label: 'app.shop', prefix: 'shops')]
 class Shop extends Entry
 {
-    #[Text(label: 'app.city', required: true)]
+    #[Text(label: 'app.cms.field.city', required: true)]
     private ?string $city = null;
 
     #[Date(label: 'app.opened_on')]
@@ -32,7 +32,7 @@ class Shop extends Entry
     #[Toggle(label: 'app.parking')]
     private bool $parking = false;
 
-    #[Media(label: 'app.photo')]
+    #[Media(label: 'app.cms.field.image')]
     protected ?string $photo = null;
 
     public function getCity(): ?string

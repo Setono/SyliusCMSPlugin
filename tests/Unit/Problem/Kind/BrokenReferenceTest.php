@@ -107,7 +107,7 @@ final class BrokenReferenceTest extends TestCase
                 'broken_reference',
                 Severity::Error,
                 $shop,
-                new TranslatableMessage('setono_sylius_cms.problem.broken_entry_reference', ['%field%' => new TranslatableMessage('app.photo'), '%type%' => new TranslatableMessage('setono_sylius_cms.reference_type.media_item')]),
+                new TranslatableMessage('setono_sylius_cms.problem.broken_entry_reference', ['%field%' => new TranslatableMessage('app.cms.field.image'), '%type%' => new TranslatableMessage('setono_sylius_cms.reference_type.media_item')]),
                 Fix::inBuilder($shop),
                 null,
                 'photo',

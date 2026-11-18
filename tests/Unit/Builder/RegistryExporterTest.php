@@ -280,7 +280,7 @@ final class RegistryExporterTest extends TestCase
         $fields = array_column($contentTypes['shop']['fields'], 'schema', 'name');
 
         self::assertSame(['city', 'openedOn', 'renovatedAt', 'parking', 'photo', 'directions'], array_keys($fields));
-        self::assertSame(['type' => 'string', 'x-cms-options' => ['maxLength' => null], 'x-cms-type' => 'text', 'x-cms-label' => '[app.city]', 'x-cms-help' => null, 'x-cms-required' => true, 'x-cms-translatable' => false], $fields['city']);
+        self::assertSame(['type' => 'string', 'x-cms-options' => ['maxLength' => null], 'x-cms-type' => 'text', 'x-cms-label' => '[app.cms.field.city]', 'x-cms-help' => null, 'x-cms-required' => true, 'x-cms-translatable' => false], $fields['city']);
         self::assertTrue($fields['directions']['x-cms-translatable']);
         self::assertArrayNotHasKey('x-cms-bindable', $fields['directions']);
         self::assertFalse($fields['parking']['default']);
