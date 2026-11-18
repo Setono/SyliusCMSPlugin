@@ -494,6 +494,19 @@ final class AdminExtensionTest extends IntegrationTestCase
     }
 
     /**
+     * The repository's paginator is a Pagerfanta<mixed>, and the lowest Pagerfanta's template isn't covariant, so the
+     * rows go in as mixed
+     *
+     * @param list<mixed> $rows
+     *
+     * @return Pagerfanta<mixed>
+     */
+    private static function paginator(array $rows): Pagerfanta
+    {
+        return new Pagerfanta(new ArrayAdapter($rows));
+    }
+
+    /**
      * The Overview's panels, which list what the --DATA-- sections set. Now is 2026-11-17 12:00 UTC
      *
      * @param ObjectProphecy<EntryRepositoryInterface> $entries
@@ -503,7 +516,7 @@ final class AdminExtensionTest extends IntegrationTestCase
         // Prophecy binds a closure to the double, so a static one reads what a --DATA-- section sets through a reference
         $needingAttention = &$this->needingAttention;
         $entries->createNeedingAttentionPaginator(Argument::any())->will(static function () use (&$needingAttention): Pagerfanta {
-            return new Pagerfanta(new ArrayAdapter($needingAttention));
+            return self::paginator($needingAttention);
         });
         $withDraft = &$this->withDraft;
         $entries->findWithDraft(OverviewRuntime::DRAFTS_IN_PROGRESS)->will(static function () use (&$withDraft): array {

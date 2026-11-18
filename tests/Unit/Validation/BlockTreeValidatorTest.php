@@ -459,6 +459,8 @@ final class BlockTreeValidatorTest extends TestCase
             ChoiceHandler::class => static fn (): ChoiceHandler => new ChoiceHandler($translator),
         ]));
 
+        $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator();
+
         return new BlockTreeValidator(
             $blockTypes,
             new NestingRules($blockTypes, new ContentTypeRegistry([
@@ -467,7 +469,7 @@ final class BlockTreeValidatorTest extends TestCase
                 'recipe' => ['model' => Recipe::class, 'translation' => null, 'resource' => 'app.recipe'],
             ])),
             new FieldValidator(
-                new FieldConstraints($handlers, $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator()),
+                new FieldConstraints($handlers, $validator),
                 new FallbackValues($handlers, $fallbackChain->reveal()),
                 $validator,
                 $translator,

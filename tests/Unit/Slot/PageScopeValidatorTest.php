@@ -156,6 +156,8 @@ final class PageScopeValidatorTest extends TestCase
             ToggleHandler::class => static fn (): ToggleHandler => new ToggleHandler(),
         ]));
 
+        $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator();
+
         return new PageScopeValidator(
             Conditions::registry(['product_in_taxon' => new ProductInTaxonKind(), 'taxon' => new TaxonKind()]),
             new SlotRegistry([
@@ -167,7 +169,7 @@ final class PageScopeValidatorTest extends TestCase
                 'taxon' => ['class' => TaxonInterface::class, 'label' => 'setono_sylius_cms.context_key.taxon'],
             ]),
             new FieldValidator(
-                new FieldConstraints($handlers, $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->setTranslator($translator)->setTranslationDomain('validators')->getValidator()),
+                new FieldConstraints($handlers, $validator),
                 new FallbackValues($handlers, new FallbackChain(new ImmutableTranslationLocaleProvider(['en_US'], 'en_US'))),
                 $validator,
                 $translator,
