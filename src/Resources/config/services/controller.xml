@@ -181,6 +181,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Preview\StartingValuesInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Builder\MediaLibraryConfig"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryPlacements"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument>%setono_sylius_cms.builder.scripts%</argument>
 
             <tag name="controller.service_arguments"/>
@@ -213,6 +214,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\BuilderCsrfToken"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
             <argument type="service" id="security.token_storage"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
 
         <!-- What entry_show and entry_discard answer with -->

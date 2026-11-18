@@ -11,6 +11,7 @@ use Setono\SyliusCMSPlugin\Localization\ChannelLocales;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Preview\StartingValuesInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Setono\SyliusCMSPlugin\Security\BuilderCsrfToken;
@@ -59,6 +60,7 @@ final readonly class BuilderAction
         private StartingValuesInterface $startingValues,
         private MediaLibraryConfig $mediaLibraryConfig,
         private EntryPlacements $entryPlacements,
+        private ContentTypeRegistryInterface $contentTypes,
         private array $scripts = [],
     ) {
     }
@@ -67,7 +69,12 @@ final readonly class BuilderAction
     {
         $this->adminAccessChecker->denyUnlessAdmin();
 
-        $entry = $this->entryRepository->findOneByUuid($uuid) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $uuid));
+        $entry = $this->entryRepository->findOneByUuid($uuid);
+        // An entry of a content type switched off in setono_sylius_cms.disabled.content_types is hidden from the builder
+        if (null === $entry || $this->contentTypes->getByEntry($entry)->disabled) {
+            throw new NotFoundHttpException(sprintf('There is no entry %s', $uuid));
+        }
+
         $channels = $this->channels();
         $locales = $this->locales($channels, $request->getLocale());
 

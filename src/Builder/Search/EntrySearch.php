@@ -65,13 +65,14 @@ final readonly class EntrySearch implements SearchInterface
     }
 
     /**
-     * The entries of the content types with a URL of their own, newest first
+     * The entries of the enabled content types with a URL of their own, newest first
      */
     private function entries(): QueryBuilder
     {
         $classes = array_map(
             static fn (ContentTypeMetadata $contentType): string => $contentType->modelClass,
-            array_filter($this->contentTypes->all(), static fn (ContentTypeMetadata $contentType): bool => $contentType->hasOwnUrl()),
+            // A disabled content type is hidden from the builder
+            array_filter($this->contentTypes->enabled(), static fn (ContentTypeMetadata $contentType): bool => $contentType->hasOwnUrl()),
         );
 
         $queryBuilder = EntityManagers::of($this->managerRegistry, $this->entryClass)->createQueryBuilder()

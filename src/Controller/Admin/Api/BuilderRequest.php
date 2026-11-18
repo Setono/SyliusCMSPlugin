@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Publishing\DraftLockedException;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
 use Setono\SyliusCMSPlugin\Security\BuilderCsrfToken;
@@ -30,11 +31,13 @@ final readonly class BuilderRequest
         private BuilderCsrfToken $csrfToken,
         private EntryRepositoryInterface $entryRepository,
         private TokenStorageInterface $tokenStorage,
+        private ContentTypeRegistryInterface $contentTypes,
     ) {
     }
 
     /**
-     * The entry the URL names, for an admin user
+     * The entry the URL names, for an admin user. An entry of a content type switched off in
+     * setono_sylius_cms.disabled.content_types is hidden from the builder
      *
      * @throws AccessDeniedException for anyone but an admin user
      * @throws NotFoundHttpException when there's no such entry
@@ -43,7 +46,12 @@ final readonly class BuilderRequest
     {
         $this->adminAccessChecker->denyUnlessAdmin();
 
-        return $this->entryRepository->findOneByUuid($uuid) ?? throw new NotFoundHttpException(sprintf('There is no entry %s', $uuid));
+        $entry = $this->entryRepository->findOneByUuid($uuid);
+        if (null === $entry || $this->contentTypes->getByEntry($entry)->disabled) {
+            throw new NotFoundHttpException(sprintf('There is no entry %s', $uuid));
+        }
+
+        return $entry;
     }
 
     /**

@@ -45,3 +45,9 @@ app:
             announcements: Announcements, above the header
             promo_after_blocks: 'Promo pages: after the blocks'
             store_locator_top: Store locator, at the top
+
+# The plurals the lists and the Content hub's side menu name the test application's own content types by
+setono_sylius_cms:
+    content_type_plural:
+        announcement: Announcements
+        store_location: Store locations

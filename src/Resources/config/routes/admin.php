@@ -82,12 +82,12 @@ return static function (RoutingConfigurator $routes): void {
         ]])
     ;
 
-    // A code no content type has fails the condition, so the request ends in a 404
+    // A code no content type has, or that of a content type switched off, fails the condition, so the request ends in a 404
     $routes->add('setono_sylius_cms_admin_entry_index', '/cms/entries/{contentType}')
         ->controller('setono_sylius_cms.controller.entry::indexAction')
         ->methods(['GET'])
         ->requirements(['contentType' => '[a-z][a-z0-9_]*'])
-        ->condition("service('setono_sylius_cms_content_types').has(params['contentType'])")
+        ->condition("service('setono_sylius_cms_content_types').isEnabled(params['contentType'])")
         ->defaults(['_sylius' => [
             'section' => 'admin',
             'permission' => true,
