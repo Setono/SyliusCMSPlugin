@@ -6,8 +6,10 @@ namespace Setono\SyliusCMSPlugin\Command;
 
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
+use Setono\SyliusCMSPlugin\Repository\EditorPresetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Upgrade\EntryRewriterInterface;
+use Setono\SyliusCMSPlugin\Upgrade\PresetRewriter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,20 +18,22 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
- * Runs the upgraders over all stored data and writes it back: the rows, drafts and revisions of every entry. Editor
- * presets (#271) join with their ticket. See "Console commands" in docs/spec/extending.md
+ * Runs the upgraders over all stored data and writes it back: the rows, drafts and revisions of every entry, and every
+ * editor preset. See "Console commands" in docs/spec/extending.md
  */
 #[AsCommand(name: 'setono:cms:upgrade', description: 'Runs the upgraders over all stored CMS data and writes it back')]
 final class UpgradeCommand extends Command
 {
     /**
-     * @param ObjectManager $manager the manager of entries, drafts and revisions
+     * @param ObjectManager $manager the manager of entries, drafts, revisions and editor presets
      */
     public function __construct(
         private readonly EntryRepositoryInterface $entries,
         private readonly EntryRewriterInterface $rewriter,
         private readonly ContentTypeRegistryInterface $contentTypes,
         private readonly ObjectManager $manager,
+        private readonly EditorPresetRepositoryInterface $presets,
+        private readonly PresetRewriter $presetRewriter,
     ) {
         parent::__construct();
     }
@@ -72,10 +76,31 @@ final class UpgradeCommand extends Command
 
         $this->writeBatch($dryRun);
 
+        // Editor presets are few, so they're written in one go
+        $presets = 0;
+        $editorPresets = $this->presets->findAllInCreationOrder();
+        foreach ($editorPresets as $preset) {
+            $what = sprintf('the editor preset %s', $preset->getUuid());
+            $rewrite = $this->presetRewriter->rewrite($preset);
+            if ($rewrite->rewritten) {
+                ++$presets;
+                $io->writeln(sprintf('%s %s', $verb, $what));
+            }
+
+            foreach ($rewrite->newer as $newer) {
+                $io->warning(sprintf('In %s: %s. It\'s kept as it is', $what, $newer));
+            }
+        }
+
+        if ([] !== $editorPresets) {
+            $this->writeBatch($dryRun);
+        }
+
         $counts = self::list(array_filter([
             0 === $blockTrees ? null : self::count($blockTrees, 'block tree'),
             0 === $drafts ? null : self::count($drafts, 'draft'),
             0 === $revisions ? null : self::count($revisions, 'revision'),
+            0 === $presets ? null : self::count($presets, 'editor preset'),
         ], static fn (?string $count): bool => null !== $count));
         if ('' === $counts) {
             $io->success('Everything is up to date.');
