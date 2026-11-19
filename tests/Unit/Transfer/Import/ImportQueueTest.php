@@ -141,6 +141,23 @@ final class ImportQueueTest extends TestCase
         self::assertSame('2026-11-20T08:00:00+00:00', $import->getFinishedAt()?->format(\DATE_ATOM));
     }
 
+    /**
+     * @test
+     */
+    public function it_fails_an_import_the_worker_gave_up_on_and_deletes_its_zip(): void
+    {
+        $import = self::checked();
+        $import->confirm(false, false);
+        $this->manager->flush()->shouldBeCalledOnce();
+        $this->storage->delete('imports/abc.zip')->shouldBeCalledOnce();
+
+        $this->queue()->fail($import, 'The database went away');
+
+        self::assertSame(ImportState::Failed, $import->getState());
+        self::assertSame('The database went away', $import->getFailure());
+        self::assertSame('2026-11-20T08:00:00+00:00', $import->getFinishedAt()?->format(\DATE_ATOM));
+    }
+
     private function queue(): ImportQueue
     {
         $factory = $this->prophesize(FactoryInterface::class);

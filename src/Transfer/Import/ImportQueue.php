@@ -63,6 +63,21 @@ final readonly class ImportQueue implements ImportQueueInterface
     {
         $path = $import->getPath();
         $import->abandon($this->clock->now());
+        $this->forget($path);
+    }
+
+    public function fail(ImportInterface $import, string $reason): void
+    {
+        $path = $import->getPath();
+        $import->fail($reason, $this->clock->now());
+        $this->forget($path);
+    }
+
+    /**
+     * Saves the import that let go of its zip, and deletes the zip
+     */
+    private function forget(?string $path): void
+    {
         $this->manager->flush();
 
         if (null !== $path) {

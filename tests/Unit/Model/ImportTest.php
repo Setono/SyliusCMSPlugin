@@ -94,6 +94,37 @@ final class ImportTest extends TestCase
     /**
      * @test
      */
+    public function it_records_why_it_failed_and_lets_go_of_the_zip_when_the_worker_gives_up_on_it(): void
+    {
+        $import = self::uploaded();
+        $import->check([]);
+        $import->confirm(false, false);
+
+        $import->fail('The database went away', new \DateTimeImmutable('2026-11-21 08:00:00'));
+
+        self::assertSame(ImportState::Failed, $import->getState());
+        self::assertFalse($import->isWaiting());
+        self::assertSame('The database went away', $import->getFailure());
+        self::assertNull($import->getPath());
+        self::assertSame('2026-11-21T08:00:00+00:00', $import->getFinishedAt()?->format(\DATE_ATOM));
+    }
+
+    /**
+     * @test
+     */
+    public function it_fails_only_while_the_worker_checks_or_imports_it(): void
+    {
+        $import = self::uploaded();
+        $import->check([]);
+
+        $this->expectException(\LogicException::class);
+
+        $import->fail('The database went away', new \DateTimeImmutable());
+    }
+
+    /**
+     * @test
+     */
     public function it_is_confirmed_only_once_its_dry_run_would_apply(): void
     {
         $import = self::uploaded();

@@ -25,8 +25,13 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\DomCrawler\Field\FileFormField;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
+use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
+use Symfony\Component\Messenger\Stamp\RedeliveryStamp;
 
 /**
  * The Transfer screen's import: the uploaded zip is kept in the plugin's transfer storage, the Messenger worker runs its
@@ -301,6 +306,36 @@ final class ImportTest extends WebTestCase
         self::consumeMessages();
         self::assertSame(ImportState::Abandoned, self::import($import->getUuid())->getState());
         self::assertNull(self::entries()->findOneByUuid(self::PAGE));
+    }
+
+    /**
+     * The handler kept throwing an unexpected error until Messenger gave up retrying, which the worker reports with
+     * WorkerMessageFailedEvent
+     *
+     * @test
+     */
+    public function it_fails_an_import_messenger_gave_up_on_shows_why_and_deletes_its_zip(): void
+    {
+        self::forgetSentMessages();
+        $client = self::signedIn();
+        $this->upload($client, $this->zipOf(self::exportFixture()));
+        $import = self::latestImport();
+        $path = (string) $import->getPath();
+
+        // Retried as often as the transport allows
+        $envelope = new Envelope(new RunImport($import->getUuid()), [new RedeliveryStamp(100)]);
+        /** @var EventDispatcherInterface $eventDispatcher */
+        $eventDispatcher = self::getContainer()->get('event_dispatcher');
+        $eventDispatcher->dispatch(new WorkerMessageFailedEvent($envelope, 'main', new HandlerFailedException($envelope, [new \RuntimeException('The database went away')])));
+
+        self::assertSame(ImportState::Failed, self::import($import->getUuid())->getState());
+        self::assertFalse(self::storage()->fileExists($path));
+
+        $crawler = $client->request('GET', sprintf('/admin/cms/transfer/imports/%s', $import->getUuid()));
+        self::assertResponseIsSuccessful();
+        self::assertSame('failed', $crawler->filter('[data-cms-import-state]')->attr('data-cms-import-state'));
+        self::assertSame(0, $crawler->filter('[data-cms-import-progress]')->count());
+        self::assertSame('The import failed with an unexpected error, and the Messenger worker stopped retrying it: The database went away', $crawler->filter('[data-cms-import-failure]')->text());
     }
 
     /**

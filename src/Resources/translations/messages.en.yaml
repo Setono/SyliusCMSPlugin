@@ -678,6 +678,8 @@ setono_sylius_cms:
             description: Import an export zip made by the Transfer screen or setono:cms:export
             editor_presets: Editor presets
             entries: Entries
+            failed: 'The import failed with an unexpected error, and the Messenger worker stopped retrying it: %reason%'
+            failed_help: Nothing changed, and its zip has been deleted. Upload the export again to try once more, and look in the logs for the error.
             file: Export zip
             file_help: 'At most %limit%, the most the server takes in one upload. Import a bigger export with setono:cms:import.'
             help: Upload an export zip to see what the import would do. Nothing changes until you confirm it. Imported entries land in their drafts, to review and publish.
@@ -708,6 +710,7 @@ setono_sylius_cms:
                 abandoned: Cancelled
                 checked: Waiting to be confirmed
                 checking: Being checked
+                failed: Failed
                 finished: Finished
                 importing: Importing
             title: Import

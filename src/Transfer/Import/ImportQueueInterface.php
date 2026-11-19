@@ -44,4 +44,12 @@ interface ImportQueueInterface
      * @throws \LogicException once it's confirmed or done
      */
     public function abandon(ImportInterface $import): void;
+
+    /**
+     * Fails an import the worker kept failing to check or import, once Messenger gave up retrying, recording the error,
+     * and deletes its zip
+     *
+     * @throws \LogicException unless the worker checks or imports it
+     */
+    public function fail(ImportInterface $import, string $reason): void;
 }

@@ -105,4 +105,17 @@ interface ImportInterface extends ResourceInterface
      * When it finished, or was abandoned
      */
     public function getFinishedAt(): ?\DateTimeImmutable;
+
+    /**
+     * Records the unexpected error the worker kept failing to check or import it with, once Messenger gave up retrying,
+     * and lets go of the zip, which the caller deletes
+     *
+     * @throws \LogicException unless the worker checks or imports it
+     */
+    public function fail(string $reason, \DateTimeImmutable $failedAt): void;
+
+    /**
+     * The error it failed with, once it's failed
+     */
+    public function getFailure(): ?string;
 }

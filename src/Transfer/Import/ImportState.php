@@ -25,4 +25,7 @@ enum ImportState: string
 
     /** An admin user cancelled it before confirming it, or it waited too long for that */
     case Abandoned = 'abandoned';
+
+    /** The worker kept failing to check or import it with an unexpected error, until Messenger gave up retrying */
+    case Failed = 'failed';
 }

@@ -129,7 +129,7 @@ Creating an entry from the Overview, All entries or a list:
   - Records with a draft or a scheduled publish here, or changed here since the export, are conflicts and block the import. A checkbox overwrites them, which discards their drafts.
   - An option publishes everything imported.
   - **Import** confirms, runs on the Messenger worker and shows its progress. The uploaded zip is kept in the plugin's storage, so a worker on another server can read it ([Transfer](transfer.md#who-runs-it)). The result links to the imported drafts to review and publish, or lists why the import refused.
-  - **Each import has a page**, which shows its progress while the worker checks or runs it and updates itself when that's done, then the plan, then the result. **Cancel** abandons an import before it's confirmed and deletes its zip. The Transfer screen lists the latest imports, each linked to its page.
+  - **Each import has a page**, which shows its progress while the worker checks or runs it and updates itself when that's done, then the plan, then the result. **Cancel** abandons an import before it's confirmed and deletes its zip. An import the worker kept failing on shows the error it failed with. The Transfer screen lists the latest imports, each linked to its page.
 
 ## Problems
 

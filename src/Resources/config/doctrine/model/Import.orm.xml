@@ -5,9 +5,9 @@
                   xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
                                       http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
     <!--
-    An import started in the admin: where its uploaded zip is kept in the media storage until it finishes or is
-    abandoned, its dry run's result and its own, as JSON, and the options it was confirmed with. The Transfer screen
-    lists the latest
+    An import started in the admin: where its uploaded zip is kept in the transfer storage until it finishes, fails or
+    is abandoned, its dry run's result and its own, as JSON, the options it was confirmed with, and the error it failed
+    with. The Transfer screen lists the latest
     -->
     <mapped-superclass name="Setono\SyliusCMSPlugin\Model\Import" table="setono_sylius_cms__import">
         <indexes>
@@ -29,5 +29,6 @@
         <field name="publish" type="boolean"/>
         <field name="result" type="json" nullable="true"/>
         <field name="finishedAt" column="finished_at" type="datetime_immutable" nullable="true"/>
+        <field name="failure" type="text" nullable="true"/>
     </mapped-superclass>
 </doctrine-mapping>

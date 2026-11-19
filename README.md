@@ -233,10 +233,13 @@ These are the plugin's messages, all dispatched on `sylius.event_bus`:
 - **Without a worker**, scheduled publishes don't run, and the admin warns about each one five minutes after its time.
   Imports started in the admin wait, and replaced files are never deleted.
 - **A message that keeps failing** ends in Sylius's `main_failed` transport, where `bin/console messenger:failed:show`
-  lists it.
+  lists it. An import whose run kept failing shows the error on its page, and its zip is deleted.
 
 Every upload in the admin, a media file or an export to import, is capped by PHP's `upload_max_filesize` and
-`post_max_size`. Import a bigger export with `bin/console setono:cms:import`.
+`post_max_size`, and a media file also by `setono_sylius_cms.media.max_upload_size` when you set it. Import a bigger
+export with `bin/console setono:cms:import`. An import, on the CLI, in the fixture or on the worker, checks each media
+file in the export against `media.max_upload_size` alone, since it doesn't upload them through PHP: the CLI's own
+`upload_max_filesize` doesn't apply, and without a configured limit a file of any size is imported.
 
 ### Run the cron commands
 

@@ -169,6 +169,16 @@
             <tag name="messenger.message_handler" handles="Setono\SyliusCMSPlugin\Transfer\Import\AbandonImport"/>
         </service>
 
+        <!-- Fails an import once Messenger gives up retrying its RunImport, and deletes its zip -->
+        <service id="Setono\SyliusCMSPlugin\Transfer\Import\FailedImportListener" class="Setono\SyliusCMSPlugin\Transfer\Import\FailedImportListener">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ImportRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImportQueueInterface"/>
+            <argument type="service" id="setono_sylius_cms.manager.import"/>
+            <argument type="service" id="doctrine"/>
+
+            <tag name="kernel.event_listener" event="Symfony\Component\Messenger\Event\WorkerMessageFailedEvent"/>
+        </service>
+
         <!-- The Sylius fixture setono_cms_import loads exports as demo and test data (docs/spec/extending.md#fixture) -->
         <service id="Setono\SyliusCMSPlugin\Fixture\ImportFixture" class="Setono\SyliusCMSPlugin\Fixture\ImportFixture">
             <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImporterInterface"/>

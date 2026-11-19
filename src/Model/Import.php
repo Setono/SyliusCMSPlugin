@@ -38,6 +38,8 @@ class Import implements ImportInterface
 
     protected ?\DateTimeImmutable $finishedAt = null;
 
+    protected ?string $failure = null;
+
     public function __construct()
     {
         $this->uuid = Uuid::v7()->toRfc4122();
@@ -166,6 +168,21 @@ class Import implements ImportInterface
     public function getFinishedAt(): ?\DateTimeImmutable
     {
         return UtcColumn::read($this->finishedAt);
+    }
+
+    public function fail(string $reason, \DateTimeImmutable $failedAt): void
+    {
+        $this->assertState(ImportState::Checking, ImportState::Importing);
+
+        $this->state = ImportState::Failed;
+        $this->failure = $reason;
+        $this->path = null;
+        $this->finishedAt = self::utc($failedAt);
+    }
+
+    public function getFailure(): ?string
+    {
+        return $this->failure;
     }
 
     private function assertState(ImportState ...$states): void
