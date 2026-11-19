@@ -21,6 +21,8 @@ final class ExportPath
             return false;
         }
 
-        return !in_array('..', preg_split('#[/\\\\]#', $path) ?: [], true);
+        $segments = preg_split('#[/\\\\]#', $path);
+
+        return false !== $segments && !in_array('..', $segments, true);
     }
 }

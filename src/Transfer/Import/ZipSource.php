@@ -104,7 +104,7 @@ final readonly class ZipSource implements ExportSourceInterface
     private function isLink(int $index): bool
     {
         $system = $attributes = 0;
-        if (!$this->zip->getExternalAttributesIndex($index, $system, $attributes) || \ZipArchive::OPSYS_UNIX !== $system) {
+        if (!$this->zip->getExternalAttributesIndex($index, $system, $attributes) || \ZipArchive::OPSYS_UNIX !== $system || !is_int($attributes)) {
             return false;
         }
 

@@ -29,11 +29,9 @@ use Setono\SyliusCMSPlugin\Tests\Support\ScheduledPublishes;
 use Setono\SyliusCMSPlugin\Tests\Support\TemporaryDirectory;
 use Setono\SyliusCMSPlugin\Transfer\Format\ExportFormat;
 use Setono\SyliusCMSPlugin\Transfer\Import\UnresolvedReference;
-use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**

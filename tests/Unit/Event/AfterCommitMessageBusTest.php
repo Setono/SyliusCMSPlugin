@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Media\DeleteReplacedFile;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
+use Symfony\Component\Messenger\Stamp\StampInterface;
 
 /**
  * The messages that must wait for a transaction to commit, such as the delayed delete of a replaced file, go out at
@@ -23,8 +24,8 @@ final class AfterCommitMessageBusTest extends TestCase
 {
     use ProphecyTrait;
 
-    /** @var list<Envelope> */
-    private array $sent = [];
+    /** @var \ArrayObject<int, Envelope> what the bus it wraps sent */
+    private \ArrayObject $sent;
 
     /** @var ObjectProphecy<MessageBusInterface> */
     private ObjectProphecy $bus;
@@ -32,11 +33,13 @@ final class AfterCommitMessageBusTest extends TestCase
     protected function setUp(): void
     {
         $this->bus = $this->prophesize(MessageBusInterface::class);
-        $sent = &$this->sent;
-        $this->bus->dispatch(Argument::any(), Argument::any())->will(static function (array $args) use (&$sent): Envelope {
-            \assert(is_object($args[0]) && is_array($args[1] ?? []));
-            $envelope = Envelope::wrap($args[0], $args[1] ?? []);
-            $sent[] = $envelope;
+        $this->sent = $sent = new \ArrayObject();
+        $this->bus->dispatch(Argument::any(), Argument::any())->will(static function (array $args) use ($sent): Envelope {
+            $message = $args[0];
+            \assert(is_object($message));
+            $stamps = array_values(array_filter((array) ($args[1] ?? []), static fn (mixed $stamp): bool => $stamp instanceof StampInterface));
+            $envelope = Envelope::wrap($message, $stamps);
+            $sent->append($envelope);
 
             return $envelope;
         });
@@ -63,12 +66,12 @@ final class AfterCommitMessageBusTest extends TestCase
         $bus->hold();
         $held = $bus->dispatch(self::message('a'), [new DelayStamp(1000)]);
         $bus->dispatch(self::message('b'));
-        self::assertSame([], $this->sent);
+        self::assertCount(0, $this->sent);
         self::assertSame(1000, $held->last(DelayStamp::class)?->getDelay());
 
         $bus->release();
-        self::assertSame(['a', 'b'], array_map(static fn (Envelope $envelope): string => self::path($envelope), $this->sent));
-        self::assertSame(1000, $this->sent[0]->last(DelayStamp::class)?->getDelay());
+        self::assertSame(['a', 'b'], array_map(self::path(...), $this->sent->getArrayCopy()));
+        self::assertSame(1000, $this->sent->getArrayCopy()[0]->last(DelayStamp::class)?->getDelay());
 
         // It no longer holds them
         $bus->dispatch(self::message('c'));
@@ -87,7 +90,7 @@ final class AfterCommitMessageBusTest extends TestCase
         $bus->forget();
         $bus->release();
 
-        self::assertSame([], $this->sent);
+        self::assertCount(0, $this->sent);
     }
 
     /**
@@ -101,7 +104,7 @@ final class AfterCommitMessageBusTest extends TestCase
         $bus->dispatch(self::message('a'));
         $bus->reset();
         $bus->release();
-        self::assertSame([], $this->sent);
+        self::assertCount(0, $this->sent);
 
         $bus->hold();
         $this->expectException(\LogicException::class);
