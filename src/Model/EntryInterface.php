@@ -28,9 +28,19 @@ interface EntryInterface extends ResourceInterface, TranslatableInterface
     public function getUuid(): string;
 
     /**
+     * For an entry an import creates, which keeps the UUID it has in the export (docs/spec/transfer.md)
+     */
+    public function setUuid(string $uuid): void;
+
+    /**
      * When it was created, in UTC. Set once
      */
     public function getCreatedAt(): \DateTimeImmutable;
+
+    /**
+     * For an entry an import creates, which keeps the time it was created in the export (docs/spec/transfer.md)
+     */
+    public function setCreatedAt(\DateTimeImmutable $createdAt): void;
 
     /**
      * When its published content or an on-save setting last changed

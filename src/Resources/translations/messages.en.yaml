@@ -236,6 +236,22 @@ setono_sylius_cms:
             poster: Poster
             poster_help: Shown before the video plays. Leave it empty to use the video's own poster from the media library.
             video: Video
+    # What an import plans and why it refuses, which setono:cms:import prints and the admin's Import shows. See "What an
+    # import does", "Conflicts" and "Code the target must have" in docs/spec/transfer.md
+    import:
+        conflict:
+            draft: '%title% has unpublished changes here.'
+            scheduled_publish: '%title% has a scheduled publish here.'
+            stale: '%title% changed here at %changed_at%, after the export''s copy from %exported_at%.'
+            url_clash: '%title% would have the URL %url%, which %other% has in %channels%.'
+        embed_code: 'Embed code is switched off in this shop, so %title% can''t bring in an Embed code block that isn''t published here with the same key and code.'
+        newer_version: '%title% can''t be imported: %reason%. Deploy the code first.'
+        not_publishable: '%title% can''t be published: %reason%'
+        other_content_type: '%title% has the UUID of an entry of the content type "%content_type%" here, so it can''t be imported.'
+        settings_refused: 'The settings of %title% can''t be saved: %reason%'
+        unknown_block_type: '%title% has blocks of the type "%type%", which the code here doesn''t have. Deploy the code first.'
+        unknown_content_type: '%title% is of the content type "%content_type%", which the code here doesn''t have. Deploy the code first.'
+        unknown_layout: '%title% has the layout "%layout%", which the code here doesn''t have for its content type. Deploy the code first.'
     layout:
         blog_category:
             standard: Standard

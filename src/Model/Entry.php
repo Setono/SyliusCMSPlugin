@@ -136,9 +136,19 @@ abstract class Entry implements EntryInterface
         return $this->uuid;
     }
 
+    public function setUuid(string $uuid): void
+    {
+        $this->uuid = $uuid;
+    }
+
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $createdAt): void
+    {
+        $this->createdAt = $createdAt;
     }
 
     public function getChangedAt(): \DateTimeImmutable

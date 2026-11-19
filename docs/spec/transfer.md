@@ -184,8 +184,8 @@ The original file sits beside it at `media/<uuid>/<filename>`.
 ## What an import does
 
 1. **It reads, checks and upgrades.** It checks the zip and every media file ([Media files](#media-files)). Content type, layout and block type upgraders run on the export's entries and presets as they're read ([Content model](content-model.md#schema-changes)).
-2. **It plans.** It works out what's created, updated, unchanged or left alone, the conflicts, the homepage changes and the unresolved references. A record identical to the target's is marked unchanged first, before the [stale check](#stale-records), so it's never a conflict. With `--publish`, the plan also runs publish validation on every entry it would publish. A dry run shows the plan and stops.
-3. **It applies the plan all or nothing**, in one database transaction. Any conflict or error means nothing changes. Files are written to storage only after the plan is complete, and the delayed delete of a replaced file is dispatched after the transaction commits ([Media](media.md#replacing-a-file)).
+2. **It plans.** It works out what's created, updated, unchanged or left alone, the conflicts, the homepage changes and the unresolved references. A record identical to the target's is marked unchanged first, before the [stale check](#stale-records), so it's never a conflict. With `--publish`, the plan also runs publish validation on every entry it would publish, and lists each that fails. A dry run shows the plan, and applies it in a transaction it rolls back, so it checks everything the real run would and changes nothing.
+3. **It applies the plan all or nothing**, in one database transaction. Any conflict or error means nothing changes. The events of what it writes, such as `EntrySettingsChanged` and `EntryPublished`, are dispatched once that transaction commits, and never for an import that rolls back. Files are written to storage only after the plan is complete, and the delayed delete of a replaced file is dispatched after the transaction commits ([Media](media.md#replacing-a-file)).
 
 What applying does to each record:
 
@@ -197,7 +197,7 @@ What applying does to each record:
 - **An unchanged record**, identical to the target's, is skipped: no draft and no revision.
 - **Every write an import makes sets `changedAt` to the export's value**: the draft or rows it saves, the on-save settings and placements it applies, and the publish that `--publish` or the fixture runs. A record keeps it until someone changes it in the target ([Stale records](#stale-records)).
 
-When it's done, the import dispatches `ImportFinished` ([Extending](extending.md#events)).
+When it's done, the import dispatches `ImportFinished` ([Extending](extending.md#events)). A dry run, or an import that refused, changed nothing and dispatches none.
 
 ### Media files
 
@@ -218,7 +218,7 @@ The plan lists conflicts, and the import refuses while there are any. Records ma
 | --- | --- |
 | A picked entry has a draft or a scheduled publish in the target. | `--overwrite`, or the admin's checkbox, discards the draft and cancels the schedule. |
 | A picked record changed in the target after the export's copy ([Stale records](#stale-records)). | `--overwrite`, or the admin's checkbox. |
-| An entry's URL clashes with another entry's in a channel and locale. | An editor changes a slug in one environment. `--overwrite` doesn't resolve it. |
+| An entry's URL clashes with another entry's in a channel and locale: one published in the target that the import doesn't write, or another entry the import writes. | An editor changes a slug in one environment. `--overwrite` doesn't resolve it. |
 
 Overwriting a picked entry keeps the target's previous published content restorable as a revision once the import is published.
 
@@ -264,15 +264,15 @@ setono:cms:import <path> [--dry-run] [--publish] [--overwrite]
 
 - `<path>` is an export folder or zip.
 - `--dry-run` prints the plan and changes nothing. It checks everything the real run would, so it exits with the code the real run would, and works as a gate in CI and deploys.
-- `--publish` publishes every imported entry as part of the import.
+- `--publish` publishes every entry the import writes, created or updated, as part of the import. They're all validated first, and the snippets an entry shows are published before it.
 - `--overwrite` overwrites the records the plan lists as conflicts, discarding their drafts. It doesn't resolve URL clashes.
 - **Exit codes**, with the reasons printed:
 
   | Code | Meaning |
   | --- | --- |
   | `0` | It applied, or the dry run would. |
-  | `1` | It refused for a reason `--overwrite` doesn't fix: unknown code, a URL clash, a failed publish, a file that fails its checks, or an `embed_code` block while it's off. |
-  | `2` (`Command::INVALID`) | `<path>` isn't a readable export folder or zip, or its `format` is unknown. |
+  | `1` | It refused for a reason `--overwrite` doesn't fix: unknown code, a URL clash, a failed publish, a file that fails its checks, an `embed_code` block while it's off, or an entry whose UUID is an entry of another content type in the target. |
+  | `2` (`Command::INVALID`) | `<path>` isn't a readable export folder or zip, its `format` is unknown, or a file in it isn't in the export format. |
   | `3` | It refused only because of conflicts that `--overwrite` would resolve. |
 
   Unresolved references are reported and don't fail the import.
