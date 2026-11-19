@@ -18,7 +18,8 @@ final class BuildAndPublishPageTest extends UITestCase
         $page = $this->visit('/admin/cms/entries/page/new');
         // The textbox, as the starting points' descriptions can mention the title too
         $page->getByRole('textbox', ['name' => 'Title'])->fill('About us');
-        $page->getByLabel('Slug')->fill('about-us');
+        // By role, as getByLabel() also matches the Blog page starting point, whose description names the slug
+        $page->getByRole('textbox', ['name' => 'Slug'])->fill('about-us');
         $page->getByRole('button', ['name' => 'Create'])->click();
 
         // The builder opens with the new page
