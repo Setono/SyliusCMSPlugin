@@ -23,6 +23,7 @@ const editorStrings: Record<string, string> = {
     'setono_sylius_cms.builder.replace_a_preset': 'Or replace the blocks of a preset',
     'setono_sylius_cms.builder.replace_preset': 'Replace %name%',
     'setono_sylius_cms.builder.edit_preset': 'Edit %name%',
+    'setono_sylius_cms.builder.not_available_here': 'Not available here',
     'setono_sylius_cms.builder.delete_preset': 'Delete %name%',
     'setono_sylius_cms.builder.delete_preset_confirm': 'Delete %name%? The entries it was inserted into keep their blocks.',
     'setono_sylius_cms.builder.download_preset': 'Download %name%',
@@ -62,6 +63,7 @@ function saved(id: string, details: Partial<PresetDetails>): SavedPreset {
 }
 
 const PROMO = '0193a5be-7400-7d3e-8f4a-5b6c7d8e9f0a';
+const NOTE = '0193a5be-7401-7d3e-8f4a-5b6c7d8e9f0b';
 
 function fakeApi(blocks: StoredBlock[], index: PresetIndex = { presets: [], startingPoints: [], categories: [] }) {
     return {
@@ -219,6 +221,17 @@ describe('changing an editor preset in the Presets tab', () => {
         expect(picker.getByRole('link', { name: 'Download Promo' })).toHaveAttribute('href', `/admin/cms/api/presets/${PROMO}/export`);
         expect(picker.queryByRole('button', { name: 'Edit Hero' })).toBeNull();
         expect(picker.queryByRole('link', { name: 'Download Hero' })).toBeNull();
+    });
+
+    it('should offer Edit, Delete and Download for an editor preset left out here too', async () => {
+        const leftOut: PresetIndex = { ...index, presets: [...index.presets, listing(NOTE, { name: 'Product note', category: 'Products', fits: false, reasons: ['Needs: Product page'] })] };
+        const picker = await openPresetsTab(fakeApi([], leftOut));
+
+        const notAvailable = within(await picker.findByRole('list', { name: 'Not available here' }));
+        expect(notAvailable.getByRole('button', { name: 'Edit Product note' })).toBeInTheDocument();
+        expect(notAvailable.getByRole('button', { name: 'Delete Product note' })).toBeInTheDocument();
+        expect(notAvailable.getByRole('link', { name: 'Download Product note' })).toHaveAttribute('href', `/admin/cms/api/presets/${NOTE}/export`);
+        expect(notAvailable.queryByRole('button', { name: /Insert/ })).toBeNull();
     });
 
     it('should rename and recategorise it, and list the presets again', async () => {

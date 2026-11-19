@@ -144,13 +144,7 @@ export function PresetsTab({ parent, index, onInserted }: PresetsTabProps) {
                                             {preset.fromCode && <span className={styles.badge}>{t('setono_sylius_cms.builder.preset_from_code')}</span>}
                                         </h4>
                                         {preset.description !== null && <p className={styles.reason}>{preset.description}</p>}
-                                        {preset.issues.length > 0 && (
-                                            <ul className={styles.issues} aria-label={t('setono_sylius_cms.builder.preset_invalid')}>
-                                                {preset.issues.map((issue) => (
-                                                    <li key={issue}>{issue}</li>
-                                                ))}
-                                            </ul>
-                                        )}
+                                        <PresetIssues preset={preset} />
                                         <div className={styles.render}>
                                             {html !== '' && <iframe title={t('setono_sylius_cms.builder.preset_preview', { '%name%': preset.name })} srcDoc={presetDocument(shown, html)} sandbox="" tabIndex={-1} />}
                                         </div>
@@ -175,12 +169,32 @@ export function PresetsTab({ parent, index, onInserted }: PresetsTabProps) {
                             <li key={preset.id} className={styles.leftOutItem}>
                                 <span className={styles.label}>{preset.name}</span>
                                 <span className={styles.reason}>{preset.reasons.join(' ')}</span>
+                                <PresetIssues preset={preset} />
+                                {!preset.fromCode && editing !== null && <EditorPresetActions preset={preset} editing={editing} categories={listing.categories} onChanged={changed} />}
                             </li>
                         ))}
                     </ul>
                 </>
             )}
         </>
+    );
+}
+
+/**
+ * Why inserting a preset leaves blocks out, such as blocks of a type the code no longer has, whether it fits here or not
+ */
+function PresetIssues({ preset }: { preset: PresetListing }) {
+    const t = useTranslator();
+    if (preset.issues.length === 0) {
+        return null;
+    }
+
+    return (
+        <ul className={styles.issues} aria-label={t('setono_sylius_cms.builder.preset_invalid')}>
+            {preset.issues.map((issue) => (
+                <li key={issue}>{issue}</li>
+            ))}
+        </ul>
     );
 }
 

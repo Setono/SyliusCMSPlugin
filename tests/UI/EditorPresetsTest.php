@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\UI;
 
 use Playwright\Assertions\Expect;
 use Setono\SyliusCMSPlugin\Preset\EditorPresetContent;
+use Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface;
 use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Repository\EditorPresetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -80,6 +81,37 @@ final class EditorPresetsTest extends UITestCase
         Expect::locator($page->locator('.sylius-flash-message'))->toContainText('The preset has been saved.');
         Expect::locator($page->locator(sprintf('[data-preset="%s"] [data-name]', $promo->id())))->toHaveText('Spring promo');
         self::assertSame('Spring promo', self::editorPreset('Spring promo')->name);
+    }
+
+    /**
+     * A preset left out where it doesn't fit, such as one that needs a product page in a page, still shows its issues and
+     * is edited, deleted and downloaded there. See "Presets" in docs/spec/builder.md
+     *
+     * @test
+     */
+    public function it_lets_an_admin_user_delete_an_editor_preset_the_presets_tab_leaves_out_seeing_its_issues(): void
+    {
+        $note = new StoredBlock('0193a5be-0000-7000-8000-000000000011', 'app_product_note', 1);
+        $note->setValue('note', 'en_US', 'Runs small');
+        /** @var EditorPresetSaverInterface $saver */
+        $saver = self::getContainer()->get(EditorPresetSaverInterface::class);
+        $saver->save(new Preset('Size note', [$note, new StoredBlock('0193a5be-0000-7000-8000-000000000012', 'retired_banner', 1)], 'Products'));
+        $about = self::createPage('About us', 'about-us');
+        $this->signInAsAdmin();
+
+        $page = $this->visit(sprintf('/admin/cms/entry/%s/builder', $about->getUuid()));
+        $page->getByRole('button', ['name' => 'Add block', 'exact' => true])->click();
+        $picker = $page->getByRole('dialog', ['name' => 'Add block']);
+        $picker->getByRole('tab', ['name' => 'Presets'])->click();
+        $leftOut = $picker->getByRole('list', ['name' => 'Not available here']);
+        Expect::locator($leftOut)->toContainText('Size note');
+        Expect::locator($leftOut->getByRole('list', ['name' => 'Invalid blocks']))->toContainText('retired_banner');
+        Expect::locator($leftOut->getByRole('link', ['name' => 'Download Size note']))->toBeVisible();
+
+        $leftOut->getByRole('button', ['name' => 'Delete Size note'])->click();
+        $leftOut->getByRole('button', ['name' => 'Delete', 'exact' => true])->click();
+
+        Expect::locator($picker->getByText('Size note'))->toHaveCount(0);
     }
 
     /**

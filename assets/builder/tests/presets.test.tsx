@@ -175,6 +175,15 @@ describe('the Presets tab', () => {
         expect(api.presets).toHaveBeenCalledWith(null);
     });
 
+    it('should mark a preset left out that has invalid blocks too, with the reason', async () => {
+        const broken = preset('broken', { name: 'Broken note', category: 'Products', fits: false, reasons: ['Needs: Product page'], issues: ['It has blocks of the type "gallery", which the code no longer has, so inserting it leaves them out.'] });
+        const picker = await openPresetsTab(fakeApi([hero, broken], async () => ({ blocks: [], notices: [] })));
+
+        const leftOut = within(await picker.findByRole('list', { name: 'Not available here' }));
+        const issues = within(leftOut.getByRole('list', { name: 'Invalid' }));
+        expect(issues.getByText('It has blocks of the type "gallery", which the code no longer has, so inserting it leaves them out.')).toBeInTheDocument();
+    });
+
     it('should search the presets', async () => {
         const picker = await openPresetsTab(fakeApi([hero, promo, note], async () => ({ blocks: [], notices: [] })));
         await picker.findByRole('group', { name: 'Banners' });
