@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 
+use Setono\SyliusCMSPlugin\Controller\Admin\PresetsScreenRequest;
 use Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface;
 use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Preset\PresetProviderInterface;
@@ -58,8 +59,9 @@ final class PresetsScreenTest extends WebTestCase
         self::assertCount(1, $row->filter(sprintf('form[action="/admin/cms/presets/%s/delete"]', $promo->id())));
         // The edit dialog suggests the categories in use, those of code presets too
         $form = $crawler->filter(sprintf('form[action="/admin/cms/presets/%s"]', $promo->id()));
-        self::assertSame(['Promo', 'Campaigns', 'For the winter sale'], [$form->filter('input[name="name"]')->attr('value'), $form->filter('input[name="category"]')->attr('value'), trim($form->filter('textarea[name="description"]')->text())]);
-        self::assertSame(['Banners', 'Blog', 'Campaigns', 'Content', 'Layout', 'Navigation', 'Pages', 'Products'], $crawler->filter(sprintf('datalist#%s option', (string) $form->filter('input[name="category"]')->attr('list')))->each(static fn (Crawler $option): string => (string) $option->attr('value')));
+        $name = PresetsScreenRequest::formName($promo->id());
+        self::assertSame(['Promo', 'Campaigns', 'For the winter sale'], [$form->filter(sprintf('input[name="%s[name]"]', $name))->attr('value'), $form->filter(sprintf('input[name="%s[category]"]', $name))->attr('value'), trim($form->filter(sprintf('textarea[name="%s[description]"]', $name))->text())]);
+        self::assertSame(['Banners', 'Blog', 'Campaigns', 'Content', 'Layout', 'Navigation', 'Pages', 'Products'], $crawler->filter(sprintf('datalist#%s option', (string) $form->filter(sprintf('input[name="%s[category]"]', $name))->attr('list')))->each(static fn (Crawler $option): string => (string) $option->attr('value')));
     }
 
     /**
@@ -89,7 +91,7 @@ final class PresetsScreenTest extends WebTestCase
         $crawler = $client->request('GET', '/admin/cms/presets?tab=block_presets');
 
         self::mockTime('2026-11-21 09:00:00');
-        $form = $crawler->filter(sprintf('form[action="/admin/cms/presets/%s"]', $promo->id()))->form(['name' => 'Spring promo', 'category' => 'Seasonal', 'description' => '']);
+        $form = $crawler->filter(sprintf('form[action="/admin/cms/presets/%s"]', $promo->id()))->form(self::fields($promo->id(), ['name' => 'Spring promo', 'category' => 'Seasonal', 'description' => '']));
         $client->submit($form);
 
         self::assertResponseRedirects('/admin/cms/presets?tab=block_presets');
@@ -112,7 +114,7 @@ final class PresetsScreenTest extends WebTestCase
         $promo = self::savePreset(new Preset('Promo', [], 'Campaigns'));
         $crawler = $client->request('GET', '/admin/cms/presets?tab=block_presets');
 
-        $client->submit($crawler->filter(sprintf('form[action="/admin/cms/presets/%s"]', $promo->id()))->form(['name' => ' ']));
+        $client->submit($crawler->filter(sprintf('form[action="/admin/cms/presets/%s"]', $promo->id()))->form(self::fields($promo->id(), ['name' => ' '])));
 
         $client->followRedirect();
         self::assertSelectorTextContains('.sylius-flash-message.negative', 'A preset needs a name.');
@@ -144,10 +146,13 @@ final class PresetsScreenTest extends WebTestCase
         $client = self::signedIn();
         $promo = self::savePreset(new Preset('Promo', [], 'Campaigns'));
 
-        $client->request('POST', sprintf('/admin/cms/presets/%s', $promo->id()), ['name' => 'Spring promo', '_csrf_token' => 'wrong']);
+        $client->request('POST', sprintf('/admin/cms/presets/%s', $promo->id()), [PresetsScreenRequest::formName($promo->id()) => ['name' => 'Spring promo', '_token' => 'wrong']]);
         self::assertResponseStatusCodeSame(403);
 
-        $client->request('POST', '/admin/cms/presets/0193a5be-0000-7000-8000-00000000ffff/delete', ['_csrf_token' => 'wrong']);
+        $client->request('POST', sprintf('/admin/cms/presets/%s/delete', $promo->id()), [PresetsScreenRequest::formName($promo->id()) => ['_token' => 'wrong']]);
+        self::assertResponseStatusCodeSame(403);
+
+        $client->request('POST', '/admin/cms/presets/0193a5be-0000-7000-8000-00000000ffff/delete', [PresetsScreenRequest::formName('0193a5be-0000-7000-8000-00000000ffff') => ['_token' => 'wrong']]);
         self::assertResponseStatusCodeSame(404);
 
         self::assertSame('Promo', self::preset($promo->id())->name);
@@ -179,6 +184,23 @@ final class PresetsScreenTest extends WebTestCase
         $client->request('GET', '/admin/cms/presets');
 
         self::assertResponseRedirects('http://localhost/admin/login');
+    }
+
+    /**
+     * The values of an editor preset's Edit form, by their names in it
+     *
+     * @param array<string, string> $values by field name
+     *
+     * @return array<string, string>
+     */
+    private static function fields(string $uuid, array $values): array
+    {
+        $fields = [];
+        foreach ($values as $name => $value) {
+            $fields[sprintf('%s[%s]', PresetsScreenRequest::formName($uuid), $name)] = $value;
+        }
+
+        return $fields;
     }
 
     private static function signedIn(): KernelBrowser

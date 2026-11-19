@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin;
 
+use Setono\SyliusCMSPlugin\Form\Type\DeletePresetType;
 use Setono\SyliusCMSPlugin\Preset\EditorPresetDeleterInterface;
 use Setono\SyliusCMSPlugin\Preset\Preset;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -23,7 +24,7 @@ final readonly class DeletePresetAction
 
     public function __invoke(Request $request, string $uuid): RedirectResponse
     {
-        return $this->screenRequest->submit($request, $uuid, function (Preset $preset): array {
+        return $this->screenRequest->submit($request, $uuid, DeletePresetType::class, function (Preset $preset): array {
             $this->deleter->delete($preset->id());
 
             return ['success', 'setono_sylius_cms.preset_deleted'];

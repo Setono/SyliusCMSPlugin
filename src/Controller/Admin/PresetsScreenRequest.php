@@ -7,6 +7,8 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin;
 use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Preset\PresetProviderInterface;
 use Setono\SyliusCMSPlugin\Security\AdminAccessChecker;
+use Symfony\Component\Form\FormFactoryInterface;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
@@ -14,8 +16,6 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
-use Symfony\Component\Security\Csrf\CsrfToken;
-use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 /**
  * What the Presets screen's forms check before they change an editor preset: an admin user, the editor preset the URL
@@ -31,23 +31,44 @@ final readonly class PresetsScreenRequest
     public function __construct(
         private AdminAccessChecker $adminAccessChecker,
         private PresetProviderInterface $presets,
-        private CsrfTokenManagerInterface $csrfTokenManager,
+        private FormFactoryInterface $formFactory,
         private UrlGeneratorInterface $urlGenerator,
     ) {
     }
 
     /**
-     * Changes the editor preset the URL names, and goes back to the Presets screen with the flash message the change
-     * returns
+     * The name of an editor preset's forms, which the screen has one of per row, so their fields' ids differ
+     */
+    public static function formName(string $uuid): string
+    {
+        return sprintf('cms_preset_%s', str_replace('-', '', strtolower($uuid)));
+    }
+
+    /**
+     * An editor preset's Edit form (Form\Type\PresetDetailsType) or Delete form (Form\Type\DeletePresetType)
      *
-     * @param callable(Preset): array{'success'|'error', string} $change returns the flash message's type and the message,
-     *        a key of the flashes domain or a text
+     * @param class-string<\Symfony\Component\Form\FormTypeInterface<mixed>> $type
+     *
+     * @return FormInterface<mixed>
+     */
+    public function form(string $type, Preset $preset, mixed $data = null, ?string $action = null): FormInterface
+    {
+        return $this->formFactory->createNamed(self::formName($preset->id()), $type, $data, null === $action ? [] : ['action' => $action]);
+    }
+
+    /**
+     * Changes the editor preset the URL names with what its form of the type submits, and goes back to the Presets
+     * screen with the flash message the change returns
+     *
+     * @param class-string<\Symfony\Component\Form\FormTypeInterface<mixed>> $type
+     * @param callable(Preset, mixed): array{'success'|'error', string} $change given the preset and the form's data,
+     *        returns the flash message's type and the message, a key of the flashes domain or a text
      *
      * @throws AccessDeniedException for anyone but an admin user
      * @throws NotFoundHttpException when there's no such editor preset
-     * @throws AccessDeniedHttpException when the form's CSRF token isn't the screen's
+     * @throws AccessDeniedHttpException when the form isn't submitted with the screen's CSRF token
      */
-    public function submit(Request $request, string $uuid, callable $change): RedirectResponse
+    public function submit(Request $request, string $uuid, string $type, callable $change): RedirectResponse
     {
         $this->adminAccessChecker->denyUnlessAdmin();
 
@@ -56,15 +77,17 @@ final readonly class PresetsScreenRequest
             throw new NotFoundHttpException(sprintf('There is no editor preset %s', $uuid));
         }
 
-        if (!$this->csrfTokenManager->isTokenValid(new CsrfToken(self::CSRF_TOKEN_ID, (string) $request->request->get('_csrf_token')))) {
+        // The form reads the values, and PresetDetails checks them, so it's invalid only for its CSRF token
+        $form = $this->form($type, $preset)->handleRequest($request);
+        if (!$form->isSubmitted() || !$form->isValid()) {
             throw new AccessDeniedHttpException('Invalid CSRF token');
         }
 
-        [$type, $message] = $change($preset);
+        [$flash, $message] = $change($preset, $form->getData());
 
         $session = $request->getSession();
         if ($session instanceof FlashBagAwareSessionInterface) {
-            $session->getFlashBag()->add($type, $message);
+            $session->getFlashBag()->add($flash, $message);
         }
 
         // Without a fragment: a browser takes a redirect to the page it's on with only a fragment more as a move on that page

@@ -562,6 +562,8 @@
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\PresetsAction" class="Setono\SyliusCMSPlugin\Controller\Admin\PresetsAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\PresetRows"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\PresetsScreenRequest"/>
+            <argument type="service" id="router"/>
             <argument type="service" id="twig"/>
 
             <tag name="controller.service_arguments"/>
@@ -638,7 +640,7 @@
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\PresetsScreenRequest" class="Setono\SyliusCMSPlugin\Controller\Admin\PresetsScreenRequest">
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetProviderInterface"/>
-            <argument type="service" id="security.csrf.token_manager"/>
+            <argument type="service" id="form.factory"/>
             <argument type="service" id="router"/>
         </service>
 

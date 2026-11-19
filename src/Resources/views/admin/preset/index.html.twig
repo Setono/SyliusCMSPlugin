@@ -70,32 +70,22 @@
                                         <i class="download icon"></i> {{ 'setono_sylius_cms.ui.download'|trans }}
                                     </a>
                                 </div>
-                                <form method="post" action="{{ path('setono_sylius_cms_admin_preset_delete', {'uuid': row.id}) }}" class="cms-preset-delete">
-                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('setono_sylius_cms_presets') }}">
+                                {{ form_start(delete_forms[row.id], {attr: {class: 'cms-preset-delete'}}) }}
                                     <button type="submit" class="ui red labeled icon button" data-requires-confirmation aria-label="{{ 'setono_sylius_cms.ui.delete_preset'|trans({'%name%': row.name}) }}">
                                         <i class="trash icon"></i> {{ 'setono_sylius_cms.ui.delete'|trans }}
                                     </button>
-                                </form>
+                                {{ form_end(delete_forms[row.id]) }}
 
                                 <dialog id="cms-preset-edit-{{ row.id }}" class="cms-dialog" aria-labelledby="cms-preset-edit-{{ row.id }}-heading">
                                     <button type="button" class="cms-dialog__close" data-cms-dialog-close aria-label="{{ 'setono_sylius_cms.ui.close'|trans }}"><i class="close icon"></i></button>
                                     <h2 class="ui header" id="cms-preset-edit-{{ row.id }}-heading">{{ 'setono_sylius_cms.ui.edit_preset'|trans({'%name%': row.name}) }}</h2>
-                                    <form class="ui form" method="post" action="{{ path('setono_sylius_cms_admin_preset_update', {'uuid': row.id}) }}">
-                                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('setono_sylius_cms_presets') }}">
-                                        <div class="required field">
-                                            <label for="cms-preset-name-{{ row.id }}">{{ 'setono_sylius_cms.ui.preset_name'|trans }}</label>
-                                            <input type="text" id="cms-preset-name-{{ row.id }}" name="name" value="{{ row.name }}" required>
-                                        </div>
-                                        <div class="field">
-                                            <label for="cms-preset-category-{{ row.id }}">{{ 'setono_sylius_cms.ui.preset_category'|trans }}</label>
-                                            <input type="text" id="cms-preset-category-{{ row.id }}" name="category" value="{{ row.category }}" list="cms-preset-categories">
-                                        </div>
-                                        <div class="field">
-                                            <label for="cms-preset-description-{{ row.id }}">{{ 'setono_sylius_cms.ui.preset_description'|trans }}</label>
-                                            <textarea id="cms-preset-description-{{ row.id }}" name="description" rows="3">{{ row.description }}</textarea>
-                                        </div>
+                                    {% set edit_form = edit_forms[row.id] %}
+                                    {{ form_start(edit_form, {attr: {class: 'ui form'}}) }}
+                                        {{ form_row(edit_form.name) }}
+                                        {{ form_row(edit_form.category) }}
+                                        {{ form_row(edit_form.description) }}
                                         <button type="submit" class="ui primary labeled icon button"><i class="save icon"></i> {{ 'setono_sylius_cms.ui.save'|trans }}</button>
-                                    </form>
+                                    {{ form_end(edit_form) }}
                                 </dialog>
                             {% endif %}
                         </td>

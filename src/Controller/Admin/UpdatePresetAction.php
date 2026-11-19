@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Controller\Admin;
 
+use Setono\SyliusCMSPlugin\Form\Type\PresetDetailsType;
 use Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface;
 use Setono\SyliusCMSPlugin\Preset\InvalidPresetDetailsException;
 use Setono\SyliusCMSPlugin\Preset\Preset;
@@ -27,9 +28,9 @@ final readonly class UpdatePresetAction
 
     public function __invoke(Request $request, string $uuid): RedirectResponse
     {
-        return $this->screenRequest->submit($request, $uuid, function (Preset $preset) use ($request): array {
+        return $this->screenRequest->submit($request, $uuid, PresetDetailsType::class, function (Preset $preset, mixed $data): array {
             try {
-                $details = PresetDetails::of($preset)->changedBy(array_intersect_key($request->request->all(), array_flip(['name', 'category', 'description'])));
+                $details = PresetDetails::of($preset)->changedBy(is_array($data) ? $data : []);
             } catch (InvalidPresetDetailsException $e) {
                 return ['error', $e->translatable->trans($this->translator)];
             }
