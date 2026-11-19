@@ -91,7 +91,7 @@ What stays in place for a cache added later:
 - **Condition kinds declare what they read**, and kinds that read the time report their next change ([Extending](extending.md#condition-kinds)). A later HTML cache adds declarations that block types and sources opt into, and treats any that haven't declared themselves cacheable as uncacheable, so nothing written for v2.0 breaks.
 - **Listings and sources report no next date boundary** in v2.0.
 - **Change events** implement `StorefrontChangedInterface` and carry the affected UUIDs ([Extending](extending.md#events)). Nothing in v2.0 listens to them for caching.
-- **Three services can be decorated:** `PlacementProviderInterface`, `EntryUrlLookupInterface` and `ReferenceLoaderInterface` ([Extending](extending.md#rendering-services)). A project that needs to cache placements, URL lookups or references decorates one with a tag-aware cache and invalidates it on `StorefrontChangedInterface` events. The plugin's docs include a cookbook page that shows how.
+- **Three services can be decorated:** `PlacementProviderInterface`, `EntryUrlLookupInterface` and `ReferenceLoaderInterface` ([Extending](extending.md#rendering-services)). A project that needs to cache placements, URL lookups or references decorates one with a tag-aware cache and invalidates it on `StorefrontChangedInterface` events. The [caching cookbook](../cookbook/caching.md) shows how for placements and URL lookups, and why it leaves references to the database.
 
 ## Stylesheet and script
 
