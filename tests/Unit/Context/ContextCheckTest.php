@@ -16,6 +16,7 @@ use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Validation\ValidationError;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\TaxonInterface;
@@ -84,6 +85,18 @@ final class ContextCheckTest extends TestCase
             new ValidationError(self::NOTE, null, null, 'The block "Category posts" only works in an entry of the type "Blog category", "removed".'),
         ], $check->mismatches(new Page()));
         self::assertSame([], $check->mismatches(self::snippet(['entry'])), 'A snippet\'s entry can be of any content type');
+    }
+
+    /**
+     * The code no longer has the entry's content type, so it can't tell what the entry is, and refuses nothing for it
+     *
+     * @test
+     */
+    public function it_finds_no_content_type_mismatch_for_an_entry_of_a_content_type_the_code_no_longer_has(): void
+    {
+        $check = self::check(self::fitting('Category posts', ['blog_category'], self::NOTE));
+
+        self::assertSame([], $check->mismatches(new Recipe()));
     }
 
     /**
