@@ -16,6 +16,11 @@ interface MediaFolderInterface extends ResourceInterface
 
     public function getUuid(): string;
 
+    /**
+     * For a folder an import creates, which keeps the UUID it has in the export (docs/spec/transfer.md)
+     */
+    public function setUuid(string $uuid): void;
+
     public function getName(): string;
 
     public function setName(string $name): void;

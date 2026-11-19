@@ -26,6 +26,11 @@ interface MediaItemInterface extends ResourceInterface, TranslatableInterface
      */
     public function getUuid(): string;
 
+    /**
+     * For a media item an import creates, which keeps the UUID it has in the export (docs/spec/transfer.md)
+     */
+    public function setUuid(string $uuid): void;
+
     public function getKind(): MediaKind;
 
     public function setKind(MediaKind $kind): void;

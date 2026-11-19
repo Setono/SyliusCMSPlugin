@@ -72,6 +72,11 @@ class MediaItem implements MediaItemInterface
         return $this->uuid;
     }
 
+    public function setUuid(string $uuid): void
+    {
+        $this->uuid = $uuid;
+    }
+
     public function getKind(): MediaKind
     {
         return $this->kind;

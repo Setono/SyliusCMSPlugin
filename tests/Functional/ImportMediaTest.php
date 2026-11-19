@@ -44,6 +44,22 @@ final class ImportMediaTest extends KernelTestCase
         self::assertSame([], $this->newlyStored());
     }
 
+    /**
+     * @test
+     */
+    public function it_refuses_a_file_that_does_not_match_its_checksum_naming_the_media_item(): void
+    {
+        $export = $this->copyOfFixture();
+        file_put_contents(sprintf('%s/media/%s/autumn-banner.png', $export, self::BANNER), self::png(48, 20, [10, 200, 10]));
+
+        $tester = self::import(['path' => $export]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('The media item Autumn banner can\'t be imported: autumn-banner.png doesn\'t match its checksum, so it isn\'t the file that was exported.', self::display($tester));
+        self::assertNull(self::entries()->findOneByUuid(self::PAGE));
+        self::assertSame([], $this->newlyStored());
+    }
+
     private static function entries(): EntryRepositoryInterface
     {
         self::entityManager()->clear();

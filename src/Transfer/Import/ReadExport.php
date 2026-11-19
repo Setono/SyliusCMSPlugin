@@ -32,6 +32,32 @@ final readonly class ReadExport
     }
 
     /**
+     * The folders the media items sit in, with their parents, in the export's order: parents before their children
+     *
+     * @param list<string> $mediaItemUuids
+     *
+     * @return list<ExportedMediaFolder>
+     */
+    public function foldersOf(array $mediaItemUuids): array
+    {
+        $parents = [];
+        foreach ($this->mediaFolders as $folder) {
+            $parents[$folder->uuid] = $folder->parent;
+        }
+
+        $needed = [];
+        foreach ($mediaItemUuids as $uuid) {
+            $folder = isset($this->mediaItems[$uuid]) ? $this->mediaItems[$uuid]->exported->folder : null;
+            while (null !== $folder && !isset($needed[$folder])) {
+                $needed[$folder] = true;
+                $folder = $parents[$folder] ?? null;
+            }
+        }
+
+        return array_values(array_filter($this->mediaFolders, static fn (ExportedMediaFolder $folder): bool => isset($needed[$folder->uuid])));
+    }
+
+    /**
      * Removes the temporary copies of its media files, once the import is done with them
      */
     public function cleanUp(): void
