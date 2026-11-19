@@ -154,6 +154,22 @@ final class ImportMediaTest extends KernelTestCase
     /**
      * @test
      */
+    public function it_imports_alt_text_in_a_locale_the_target_lacks_unchanged_and_lists_it(): void
+    {
+        $export = $this->copyOfFixture();
+        $path = sprintf('%s/media/%s.json', $export, self::BANNER);
+        file_put_contents($path, str_replace('"en_US": "A woman', '"da_DK": "En kvinde i rød frakke",' . "\n" . '        "en_US": "A woman', (string) file_get_contents($path)));
+
+        $tester = self::import(['path' => $export]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Autumn banner: locale "da_DK"', self::display($tester));
+        self::assertSame(['da_DK' => 'En kvinde i rød frakke', 'en_US' => 'A woman in a red coat among autumn leaves'], self::mediaItem(self::BANNER)?->getAltTexts());
+    }
+
+    /**
+     * @test
+     */
     public function it_leaves_a_media_item_that_came_along_as_the_target_has_it(): void
     {
         $logo = $this->uploadMediaItem('logo.png', self::png(10, 10));

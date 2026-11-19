@@ -12,7 +12,7 @@ Moving content between environments of a store: what a [transfer](../../GLOSSARY
 - **On-save settings travel and apply on import:** `enabled`, the date window, the channels, the audience, "Homepage of", the position and a snippet's placements ([Content model](content-model.md#whats-drafted-and-what-takes-effect-on-save)). They apply as a save in the admin would.
   - A new entry still shows nothing until it's published, because a placement of an unpublished snippet shows nothing, and a homepage shoppers can't see falls back to Sylius's own.
   - A snippet that's already live in the target gets its imported placements at once, before its new content is published.
-- **Media items** travel with their folders, metadata and original files. The target generates its own image variants. Missing folders are created, and existing folders aren't moved or renamed.
+- **Media items** travel with their folders, metadata and original files. The target generates its own image variants. The folders of the media items an import creates or updates are created when the target lacks them, with their parents, and existing folders aren't moved or renamed.
 - **A transfer never deletes.** It creates and updates in the target. There's no mirror mode.
 
 **What never travels:** drafts, revisions, share links and old slugs. The target records its own old slugs when a publish there changes a slug. The media usage index and the category reference table are rebuilt in the target from what's imported.
@@ -191,7 +191,7 @@ What applying does to each record:
 
 - **A picked entry** has its content saved as its draft, or written to its rows when it was never published in the target, as a save in the builder would ([Publishing](publishing.md)). It goes live only through a publish: the `--publish` option, or an editor in the target. That publish validates, checks slug clashes, records old slugs and stores a revision like any other. With `--publish`, a publish that fails validation fails the whole import.
 - **A picked editor preset** is replaced, or created.
-- **A picked media item** replaces its file the way a replace in the library does: it keeps its UUID and takes effect everywhere at once ([ADR 0013](../adr/0013-media-items-take-effect-on-save.md)). Its metadata is updated too.
+- **A picked media item** replaces its file the way a replace in the library does: it keeps its UUID and takes effect everywhere at once ([ADR 0013](../adr/0013-media-items-take-effect-on-save.md)). Its metadata is updated too, alt text and focal point included. A file of another kind than the target's media item refuses the import, as a replace refuses it. When the target holds the same file already, the media item keeps it, and its URLs, and only its metadata changes.
 - **A dependency** (a snippet or media item that came along) is created when the target lacks it, and otherwise left as it is, so the target's own edits to a shared snippet, or a logo replaced there, survive.
 - **On-save settings and placements** of the records it writes apply at once.
 - **An unchanged record**, identical to the target's, is skipped: no draft and no revision.
@@ -203,10 +203,10 @@ When it's done, the import dispatches `ImportFinished` ([Extending](extending.md
 
 An export is untrusted input: any admin user can import one. So every file in it goes through the same checks as an upload ([Media](media.md#uploading)), whether its media item is picked, a dependency, or new in the target:
 
-- **The zip.** Every entry must resolve inside the export's root. An absolute path, a `..` segment or a link refuses the import.
+- **The zip.** Every entry must resolve inside the export's root. An absolute path, a `..` segment or a link refuses the import, and so does a link in an export folder.
 - **The filename.** `filename` must be a plain basename: no `/`, `\`, `..` or control characters. Anything else refuses the import.
 - **The checksum.** The file's SHA-256 must match `checksum`. A mismatch refuses the import.
-- **The file itself.** Its type is checked against `media.types` and its size against the upload limit. Its MIME type, size and dimensions are read from the file, and the values in the JSON are ignored. SVG is sanitised.
+- **The file itself.** Its type is checked against `media.types` and its size against the upload limit. Its kind, MIME type, size and dimensions are read from the file, and the values in the JSON are ignored, so metadata of another kind, such as alt text in the JSON of what's a document, is left out. SVG is sanitised.
 
 A file that fails a check refuses the whole import, with the media item named.
 
@@ -234,7 +234,7 @@ An entry created separately in each environment has two UUIDs, so it's two entri
 
 ## References that don't resolve
 
-References that don't resolve in the target import unchanged: Sylius codes the target lacks (products, taxons, channels, customer groups, locales, product attributes) and CMS UUIDs that are neither exported nor present. The dry run and the import's result list them, and the admin flags them as broken references ([Admin](admin.md#problems)).
+References that don't resolve in the target import unchanged: Sylius codes the target lacks (products, taxons, channels, customer groups, locales, including those of media items' alt text, product attributes) and CMS UUIDs that are neither exported nor present. The dry run and the import's result list them, and the admin flags them as broken references ([Admin](admin.md#problems)).
 
 ## Code the target must have
 
@@ -272,7 +272,7 @@ setono:cms:import <path> [--dry-run] [--publish] [--overwrite]
   | --- | --- |
   | `0` | It applied, or the dry run would. |
   | `1` | It refused for a reason `--overwrite` doesn't fix: unknown code, a URL clash, a failed publish, a file that fails its checks, an `embed_code` block while it's off, or an entry whose UUID is an entry of another content type in the target. |
-  | `2` (`Command::INVALID`) | `<path>` isn't a readable export folder or zip, its `format` is unknown, or a file in it isn't in the export format. |
+  | `2` (`Command::INVALID`) | `<path>` isn't a readable export folder or zip, its `format` is unknown, a file in it isn't in the export format, or a media item's file is missing. |
   | `3` | It refused only because of conflicts that `--overwrite` would resolve. |
 
   Unresolved references are reported and don't fail the import.
