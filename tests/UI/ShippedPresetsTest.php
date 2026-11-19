@@ -35,8 +35,12 @@ final class ShippedPresetsTest extends UITestCase
         $create = $page->getByRole('dialog', ['name' => 'New Page']);
         $startingPoints = $create->getByRole('group', ['name' => 'Starting point']);
         Expect::locator($startingPoints->getByRole('radio', ['name' => 'Blank']))->toBeChecked();
-        Expect::locator($startingPoints->locator('img[src="/bundles/setonosyliuscmsplugin/thumbnail/preset/landing_page.svg"]'))->toBeVisible();
-        Expect::locator($startingPoints->locator('img[src="/bundles/setonosyliuscmsplugin/thumbnail/preset/content_page.svg"]'))->toBeVisible();
+        foreach (['landing_page', 'content_page'] as $code) {
+            $thumbnail = $startingPoints->locator(sprintf('img[src="/bundles/setonosyliuscmsplugin/thumbnail/preset/%s.svg"]', $code));
+            Expect::locator($thumbnail)->toBeVisible();
+            // Loaded, not a broken image
+            Expect::locator($thumbnail)->toHaveJSProperty('naturalWidth', 120);
+        }
         $startingPoints->getByText('Landing page', ['exact' => true])->click();
         Expect::locator($startingPoints->getByRole('radio', ['name' => 'Landing page']))->toBeChecked();
         $create->getByLabel('Title')->fill('Spring');
