@@ -11,7 +11,7 @@
             "version": 1,
             "fields": {
                 "tagline": {
-                    "$trans": "app.cms.preset.hero.heading"
+                    "$trans": "app.cms.preset.sale_hero.heading"
                 },
                 "transparentHeader": true
             },
@@ -44,7 +44,7 @@
             "style": null,
             "fields": {
                 "content": {
-                    "$trans": "app.cms.preset.hero.text"
+                    "$trans": "app.cms.preset.sale_hero.text"
                 }
             },
             "translated": {},

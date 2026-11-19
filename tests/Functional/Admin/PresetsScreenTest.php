@@ -42,10 +42,12 @@ final class PresetsScreenTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSame(['Starting points', 'Block presets'], $crawler->filter('[data-preset-tabs] a.item')->each(static fn (Crawler $tab): string => trim($tab->text())));
         self::assertSame('Block presets', trim($crawler->filter('[data-preset-tabs] a.item.active')->text()));
-        self::assertSame(['column_pair', 'hero', 'product_spotlight', $promo->id()], self::presetIds($crawler));
+        // The plugin's shipped presets come first, then the project's code presets, then the editors'
+        self::assertSame(['banner_carousel', 'bestsellers_carousel'], array_slice(self::presetIds($crawler), 0, 2));
+        self::assertSame(['column_pair', 'product_spotlight', 'sale_hero', $promo->id()], array_slice(self::presetIds($crawler), -4));
 
-        $hero = $crawler->filter('[data-preset="hero"]');
-        self::assertSame(['Hero', 'Banners', 'A heading and an introduction'], [trim($hero->filter('[data-name]')->text()), trim($hero->filter('[data-category]')->text()), trim($hero->filter('[data-description]')->text())]);
+        $hero = $crawler->filter('[data-preset="sale_hero"]');
+        self::assertSame(['Sale hero', 'Banners', 'A heading and an introduction'], [trim($hero->filter('[data-name]')->text()), trim($hero->filter('[data-category]')->text()), trim($hero->filter('[data-description]')->text())]);
         self::assertSame('From code', trim($hero->filter('[data-from-code]')->text()));
         self::assertCount(0, $hero->filter('form, [data-cms-dialog-open]'));
 
@@ -57,7 +59,7 @@ final class PresetsScreenTest extends WebTestCase
         // The edit dialog suggests the categories in use, those of code presets too
         $form = $crawler->filter(sprintf('form[action="/admin/cms/presets/%s"]', $promo->id()));
         self::assertSame(['Promo', 'Campaigns', 'For the winter sale'], [$form->filter('input[name="name"]')->attr('value'), $form->filter('input[name="category"]')->attr('value'), trim($form->filter('textarea[name="description"]')->text())]);
-        self::assertSame(['Banners', 'Campaigns', 'Layout', 'Pages', 'Products'], $crawler->filter(sprintf('datalist#%s option', (string) $form->filter('input[name="category"]')->attr('list')))->each(static fn (Crawler $option): string => (string) $option->attr('value')));
+        self::assertSame(['Banners', 'Campaigns', 'Content', 'Layout', 'Navigation', 'Pages', 'Products'], $crawler->filter(sprintf('datalist#%s option', (string) $form->filter('input[name="category"]')->attr('list')))->each(static fn (Crawler $option): string => (string) $option->attr('value')));
     }
 
     /**
@@ -72,7 +74,7 @@ final class PresetsScreenTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame('Starting points', trim($crawler->filter('[data-preset-tabs] a.item.active')->text()));
-        self::assertSame([$landing->id()], self::presetIds($crawler));
+        self::assertSame(['content_page', 'landing_page', $landing->id()], self::presetIds($crawler));
         self::assertSame('Page', trim($crawler->filter('[data-preset] [data-content-type]')->text()));
     }
 
@@ -131,7 +133,7 @@ final class PresetsScreenTest extends WebTestCase
         self::assertResponseRedirects('/admin/cms/presets?tab=block_presets');
         $crawler = $client->followRedirect();
         self::assertSelectorTextContains('.sylius-flash-message.positive', 'The preset has been deleted.');
-        self::assertSame(['column_pair', 'hero', 'product_spotlight'], self::presetIds($crawler));
+        self::assertSame(['column_pair', 'product_spotlight', 'sale_hero'], array_slice(self::presetIds($crawler), -3));
     }
 
     /**

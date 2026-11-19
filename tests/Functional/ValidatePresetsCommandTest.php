@@ -31,9 +31,11 @@ final class ValidatePresetsCommandTest extends KernelTestCase
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         $display = self::display($tester);
         self::assertStringContainsString('column_pair.json', $display);
-        self::assertStringContainsString('hero.json', $display);
+        self::assertStringContainsString('sale_hero.json', $display);
         self::assertStringContainsString('product_spotlight.json', $display);
-        self::assertStringContainsString('[OK] 3 preset files are valid.', $display);
+        // The plugin's shipped presets are registered too
+        self::assertStringContainsString('src/Resources/presets/landing_page.json', $display);
+        self::assertStringContainsString('[OK] 14 preset files are valid.', $display);
     }
 
     /**

@@ -8,7 +8,8 @@ use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 
 /**
  * The block picker's Presets tab: the presets, with whether each is offered at a spot and why not, and a preset's
- * blocks made ready to insert into an entry. The test application registers hero, column_pair and product_spotlight.
+ * blocks made ready to insert into an entry. The test application registers sale_hero, column_pair and product_spotlight,
+ * which come after the plugin's shipped presets.
  * See "Presets" in docs/spec/layouts-and-presets.md and "JSON endpoints" in docs/spec/builder.md
  */
 final class PresetsTest extends BuilderApiTestCase
@@ -27,9 +28,9 @@ final class PresetsTest extends BuilderApiTestCase
 
         $presets = self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s', $page->getUuid()));
 
-        self::assertSame(['column_pair', 'hero', 'product_spotlight'], array_keys($presets));
-        $hero = $presets['hero'];
-        self::assertSame(['id' => 'hero', 'fromCode' => true, 'name' => 'Hero', 'category' => 'Banners', 'description' => 'A heading and an introduction', 'thumbnail' => null, 'fits' => true, 'reasons' => [], 'issues' => []], array_diff_key($hero, ['blocks' => true]));
+        self::assertSame(['column_pair', 'product_spotlight', 'sale_hero'], array_slice(array_keys($presets), -3));
+        $hero = $presets['sale_hero'];
+        self::assertSame(['id' => 'sale_hero', 'fromCode' => true, 'name' => 'Sale hero', 'category' => 'Banners', 'description' => 'A heading and an introduction', 'thumbnail' => null, 'fits' => true, 'reasons' => [], 'issues' => []], array_diff_key($hero, ['blocks' => true]));
         self::assertSame(['Column isn\'t allowed here'], $presets['column_pair']['reasons']);
         self::assertFalse($presets['column_pair']['fits']);
         self::assertSame(['Needs: Product page'], $presets['product_spotlight']['reasons']);
@@ -53,7 +54,7 @@ final class PresetsTest extends BuilderApiTestCase
         $inFull = self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s&parent=%s', $full->getUuid(), self::COLUMNS));
 
         self::assertTrue($inRoomy['column_pair']['fits']);
-        self::assertSame(['Heading isn\'t allowed here', 'Rich text isn\'t allowed here'], $inRoomy['hero']['reasons']);
+        self::assertSame(['Heading isn\'t allowed here', 'Rich text isn\'t allowed here'], $inRoomy['sale_hero']['reasons']);
         self::assertSame(['At most 4 Column blocks fit here'], $inFull['column_pair']['reasons']);
     }
 
@@ -97,7 +98,7 @@ final class PresetsTest extends BuilderApiTestCase
         self::addTranslation($page, 'da_DK', 'Om os', 'om-os');
         self::addTranslation($page, 'de_DE', 'Über uns', 'ueber-uns');
 
-        $response = self::json($client, 'POST', '/admin/cms/api/presets/hero/insert', ['entry' => $page->getUuid()]);
+        $response = self::json($client, 'POST', '/admin/cms/api/presets/sale_hero/insert', ['entry' => $page->getUuid()]);
 
         self::assertResponseIsSuccessful();
         self::assertIsArray($response);
@@ -146,7 +147,7 @@ final class PresetsTest extends BuilderApiTestCase
         self::json($client, 'POST', '/admin/cms/api/presets/banner/insert', ['entry' => $page->getUuid()]);
         self::assertResponseStatusCodeSame(404);
 
-        self::json($client, 'POST', '/admin/cms/api/presets/hero/insert', []);
+        self::json($client, 'POST', '/admin/cms/api/presets/sale_hero/insert', []);
         self::assertResponseStatusCodeSame(400);
     }
 

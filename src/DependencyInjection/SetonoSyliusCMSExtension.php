@@ -64,6 +64,12 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
     /** The name of the plugin's own Liip loader and resolver, which media.liip defaults to */
     public const LIIP_NAME = 'setono_sylius_cms';
 
+    /**
+     * The directory of the code presets the plugin ships, the page starting points and block presets a fresh install
+     * starts from. See "Shipped code presets" in docs/spec/layouts-and-presets.md
+     */
+    private const PRESETS_DIRECTORY = __DIR__ . '/../Resources/presets';
+
     /** The entry lists show the entries edited last first */
     private const GRID_SORTING = ['lastEdited' => 'desc'];
 
@@ -227,8 +233,13 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $this->prependOverviewEvents($container);
         $this->prependProblems($container);
         $this->prependMessenger($container);
-        // Before the config is read, so the slots it reads hold them
-        $container->prependExtensionConfig($this->getAlias(), ['context_keys' => StockContextKeys::config(), 'slots' => StockSlots::config()]);
+        // Before the config is read, so the slots it reads hold them. The shipped code presets' directory comes first, as
+        // a bundle prepends its own
+        $container->prependExtensionConfig($this->getAlias(), [
+            'context_keys' => StockContextKeys::config(),
+            'slots' => StockSlots::config(),
+            'presets' => ['paths' => [self::PRESETS_DIRECTORY]],
+        ]);
 
         /** @var array{assets: bool, media: array{storage: string, liip: array{loader: string, resolver: string}}, slots: array<string, array{template_event?: array{name: string, priority: int}}>} $config */
         $config = $this->processConfiguration(new Configuration(), $container->getExtensionConfig($this->getAlias()));

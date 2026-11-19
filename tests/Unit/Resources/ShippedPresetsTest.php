@@ -75,14 +75,18 @@ final class ShippedPresetsTest extends TestCase
         self::assertEquals(new TranslationKey(sprintf('setono_sylius_cms.preset_category.%s', $category)), $preset->category);
         self::assertEquals(new TranslationKey(sprintf('setono_sylius_cms.preset.%s.description', $code)), $preset->description);
         self::assertSame($blocks, self::outline($preset->blocks));
-        self::assertSame(null === $startingPoint, null === $preset->startingPoint);
-        if (null !== $startingPoint) {
-            self::assertSame($startingPoint->contentType, $preset->startingPoint?->contentType);
-            self::assertSame($startingPoint->layout?->code, $preset->startingPoint?->layout?->code);
-            self::assertSame($startingPoint->layout?->fields, $preset->startingPoint?->layout?->fields);
-            // No starting point for Page is the default, so the create dialog preselects Blank
-            self::assertFalse($preset->startingPoint?->default);
+        if (null === $startingPoint) {
+            self::assertNull($preset->startingPoint);
+
+            return;
         }
+
+        self::assertNotNull($preset->startingPoint);
+        self::assertSame($startingPoint->contentType, $preset->startingPoint->contentType);
+        self::assertSame($startingPoint->layout?->code, $preset->startingPoint->layout?->code);
+        self::assertSame($startingPoint->layout?->fields, $preset->startingPoint->layout?->fields);
+        // No starting point for Page is the default, so the create dialog preselects Blank
+        self::assertFalse($preset->startingPoint->default);
     }
 
     /**
@@ -188,7 +192,7 @@ final class ShippedPresetsTest extends TestCase
             self::assertSame([], $block->translated);
         }
 
-        self::assertSame([], self::localeMapsIn($preset->startingPoint?->layout?->fields ?? []));
+        self::assertSame([], self::localeMapsIn($preset->startingPoint?->layout->fields ?? []));
     }
 
     /**
@@ -325,7 +329,8 @@ final class ShippedPresetsTest extends TestCase
     private static function blockTypes(): BlockTypeRegistry
     {
         $classes = [];
-        foreach (glob(self::RESOURCES . '/../Block/*.php') ?: [] as $file) {
+        $files = glob(self::RESOURCES . '/../Block/*.php');
+        foreach (false === $files ? [] : $files as $file) {
             $class = 'Setono\\SyliusCMSPlugin\\Block\\' . basename($file, '.php');
             $attribute = class_exists($class) ? ((new \ReflectionClass($class))->getAttributes(BlockType::class)[0] ?? null) : null;
             if (null !== $attribute) {
