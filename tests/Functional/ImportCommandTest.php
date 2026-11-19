@@ -12,12 +12,17 @@ use Setono\SyliusCMSPlugin\Event\ImportFinished;
 use Setono\SyliusCMSPlugin\Event\PlacementsChanged;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
+use Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface;
+use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Preset\PresetProviderInterface;
+use Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\Placements;
 use Setono\SyliusCMSPlugin\Tests\Support\Revisions;
+use Setono\SyliusCMSPlugin\Tests\Support\ScheduledPublishes;
 use Setono\SyliusCMSPlugin\Tests\Support\TemporaryDirectory;
 use Setono\SyliusCMSPlugin\Transfer\Format\ExportFormat;
 use Setono\SyliusCMSPlugin\Transfer\Import\UnresolvedReference;
@@ -39,6 +44,7 @@ final class ImportCommandTest extends KernelTestCase
     use Entries;
     use Placements;
     use Revisions;
+    use ScheduledPublishes;
     use TemporaryDirectory;
 
     /** The committed export: a picked page with a snippet in it, which holds another, and an editor preset */
@@ -53,6 +59,9 @@ final class ImportCommandTest extends KernelTestCase
     private const PRESET = '0193a5be-7400-7d3e-8f4a-5b6c7d8e9f0a';
 
     private const PLACEMENT = '0193a5be-7300-7b1c-8d2e-3f4a5b6c7d8e';
+
+    /** The placement before the snippet's in the source slot */
+    private const PRECEDING_PLACEMENT = '0193a5be-7301-7c2d-9e3f-4a5b6c7d8e9f';
 
     /**
      * @test
@@ -356,6 +365,137 @@ final class ImportCommandTest extends KernelTestCase
         self::assertSame([], $finished->getAffectedUuids());
         self::assertSame([self::INNER_SNIPPET, self::SNIPPET, self::PAGE, self::PRESET], $finished->result->unchanged());
         self::assertSame([], $heard);
+    }
+
+    /**
+     * @test
+     */
+    public function it_skips_records_identical_to_the_targets_even_when_the_target_changed_them_later(): void
+    {
+        self::import(['path' => self::FIXTURE, '--publish' => true]);
+        // Saving the same settings again here bumps changedAt, which would make the page stale, but it's identical
+        self::entityManager()->getConnection()->update('setono_sylius_cms__entry', ['changed_at' => '2026-11-18 12:00:00'], ['uuid' => self::PAGE]);
+
+        $tester = self::import(['path' => self::FIXTURE]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Imported: 3 entries and 1 editor preset unchanged.', self::display($tester));
+        $page = self::entry(self::PAGE);
+        self::assertInstanceOf(PageInterface::class, $page);
+        self::assertNull(self::draftOf($page));
+        self::assertCount(1, self::revisionsOf($page));
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_a_snippet_that_came_along_as_the_target_has_it(): void
+    {
+        $snippet = self::createSnippet('Autumn banner, edited here', published: true);
+        $placement = self::place($snippet, 'shop.footer');
+        self::entityManager()->getConnection()->update('setono_sylius_cms__entry', ['uuid' => self::SNIPPET], ['id' => $snippet->getId()]);
+
+        $tester = self::import(['path' => self::FIXTURE]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Autumn banner (snippet), came along: left alone', self::display($tester));
+        self::assertStringContainsString('Imported: 2 entries and 1 editor preset created, 1 entry left alone.', self::display($tester));
+        $snippet = self::entry(self::SNIPPET);
+        self::assertInstanceOf(SnippetInterface::class, $snippet);
+        self::assertSame('Autumn banner, edited here', $snippet->getTranslation('en_US')->getTitle());
+        self::assertSame([$placement->getUuid()], array_map(static fn (PlacementInterface $placement): string => $placement->getUuid(), self::placements()->findBySnippet($snippet)));
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_picked_entry_with_a_scheduled_publish_here_and_cancels_it_with_overwrite(): void
+    {
+        $page = self::createPageWithUuid(self::PAGE, 'Autumn sale (old)', 'autumn-sale');
+        /** @var PublishSchedulerInterface $scheduler */
+        $scheduler = self::getContainer()->get(PublishSchedulerInterface::class);
+        $scheduler->schedule($page, new \DateTimeImmutable('+1 week'));
+
+        $refused = self::import(['path' => self::FIXTURE]);
+
+        self::assertSame(3, $refused->getStatusCode(), $refused->getDisplay());
+        self::assertStringContainsString('Autumn sale has a scheduled publish here.', self::display($refused));
+
+        $overwritten = self::import(['path' => self::FIXTURE, '--overwrite' => true]);
+
+        self::assertSame(Command::SUCCESS, $overwritten->getStatusCode(), $overwritten->getDisplay());
+        self::assertNull(self::scheduledPublishOf(self::entry(self::PAGE)));
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_picked_editor_preset_changed_here_after_the_exports_copy_until_overwrite(): void
+    {
+        self::bootKernel();
+        /** @var EditorPresetSaverInterface $saver */
+        $saver = self::getContainer()->get(EditorPresetSaverInterface::class);
+        $saver->save(new Preset('Autumn hero, renamed here', [], uuid: self::PRESET), new \DateTimeImmutable('2026-11-15T09:00:00Z'));
+
+        $refused = self::import(['path' => self::FIXTURE]);
+
+        self::assertSame(3, $refused->getStatusCode(), $refused->getDisplay());
+        self::assertStringContainsString('Autumn hero changed here at 2026-11-15T09:00:00Z, after the export\'s copy from 2026-11-10T08:00:00Z.', self::display($refused));
+
+        $overwritten = self::import(['path' => self::FIXTURE, '--overwrite' => true]);
+
+        self::assertSame(Command::SUCCESS, $overwritten->getStatusCode(), $overwritten->getDisplay());
+        /** @var PresetProviderInterface $presets */
+        $presets = self::getContainer()->get(PresetProviderInterface::class);
+        $preset = $presets->find(self::PRESET);
+        self::assertSame('Autumn hero', $preset?->name);
+        self::assertSame('2026-11-10T08:00:00Z', null === $preset->changedAt ? null : ExportFormat::dateTime($preset->changedAt));
+    }
+
+    /**
+     * @test
+     */
+    public function it_places_an_imported_placement_right_after_the_nearest_of_its_preceding_placements_here(): void
+    {
+        $other = self::place(self::createSnippet('Size guide', published: true), 'product.after_price');
+        $preceding = self::place(self::createSnippet('Free returns', published: true), 'product.after_price');
+        self::entityManager()->getConnection()->update('setono_sylius_cms__placement', ['uuid' => self::PRECEDING_PLACEMENT], ['id' => $preceding->getId()]);
+        $last = self::place(self::createSnippet('Gift wrapping', published: true), 'product.after_price');
+
+        $tester = self::import(['path' => self::FIXTURE]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::entityManager()->clear();
+        $slot = self::placements()->findBySlots(['product.after_price']);
+        usort($slot, static fn (PlacementInterface $a, PlacementInterface $b): int => $a->getPosition() <=> $b->getPosition());
+        self::assertSame(
+            [$other->getUuid(), self::PRECEDING_PLACEMENT, self::PLACEMENT, $last->getUuid()],
+            array_map(static fn (PlacementInterface $placement): string => $placement->getUuid(), $slot),
+        );
+        self::assertSame([0, 1, 2, 3], array_map(static fn (PlacementInterface $placement): int => $placement->getPosition(), $slot));
+    }
+
+    /**
+     * @test
+     */
+    public function it_lists_the_homepage_changes_and_makes_them(): void
+    {
+        $home = self::createPage('Home', 'home', published: true, channels: ['WEB']);
+        self::setHomepageOf($home, 'WEB');
+        $export = $this->copyOfFixture();
+        $file = sprintf('%s/entries/%s.json', $export, self::PAGE);
+        file_put_contents($file, str_replace('"homepageOf": []', '"homepageOf": ["WEB"]', (string) file_get_contents($file)));
+
+        $tester = self::import(['path' => $export]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Homepage changes ---------------- * WEB: Autumn sale becomes its homepage, instead of Home', self::display($tester));
+        $page = self::entry(self::PAGE);
+        self::assertInstanceOf(PageInterface::class, $page);
+        self::assertSame(['WEB'], $page->getHomepageChannelCodes());
+        $home = self::entry($home->getUuid());
+        self::assertInstanceOf(PageInterface::class, $home);
+        self::assertSame([], $home->getHomepageChannelCodes());
     }
 
     /**
