@@ -36,7 +36,7 @@ final class ImportResultNormalizerTest extends TestCase
             [
                 new ImportRefusal('d4', new TranslatableMessage('setono_sylius_cms.import.media_refused', [
                     '%name%' => 'Banner',
-                    '%reason%' => new TranslatableMessage('setono_sylius_cms.media.refused.not_image', ['%filename%' => 'banner.pdf'], 'validators'),
+                    '%reason%' => new TranslatableMessage('setono_sylius_cms.block.unknown_type', ['%type%' => 'banner'], 'validators'),
                 ])),
                 new ImportRefusal(null, new TranslatableMessage('setono_sylius_cms.import.path_outside_root', ['%path%' => '../evil'])),
             ],

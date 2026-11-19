@@ -168,5 +168,13 @@
 
             <tag name="messenger.message_handler" handles="Setono\SyliusCMSPlugin\Transfer\Import\AbandonImport"/>
         </service>
+
+        <!-- The Sylius fixture setono_cms_import loads exports as demo and test data (docs/spec/extending.md#fixture) -->
+        <service id="Setono\SyliusCMSPlugin\Fixture\ImportFixture" class="Setono\SyliusCMSPlugin\Fixture\ImportFixture">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImporterInterface"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="sylius_fixtures.fixture"/>
+        </service>
     </services>
 </container>
