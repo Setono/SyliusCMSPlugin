@@ -184,9 +184,9 @@ final class ImportPlannerTest extends TestCase
         self::assertEquals([
             new PlannedRecord(RecordKind::Entry, self::PAGE, 'Autumn sale', true, ImportAction::Create, 'page'),
             new PlannedRecord(RecordKind::Entry, self::SNIPPET, 'Autumn banner', false, ImportAction::Create, 'snippet'),
-        ], $plan->entries);
-        self::assertEquals([new PlannedRecord(RecordKind::Preset, self::PRESET, 'Autumn hero', true, ImportAction::Create)], $plan->presets);
-        self::assertEquals([new PlannedRecord(RecordKind::MediaItem, self::BANNER, 'Autumn banner', true, ImportAction::Create)], $plan->mediaItems);
+        ], $plan->records(RecordKind::Entry));
+        self::assertEquals([new PlannedRecord(RecordKind::Preset, self::PRESET, 'Autumn hero', true, ImportAction::Create)], $plan->records(RecordKind::Preset));
+        self::assertEquals([new PlannedRecord(RecordKind::MediaItem, self::BANNER, 'Autumn banner', true, ImportAction::Create)], $plan->records(RecordKind::MediaItem));
         self::assertSame([], $plan->conflicts);
         self::assertSame([], $plan->refusals);
         self::assertSame([], $plan->homepageChanges);
@@ -204,7 +204,7 @@ final class ImportPlannerTest extends TestCase
 
         $plan = $this->plan(self::export([self::entry(self::snippet(self::SNIPPET, 'Autumn banner'), placements: [$placement])]));
 
-        self::assertSame([[self::SNIPPET, ImportAction::Unchanged]], self::actions($plan->entries));
+        self::assertSame([[self::SNIPPET, ImportAction::Unchanged]], self::actions($plan->records(RecordKind::Entry)));
         self::assertSame([], $plan->conflicts);
         self::assertSame([], $plan->refusals);
     }
@@ -228,7 +228,7 @@ final class ImportPlannerTest extends TestCase
             [self::PAGE, ImportAction::Update],
             [self::OTHER_PAGE, ImportAction::Update],
             [self::SNIPPET, ImportAction::Update],
-        ], self::actions($plan->entries));
+        ], self::actions($plan->records(RecordKind::Entry)));
         self::assertSame([], $plan->conflicts);
     }
 
@@ -241,7 +241,7 @@ final class ImportPlannerTest extends TestCase
 
         $plan = $this->plan(self::export([self::entry(self::page(self::PAGE, 'Autumn sale!'))]));
 
-        self::assertSame([[self::PAGE, ImportAction::Update]], self::actions($plan->entries));
+        self::assertSame([[self::PAGE, ImportAction::Update]], self::actions($plan->records(RecordKind::Entry)));
         self::assertSame([
             ['draft', self::PAGE, 'setono_sylius_cms.import.conflict.draft', ['%title%' => 'Autumn sale!']],
             ['scheduled_publish', self::PAGE, 'setono_sylius_cms.import.conflict.scheduled_publish', ['%title%' => 'Autumn sale!']],
@@ -260,7 +260,7 @@ final class ImportPlannerTest extends TestCase
 
         $plan = $this->plan(self::export([self::entry(self::snippet(self::SNIPPET, 'Autumn banner'), picked: false)]));
 
-        self::assertEquals([new PlannedRecord(RecordKind::Entry, self::SNIPPET, 'Autumn banner', false, ImportAction::LeaveAlone, 'snippet')], $plan->entries);
+        self::assertEquals([new PlannedRecord(RecordKind::Entry, self::SNIPPET, 'Autumn banner', false, ImportAction::LeaveAlone, 'snippet')], $plan->records(RecordKind::Entry));
         self::assertSame([], $plan->conflicts);
     }
 
@@ -274,7 +274,7 @@ final class ImportPlannerTest extends TestCase
         $plan = $this->plan(self::export([self::entry(self::page(self::PAGE, 'Autumn sale')), self::entry(self::page(self::OTHER_PAGE, 'Spring sale'))]));
 
         self::assertSame([[self::PAGE, 'setono_sylius_cms.import.other_content_type', ['%title%' => 'Autumn sale', '%content_type%' => 'snippet']]], self::refusals($plan->refusals));
-        self::assertSame([[self::OTHER_PAGE, ImportAction::Create]], self::actions($plan->entries));
+        self::assertSame([[self::OTHER_PAGE, ImportAction::Create]], self::actions($plan->records(RecordKind::Entry)));
         self::assertTrue($plan->isRefused(true));
     }
 
@@ -304,7 +304,7 @@ final class ImportPlannerTest extends TestCase
             self::entry(self::snippet(self::INNER_SNIPPET, 'Newsletter signup', [self::snippetBlock(self::SNIPPET)]), picked: false),
         ]));
 
-        self::assertSame([self::INNER_SNIPPET, self::SNIPPET, self::PAGE, self::OTHER_PAGE], array_map(static fn (PlannedRecord $entry): string => $entry->uuid, $plan->entries));
+        self::assertSame([self::INNER_SNIPPET, self::SNIPPET, self::PAGE, self::OTHER_PAGE], array_map(static fn (PlannedRecord $entry): string => $entry->uuid, $plan->records(RecordKind::Entry)));
     }
 
     /**
@@ -365,7 +365,7 @@ final class ImportPlannerTest extends TestCase
 
         $plan = $this->plan(self::export([self::entry(self::page(self::PAGE, 'Autumn sale', 'autumn-sale'))]));
 
-        self::assertSame([[self::PAGE, ImportAction::Unchanged]], self::actions($plan->entries));
+        self::assertSame([[self::PAGE, ImportAction::Unchanged]], self::actions($plan->records(RecordKind::Entry)));
         self::assertSame([], $plan->conflicts);
         self::assertSame([], $this->urlLookups);
     }
@@ -431,7 +431,7 @@ final class ImportPlannerTest extends TestCase
 
         $plan = $this->plan(self::export([self::entry(self::page(self::PAGE, 'Autumn sale'), self::settings(homepageOf: ['WEB']), picked: false)]));
 
-        self::assertSame([[self::PAGE, ImportAction::LeaveAlone]], self::actions($plan->entries));
+        self::assertSame([[self::PAGE, ImportAction::LeaveAlone]], self::actions($plan->records(RecordKind::Entry)));
         self::assertSame([], $plan->homepageChanges);
     }
 
@@ -460,7 +460,7 @@ final class ImportPlannerTest extends TestCase
             new PlannedRecord(RecordKind::Preset, $unchanged, 'Spring hero', true, ImportAction::Unchanged),
             new PlannedRecord(RecordKind::Preset, $updated, 'Summer hero!', true, ImportAction::Update),
             new PlannedRecord(RecordKind::Preset, $leftAlone, 'Winter hero', false, ImportAction::LeaveAlone),
-        ], $plan->presets);
+        ], $plan->records(RecordKind::Preset));
         self::assertSame([
             ['stale', self::PRESET, 'setono_sylius_cms.import.conflict.stale', ['%title%' => 'Autumn hero!', '%changed_at%' => self::LATER, '%exported_at%' => self::EXPORTED]],
         ], self::conflicts($plan->conflicts));
@@ -492,7 +492,7 @@ final class ImportPlannerTest extends TestCase
             [$unchanged, ImportAction::Unchanged],
             [$stale, ImportAction::Update],
             [$leftAlone, ImportAction::LeaveAlone],
-        ], self::actions($plan->mediaItems));
+        ], self::actions($plan->records(RecordKind::MediaItem)));
         self::assertSame([
             ['stale', $stale, 'setono_sylius_cms.import.conflict.stale', ['%title%' => 'Autumn banner', '%changed_at%' => self::LATER, '%exported_at%' => self::EXPORTED]],
         ], self::conflicts($plan->conflicts));
@@ -509,7 +509,7 @@ final class ImportPlannerTest extends TestCase
 
         $plan = $this->plan(self::export([], [], [self::mediaItem()]));
 
-        self::assertSame([], $plan->mediaItems);
+        self::assertSame([], $plan->records(RecordKind::MediaItem));
         self::assertCount(1, $plan->refusals);
         self::assertSame(self::BANNER, $plan->refusals[0]->uuid);
         $reason = $plan->refusals[0]->reason;
@@ -538,7 +538,7 @@ final class ImportPlannerTest extends TestCase
         self::assertEquals([
             new PlannedRecord(RecordKind::MediaFolder, self::CAMPAIGNS, 'Campaigns', false, ImportAction::Unchanged),
             new PlannedRecord(RecordKind::MediaFolder, self::AUTUMN, 'Autumn', false, ImportAction::Create),
-        ], $plan->mediaFolders);
+        ], $plan->records(RecordKind::MediaFolder));
 
         // Renamed, or under another parent, in the target
         $campaigns->setName('Old campaigns');
@@ -550,7 +550,7 @@ final class ImportPlannerTest extends TestCase
         self::assertSame([
             [self::CAMPAIGNS, ImportAction::LeaveAlone],
             [self::AUTUMN, ImportAction::LeaveAlone],
-        ], self::actions($this->plan(self::export([], [], [self::mediaItem(folder: self::AUTUMN)], $folders))->mediaFolders));
+        ], self::actions($this->plan(self::export([], [], [self::mediaItem(folder: self::AUTUMN)], $folders))->records(RecordKind::MediaFolder)));
     }
 
     /**
@@ -562,8 +562,8 @@ final class ImportPlannerTest extends TestCase
 
         $plan = $this->plan(self::export([], [], [self::mediaItem(folder: self::AUTUMN, picked: false)], [new ExportedMediaFolder(self::AUTUMN, 'Autumn', null)]));
 
-        self::assertSame([[self::BANNER, ImportAction::LeaveAlone]], self::actions($plan->mediaItems));
-        self::assertSame([], $plan->mediaFolders);
+        self::assertSame([[self::BANNER, ImportAction::LeaveAlone]], self::actions($plan->records(RecordKind::MediaItem)));
+        self::assertSame([], $plan->records(RecordKind::MediaFolder));
     }
 
     /**

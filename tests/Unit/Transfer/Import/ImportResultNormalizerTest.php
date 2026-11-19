@@ -30,8 +30,10 @@ final class ImportResultNormalizerTest extends TestCase
             [
                 new PlannedRecord(RecordKind::Entry, 'a1', 'Autumn sale', true, ImportAction::Update, 'page'),
                 new PlannedRecord(RecordKind::Entry, 'b2', 'Autumn banner', false, ImportAction::LeaveAlone, 'snippet'),
+                new PlannedRecord(RecordKind::Preset, 'c3', 'Autumn hero', true, ImportAction::Create),
+                new PlannedRecord(RecordKind::MediaItem, 'd4', 'Banner', false, ImportAction::Create),
+                new PlannedRecord(RecordKind::MediaFolder, 'f6', 'Campaigns', false, ImportAction::Unchanged),
             ],
-            [new PlannedRecord(RecordKind::Preset, 'c3', 'Autumn hero', true, ImportAction::Create)],
             [new ImportConflict(ConflictKind::Draft, 'a1', new TranslatableMessage('setono_sylius_cms.import.conflict.draft', ['%title%' => 'Autumn sale']))],
             [
                 new ImportRefusal('d4', new TranslatableMessage('setono_sylius_cms.import.media_refused', [
@@ -42,8 +44,6 @@ final class ImportResultNormalizerTest extends TestCase
             ],
             [new HomepageChange('WEB', 'e5', 'Home', 'a1', 'Autumn sale'), new HomepageChange('MOBILE', 'a1', 'Autumn sale', null, null)],
             [new UnresolvedReference('a1', 'Autumn sale', UnresolvedReference::CHANNEL, 'MOBILE')],
-            [new PlannedRecord(RecordKind::MediaItem, 'd4', 'Banner', false, ImportAction::Create)],
-            [new PlannedRecord(RecordKind::MediaFolder, 'f6', 'Campaigns', false, ImportAction::Unchanged)],
         ));
         $normalizer = new ImportResultNormalizer();
 
@@ -58,9 +58,27 @@ final class ImportResultNormalizerTest extends TestCase
     /**
      * @test
      */
+    public function it_writes_the_planned_records_keyed_by_their_kind(): void
+    {
+        $data = (new ImportResultNormalizer())->normalize(ImportResult::applied(new ImportPlan([
+            new PlannedRecord(RecordKind::Preset, 'c3', 'Autumn hero', true, ImportAction::Create),
+            new PlannedRecord(RecordKind::Entry, 'a1', 'Autumn sale', true, ImportAction::Update, 'page'),
+        ]), false));
+
+        self::assertSame([
+            'entry' => [['uuid' => 'a1', 'label' => 'Autumn sale', 'picked' => true, 'action' => 'update', 'contentType' => 'page']],
+            'preset' => [['uuid' => 'c3', 'label' => 'Autumn hero', 'picked' => true, 'action' => 'create', 'contentType' => null]],
+            'media_item' => [],
+            'media_folder' => [],
+        ], is_array($data['plan']) ? $data['plan']['records'] : null);
+    }
+
+    /**
+     * @test
+     */
     public function it_writes_an_applied_import_and_a_dry_run_that_would_apply(): void
     {
-        $plan = new ImportPlan([new PlannedRecord(RecordKind::Entry, 'a1', 'Autumn sale', true, ImportAction::Create, 'page')], []);
+        $plan = new ImportPlan([new PlannedRecord(RecordKind::Entry, 'a1', 'Autumn sale', true, ImportAction::Create, 'page')]);
         $normalizer = new ImportResultNormalizer();
 
         $applied = $normalizer->denormalize($normalizer->normalize(ImportResult::applied($plan, false)));
@@ -93,6 +111,6 @@ final class ImportResultNormalizerTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
 
-        (new ImportResultNormalizer())->denormalize(['status' => 'applied', 'plan' => ['entries' => [['kind' => 'entry']]]]);
+        (new ImportResultNormalizer())->denormalize(['status' => 'applied', 'plan' => ['records' => ['entry' => [['uuid' => 'a1']]]]]);
     }
 }

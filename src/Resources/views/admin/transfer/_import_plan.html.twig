@@ -6,24 +6,24 @@
  # plan: Transfer\Import\ImportPlan
  # content_types: the content types' labels by their codes
  #}
-{% macro records(heading, records, attribute, content_types) %}
-    {% if records is not empty %}
-        <h4 class="ui header" id="cms-import-{{ attribute }}-heading">{{ heading|trans }}</h4>
-        <table class="ui very basic compact table" aria-labelledby="cms-import-{{ attribute }}-heading" data-cms-import-{{ attribute }}>
-            <tbody>
-                {% for record in records %}
-                    <tr data-cms-import-record>
-                        <td>{{ record.label }}</td>
-                        {% if record.contentType is not null %}
-                            <td class="collapsing">{{ content_types[record.contentType]|default(record.contentType)|trans }}</td>
-                        {% endif %}
-                        <td class="collapsing">{% if not record.picked %}<span class="ui mini basic label">{{ 'setono_sylius_cms.ui.import.came_along'|trans }}</span>{% endif %}</td>
-                        <td class="collapsing right aligned"><strong>{{ ('setono_sylius_cms.ui.import.action.' ~ record.action.value)|trans }}</strong></td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+{# kind: Transfer\Import\RecordKind, records: its records in the plan #}
+{% macro records(kind, records, content_types) %}
+    {% set attribute = kind.plural|replace({'_': '-'}) %}
+    <h4 class="ui header" id="cms-import-{{ attribute }}-heading">{{ ('setono_sylius_cms.ui.import.' ~ kind.plural)|trans }}</h4>
+    <table class="ui very basic compact table" aria-labelledby="cms-import-{{ attribute }}-heading" data-cms-import-{{ attribute }}>
+        <tbody>
+            {% for record in records %}
+                <tr data-cms-import-record>
+                    <td>{{ record.label }}</td>
+                    {% if record.contentType is not null %}
+                        <td class="collapsing">{{ content_types[record.contentType]|default(record.contentType)|trans }}</td>
+                    {% endif %}
+                    <td class="collapsing">{% if not record.picked %}<span class="ui mini basic label">{{ 'setono_sylius_cms.ui.import.came_along'|trans }}</span>{% endif %}</td>
+                    <td class="collapsing right aligned"><strong>{{ ('setono_sylius_cms.ui.import.action.' ~ record.action.value)|trans }}</strong></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endmacro %}
 
 {% set conflicts = plan.conflicts %}
@@ -50,10 +50,9 @@
     </div>
 {% endif %}
 
-{{ _self.records('setono_sylius_cms.ui.import.entries', plan.entries, 'entries', content_types) }}
-{{ _self.records('setono_sylius_cms.ui.import.editor_presets', plan.presets, 'presets', content_types) }}
-{{ _self.records('setono_sylius_cms.ui.import.media_items', plan.mediaItems, 'media-items', content_types) }}
-{{ _self.records('setono_sylius_cms.ui.import.media_folders', plan.mediaFolders, 'media-folders', content_types) }}
+{% for kind in plan.kinds %}
+    {{ _self.records(kind, plan.records(kind), content_types) }}
+{% endfor %}
 
 {% if plan.homepageChanges is not empty %}
     <h4 class="ui header">{{ 'setono_sylius_cms.ui.import.homepage_changes'|trans }}</h4>

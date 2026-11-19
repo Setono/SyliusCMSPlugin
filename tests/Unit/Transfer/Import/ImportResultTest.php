@@ -110,8 +110,8 @@ final class ImportResultTest extends TestCase
             [
                 new PlannedRecord(RecordKind::Entry, self::PAGE, 'Autumn sale', true, ImportAction::Update, 'page'),
                 new PlannedRecord(RecordKind::Entry, self::SNIPPET, 'Autumn banner', false, ImportAction::Create, 'snippet'),
+                new PlannedRecord(RecordKind::Preset, self::PRESET, 'Autumn hero', true, ImportAction::Update),
             ],
-            [new PlannedRecord(RecordKind::Preset, self::PRESET, 'Autumn hero', true, ImportAction::Update)],
             $conflicts,
             $refusals,
         );

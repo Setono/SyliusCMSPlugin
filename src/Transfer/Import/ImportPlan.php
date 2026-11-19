@@ -6,32 +6,40 @@ namespace Setono\SyliusCMSPlugin\Transfer\Import;
 
 /**
  * What an import would do, which a dry run shows and the admin renders before an import is confirmed: what's created,
- * updated, unchanged or left alone, the conflicts, the reasons it refuses, the homepage changes and the references
- * that don't resolve. See "What an import does" in docs/spec/transfer.md
+ * updated, unchanged or left alone, by kind of record, the conflicts, the reasons it refuses, the homepage changes and
+ * the references that don't resolve. See "What an import does" in docs/spec/transfer.md
  */
 final readonly class ImportPlan
 {
+    /** @var array<string, list<PlannedRecord>> by kind, as RecordKind's values, in the order of RecordKind's cases */
+    private array $records;
+
     /**
-     * @param list<PlannedRecord> $entries in the order they're written: what other entries use before what uses them
-     * @param list<PlannedRecord> $presets
+     * @param list<PlannedRecord> $records the records of every kind, those of each kind in the order they're written:
+     *                                     the entries other entries use before what uses them, and media folders'
+     *                                     parents before their children
      * @param list<ImportConflict> $conflicts
      * @param list<ImportRefusal> $refusals
      * @param list<HomepageChange> $homepageChanges
      * @param list<UnresolvedReference> $unresolvedReferences
-     * @param list<PlannedRecord> $mediaItems
-     * @param list<PlannedRecord> $mediaFolders the folders of the media items it writes, with their parents: parents
-     *                                         before their children
      */
     public function __construct(
-        public array $entries,
-        public array $presets,
+        array $records,
         public array $conflicts = [],
         public array $refusals = [],
         public array $homepageChanges = [],
         public array $unresolvedReferences = [],
-        public array $mediaItems = [],
-        public array $mediaFolders = [],
     ) {
+        $byKind = [];
+        foreach (RecordKind::cases() as $kind) {
+            $byKind[$kind->value] = [];
+        }
+
+        foreach ($records as $record) {
+            $byKind[$record->kind->value][] = $record;
+        }
+
+        $this->records = $byKind;
     }
 
     /**
@@ -41,7 +49,7 @@ final readonly class ImportPlan
      */
     public function withRefusals(array $refusals): self
     {
-        return new self($this->entries, $this->presets, $this->conflicts, [...$this->refusals, ...$refusals], $this->homepageChanges, $this->unresolvedReferences, $this->mediaItems, $this->mediaFolders);
+        return new self($this->records(), $this->conflicts, [...$this->refusals, ...$refusals], $this->homepageChanges, $this->unresolvedReferences);
     }
 
     /**
@@ -83,27 +91,33 @@ final readonly class ImportPlan
     }
 
     /**
-     * @return list<PlannedRecord> every record: entries, editor presets, media items and media folders
+     * The kinds it has records of, in the order of RecordKind's cases, which is the order it lists them in. Twig reads
+     * them here, as the lowest Twig the plugin allows has no enum_cases()
+     *
+     * @return list<RecordKind>
      */
-    public function records(): array
+    public function kinds(): array
     {
-        return [...$this->entries, ...$this->presets, ...$this->mediaItems, ...$this->mediaFolders];
+        return array_values(array_filter(RecordKind::cases(), fn (RecordKind $kind): bool => [] !== $this->records[$kind->value]));
     }
 
     /**
-     * @return list<PlannedRecord> the entries the import writes: those it creates or updates
+     * @param RecordKind|null $kind null for every kind
+     *
+     * @return list<PlannedRecord> its records of the kind, or of every kind, kind by kind in the order of RecordKind's
+     *                             cases
      */
-    public function writtenEntries(): array
+    public function records(?RecordKind $kind = null): array
     {
-        return array_values(array_filter($this->entries, static fn (PlannedRecord $entry): bool => $entry->writes()));
+        return null === $kind ? array_merge(...array_values($this->records)) : $this->records[$kind->value];
     }
 
     /**
-     * @return list<PlannedRecord> the media items the import writes: those it creates or updates
+     * @return list<PlannedRecord> the records of the kind the import writes: those it creates or updates
      */
-    public function writtenMediaItems(): array
+    public function written(RecordKind $kind): array
     {
-        return array_values(array_filter($this->mediaItems, static fn (PlannedRecord $mediaItem): bool => $mediaItem->writes()));
+        return array_values(array_filter($this->records[$kind->value], static fn (PlannedRecord $record): bool => $record->writes()));
     }
 
     /**

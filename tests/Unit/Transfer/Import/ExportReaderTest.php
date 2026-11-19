@@ -78,8 +78,8 @@ final class ExportReaderTest extends TestCase
 
         self::assertSame([], $export->refusals);
         self::assertSame([self::PAGE, self::SNIPPET, self::INNER_SNIPPET], array_keys($export->entries));
-        self::assertTrue($export->entries[self::PAGE]->picked);
-        self::assertFalse($export->entries[self::SNIPPET]->picked);
+        self::assertTrue($export->entries[self::PAGE]->isPicked());
+        self::assertFalse($export->entries[self::SNIPPET]->isPicked());
         self::assertSame('Autumn sale', $export->entries[self::PAGE]->label());
         self::assertSame('page', $export->entries[self::PAGE]->contentType->code);
         self::assertInstanceOf(Page::class, $export->entries[self::PAGE]->content);
@@ -89,12 +89,12 @@ final class ExportReaderTest extends TestCase
         self::assertCount(1, $export->entries[self::SNIPPET]->exported->placements);
 
         self::assertSame([self::PRESET], array_keys($export->presets));
-        self::assertTrue($export->presets[self::PRESET]->picked);
+        self::assertTrue($export->presets[self::PRESET]->isPicked());
         self::assertSame('Autumn hero', $export->presets[self::PRESET]->label());
 
         self::assertCount(2, $export->mediaFolders);
         self::assertSame([self::BANNER, self::VIDEO, self::POSTER], array_keys($export->mediaItems));
-        self::assertFalse($export->mediaItems[self::BANNER]->picked);
+        self::assertFalse($export->mediaItems[self::BANNER]->isPicked());
         self::assertSame('Autumn banner', $export->mediaItems[self::BANNER]->label());
         // What the check read from the file, never what the JSON says
         self::assertSame('image/webp', $export->mediaItems[self::BANNER]->file->mimeType);
@@ -113,8 +113,8 @@ final class ExportReaderTest extends TestCase
 
         $read = $this->reader()->read(new DirectorySource($export));
 
-        self::assertTrue($read->mediaItems[self::BANNER]->picked);
-        self::assertFalse($read->mediaItems[self::POSTER]->picked);
+        self::assertTrue($read->mediaItems[self::BANNER]->isPicked());
+        self::assertFalse($read->mediaItems[self::POSTER]->isPicked());
         $read->cleanUp();
     }
 

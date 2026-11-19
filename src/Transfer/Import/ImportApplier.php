@@ -71,16 +71,14 @@ final readonly class ImportApplier
      */
     public function apply(ReadExport $export, ImportPlan $plan, ImportOptions $options): array
     {
-        foreach ($plan->presets as $planned) {
-            if ($planned->writes()) {
-                $preset = $export->presets[$planned->uuid];
-                $this->presetSaver->save($preset->preset, $preset->changedAt());
-            }
+        foreach ($plan->written(RecordKind::Preset) as $planned) {
+            $preset = $export->presets[$planned->uuid];
+            $this->presetSaver->save($preset->preset, $preset->changedAt());
         }
 
         /** @var list<array{ReadEntry, EntryInterface}> $written */
         $written = [];
-        foreach ($plan->writtenEntries() as $planned) {
+        foreach ($plan->written(RecordKind::Entry) as $planned) {
             $entry = $export->entries[$planned->uuid];
             $row = ImportAction::Create === $planned->action ? $this->create($entry) : $this->update($entry, $options->overwrite);
 

@@ -66,7 +66,7 @@ final readonly class MediaApplier
 
         /** @var array<string, array{ReadMediaItem, MediaItemInterface, MediaItemMetadata|null}> $written by UUID, with an updated one's metadata before */
         $written = [];
-        foreach ($plan->writtenMediaItems() as $planned) {
+        foreach ($plan->written(RecordKind::MediaItem) as $planned) {
             $mediaItem = $export->mediaItems[$planned->uuid];
             if (ImportAction::Create === $planned->action) {
                 $row = $this->create($mediaItem, $files);
@@ -113,7 +113,7 @@ final readonly class MediaApplier
         }
 
         $folders = [];
-        foreach ($plan->mediaFolders as $planned) {
+        foreach ($plan->records(RecordKind::MediaFolder) as $planned) {
             if (ImportAction::Create !== $planned->action) {
                 $folders[$planned->uuid] = $this->mediaFolders->findOneByUuid($planned->uuid) ?? throw new \LogicException(sprintf('The plan uses the media folder %s, which there\'s none of', $planned->uuid));
 

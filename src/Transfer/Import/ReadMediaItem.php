@@ -15,7 +15,7 @@ use Setono\SyliusCMSPlugin\Transfer\Format\ExportedMediaItem;
  * and waiting in a temporary copy until the import stores it or is done. What the file is, its kind, MIME type, size,
  * dimensions and checksum, is what the check read from it, never what the JSON says
  */
-final readonly class ReadMediaItem
+final readonly class ReadMediaItem implements ReadRecord
 {
     /**
      * @param bool $picked whether the export picked it, rather than it coming along as a dependency
@@ -24,14 +24,29 @@ final readonly class ReadMediaItem
     public function __construct(
         public ExportedMediaItem $exported,
         public CheckedFile $file,
-        public bool $picked,
+        private bool $picked,
         private string $copy,
     ) {
+    }
+
+    public function kind(): RecordKind
+    {
+        return RecordKind::MediaItem;
     }
 
     public function uuid(): string
     {
         return $this->exported->uuid;
+    }
+
+    public function changedAt(): \DateTimeImmutable
+    {
+        return $this->exported->changedAt;
+    }
+
+    public function isPicked(): bool
+    {
+        return $this->picked;
     }
 
     /**

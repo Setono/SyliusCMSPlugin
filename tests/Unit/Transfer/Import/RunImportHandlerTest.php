@@ -83,7 +83,6 @@ final class RunImportHandlerTest extends TestCase
         $import = $this->confirmed(overwrite: false, publish: true);
         $refused = ImportResult::refused(new ImportPlan(
             [new PlannedRecord(RecordKind::Entry, 'a1', 'Autumn sale', true, ImportAction::Update, 'page')],
-            [],
             [new ImportConflict(ConflictKind::Draft, 'a1', new TranslatableMessage('setono_sylius_cms.import.conflict.draft', ['%title%' => 'Autumn sale']))],
         ));
         $this->importer->import(Argument::type(ZipSource::class), Argument::that(
@@ -106,7 +105,7 @@ final class RunImportHandlerTest extends TestCase
     public function it_records_an_applied_import_and_deletes_the_zip(): void
     {
         $import = $this->confirmed(overwrite: true, publish: false);
-        $applied = ImportResult::applied(new ImportPlan([new PlannedRecord(RecordKind::Entry, 'a1', 'Autumn sale', true, ImportAction::Create, 'page')], []), false);
+        $applied = ImportResult::applied(new ImportPlan([new PlannedRecord(RecordKind::Entry, 'a1', 'Autumn sale', true, ImportAction::Create, 'page')]), false);
         $this->importer->import(Argument::type(ZipSource::class), Argument::that(
             static fn (ImportOptions $options): bool => !$options->dryRun && !$options->publish && $options->overwrite,
         ))->willReturn($applied);
@@ -124,7 +123,7 @@ final class RunImportHandlerTest extends TestCase
     public function it_runs_the_dry_run_of_an_uploaded_zip_as_if_overwriting_and_keeps_the_zip_for_the_admin_user_to_confirm(): void
     {
         $import = $this->uploaded();
-        $wouldApply = ImportResult::applied(new ImportPlan([new PlannedRecord(RecordKind::Entry, 'a1', 'Autumn sale', true, ImportAction::Update, 'page')], []), true);
+        $wouldApply = ImportResult::applied(new ImportPlan([new PlannedRecord(RecordKind::Entry, 'a1', 'Autumn sale', true, ImportAction::Update, 'page')]), true);
         $this->importer->import(Argument::type(ZipSource::class), Argument::that(
             static fn (ImportOptions $options): bool => $options->dryRun && !$options->publish && $options->overwrite,
         ))->willReturn($wouldApply);
@@ -143,7 +142,7 @@ final class RunImportHandlerTest extends TestCase
     public function it_finishes_an_import_whose_dry_run_refuses_even_overwriting_and_deletes_the_zip(): void
     {
         $import = $this->uploaded();
-        $refused = ImportResult::refused(new ImportPlan([], []));
+        $refused = ImportResult::refused(new ImportPlan([]));
         $this->importer->import(Argument::cetera())->willReturn($refused);
         $this->storage->delete(self::PATH)->shouldBeCalledOnce();
 
@@ -239,7 +238,7 @@ final class RunImportHandlerTest extends TestCase
         $abandonedMeanwhile = new Import();
         $abandonedMeanwhile->abandon(new \DateTimeImmutable());
         $this->imports->findOneByUuid($import->getUuid())->willReturn($import, $abandonedMeanwhile);
-        $this->importer->import(Argument::cetera())->willReturn(ImportResult::applied(new ImportPlan([], []), true));
+        $this->importer->import(Argument::cetera())->willReturn(ImportResult::applied(new ImportPlan([]), true));
 
         $this->handler()(new RunImport($import->getUuid()));
 

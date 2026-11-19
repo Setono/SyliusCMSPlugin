@@ -676,18 +676,18 @@ setono_sylius_cms:
             checked_help: Nothing has changed yet. Review what the import would do, then import it.
             conflicts: Conflicts
             conflicts_help: Records with unpublished changes or a scheduled publish here, or changed here since the export, are in the way until they're overwritten. A URL clash needs a slug changed in one of the environments.
+            # By the kind of record's RecordKind::plural(), as the plan's headings are (entries, presets, …)
             count:
-                editor_presets: '%count% editor preset|%count% editor presets'
                 entries: '%count% entry|%count% entries'
                 media_folders: '%count% media folder|%count% media folders'
                 media_items: '%count% media item|%count% media items'
+                presets: '%count% editor preset|%count% editor presets'
             counted:
                 create: '%records% created'
                 left_alone: '%records% left alone'
                 unchanged: '%records% unchanged'
                 update: '%records% updated'
             description: Import an export zip made by the Transfer screen or setono:cms:export
-            editor_presets: Editor presets
             entries: Entries
             failed: 'The import failed with an unexpected error, and the Messenger worker stopped retrying it: %reason%'
             failed_help: Nothing changed, and its zip has been deleted. Upload the export again to try once more, and look in the logs for the error.
@@ -706,6 +706,7 @@ setono_sylius_cms:
             media_folders: Media folders
             media_items: Media items
             overwrite: Overwrite the records in conflict, discarding their unpublished changes and cancelling their scheduled publishes
+            presets: Editor presets
             progress:
                 checking: 'The Messenger worker has been checking the export since %time%.'
                 importing: 'The Messenger worker has been importing it since %time%.'

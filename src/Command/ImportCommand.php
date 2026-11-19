@@ -87,17 +87,15 @@ final class ImportCommand extends Command
 
     private function printPlan(SymfonyStyle $io, ImportPlan $plan, bool $overwrite): void
     {
-        foreach (['Entries' => $plan->entries, 'Editor presets' => $plan->presets, 'Media items' => $plan->mediaItems, 'Media folders' => $plan->mediaFolders] as $heading => $records) {
-            if ([] !== $records) {
-                $io->section($heading);
-                $io->listing(array_map(static fn (PlannedRecord $record): string => sprintf(
-                    '%s%s%s: %s',
-                    $record->label,
-                    null === $record->contentType ? '' : sprintf(' (%s)', $record->contentType),
-                    $record->picked ? '' : ', came along',
-                    str_replace('_', ' ', $record->action->value),
-                ), $records));
-            }
+        foreach ($plan->kinds() as $kind) {
+            $io->section(ucfirst($kind->nouns()[1]));
+            $io->listing(array_map(static fn (PlannedRecord $record): string => sprintf(
+                '%s%s%s: %s',
+                $record->label,
+                null === $record->contentType ? '' : sprintf(' (%s)', $record->contentType),
+                $record->picked ? '' : ', came along',
+                str_replace('_', ' ', $record->action->value),
+            ), $plan->records($kind)));
         }
 
         if ([] !== $plan->homepageChanges) {
@@ -175,19 +173,13 @@ final class ImportCommand extends Command
      */
     private static function summary(ImportPlan $plan): string
     {
-        $kinds = [
-            ['entry', 'entries', $plan->entries],
-            ['editor preset', 'editor presets', $plan->presets],
-            ['media item', 'media items', $plan->mediaItems],
-            ['media folder', 'media folders', $plan->mediaFolders],
-        ];
-
         $parts = [];
         foreach (self::ACTIONS as $word => $action) {
             $counts = [];
-            foreach ($kinds as [$one, $many, $records]) {
-                $count = count(array_filter($records, static fn (PlannedRecord $record): bool => $action === $record->action));
+            foreach ($plan->kinds() as $kind) {
+                $count = count(array_filter($plan->records($kind), static fn (PlannedRecord $record): bool => $action === $record->action));
                 if ($count > 0) {
+                    [$one, $many] = $kind->nouns();
                     $counts[] = sprintf('%d %s', $count, 1 === $count ? $one : $many);
                 }
             }

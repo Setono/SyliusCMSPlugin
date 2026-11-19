@@ -56,7 +56,7 @@ final readonly class ImportPlanner implements ImportPlannerInterface
     public function plan(ReadExport $export): ImportPlan
     {
         $refusals = $export->refusals;
-        $conflicts = $entries = $presets = [];
+        $records = $conflicts = [];
 
         /** @var array<string, array{ReadEntry, EntryInterface|null}> $written the entries it writes, with what the target holds of each */
         $written = [];
@@ -71,13 +71,10 @@ final readonly class ImportPlanner implements ImportPlannerInterface
                 continue;
             }
 
-            $decision = RecordDecision::of($entry->picked, $entry->exported->changedAt, null === $target ? null : $this->targetRecords->ofEntry($entry, $target));
-            $entries[] = new PlannedRecord(RecordKind::Entry, $entry->uuid(), $entry->label(), $entry->picked, $decision->action, $entry->contentType->code);
-            foreach ($decision->conflicts as $kind) {
-                $conflicts[] = new ImportConflict($kind, $entry->uuid(), self::conflictMessage($kind, $entry->label(), $entry->exported->changedAt, $target?->getChangedAt()));
-            }
-
-            if ($decision->writes()) {
+            [$planned, $plannedConflicts] = self::decide($entry, null === $target ? null : $this->targetRecords->ofEntry($entry, $target), $entry->contentType->code);
+            $records[] = $planned;
+            array_push($conflicts, ...$plannedConflicts);
+            if ($planned->writes()) {
                 $written[$entry->uuid()] = [$entry, $target];
             }
         }
@@ -85,13 +82,10 @@ final readonly class ImportPlanner implements ImportPlannerInterface
         $writtenPresets = [];
         foreach ($export->presets as $preset) {
             $target = $this->presets->findOneByUuid($preset->uuid());
-            $decision = RecordDecision::of($preset->picked, $preset->changedAt(), null === $target ? null : $this->targetRecords->ofPreset($preset, $target));
-            $presets[] = new PlannedRecord(RecordKind::Preset, $preset->uuid(), $preset->label(), $preset->picked, $decision->action);
-            foreach ($decision->conflicts as $kind) {
-                $conflicts[] = new ImportConflict($kind, $preset->uuid(), self::conflictMessage($kind, $preset->label(), $preset->changedAt(), $target?->getChangedAt()));
-            }
-
-            if ($decision->writes()) {
+            [$planned, $plannedConflicts] = self::decide($preset, null === $target ? null : $this->targetRecords->ofPreset($preset, $target));
+            $records[] = $planned;
+            array_push($conflicts, ...$plannedConflicts);
+            if ($planned->writes()) {
                 $writtenPresets[] = $preset;
             }
         }
@@ -103,7 +97,7 @@ final readonly class ImportPlanner implements ImportPlannerInterface
             }
         }
 
-        $mediaItems = $writtenMediaItems = [];
+        $writtenMediaItems = [];
         foreach ($export->mediaItems as $mediaItem) {
             $target = $this->mediaItemRepository->findOneByUuid($mediaItem->uuid());
             if (null !== $target && $target->getKind() !== $mediaItem->file->kind) {
@@ -116,28 +110,43 @@ final readonly class ImportPlanner implements ImportPlannerInterface
                 continue;
             }
 
-            $changedAt = $mediaItem->exported->changedAt;
-            $decision = RecordDecision::of($mediaItem->picked, $changedAt, null === $target ? null : new TargetRecord($target->getChangedAt(), $mediaItem->isIdenticalTo($target)));
-            $mediaItems[] = new PlannedRecord(RecordKind::MediaItem, $mediaItem->uuid(), $mediaItem->label(), $mediaItem->picked, $decision->action);
-            foreach ($decision->conflicts as $kind) {
-                $conflicts[] = new ImportConflict($kind, $mediaItem->uuid(), self::conflictMessage($kind, $mediaItem->label(), $changedAt, $target?->getChangedAt()));
-            }
-
-            if ($decision->writes()) {
+            [$planned, $plannedConflicts] = self::decide($mediaItem, null === $target ? null : new TargetRecord($target->getChangedAt(), $mediaItem->isIdenticalTo($target)));
+            $records[] = $planned;
+            array_push($conflicts, ...$plannedConflicts);
+            if ($planned->writes()) {
                 $writtenMediaItems[] = $mediaItem;
             }
         }
 
         return new ImportPlan(
-            $entries,
-            $presets,
+            [...$records, ...$this->mediaFolders($export, $writtenMediaItems)],
             $conflicts,
             $refusals,
             $this->homepageChanges($written),
             $this->unresolvedReferences->in($export, array_values(array_map(static fn (array $written): ReadEntry => $written[0], $written)), $writtenPresets, $writtenMediaItems),
-            $mediaItems,
-            $this->mediaFolders($export, $writtenMediaItems),
         );
+    }
+
+    /**
+     * What the import does with the record, from what the target holds of it (RecordDecision), and the conflicts that
+     * stop it
+     *
+     * @param TargetRecord|null $target null when the target has none of it
+     * @param string|null $contentType an entry's content type's code
+     *
+     * @return array{PlannedRecord, list<ImportConflict>}
+     */
+    private static function decide(ReadRecord $record, ?TargetRecord $target, ?string $contentType = null): array
+    {
+        $decision = RecordDecision::of($record->isPicked(), $record->changedAt(), $target);
+
+        return [
+            new PlannedRecord($record->kind(), $record->uuid(), $record->label(), $record->isPicked(), $decision->action, $contentType),
+            array_map(
+                static fn (ConflictKind $kind): ImportConflict => new ImportConflict($kind, $record->uuid(), self::conflictMessage($kind, $record->label(), $record->changedAt(), $target?->changedAt)),
+                $decision->conflicts,
+            ),
+        ];
     }
 
     /**

@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Transfer\Import;
 
 /**
- * What an import does with one record of the export, an entry or an editor preset, and the conflicts that stop it.
- * "Source wins" for picked records, unless the target's copy is newer, and records that only came along are created
- * when the target lacks them and otherwise left alone. A URL clash is found apart, for the records the import writes.
- * See "What an import does", "Conflicts" and "Stale records" in docs/spec/transfer.md and ADR 0016
+ * What an import does with one record of the export (ReadRecord), an entry, an editor preset or a media item, and the
+ * conflicts that stop it. "Source wins" for picked records, unless the target's copy is newer, and records that only
+ * came along are created when the target lacks them and otherwise left alone. A URL clash is found apart, for the
+ * records the import writes. See "What an import does", "Conflicts" and "Stale records" in docs/spec/transfer.md and
+ * ADR 0016
  */
 final readonly class RecordDecision
 {

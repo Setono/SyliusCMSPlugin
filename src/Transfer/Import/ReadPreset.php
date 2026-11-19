@@ -11,7 +11,7 @@ use Setono\SyliusCMSPlugin\Preset\TranslationKey;
  * An editor preset of the export as the import read it, its blocks and a starting point's layout upgraded to the
  * code's versions
  */
-final readonly class ReadPreset
+final readonly class ReadPreset implements ReadRecord
 {
     /**
      * @param Preset $preset with its UUID and the changedAt the export records
@@ -19,8 +19,18 @@ final readonly class ReadPreset
      */
     public function __construct(
         public Preset $preset,
-        public bool $picked,
+        private bool $picked,
     ) {
+    }
+
+    public function kind(): RecordKind
+    {
+        return RecordKind::Preset;
+    }
+
+    public function isPicked(): bool
+    {
+        return $this->picked;
     }
 
     public function uuid(): string

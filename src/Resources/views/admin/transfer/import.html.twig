@@ -80,14 +80,13 @@
                     </div>
                 {% else %}
                     {# Such as "3 entries and 1 editor preset created, 1 entry updated" #}
-                    {% set kinds = [['entries', result.plan.entries], ['editor_presets', result.plan.presets], ['media_items', result.plan.mediaItems], ['media_folders', result.plan.mediaFolders]] %}
                     {% set parts = [] %}
                     {% for action in ['create', 'update', 'unchanged', 'left_alone'] %}
                         {% set counts = [] %}
-                        {% for kind in kinds %}
-                            {% set count = kind[1]|filter(record => record.action.value == action)|length %}
+                        {% for kind in result.plan.kinds %}
+                            {% set count = result.plan.records(kind)|filter(record => record.action.value == action)|length %}
                             {% if count > 0 %}
-                                {% set counts = counts|merge([('setono_sylius_cms.ui.import.count.' ~ kind[0])|trans({'%count%': count})]) %}
+                                {% set counts = counts|merge([('setono_sylius_cms.ui.import.count.' ~ kind.plural)|trans({'%count%': count})]) %}
                             {% endif %}
                         {% endfor %}
                         {% if counts is not empty %}
@@ -97,7 +96,7 @@
                     <div class="ui positive message">
                         {{- parts is empty ? 'setono_sylius_cms.ui.import.imported_nothing'|trans : 'setono_sylius_cms.ui.import.imported'|trans({'%summary%': parts|join(', ')}) -}}
                     </div>
-                    {% set written = result.plan.writtenEntries %}
+                    {% set written = result.plan.written(constant('Setono\\SyliusCMSPlugin\\Transfer\\Import\\RecordKind::Entry')) %}
                     {% if written is not empty %}
                         <p id="cms-import-written-heading">{{ (import.publish ? 'setono_sylius_cms.ui.import.written_published' : 'setono_sylius_cms.ui.import.written')|trans }}</p>
                         <ul class="ui list" aria-labelledby="cms-import-written-heading" data-cms-import-entries-written>

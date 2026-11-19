@@ -47,7 +47,7 @@ final class ImportedFileCheckerTest extends TestCase
         $read = (new ImportedFileChecker($checker->reveal(), new UploadLimit(null, 1000)))->check($this->source(), self::mediaItem(), true);
 
         self::assertSame($checked, $read->file);
-        self::assertTrue($read->picked);
+        self::assertTrue($read->isPicked());
         self::assertSame(self::UUID, $read->uuid());
         self::assertSame('Autumn banner', $read->label());
         self::assertIsString($copy);

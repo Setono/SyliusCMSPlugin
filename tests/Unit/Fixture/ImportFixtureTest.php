@@ -46,7 +46,7 @@ final class ImportFixtureTest extends TestCase
         $importer = $this->prophesize(ImporterInterface::class);
         $importer->import(Argument::type(DirectorySource::class), Argument::that(
             static fn (ImportOptions $options): bool => $options->publish && !$options->dryRun && !$options->overwrite,
-        ))->willReturn(ImportResult::applied(new ImportPlan([], []), false))->shouldBeCalledOnce();
+        ))->willReturn(ImportResult::applied(new ImportPlan([]), false))->shouldBeCalledOnce();
 
         (new ImportFixture($importer->reveal(), new IdentityTranslator()))->load(['path' => self::EXPORT]);
     }
@@ -58,7 +58,6 @@ final class ImportFixtureTest extends TestCase
     {
         $importer = $this->prophesize(ImporterInterface::class);
         $importer->import(Argument::cetera())->willReturn(ImportResult::refused(new ImportPlan(
-            [],
             [],
             [new ImportConflict(ConflictKind::Draft, 'a1', new TranslatableMessage('setono_sylius_cms.import.conflict.draft', ['%title%' => 'Autumn sale']))],
             [new ImportRefusal(null, new TranslatableMessage('setono_sylius_cms.import.path_outside_root', ['%path%' => '../evil']))],

@@ -9,8 +9,9 @@ use Symfony\Contracts\Translation\TranslatableInterface;
 
 /**
  * Writes an import's result, with its whole plan, as plain JSON data and reads it back, so an import started in the
- * admin keeps its dry run's result and its own for the admin user to see (Model\ImportInterface). The messages are kept
- * as their keys, parameters and domains, and translated when they're shown. See "Who runs it" in docs/spec/transfer.md
+ * admin keeps its dry run's result and its own for the admin user to see (Model\ImportInterface). The plan's records are
+ * keyed by their kind, as RecordKind's values. The messages are kept as their keys, parameters and domains, and
+ * translated when they're shown. See "Who runs it" in docs/spec/transfer.md
  */
 final readonly class ImportResultNormalizer
 {
@@ -52,11 +53,13 @@ final readonly class ImportResultNormalizer
      */
     private static function normalizePlan(ImportPlan $plan): array
     {
+        $records = [];
+        foreach (RecordKind::cases() as $kind) {
+            $records[$kind->value] = array_map(self::normalizeRecord(...), $plan->records($kind));
+        }
+
         return [
-            'entries' => array_map(self::normalizeRecord(...), $plan->entries),
-            'presets' => array_map(self::normalizeRecord(...), $plan->presets),
-            'mediaItems' => array_map(self::normalizeRecord(...), $plan->mediaItems),
-            'mediaFolders' => array_map(self::normalizeRecord(...), $plan->mediaFolders),
+            'records' => $records,
             'conflicts' => array_map(static fn (ImportConflict $conflict): array => [
                 'kind' => $conflict->kind->value,
                 'uuid' => $conflict->uuid,
@@ -87,9 +90,13 @@ final readonly class ImportResultNormalizer
      */
     private static function denormalizePlan(array $data): ImportPlan
     {
+        $records = [];
+        foreach (RecordKind::cases() as $kind) {
+            array_push($records, ...self::map(self::array($data, 'records'), $kind->value, static fn (array $record): PlannedRecord => self::denormalizeRecord($kind, $record)));
+        }
+
         return new ImportPlan(
-            self::map($data, 'entries', self::denormalizeRecord(...)),
-            self::map($data, 'presets', self::denormalizeRecord(...)),
+            $records,
             self::map($data, 'conflicts', static fn (array $conflict): ImportConflict => new ImportConflict(
                 ConflictKind::tryFrom(self::string($conflict, 'kind')) ?? throw new \InvalidArgumentException('A conflict has no known kind'),
                 self::string($conflict, 'uuid'),
@@ -112,18 +119,15 @@ final readonly class ImportResultNormalizer
                 self::string($reference, 'type'),
                 self::string($reference, 'id'),
             )),
-            self::map($data, 'mediaItems', self::denormalizeRecord(...)),
-            self::map($data, 'mediaFolders', self::denormalizeRecord(...)),
         );
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<string, mixed> without its kind, which it's keyed by
      */
     private static function normalizeRecord(PlannedRecord $record): array
     {
         return [
-            'kind' => $record->kind->value,
             'uuid' => $record->uuid,
             'label' => $record->label,
             'picked' => $record->picked,
@@ -135,7 +139,7 @@ final readonly class ImportResultNormalizer
     /**
      * @param array<array-key, mixed> $data
      */
-    private static function denormalizeRecord(array $data): PlannedRecord
+    private static function denormalizeRecord(RecordKind $kind, array $data): PlannedRecord
     {
         $picked = $data['picked'] ?? null;
         if (!is_bool($picked)) {
@@ -143,7 +147,7 @@ final readonly class ImportResultNormalizer
         }
 
         return new PlannedRecord(
-            RecordKind::tryFrom(self::string($data, 'kind')) ?? throw new \InvalidArgumentException('A record has no known kind'),
+            $kind,
             self::string($data, 'uuid'),
             self::string($data, 'label'),
             $picked,

@@ -12,7 +12,7 @@ use Setono\SyliusCMSPlugin\Transfer\Format\ExportedEntry;
 /**
  * An entry of the export as the import read it, upgraded to the code's versions
  */
-final readonly class ReadEntry
+final readonly class ReadEntry implements ReadRecord
 {
     /**
      * @param ExportedEntry $exported its file, with the entry upgraded, in the shape CanonicalJson::decode() gives
@@ -24,13 +24,28 @@ final readonly class ReadEntry
         public ExportedEntry $exported,
         public EntryInterface $content,
         public ContentTypeMetadata $contentType,
-        public bool $picked,
+        private bool $picked,
     ) {
+    }
+
+    public function kind(): RecordKind
+    {
+        return RecordKind::Entry;
     }
 
     public function uuid(): string
     {
         return $this->content->getUuid();
+    }
+
+    public function changedAt(): \DateTimeImmutable
+    {
+        return $this->exported->changedAt;
+    }
+
+    public function isPicked(): bool
+    {
+        return $this->picked;
     }
 
     /**
