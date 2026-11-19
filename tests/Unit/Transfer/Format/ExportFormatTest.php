@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Media\MediaKind;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
+use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Transfer\Format\ExportedMediaFolder;
 use Setono\SyliusCMSPlugin\Transfer\Format\ExportedMediaItem;
 use Setono\SyliusCMSPlugin\Transfer\Format\ExportFormat;
@@ -182,31 +183,50 @@ final class ExportFormatTest extends TestCase
     public function it_refuses_a_format_it_does_not_know_and_files_that_are_not_in_the_format(): void
     {
         $format = new ExportFormat();
+        $settings = '"changedAt": "2026-11-12T10:15:00Z", "settings": {"enabled": true}';
+        $preset = (string) preg_replace('/"blocks": \[.*\]/s', '"blocks": {}', self::fixture(ExportFormat::presetPath(self::PRESET)));
         $refused = [
-            'a manifest of another format' => static fn () => $format->decodeManifest('{"format": 2, "plugin": "3.0.0", "exportedAt": "2027-01-01T00:00:00Z", "picked": {"entries": [], "presets": [], "media": []}}'),
-            'a manifest without picked records' => static fn () => $format->decodeManifest('{"format": 1, "plugin": "2.0.0", "exportedAt": "2026-11-13T15:00:00Z"}'),
-            'JSON that does not parse' => static fn () => $format->decodeManifest('{"format": 1,'),
-            'an entry without its entry' => static fn () => $format->decodeEntry('{"changedAt": "2026-11-12T10:15:00Z", "settings": {}, "placements": []}'),
-            'an entry with a date that is not one' => static fn () => $format->decodeEntry('{"changedAt": "yesterday", "settings": {}, "placements": [], "entry": {}}'),
-            'an entry whose settings are not settings' => static fn () => $format->decodeEntry('{"changedAt": "2026-11-12T10:15:00Z", "settings": {"enabled": "yes"}, "placements": [], "entry": {}}'),
-            'a placement without a slot' => static fn () => $format->decodeEntry('{"changedAt": "2026-11-12T10:15:00Z", "settings": {}, "placements": [{"uuid": "0193a5be-7300-7b1c-8d2e-3f4a5b6c7d8e", "scope": [], "preceding": []}], "entry": {}}'),
-            'a code preset' => static fn () => $format->decodePreset('{"format": 1, "name": "Hero", "category": null, "description": null, "thumbnail": null, "startingPoint": null, "blocks": []}'),
-            'folders that are not a list' => static fn () => $format->decodeMediaFolders('{"uuid": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b"}'),
-            'a folder before its parent' => static fn () => $format->decodeMediaFolders('[{"uuid": "0193a5be-7501-7f5a-8b6c-7d8e9f0a1b2c", "name": "Autumn", "parent": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b"}, {"uuid": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b", "name": "Campaigns", "parent": null}]'),
-            'a folder whose parent is not listed' => static fn () => $format->decodeMediaFolders('[{"uuid": "0193a5be-7501-7f5a-8b6c-7d8e9f0a1b2c", "name": "Autumn", "parent": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b"}]'),
-            'a folder listed twice' => static fn () => $format->decodeMediaFolders('[{"uuid": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b", "name": "Campaigns", "parent": null}, {"uuid": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b", "name": "Campaigns", "parent": null}]'),
-            'a media item of a kind there is none of' => static fn () => $format->decodeMediaItem(str_replace('"image"', '"sound"', self::fixture(ExportFormat::mediaItemPath(self::IMAGE)))),
-            'a media item whose checksum is not one' => static fn () => $format->decodeMediaItem(str_replace('sha256:430515', 'md5:430515', self::fixture(ExportFormat::mediaItemPath(self::IMAGE)))),
+            'a manifest of another format' => [static fn () => $format->decodeManifest('{"format": 2, "plugin": "3.0.0", "exportedAt": "2027-01-01T00:00:00Z", "picked": {"entries": [], "presets": [], "media": []}}'), 'The export has the format 2, but this version of the plugin reads format 1'],
+            'a manifest without the plugin version' => [static fn () => $format->decodeManifest('{"format": 1, "exportedAt": "2026-11-13T15:00:00Z", "picked": {"entries": [], "presets": [], "media": []}}'), 'The manifest must name the plugin version that wrote it'],
+            'a manifest without picked records' => [static fn () => $format->decodeManifest('{"format": 1, "plugin": "2.0.0", "exportedAt": "2026-11-13T15:00:00Z"}'), 'The manifest\'s picked records must be a JSON object'],
+            'JSON that does not parse' => [static fn () => $format->decodeManifest('{"format": 1,'), 'manifest.json isn\'t valid JSON: Syntax error'],
+            'an entry without its entry' => [static fn () => $format->decodeEntry('{' . $settings . ', "placements": []}'), 'The entry\'s file must hold the entry in the entry format'],
+            'an entry with a date that is not one' => [static fn () => $format->decodeEntry('{"changedAt": "yesterday", "settings": {}, "placements": [], "entry": {}}'), 'The entry\'s changedAt must be a date and time in UTC, such as 2026-11-13T15:00:00Z'],
+            'an entry whose settings are not settings' => [static fn () => $format->decodeEntry('{"changedAt": "2026-11-12T10:15:00Z", "settings": {"enabled": "yes"}, "placements": [], "entry": {}}'), 'The entry\'s settings are invalid: "enabled" must be true or false'],
+            'a placement without a slot' => [static fn () => $format->decodeEntry('{' . $settings . ', "placements": [{"uuid": "0193a5be-7300-7b1c-8d2e-3f4a5b6c7d8e", "scope": [], "preceding": []}], "entry": {"uuid": "' . self::SNIPPET . '"}}'), 'A placement must name its slot'],
+            'a placement whose UUID is not one' => [static fn () => $format->decodeEntry('{' . $settings . ', "placements": [{"uuid": "1", "slot": "product.after_price", "scope": [], "preceding": []}], "entry": {"uuid": "' . self::SNIPPET . '"}}'), 'A placement\'s UUID must be a UUID'],
+            'a code preset' => [static fn () => $format->decodePreset('{"format": 1, "name": "Hero", "category": null, "description": null, "thumbnail": null, "startingPoint": null, "blocks": []}'), 'An export holds editor presets, which have a UUID and a changedAt'],
+            'a preset whose blocks are not a list' => [static fn () => $format->decodePreset($preset), 'The preset is invalid: The preset must have a list of blocks'],
+            'folders that are not a list' => [static fn () => $format->decodeMediaFolders('{"uuid": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b"}'), 'The media folders must be a JSON list'],
+            'a folder without a name' => [static fn () => $format->decodeMediaFolders('[{"uuid": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b", "name": "", "parent": null}]'), 'A media folder must have a name'],
+            'a folder before its parent' => [static fn () => $format->decodeMediaFolders('[{"uuid": "0193a5be-7501-7f5a-8b6c-7d8e9f0a1b2c", "name": "Autumn", "parent": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b"}, {"uuid": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b", "name": "Campaigns", "parent": null}]'), 'The parent of the media folder 0193a5be-7501-7f5a-8b6c-7d8e9f0a1b2c must be listed before it'],
+            'a folder whose parent is not listed' => [static fn () => $format->decodeMediaFolders('[{"uuid": "0193a5be-7501-7f5a-8b6c-7d8e9f0a1b2c", "name": "Autumn", "parent": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b"}]'), 'The parent of the media folder 0193a5be-7501-7f5a-8b6c-7d8e9f0a1b2c must be listed before it'],
+            'a folder listed twice' => [static fn () => $format->decodeMediaFolders('[{"uuid": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b", "name": "Campaigns", "parent": null}, {"uuid": "0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b", "name": "Campaigns", "parent": null}]'), 'The media folder 0193a5be-7500-7e4f-9a5b-6c7d8e9f0a1b is listed twice'],
+            'a media item of a kind there is none of' => [static fn () => $format->decodeMediaItem(str_replace('"image"', '"sound"', self::fixture(ExportFormat::mediaItemPath(self::IMAGE)))), 'A media item\'s kind must be image, video or document'],
+            'a media item whose checksum is not one' => [static fn () => $format->decodeMediaItem(str_replace('sha256:430515', 'md5:430515', self::fixture(ExportFormat::mediaItemPath(self::IMAGE)))), 'A media item\'s checksum must be sha256: and the lowercase hex SHA-256 of its file'],
+            'a media item whose focal point is outside it' => [static fn () => $format->decodeMediaItem(str_replace('"x": 0.42', '"x": 1.5', self::fixture(ExportFormat::mediaItemPath(self::IMAGE)))), 'A focal point\'s x and y must be from 0 to 1, not 1.5 and 0.35'],
         ];
 
-        foreach ($refused as $what => $decode) {
+        foreach ($refused as $what => [$decode, $message]) {
             try {
                 $decode();
                 self::fail(sprintf('It read %s', $what));
-            } catch (InvalidExportException) {
-                $this->addToAssertionCount(1);
+            } catch (InvalidExportException $e) {
+                self::assertSame($message, $e->getMessage(), $what);
             }
         }
+    }
+
+    /**
+     * An export holds what editors made, which a code preset isn't
+     *
+     * @test
+     */
+    public function it_writes_only_an_editor_preset(): void
+    {
+        $this->expectExceptionObject(new \InvalidArgumentException('An export holds editor presets, which have a UUID and a changedAt'));
+
+        (new ExportFormat())->encodePreset(new Preset('Hero', [], code: 'hero'));
     }
 
     private static function fixture(string $path): string
