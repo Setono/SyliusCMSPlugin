@@ -116,12 +116,4 @@ final readonly class ImportPlan
             array_filter($this->records(), static fn (PlannedRecord $record): bool => $action === $record->action),
         ));
     }
-
-    /**
-     * @return list<ImportConflict> the conflicts about the record
-     */
-    public function conflictsOf(string $uuid): array
-    {
-        return array_values(array_filter($this->conflicts, static fn (ImportConflict $conflict): bool => $uuid === $conflict->uuid));
-    }
 }

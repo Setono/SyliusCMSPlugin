@@ -43,14 +43,6 @@ final readonly class ExportPlan
     }
 
     /**
-     * Whether it holds no record at all
-     */
-    public function isEmpty(): bool
-    {
-        return [] === $this->entries && [] === $this->presets && [] === $this->mediaItems;
-    }
-
-    /**
      * Every entry it holds, picked or a dependency
      *
      * @return list<EntryInterface>
