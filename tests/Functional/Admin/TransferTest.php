@@ -56,7 +56,7 @@ final class TransferTest extends WebTestCase
             $crawler->filter('[data-cms-export-folders] .ui.checkbox')->each(static fn (Crawler $box): array => [trim($box->filter('label')->text()), null !== $box->filter('input')->attr('checked')]),
         );
         self::assertSame(['0 entries, 0 editor presets and 1 media item'], $crawler->filter('[data-cms-export-plan] [data-cms-export-counts]')->each(static fn (Crawler $node): string => trim($node->text())));
-        self::assertSame(0, $crawler->filter('[data-cms-export-added]')->count());
+        self::assertCount(0, $crawler->filter('[data-cms-export-added]'));
     }
 
     /**

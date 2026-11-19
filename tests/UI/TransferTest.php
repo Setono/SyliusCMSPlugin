@@ -53,7 +53,10 @@ final class TransferTest extends UITestCase
         // Download gives the export as a zip
         $responses = [];
         $browser->events()->onResponse(static function (ResponseInterface $response) use (&$responses): void {
-            $responses[parse_url($response->url(), \PHP_URL_PATH)] = $response;
+            $path = parse_url($response->url(), \PHP_URL_PATH);
+            if (is_string($path)) {
+                $responses[$path] = $response;
+            }
         });
 
         try {
