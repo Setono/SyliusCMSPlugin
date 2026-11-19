@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Functional;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\AsResource\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\AsResourceContentTypeKernel;
@@ -45,7 +44,7 @@ final class AsResourceContentTypeTest extends KernelTestCase
         /** @var EntityManagerInterface $manager */
         $manager = self::getContainer()->get('doctrine.orm.entity_manager');
 
-        self::assertSame(Recipe::class, $manager->getClassMetadata(Entry::class)->discriminatorMap['recipe'] ?? null);
+        self::assertSame(Recipe::class, $manager->getClassMetadata(Recipe::class)->discriminatorMap['recipe'] ?? null);
         self::assertSame('recipe', $manager->getClassMetadata(Recipe::class)->discriminatorValue);
         self::assertSame('recipe_servings', $manager->getClassMetadata(Recipe::class)->getColumnName('servings'));
     }
