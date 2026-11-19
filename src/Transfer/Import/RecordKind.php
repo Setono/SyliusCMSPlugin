@@ -10,6 +10,5 @@ namespace Setono\SyliusCMSPlugin\Transfer\Import;
 enum RecordKind: string
 {
     case Entry = 'entry';
-
     case Preset = 'preset';
 }

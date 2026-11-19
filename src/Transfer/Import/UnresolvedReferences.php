@@ -144,7 +144,7 @@ final readonly class UnresolvedReferences
                 UnresolvedReference::CHANNEL => self::codes($this->channels->findBy(['code' => array_keys($byId)])),
                 UnresolvedReference::CUSTOMER_GROUP => self::codes($this->customerGroups->findBy(['code' => array_keys($byId)])),
                 UnresolvedReference::LOCALE => self::codes($this->locales->findBy(['code' => array_keys($byId)])),
-                default => $this->existing((string) $type, array_map('strval', array_keys($byId))),
+                default => $this->existing((string) $type, array_map(strval(...), array_keys($byId))),
             };
 
             foreach ($existing as $id) {

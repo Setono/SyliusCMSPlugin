@@ -10,14 +10,14 @@ use Setono\SyliusCMSPlugin\Transfer\Format\InvalidExportException;
  * Reads an export from a zip holding the export's folder at its root. It reads files by their names and never extracts
  * the zip. Checking that every entry of the zip resolves inside the export's root is #280's, with the media files
  */
-final class ZipSource implements ExportSourceInterface
+final readonly class ZipSource implements ExportSourceInterface
 {
-    private readonly \ZipArchive $zip;
+    private \ZipArchive $zip;
 
     /**
      * @throws InvalidExportException when the file isn't a zip that can be read
      */
-    public function __construct(private readonly string $file)
+    public function __construct(private string $file)
     {
         $this->zip = new \ZipArchive();
         $opened = $this->zip->open($file, \ZipArchive::RDONLY);

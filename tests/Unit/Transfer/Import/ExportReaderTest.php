@@ -150,9 +150,9 @@ final class ExportReaderTest extends TestCase
 
         // The export is the code's versions already, unless the code is older than it
         $upgrader = $this->prophesize(StoredDataUpgraderInterface::class);
-        foreach (['upgradeEntry', 'upgradeBlocks'] as $method) {
-            $upgrader->{$method}(Argument::type('array'))->will(static fn (array $args): Upgraded => new Upgraded((array) $args[0], null === $newer ? [] : [$newer]));
-        }
+        $upgraded = static fn (array $args): Upgraded => new Upgraded((array) $args[0], null === $newer ? [] : [$newer]);
+        $upgrader->upgradeEntry(Argument::type('array'))->will($upgraded);
+        $upgrader->upgradeBlocks(Argument::type('array'))->will($upgraded);
 
         return new ExportReader(
             $registry,

@@ -350,8 +350,10 @@ final class ExportFormat
             throw new InvalidExportException(sprintf('%s must be a JSON object', $what));
         }
 
-        /** @var array<string, mixed> $value */
-        return $value;
+        /** @var array<string, mixed> $map */
+        $map = $value;
+
+        return $map;
     }
 
     /**

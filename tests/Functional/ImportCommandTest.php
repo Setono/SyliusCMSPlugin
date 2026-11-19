@@ -75,6 +75,7 @@ final class ImportCommandTest extends KernelTestCase
 
         // Never published here, so the content is in the rows, and nothing is published
         $page = self::entry(self::PAGE);
+        self::assertInstanceOf(PageInterface::class, $page);
         self::assertFalse($page->isPublished());
         self::assertNull(self::draftOf($page));
         self::assertSame('Autumn sale', $page->getTranslation('en_US')->getTitle());
@@ -333,38 +334,41 @@ final class ImportCommandTest extends KernelTestCase
         // Connected, so the level counts the transaction every test runs in
         $connection->executeQuery('SELECT 1');
         $level = $connection->getTransactionNestingLevel();
-        $heard = [];
+        /** @var \ArrayObject<int, object> $heard the events the listeners heard, in order */
+        $heard = new \ArrayObject();
         foreach ([EntryCreated::class, EntrySettingsChanged::class, PlacementsChanged::class, EntryPublished::class, ImportFinished::class] as $event) {
-            self::eventDispatcher()->addListener($event, static function (object $event) use (&$heard, $connection, $level): void {
+            self::eventDispatcher()->addListener($event, static function (object $event) use ($heard, $connection, $level): void {
                 // Only once the import's transaction committed
                 self::assertSame($level, $connection->getTransactionNestingLevel());
-                $heard[] = $event;
+                $heard->append($event);
             });
         }
 
         self::import(['path' => self::FIXTURE, '--dry-run' => true, '--publish' => true], boot: false);
-        self::assertSame([], $heard);
+        self::assertCount(0, $heard);
 
         self::import(['path' => self::FIXTURE, '--publish' => true], boot: false);
 
-        $finished = array_pop($heard);
+        $events = $heard->getArrayCopy();
+        $finished = array_pop($events);
         self::assertInstanceOf(ImportFinished::class, $finished);
         self::assertSame([self::INNER_SNIPPET, self::SNIPPET, self::PAGE, self::PRESET], $finished->result->created());
         self::assertSame([], $finished->result->updated());
         self::assertSame([self::INNER_SNIPPET, self::SNIPPET, self::PAGE, self::PRESET], $finished->getAffectedUuids());
         self::assertEquals([new UnresolvedReference(self::SNIPPET, 'Autumn banner', 'taxon', 't_shirts')], $finished->result->unresolvedReferences());
-        self::assertCount(3, array_filter($heard, static fn (object $event): bool => $event instanceof EntryCreated));
-        self::assertCount(3, array_filter($heard, static fn (object $event): bool => $event instanceof EntryPublished));
-        self::assertCount(1, array_filter($heard, static fn (object $event): bool => $event instanceof PlacementsChanged));
+        self::assertCount(3, array_filter($events, static fn (object $event): bool => $event instanceof EntryCreated));
+        self::assertCount(3, array_filter($events, static fn (object $event): bool => $event instanceof EntryPublished));
+        self::assertCount(1, array_filter($events, static fn (object $event): bool => $event instanceof PlacementsChanged));
 
         // An import that changes nothing touched nothing
-        $heard = [];
+        $heard->exchangeArray([]);
         self::import(['path' => self::FIXTURE], boot: false);
-        $finished = array_pop($heard);
+        $events = $heard->getArrayCopy();
+        $finished = array_pop($events);
         self::assertInstanceOf(ImportFinished::class, $finished);
         self::assertSame([], $finished->getAffectedUuids());
         self::assertSame([self::INNER_SNIPPET, self::SNIPPET, self::PAGE, self::PRESET], $finished->result->unchanged());
-        self::assertSame([], $heard);
+        self::assertSame([], $events);
     }
 
     /**

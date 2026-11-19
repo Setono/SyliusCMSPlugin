@@ -68,7 +68,7 @@ final readonly class ImportedPlacements
         $this->editRecorder->record($snippet);
         $this->manager->flush();
 
-        $this->events->dispatch(new PlacementsChanged([$snippet->getUuid()], array_map('strval', array_keys($slots))));
+        $this->events->dispatch(new PlacementsChanged([$snippet->getUuid()], array_map(strval(...), array_keys($slots))));
     }
 
     /**
