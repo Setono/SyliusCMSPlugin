@@ -20,6 +20,7 @@ setono_sylius_cms:
         condition: 'The condition "%kind%" on the block "%block%"'
         does_not_provide: '%what% doesn''t provide the host-page context %context%.'
         layout_binding: 'The binding "%binding%" in the layout'
+        entry_source: 'The source "%source%" in the field "%field%"'
         layout_source: 'The source "%source%" in the layout''s field "%field%"'
         needs: '%what% needs the host-page context %context%.'
         needs_entry_of: '%what% only works in an entry of the type %content_types%.'

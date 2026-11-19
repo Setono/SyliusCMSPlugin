@@ -24,6 +24,7 @@ use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
+use Setono\SyliusCMSPlugin\Tests\Unit\Context\Fixture\Lookbook;
 use Setono\SyliusCMSPlugin\Tree\ReferenceFinder;
 use Setono\SyliusCMSPlugin\Tree\SnippetUse;
 use Setono\SyliusCMSPlugin\Tree\SnippetUses;
@@ -79,6 +80,26 @@ final class SnippetUsesTest extends TestCase
     }
 
     /**
+     * A content type's own Snippet field shows it as a Snippet block does
+     *
+     * @test
+     */
+    public function it_finds_an_entry_whose_own_snippet_field_shows_the_snippet(): void
+    {
+        $footer = new Snippet();
+        $lookbook = new Lookbook();
+        $lookbook->banner = $footer->getUuid();
+        $lookbook->publish(new \DateTimeImmutable());
+
+        $entries = $this->prophesize(EntryRepositoryInterface::class);
+        $entries->findReferencing([$footer->getUuid()])->willReturn([$lookbook]);
+        $workingCopies = $this->prophesize(WorkingCopyProviderInterface::class);
+        $workingCopies->getWorkingCopy($lookbook)->willReturn($lookbook);
+
+        self::assertEquals([new SnippetUse($lookbook, true, $lookbook)], $this->uses($entries->reveal(), $workingCopies->reveal())->of($footer));
+    }
+
+    /**
      * @test
      */
     public function it_leaves_out_a_snippet_that_shows_itself(): void
@@ -108,6 +129,7 @@ final class SnippetUsesTest extends TestCase
             new ContentTypeRegistry([
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
                 'snippet' => ['model' => Snippet::class, 'translation' => EntryTranslation::class, 'resource' => 'setono_sylius_cms.snippet'],
+                'lookbook' => ['model' => Lookbook::class, 'translation' => EntryTranslation::class, 'resource' => 'app.lookbook'],
             ]),
         );
     }

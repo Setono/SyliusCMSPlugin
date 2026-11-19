@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Model\BlogCategory;
 use Setono\SyliusCMSPlugin\Model\BlogCategoryTranslation;
 use Setono\SyliusCMSPlugin\Model\BlogPost;
 use Setono\SyliusCMSPlugin\Model\BlogPostTranslation;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
@@ -24,6 +25,7 @@ use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Tests\Support\Sources;
 use Setono\SyliusCMSPlugin\Tests\Unit\Context\Fixture\CategoryPosts;
 use Setono\SyliusCMSPlugin\Tests\Unit\Context\Fixture\LocalizedPicks;
+use Setono\SyliusCMSPlugin\Tests\Unit\Context\Fixture\Lookbook;
 use Setono\SyliusCMSPlugin\Tests\Unit\Context\Fixture\Neighbours;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Kind\Fixture\Showcase;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\Fixture\OnSale;
@@ -117,6 +119,21 @@ final class SourceDependenciesTest extends TestCase
     }
 
     /**
+     * A content type's own list field is a field like any other (docs/spec/extending.md#content-types)
+     *
+     * @test
+     */
+    public function it_finds_a_list_of_the_content_types_own_fields_filled_by_a_source_that_needs_context_keys(): void
+    {
+        $lookbook = new Lookbook();
+        $lookbook->picks = self::stored('neighbours');
+
+        self::assertEquals([
+            new ContextDependency(new TranslatableMessage('setono_sylius_cms.context.entry_source', ['%source%' => new TranslatableMessage('app.source.neighbours'), '%field%' => new TranslatableMessage('app.cms.field.picks')], 'validators'), ['product', 'taxon']),
+        ], [...self::finder()->findIn($lookbook)]);
+    }
+
+    /**
      * A source that fits only some content types as the entry, such as In this category, depends on the entry being of
      * one of them (docs/spec/extending.md#sources)
      *
@@ -171,6 +188,7 @@ final class SourceDependenciesTest extends TestCase
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
                 'blog_post' => ['model' => BlogPost::class, 'translation' => BlogPostTranslation::class, 'resource' => 'setono_sylius_cms.blog_post'],
                 'blog_category' => ['model' => BlogCategory::class, 'translation' => BlogCategoryTranslation::class, 'resource' => 'setono_sylius_cms.blog_category'],
+                'lookbook' => ['model' => Lookbook::class, 'translation' => EntryTranslation::class, 'resource' => 'app.lookbook'],
             ]),
             Sources::registry(['on_sale' => new OnSale(), 'product_taxons' => new ProductTaxons(), 'neighbours' => new Neighbours(), 'category_posts' => new CategoryPosts()], $disabled),
         );

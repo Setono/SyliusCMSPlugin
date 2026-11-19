@@ -60,20 +60,21 @@ final readonly class ShownSnippetDependencies implements ContextDependencyFinder
     }
 
     /**
-     * The references of the Snippet fields in the entry's tree, but those to the entry itself
+     * The references of the entry's Snippet fields, its content type's own and those in its tree, but those to the entry itself
      *
      * @return list<FoundReference>
      */
     private function snippetReferences(EntryInterface $entry): array
     {
         try {
-            $contentType = $this->contentTypes->getByEntry($entry)->code;
+            $contentType = $this->contentTypes->getByEntry($entry);
         } catch (UnknownContentTypeException) {
             return [];
         }
 
         $found = [];
-        foreach ($this->referenceFinder->inTree($entry->getBlockTree(), $contentType) as $reference) {
+        // Its content type's own Snippet fields show a snippet too
+        foreach ($this->referenceFinder->inEntry($entry, $contentType) as $reference) {
             if (SnippetReferences::isSnippetReference($reference->reference) && $reference->reference->id !== $entry->getUuid()) {
                 $found[] = $reference;
             }
