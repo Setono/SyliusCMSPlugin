@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Publishing\EntryDeleterInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Blog;
+use Setono\SyliusCMSPlugin\Tests\Support\Faq;
 use Setono\SyliusCMSPlugin\Tests\Support\StoreLocations;
 
 /**
@@ -16,6 +17,7 @@ use Setono\SyliusCMSPlugin\Tests\Support\StoreLocations;
 final class CategoryPickerTest extends BuilderApiTestCase
 {
     use Blog;
+    use Faq;
     use StoreLocations;
 
     /**
@@ -55,6 +57,38 @@ final class CategoryPickerTest extends BuilderApiTestCase
             self::json($client, 'GET', '/admin/cms/api/search/entry?q=&contentType=blog_category'),
         );
         self::assertSame([$news->getUuid()], array_column((array) self::json($client, 'GET', '/admin/cms/api/search/entry?q=NEW&contentType=blog_category'), 'ref'));
+    }
+
+    /**
+     * FAQ categories have no URL of their own, so no link leads to them, but a FAQ item's categories picker finds them
+     *
+     * @test
+     */
+    public function it_tells_the_picker_of_a_faq_items_categories_to_search_the_faq_categories_which_it_finds(): void
+    {
+        $client = self::signedIn();
+        $shipping = self::createFaqCategory('Shipping');
+        self::createFaqItem('How fast do you ship?', 'Within three days.', [$shipping]);
+
+        $registry = (array) self::json($client, 'GET', '/admin/cms/api/registry');
+        /** @var list<array{code: string, prefix: string|null, blocks: mixed, fields: list<array{name: string, schema: array<string, mixed>}>}> $contentTypes */
+        $contentTypes = $registry['contentTypes'] ?? [];
+        $faqItem = array_values(array_filter($contentTypes, static fn (array $contentType): bool => 'faq_item' === $contentType['code']))[0] ?? null;
+        self::assertNotNull($faqItem);
+        self::assertNull($faqItem['prefix']);
+        self::assertNull($faqItem['blocks']);
+
+        $fields = array_column($faqItem['fields'], 'schema', 'name');
+        self::assertSame(['categories', 'answer'], array_keys($fields));
+        self::assertSame(['max' => null, 'sources' => [], 'limit' => 8, 'contentType' => 'faq_category'], $fields['categories']['x-cms-options'] ?? null);
+        self::assertSame('rich_text', $fields['answer']['x-cms-type'] ?? null);
+        self::assertTrue($fields['answer']['x-cms-translatable'] ?? null);
+
+        self::assertSame([], self::json($client, 'GET', '/admin/cms/api/search/entry?q=ship'), 'A link leads only to an entry with a URL of its own');
+        self::assertSame(
+            [['ref' => $shipping->getUuid(), 'name' => 'Shipping', 'thumbnail' => null]],
+            self::json($client, 'GET', '/admin/cms/api/search/entry?q=ship&contentType=faq_category'),
+        );
     }
 
     /**

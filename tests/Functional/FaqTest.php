@@ -48,6 +48,13 @@ final class FaqTest extends WebTestCase
             self::assertCount(1, $crawler->filter('input[name="setono_sylius_cms_create_entry[title]"]'));
             self::assertCount(0, $crawler->filter('input[name="setono_sylius_cms_create_entry[slug]"]'), sprintf('A %s has no slug', $contentType));
         }
+
+        // The item's overview page shows no URL, and no draft to share, as there's no page to share it on
+        $crawler = $client->request('GET', sprintf('/admin/cms/entry/%s', $item->getUuid()));
+        self::assertResponseIsSuccessful();
+        self::assertSame('FAQ item', $crawler->filter('[data-content-type]')->text());
+        self::assertCount(0, $crawler->filter('[data-overview-header] [data-url]'));
+        self::assertSelectorNotExists('[aria-controls="cms-share-draft"]');
     }
 
     /**
