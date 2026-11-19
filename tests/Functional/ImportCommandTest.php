@@ -466,7 +466,7 @@ final class ImportCommandTest extends KernelTestCase
         self::assertStringContainsString('Autumn hero: update', self::display($tester));
         /** @var PresetProviderInterface $presets */
         $presets = self::getContainer()->get(PresetProviderInterface::class);
-        self::assertSame(['image'], array_map(static fn (StoredBlock $block): string => $block->type, $presets->find(self::PRESET)?->blocks ?? []));
+        self::assertSame(['image'], array_map(static fn (StoredBlock $block): string => $block->type, $presets->find(self::PRESET)->blocks ?? []));
     }
 
     /**

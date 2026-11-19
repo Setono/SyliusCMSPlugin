@@ -179,6 +179,8 @@ final class TransferTest extends WebTestCase
      */
     private static function exportZips(): array
     {
-        return glob(sys_get_temp_dir() . '/setono_sylius_cms_export_*.zip') ?: [];
+        $zips = glob(sys_get_temp_dir() . '/setono_sylius_cms_export_*.zip');
+
+        return false === $zips ? [] : $zips;
     }
 }
