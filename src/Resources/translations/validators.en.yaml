@@ -85,4 +85,3 @@ setono_sylius_cms:
     # Why the create dialog refuses a starting point. See "Starting points" in docs/spec/layouts-and-presets.md
     starting_point:
         disabled: 'This starting point can''t be used until a developer fixes it. Pick another.'
-        refused: 'This starting point can''t be used: %reason%'

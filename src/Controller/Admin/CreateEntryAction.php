@@ -32,7 +32,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Twig\Environment;
@@ -114,13 +113,13 @@ final readonly class CreateEntryAction
             $startingPoint = self::picked($startingPoints, $data['startingPoint'] ?? null);
             if (null !== $startingPoint) {
                 // The starting point brings its own layout, so the one picked for Blank is left out
-                $this->start($request, $form, $entry, $startingPoint, $localeCode);
+                $this->start($request, $entry, $startingPoint, $localeCode);
             } elseif (isset($data['layout'])) {
                 $layout = $this->layouts->get($contentType, $data['layout']);
                 $entry->setBlockTree(new StoredTree(new StoredLayout($layout->code, $layout->version), $entry->getBlockTree()->blocks));
             }
 
-            if ($form->isValid() && !$this->hasUrlErrors($form, $entry)) {
+            if (!$this->hasUrlErrors($form, $entry)) {
                 return $this->save($entry, $contentType);
             }
         }
@@ -137,31 +136,22 @@ final readonly class CreateEntryAction
     /**
      * Gives the new entry the starting point's tree: its blocks and its layout, with the values of the locales of the
      * entry's channels and the one its title is in. What it left out, as inserting does, such as blocks of a disabled
-     * type, the builder tells the editor once it opens (BuilderAction::NOTICES). A starting point the code is older than
-     * is refused, with the error on the starting point
-     *
-     * @param FormInterface<array{title: string, slug?: string, layout?: string, startingPoint?: string|null, channels?: array<int, string>}|null> $form
+     * type, the builder tells the editor once it opens (BuilderAction::NOTICES). A starting point the code is older than,
+     * which the transformer would refuse, never gets here: StartingPointChoices disables it, from the same upgrade, and
+     * the form refuses a disabled one
      */
-    private function start(Request $request, FormInterface $form, EntryInterface $entry, StartingPointChoice $startingPoint, string $localeCode): void
+    private function start(Request $request, EntryInterface $entry, StartingPointChoice $startingPoint, string $localeCode): void
     {
         $locales = array_values(array_unique([$localeCode, ...$this->channelLocales->ofChannels($entry->getChannelCodes())]));
         $started = $this->startingPointTransformer->transform($startingPoint->preset, $locales);
-        if (!$started->refused) {
-            $entry->setBlockTree($started->tree);
+        $entry->setBlockTree($started->tree);
 
-            $session = $request->hasSession() ? $request->getSession() : null;
-            if ($session instanceof FlashBagAwareSessionInterface) {
-                foreach ($started->notices as $notice) {
-                    $session->getFlashBag()->add(BuilderAction::NOTICES, $notice->trans($this->translator));
-                }
+        $session = $request->hasSession() ? $request->getSession() : null;
+        if ($session instanceof FlashBagAwareSessionInterface) {
+            foreach ($started->notices as $notice) {
+                $session->getFlashBag()->add(BuilderAction::NOTICES, $notice->trans($this->translator));
             }
-
-            return;
         }
-
-        $form->get('startingPoint')->addError(new FormError($this->translator->trans('setono_sylius_cms.starting_point.refused', [
-            '%reason%' => implode(' ', array_map(fn (TranslatableMessage $notice): string => $notice->trans($this->translator), $started->notices)),
-        ], 'validators')));
     }
 
     /**
