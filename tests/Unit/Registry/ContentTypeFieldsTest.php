@@ -12,6 +12,7 @@ use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\FlagshipShop;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopProxy;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
 
 final class ContentTypeFieldsTest extends TestCase
@@ -75,6 +76,19 @@ final class ContentTypeFieldsTest extends TestCase
         self::assertFalse($fields->read($shop, 'parking'));
         self::assertNull($fields->read($shop, 'photo'));
         self::assertSame("Turn left\nat the fountain", $fields->read($translation, 'directions'));
+    }
+
+    /**
+     * An entry Doctrine hasn't loaded yet, such as one a reference points to, holds the row's values once it's loaded
+     *
+     * @test
+     */
+    public function it_loads_a_doctrine_proxy_before_reading_its_field(): void
+    {
+        $proxy = new ShopProxy();
+
+        self::assertSame('Aarhus', (new ContentTypeFields(new FieldReader()))->read($proxy, 'city'));
+        self::assertTrue($proxy->__isInitialized());
     }
 
     /**
