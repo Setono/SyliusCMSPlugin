@@ -92,6 +92,8 @@ final class HubMenuBuilderTest extends TestCase
         self::assertSame('/admin/cms/transfer', $transfer->getUri());
         self::assertSame('exchange', $transfer->getLabelAttribute('icon'));
         self::assertTrue(MenuFactory::matcherOn('setono_sylius_cms_admin_transfer')->isCurrent($transfer));
+        // An import's page is one of the Transfer screen's
+        self::assertTrue(MenuFactory::matcherOn('setono_sylius_cms_admin_import_show', ['uuid' => '0193a5be-0000-7000-8000-000000000001'])->isCurrent($transfer));
     }
 
     /**

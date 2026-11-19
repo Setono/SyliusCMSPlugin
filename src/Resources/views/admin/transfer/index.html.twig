@@ -2,7 +2,8 @@
  # The Transfer screen in the hub's library. Its export is a GET form: entries are found by their title or slug and
  # added, editor presets and media folders are checked, or everything is. Update shows what the export holds, with
  # the snippets and media items that come along because the picked records use them, and Download gets the export of
- # what the form picks as a zip. See "Transfer" in docs/spec/admin.md
+ # what the form picks as a zip. Its import uploads an export zip, which import-upload.js sends, and lists the latest
+ # imports, each linked to its page (import.html.twig). See "Transfer" in docs/spec/admin.md
  #}
 {% extends '@SetonoSyliusCMSPlugin/admin/layout.html.twig' %}
 
@@ -189,4 +190,9 @@
             </table>
         {% endif %}
     </section>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="module" src="{{ asset('bundles/setonosyliuscmsplugin/admin/import-upload.js') }}"></script>
 {% endblock %}

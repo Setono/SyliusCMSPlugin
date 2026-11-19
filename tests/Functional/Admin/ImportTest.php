@@ -119,6 +119,27 @@ final class ImportTest extends WebTestCase
     /**
      * @test
      */
+    public function it_answers_the_screens_script_with_the_page_to_go_to_as_json(): void
+    {
+        $client = self::signedIn();
+        $crawler = $client->request('GET', '/admin/cms/transfer');
+        $token = $crawler->filter('form[data-cms-import-upload] input[name="_csrf_token"]')->attr('value');
+
+        $client->request('POST', '/admin/cms/transfer/imports', ['_csrf_token' => $token], ['export' => $this->uploadedFile($this->zipOf(self::exportFixture()))], ['HTTP_ACCEPT' => 'application/json']);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['url' => sprintf('/admin/cms/transfer/imports/%s', self::latestImport()->getUuid())], json_decode((string) $client->getResponse()->getContent(), true));
+
+        $client->request('POST', '/admin/cms/transfer/imports', ['_csrf_token' => $token], ['export' => $this->uploadedFile($this->temporaryFile('cms-export.zip', 'not a zip'))], ['HTTP_ACCEPT' => 'application/json']);
+
+        self::assertSame(['url' => '/admin/cms/transfer'], json_decode((string) $client->getResponse()->getContent(), true));
+        $client->request('GET', '/admin/cms/transfer');
+        self::assertSelectorTextContains('.sylius-flash-message.negative', 'cms-export.zip isn\'t an export zip.');
+    }
+
+    /**
+     * @test
+     */
     public function it_refuses_an_upload_without_the_screens_csrf_token(): void
     {
         $client = self::signedIn();

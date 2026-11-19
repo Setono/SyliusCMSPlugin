@@ -112,7 +112,8 @@ final readonly class HubMenuBuilder
         ;
 
         $library
-            ->addChild('transfer', ['route' => 'setono_sylius_cms_admin_transfer'])
+            // An import's page is one of the Transfer screen's
+            ->addChild('transfer', ['route' => 'setono_sylius_cms_admin_transfer', 'extras' => ['routes' => [['route' => 'setono_sylius_cms_admin_import_show']]]])
             ->setLabel('setono_sylius_cms.menu.admin.hub.transfer')
             ->setLabelAttribute('icon', 'exchange')
         ;
