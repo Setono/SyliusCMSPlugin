@@ -251,7 +251,7 @@ final class ExportReaderTest extends TestCase
 
         // Reads each file as a WebP image or an MP4 video, whatever its JSON says, unless it's refused
         $checker = $this->prophesize(MediaFileCheckerInterface::class);
-        $checker->check(Argument::type(\SplFileInfo::class), Argument::type('string'))->will(static function (array $args) use ($refusedFiles): CheckedFile {
+        $checker->check(Argument::type(\SplFileInfo::class), Argument::type('string'), Argument::type(UploadLimit::class))->will(static function (array $args) use ($refusedFiles): CheckedFile {
             [$file, $filename] = $args;
             \assert($file instanceof \SplFileInfo && is_string($filename));
             if (isset($refusedFiles[$filename])) {

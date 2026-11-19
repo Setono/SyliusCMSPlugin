@@ -789,7 +789,7 @@ setono_sylius_cms:
             image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml']
             video: ['video/mp4', 'video/webm']
             document: ['application/pdf']
-        max_upload_size: null  # null means PHP's effective limit; a value above it is lowered to it
+        max_upload_size: null  # null means PHP's effective limit; a value above it is lowered to it. Imports check against this value alone, and take any size when it's null
         widths: [320, 640, 960, 1280, 1600, 1920, 2560]
         grace_period: 'P1D'  # ISO 8601 duration before a replaced file is deleted
 

@@ -154,6 +154,25 @@ final class ImportMediaTest extends KernelTestCase
     }
 
     /**
+     * The import runs in the CLI's PHP, whose upload_max_filesize is 2 MB by default, but it doesn't upload its files
+     * through PHP, so only media.max_upload_size, which isn't configured here, limits their size
+     *
+     * @test
+     */
+    public function it_imports_a_media_file_bigger_than_the_upload_limit_of_the_php_running_it(): void
+    {
+        $export = $this->copyOfFixture();
+        self::growVideo($export, self::VIDEO, 3 * 1024 * 1024);
+
+        $tester = self::import(['path' => $export]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        $video = self::mediaItem(self::VIDEO);
+        self::assertNotNull($video);
+        self::assertGreaterThan(3 * 1024 * 1024, $video->getSize());
+    }
+
+    /**
      * @test
      */
     public function it_imports_alt_text_in_a_locale_the_target_lacks_unchanged_and_lists_it(): void

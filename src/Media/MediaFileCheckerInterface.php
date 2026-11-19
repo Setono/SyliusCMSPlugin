@@ -14,8 +14,10 @@ interface MediaFileCheckerInterface
 {
     /**
      * @param string $filename the file's original name, which only the messages use
+     * @param UploadLimit|null $limit what the file's size is checked against: the upload limit, unless an import gives
+     *                                its own (UploadLimit::forImports())
      *
      * @throws RefusedFileException
      */
-    public function check(\SplFileInfo $file, string $filename): CheckedFile;
+    public function check(\SplFileInfo $file, string $filename, ?UploadLimit $limit = null): CheckedFile;
 }

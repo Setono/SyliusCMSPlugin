@@ -422,7 +422,7 @@ final class Configuration implements ConfigurationInterface
                             ->validate()->always(self::assertMimeTypesInOneKind(...))->end()
                         ->end()
                         ->scalarNode('max_upload_size')
-                            ->info('In bytes, or as php.ini writes it, such as 20M. null means PHP\'s effective limit, and a value above it is lowered to it')
+                            ->info('In bytes, or as php.ini writes it, such as 20M. null means PHP\'s effective limit, and a value above it is lowered to it. An import checks its files against this value alone, and takes any size when it\'s null')
                             ->defaultNull()
                             ->validate()
                                 ->ifTrue(static fn (mixed $size): bool => null !== $size)

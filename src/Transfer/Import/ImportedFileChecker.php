@@ -16,16 +16,20 @@ use Symfony\Component\Translation\TranslatableMessage;
  * Checks a media item's file in an export, whether the media item is picked, a dependency or new in the target. An
  * export is untrusted input, so its filename must be a plain basename and the file must match its checksum, and then it
  * goes through the very checks an upload does (MediaFileCheckerInterface): its type against media.types, its size
- * against the upload limit, its MIME type, size and dimensions read from the file, and an SVG sanitised. What the JSON
- * says of the file is never read. The file is copied out of the export into a temporary file for that, no further than
- * the upload limit, so an export can't fill the disk. See "Media files" in docs/spec/transfer.md
+ * against media.max_upload_size (UploadLimit::forImports(), which the limits of the PHP running the import don't lower),
+ * its MIME type, size and dimensions read from the file, and an SVG sanitised. What the JSON says of the file is never
+ * read. The file is copied out of the export into a temporary file for that, no further than that limit, so an export
+ * can't fill the disk when one is configured. See "Media files" in docs/spec/transfer.md
  */
 final readonly class ImportedFileChecker
 {
+    private UploadLimit $limit;
+
     public function __construct(
         private MediaFileCheckerInterface $checker,
-        private UploadLimit $uploadLimit,
+        UploadLimit $uploadLimit,
     ) {
+        $this->limit = $uploadLimit->forImports();
     }
 
     /**
@@ -48,7 +52,7 @@ final readonly class ImportedFileChecker
                 throw new RefusedFileException(new TranslatableMessage('setono_sylius_cms.import.media_file.checksum', ['%filename%' => $filename]));
             }
 
-            return new ReadMediaItem($mediaItem, $this->checker->check(new \SplFileInfo($copy), $filename), $picked, $copy);
+            return new ReadMediaItem($mediaItem, $this->checker->check(new \SplFileInfo($copy), $filename, $this->limit), $picked, $copy);
         } catch (\Throwable $e) {
             self::remove($copy);
 
@@ -64,7 +68,7 @@ final readonly class ImportedFileChecker
      */
     private function copy(ExportSourceInterface $source, string $path, string $filename): string
     {
-        $limit = $this->uploadLimit->bytes();
+        $limit = $this->limit->bytes();
         $stream = $source->readStream($path);
 
         try {

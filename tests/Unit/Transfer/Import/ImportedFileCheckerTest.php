@@ -42,7 +42,7 @@ final class ImportedFileCheckerTest extends TestCase
             $copy = $file->getPathname();
 
             return self::CONTENT === file_get_contents($copy);
-        }), 'autumn-banner.png')->willReturn($checked)->shouldBeCalledOnce();
+        }), 'autumn-banner.png', Argument::type(UploadLimit::class))->willReturn($checked)->shouldBeCalledOnce();
 
         $read = (new ImportedFileChecker($checker->reveal(), new UploadLimit(null, 1000)))->check($this->source(), self::mediaItem(), true);
 
@@ -96,13 +96,35 @@ final class ImportedFileCheckerTest extends TestCase
     }
 
     /**
+     * The PHP that runs an import, such as the CLI's, didn't upload the file, so its own limit, 10 bytes here, doesn't
+     * count, and the configured one, none here, is what the file's checked against
+     *
+     * @test
+     */
+    public function it_checks_the_file_against_the_configured_limit_alone_not_that_of_the_php_running_it(): void
+    {
+        $checked = new CheckedFile(MediaKind::Image, 'image/png', 'png', '/tmp/checked.png', 34, 48, 20, str_repeat('a', 64));
+        $checker = $this->prophesize(MediaFileCheckerInterface::class);
+        $checker->check(
+            Argument::type(\SplFileInfo::class),
+            'autumn-banner.png',
+            Argument::that(static fn (UploadLimit $limit): bool => \PHP_INT_MAX === $limit->bytes()),
+        )->willReturn($checked)->shouldBeCalledOnce();
+
+        $read = (new ImportedFileChecker($checker->reveal(), new UploadLimit(null, 10)))->check($this->source(), self::mediaItem(), true);
+
+        self::assertSame($checked, $read->file);
+        $read->cleanUp();
+    }
+
+    /**
      * @test
      */
     public function it_refuses_what_an_upload_would_refuse_whatever_the_json_says(): void
     {
         $refused = RefusedFileException::notAllowed('autumn-banner.png', 'EXE', ['PNG'], 1000);
         $checker = $this->prophesize(MediaFileCheckerInterface::class);
-        $checker->check(Argument::type(\SplFileInfo::class), 'autumn-banner.png')->willThrow($refused);
+        $checker->check(Argument::type(\SplFileInfo::class), 'autumn-banner.png', Argument::type(UploadLimit::class))->willThrow($refused);
 
         try {
             (new ImportedFileChecker($checker->reveal(), new UploadLimit(null, 1000)))->check($this->source(), self::mediaItem(), false);

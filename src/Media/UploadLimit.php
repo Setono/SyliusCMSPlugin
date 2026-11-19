@@ -9,7 +9,8 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 /**
  * The effective upload limit: media.max_upload_size, lowered to PHP's effective limit when it's higher, because PHP
  * refuses a bigger file before the plugin sees it. Without a configured limit, it's PHP's. The builder gets it with its
- * registry, and checks a file before uploading it. See "What the library holds" in docs/spec/media.md
+ * registry, and checks a file before uploading it. An import checks its files against forImports() instead, since it
+ * doesn't upload them through PHP. See "What the library holds" in docs/spec/media.md
  */
 final readonly class UploadLimit
 {
@@ -29,6 +30,16 @@ final readonly class UploadLimit
     public static function fromPhp(?int $configured): self
     {
         return new self($configured, (int) min(\PHP_INT_MAX, UploadedFile::getMaxFilesize()));
+    }
+
+    /**
+     * The limit an imported file is checked against: the configured one alone, or none. The PHP that runs an import, such
+     * as the CLI's or the Messenger worker's, with its own upload_max_filesize, didn't upload the file, so its limits
+     * don't lower it. See "Media files" in docs/spec/transfer.md
+     */
+    public function forImports(): self
+    {
+        return new self($this->configured, \PHP_INT_MAX);
     }
 
     public function bytes(): int

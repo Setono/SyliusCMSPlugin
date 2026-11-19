@@ -208,7 +208,7 @@ An export is untrusted input: any admin user can import one. So every file in it
 - **The zip.** Every entry must resolve inside the export's root. An absolute path, a `..` segment or a link refuses the import, and so does a link in an export folder.
 - **The filename.** `filename` must be a plain basename: no `/`, `\`, `..` or control characters. Anything else refuses the import.
 - **The checksum.** The file's SHA-256 must match `checksum`. A mismatch refuses the import.
-- **The file itself.** Its type is checked against `media.types` and its size against the upload limit. Its kind, MIME type, size and dimensions are read from the file, and the values in the JSON are ignored, so metadata of another kind, such as alt text in the JSON of what's a document, is left out. SVG is sanitised.
+- **The file itself.** Its type is checked against `media.types` and its size against `media.max_upload_size`. PHP's own `upload_max_filesize` and `post_max_size` don't lower that limit, as they do an upload's: the import doesn't upload the file through PHP, and the CLI or worker that runs it often has much lower limits than the web server. Without a configured limit, a file of any size is imported. Its kind, MIME type, size and dimensions are read from the file, and the values in the JSON are ignored, so metadata of another kind, such as alt text in the JSON of what's a document, is left out. SVG is sanitised.
 
 A file that fails a check refuses the whole import, with the media item named.
 

@@ -93,6 +93,19 @@ trait Imports
     }
 
     /**
+     * Grows an export's MP4 by a media data box of the given size, and writes its new checksum in its JSON
+     */
+    private static function growVideo(string $export, string $uuid, int $bytes): void
+    {
+        $json = sprintf('%s/media/%s.json', $export, $uuid);
+        /** @var array{filename: string, checksum: string} $mediaItem */
+        $mediaItem = json_decode((string) file_get_contents($json), true, flags: \JSON_THROW_ON_ERROR);
+        $file = sprintf('%s/media/%s/%s', $export, $uuid, $mediaItem['filename']);
+        file_put_contents($file, pack('N', $bytes + 8) . 'mdat' . str_repeat("\0", $bytes), \FILE_APPEND);
+        file_put_contents($json, str_replace($mediaItem['checksum'], 'sha256:' . hash_file('sha256', $file), (string) file_get_contents($json)));
+    }
+
+    /**
      * A published page with the UUID the committed export's page has, as when environments were cloned from each other.
      * The test case uses Entries too
      */
