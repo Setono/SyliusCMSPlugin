@@ -38,18 +38,15 @@ final class StartingPointPresetsTest extends BuilderApiTestCase
         $page = self::campaignPage();
         $csrfToken = self::openBuilder($client, $page);
 
-        $response = self::json($client, 'POST', '/admin/cms/api/presets', [
+        $uuid = self::createdId(self::json($client, 'POST', '/admin/cms/api/presets', [
             'entry' => $page->getUuid(),
             'startingPoint' => true,
             'name' => 'Campaign page',
             'category' => 'Pages',
-        ], $csrfToken);
+        ], $csrfToken));
 
         self::assertResponseStatusCodeSame(201);
-        self::assertIsArray($response);
-        self::assertIsArray($response['preset'] ?? null);
-        self::assertIsString($response['preset']['id'] ?? null);
-        $saved = self::preset($response['preset']['id']);
+        $saved = self::preset($uuid);
         self::assertEquals(new StartingPoint('page', new StoredLayout('landing', 1, ['tagline' => ['en_US' => 'Up to 50% off'], 'transparentHeader' => true], ['tagline' => ['da_DK' => ['from' => 'en_US', 'fingerprint' => 'abc']]])), $saved->startingPoint);
         self::assertSame([self::HEADING, self::COLUMNS], array_map(static fn (StoredBlock $block): string => $block->key, $saved->blocks));
         self::assertSame([self::COLUMNS, self::COLUMN], $saved->blocks[1]->keys());
@@ -58,8 +55,8 @@ final class StartingPointPresetsTest extends BuilderApiTestCase
         // It isn't a block preset, so the Presets tab doesn't list it, and the answer lists it among the page's starting points
         $index = self::json($client, 'GET', sprintf('/admin/cms/api/presets?entry=%s', $page->getUuid()));
         self::assertIsArray($index);
-        self::assertArrayNotHasKey($saved->uuid, self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s', $page->getUuid())));
-        self::assertSame([['id' => $saved->uuid, 'fromCode' => false, 'name' => 'Campaign page', 'category' => 'Pages', 'description' => null]], $index['startingPoints'] ?? null);
+        self::assertArrayNotHasKey($uuid, self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s', $page->getUuid())));
+        self::assertSame([['id' => $uuid, 'fromCode' => false, 'name' => 'Campaign page', 'category' => 'Pages', 'description' => null]], $index['startingPoints'] ?? null);
     }
 
     /**
@@ -87,11 +84,7 @@ final class StartingPointPresetsTest extends BuilderApiTestCase
         $client = self::signedIn();
         $page = self::campaignPage();
         $csrfToken = self::openBuilder($client, $page);
-        $created = self::json($client, 'POST', '/admin/cms/api/presets', ['entry' => $page->getUuid(), 'startingPoint' => true, 'name' => 'Campaign page'], $csrfToken);
-        self::assertIsArray($created);
-        self::assertIsArray($created['preset'] ?? null);
-        $uuid = $created['preset']['id'] ?? null;
-        self::assertIsString($uuid);
+        $uuid = self::createdId(self::json($client, 'POST', '/admin/cms/api/presets', ['entry' => $page->getUuid(), 'startingPoint' => true, 'name' => 'Campaign page'], $csrfToken));
 
         $other = self::createPageWithBlocks('Contact', 'contact-us', [self::heading('0193a5be-0000-7000-8000-0000000000aa', 'Contact us')]);
         self::json($client, 'PUT', sprintf('/admin/cms/api/presets/%s', $uuid), ['entry' => $other->getUuid(), 'startingPoint' => true], $csrfToken);
@@ -111,27 +104,22 @@ final class StartingPointPresetsTest extends BuilderApiTestCase
         $client = self::signedIn();
         $page = self::campaignPage();
         $csrfToken = self::openBuilder($client, $page);
-        $startingPoint = self::json($client, 'POST', '/admin/cms/api/presets', ['entry' => $page->getUuid(), 'startingPoint' => true, 'name' => 'Campaign page'], $csrfToken);
-        $blockPreset = self::json($client, 'POST', '/admin/cms/api/presets', ['entry' => $page->getUuid(), 'blocks' => [self::HEADING], 'name' => 'Heading'], $csrfToken);
-        self::assertIsArray($startingPoint);
-        self::assertIsArray($startingPoint['preset'] ?? null);
-        self::assertIsArray($blockPreset);
-        self::assertIsArray($blockPreset['preset'] ?? null);
+        $startingPoint = self::createdId(self::json($client, 'POST', '/admin/cms/api/presets', ['entry' => $page->getUuid(), 'startingPoint' => true, 'name' => 'Campaign page'], $csrfToken));
+        $blockPreset = self::createdId(self::json($client, 'POST', '/admin/cms/api/presets', ['entry' => $page->getUuid(), 'blocks' => [self::HEADING], 'name' => 'Heading'], $csrfToken));
         $snippet = self::createSnippet('Footer', [self::heading('0193a5be-0000-7000-8000-0000000000bb', 'Need help?')]);
 
         foreach ([
-            [$startingPoint['preset']['id'], ['entry' => $page->getUuid(), 'blocks' => [self::HEADING]]],
-            [$startingPoint['preset']['id'], ['entry' => $snippet->getUuid(), 'startingPoint' => true]],
-            [$blockPreset['preset']['id'], ['entry' => $page->getUuid(), 'startingPoint' => true]],
+            [$startingPoint, ['entry' => $page->getUuid(), 'blocks' => [self::HEADING]]],
+            [$startingPoint, ['entry' => $snippet->getUuid(), 'startingPoint' => true]],
+            [$blockPreset, ['entry' => $page->getUuid(), 'startingPoint' => true]],
         ] as [$uuid, $body]) {
-            self::assertIsString($uuid);
             self::json($client, 'PUT', sprintf('/admin/cms/api/presets/%s', $uuid), $body, $csrfToken);
 
             self::assertResponseStatusCodeSame(400, json_encode($body, \JSON_THROW_ON_ERROR));
         }
 
-        self::assertSame('page', self::preset((string) $startingPoint['preset']['id'])->startingPoint?->contentType);
-        self::assertNull(self::preset((string) $blockPreset['preset']['id'])->startingPoint);
+        self::assertSame('page', self::preset($startingPoint)->startingPoint?->contentType);
+        self::assertNull(self::preset($blockPreset)->startingPoint);
     }
 
     /**
@@ -168,6 +156,18 @@ final class StartingPointPresetsTest extends BuilderApiTestCase
         self::entityManager()->flush();
 
         return $page;
+    }
+
+    /**
+     * The UUID of the preset preset_create answered with
+     */
+    private static function createdId(mixed $response): string
+    {
+        self::assertIsArray($response);
+        self::assertIsArray($response['preset'] ?? null);
+        self::assertIsString($response['preset']['id'] ?? null);
+
+        return $response['preset']['id'];
     }
 
     private static function preset(string $uuid): Preset

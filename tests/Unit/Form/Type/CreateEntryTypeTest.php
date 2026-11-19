@@ -256,7 +256,9 @@ final class CreateEntryTypeTest extends TypeTestCase
         self::assertSame(['data-thumbnail' => '/build/landing.svg', 'data-description' => 'About landing'], $vars['choices'][0]->attr);
         self::assertSame(['data-description' => 'About ' . self::EDITOR_PRESET], $vars['choices'][1]->attr);
         self::assertNull($vars['data']);
-        self::assertTrue($view['startingPoint']['placeholder']->vars['checked']);
+        /** @var array{checked: bool} $blank */
+        $blank = $view['startingPoint']['placeholder']->vars;
+        self::assertTrue($blank['checked']);
 
         $form->submit(['title' => 'About us', 'slug' => 'about-us', 'startingPoint' => self::EDITOR_PRESET]);
 

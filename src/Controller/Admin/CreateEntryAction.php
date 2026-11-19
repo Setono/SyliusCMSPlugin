@@ -173,7 +173,7 @@ final readonly class CreateEntryAction
      * Adds the entry's URL errors to the slug field: a URL a route takes, or another entry has published. The form
      * checked the slug's rules already
      *
-     * @param FormInterface<array{title: string, slug?: string, layout?: string, channels?: array<int, string>}|null> $form
+     * @param FormInterface<array{title: string, slug?: string, layout?: string, startingPoint?: string|null, channels?: array<int, string>}|null> $form
      */
     private function hasUrlErrors(FormInterface $form, EntryInterface $entry): bool
     {

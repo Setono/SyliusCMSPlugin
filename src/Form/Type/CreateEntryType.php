@@ -128,7 +128,7 @@ final class CreateEntryType extends AbstractType
      * it, then the content type's starting points. The default is picked to start with, unless it's disabled, and
      * otherwise Blank. A disabled one is shown but refused
      *
-     * @param FormBuilderInterface<mixed> $builder
+     * @param FormBuilderInterface<array{title: string, slug?: string, layout?: string, startingPoint?: string|null, channels?: array<int, string>}|null> $builder
      * @param list<StartingPointChoice> $startingPoints
      */
     private function addStartingPoint(FormBuilderInterface $builder, array $startingPoints): void
