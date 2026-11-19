@@ -52,6 +52,7 @@
             <argument type="service" id="sylius.repository.channel"/>
             <argument type="service" id="sylius.repository.customer_group"/>
             <argument type="service" id="sylius.repository.locale"/>
+            <argument type="service" id="sylius.repository.product_attribute"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Transfer\Import\ImportPlanner" class="Setono\SyliusCMSPlugin\Transfer\Import\ImportPlanner">

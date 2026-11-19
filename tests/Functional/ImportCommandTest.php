@@ -10,6 +10,7 @@ use Setono\SyliusCMSPlugin\Event\EntryPublished;
 use Setono\SyliusCMSPlugin\Event\EntrySettingsChanged;
 use Setono\SyliusCMSPlugin\Event\ImportFinished;
 use Setono\SyliusCMSPlugin\Event\PlacementsChanged;
+use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\PlacementInterface;
@@ -500,6 +501,37 @@ final class ImportCommandTest extends KernelTestCase
         $home = self::entry($home->getUuid());
         self::assertInstanceOf(PageInterface::class, $home);
         self::assertSame([], $home->getHomepageChannelCodes());
+    }
+
+    /**
+     * @test
+     */
+    public function it_lists_the_references_that_do_not_resolve_here_and_imports_them_unchanged(): void
+    {
+        $export = $this->copyOfFixture();
+        $path = sprintf('%s/entries/%s.json', $export, self::PAGE);
+        /** @var array{settings: array<string, mixed>, entry: array{tree: array{blocks: list<array<string, mixed>>}}} $file */
+        $file = CanonicalJson::decode((string) file_get_contents($path));
+        $file['settings']['channels'] = ['MOBILE', 'WEB'];
+        $file['settings']['audience'] = ['mode' => 'only', 'groups' => ['@guest', 'vip']];
+        $file['entry']['tree']['blocks'][0]['fields'] = ['text' => ['en_US' => ['$bind' => 'product.attribute', '$params' => ['attribute' => 'material'], '$fallback' => 'Autumn sale']]];
+        $file['entry']['tree']['blocks'][] = ['key' => '0193a5be-0000-7000-8000-0000000000f1', 'type' => 'snippet', 'version' => 1, 'style' => null, 'fields' => ['snippet' => '0193a5be-dead-7000-8000-000000000000'], 'translated' => new \stdClass(), 'conditions' => [], 'children' => []];
+        file_put_contents($path, CanonicalJson::encodeFile($file));
+
+        $tester = self::import(['path' => $export]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        $display = self::display($tester);
+        foreach (['Autumn sale: entry "0193a5be-dead-7000-8000-000000000000"', 'Autumn sale: channel "MOBILE"', 'Autumn sale: customer group "vip"', 'Autumn sale: product attribute "material"', 'Autumn banner: taxon "t_shirts"'] as $unresolved) {
+            self::assertStringContainsString($unresolved, $display);
+        }
+
+        // What the export holds and the target has resolves
+        foreach (['"WEB"', '"@guest"', '"en_US"', '0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60', self::SNIPPET] as $resolved) {
+            self::assertStringNotContainsString($resolved, $display);
+        }
+
+        self::assertSame(['MOBILE', 'WEB'], self::entry(self::PAGE)->getChannelCodes());
     }
 
     /**

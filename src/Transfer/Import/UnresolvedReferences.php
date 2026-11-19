@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Transfer\Import;
 
 use Psr\Container\ContainerInterface;
+use Setono\SyliusCMSPlugin\Binding\StoredBinding;
 use Setono\SyliusCMSPlugin\Condition\ConditionMatcher;
 use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Field\ReferenceType;
@@ -16,24 +17,29 @@ use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Customer\Model\CustomerGroupInterface;
 use Sylius\Component\Locale\Model\LocaleInterface;
+use Sylius\Component\Product\Model\ProductAttributeInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 
 /**
  * The references the records an import writes hold that don't resolve in the target: an entry or a media item that's
- * neither in the export nor in the target, a product or a taxon the target lacks, and the channels, customer groups and
- * locales of their settings and translations. They're found in fields, as the admin's broken references are, in
- * blocks' visibility conditions and in placements' page scopes. They import unchanged. See "References that don't
- * resolve" in docs/spec/transfer.md
+ * neither in the export nor in the target, a product or a taxon the target lacks, a product attribute a binding shows,
+ * and the channels, customer groups and locales of their settings and translations. They're found in fields, as the
+ * admin's broken references are, in bindings, in blocks' visibility conditions and in placements' page scopes. They
+ * import unchanged. See "References that don't resolve" in docs/spec/transfer.md
  *
  * @internal
  */
 final readonly class UnresolvedReferences
 {
+    /** The shipped Product attribute binding, whose attribute parameter is a product attribute's code */
+    private const PRODUCT_ATTRIBUTE_BINDING = 'product.attribute';
+
     /**
      * @param ContainerInterface $typeLoaders the ReferenceTypeLoaderInterface of each reference type, by type
      * @param ChannelRepositoryInterface<ChannelInterface> $channels
      * @param RepositoryInterface<CustomerGroupInterface> $customerGroups
      * @param RepositoryInterface<LocaleInterface> $locales
+     * @param RepositoryInterface<ProductAttributeInterface> $productAttributes
      */
     public function __construct(
         private ReferenceFinder $referenceFinder,
@@ -42,6 +48,7 @@ final readonly class UnresolvedReferences
         private ChannelRepositoryInterface $channels,
         private RepositoryInterface $customerGroups,
         private RepositoryInterface $locales,
+        private RepositoryInterface $productAttributes,
     ) {
     }
 
@@ -71,6 +78,10 @@ final readonly class UnresolvedReferences
                 }
             }
 
+            foreach (self::boundAttributes($entry->content->getBlockTree()) as $code) {
+                $held[] = [$entry->uuid(), $entry->label(), UnresolvedReference::PRODUCT_ATTRIBUTE, $code];
+            }
+
             foreach ($entry->content->getTranslations()->getKeys() as $localeCode) {
                 $held[] = [$entry->uuid(), $entry->label(), UnresolvedReference::LOCALE, (string) $localeCode];
             }
@@ -81,6 +92,10 @@ final readonly class UnresolvedReferences
             $found = null === $startingPoint ? $this->referenceFinder->inBlocks($preset->preset->blocks) : $this->referenceFinder->inTree(new StoredTree($startingPoint->layout, $preset->preset->blocks), $startingPoint->contentType);
             foreach (ReferenceFinder::references($found) as $reference) {
                 $held[] = [$preset->uuid(), $preset->label(), $reference->type, $reference->id];
+            }
+
+            foreach (self::boundAttributes(new StoredTree($startingPoint?->layout, $preset->preset->blocks)) as $code) {
+                $held[] = [$preset->uuid(), $preset->label(), UnresolvedReference::PRODUCT_ATTRIBUTE, $code];
             }
         }
 
@@ -144,6 +159,7 @@ final readonly class UnresolvedReferences
                 UnresolvedReference::CHANNEL => self::codes($this->channels->findBy(['code' => array_keys($byId)])),
                 UnresolvedReference::CUSTOMER_GROUP => self::codes($this->customerGroups->findBy(['code' => array_keys($byId)])),
                 UnresolvedReference::LOCALE => self::codes($this->locales->findBy(['code' => array_keys($byId)])),
+                UnresolvedReference::PRODUCT_ATTRIBUTE => self::codes($this->productAttributes->findBy(['code' => array_keys($byId)])),
                 default => $this->existing((string) $type, array_map(strval(...), array_keys($byId))),
             };
 
@@ -172,7 +188,42 @@ final readonly class UnresolvedReferences
     }
 
     /**
-     * @param iterable<ChannelInterface|CustomerGroupInterface|LocaleInterface> $records
+     * The codes of the product attributes the tree's bindings show: in its layout's and blocks' values, a translatable
+     * one's in each locale
+     *
+     * @return list<string>
+     */
+    private static function boundAttributes(StoredTree $tree): array
+    {
+        $codes = [];
+        $walk = static function (mixed $value) use (&$walk, &$codes): void {
+            $binding = StoredBinding::fromValue($value);
+            if (null !== $binding) {
+                $attribute = $binding->params['attribute'] ?? null;
+                if (self::PRODUCT_ATTRIBUTE_BINDING === $binding->property && is_string($attribute) && '' !== $attribute) {
+                    $codes[$attribute] = $attribute;
+                }
+
+                return;
+            }
+
+            if (is_array($value) || $value instanceof \stdClass) {
+                foreach ((array) $value as $inner) {
+                    $walk($inner);
+                }
+            }
+        };
+
+        $walk($tree->layout?->fields ?? []);
+        foreach ($tree->allBlocks() as $block) {
+            $walk($block->fields);
+        }
+
+        return array_values($codes);
+    }
+
+    /**
+     * @param iterable<ChannelInterface|CustomerGroupInterface|LocaleInterface|ProductAttributeInterface> $records
      *
      * @return list<string>
      */

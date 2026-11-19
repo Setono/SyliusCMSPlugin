@@ -17,10 +17,13 @@ final readonly class UnresolvedReference
 
     public const LOCALE = 'locale';
 
+    public const PRODUCT_ATTRIBUTE = 'product_attribute';
+
     /**
      * @param string $uuid the record that holds it
      * @param string $label what names that record
-     * @param string $type a reference type (Field\ReferenceType), or channel, customer_group or locale
+     * @param string $type a reference type (Field\ReferenceType), or channel, customer_group, locale or
+     *                     product_attribute
      * @param string $id the code or UUID it refers by
      */
     public function __construct(
