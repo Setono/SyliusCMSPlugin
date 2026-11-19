@@ -1,6 +1,6 @@
 import type { Change } from './changeSet';
 import { withUuid, type BuilderConfig, type ShownToAndDate } from './config';
-import type { EntryResponse, EntrySettings, EntryStatus, EntryUrlsResponse, InsertedPreset, PresenceResponse, PresetDetails, PresetIndex, PresetListing, Registry, SavedPreset, SaveResponse, StoredBlock, ValidationError } from './types';
+import type { EntryResponse, EntrySettings, EntryStatus, EntryUrlsResponse, InsertedPreset, PresenceResponse, PresetContent, PresetDetails, PresetIndex, PresetListing, Registry, SavedPreset, SaveResponse, StartingPointListing, StoredBlock, ValidationError } from './types';
 
 /** The builder's JSON endpoints. They're internal, and change together with the app. */
 export interface BuilderApi {
@@ -42,19 +42,23 @@ export interface BuilderApi {
     /** The blocks a snippet shows, from its published content, which Detach to edit here copies. Absent without its endpoint. */
     snippetBlocks?(snippet: string): Promise<StoredBlock[]>;
     /**
-     * The block presets at a spot in the working copy as the server has it, the top level or a block's children, and the
-     * categories in use. Absent without its endpoint.
+     * The block presets at a spot in the working copy as the server has it, the top level or a block's children, the
+     * starting points of the entry's content type, and the categories in use. Absent without its endpoint.
      */
     presets?(parent: string | null): Promise<PresetIndex>;
     /** A preset's blocks ready to insert into the entry. Fails with an ApiError of status 422 and why when it refuses. Absent without its endpoint. */
     insertPreset?(id: string): Promise<InsertedPreset>;
     /**
-     * Saves blocks of the working copy as the server has it, by their keys, as a new editor preset. Fails with an ApiError
-     * of status 400 and why when the server refuses, such as for no name. Absent without the editor presets' endpoints.
+     * Saves blocks of the working copy as the server has it, by their keys, or its whole tree as a starting point, as a
+     * new editor preset. Fails with an ApiError of status 400 and why when the server refuses, such as for no name.
+     * Absent without the editor presets' endpoints.
      */
-    createPreset?(blocks: readonly string[], details: PresetDetails): Promise<SavedPreset>;
-    /** Replaces an editor preset's blocks with blocks of the working copy, by their keys. Absent without the editor presets' endpoints. */
-    replacePreset?(id: string, blocks: readonly string[]): Promise<SavedPreset>;
+    createPreset?(content: PresetContent, details: PresetDetails): Promise<SavedPreset>;
+    /**
+     * Replaces an editor preset's blocks with blocks of the working copy, by their keys, or an editor starting point's
+     * with the whole tree. Absent without the editor presets' endpoints.
+     */
+    replacePreset?(id: string, content: PresetContent): Promise<SavedPreset>;
     /** Renames or recategorises an editor preset, or changes its description. Absent without the editor presets' endpoints. */
     updatePreset?(id: string, details: Partial<PresetDetails>): Promise<SavedPreset>;
     /** Deletes an editor preset. Absent without the editor presets' endpoints. */
@@ -266,13 +270,16 @@ function editorPresetsOf(fetchFn: Fetch, config: BuilderConfig): Pick<BuilderApi
         return answer as unknown as SavedPreset;
     };
 
+    // The blocks by their keys, or the whole tree as a starting point
+    const content = (saving: PresetContent): { blocks: readonly string[] } | { startingPoint: true } => (saving === 'tree' ? { startingPoint: true } : { blocks: saving });
+
     return {
-        async createPreset(blocks, details) {
-            return saved(await send(fetchFn, presetCreate, { method: 'POST', headers, body: JSON.stringify({ entry: config.entryUuid, blocks, ...details }) }));
+        async createPreset(saving, details) {
+            return saved(await send(fetchFn, presetCreate, { method: 'POST', headers, body: JSON.stringify({ entry: config.entryUuid, ...content(saving), ...details }) }));
         },
 
-        async replacePreset(id, blocks) {
-            return saved(await send(fetchFn, withUuid(preset, id), { method: 'PUT', headers, body: JSON.stringify({ entry: config.entryUuid, blocks }) }));
+        async replacePreset(id, saving) {
+            return saved(await send(fetchFn, withUuid(preset, id), { method: 'PUT', headers, body: JSON.stringify({ entry: config.entryUuid, ...content(saving) }) }));
         },
 
         async updatePreset(id, details) {
@@ -302,8 +309,9 @@ function presetsOf(fetchFn: Fetch, entry: string, index: string | undefined, ins
             }
 
             const categories = isObject(body) && Array.isArray(body.categories) ? body.categories.filter((category): category is string => typeof category === 'string') : [];
+            const startingPoints = isObject(body) && Array.isArray(body.startingPoints) ? (body.startingPoints as StartingPointListing[]) : [];
 
-            return { presets: presets as PresetListing[], categories };
+            return { presets: presets as PresetListing[], startingPoints, categories };
         },
 
         async insertPreset(id) {

@@ -1,0 +1,55 @@
+{
+    "changedAt": "2026-11-09T07:00:00Z",
+    "settings": {
+        "enabled": true,
+        "showFrom": null,
+        "showUntil": null,
+        "channels": [
+            "WEB"
+        ],
+        "audience": {
+            "mode": "everyone",
+            "groups": []
+        },
+        "homepageOf": [],
+        "position": null
+    },
+    "placements": [],
+    "entry": {
+        "uuid": "0193a5be-7256-7a01-8b2c-3d4e5f6a7b8c",
+        "contentType": "snippet",
+        "version": 1,
+        "createdAt": "2026-11-01T08:30:00Z",
+        "fields": {
+            "context": []
+        },
+        "translations": {
+            "en_US": {
+                "shown": true,
+                "fields": {
+                    "title": "Newsletter signup"
+                },
+                "translated": {}
+            }
+        },
+        "tree": {
+            "layout": null,
+            "blocks": [
+                {
+                    "key": "0193a5be-0000-7000-8000-000000000001",
+                    "type": "heading",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "text": {
+                            "en_US": "Join our newsletter"
+                        }
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": []
+                }
+            ]
+        }
+    }
+}

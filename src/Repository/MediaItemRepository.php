@@ -82,6 +82,32 @@ class MediaItemRepository extends EntityRepository implements MediaItemRepositor
         return $mediaItem instanceof MediaItemInterface ? $mediaItem : null;
     }
 
+    public function findAllInUploadOrder(): array
+    {
+        /** @var list<MediaItemInterface> $mediaItems */
+        $mediaItems = $this->createQueryBuilder('o')->orderBy('o.id')->getQuery()->getResult();
+
+        return $mediaItems;
+    }
+
+    public function findInFolders(array $folders): array
+    {
+        if ([] === $folders) {
+            return [];
+        }
+
+        /** @var list<MediaItemInterface> $mediaItems */
+        $mediaItems = $this->createQueryBuilder('o')
+            ->andWhere('o.folder IN (:folders)')
+            ->setParameter('folders', $folders)
+            ->orderBy('o.id')
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $mediaItems;
+    }
+
     public function createLibraryPaginator(MediaFilter $filter): Pagerfanta
     {
         $queryBuilder = $this->createQueryBuilder('o')

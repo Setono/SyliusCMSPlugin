@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://symfony.com/schema/dic/services"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <!-- Transfer: exports of entries, editor presets and media items (docs/spec/transfer.md) -->
+    <services>
+        <service id="Setono\SyliusCMSPlugin\Transfer\PublishedContent" class="Setono\SyliusCMSPlugin\Transfer\PublishedContent">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Transfer\ExportPlanner" class="Setono\SyliusCMSPlugin\Transfer\ExportPlanner">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.repository.editor_preset"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\PublishedContent"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Tree\ReferenceFinder"/>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Transfer\ExportPlannerInterface" alias="Setono\SyliusCMSPlugin\Transfer\ExportPlanner"/>
+
+        <service id="Setono\SyliusCMSPlugin\Transfer\Exporter" class="Setono\SyliusCMSPlugin\Transfer\Exporter">
+            <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryNormalizer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\PublishedContent"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.storage"/>
+            <argument type="service" id="clock"/>
+            <argument>%setono_sylius_cms.plugin_version%</argument>
+        </service>
+        <service id="Setono\SyliusCMSPlugin\Transfer\ExporterInterface" alias="Setono\SyliusCMSPlugin\Transfer\Exporter"/>
+    </services>
+</container>

@@ -109,6 +109,8 @@ final class SetonoSyliusCMSExtension extends AbstractResourceExtension implement
         $container->setParameter('setono_sylius_cms.bestsellers.window', $config['bestsellers']['window']);
         $container->setParameter('setono_sylius_cms.builder.scripts', $config['builder']['scripts']);
         self::registerCodePresets($container, $config['presets']['paths'], $config['disabled']['presets']);
+        // The plugin version an export's manifest names: null for the one that's installed, which a test pins
+        $container->setParameter('setono_sylius_cms.plugin_version', null);
 
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.xml');

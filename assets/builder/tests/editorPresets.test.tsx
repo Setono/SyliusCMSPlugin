@@ -63,7 +63,7 @@ function saved(id: string, details: Partial<PresetDetails>): SavedPreset {
 
 const PROMO = '0193a5be-7400-7d3e-8f4a-5b6c7d8e9f0a';
 
-function fakeApi(blocks: StoredBlock[], index: PresetIndex = { presets: [], categories: [] }) {
+function fakeApi(blocks: StoredBlock[], index: PresetIndex = { presets: [], startingPoints: [], categories: [] }) {
     return {
         fetchRegistry: vi.fn(async () => ({ ...registry, strings: editorStrings })),
         fetchEntry: vi.fn(async (): Promise<EntryResponse> => ({ entry: entry(blocks), settings: settings(), status: 'never_published', lockToken: 0, editors: [] })),
@@ -102,7 +102,7 @@ function selectionPane(): HTMLElement {
 
 describe('saving blocks as a preset with ★', () => {
     it('should save the selected block with a name, a category suggested from those in use, and a description', async () => {
-        const api = fakeApi([block('a', { text: { en_US: 'Winter sale' } }), block('b')], { presets: [], categories: ['Banners', 'Campaigns'] });
+        const api = fakeApi([block('a', { text: { en_US: 'Winter sale' } }), block('b')], { presets: [], startingPoints: [], categories: ['Banners', 'Campaigns'] });
         await openBuilder(api);
         fireEvent.click(within(tree()).getByRole('button', { name: 'Heading Winter sale' }));
 
@@ -154,6 +154,7 @@ describe('saving blocks as a preset with ★', () => {
     it("should replace an editor preset's blocks, offering only editor presets", async () => {
         const api = fakeApi([block('a', { text: { en_US: 'Winter sale' } })], {
             presets: [listing('hero', { name: 'Hero', fromCode: true }), listing(PROMO, { name: 'Promo' })],
+            startingPoints: [],
             categories: [],
         });
         await openBuilder(api);
@@ -205,6 +206,7 @@ describe('changing an editor preset in the Presets tab', () => {
 
     const index: PresetIndex = {
         presets: [listing('hero', { name: 'Hero', fromCode: true, category: 'Banners' }), listing(PROMO, { name: 'Promo', category: 'Banners', description: 'For the sale' })],
+        startingPoints: [],
         categories: ['Banners', 'Campaigns'],
     };
 
@@ -298,7 +300,7 @@ describe("the editor presets' endpoints", () => {
         expect(deleted.calls.map(({ url, init }) => [init?.method, url])).toEqual([['DELETE', `/presets/${PROMO}`]]);
 
         const listed = recordingFetch({ presets: [listing(PROMO)], categories: ['Banners', 42] });
-        await expect(createApi(withEndpoints, listed.fetchFn).presets?.(null)).resolves.toEqual({ presets: [listing(PROMO)], categories: ['Banners'] });
+        await expect(createApi(withEndpoints, listed.fetchFn).presets?.(null)).resolves.toEqual({ presets: [listing(PROMO)], startingPoints: [], categories: ['Banners'] });
     });
 
     it('should have none of them without all their endpoints', () => {

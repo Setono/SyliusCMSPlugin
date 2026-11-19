@@ -24,13 +24,15 @@ import { VisibilityConditions } from './VisibilityConditions';
 export interface SelectionPaneProps {
     /** ★: opens Save as preset for the blocks with these keys. Without it, there's no ★. */
     onSavePreset?: ((keys: readonly string[]) => void) | undefined;
+    /** Opens Save as starting point for the whole tree, from the entry's settings. Without it, there's none. */
+    onSaveStartingPoint?: (() => void) | undefined;
 }
 
 /**
  * The right pane: the selected block's path, its actions, its block style when its block type offers any, its fields,
  * rendered from their schemas, its children and its visibility conditions, or the entry's settings. With several blocks selected, the actions for all of them.
  */
-export function SelectionPane({ onSavePreset }: SelectionPaneProps = {}) {
+export function SelectionPane({ onSavePreset, onSaveStartingPoint }: SelectionPaneProps = {}) {
     const t = useTranslator();
     const { store, locales } = useBuilder();
     const block = useBuilderState((state) => (state.selectedKey === null ? undefined : findBlock(state.entry.tree.blocks, state.selectedKey)));
@@ -57,7 +59,7 @@ export function SelectionPane({ onSavePreset }: SelectionPaneProps = {}) {
 
     // With nothing selected, or the entry's settings selected, it shows the settings
     if (block === undefined) {
-        return <SettingsPane />;
+        return <SettingsPane onSaveStartingPoint={onSaveStartingPoint} />;
     }
 
     const label = blockLabel(block, blockType, t);

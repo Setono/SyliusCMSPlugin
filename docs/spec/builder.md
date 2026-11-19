@@ -58,7 +58,7 @@ With a block selected, the right pane shows:
 - its **children**, with + to add one
 - its **visibility conditions** ([Targeting](targeting.md#condition-kinds))
 
-With nothing selected, or the entry's settings selected, it shows the settings in three tabs:
+With nothing selected, or the entry's settings selected, it shows **Save as starting point**, which saves the whole tree, with its layout and the layout's field values, as a starting point for the entry's content type, or replaces an editor starting point of that content type ([Layouts and presets](layouts-and-presets.md#starting-points)). It's there when the content type has a block tree, and disabled while the tree has no blocks. Under it are the settings, in three tabs:
 
 - **Settings:** title, layout (with a warning when its layout was removed from code), categories (deleted ones flagged), channels, enabled, date window, audience, "Homepage of" for pages, and the host-page context for snippets.
 - **URL & SEO** for a content type with its own URL: slug (with its conflict errors), a warning when a Sylius route takes the URL, old slugs, meta title, meta description and "Hide from search engines".
@@ -202,9 +202,9 @@ The builder talks to plain JSON controllers under the admin firewall, not to API
 | `snippet_blocks` | GET | `/snippets/{uuid}/blocks` | The blocks a Snippet block shows: the snippet's published content, upgraded, without blocks of removed types. "Detach to edit here" copies them, with new keys. |
 | `source_count` | POST | `/sources/count` | How many items a source yields for given parameters under a preview token. |
 | `media_upload` | POST | `/media` | Uploads files into a folder, answering with the new media items or the duplicates found ([Media](media.md)). |
-| `preset_index` | GET | `/presets?entry=&parent=` | The block presets, code and editor, with their metadata, why each is marked invalid, whether each fits the spot (the entry's top level, or the children of the block `parent`) and why not, and the blocks each would insert, for the live render. Also the categories in use, of every preset, which saving a preset suggests. |
-| `preset_create` | POST | `/presets` | Saves the selected blocks, or the whole tree as a starting point, as an editor preset. The blocks are named by their keys in the entry's working copy as the server has it, so the builder sends its unsaved changes first. |
-| `preset_replace` | PUT | `/presets/{uuid}` | Replaces an editor preset's blocks ("Replace <name>"). |
+| `preset_index` | GET | `/presets?entry=&parent=` | The block presets, code and editor, with their metadata, why each is marked invalid, whether each fits the spot (the entry's top level, or the children of the block `parent`) and why not, and the blocks each would insert, for the live render. Also the starting points of the entry's content type, which saving the whole tree can replace, and the categories in use, of every preset, which saving a preset suggests. |
+| `preset_create` | POST | `/presets` | Saves the selected blocks, or the whole tree as a starting point, as an editor preset. The blocks are named by their keys, or `"startingPoint": true` asks for the whole tree, with its layout and the layout's field values, for the entry's content type. Both are read from the entry's working copy as the server has it, so the builder sends its unsaved changes first. |
+| `preset_replace` | PUT | `/presets/{uuid}` | Replaces an editor preset's blocks ("Replace <name>"), or an editor starting point's tree and layout with the whole tree of an entry of its content type. A block preset stays a block preset, and a starting point a starting point. |
 | `preset_update` | PATCH | `/presets/{uuid}` | Renames or recategorises an editor preset. |
 | `preset_delete` | DELETE | `/presets/{uuid}` | Deletes an editor preset. |
 | `preset_export` | GET | `/presets/{uuid}/export` | Downloads an editor preset as a code preset file, the one `setono:cms:preset:export` writes ([Layouts and presets](layouts-and-presets.md#code-presets)). |

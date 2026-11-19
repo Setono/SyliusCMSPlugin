@@ -35,4 +35,15 @@ enum PresetIssueKind: string
     {
         return self::DisabledBlockType !== $this;
     }
+
+    /**
+     * Whether a starting point with it can't be picked in the create dialog: its blocks of removed types would leave
+     * holes in the new entry, and what's newer than the code can't be created from at all. With the others, the entry is
+     * created and the problems flagged, or the default layout used. See "Presets with invalid blocks" in
+     * docs/spec/layouts-and-presets.md
+     */
+    public function disablesStartingPoint(): bool
+    {
+        return self::RemovedBlockType === $this || self::NewerVersion === $this;
+    }
 }

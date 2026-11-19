@@ -316,15 +316,15 @@ function presetEditing(api: BuilderApi, flush: () => Promise<unknown>): PresetEd
     }
 
     return {
-        create: async (blocks, details) => {
+        create: async (content, details) => {
             await flush();
 
-            return create(blocks, details);
+            return create(content, details);
         },
-        replace: async (id, blocks) => {
+        replace: async (id, content) => {
             await flush();
 
-            return replace(id, blocks);
+            return replace(id, content);
         },
         update: (id, details) => update(id, details),
         remove: (id) => remove(id),

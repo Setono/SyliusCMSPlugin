@@ -6,10 +6,11 @@ namespace Setono\SyliusCMSPlugin\Preset;
 
 use Setono\SyliusCMSPlugin\Field\LinkLocaleParts;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
-use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
+use Setono\SyliusCMSPlugin\Registry\LayoutMetadata;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
+use Setono\SyliusCMSPlugin\Tree\StoredLayout;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 use Setono\SyliusCMSPlugin\Upgrade\NewerVersion;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
@@ -52,11 +53,7 @@ final readonly class InsertTransformer
 
         $upgraded = $this->upgrader->upgradeBlocks($stored);
         if ([] !== $upgraded->newer) {
-            return new BlocksToInsert([], array_map(static fn (NewerVersion $newer): TranslatableMessage => new TranslatableMessage('setono_sylius_cms.preset.newer_version', [
-                '%type%' => $newer->code,
-                '%version%' => $newer->version,
-                '%code_version%' => $newer->codeVersion,
-            ]), $upgraded->newer), true);
+            return new BlocksToInsert([], array_map(self::newerVersionNotice(...), $upgraded->newer), true);
         }
 
         /** @var array<string, TranslatableMessage> $notices */
@@ -64,6 +61,30 @@ final readonly class InsertTransformer
         $blocks = $this->copy(array_map($serializer->denormalizeBlock(...), array_values($upgraded->data)), $locales, $notices);
 
         return new BlocksToInsert($blocks, array_values($notices));
+    }
+
+    /**
+     * A starting point's layout made ready for a new entry, its field values as a block's are on insert: translation
+     * keys resolve in each of the entry's locales that has a translation, and the values and translation state of the
+     * locales the entry doesn't have are dropped. The layout must be upgraded already
+     *
+     * @param list<string> $locales the locales of the entry the layout is for
+     */
+    public function transformLayout(StoredLayout $layout, LayoutMetadata $metadata, array $locales): StoredLayout
+    {
+        return new StoredLayout($layout->code, $layout->version, $this->fields($metadata->fields, $layout->fields, $locales), self::translated($layout->translated, $locales));
+    }
+
+    /**
+     * Why inserting refuses what was saved with a newer version than the code's
+     */
+    public static function newerVersionNotice(NewerVersion $newer): TranslatableMessage
+    {
+        return new TranslatableMessage('setono_sylius_cms.preset.newer_version', [
+            '%type%' => $newer->code,
+            '%version%' => $newer->version,
+            '%code_version%' => $newer->codeVersion,
+        ]);
     }
 
     /**
@@ -95,7 +116,7 @@ final readonly class InsertTransformer
                 $block->type,
                 $block->version,
                 $block->style,
-                $this->fields($blockType, $block->fields, $locales),
+                $this->fields($blockType->fields, $block->fields, $locales),
                 self::translated($block->translated, $locales),
                 $block->conditions,
                 $this->copy($block->children, $locales, $notices),
@@ -106,16 +127,17 @@ final readonly class InsertTransformer
     }
 
     /**
+     * @param array<string, FieldMetadata> $metadata the fields of the block type or the layout
      * @param array<string, mixed> $values
      * @param list<string> $locales
      *
      * @return array<string, mixed>
      */
-    private function fields(BlockTypeMetadata $blockType, array $values, array $locales): array
+    private function fields(array $metadata, array $values, array $locales): array
     {
         $fields = [];
         foreach ($values as $name => $value) {
-            $field = $blockType->fields[$name] ?? null;
+            $field = $metadata[$name] ?? null;
             if (null !== $field) {
                 $value = self::inLocales($field, $this->translationKeyValues->resolve($field, $value, $locales, $this->translationKeys->resolve(...)), $locales);
             }

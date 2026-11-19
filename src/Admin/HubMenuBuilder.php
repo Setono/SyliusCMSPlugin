@@ -16,8 +16,9 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * The Content hub's own side menu, the KnpMenu menu "setono_sylius_cms.admin.hub": Overview, Entries, with an item
- * per collection after Pages and Snippets, which lists its categories too, and Library. Items show a count from their "count" extra. Later tickets
- * and projects add their items in a listener of the event this dispatches, the way Sylius's admin menu is extended.
+ * per collection after Pages and Snippets, which lists its categories too, and Library: Media, Presets and Transfer.
+ * Items show a count from their "count" extra. Projects add their items in a listener of the event this dispatches, the
+ * way Sylius's admin menu is extended.
  * See "Navigation" in docs/spec/admin.md
  */
 final readonly class HubMenuBuilder
@@ -98,7 +99,6 @@ final readonly class HubMenuBuilder
 
         $library = $menu->addChild('library')->setLabel('setono_sylius_cms.menu.admin.hub.library');
 
-        // Transfer joins with its ticket
         $library
             ->addChild('media', ['route' => 'setono_sylius_cms_admin_media_index'])
             ->setLabel('setono_sylius_cms.menu.admin.hub.media')
@@ -109,6 +109,12 @@ final readonly class HubMenuBuilder
             ->addChild('presets', ['route' => 'setono_sylius_cms_admin_preset_index'])
             ->setLabel('setono_sylius_cms.menu.admin.hub.presets')
             ->setLabelAttribute('icon', 'clone outline')
+        ;
+
+        $library
+            ->addChild('transfer', ['route' => 'setono_sylius_cms_admin_transfer'])
+            ->setLabel('setono_sylius_cms.menu.admin.hub.transfer')
+            ->setLabelAttribute('icon', 'exchange')
         ;
 
         $this->eventDispatcher->dispatch(new MenuBuilderEvent($this->factory, $menu), self::EVENT);

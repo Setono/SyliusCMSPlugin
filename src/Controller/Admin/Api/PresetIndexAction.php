@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Preset\PresetIssue;
 use Setono\SyliusCMSPlugin\Preset\PresetProviderInterface;
 use Setono\SyliusCMSPlugin\Preset\TranslationKey;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,7 +29,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  * and the blocks it would insert, which the tab renders live under the preview's token. It reads the working copy as
  * the server has it, so the builder sends its unsaved changes first. It changes nothing, so it needs no CSRF token. The
  * answer also has the categories in use, of every preset, which editors are suggested when they save one.
- * Starting points are offered when an entry is created, not here. See "Where a preset is offered" in
+ * Starting points are offered when an entry is created, not here: the answer only names the entry's content type's,
+ * which saving the entry's whole tree can replace. See "Where a preset is offered" in
  * docs/spec/layouts-and-presets.md and "Block picker" in docs/spec/builder.md
  */
 final readonly class PresetIndexAction
@@ -41,6 +43,7 @@ final readonly class PresetIndexAction
         private PresetFitCheck $fitCheck,
         private PresetCheck $presetCheck,
         private TranslatorInterface $translator,
+        private ContentTypeRegistryInterface $contentTypes,
     ) {
     }
 
@@ -56,10 +59,13 @@ final readonly class PresetIndexAction
         $parent = is_string($parent) && '' !== $parent ? $parent : null;
         $locales = self::localesOf($workingCopy);
 
-        $presets = $categories = [];
+        $contentType = $this->contentTypes->getByEntry($workingCopy)->code;
+        $presets = $startingPoints = $categories = [];
         foreach ($this->presets->all() as $preset) {
             if (null === $preset->startingPoint) {
                 $presets[] = $this->describe($preset, $workingCopy, $parent, $locales);
+            } elseif ($preset->startingPoint->contentType === $contentType) {
+                $startingPoints[] = $this->name($preset);
             }
 
             $category = $this->text($preset->category);
@@ -72,7 +78,22 @@ final readonly class PresetIndexAction
         $categories = array_map(strval(...), array_keys($categories));
         sort($categories, \SORT_NATURAL | \SORT_FLAG_CASE);
 
-        return new JsonResponse(CanonicalJson::encode(new ListedObject(['presets' => $presets, 'categories' => $categories])), json: true);
+        return new JsonResponse(CanonicalJson::encode(new ListedObject(['presets' => $presets, 'startingPoints' => $startingPoints, 'categories' => $categories])), json: true);
+    }
+
+    /**
+     * A starting point of the entry's content type, which saving the entry's whole tree can replace when it's an
+     * editor preset
+     */
+    private function name(Preset $preset): ListedObject
+    {
+        return new ListedObject([
+            'id' => $preset->id(),
+            'fromCode' => $preset->isFromCode(),
+            'name' => $this->text($preset->name),
+            'category' => $this->text($preset->category),
+            'description' => $this->text($preset->description),
+        ]);
     }
 
     /**

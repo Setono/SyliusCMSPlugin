@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useBuilder } from '../context';
 import { leavesOn, shortcutOf } from '../shortcuts';
+import type { PresetContent } from '../types';
 import { BlockTreePane } from './BlockTreePane';
 import { ClashDialog } from './ClashDialog';
 import { LeaveDialog } from './LeaveDialog';
@@ -18,9 +19,11 @@ export function Shell() {
     const treeHeadingId = useId();
     const selection = useRef<HTMLElement>(null);
     const { store, leave, hasBlockTree, presets } = useBuilder();
-    // The blocks ★ saves as a preset, from the right pane or the preview's toolbar, while the dialog is open
-    const [presetBlocks, setPresetBlocks] = useState<readonly string[] | null>(null);
-    const savePreset = presets !== null && presets.editing !== null ? setPresetBlocks : undefined;
+    // What's saved as a preset while the dialog is open: the blocks ★ saves, from the right pane or the preview's
+    // toolbar, or the whole tree the entry settings save as a starting point, which needs a block tree
+    const [presetContent, setPresetContent] = useState<PresetContent | null>(null);
+    const savePreset = presets !== null && presets.editing !== null ? setPresetContent : undefined;
+    const saveStartingPoint = savePreset !== undefined && hasBlockTree ? () => savePreset('tree') : undefined;
 
     // Undo and redo work on the working copy wherever the focus is, also in a field: its value is the working copy's.
     // A control with an undo of its own, such as rich text, handles the keys first. Esc leaves the builder, unless a
@@ -59,11 +62,11 @@ export function Shell() {
             )}
             <Preview className={styles.preview} onOpenSettings={openSettings} onSavePreset={savePreset} />
             <aside ref={selection} className={styles.selection}>
-                <SelectionPane onSavePreset={savePreset} />
+                <SelectionPane onSavePreset={savePreset} onSaveStartingPoint={saveStartingPoint} />
             </aside>
             <ClashDialog />
             <LeaveDialog />
-            {savePreset !== undefined && <SavePresetDialog blocks={presetBlocks} onClose={() => setPresetBlocks(null)} />}
+            {savePreset !== undefined && <SavePresetDialog content={presetContent} onClose={() => setPresetContent(null)} />}
         </div>
     );
 }

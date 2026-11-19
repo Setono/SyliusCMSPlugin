@@ -254,3 +254,45 @@
     padding: 0;
     border: 0;
 }
+
+/* ★ Save as starting point, above the tabs */
+.paneActions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--builder-space-1);
+}
+
+.paneAction {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--builder-space-2);
+    height: var(--builder-control-height);
+    padding: 0 var(--builder-space-3);
+    border: 1px solid var(--builder-color-border-strong);
+    border-radius: var(--builder-radius-md);
+    background: var(--builder-color-surface);
+    color: var(--builder-color-text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.paneAction:hover:not(:disabled) {
+    background: var(--builder-color-hover);
+}
+
+.paneAction:disabled {
+    cursor: not-allowed;
+    opacity: var(--builder-disabled-opacity);
+}
+
+.paneAction:focus-visible {
+    outline: 2px solid var(--builder-color-focus);
+    outline-offset: 2px;
+}
+
+.paneActionHint {
+    margin: 0;
+    color: var(--builder-color-text-muted);
+    font-size: var(--builder-font-size-sm);
+}

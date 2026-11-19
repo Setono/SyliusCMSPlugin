@@ -2,6 +2,7 @@ import { useId, useRef, useState, type ReactNode } from 'react';
 import { useBuilder, useBuilderState, useValidationState, type BuilderSession } from '../context';
 import { useTranslator, type MessageKey } from '../i18n';
 import { entryMessages } from '../validation';
+import { StarIcon } from './icons';
 import { MoreTab } from './settings/MoreTab';
 import { SettingsTab } from './settings/SettingsTab';
 import { UrlAndSeoTab } from './settings/UrlAndSeoTab';
@@ -41,11 +42,17 @@ const tabs: Tab[] = [
     { code: 'more', label: 'setono_sylius_cms.builder.more', panel: () => <MoreTab /> },
 ];
 
+export interface SettingsPaneProps {
+    /** Opens Save as starting point for the whole tree. Without it, as for a content type without a block tree, there's none. */
+    onSaveStartingPoint?: (() => void) | undefined;
+}
+
 /**
- * The entry's settings, shown while no block is selected, in tabs. The arrow keys, Home and End move between the tabs.
- * See "Right pane: the selection" in docs/spec/builder.md
+ * The entry's settings, shown while no block is selected, in tabs, under the action that saves the whole tree as a
+ * starting point. The arrow keys, Home and End move between the tabs. See "Right pane: the selection" in
+ * docs/spec/builder.md and "Editor presets" in docs/spec/layouts-and-presets.md
  */
-export function SettingsPane() {
+export function SettingsPane({ onSaveStartingPoint }: SettingsPaneProps = {}) {
     const t = useTranslator();
     const id = useId();
     const session = useBuilder();
@@ -69,6 +76,7 @@ export function SettingsPane() {
 
     return (
         <div className={styles.pane}>
+            {onSaveStartingPoint !== undefined && <SaveStartingPoint onSave={onSaveStartingPoint} />}
             <EntryErrors shownElsewhere={tab?.fields?.(session) ?? []} />
             <div
                 ref={tabList}
@@ -103,6 +111,30 @@ export function SettingsPane() {
                 <div role="tabpanel" id={`${id}-${tab.code}-panel`} className={styles.panel} aria-labelledby={`${id}-${tab.code}-tab`}>
                     {tab.panel()}
                 </div>
+            )}
+        </div>
+    );
+}
+
+/**
+ * ★ Save as starting point: the whole tree, with its layout and the layout's field values, as a starting point for new
+ * entries of the content type. A tree without blocks has nothing to save.
+ */
+function SaveStartingPoint({ onSave }: { onSave: () => void }) {
+    const t = useTranslator();
+    const hintId = useId();
+    const empty = useBuilderState((state) => state.entry.tree.blocks.length === 0);
+
+    return (
+        <div className={styles.paneActions}>
+            <button type="button" className={styles.paneAction} disabled={empty} aria-describedby={empty ? hintId : undefined} onClick={onSave}>
+                <StarIcon />
+                {t('setono_sylius_cms.builder.save_as_starting_point')}
+            </button>
+            {empty && (
+                <p id={hintId} className={styles.paneActionHint}>
+                    {t('setono_sylius_cms.builder.save_as_starting_point_empty')}
+                </p>
             )}
         </div>
     );

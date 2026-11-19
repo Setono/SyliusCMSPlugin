@@ -82,6 +82,35 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         return $entries;
     }
 
+    public function findByContentType(string $contentType): array
+    {
+        /** @var list<EntryInterface> $entries */
+        $entries = $this->entries($contentType)->orderBy('o.id')->getQuery()->getResult();
+
+        return $entries;
+    }
+
+    public function search(string $search, int $limit, array $hiddenContentTypes = []): array
+    {
+        $translationClass = $this->getClassMetadata()->getAssociationTargetClass('translations');
+
+        /** @var list<EntryInterface> $entries */
+        $entries = $this->entries(null, $hiddenContentTypes)
+            ->andWhere(sprintf(
+                'EXISTS (SELECT matched.id FROM %1$s matched WHERE matched.translatable = o AND (LOWER(matched.title) LIKE :search %2$s OR LOWER(matched.slug) LIKE :search %2$s))',
+                $translationClass,
+                SearchPattern::ESCAPE,
+            ))
+            ->setParameter('search', SearchPattern::containing($search))
+            ->orderBy('o.id', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $entries;
+    }
+
     public function findByCustomerGroupCodes(array $codes): array
     {
         if ([] === $codes) {

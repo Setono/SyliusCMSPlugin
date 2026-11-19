@@ -1,0 +1,75 @@
+{
+    "changedAt": "2026-11-12T10:15:00Z",
+    "settings": {
+        "enabled": true,
+        "showFrom": null,
+        "showUntil": null,
+        "channels": [
+            "WEB"
+        ],
+        "audience": {
+            "mode": "everyone",
+            "groups": []
+        },
+        "homepageOf": [],
+        "position": null
+    },
+    "placements": [],
+    "entry": {
+        "uuid": "0193a5be-71b0-7a3c-9d4e-5f6a7b8c9d0e",
+        "contentType": "page",
+        "version": 1,
+        "createdAt": "2026-11-01T08:30:00Z",
+        "fields": {
+            "noindex": false
+        },
+        "translations": {
+            "en_US": {
+                "shown": true,
+                "fields": {
+                    "metaDescription": null,
+                    "metaTitle": null,
+                    "slug": "autumn-sale",
+                    "title": "Autumn sale"
+                },
+                "translated": {}
+            }
+        },
+        "tree": {
+            "layout": {
+                "code": "standard",
+                "version": 1,
+                "fields": {},
+                "translated": {}
+            },
+            "blocks": [
+                {
+                    "key": "0193a5be-0000-7000-8000-000000000005",
+                    "type": "heading",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "text": {
+                            "en_US": "Autumn sale"
+                        }
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": []
+                },
+                {
+                    "key": "0193a5be-0000-7000-8000-000000000006",
+                    "type": "snippet",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "snippet": "0193a5be-7255-7f00-8a1b-2c3d4e5f6a7b"
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": []
+                }
+            ]
+        }
+    }
+}

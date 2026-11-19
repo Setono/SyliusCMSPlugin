@@ -6,7 +6,6 @@ namespace Setono\SyliusCMSPlugin\Controller\Admin\Api;
 
 use Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface;
 use Setono\SyliusCMSPlugin\Preset\InvalidPresetDetailsException;
-use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Preset\PresetDetails;
 use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -17,9 +16,11 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * ★ in the builder: saves the selected blocks, or a ⌘-click selection, as a new editor preset, at once. The body is
  * {"entry": <uuid>, "blocks": [<key>, …], "name": …, "category": …, "description": …}: a selection under different
- * parents is saved in tree order, and a block inside another selected block once. The name is required, and the
- * category and description are optional. Answers 201 with the preset. See "Editor presets" in
- * docs/spec/layouts-and-presets.md and "JSON endpoints" in docs/spec/builder.md
+ * parents is saved in tree order, and a block inside another selected block once. From the entry settings, the body
+ * has "startingPoint": true instead of the blocks, and the whole tree is saved as a starting point for the entry's
+ * content type, with its layout and the layout's field values. The name is required, and the category and description
+ * are optional. Answers 201 with the preset. See "Editor presets" in docs/spec/layouts-and-presets.md and "JSON
+ * endpoints" in docs/spec/builder.md
  */
 final readonly class CreatePresetAction
 {
@@ -37,14 +38,14 @@ final readonly class CreatePresetAction
             try {
                 $body = $request->toArray();
                 $details = (new PresetDetails(''))->changedBy($body);
-                $blocks = $this->blocksRequest->blocks($body);
+                $content = $this->blocksRequest->content($body);
             } catch (InvalidPresetDetailsException $e) {
                 return BuilderRequest::badRequest($e->translatable->trans($this->translator));
             } catch (JsonException|\InvalidArgumentException $e) {
                 return BuilderRequest::badRequest($e->getMessage());
             }
 
-            $saved = $this->saver->save($details->applyTo(new Preset('', $blocks)));
+            $saved = $this->saver->save($details->applyTo($content));
 
             return new JsonResponse(['preset' => PresetAnswer::of($saved, $this->translator)], Response::HTTP_CREATED);
         });

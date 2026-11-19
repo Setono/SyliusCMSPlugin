@@ -261,17 +261,21 @@ setono_sylius_cms:
                 pages: Pages
                 presets: Presets
                 snippets: Snippets
+                transfer: Transfer
             main:
                 content:
                     content: Content
                     header: Content
     form:
         entry:
+            blank: Blank
             channels: Channels
             layout: Layout
             slug: Slug
             slug_help: 'Generated from the title until you change it. It may have slashes, such as about/team.'
             slug_rules: A slug can't start or end with a slash, or have two slashes in a row.
+            starting_point: Starting point
+            starting_point_help: A starting point gives the new entry its blocks and its layout.
             title: Title
     media:
         # Why a media item can't be deleted. See "Deleting" in docs/spec/media.md
@@ -611,6 +615,36 @@ setono_sylius_cms:
         this_page: This page
         this_snippet: This snippet
         title: Title
+        transfer:
+            add: Add
+            add_entry: 'Add %title%'
+            added: Added because the picked records use them
+            counts: '%entries%, %presets% and %media_items%'
+            description: Move content between environments of the store as export files
+            download: Download
+            editor_presets: Editor presets
+            entries: Entries
+            entry_count: '%count% entry|%count% entries'
+            everything: 'Everything: every entry, editor preset and media item'
+            export: Export
+            export_help: Pick entries, editor presets and media folders, or everything. The snippets and media items they use come along.
+            find_entries: Find entries
+            find_entries_placeholder: By title or slug
+            in_the_export: In the export
+            media_folders: Media folders
+            media_folders_help: A folder brings every media item in it and in its subfolders.
+            media_item_count: '%count% media item|%count% media items'
+            no_editor_presets: There are no editor presets.
+            no_entries_found: No entries match.
+            no_entries_picked: No entries picked yet. Find them by their title or slug.
+            no_media_folders: There are no media folders.
+            nothing_picked: Pick what to export to see what the export holds.
+            picked: Picked
+            picked_entries: Picked entries
+            preset_count: '%count% editor preset|%count% editor presets'
+            remove_entry: 'Remove %title%'
+            title: Transfer
+            update: Update
         translation_chip:
             complete: complete
             held_back: held back
@@ -729,6 +763,11 @@ setono_sylius_cms:
         preset_save: Save
         preset_cancel: Cancel
         preset_delete: Delete
+        # Saving the whole tree as a starting point, from the entry settings. See "Starting points" in docs/spec/layouts-and-presets.md
+        save_as_starting_point: Save as starting point
+        save_as_starting_point_help: 'The whole tree, with its layout and the layout''s settings, is saved as a starting point that new entries of this content type can be created from. The entries created from it keep their own copy.'
+        save_as_starting_point_empty: Add blocks to save them as a starting point.
+        replace_a_starting_point: Or replace a starting point
         condition_match: Matches when it
         copy_it_here: Copy it here
         clash: A colleague changed this too

@@ -29,10 +29,26 @@
         <service id="Setono\SyliusCMSPlugin\Admin\StatusLabelerInterface" alias="Setono\SyliusCMSPlugin\Admin\StatusLabeler"/>
 
         <!-- What the Presets screen lists: the starting points or the block presets, and the categories in use -->
+        <service id="Setono\SyliusCMSPlugin\Admin\StartingPointChoices" class="Setono\SyliusCMSPlugin\Admin\StartingPointChoices">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetCheck"/>
+            <argument type="service" id="translator"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Admin\PresetRows" class="Setono\SyliusCMSPlugin\Admin\PresetRows">
             <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetCheck"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="translator"/>
+        </service>
+
+        <!-- What the Transfer screen's export offers to pick, and how it names what's picked and what comes along -->
+        <service id="Setono\SyliusCMSPlugin\Admin\ExportChoices" class="Setono\SyliusCMSPlugin\Admin\ExportChoices">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.repository.editor_preset"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
             <argument type="service" id="translator"/>
         </service>
 
