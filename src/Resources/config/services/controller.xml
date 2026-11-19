@@ -291,6 +291,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetFitCheck"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetCheck"/>
             <argument type="service" id="translator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
 
             <tag name="controller.service_arguments"/>
         </service>
@@ -309,6 +310,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\CreatePresetAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\CreatePresetAction">
