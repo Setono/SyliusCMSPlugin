@@ -121,7 +121,7 @@ final class CMSCacheTest extends WebTestCase
      */
     private static function clearCMSCache(): void
     {
-        $cache = self::getContainer()->get('app.cms_cache');
+        $cache = self::getContainer()->get(CMSCacheKernel::POOL);
         self::assertInstanceOf(CacheItemPoolInterface::class, $cache);
         self::assertTrue($cache->clear());
     }

@@ -225,7 +225,7 @@ These are the plugin's messages, all dispatched on `sylius.event_bus`:
 - **A message that keeps failing** ends in Sylius's `main_failed` transport, where `bin/console messenger:failed:show`
   lists it.
 
-Uploads in the admin, media files and exports for an import alike, are capped by PHP's `upload_max_filesize` and
+Every upload in the admin, a media file or an export to import, is capped by PHP's `upload_max_filesize` and
 `post_max_size`. Import a bigger export with `bin/console setono:cms:import`.
 
 ### Run the cron commands

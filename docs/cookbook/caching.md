@@ -17,8 +17,8 @@ A project caches one by decorating it with a tag-aware cache, and invalidates th
 storefront changed: every event that changes what shoppers see implements
 `Setono\SyliusCMSPlugin\Event\StorefrontChangedInterface`.
 
-The code on this page runs in the plugin's test application, in `tests/Application/Cache/`, wired by
-`tests/Application/config/cookbook/caching.yaml`, and its tests are `tests/Unit/Application/Cache/` and
+The code on this page runs in the plugin's test application, in `tests/Application/Cache/`, wired as below by
+`tests/Functional/Fixture/CMSCacheKernel.php`, and its tests are `tests/Unit/Application/Cache/` and
 `tests/Functional/Shop/CMSCacheTest.php`.
 
 ## A tag-aware pool
