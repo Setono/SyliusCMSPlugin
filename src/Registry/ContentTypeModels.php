@@ -35,7 +35,7 @@ final class ContentTypeModels
     /**
      * The key, such as the content type's code, of the model the class names among the models
      *
-     * @template TKey of array-key
+     * @template TKey of int|string
      *
      * @param array<TKey, class-string> $models
      *
