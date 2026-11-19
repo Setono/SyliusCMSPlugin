@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Upgrade;
 
-use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\EditorPresetInterface;
 use Setono\SyliusCMSPlugin\Preset\EditorPresetContent;
 use Setono\SyliusCMSPlugin\Preset\InvalidPresetException;
 use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\PresetUpgrader;
 use Setono\SyliusCMSPlugin\Preset\StartingPoint;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
-use Setono\SyliusCMSPlugin\Tree\StoredTree;
-use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 
 /**
  * Writes an editor preset back upgraded, for setono:cms:upgrade: its blocks, and a starting point's layout, run through
@@ -24,7 +22,7 @@ use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
  */
 final readonly class PresetRewriter
 {
-    public function __construct(private StoredDataUpgraderInterface $upgrader)
+    public function __construct(private PresetUpgrader $presetUpgrader)
     {
     }
 
@@ -41,25 +39,15 @@ final readonly class PresetRewriter
             return new PresetRewrite(false, []);
         }
 
-        $serializer = new StoredTreeSerializer();
-        $startingPoint = $preset->startingPoint;
-        /** @var array<array-key, mixed> $tree */
-        $tree = CanonicalJson::decode(CanonicalJson::encode($serializer->normalize(new StoredTree($startingPoint?->layout, $preset->blocks))));
-        if (null === $startingPoint) {
-            $blocks = is_array($tree['blocks'] ?? null) ? $tree['blocks'] : [];
-            $upgraded = $this->upgrader->upgradeBlocks($blocks);
-            $tree['blocks'] = $upgraded->data;
-        } else {
-            $upgraded = $this->upgrader->upgradeTree($tree, $startingPoint->contentType);
-            $tree = $upgraded->data;
-        }
+        $upgraded = $this->presetUpgrader->upgrade($preset);
 
         try {
-            $upgradedTree = $serializer->denormalize($tree);
+            $upgradedTree = $upgraded->tree();
         } catch (InvalidStoredTreeException) {
             return new PresetRewrite(false, $upgraded->newer);
         }
 
+        $startingPoint = $preset->startingPoint;
         $before = $row->getContent();
         $content->write($row, new Preset(
             $preset->name,

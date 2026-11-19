@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Preset;
 
-use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Registry\AllowedBlockType;
+use Setono\SyliusCMSPlugin\Registry\BlockTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\NestingRulesInterface;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
-use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
+use Setono\SyliusCMSPlugin\Tree\StoredTree;
 use Setono\SyliusCMSPlugin\Tree\StoredValue;
 use Setono\SyliusCMSPlugin\Tree\StoredValueFit;
 use Setono\SyliusCMSPlugin\Tree\TreeValues;
-use Setono\SyliusCMSPlugin\Upgrade\NewerVersion;
-use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
@@ -39,7 +37,7 @@ final readonly class PresetCheck
         private ContentTypeRegistryInterface $contentTypes,
         private LayoutRegistryInterface $layouts,
         private NestingRulesInterface $nestingRules,
-        private StoredDataUpgraderInterface $upgrader,
+        private PresetUpgrader $presetUpgrader,
         private TranslationKeyValues $translationKeyValues,
         private StoredValueFit $fit,
     ) {
@@ -50,32 +48,29 @@ final readonly class PresetCheck
      */
     public function check(Preset $preset): array
     {
-        $serializer = new StoredTreeSerializer();
-        /** @var list<mixed> $stored */
-        $stored = CanonicalJson::decode(CanonicalJson::encode(array_map($serializer->normalizeBlock(...), $preset->blocks)));
-        $upgraded = $this->upgrader->upgradeBlocks($stored);
-        if ([] !== $upgraded->newer) {
-            return array_map(self::newerVersion(...), $upgraded->newer);
+        $upgraded = $this->presetUpgrader->upgrade($preset);
+        if ($upgraded->hasNewer()) {
+            return array_map(static fn (TranslatableMessage $message): PresetIssue => new PresetIssue(PresetIssueKind::NewerVersion, null, $message), $upgraded->newerVersionMessages());
         }
 
-        $blocks = array_map($serializer->denormalizeBlock(...), array_values($upgraded->data));
+        $tree = $upgraded->tree();
         // A block preset is one or more saved blocks, while a starting point brings its layout and values too
-        $issues = [] === $blocks && null === $preset->startingPoint ? [new PresetIssue(PresetIssueKind::NoBlocks, null, new TranslatableMessage('setono_sylius_cms.preset.issue.no_blocks'))] : [];
-        $issues = [...$issues, ...$this->startingPointIssues($preset, $blocks)];
+        $issues = [] === $tree->blocks && null === $preset->startingPoint ? [new PresetIssue(PresetIssueKind::NoBlocks, null, new TranslatableMessage('setono_sylius_cms.preset.issue.no_blocks'))] : [];
+        $issues = [...$issues, ...$this->startingPointIssues($preset, $tree)];
 
-        foreach ($blocks as $block) {
-            $issues = [...$issues, ...$this->blockIssues($block)];
+        foreach (PresetBlocks::walk($tree->blocks, $this->blockTypes) as [$block, $blockType]) {
+            $issues = [...$issues, ...$this->blockIssues($block, $blockType)];
         }
 
         return $issues;
     }
 
     /**
-     * @param list<StoredBlock> $blocks
+     * @param StoredTree $tree the starting point's blocks and layout, upgraded
      *
      * @return list<PresetIssue>
      */
-    private function startingPointIssues(Preset $preset, array $blocks): array
+    private function startingPointIssues(Preset $preset, StoredTree $tree): array
     {
         $startingPoint = $preset->startingPoint;
         if (null === $startingPoint) {
@@ -89,36 +84,33 @@ final readonly class PresetCheck
 
         $contentType = new TranslatableMessage($this->contentTypes->get($contentTypeCode)->label);
         $issues = [];
-        $layout = $startingPoint->layout;
+        $layout = $tree->layout;
         if (null !== $layout && !$this->layouts->has($contentTypeCode, $layout->code)) {
             $issues[] = new PresetIssue(PresetIssueKind::StartingPoint, null, new TranslatableMessage('setono_sylius_cms.preset.issue.unknown_layout', ['%layout%' => $layout->code, '%content_type%' => $contentType]));
         } elseif (null !== $layout) {
-            $upgraded = $this->upgrader->upgradeTree(['layout' => CanonicalJson::decode(CanonicalJson::encode((new StoredTreeSerializer())->normalizeLayout($layout))), 'blocks' => []], $contentTypeCode);
-            if ([] !== $upgraded->newer) {
-                return array_map(self::newerVersion(...), $upgraded->newer);
-            }
-
-            $upgradedLayout = (new StoredTreeSerializer())->denormalizeLayout($upgraded->data['layout'] ?? null);
-            foreach ($this->values(TreeValues::inValues($this->layouts->get($contentTypeCode, $layout->code)->fields, $upgradedLayout->fields)) as $value) {
+            foreach ($this->values(TreeValues::inValues($this->layouts->get($contentTypeCode, $layout->code)->fields, $layout->fields)) as $value) {
                 if ($this->fit->doesNotFit($value)) {
                     $issues[] = new PresetIssue(PresetIssueKind::Misfit, null, new TranslatableMessage('setono_sylius_cms.problem.misfit_layout_value', ['%field%' => new TranslatableMessage($value->field->field->label)]));
                 }
             }
         }
 
-        return [...$issues, ...$this->listIssues($blocks, $this->nestingRules->topLevel($contentTypeCode), null, $contentType)];
+        return [...$issues, ...$this->listIssues($tree->blocks, $this->nestingRules->topLevel($contentTypeCode), null, $contentType)];
     }
 
     /**
+     * What's wrong with a block itself and the list of its children. Its children's own issues are theirs
+     *
+     * @param BlockTypeMetadata|null $blockType null when the code no longer has it
+     *
      * @return list<PresetIssue>
      */
-    private function blockIssues(StoredBlock $block): array
+    private function blockIssues(StoredBlock $block, ?BlockTypeMetadata $blockType): array
     {
-        if (!$this->blockTypes->has($block->type)) {
+        if (null === $blockType) {
             return [new PresetIssue(PresetIssueKind::RemovedBlockType, $block->key, new TranslatableMessage('setono_sylius_cms.preset.issue.removed_block_type', ['%type%' => $block->type]))];
         }
 
-        $blockType = $this->blockTypes->get($block->type);
         $label = new TranslatableMessage($blockType->label);
         $issues = [];
         if ($blockType->disabled) {
@@ -140,12 +132,7 @@ final readonly class PresetCheck
             }
         }
 
-        $issues = [...$issues, ...$this->listIssues($block->children, $this->nestingRules->children($block->type), $block->key, $label)];
-        foreach ($block->children as $child) {
-            $issues = [...$issues, ...$this->blockIssues($child)];
-        }
-
-        return $issues;
+        return [...$issues, ...$this->listIssues($block->children, $this->nestingRules->children($block->type), $block->key, $label)];
     }
 
     /**
@@ -185,15 +172,6 @@ final readonly class PresetCheck
         }
 
         return $issues;
-    }
-
-    private static function newerVersion(NewerVersion $newer): PresetIssue
-    {
-        return new PresetIssue(PresetIssueKind::NewerVersion, null, new TranslatableMessage('setono_sylius_cms.preset.newer_version', [
-            '%type%' => $newer->code,
-            '%version%' => $newer->version,
-            '%code_version%' => $newer->codeVersion,
-        ]));
     }
 
     /**

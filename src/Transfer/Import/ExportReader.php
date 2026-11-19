@@ -6,11 +6,11 @@ namespace Setono\SyliusCMSPlugin\Transfer\Import;
 
 use Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer;
 use Setono\SyliusCMSPlugin\EntryFormat\InvalidEntryFormatException;
-use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Media\RefusedFileException;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\PresetUpgrader;
 use Setono\SyliusCMSPlugin\Preset\StartingPoint;
 use Setono\SyliusCMSPlugin\Publishing\EntrySettings;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
@@ -24,8 +24,6 @@ use Setono\SyliusCMSPlugin\Transfer\Format\InvalidExportException;
 use Setono\SyliusCMSPlugin\Transfer\Format\Manifest;
 use Setono\SyliusCMSPlugin\Tree\InvalidStoredTreeException;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
-use Setono\SyliusCMSPlugin\Tree\StoredTree;
-use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
 use Setono\SyliusCMSPlugin\Upgrade\NewerVersion;
 use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Symfony\Component\Translation\TranslatableMessage;
@@ -46,6 +44,7 @@ final readonly class ExportReader
         private LayoutRegistryInterface $layouts,
         private BlockTypeRegistryInterface $blockTypes,
         private StoredDataUpgraderInterface $upgrader,
+        private PresetUpgrader $presetUpgrader,
         private EntryDenormalizer $entryDenormalizer,
         private ImportedFileChecker $files,
     ) {
@@ -251,25 +250,15 @@ final readonly class ExportReader
             return null;
         }
 
-        $serializer = new StoredTreeSerializer();
-        /** @var array<array-key, mixed> $tree */
-        $tree = CanonicalJson::decode(CanonicalJson::encode($serializer->normalize(new StoredTree($startingPoint?->layout, $preset->blocks))));
-        if (null === $startingPoint) {
-            $upgraded = $this->upgrader->upgradeBlocks(is_array($tree['blocks'] ?? null) ? $tree['blocks'] : []);
-            $tree['blocks'] = $upgraded->data;
-        } else {
-            $upgraded = $this->upgrader->upgradeTree($tree, $startingPoint->contentType);
-            $tree = $upgraded->data;
-        }
-
-        if ([] !== $upgraded->newer) {
+        $upgraded = $this->presetUpgrader->upgrade($preset);
+        if ($upgraded->hasNewer()) {
             array_push($refusals, ...self::newer($uuid, $title, $upgraded->newer));
 
             return null;
         }
 
         try {
-            $tree = $serializer->denormalize($tree);
+            $tree = $upgraded->tree();
         } catch (InvalidStoredTreeException $e) {
             throw new InvalidExportException(sprintf('The preset %s is invalid: %s', $uuid, $e->getMessage()), previous: $e);
         }

@@ -11,6 +11,7 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Model\EditorPreset;
 use Setono\SyliusCMSPlugin\Preset\EditorPresetContent;
 use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\PresetUpgrader;
 use Setono\SyliusCMSPlugin\Preset\StartingPoint;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
@@ -51,7 +52,7 @@ final class PresetRewriterTest extends TestCase
             return new Upgraded($tree);
         });
 
-        $rewrite = (new PresetRewriter($this->upgrader->reveal()))->rewrite($row);
+        $rewrite = (new PresetRewriter(new PresetUpgrader($this->upgrader->reveal())))->rewrite($row);
 
         self::assertTrue($rewrite->rewritten);
         self::assertSame([], $rewrite->newer);
@@ -70,7 +71,7 @@ final class PresetRewriterTest extends TestCase
         $content = $row->getContent();
         $this->upgrader->upgradeBlocks(Argument::type('array'))->will(static fn (array $arguments): Upgraded => new Upgraded((array) $arguments[0]));
 
-        self::assertFalse((new PresetRewriter($this->upgrader->reveal()))->rewrite($row)->rewritten);
+        self::assertFalse((new PresetRewriter(new PresetUpgrader($this->upgrader->reveal())))->rewrite($row)->rewritten);
         self::assertSame($content, $row->getContent());
     }
 
@@ -82,7 +83,7 @@ final class PresetRewriterTest extends TestCase
         $row = new EditorPreset();
         $row->setContent('{"format": 1}');
 
-        $rewrite = (new PresetRewriter($this->upgrader->reveal()))->rewrite($row);
+        $rewrite = (new PresetRewriter(new PresetUpgrader($this->upgrader->reveal())))->rewrite($row);
 
         self::assertFalse($rewrite->rewritten);
         self::assertSame('{"format": 1}', $row->getContent());

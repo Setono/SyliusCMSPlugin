@@ -5,15 +5,11 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Preset;
 
 use Setono\SyliusCMSPlugin\Field\LinkLocaleParts;
-use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
 use Setono\SyliusCMSPlugin\Registry\LayoutMetadata;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Tree\StoredLayout;
-use Setono\SyliusCMSPlugin\Tree\StoredTreeSerializer;
-use Setono\SyliusCMSPlugin\Upgrade\NewerVersion;
-use Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface;
 use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Component\Uid\Uuid;
 
@@ -35,7 +31,7 @@ use Symfony\Component\Uid\Uuid;
 final readonly class InsertTransformer
 {
     public function __construct(
-        private StoredDataUpgraderInterface $upgrader,
+        private PresetUpgrader $presetUpgrader,
         private BlockTypeRegistryInterface $blockTypes,
         private TranslationKeyResolverInterface $translationKeys,
         private TranslationKeyValues $translationKeyValues,
@@ -47,20 +43,23 @@ final readonly class InsertTransformer
      */
     public function transform(Preset $preset, array $locales): BlocksToInsert
     {
-        $serializer = new StoredTreeSerializer();
-        /** @var list<mixed> $stored */
-        $stored = CanonicalJson::decode(CanonicalJson::encode(array_map($serializer->normalizeBlock(...), $preset->blocks)));
+        return $this->transformUpgraded($this->presetUpgrader->upgrade($preset), $locales);
+    }
 
-        $upgraded = $this->upgrader->upgradeBlocks($stored);
-        if ([] !== $upgraded->newer) {
-            return new BlocksToInsert([], array_map(self::newerVersionNotice(...), $upgraded->newer), true);
+    /**
+     * The blocks of a preset PresetUpgrader has upgraded, as transform() makes them ready
+     *
+     * @param list<string> $locales the locales of the entry the blocks are inserted into
+     */
+    public function transformUpgraded(UpgradedPreset $upgraded, array $locales): BlocksToInsert
+    {
+        if ($upgraded->hasNewer()) {
+            return new BlocksToInsert([], $upgraded->newerVersionMessages(), true);
         }
 
-        /** @var array<string, TranslatableMessage> $notices */
-        $notices = [];
-        $blocks = $this->copy(array_map($serializer->denormalizeBlock(...), array_values($upgraded->data)), $locales, $notices);
+        $blocks = $upgraded->tree()->blocks;
 
-        return new BlocksToInsert($blocks, array_values($notices));
+        return new BlocksToInsert($this->copy($blocks, $locales), $this->notices($blocks));
     }
 
     /**
@@ -76,38 +75,41 @@ final readonly class InsertTransformer
     }
 
     /**
-     * Why inserting refuses what was saved with a newer version than the code's
+     * One notice per type of the blocks inserting leaves out, in the order they're met: those of a type the code no
+     * longer has or has disabled. What's inside them goes with them, so it isn't looked into
+     *
+     * @param list<StoredBlock> $blocks
+     *
+     * @return list<TranslatableMessage>
      */
-    public static function newerVersionNotice(NewerVersion $newer): TranslatableMessage
+    private function notices(array $blocks): array
     {
-        return new TranslatableMessage('setono_sylius_cms.preset.newer_version', [
-            '%type%' => $newer->code,
-            '%version%' => $newer->version,
-            '%code_version%' => $newer->codeVersion,
-        ]);
+        $notices = [];
+        foreach (PresetBlocks::walk($blocks, $this->blockTypes, intoDisabled: false) as [$block, $blockType]) {
+            if (null === $blockType) {
+                $notices[$block->type] ??= new TranslatableMessage('setono_sylius_cms.preset.removed_block_type', ['%type%' => $block->type]);
+            } elseif ($blockType->disabled) {
+                $notices[$block->type] ??= new TranslatableMessage('setono_sylius_cms.preset.disabled_block_type', ['%block%' => new TranslatableMessage($blockType->label)]);
+            }
+        }
+
+        return array_values($notices);
     }
 
     /**
+     * The blocks with new keys, without those inserting leaves out
+     *
      * @param list<StoredBlock> $blocks
      * @param list<string> $locales
-     * @param array<string, TranslatableMessage> $notices one per block type left out, by type
      *
      * @return list<StoredBlock>
      */
-    private function copy(array $blocks, array $locales, array &$notices): array
+    private function copy(array $blocks, array $locales): array
     {
         $copies = [];
         foreach ($blocks as $block) {
-            if (!$this->blockTypes->has($block->type)) {
-                $notices[$block->type] ??= new TranslatableMessage('setono_sylius_cms.preset.removed_block_type', ['%type%' => $block->type]);
-
-                continue;
-            }
-
-            $blockType = $this->blockTypes->get($block->type);
-            if ($blockType->disabled) {
-                $notices[$block->type] ??= new TranslatableMessage('setono_sylius_cms.preset.disabled_block_type', ['%block%' => new TranslatableMessage($blockType->label)]);
-
+            $blockType = PresetBlocks::typeOf($block, $this->blockTypes);
+            if (null === $blockType || $blockType->disabled) {
                 continue;
             }
 
@@ -119,7 +121,7 @@ final readonly class InsertTransformer
                 $this->fields($blockType->fields, $block->fields, $locales),
                 self::translated($block->translated, $locales),
                 $block->conditions,
-                $this->copy($block->children, $locales, $notices),
+                $this->copy($block->children, $locales),
             );
         }
 

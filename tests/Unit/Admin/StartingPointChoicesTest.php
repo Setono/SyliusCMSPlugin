@@ -23,6 +23,7 @@ use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Preset\PresetCheck;
 use Setono\SyliusCMSPlugin\Preset\PresetProviderInterface;
+use Setono\SyliusCMSPlugin\Preset\PresetUpgrader;
 use Setono\SyliusCMSPlugin\Preset\StartingPoint;
 use Setono\SyliusCMSPlugin\Preset\TranslationKey;
 use Setono\SyliusCMSPlugin\Preset\TranslationKeyValues;
@@ -141,7 +142,7 @@ final class StartingPointChoicesTest extends TestCase
             $contentTypes,
             new LayoutRegistry(['page' => ['standard' => Standard::class]], new FieldReader()),
             new NestingRules($blockTypes, $contentTypes),
-            $upgrader->reveal(),
+            new PresetUpgrader($upgrader->reveal()),
             new TranslationKeyValues(new RichTextSchema()),
             new StoredValueFit(new FallbackValues($handlers, $this->prophesize(FallbackChainInterface::class)->reveal())),
         );

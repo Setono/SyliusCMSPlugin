@@ -18,6 +18,7 @@ use Setono\SyliusCMSPlugin\Block\RichText;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Preset\InsertTransformer;
 use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\PresetUpgrader;
 use Setono\SyliusCMSPlugin\Preset\TranslationKey;
 use Setono\SyliusCMSPlugin\Preset\TranslationKeyResolverInterface;
 use Setono\SyliusCMSPlugin\Preset\TranslationKeyValues;
@@ -232,7 +233,7 @@ final class InsertTransformerTest extends TestCase
     private function transformer(): InsertTransformer
     {
         return new InsertTransformer(
-            $this->upgrader->reveal(),
+            new PresetUpgrader($this->upgrader->reveal()),
             new BlockTypeRegistry([
                 'heading' => Heading::class,
                 'rich_text' => RichText::class,

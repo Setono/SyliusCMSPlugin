@@ -50,9 +50,14 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
         </service>
 
+        <!-- Brings a preset up to date with the code, for inserting, creating, validating, upgrading and importing it -->
+        <service id="Setono\SyliusCMSPlugin\Preset\PresetUpgrader" class="Setono\SyliusCMSPlugin\Preset\PresetUpgrader">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+        </service>
+
         <!-- Makes a preset's blocks ready to insert into an entry: upgraded, new keys, the entry's locales, keys resolved -->
         <service id="Setono\SyliusCMSPlugin\Preset\InsertTransformer" class="Setono\SyliusCMSPlugin\Preset\InsertTransformer">
-            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetUpgrader"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preset\TranslationKeyResolverInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preset\TranslationKeyValues"/>
@@ -61,7 +66,7 @@
         <service id="Setono\SyliusCMSPlugin\Preset\StartingPointTransformer" class="Setono\SyliusCMSPlugin\Preset\StartingPointTransformer">
             <argument type="service" id="Setono\SyliusCMSPlugin\Preset\InsertTransformer"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetUpgrader"/>
         </service>
 
         <service id="Setono\SyliusCMSPlugin\Preset\TranslationKeyValues" class="Setono\SyliusCMSPlugin\Preset\TranslationKeyValues">
@@ -83,7 +88,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\NestingRulesInterface"/>
-            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetUpgrader"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preset\TranslationKeyValues"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Tree\StoredValueFit"/>
         </service>

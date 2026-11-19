@@ -28,6 +28,7 @@ use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Preset\PresetCheck;
 use Setono\SyliusCMSPlugin\Preset\PresetIssue;
 use Setono\SyliusCMSPlugin\Preset\PresetIssueKind;
+use Setono\SyliusCMSPlugin\Preset\PresetUpgrader;
 use Setono\SyliusCMSPlugin\Preset\StartingPoint;
 use Setono\SyliusCMSPlugin\Preset\TranslationKeyValues;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
@@ -130,6 +131,22 @@ final class PresetCheckTest extends TestCase
     }
 
     /**
+     * A starting point is upgraded as a tree of its content type, its layout with its blocks, and what's newer in either
+     * is all that's found, as nothing else in it can be read as the code would
+     *
+     * @test
+     */
+    public function it_finds_only_what_a_starting_point_holds_with_a_newer_version_in_its_layout_or_blocks(): void
+    {
+        $this->upgrader->upgradeTree(Argument::type('array'), 'page')->will(static fn (array $arguments): Upgraded => new Upgraded((array) $arguments[0], [new NewerVersion(Kind::Layout, 'page:standard', 3, 1)]));
+        $preset = new Preset('Landing', [new StoredBlock(self::KEY, 'gallery', 1)], startingPoint: new StartingPoint('page', new StoredLayout('standard', 3, ['showTitle' => 'yes'])), code: 'landing');
+
+        self::assertEquals([
+            new PresetIssue(PresetIssueKind::NewerVersion, null, new TranslatableMessage('setono_sylius_cms.preset.newer_version', ['%type%' => 'page:standard', '%version%' => 3, '%code_version%' => 1])),
+        ], $this->check()->check($preset));
+    }
+
+    /**
      * @test
      */
     public function it_finds_children_their_block_does_not_allow_and_too_few_or_too_many_of_a_type(): void
@@ -220,7 +237,7 @@ final class PresetCheckTest extends TestCase
             $contentTypes,
             new LayoutRegistry(['page' => ['standard' => Standard::class]], new FieldReader()),
             new NestingRules($blockTypes, $contentTypes),
-            $this->upgrader->reveal(),
+            new PresetUpgrader($this->upgrader->reveal()),
             new TranslationKeyValues(new RichTextSchema()),
             new StoredValueFit(new FallbackValues($handlers, $this->prophesize(FallbackChainInterface::class)->reveal())),
         );

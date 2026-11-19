@@ -40,6 +40,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetUpgrader"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\EntryFormat\EntryDenormalizer"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImportedFileChecker"/>
         </service>

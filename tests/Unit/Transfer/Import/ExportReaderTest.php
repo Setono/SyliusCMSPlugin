@@ -22,6 +22,7 @@ use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Snippet;
+use Setono\SyliusCMSPlugin\Preset\PresetUpgrader;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
@@ -268,6 +269,7 @@ final class ExportReaderTest extends TestCase
             new LayoutRegistry($layouts, new FieldReader()),
             new BlockTypeRegistry($blockTypes, new FieldReader()),
             $upgrader->reveal(),
+            new PresetUpgrader($upgrader->reveal()),
             new EntryDenormalizer($registry),
             new ImportedFileChecker($checker->reveal(), new UploadLimit(null, 1_000_000)),
         );

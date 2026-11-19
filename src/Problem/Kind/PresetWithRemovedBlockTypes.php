@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Problem\Kind;
 
 use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\PresetBlocks;
 use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\PresetProblem;
 use Setono\SyliusCMSPlugin\Problem\PresetProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistryInterface;
-use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Component\Translation\TranslatableMessage;
 
 /**
@@ -29,7 +29,14 @@ final readonly class PresetWithRemovedBlockTypes implements PresetProblemKindInt
 
     public function findIn(Preset $preset): iterable
     {
-        $removed = array_values(array_unique($this->removedTypes($preset->blocks)));
+        $removed = [];
+        foreach (PresetBlocks::walk($preset->blocks, $this->blockTypes) as [$block, $blockType]) {
+            if (null === $blockType) {
+                $removed[] = $block->type;
+            }
+        }
+
+        $removed = array_values(array_unique($removed));
         if ([] === $removed) {
             return [];
         }
@@ -41,20 +48,5 @@ final readonly class PresetWithRemovedBlockTypes implements PresetProblemKindInt
             new TranslatableMessage('setono_sylius_cms.problem.preset_removed_block_type', ['%types%' => implode(', ', array_map(static fn (string $type): string => sprintf('"%s"', $type), $removed))]),
             $preset->isFromCode() ? null : Fix::onPresetsScreen($preset),
         )];
-    }
-
-    /**
-     * @param list<StoredBlock> $blocks
-     *
-     * @return list<string>
-     */
-    private function removedTypes(array $blocks): array
-    {
-        $removed = [];
-        foreach ($blocks as $block) {
-            $removed = [...$removed, ...($this->blockTypes->has($block->type) ? $this->removedTypes($block->children) : [$block->type])];
-        }
-
-        return $removed;
     }
 }

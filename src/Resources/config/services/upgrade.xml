@@ -26,7 +26,7 @@
 
         <!-- Writes an editor preset back upgraded, for setono:cms:upgrade -->
         <service id="Setono\SyliusCMSPlugin\Upgrade\PresetRewriter" class="Setono\SyliusCMSPlugin\Upgrade\PresetRewriter">
-            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetUpgrader"/>
         </service>
     </services>
 </container>

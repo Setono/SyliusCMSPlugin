@@ -16,6 +16,7 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Preset\EditorPresetContent;
 use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\PresetUpgrader;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Repository\EditorPresetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
@@ -228,7 +229,7 @@ final class UpgradeCommandTest extends TestCase
             ]),
             $this->manager->reveal(),
             $this->presets->reveal(),
-            new PresetRewriter($this->upgrader->reveal()),
+            new PresetRewriter(new PresetUpgrader($this->upgrader->reveal())),
         ));
         $tester->execute($input);
 

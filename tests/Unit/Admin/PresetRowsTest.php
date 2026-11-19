@@ -21,6 +21,7 @@ use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Preset\PresetCheck;
 use Setono\SyliusCMSPlugin\Preset\PresetProviderInterface;
+use Setono\SyliusCMSPlugin\Preset\PresetUpgrader;
 use Setono\SyliusCMSPlugin\Preset\StartingPoint;
 use Setono\SyliusCMSPlugin\Preset\TranslationKey;
 use Setono\SyliusCMSPlugin\Preset\TranslationKeyValues;
@@ -101,6 +102,7 @@ final class PresetRowsTest extends TestCase
 
         $upgrader = $this->prophesize(StoredDataUpgraderInterface::class);
         $upgrader->upgradeBlocks(Argument::type('array'))->will(static fn (array $arguments): Upgraded => new Upgraded((array) $arguments[0]));
+        $upgrader->upgradeTree(Argument::type('array'), Argument::type('string'))->will(static fn (array $arguments): Upgraded => new Upgraded((array) $arguments[0]));
         $blockTypes = new BlockTypeRegistry(['heading' => Heading::class], new FieldReader());
         $contentTypes = new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]);
         $handlers = new FieldHandlerLocator(new ServiceLocator([
@@ -112,7 +114,7 @@ final class PresetRowsTest extends TestCase
             $contentTypes,
             new LayoutRegistry(['page' => ['standard' => Standard::class]], new FieldReader()),
             new NestingRules($blockTypes, $contentTypes),
-            $upgrader->reveal(),
+            new PresetUpgrader($upgrader->reveal()),
             new TranslationKeyValues(new RichTextSchema()),
             new StoredValueFit(new FallbackValues($handlers, $this->prophesize(FallbackChainInterface::class)->reveal())),
         );

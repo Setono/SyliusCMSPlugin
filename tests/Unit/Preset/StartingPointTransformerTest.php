@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Block\RichText;
 use Setono\SyliusCMSPlugin\Layout\Page\Standard;
 use Setono\SyliusCMSPlugin\Preset\InsertTransformer;
 use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\PresetUpgrader;
 use Setono\SyliusCMSPlugin\Preset\StartingPoint;
 use Setono\SyliusCMSPlugin\Preset\StartingPointTransformer;
 use Setono\SyliusCMSPlugin\Preset\TranslationKey;
@@ -53,8 +54,7 @@ final class StartingPointTransformerTest extends TestCase
     protected function setUp(): void
     {
         $this->upgrader = $this->prophesize(StoredDataUpgraderInterface::class);
-        $this->upgrader->upgradeBlocks(Argument::type('array'))->will(static fn (array $arguments): Upgraded => new Upgraded((array) $arguments[0]));
-        $this->upgrader->upgradeTree(Argument::type('array'), 'page')->will(static fn (array $arguments): Upgraded => new Upgraded((array) $arguments[0]));
+        $this->upgrader->upgradeTree(Argument::type('array'), Argument::type('string'))->will(static fn (array $arguments): Upgraded => new Upgraded((array) $arguments[0]));
         $this->translationKeys = $this->prophesize(TranslationKeyResolverInterface::class);
         $this->translationKeys->resolve(Argument::cetera())->willReturn(null);
     }
@@ -122,9 +122,11 @@ final class StartingPointTransformerTest extends TestCase
         self::assertSame([], $created->tree->blocks);
         self::assertEquals([new TranslatableMessage('setono_sylius_cms.preset.newer_version', ['%type%' => 'page:campaign', '%version%' => 3, '%code_version%' => 2])], $created->notices);
 
-        $this->upgrader->upgradeBlocks(Argument::type('array'))->will(static fn (array $arguments): Upgraded => new Upgraded((array) $arguments[0], [new NewerVersion(Kind::BlockType, 'heading', 2, 1)]));
+        $this->upgrader->upgradeTree(Argument::type('array'), 'page')->will(static fn (array $arguments): Upgraded => new Upgraded((array) $arguments[0], [new NewerVersion(Kind::BlockType, 'heading', 2, 1)]));
 
-        self::assertTrue($this->transformer()->transform(self::startingPoint([new StoredBlock(self::HEADING, 'heading', 2)], null), ['en_US'])->refused);
+        $created = $this->transformer()->transform(self::startingPoint([new StoredBlock(self::HEADING, 'heading', 2)], null), ['en_US']);
+        self::assertTrue($created->refused);
+        self::assertEquals([new TranslatableMessage('setono_sylius_cms.preset.newer_version', ['%type%' => 'heading', '%version%' => 2, '%code_version%' => 1])], $created->notices);
     }
 
     /**
@@ -154,6 +156,19 @@ final class StartingPointTransformerTest extends TestCase
     }
 
     /**
+     * The create dialog doesn't offer a starting point with what's newer than the code, its layout's version included
+     * while that layout is disabled
+     *
+     * @test
+     */
+    public function it_refuses_a_starting_point_whose_disabled_layout_was_saved_with_a_newer_version_than_the_codes(): void
+    {
+        $this->upgrader->upgradeTree(Argument::type('array'), 'page')->will(static fn (array $arguments): Upgraded => new Upgraded((array) $arguments[0], [new NewerVersion(Kind::Layout, 'page:campaign', 3, 2)]));
+
+        self::assertTrue($this->transformer(['page.campaign'])->transform(self::startingPoint([], new StoredLayout('campaign', 3)), ['en_US'])->refused);
+    }
+
+    /**
      * @test
      */
     public function it_uses_the_default_layout_when_the_starting_point_has_none(): void
@@ -168,8 +183,6 @@ final class StartingPointTransformerTest extends TestCase
      */
     public function it_builds_a_tree_without_a_layout_for_a_content_type_without_layouts(): void
     {
-        $this->upgrader->upgradeTree(Argument::cetera())->shouldNotBeCalled();
-
         $created = $this->transformer()->transform(self::startingPoint([new StoredBlock(self::HEADING, 'heading', 1)], new StoredLayout('campaign', 2), 'snippet'), ['en_US']);
 
         self::assertNull($created->tree->layout);
@@ -200,7 +213,7 @@ final class StartingPointTransformerTest extends TestCase
     private function transformer(array $disabledLayouts = []): StartingPointTransformer
     {
         $insertTransformer = new InsertTransformer(
-            $this->upgrader->reveal(),
+            new PresetUpgrader($this->upgrader->reveal()),
             new BlockTypeRegistry(['heading' => Heading::class, 'rich_text' => RichText::class], new FieldReader()),
             $this->translationKeys->reveal(),
             new TranslationKeyValues(new RichTextSchema()),
@@ -209,7 +222,7 @@ final class StartingPointTransformerTest extends TestCase
         return new StartingPointTransformer(
             $insertTransformer,
             new LayoutRegistry(['page' => ['standard' => Standard::class, 'campaign' => Campaign::class]], new FieldReader(), [], $disabledLayouts),
-            $this->upgrader->reveal(),
+            new PresetUpgrader($this->upgrader->reveal()),
         );
     }
 }
