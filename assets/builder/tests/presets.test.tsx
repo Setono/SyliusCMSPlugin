@@ -141,7 +141,7 @@ function fakeApi(presets: PresetListing[], insertPreset: (id: string) => Promise
         schedule: vi.fn(() => Promise.reject(new Error('Not scheduled in this test'))),
         cancelSchedule: vi.fn(() => Promise.reject(new Error('Not scheduled in this test'))),
         presence: vi.fn(async (): Promise<PresenceResponse> => ({ editors: [], lockToken: 0 })),
-        presets: vi.fn(async (_parent: string | null): Promise<PresetIndex> => ({ presets, categories: [] })),
+        presets: vi.fn(async (_parent: string | null): Promise<PresetIndex> => ({ presets, startingPoints: [], categories: [] })),
         insertPreset: vi.fn(insertPreset),
     } satisfies BuilderApi;
 }

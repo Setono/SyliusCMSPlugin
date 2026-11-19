@@ -9,7 +9,7 @@ import type { PresenceState, PresenceStore } from './presence';
 import type { PreviewState, PreviewStore } from './preview';
 import type { SettingsState, SettingsStore } from './settings';
 import type { SnippetPreviewApi } from './snippetPreview';
-import type { FieldDefinition, InsertedPreset, PresetDetails, PresetIndex, SavedPreset, StoredBlock } from './types';
+import type { FieldDefinition, InsertedPreset, PresetContent, PresetDetails, PresetIndex, SavedPreset, StoredBlock } from './types';
 import type { BuilderState, BuilderStore } from './store';
 import type { UrlsState, UrlsStore } from './urls';
 import type { ValidationState, ValidationStore } from './validation';
@@ -92,10 +92,10 @@ export interface PresetsSession {
 
 /** What ★ and the Presets tab do with editor presets. Each takes effect at once. See "Editor presets" in docs/spec/layouts-and-presets.md */
 export interface PresetEditing {
-    /** Saves the blocks with these keys as a new editor preset, once the unsaved changes are sent. */
-    create(blocks: readonly string[], details: PresetDetails): Promise<SavedPreset>;
-    /** Replaces an editor preset's blocks with the blocks with these keys, once the unsaved changes are sent. */
-    replace(id: string, blocks: readonly string[]): Promise<SavedPreset>;
+    /** Saves the blocks with these keys, or the whole tree as a starting point, as a new editor preset, once the unsaved changes are sent. */
+    create(content: PresetContent, details: PresetDetails): Promise<SavedPreset>;
+    /** Replaces an editor preset's blocks with the blocks with these keys, or an editor starting point's with the whole tree, once the unsaved changes are sent. */
+    replace(id: string, content: PresetContent): Promise<SavedPreset>;
     /** Renames or recategorises an editor preset, or changes its description. */
     update(id: string, details: Partial<PresetDetails>): Promise<SavedPreset>;
     remove(id: string): Promise<void>;

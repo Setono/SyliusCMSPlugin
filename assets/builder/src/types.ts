@@ -67,11 +67,35 @@ export interface PresetListing {
     blocks: StoredBlock[];
 }
 
-/** The block presets at a spot, and the categories in use, of every preset, which editors are suggested when they save one. */
+/**
+ * A starting point of the entry's content type, which saving the entry's whole tree can replace when it's an editor
+ * preset. See "Starting points" in docs/spec/layouts-and-presets.md
+ */
+export interface StartingPointListing {
+    /** A code preset's code, or an editor preset's UUID. */
+    id: string;
+    /** Whether it's a code preset, which is read-only. */
+    fromCode: boolean;
+    name: string;
+    category: string | null;
+    description: string | null;
+}
+
+/**
+ * The block presets at a spot, the starting points of the entry's content type, and the categories in use, of every
+ * preset, which editors are suggested when they save one.
+ */
 export interface PresetIndex {
     presets: PresetListing[];
+    startingPoints: StartingPointListing[];
     categories: string[];
 }
+
+/**
+ * What's saved as a preset: the blocks with these keys, or 'tree', the entry's whole tree, as a starting point for its
+ * content type with its layout and the layout's field values. See "Editor presets" in docs/spec/layouts-and-presets.md
+ */
+export type PresetContent = readonly string[] | 'tree';
 
 /** What editors organise a preset by. An empty category or description is none. */
 export interface PresetDetails {

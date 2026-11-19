@@ -451,7 +451,7 @@ describe('the editing tools in the preview', () => {
 
     it("should give the bridge ★ when presets can be saved, and open Save as preset for the toolbar's block, or the selection it's part of", async () => {
         const editing = {
-            presets: vi.fn(async () => ({ presets: [], categories: [] })),
+            presets: vi.fn(async () => ({ presets: [], startingPoints: [], categories: [] })),
             insertPreset: vi.fn(async () => ({ blocks: [], notices: [] })),
             createPreset: vi.fn(async () => ({ id: 'p', name: 'Promo', category: null, description: null, changedAt: '2026-11-20T10:00:00Z' })),
             replacePreset: vi.fn(() => Promise.reject(new Error('Not replaced in this test'))),

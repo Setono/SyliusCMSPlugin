@@ -3,12 +3,15 @@ import { useEffect, useId, useState, type FormEvent } from 'react';
 import { useBuilder } from '../context';
 import formStyles from '../form/Form.module.css';
 import { useTranslator } from '../i18n';
-import type { PresetIndex, PresetListing } from '../types';
+import type { PresetContent, PresetIndex } from '../types';
 import styles from './SavePresetDialog.module.css';
 
 export interface SavePresetDialogProps {
-    /** The keys of the blocks to save, the selected block or a ⌘-click selection, or null while the dialog is closed. */
-    blocks: readonly string[] | null;
+    /**
+     * What to save: the keys of the blocks, the selected block or a ⌘-click selection, or 'tree', the whole tree as a
+     * starting point. Null while the dialog is closed.
+     */
+    content: PresetContent | null;
     onClose: () => void;
 }
 
@@ -16,26 +19,31 @@ export interface SavePresetDialogProps {
  * ★ "Save as preset": saves the selected blocks, or a ⌘-click selection, as an editor preset with a name, a category,
  * which is free text suggested from the categories in use, and a description, or replaces an editor preset's blocks
  * with them ("Replace <name>"). The server saves them as it has them, in tree order, a block inside another selected
- * block once, and it takes effect at once. See "Editor presets" in docs/spec/layouts-and-presets.md
+ * block once, and it takes effect at once. From the entry settings, "Save as starting point" saves the whole tree, with
+ * its layout and the layout's field values, as a starting point for the entry's content type, or replaces an editor
+ * starting point of that content type. See "Editor presets" in docs/spec/layouts-and-presets.md
  */
-export function SavePresetDialog({ blocks, onClose }: SavePresetDialogProps) {
+export function SavePresetDialog({ content, onClose }: SavePresetDialogProps) {
     const t = useTranslator();
+    const startingPoint = content === 'tree';
 
     return (
-        <Dialog.Root open={blocks !== null} onOpenChange={(open) => open || onClose()}>
+        <Dialog.Root open={content !== null} onOpenChange={(open) => open || onClose()}>
             <Dialog.Portal>
                 <Dialog.Overlay className={styles.overlay} />
                 <Dialog.Content className={styles.dialog}>
-                    <Dialog.Title className={styles.title}>{t('setono_sylius_cms.builder.save_as_preset')}</Dialog.Title>
-                    <Dialog.Description className={styles.description}>{t('setono_sylius_cms.builder.save_as_preset_help')}</Dialog.Description>
-                    {blocks !== null && <SavePresetForm blocks={blocks} onSaved={onClose} />}
+                    <Dialog.Title className={styles.title}>{t(startingPoint ? 'setono_sylius_cms.builder.save_as_starting_point' : 'setono_sylius_cms.builder.save_as_preset')}</Dialog.Title>
+                    <Dialog.Description className={styles.description}>
+                        {t(startingPoint ? 'setono_sylius_cms.builder.save_as_starting_point_help' : 'setono_sylius_cms.builder.save_as_preset_help')}
+                    </Dialog.Description>
+                    {content !== null && <SavePresetForm content={content} onSaved={onClose} />}
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>
     );
 }
 
-function SavePresetForm({ blocks, onSaved }: { blocks: readonly string[]; onSaved: () => void }) {
+function SavePresetForm({ content, onSaved }: { content: PresetContent; onSaved: () => void }) {
     const t = useTranslator();
     const id = useId();
     const { presets } = useBuilder();
@@ -79,11 +87,13 @@ function SavePresetForm({ blocks, onSaved }: { blocks: readonly string[]; onSave
     const submit = (event: FormEvent): void => {
         event.preventDefault();
         if (editing !== null) {
-            void save(() => editing.create(blocks, { name, category: category.trim() === '' ? null : category, description: description.trim() === '' ? null : description }));
+            void save(() => editing.create(content, { name, category: category.trim() === '' ? null : category, description: description.trim() === '' ? null : description }));
         }
     };
 
-    const replaceable: PresetListing[] = (index?.presets ?? []).filter(({ fromCode }) => !fromCode);
+    // A preset stays what it is: blocks replace an editor block preset's, and the whole tree an editor starting point's
+    const startingPoint = content === 'tree';
+    const replaceable = (startingPoint ? (index?.startingPoints ?? []) : (index?.presets ?? [])).filter(({ fromCode }) => !fromCode);
 
     return (
         <>
@@ -125,12 +135,12 @@ function SavePresetForm({ blocks, onSaved }: { blocks: readonly string[]; onSave
             {replaceable.length > 0 && editing !== null && (
                 <section className={styles.replace} aria-labelledby={`${id}-replace`}>
                     <h3 id={`${id}-replace`} className={styles.subheading}>
-                        {t('setono_sylius_cms.builder.replace_a_preset')}
+                        {t(startingPoint ? 'setono_sylius_cms.builder.replace_a_starting_point' : 'setono_sylius_cms.builder.replace_a_preset')}
                     </h3>
                     <ul className={styles.replaceList}>
                         {replaceable.map((preset) => (
                             <li key={preset.id}>
-                                <button type="button" className={styles.secondary} disabled={saving} onClick={() => void save(() => editing.replace(preset.id, blocks))}>
+                                <button type="button" className={styles.secondary} disabled={saving} onClick={() => void save(() => editing.replace(preset.id, content))}>
                                     {t('setono_sylius_cms.builder.replace_preset', { '%name%': preset.name })}
                                 </button>
                             </li>

@@ -706,6 +706,11 @@ setono_sylius_cms:
         preset_save: Save
         preset_cancel: Cancel
         preset_delete: Delete
+        # Saving the whole tree as a starting point, from the entry settings. See "Starting points" in docs/spec/layouts-and-presets.md
+        save_as_starting_point: Save as starting point
+        save_as_starting_point_help: 'The whole tree, with its layout and the layout''s settings, is saved as a starting point that new entries of this content type can be created from. The entries created from it keep their own copy.'
+        save_as_starting_point_empty: Add blocks to save them as a starting point.
+        replace_a_starting_point: Or replace a starting point
         condition_match: Matches when it
         copy_it_here: Copy it here
         clash: A colleague changed this too
