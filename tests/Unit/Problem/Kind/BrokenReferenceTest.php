@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Field\RichTextHandler;
 use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\MediaItem;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Model\Page;
@@ -30,6 +31,7 @@ use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Rendering\ReferenceTypeLoaderInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Kind\Fixture\Kiosk;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
@@ -170,6 +172,35 @@ final class BrokenReferenceTest extends TestCase
     }
 
     /**
+     * A link in the rich text of one of the content type's own fields too
+     *
+     * @test
+     */
+    public function it_says_a_link_in_the_rich_text_of_one_of_the_content_types_own_fields_that_leads_to_a_deleted_record_shows_as_plain_text(): void
+    {
+        $kiosk = new Kiosk();
+        $kiosk->intro = ['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [
+            ['type' => 'text', 'text' => 'Waffles', 'marks' => [['type' => 'cmsLink', 'attrs' => ['target' => 'recipe', 'ref' => 'WAFFLES', 'anchor' => null]]]],
+        ]]]];
+
+        $products = $this->prophesize(ReferenceTypeLoaderInterface::class);
+        $products->existing(['WAFFLES'])->willReturn([])->shouldBeCalledOnce();
+
+        self::assertEquals([new Problem(
+            'broken_reference',
+            Severity::Error,
+            $kiosk,
+            new TranslatableMessage('setono_sylius_cms.problem.broken_entry_rich_text_reference', [
+                '%field%' => new TranslatableMessage('app.cms.field.intro'),
+                '%type%' => new TranslatableMessage('setono_sylius_cms.reference_type.product'),
+            ]),
+            Fix::inBuilder($kiosk),
+            null,
+            'intro',
+        )], [...$this->kind($this->prophesize(ReferenceTypeLoaderInterface::class)->reveal(), products: $products->reveal())->findIn($kiosk)]);
+    }
+
+    /**
      * A media item written, such as one deleted, has the entries that may refer to it counted again
      *
      * @test
@@ -291,6 +322,7 @@ final class BrokenReferenceTest extends TestCase
             new ContentTypeRegistry([
                 'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
                 'shop' => ['model' => Shop::class, 'translation' => ShopTranslation::class, 'resource' => 'app.shop'],
+                'kiosk' => ['model' => Kiosk::class, 'translation' => EntryTranslation::class, 'resource' => 'app.kiosk'],
             ]),
             $blockTypes,
             new LayoutRegistry(['page' => ['hero' => Hero::class]], new FieldReader()),

@@ -16,6 +16,7 @@ use Setono\SyliusCMSPlugin\Field\TextHandler;
 use Setono\SyliusCMSPlugin\Field\ToggleHandler;
 use Setono\SyliusCMSPlugin\Localization\FallbackChainInterface;
 use Setono\SyliusCMSPlugin\Localization\FallbackValues;
+use Setono\SyliusCMSPlugin\Model\EntryTranslation;
 use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Problem\Fix;
@@ -29,6 +30,7 @@ use Setono\SyliusCMSPlugin\Registry\LayoutRegistry;
 use Setono\SyliusCMSPlugin\Tests\Support\Links;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\OpeningHoursHandler;
 use Setono\SyliusCMSPlugin\Tests\Unit\Builder\Fixture\Store;
+use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Kind\Fixture\Kiosk;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Kind\Fixture\Wide;
 use Setono\SyliusCMSPlugin\Tests\Unit\Validation\Fixture\Testimonial;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -167,6 +169,27 @@ final class MisfitValueTest extends TestCase
     }
 
     /**
+     * A content type's own fields are fields like any other, fixed in the builder's settings
+     *
+     * @test
+     */
+    public function it_finds_a_value_of_one_of_the_content_types_own_fields_that_does_not_fit(): void
+    {
+        $kiosk = new Kiosk();
+        $kiosk->open = 'yes';
+
+        self::assertEquals([new Problem(
+            'misfit_value',
+            Severity::Error,
+            $kiosk,
+            new TranslatableMessage('setono_sylius_cms.problem.misfit_entry_value', ['%field%' => new TranslatableMessage('app.cms.field.open')]),
+            Fix::inBuilder($kiosk),
+            null,
+            'open',
+        )], [...$this->kind()->findIn($kiosk)]);
+    }
+
+    /**
      * @test
      */
     public function it_never_counts_a_missing_translation_or_a_missing_or_empty_value_as_a_problem(): void
@@ -242,7 +265,10 @@ final class MisfitValueTest extends TestCase
 
         return new MisfitValue(
             new TreeValues(new BlockTypeRegistry(['heading' => Heading::class, 'group' => Group::class, 'rich_text' => RichText::class, 'store' => Store::class, 'testimonial' => Testimonial::class], new FieldReader()), new LayoutRegistry(['page' => ['wide' => Wide::class]], new FieldReader(), disabled: $disabledLayouts)),
-            new ContentTypeRegistry(['page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page']]),
+            new ContentTypeRegistry([
+                'page' => ['model' => Page::class, 'translation' => PageTranslation::class, 'resource' => 'setono_sylius_cms.page'],
+                'kiosk' => ['model' => Kiosk::class, 'translation' => EntryTranslation::class, 'resource' => 'app.kiosk'],
+            ]),
             new StoredValueFit(new FallbackValues($handlers, $this->prophesize(FallbackChainInterface::class)->reveal())),
         );
     }
