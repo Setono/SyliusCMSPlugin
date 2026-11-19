@@ -33,7 +33,7 @@ final class PresetsTest extends UITestCase
         // The presets that fit a page's top level, by category, and the one that needs a product page, with why
         Expect::locator($picker->getByRole('group', ['name' => 'Banners']))->toBeVisible();
         Expect::locator($picker->getByText('Product spotlight'))->toBeVisible();
-        Expect::locator($picker->getByText('Needs: Product page'))->toBeVisible();
+        Expect::locator($picker->locator('li:has-text("Product spotlight")')->getByText('Needs: Product page'))->toBeVisible();
 
         $picker->getByRole('searchbox', ['name' => 'Search presets'])->fill('introduction');
         self::assertTexts(['Sale heroFrom code'], $picker->getByRole('heading', ['level' => 4]));

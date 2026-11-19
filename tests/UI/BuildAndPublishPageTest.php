@@ -16,7 +16,8 @@ final class BuildAndPublishPageTest extends UITestCase
         $this->signInAsAdmin();
 
         $page = $this->visit('/admin/cms/entries/page/new');
-        $page->getByLabel('Title')->fill('About us');
+        // The textbox, as the starting points' descriptions can mention the title too
+        $page->getByRole('textbox', ['name' => 'Title'])->fill('About us');
         $page->getByLabel('Slug')->fill('about-us');
         $page->getByRole('button', ['name' => 'Create'])->click();
 
