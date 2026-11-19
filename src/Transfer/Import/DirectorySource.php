@@ -92,7 +92,7 @@ final readonly class DirectorySource implements ExportSourceInterface
 
     private function file(string $path): ?string
     {
-        if (in_array('..', explode('/', $path), true)) {
+        if (!ExportPath::isInsideRoot($path)) {
             return null;
         }
 
