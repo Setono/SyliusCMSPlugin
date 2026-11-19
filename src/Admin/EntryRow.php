@@ -29,6 +29,7 @@ final readonly class EntryRow
      * @param EntryStatus|null $scheduledPublishStatus its state: publishes at a time, overdue or failed, or
      *                                           null when there's none
      * @param ProblemCount $problems its errors and warnings, as the lists' problem marker shows them
+     * @param list<string> $categories the titles of its categories, as its working copy holds them, in a collection with categories
      */
     public function __construct(
         public EntryInterface $entry,
@@ -41,6 +42,7 @@ final readonly class EntryRow
         public ?ScheduledPublishInterface $scheduledPublish = null,
         public ?EntryStatus $scheduledPublishStatus = null,
         public ProblemCount $problems = new ProblemCount(),
+        public array $categories = [],
     ) {
     }
 }

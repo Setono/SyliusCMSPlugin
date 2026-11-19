@@ -53,6 +53,13 @@
         </service>
 
         <!-- The rows of the entry lists, which their grids' field templates get through cms_admin_entry_row() -->
+        <!-- The categories the entry lists show below an entry's title -->
+        <service id="Setono\SyliusCMSPlugin\Admin\EntryCategories" class="Setono\SyliusCMSPlugin\Admin\EntryCategories">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\IndexedFields"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Admin\EntryRows" class="Setono\SyliusCMSPlugin\Admin\EntryRows">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
@@ -64,6 +71,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
             <argument type="service" id="clock"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\EntryCategories"/>
 
             <tag name="kernel.reset" method="reset"/>
         </service>

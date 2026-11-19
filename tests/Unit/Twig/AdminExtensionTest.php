@@ -11,6 +11,7 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Setono\SyliusCMSPlugin\Admin\ChannelHomepages;
 use Setono\SyliusCMSPlugin\Admin\ComingUp;
+use Setono\SyliusCMSPlugin\Admin\EntryCategories;
 use Setono\SyliusCMSPlugin\Admin\EntryPlacements;
 use Setono\SyliusCMSPlugin\Admin\EntryRows;
 use Setono\SyliusCMSPlugin\Admin\EntryShareLinks;
@@ -25,6 +26,7 @@ use Setono\SyliusCMSPlugin\Block\Snippet as SnippetBlock;
 use Setono\SyliusCMSPlugin\Builder\RegistryExporter;
 use Setono\SyliusCMSPlugin\Builder\UiStrings;
 use Setono\SyliusCMSPlugin\Collection\Collections;
+use Setono\SyliusCMSPlugin\Collection\IndexedFields;
 use Setono\SyliusCMSPlugin\Context\DeclaredContextInterface;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\SnippetHandler;
@@ -64,6 +66,7 @@ use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface;
 use Setono\SyliusCMSPlugin\Query\CompletenessQueryInterface;
 use Setono\SyliusCMSPlugin\Registry\BlockTypeRegistry;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeFields;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Registry\ContextKeyRegistry;
 use Setono\SyliusCMSPlugin\Registry\FieldReader;
@@ -509,6 +512,7 @@ final class AdminExtensionTest extends IntegrationTestCase
             $scheduledPublishes->reveal(),
             new MockClock(),
             $problemCounts->reveal(),
+            new EntryCategories(new IndexedFields(self::contentTypes(), new ContentTypeFields(new FieldReader())), self::contentTypes(), $this->prophesize(EntryRepositoryInterface::class)->reveal()),
         );
     }
 
@@ -777,6 +781,7 @@ final class AdminExtensionTest extends IntegrationTestCase
                 $this->prophesize(ScheduledPublishRepositoryInterface::class)->reveal(),
                 new MockClock(),
                 $this->prophesize(ProblemCountProviderInterface::class)->reveal(),
+                new EntryCategories(new IndexedFields(self::contentTypes(), new ContentTypeFields(new FieldReader())), self::contentTypes(), $this->prophesize(EntryRepositoryInterface::class)->reveal()),
             ),
             $this->translationChips(),
             new Collections(self::contentTypes()),

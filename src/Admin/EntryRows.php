@@ -40,6 +40,7 @@ final class EntryRows implements ResetInterface
         private readonly ScheduledPublishRepositoryInterface $scheduledPublishes,
         private readonly ClockInterface $clock,
         private readonly ProblemCountProviderInterface $problemCounts,
+        private readonly EntryCategories $categories,
     ) {
     }
 
@@ -70,9 +71,10 @@ final class EntryRows implements ResetInterface
         $problems = $this->problemCounts->getCounts($entries);
 
         $locales = [$this->localeContext->getLocaleCode(), $this->translationLocaleProvider->getDefaultLocaleCode()];
+        $categories = $this->categories->titlesOf($entries, $drafts, $locales);
 
         foreach ($entries as $entry) {
-            $this->rows[$entry->getUuid()] = $this->build($entry, $drafts[$entry->getUuid()] ?? null, $scheduledPublishes[$entry->getUuid()] ?? null, $problems[$entry->getUuid()] ?? new ProblemCount(), $locales);
+            $this->rows[$entry->getUuid()] = $this->build($entry, $drafts[$entry->getUuid()] ?? null, $scheduledPublishes[$entry->getUuid()] ?? null, $problems[$entry->getUuid()] ?? new ProblemCount(), $locales, $categories[$entry->getUuid()] ?? []);
         }
     }
 
@@ -95,8 +97,9 @@ final class EntryRows implements ResetInterface
 
     /**
      * @param list<string> $locales the locales to show the first of that the entry has: the admin user's, then the store's default
+     * @param list<string> $categories the titles of its categories
      */
-    private function build(EntryInterface $entry, ?DraftInterface $draft, ?ScheduledPublishInterface $scheduledPublish, ProblemCount $problems, array $locales): EntryRow
+    private function build(EntryInterface $entry, ?DraftInterface $draft, ?ScheduledPublishInterface $scheduledPublish, ProblemCount $problems, array $locales, array $categories): EntryRow
     {
         $contentType = $this->contentTypes->getByEntry($entry);
 
@@ -116,6 +119,7 @@ final class EntryRows implements ResetInterface
             $scheduledPublish,
             null === $scheduledPublish ? null : EntryStatus::ofScheduledPublish($scheduledPublish, $this->clock->now()),
             $problems,
+            $categories,
         );
     }
 

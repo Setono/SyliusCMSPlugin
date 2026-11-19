@@ -57,6 +57,12 @@ final class BlogTest extends UITestCase
         $browser->getByRole('button', ['name' => 'Publish'])->click();
         Expect::locator($browser->getByText('Published', ['exact' => true]))->toBeVisible();
 
+        // The Blog's list shows the post's category below its title and URL
+        $browser = $this->visit('/admin/cms/entries/blog_post');
+        $title = $browser->locator('[data-column="title"]')->filter(['hasText' => 'Opening night']);
+        Expect::locator($title->locator('.description'))->toHaveText('/en_US/blog/opening-night');
+        Expect::locator($title->locator('[data-categories] .label'))->toHaveText('News');
+
         // The post's page links to its category, whose page is its archive
         $shop = $this->visit('/en_US/blog/opening-night');
         Expect::locator($shop->locator('.cms-article__title'))->toHaveText('Opening night');

@@ -97,9 +97,12 @@ final readonly class IndexedFields
     }
 
     /**
+     * The UUIDs an Entries field's value holds, lowercase, each once, in the editor's order. A value that isn't a list,
+     * such as a source, holds none, and what isn't a UUID is left out
+     *
      * @return list<string>
      */
-    private static function uuids(mixed $value): array
+    public static function uuids(mixed $value): array
     {
         if (!is_array($value) || !array_is_list($value)) {
             return [];

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional\Admin;
 
+use Setono\SyliusCMSPlugin\Model\BlogPostInterface;
+use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Blog;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -104,6 +106,41 @@ final class BlogListsTest extends WebTestCase
 
         $client->request('GET', '/admin/cms/collections/blog_category');
         self::assertResponseStatusCodeSame(404, 'A collection is named by its entries\' content type');
+    }
+
+    /**
+     * The Title column shows a post's categories below its title and URL, in the editor's order, as its working copy
+     * holds them. See "Entry lists" in docs/spec/admin.md
+     *
+     * @test
+     */
+    public function it_shows_each_posts_categories_below_its_title_as_its_working_copy_holds_them(): void
+    {
+        $client = self::signedIn();
+        $news = self::createBlogCategory('News', 'news', published: true);
+        $guides = self::createBlogCategory('Guides', 'guides', published: true);
+        $hello = self::createBlogPost('Hello', 'hello', [$news, $guides], published: true);
+        self::createBlogPost('Uncategorised', 'uncategorised', published: true);
+        // A draft that moves the post to Guides only, which the list shows
+        $moved = self::createBlogPost('Moved', 'moved', [$news], published: true);
+        /** @var WorkingCopyManagerInterface $workingCopies */
+        $workingCopies = self::getContainer()->get(WorkingCopyManagerInterface::class);
+        $workingCopy = $workingCopies->getWorkingCopy($moved);
+        self::assertInstanceOf(BlogPostInterface::class, $workingCopy);
+        $workingCopy->setCategories([$guides->getUuid()]);
+        $workingCopies->save($moved, $workingCopy);
+
+        $crawler = $client->request('GET', '/admin/cms/entries/blog_post');
+
+        self::assertResponseIsSuccessful();
+        $categories = [];
+        $crawler->filter('table tbody [data-column="title"]')->each(static function (Crawler $title) use (&$categories): void {
+            $categories[(string) $title->attr('data-entry')] = $title->filter('[data-categories] .label')->each(static fn (Crawler $label): string => $label->text());
+        });
+        self::assertSame(['News', 'Guides'], $categories[$hello->getUuid()]);
+        self::assertSame(['Guides'], $categories[$moved->getUuid()]);
+        self::assertContains([], $categories, 'A post without categories shows none');
+        self::assertSame('/en_US/blog/hello', $crawler->filter(sprintf('[data-column="title"][data-entry="%s"] .description small', $hello->getUuid()))->text());
     }
 
     private static function signedIn(): KernelBrowser

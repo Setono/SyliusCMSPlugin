@@ -1,11 +1,16 @@
 {#
- # The Title column of the entry lists: the working copy's title in the admin user's locale, with its URL below.
- # `data` is the entry. The title opens the entry's overview page
+ # The Title column of the entry lists: the working copy's title in the admin user's locale, with its URL and, in a
+ # collection with categories, its categories below. `data` is the entry. The title opens the entry's overview page
  #}
 {% set row = cms_admin_entry_row(data) %}
 <div data-column="title" data-entry="{{ data.uuid }}">
     <a href="{{ path('setono_sylius_cms_admin_entry_show', {'uuid': data.uuid}) }}"><strong>{{ row.title|default('setono_sylius_cms.ui.untitled'|trans) }}</strong></a>
     {% if row.url is not null %}
         <div class="description"><small>{{ row.url }}</small></div>
+    {% endif %}
+    {% if row.categories is not empty %}
+        <div data-categories>
+            {% for category in row.categories %}<span class="ui mini basic label">{{ category }}</span>{% endfor %}
+        </div>
     {% endif %}
 </div>
