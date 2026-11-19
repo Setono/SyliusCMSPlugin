@@ -182,7 +182,7 @@ final class ExportFormatTest extends TestCase
                 $decode();
                 self::fail(sprintf('It read %s', $what));
             } catch (InvalidExportException) {
-                self::addToAssertionCount(1);
+                $this->addToAssertionCount(1);
             }
         }
     }
