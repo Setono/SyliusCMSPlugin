@@ -34,7 +34,18 @@ final class ExportFormat
 
     public const MANIFEST = 'manifest.json';
 
-    public const MEDIA_FOLDERS = 'media/folders.json';
+    /** The directory that holds each entry's file, <uuid>.json */
+    public const ENTRIES = 'entries';
+
+    /** The directory that holds each editor preset's file, <uuid>.json */
+    public const PRESETS = 'presets';
+
+    /** The directory that holds each media item's file, <uuid>.json, its original file in <uuid>/ and the folders' file */
+    public const MEDIA = 'media';
+
+    public const MEDIA_FOLDERS = self::MEDIA . '/folders.json';
+
+    private const RECORD_EXTENSION = '.json';
 
     private const CHECKSUM_PREFIX = 'sha256:';
 
@@ -42,17 +53,31 @@ final class ExportFormat
 
     public static function entryPath(string $uuid): string
     {
-        return sprintf('entries/%s.json', $uuid);
+        return self::recordPath(self::ENTRIES, $uuid);
     }
 
     public static function presetPath(string $uuid): string
     {
-        return sprintf('presets/%s.json', $uuid);
+        return self::recordPath(self::PRESETS, $uuid);
     }
 
     public static function mediaItemPath(string $uuid): string
     {
-        return sprintf('media/%s.json', $uuid);
+        return self::recordPath(self::MEDIA, $uuid);
+    }
+
+    /**
+     * The UUID of the record whose file sits in one of the record directories (ENTRIES, PRESETS, MEDIA) under the
+     * given name, as entryPath(), presetPath() and mediaItemPath() write it, or null when the file is no record's,
+     * such as media/folders.json
+     */
+    public static function recordUuid(string $directory, string $file): ?string
+    {
+        if (!str_ends_with($file, self::RECORD_EXTENSION) || self::MEDIA_FOLDERS === $directory . '/' . $file) {
+            return null;
+        }
+
+        return substr($file, 0, -strlen(self::RECORD_EXTENSION));
     }
 
     /**
@@ -66,7 +91,7 @@ final class ExportFormat
             throw new \InvalidArgumentException(sprintf('The filename "%s" isn\'t a plain basename', $filename));
         }
 
-        return sprintf('media/%s/%s', $uuid, $filename);
+        return sprintf('%s/%s/%s', self::MEDIA, $uuid, $filename);
     }
 
     /**
@@ -322,6 +347,11 @@ final class ExportFormat
             $matches[1],
             self::parseDateTime($data['changedAt'] ?? null, 'A media item\'s changedAt'),
         );
+    }
+
+    private static function recordPath(string $directory, string $uuid): string
+    {
+        return $directory . '/' . $uuid . self::RECORD_EXTENSION;
     }
 
     /**

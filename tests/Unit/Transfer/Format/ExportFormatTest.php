@@ -68,6 +68,23 @@ final class ExportFormatTest extends TestCase
     /**
      * @test
      */
+    public function it_names_the_directories_that_hold_one_file_per_record_and_reads_the_uuid_back_from_a_file_in_one(): void
+    {
+        self::assertSame('entries/' . self::PAGE . '.json', ExportFormat::ENTRIES . '/' . self::PAGE . '.json');
+        self::assertSame('presets/' . self::PAGE . '.json', ExportFormat::PRESETS . '/' . self::PAGE . '.json');
+        self::assertSame('media/' . self::PAGE . '.json', ExportFormat::MEDIA . '/' . self::PAGE . '.json');
+        self::assertSame('media/folders.json', ExportFormat::MEDIA_FOLDERS);
+
+        self::assertSame(self::PAGE, ExportFormat::recordUuid(ExportFormat::ENTRIES, self::PAGE . '.json'));
+        self::assertSame(self::PRESET, ExportFormat::recordUuid(ExportFormat::PRESETS, self::PRESET . '.json'));
+        self::assertSame(self::IMAGE, ExportFormat::recordUuid(ExportFormat::MEDIA, self::IMAGE . '.json'));
+        self::assertNull(ExportFormat::recordUuid(ExportFormat::MEDIA, 'folders.json'), 'media/folders.json lists the folders, it is no media item');
+        self::assertNull(ExportFormat::recordUuid(ExportFormat::ENTRIES, 'notes.txt'));
+    }
+
+    /**
+     * @test
+     */
     public function it_takes_only_a_plain_basename_for_a_media_file(): void
     {
         foreach (['autumn-banner.jpg', 'Summer Sale!.JPEG', '.htaccess', 'naïve café.png'] as $filename) {

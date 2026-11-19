@@ -62,7 +62,7 @@ final readonly class ExportReader
 
         $refusals = $entries = [];
         $picked = array_flip($manifest->entries);
-        foreach (self::uuids($source, 'entries') as $uuid) {
+        foreach (self::uuids($source, ExportFormat::ENTRIES) as $uuid) {
             $exported = $format->decodeEntry($source->read(ExportFormat::entryPath($uuid)));
             $entry = $this->readEntry($uuid, $exported, isset($picked[$uuid]), $refusals);
             if (null !== $entry) {
@@ -72,7 +72,7 @@ final readonly class ExportReader
 
         $presets = [];
         $picked = array_flip($manifest->presets);
-        foreach (self::uuids($source, 'presets') as $uuid) {
+        foreach (self::uuids($source, ExportFormat::PRESETS) as $uuid) {
             $preset = $format->decodePreset($source->read(ExportFormat::presetPath($uuid)));
             if ($uuid !== $preset->uuid) {
                 throw new InvalidExportException(sprintf('The file %s holds the preset %s', ExportFormat::presetPath($uuid), (string) $preset->uuid));
@@ -113,7 +113,7 @@ final readonly class ExportReader
         $mediaItems = [];
 
         try {
-            foreach (self::uuids($source, 'media') as $uuid) {
+            foreach (self::uuids($source, ExportFormat::MEDIA) as $uuid) {
                 $mediaItem = $format->decodeMediaItem($source->read(ExportFormat::mediaItemPath($uuid)));
                 if ($uuid !== $mediaItem->uuid) {
                     throw new InvalidExportException(sprintf('The file %s holds the media item %s', ExportFormat::mediaItemPath($uuid), $mediaItem->uuid));
@@ -349,8 +349,9 @@ final readonly class ExportReader
     {
         $uuids = [];
         foreach ($source->files($directory) as $file) {
-            if (str_ends_with($file, '.json') && 'folders.json' !== $file) {
-                $uuids[] = substr($file, 0, -5);
+            $uuid = ExportFormat::recordUuid($directory, $file);
+            if (null !== $uuid) {
+                $uuids[] = $uuid;
             }
         }
 
