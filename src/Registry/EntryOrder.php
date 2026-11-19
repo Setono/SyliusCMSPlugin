@@ -63,6 +63,23 @@ final readonly class EntryOrder
     }
 
     /**
+     * Newest first, for entries of the model, as Related lists them: this order when it's a date descending, its first
+     * property a date of the model's, such as Blog post's publishedAt, and else by createdAt descending. See "Entry
+     * sources" in docs/spec/sources.md
+     *
+     * @param class-string $modelClass
+     */
+    public function newestFirst(string $modelClass): self
+    {
+        $first = array_key_first($this->fields);
+        if (null !== $first && !$this->byPosition && 'DESC' === $this->fields[$first] && self::isDate($modelClass, $first)) {
+            return $this;
+        }
+
+        return self::default();
+    }
+
+    /**
      * Orders the entries "$alias" of the query by the properties, and then by id, so entries that tie keep one order
      */
     public function applyTo(QueryBuilder $queryBuilder, string $alias): void
@@ -72,5 +89,21 @@ final readonly class EntryOrder
         }
 
         $queryBuilder->addOrderBy(sprintf('%s.id', $alias), 'ASC');
+    }
+
+    /**
+     * Whether the model's property holds a date, by its type
+     *
+     * @param class-string $modelClass
+     */
+    private static function isDate(string $modelClass, string $property): bool
+    {
+        if (!property_exists($modelClass, $property)) {
+            return false;
+        }
+
+        $type = (new \ReflectionProperty($modelClass, $property))->getType();
+
+        return $type instanceof \ReflectionNamedType && !$type->isBuiltin() && is_a($type->getName(), \DateTimeInterface::class, true);
     }
 }

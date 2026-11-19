@@ -80,7 +80,8 @@ One generic block, code `entries`, lists entries of any collection, mirroring th
 | `paginate` | Toggle, off by default | no |
 
 - **Filling it.** Hand-picked, or one of the entry sources: From a collection, In this category or Related ([Sources](sources.md#entry-sources)).
-- **Displays.** The block offers the displays that the listed content type has cards for: `grid` and `carousel` for blog posts, and `accordion` for FAQ items. A source says which content type it lists from its parameters and the host entry's type ([Extending](extending.md#sources)), and all three entry sources do. A hand-picked list offers the displays that every picked entry's content type has. The carousel display uses the shared carousel script ([Blocks](blocks.md#carousel)).
+- **Displays.** The block offers the displays that the listed content type has cards for: `grid` and `carousel` for blog posts, and `accordion` for FAQ items. A source says which content type it lists from its parameters and the host entry's type ([Extending](extending.md#sources)), and all three entry sources do. A hand-picked list offers the displays that every picked entry's content type has, and one with nothing picked, or a source that can't tell, every display any content type has cards for. A display's choice label is `setono_sylius_cms.choice.entries_display.<display>`, or the display itself without one. The carousel display uses the shared carousel script ([Blocks](blocks.md#carousel)), showing 3 per view.
+- **Each entry through its own card.** An entry whose content type has no card for the block's display is left out, and a block with no card to show prints nothing.
 - **Markup.** `cms-entries cms-entries--<display>`, with a `cms-entries__item` around each card, and `<nav class="cms-pagination">` for the page links. Inside the `nav`: a `cms-pagination__list` (`ol`) of `cms-pagination__item`s, each holding a `cms-pagination__link` (`a`). The current page's link has `cms-pagination__link--current` and `aria-current="page"`. `cms-pagination__previous` and `cms-pagination__next` are the links before and after the list, left out on the first and last page. A gap in the numbers is a `cms-pagination__gap` item.
 
 ### Cards
@@ -94,6 +95,8 @@ Shipped cards:
 | `@SetonoSyliusCMSPlugin/card/blog_post/grid.html.twig` | the featured image, the date, the title and the excerpt, linking to the post |
 | `@SetonoSyliusCMSPlugin/card/blog_post/carousel.html.twig` | the same, sized for a carousel slide |
 | `@SetonoSyliusCMSPlugin/card/faq_item/accordion.html.twig` | a `<details>` with the question as its summary and the answer as its content, using the Accordion item's classes |
+
+The blog post cards' markup: an `article.cms-blog-post-card.cms-blog-post-card--<display>` holding `cms-blog-post-card__image` (the `<picture>`), `cms-blog-post-card__date` (a `<time>`), `cms-blog-post-card__title` (an `h3`) with the `cms-blog-post-card__link` to the post, stretched over the whole card, and `cms-blog-post-card__excerpt`. Each part is left out when the post has none. Templates render a card with `cms_card(entry, display)` ([Twig](extending.md#twig)).
 
 ### Pagination
 

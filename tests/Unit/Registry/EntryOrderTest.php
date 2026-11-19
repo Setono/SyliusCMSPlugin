@@ -9,7 +9,12 @@ use Doctrine\ORM\Query\Expr\OrderBy;
 use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Setono\SyliusCMSPlugin\Attribute\ContentType;
+use Setono\SyliusCMSPlugin\Model\BlogPost;
+use Setono\SyliusCMSPlugin\Model\FaqItem;
+use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Registry\EntryOrder;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Location;
 
 final class EntryOrderTest extends TestCase
 {
@@ -85,5 +90,31 @@ final class EntryOrderTest extends TestCase
         /** @var list<OrderBy> $orderBy */
         $orderBy = $queryBuilder->getDQLPart('orderBy');
         self::assertSame(['entry.city ASC', 'entry.createdAt DESC', 'entry.id ASC'], array_merge(...array_map(static fn (OrderBy $part): array => $part->getParts(), $orderBy)));
+    }
+
+    /**
+     * Related lists newest first: by the content type's order when it's a date descending, such as Blog post's
+     * publishedAt, and else by createdAt descending (docs/spec/sources.md#entry-sources)
+     *
+     * @test
+     */
+    public function it_is_newest_first_by_a_date_descending_it_orders_by_first(): void
+    {
+        $order = EntryOrder::parse(['publishedAt' => 'DESC', 'title' => 'ASC'])->newestFirst(BlogPost::class);
+
+        self::assertSame(['publishedAt' => 'DESC', 'title' => 'ASC'], $order->fields);
+        self::assertSame(['createdAt' => 'DESC'], EntryOrder::parse(['createdAt' => 'DESC'])->newestFirst(Page::class)->fields);
+    }
+
+    /**
+     * @test
+     */
+    public function it_is_newest_first_by_the_creation_date_for_an_order_that_is_not_a_date_descending(): void
+    {
+        self::assertSame(['createdAt' => 'DESC'], EntryOrder::parse(ContentType::ORDER_BY_POSITION)->newestFirst(FaqItem::class)->fields, 'By position');
+        self::assertSame(['createdAt' => 'DESC'], EntryOrder::parse(['publishedAt' => 'ASC'])->newestFirst(BlogPost::class)->fields, 'A date ascending is oldest first');
+        self::assertSame(['createdAt' => 'DESC'], EntryOrder::parse(['city' => 'DESC'])->newestFirst(Location::class)->fields, 'A property that isn\'t a date');
+        self::assertSame(['createdAt' => 'DESC'], EntryOrder::parse(['missing' => 'DESC'])->newestFirst(Page::class)->fields, 'A property the model doesn\'t have');
+        self::assertFalse(EntryOrder::parse(ContentType::ORDER_BY_POSITION)->newestFirst(FaqItem::class)->byPosition);
     }
 }

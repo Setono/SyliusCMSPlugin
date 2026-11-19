@@ -199,6 +199,19 @@ final class ShopStylesheetTest extends TestCase
     }
 
     /**
+     * The Entries block's grid is the Products block's: as many cards to a row as fit at --cms-grid-item-min-width
+     *
+     * @test
+     */
+    public function it_lays_out_an_entries_grid_as_a_products_grid_and_stretches_a_blog_post_card_s_link_over_it(): void
+    {
+        self::assertSame(self::declarations('.cms-products--grid'), self::declarations('.cms-entries--grid'));
+        self::assertSame('relative', self::declarations('.cms-blog-post-card')['position'] ?? null);
+        self::assertSame('absolute', self::declarations('.cms-blog-post-card__link::after')['position'] ?? null);
+        self::assertSame('0', self::declarations('.cms-blog-post-card__link::after')['inset'] ?? null);
+    }
+
+    /**
      * @test
      */
     public function it_never_styles_html_or_body(): void

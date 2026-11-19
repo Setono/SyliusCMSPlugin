@@ -21,7 +21,10 @@ trait Blog
 {
     use CollectionEntries;
 
-    protected static function createBlogCategory(string $title, string $slug, ?string $description = null, bool $published = false): BlogCategoryInterface
+    /**
+     * @param list<StoredBlock> $blocks the top-level blocks of its tree, in its default layout, such as an Entries block filled by In this category
+     */
+    protected static function createBlogCategory(string $title, string $slug, ?string $description = null, bool $published = false, array $blocks = []): BlogCategoryInterface
     {
         /** @var FactoryInterface<BlogCategoryInterface> $factory */
         $factory = self::getContainer()->get('setono_sylius_cms.factory.blog_category');
@@ -31,6 +34,7 @@ trait Blog
         $category->setFallbackLocale('en_US');
         $category->setTitle($title);
         $category->setSlug($slug);
+        $category->setBlockTree(new StoredTree($category->getBlockTree()->layout, $blocks));
 
         $translation = $category->getTranslation('en_US');
         self::assertInstanceOf(BlogCategoryTranslationInterface::class, $translation);

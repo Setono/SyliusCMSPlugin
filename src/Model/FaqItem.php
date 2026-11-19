@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Model;
 
+use Setono\SyliusCMSPlugin\Attribute\Card;
 use Setono\SyliusCMSPlugin\Attribute\ContentType;
 use Setono\SyliusCMSPlugin\Field\Entries;
 
@@ -16,6 +17,7 @@ use Setono\SyliusCMSPlugin\Field\Entries;
 #[ContentType(
     code: self::CONTENT_TYPE,
     label: 'setono_sylius_cms.content_type.faq_item',
+    cards: [new Card('accordion', '@SetonoSyliusCMSPlugin/card/faq_item/accordion.html.twig')],
     order: ContentType::ORDER_BY_POSITION,
     categoryType: FaqCategory::class,
 )]

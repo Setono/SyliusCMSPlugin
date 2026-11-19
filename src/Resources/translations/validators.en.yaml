@@ -19,6 +19,7 @@ setono_sylius_cms:
         layout_binding: 'The binding "%binding%" in the layout'
         layout_source: 'The source "%source%" in the layout''s field "%field%"'
         needs: '%what% needs the host-page context %context%.'
+        needs_entry_of: '%what% only works in an entry of the type %content_types%.'
         placement: 'The placement in "%slot%"'
         snippet: 'The snippet "%snippet%"'
         source: 'The source "%source%" in the block "%block%"'

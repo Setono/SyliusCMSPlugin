@@ -71,6 +71,7 @@ The builder's block picker has a Presets tab, and + between blocks offers preset
 - every one of its top-level blocks is allowed there
 - inserting it keeps the spot within its min and max
 - the context its blocks, sources and bindings need is available there
+- every source in it fits the entry's content type, as Related fits only entries of a collection with categories, so `related_posts` is offered only on blog posts ([Extending](extending.md#sources))
 
 Presets left out are named with the reason, the same way block types are, such as "needs a product page".
 
