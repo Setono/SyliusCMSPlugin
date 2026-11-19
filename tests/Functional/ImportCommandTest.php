@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Functional;
 
+use Setono\SyliusCMSPlugin\Event\BeforeEntryPublish;
+use Setono\SyliusCMSPlugin\Event\EntryCreated;
+use Setono\SyliusCMSPlugin\Event\EntryPublished;
+use Setono\SyliusCMSPlugin\Event\EntrySettingsChanged;
+use Setono\SyliusCMSPlugin\Event\ImportFinished;
+use Setono\SyliusCMSPlugin\Event\PlacementsChanged;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
@@ -11,12 +17,16 @@ use Setono\SyliusCMSPlugin\Preset\PresetProviderInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\Placements;
+use Setono\SyliusCMSPlugin\Tests\Support\Revisions;
 use Setono\SyliusCMSPlugin\Tests\Support\TemporaryDirectory;
 use Setono\SyliusCMSPlugin\Transfer\Format\ExportFormat;
+use Setono\SyliusCMSPlugin\Transfer\Import\UnresolvedReference;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * setono:cms:import reads an export, plans what it creates, updates, leaves unchanged or alone, and applies the plan all
@@ -28,6 +38,7 @@ final class ImportCommandTest extends KernelTestCase
 {
     use Entries;
     use Placements;
+    use Revisions;
     use TemporaryDirectory;
 
     /** The committed export: a picked page with a snippet in it, which holds another, and an editor preset */
@@ -229,6 +240,125 @@ final class ImportCommandTest extends KernelTestCase
     }
 
     /**
+     * @test
+     */
+    public function it_publishes_every_entry_it_writes_with_publish_as_any_publish_would(): void
+    {
+        $tester = self::import(['path' => self::FIXTURE, '--publish' => true]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        foreach ([self::PAGE => '2026-11-12T10:15:00Z', self::SNIPPET => '2026-11-12T09:30:00Z', self::INNER_SNIPPET => '2026-11-09T07:00:00Z'] as $uuid => $changedAt) {
+            $entry = self::entry($uuid);
+            self::assertTrue($entry->isPublished(), $uuid);
+            self::assertCount(1, self::revisionsOf($entry), $uuid);
+            // The publish keeps the export's changedAt too
+            self::assertSame($changedAt, ExportFormat::dateTime(self::entry($uuid)->getChangedAt()), $uuid);
+        }
+
+        self::bootKernel();
+        $client = self::getContainer()->get('test.client');
+        self::assertInstanceOf(KernelBrowser::class, $client);
+        $client->request('GET', '/en_US/autumn-sale');
+        self::assertSame(200, $client->getResponse()->getStatusCode());
+        self::assertStringContainsString('Join our newsletter', (string) $client->getResponse()->getContent());
+    }
+
+    /**
+     * @test
+     */
+    public function it_fails_the_whole_import_when_a_publish_fails(): void
+    {
+        self::bootKernel();
+        self::eventDispatcher()->addListener(BeforeEntryPublish::class, static function (BeforeEntryPublish $event): void {
+            if ('Autumn banner' === $event->entry->getTranslation('en_US')->getTitle()) {
+                $event->veto('The campaign was postponed');
+            }
+        });
+
+        $tester = self::import(['path' => self::FIXTURE, '--publish' => true], boot: false);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Autumn banner can\'t be published: The campaign was postponed', self::display($tester));
+        self::assertStringContainsString('The import refused. Nothing changed.', self::display($tester));
+        foreach ([self::PAGE, self::SNIPPET, self::INNER_SNIPPET] as $uuid) {
+            self::assertNull(self::entries()->findOneByUuid($uuid), $uuid);
+        }
+
+        /** @var PresetProviderInterface $presets */
+        $presets = self::getContainer()->get(PresetProviderInterface::class);
+        self::assertNull($presets->find(self::PRESET));
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_an_entry_publish_validation_fails_for_with_publish_and_lists_each(): void
+    {
+        // The headings' text is required
+        $export = $this->copyOfFixture();
+        foreach ([self::PAGE => 'Autumn sale', self::INNER_SNIPPET => 'Join our newsletter'] as $uuid => $heading) {
+            $file = sprintf('%s/entries/%s.json', $export, $uuid);
+            file_put_contents($file, str_replace(sprintf('"en_US": "%s"', $heading), '"en_US": ""', (string) file_get_contents($file)));
+        }
+
+        $dryRun = self::import(['path' => $export, '--publish' => true, '--dry-run' => true]);
+        $tester = self::import(['path' => $export, '--publish' => true]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertSame(Command::FAILURE, $dryRun->getStatusCode(), $dryRun->getDisplay());
+        self::assertStringContainsString('Newsletter signup can\'t be published:', self::display($tester));
+        self::assertStringContainsString('Autumn sale can\'t be published:', self::display($tester));
+        self::assertNull(self::entries()->findOneByUuid(self::PAGE));
+
+        // Without --publish nothing is validated, so it imports as it is
+        self::assertSame(Command::SUCCESS, self::import(['path' => $export])->getStatusCode());
+    }
+
+    /**
+     * @test
+     */
+    public function it_dispatches_import_finished_with_the_result_after_the_events_of_what_it_wrote_once_it_commits(): void
+    {
+        self::bootKernel();
+        $connection = self::entityManager()->getConnection();
+        // Connected, so the level counts the transaction every test runs in
+        $connection->executeQuery('SELECT 1');
+        $level = $connection->getTransactionNestingLevel();
+        $heard = [];
+        foreach ([EntryCreated::class, EntrySettingsChanged::class, PlacementsChanged::class, EntryPublished::class, ImportFinished::class] as $event) {
+            self::eventDispatcher()->addListener($event, static function (object $event) use (&$heard, $connection, $level): void {
+                // Only once the import's transaction committed
+                self::assertSame($level, $connection->getTransactionNestingLevel());
+                $heard[] = $event;
+            });
+        }
+
+        self::import(['path' => self::FIXTURE, '--dry-run' => true, '--publish' => true], boot: false);
+        self::assertSame([], $heard);
+
+        self::import(['path' => self::FIXTURE, '--publish' => true], boot: false);
+
+        $finished = array_pop($heard);
+        self::assertInstanceOf(ImportFinished::class, $finished);
+        self::assertSame([self::INNER_SNIPPET, self::SNIPPET, self::PAGE, self::PRESET], $finished->result->created());
+        self::assertSame([], $finished->result->updated());
+        self::assertSame([self::INNER_SNIPPET, self::SNIPPET, self::PAGE, self::PRESET], $finished->getAffectedUuids());
+        self::assertEquals([new UnresolvedReference(self::SNIPPET, 'Autumn banner', 'taxon', 't_shirts')], $finished->result->unresolvedReferences());
+        self::assertCount(3, array_filter($heard, static fn (object $event): bool => $event instanceof EntryCreated));
+        self::assertCount(3, array_filter($heard, static fn (object $event): bool => $event instanceof EntryPublished));
+        self::assertCount(1, array_filter($heard, static fn (object $event): bool => $event instanceof PlacementsChanged));
+
+        // An import that changes nothing touched nothing
+        $heard = [];
+        self::import(['path' => self::FIXTURE], boot: false);
+        $finished = array_pop($heard);
+        self::assertInstanceOf(ImportFinished::class, $finished);
+        self::assertSame([], $finished->getAffectedUuids());
+        self::assertSame([self::INNER_SNIPPET, self::SNIPPET, self::PAGE, self::PRESET], $finished->result->unchanged());
+        self::assertSame([], $heard);
+    }
+
+    /**
      * A published page with the UUID the committed export's page has, as when environments were cloned from each other
      */
     private static function createPageWithUuid(string $uuid, string $title, string $slug): PageInterface
@@ -299,12 +429,24 @@ final class ImportCommandTest extends KernelTestCase
         return $entry;
     }
 
+    private static function eventDispatcher(): EventDispatcherInterface
+    {
+        /** @var EventDispatcherInterface $eventDispatcher */
+        $eventDispatcher = self::getContainer()->get('event_dispatcher');
+
+        return $eventDispatcher;
+    }
+
     /**
      * @param array<string, mixed> $input
+     * @param bool $boot false to run it in the kernel the test booted, with its listeners
      */
-    private static function import(array $input): CommandTester
+    private static function import(array $input, bool $boot = true): CommandTester
     {
-        self::bootKernel();
+        if ($boot || null === self::$kernel) {
+            self::bootKernel();
+        }
+
         $tester = new CommandTester((new Application(self::$kernel))->find('setono:cms:import'));
         $tester->execute($input, ['decorated' => false]);
 
