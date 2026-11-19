@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Tests\UI;
 
 use Playwright\Assertions\Expect;
 use Playwright\Exception\PlaywrightException;
+use Playwright\Network\RequestInterface;
 use Playwright\Network\ResponseInterface;
 use Playwright\Page\PageInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
@@ -51,7 +52,14 @@ final class VideoAndDownloadsTest extends UITestCase
         Expect::locator($link)->toHaveText('size-guide');
         Expect::locator($link)->toHaveAttribute('href', sprintf('http://localhost/media/%s/size-guide.pdf', $sizeGuide->getUuid()));
 
-        // Following the link, the permanent URL redirects to the document's current file, which the browser gets
+        // Following the link, the permanent URL redirects to the document's current file, which the browser gets. The
+        // permanent URL is checked by its request, not its response: playwright-symfony stands in for the redirect with
+        // a 204 and then sends the page to the file, and that navigation can cancel the 204 before the browser reports
+        // it. PermanentUrlTest checks the redirect itself
+        $requests = [];
+        $shop->events()->onRequest(static function (RequestInterface $request) use (&$requests): void {
+            $requests[] = $request->url();
+        });
         $responses = [];
         $shop->events()->onResponse(static function (ResponseInterface $response) use (&$responses): void {
             $responses[$response->url()] = $response;
@@ -66,9 +74,9 @@ final class VideoAndDownloadsTest extends UITestCase
 
         $permanentUrl = sprintf('http://localhost/media/%s/size-guide.pdf', $sizeGuide->getUuid());
         $fileUrl = 'http://localhost/media/cms/' . $sizeGuide->getPath();
-        self::awaitResponses($shop, $responses, $permanentUrl, $fileUrl);
+        self::awaitResponses($shop, $responses, $fileUrl);
 
-        self::assertArrayHasKey($permanentUrl, $responses, 'The link leads to the permanent URL');
+        self::assertContains($permanentUrl, $requests, 'The link leads to the permanent URL');
         $pdf = $responses[$fileUrl] ?? null;
         self::assertNotNull($pdf, 'The permanent URL redirects to the current file');
         self::assertSame(200, $pdf->status());
