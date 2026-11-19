@@ -40,7 +40,9 @@ final class CMSCacheInvalidatorTest extends TestCase
         $events = CMSCacheInvalidator::getSubscribedEvents();
 
         self::assertEqualsCanonicalizing(self::storefrontChanges(), array_keys($events));
-        self::assertSame(['invalidate'], array_values(array_unique($events)));
+        foreach ($events as $method) {
+            self::assertSame('invalidate', $method);
+        }
     }
 
     /**

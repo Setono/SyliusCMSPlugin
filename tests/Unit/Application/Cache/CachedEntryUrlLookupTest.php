@@ -113,9 +113,11 @@ final class CachedEntryUrlLookupTest extends TestCase
         $item->expiresAfter(3600)->willReturn($item->reveal())->shouldBeCalled();
         $cache = $this->prophesize(TagAwareCacheInterface::class);
         $cache->get(Argument::type('string'), Argument::type('callable'))->will(static function (array $arguments) use ($item): mixed {
+            $callback = $arguments[1];
+            self::assertIsCallable($callback);
             $save = true;
 
-            return $arguments[1]($item->reveal(), $save);
+            return $callback($item->reveal(), $save);
         });
 
         self::assertSame($aboutUs, (new CachedEntryUrlLookup($decorated->reveal(), $cache->reveal()))->lookup($web, 'en_US', 'about-us'));
