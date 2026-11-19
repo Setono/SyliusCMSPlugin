@@ -301,6 +301,51 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\PresetBlocksRequest" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\PresetBlocksRequest">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\CreatePresetAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\CreatePresetAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\PresetBlocksRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\EditorPresetLookup" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\EditorPresetLookup">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetProviderInterface"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ReplacePresetAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ReplacePresetAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\EditorPresetLookup"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\PresetBlocksRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdatePresetAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdatePresetAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\EditorPresetLookup"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\DeletePresetAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\DeletePresetAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\EditorPresetDeleterInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\EntryUrlsAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\BuilderRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Publishing\WorkingCopyProviderInterface"/>
@@ -495,6 +540,44 @@
         </service>
 
         <!-- The media library's screen, and its endpoints, which the builder's media picker shares -->
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\PresetsAction" class="Setono\SyliusCMSPlugin\Controller\Admin\PresetsAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\PresetRows"/>
+            <argument type="service" id="twig"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\PresetsScreenRequest" class="Setono\SyliusCMSPlugin\Controller\Admin\PresetsScreenRequest">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetProviderInterface"/>
+            <argument type="service" id="security.csrf.token_manager"/>
+            <argument type="service" id="router"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\UpdatePresetAction" class="Setono\SyliusCMSPlugin\Controller\Admin\UpdatePresetAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\PresetsScreenRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface"/>
+            <argument type="service" id="translator"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\DeletePresetAction" class="Setono\SyliusCMSPlugin\Controller\Admin\DeletePresetAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\PresetsScreenRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\EditorPresetDeleterInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\Api\ExportPresetAction" class="Setono\SyliusCMSPlugin\Controller\Admin\Api\ExportPresetAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\Api\EditorPresetLookup"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\CodePresetExporter"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\MediaLibraryAction" class="Setono\SyliusCMSPlugin\Controller\Admin\MediaLibraryAction">
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\BuilderCsrfToken"/>

@@ -74,6 +74,7 @@ final class ContentHubTest extends WebTestCase
                 ['Announcements', '0', '/admin/cms/entries/announcement'],
                 ['Store locations', '1', '/admin/cms/entries/store_location'],
                 ['Media', null, '/admin/cms/media'],
+                ['Presets', null, '/admin/cms/presets'],
             ],
             $menu->filter('.item > .menu > a.item')->each(static fn (Crawler $item): array => [self::label($item), 0 === $item->filter('.label')->count() ? null : $item->filter('.label')->text(), (string) $item->attr('href')]),
         );

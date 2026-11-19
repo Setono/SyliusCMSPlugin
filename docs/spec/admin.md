@@ -119,7 +119,7 @@ Creating an entry from the Overview, All entries or a list:
 
 - **Two tabs:** starting points and block presets.
 - **Code presets** are read-only and marked as coming from code.
-- **Editor presets** can be renamed, recategorised and deleted. Their blocks are changed by saving over them in the builder ([Layouts and presets](layouts-and-presets.md)).
+- **Editor presets** can be renamed, recategorised, deleted and downloaded as code preset files. Their blocks are changed by saving over them in the builder ([Layouts and presets](layouts-and-presets.md)).
 - **A preset with blocks of types that no longer exist** is flagged.
 
 ## Transfer

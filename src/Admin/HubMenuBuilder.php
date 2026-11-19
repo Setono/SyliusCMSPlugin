@@ -98,11 +98,17 @@ final readonly class HubMenuBuilder
 
         $library = $menu->addChild('library')->setLabel('setono_sylius_cms.menu.admin.hub.library');
 
-        // Presets and Transfer join with their tickets
+        // Transfer joins with its ticket
         $library
             ->addChild('media', ['route' => 'setono_sylius_cms_admin_media_index'])
             ->setLabel('setono_sylius_cms.menu.admin.hub.media')
             ->setLabelAttribute('icon', 'images outline')
+        ;
+
+        $library
+            ->addChild('presets', ['route' => 'setono_sylius_cms_admin_preset_index'])
+            ->setLabel('setono_sylius_cms.menu.admin.hub.presets')
+            ->setLabelAttribute('icon', 'clone outline')
         ;
 
         $this->eventDispatcher->dispatch(new MenuBuilderEvent($this->factory, $menu), self::EVENT);

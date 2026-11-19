@@ -237,6 +237,7 @@ setono_sylius_cms:
                 media: Media
                 overview: Overview
                 pages: Pages
+                presets: Presets
                 snippets: Snippets
             main:
                 content:
@@ -252,7 +253,7 @@ setono_sylius_cms:
             title: Title
     media:
         # Why a media item can't be deleted. See "Deleting" in docs/spec/media.md
-        in_use: '{1} It''s used in an entry, so it can''t be deleted.|]1,Inf[ It''s used in %count% entries, so it can''t be deleted.'
+        in_use: '{1} It''s used in one place, so it can''t be deleted.|]1,Inf[ It''s used in %count% places, so it can''t be deleted.'
         # Why the media library refused a file. See "Uploading" in docs/spec/media.md
         refused:
             not_allowed: '%filename% is a %type% file, which the media library doesn''t take. It takes %types%, up to %limit% each.'
@@ -269,8 +270,10 @@ setono_sylius_cms:
         embed_code: 'Embed code runs in the shop, not in the builder''s preview.'
         unresolved_link: '%field% isn''t shown here: what it links to isn''t visible in this channel and locale, or was deleted.'
         unresolved_rich_text_link: 'A link in %field% shows as plain text here: what it links to isn''t visible in this channel and locale, or was deleted.'
-    # What inserting a preset tells editors. See "What inserting copies" in docs/spec/layouts-and-presets.md
+    # What inserting a preset tells editors, and why saving one is refused. See "What inserting copies" and "Editor
+    # presets" in docs/spec/layouts-and-presets.md
     preset:
+        details_not_text: 'A preset''s name, category and description must be text.'
         disabled_block_type: '%block% blocks are switched off, so the preset''s were left out.'
         # Why the block picker's Presets tab leaves a preset out at a spot. See "Where a preset is offered"
         fit:
@@ -287,6 +290,7 @@ setono_sylius_cms:
             too_many: '%parent% holds at most %count% %block% blocks.'
             unknown_content_type: 'Its starting point is for the content type "%content_type%", which the code doesn''t have.'
             unknown_layout: 'Its starting point''s layout "%layout%" isn''t a layout of %content_type%.'
+        name_required: 'A preset needs a name.'
         newer_version: '"%type%" in the preset was saved with version %version%, but this store has version %code_version%, so the preset can''t be inserted.'
         removed_block_type: 'Blocks of the type "%type%", which the code no longer has, were left out.'
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
@@ -405,6 +409,7 @@ setono_sylius_cms:
             guests: Guests
             no_group: Signed in without a group
             only: 'Only %groups%'
+        block_presets: Block presets
         by: 'by %name%'
         cancel_schedule: Cancel the schedule
         channel: Channel
@@ -416,6 +421,25 @@ setono_sylius_cms:
             publishes: Publishes
             starts: Starts showing
         complete_of: '%complete% of %entries% complete'
+        delete: Delete
+        delete_preset: 'Delete %name%'
+        download: Download
+        download_preset: 'Download %name%'
+        edit: Edit
+        edit_preset: 'Edit %name%'
+        fix_in_presets: Open in Presets
+        no_block_presets: 'There are no block presets yet. Select blocks in the builder and save them with ★.'
+        no_starting_points: There are no starting points yet.
+        preset_category: Category
+        preset_content_type: Content type
+        preset_description: Description
+        preset_invalid: Invalid blocks
+        preset_name: Name
+        presets: Presets
+        preset: Preset
+        presets_description: 'Blocks saved to insert anywhere, and starting points for new entries'
+        save: Save
+        starting_points: Starting points
         content: Content
         content_description: Pages and everything else shoppers read that isn't a product
         copied: Copied
@@ -663,6 +687,22 @@ setono_sylius_cms:
         preset_preview: Preview of %name%
         insert_preset: Insert %name%
         preset_does_not_fit: 'It doesn''t fit here any more.'
+        # Saving blocks as an editor preset (★), and changing one in the Presets tab. See "Editor presets" in docs/spec/layouts-and-presets.md
+        save_as_preset: Save as preset
+        save_as_preset_help: 'The blocks, with everything in them, are saved as a preset to insert anywhere. The entries it''s inserted into keep their own copy.'
+        preset_name: Name
+        preset_category: Category
+        preset_description: Description
+        save_preset: Save preset
+        replace_a_preset: Or replace the blocks of a preset
+        replace_preset: 'Replace %name%'
+        edit_preset: 'Edit %name%'
+        delete_preset: 'Delete %name%'
+        delete_preset_confirm: 'Delete %name%? The entries it was inserted into keep their blocks.'
+        download_preset: 'Download %name%'
+        preset_save: Save
+        preset_cancel: Cancel
+        preset_delete: Delete
         condition_match: Matches when it
         copy_it_here: Copy it here
         clash: A colleague changed this too

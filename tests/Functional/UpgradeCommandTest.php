@@ -6,6 +6,9 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional;
 
 use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface;
+use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\PresetProviderInterface;
 use Setono\SyliusCMSPlugin\Publishing\WorkingCopyManagerInterface;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\UpgradesKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
@@ -128,6 +131,53 @@ final class UpgradeCommandTest extends KernelTestCase
         self::assertStringContainsString(sprintf('In the page %s: The block type "callout" was saved with version 3, but the code has version 2. It\'s kept as it is', $page->getUuid()), $display);
         self::assertStringContainsString('Everything is up to date.', $display);
         self::assertSame($rows, self::reloadPage($page)->getBlockTreeJson());
+    }
+
+    /**
+     * @test
+     */
+    public function it_rewrites_the_editor_presets_that_need_upgrading_keeping_their_changed_at(): void
+    {
+        self::bootKernel();
+        $old = self::savePreset(new Preset('Callout', [self::calloutAtVersion1('In a preset')]));
+        $current = self::savePreset(new Preset('Current', [new StoredBlock(self::CALLOUT, 'callout', 2, fields: ['message' => ['en_US' => 'Up to date']])]));
+        $future = self::savePreset(new Preset('Future', [new StoredBlock(self::CALLOUT, 'callout', 3, fields: ['body' => ['en_US' => 'From the future']])]));
+
+        $dryRun = self::display(self::upgrade(['--dry-run' => true]));
+        self::assertStringContainsString(sprintf('Would upgrade the editor preset %s', (string) $old->uuid), $dryRun);
+        self::assertStringContainsString('Dry run: 1 editor preset would be upgraded. Nothing was written.', $dryRun);
+        self::assertEquals($old, self::preset((string) $old->uuid));
+
+        $display = self::display(self::upgrade());
+
+        self::assertStringContainsString(sprintf('Upgraded the editor preset %s', (string) $old->uuid), $display);
+        self::assertStringNotContainsString(sprintf('Upgraded the editor preset %s', (string) $current->uuid), $display);
+        self::assertStringContainsString(sprintf('In the editor preset %s: The block type "callout" was saved with version 3, but the code has version 2. It\'s kept as it is', (string) $future->uuid), $display);
+        self::assertStringContainsString('Upgraded 1 editor preset.', $display);
+
+        $upgraded = self::preset((string) $old->uuid);
+        self::assertSame([2, ['message' => ['en_US' => 'In a preset']]], [$upgraded->blocks[0]->version, $upgraded->blocks[0]->fields]);
+        self::assertEquals($old->changedAt, $upgraded->changedAt);
+        self::assertEquals($future, self::preset((string) $future->uuid));
+        self::assertStringContainsString('Everything is up to date.', self::display(self::upgrade()));
+    }
+
+    private static function savePreset(Preset $preset): Preset
+    {
+        /** @var EditorPresetSaverInterface $saver */
+        $saver = self::getContainer()->get(EditorPresetSaverInterface::class);
+
+        return $saver->save($preset, new \DateTimeImmutable('2026-11-10T08:00:00Z'));
+    }
+
+    private static function preset(string $uuid): Preset
+    {
+        self::entityManager()->clear();
+
+        /** @var PresetProviderInterface $presets */
+        $presets = self::getContainer()->get(PresetProviderInterface::class);
+
+        return $presets->find($uuid) ?? throw new \LogicException(sprintf('There is no preset %s', $uuid));
     }
 
     /**

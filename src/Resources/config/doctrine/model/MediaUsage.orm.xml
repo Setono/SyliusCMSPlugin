@@ -6,12 +6,14 @@
                                       http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
     <!--
     The media usage index: which media items each entry's draft and published content use, one row per entry and media
-    item. Media items are named by UUID, as content names them, so the index is written without loading them, and a row
-    can name one that's gone. Deleting the entry deletes its rows
+    item, and which media items each editor preset uses, one row per preset and media item. A row has an entry or a
+    preset. Media items are named by UUID, as content names them, so the index is written without loading them, and a
+    row can name one that's gone. Deleting the entry or the preset deletes its rows
     -->
     <mapped-superclass name="Setono\SyliusCMSPlugin\Model\MediaUsage" table="setono_sylius_cms__media_usage">
         <unique-constraints>
             <unique-constraint name="setono_sylius_cms__media_usage_uniq" columns="entry_id,media_item_uuid"/>
+            <unique-constraint name="setono_sylius_cms__media_usage_preset_uniq" columns="preset_id,media_item_uuid"/>
         </unique-constraints>
 
         <indexes>
@@ -28,7 +30,11 @@
         <field name="inPublished" column="in_published" type="boolean"/>
 
         <many-to-one field="entry" target-entity="Setono\SyliusCMSPlugin\Model\EntryInterface">
-            <join-column name="entry_id" referenced-column-name="id" nullable="false" on-delete="CASCADE"/>
+            <join-column name="entry_id" referenced-column-name="id" nullable="true" on-delete="CASCADE"/>
+        </many-to-one>
+
+        <many-to-one field="preset" target-entity="Setono\SyliusCMSPlugin\Model\EditorPresetInterface">
+            <join-column name="preset_id" referenced-column-name="id" nullable="true" on-delete="CASCADE"/>
         </many-to-one>
     </mapped-superclass>
 </doctrine-mapping>

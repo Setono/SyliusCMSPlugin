@@ -449,6 +449,30 @@ describe('the editing tools in the preview', () => {
         await waitFor(() => expect(sent().find((message) => message.type === 'insert')).toMatchObject({ previous: ['a'], next: ['b'] }));
     });
 
+    it("should give the bridge ★ when presets can be saved, and open Save as preset for the toolbar's block, or the selection it's part of", async () => {
+        const editing = {
+            presets: vi.fn(async () => ({ presets: [], categories: [] })),
+            insertPreset: vi.fn(async () => ({ blocks: [], notices: [] })),
+            createPreset: vi.fn(async () => ({ id: 'p', name: 'Promo', category: null, description: null, changedAt: '2026-11-20T10:00:00Z' })),
+            replacePreset: vi.fn(() => Promise.reject(new Error('Not replaced in this test'))),
+            updatePreset: vi.fn(() => Promise.reject(new Error('Not updated in this test'))),
+            deletePreset: vi.fn(async () => undefined),
+            presetExportUrl: (id: string) => `/presets/${id}/export`,
+        };
+        const api = fakeApi([block('a', { text: { en_US: 'First' } }), block('b', { text: { en_US: 'Second' } }), block('c', { text: { en_US: 'Third' } })], editing);
+        const { sent } = await openWithBridge(api);
+        expect(sent()[0]).toMatchObject({ type: 'init', strings: { savePreset: 'Save as preset' } });
+        fireEvent.click(treeRow('First'));
+        fireEvent.click(treeRow('Third'), { metaKey: true });
+
+        fromBridge({ type: 'save_preset', key: 'c' });
+        const dialog = within(await screen.findByRole('dialog', { name: 'Save as preset' }));
+        fireEvent.change(dialog.getByRole('textbox', { name: 'Name' }), { target: { value: 'Promo' } });
+        fireEvent.click(dialog.getByRole('button', { name: 'Save preset' }));
+
+        await waitFor(() => expect(editing.createPreset).toHaveBeenCalledWith(['a', 'c'], { name: 'Promo', category: null, description: null }));
+    });
+
     it("should act on the whole selection when the toolbar's block is part of it", async () => {
         await openWithBridge(fakeApi([block('a', { text: { en_US: 'First' } }), block('b', { text: { en_US: 'Second' } }), block('c', { text: { en_US: 'Third' } })]));
         fireEvent.click(treeRow('First'));

@@ -65,6 +65,16 @@ describe('the bridge', () => {
         expect(posted).toEqual([{ type: 'ready' }]);
     });
 
+    it("should offer ★ in the selected block's toolbar when the builder gives it a label, which asks the builder to save the block as a preset", () => {
+        bridge.receive({ type: 'init', strings: { ...strings, savePreset: 'Save as preset' } });
+        bridge.receive({ type: 'select', key: 'c' });
+        posted = [];
+
+        fireEvent.click(within(within(controls()).getByRole('toolbar')).getByRole('button', { name: 'Save as preset' }));
+
+        expect(posted).toEqual([{ type: 'save_preset', key: 'c' }]);
+    });
+
     describe('once the builder has set it up', () => {
         beforeEach(() => {
             bridge.receive({ type: 'init', strings });
@@ -117,6 +127,12 @@ describe('the bridge', () => {
                 { type: 'settings', key: 'c' },
                 { type: 'delete', key: 'c' },
             ]);
+        });
+
+        it("should offer no ★ in the selected block's toolbar when the builder gives it no label, as when presets can't be saved", () => {
+            bridge.receive({ type: 'select', key: 'a' });
+
+            expect(within(within(controls()).getByRole('toolbar')).queryByRole('button', { name: 'Save as preset' })).toBeNull();
         });
 
         it("should offer move up, move down and duplicate in the selected block's toolbar, which ask the builder", () => {

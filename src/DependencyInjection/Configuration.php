@@ -25,6 +25,8 @@ use Setono\SyliusCMSPlugin\Model\BlogPostTranslation;
 use Setono\SyliusCMSPlugin\Model\BlogPostTranslationInterface;
 use Setono\SyliusCMSPlugin\Model\Draft;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
+use Setono\SyliusCMSPlugin\Model\EditorPreset;
+use Setono\SyliusCMSPlugin\Model\EditorPresetInterface;
 use Setono\SyliusCMSPlugin\Model\Entry;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroup;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
@@ -68,6 +70,7 @@ use Setono\SyliusCMSPlugin\Model\SnippetInterface;
 use Setono\SyliusCMSPlugin\Registry\Code;
 use Setono\SyliusCMSPlugin\Registry\SlotMetadata;
 use Setono\SyliusCMSPlugin\Repository\DraftRepository;
+use Setono\SyliusCMSPlugin\Repository\EditorPresetRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryPresenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryReferenceRepository;
 use Setono\SyliusCMSPlugin\Repository\EntryRepository;
@@ -711,8 +714,8 @@ final class Configuration implements ConfigurationInterface
      * The shipped Sylius resources. The draft and the rows beside an entry (its channels, its audience groups, who has
      * it open, its saves, its revisions, its old slugs, its scheduled publish, its share links, the channels a
      * page is the homepage of and a snippet's placements), the bestseller scores, the media usage index and the reference
-     * table have no admin screens of their own, so they have no controller. The content types are Page and Snippet, and
-     * the blog's Blog post and Blog category.
+     * table have no admin screens of their own, so they have no controller. Nor have the editor presets, whose Presets
+     * screen lists code presets too. The content types are Page and Snippet, and the blog's Blog post and Blog category.
      * A project extends a shipped content type the way it extends any Sylius model:
      * by overriding classes.model, and translation.classes.model, with its own subclasses.
      * The channel and audience group rows always belong to an entry, and the homepage rows to a page, so their
@@ -739,6 +742,7 @@ final class Configuration implements ConfigurationInterface
                     ->append(self::resourceWithoutController('media_folder', MediaFolder::class, MediaFolderInterface::class, MediaFolderRepository::class))
                     ->append(self::resourceWithoutController('media_usage', MediaUsage::class, MediaUsageInterface::class, MediaUsageRepository::class))
                     ->append(self::resourceWithoutController('entry_reference', EntryReference::class, EntryReferenceInterface::class, EntryReferenceRepository::class))
+                    ->append(self::resourceWithoutController('editor_preset', EditorPreset::class, EditorPresetInterface::class, EditorPresetRepository::class))
                     ->append(self::resourceWithoutController('bestseller_score', BestsellerScore::class, BestsellerScoreInterface::class))
                     ->append(self::resourceWithoutController('placement', Placement::class, PlacementInterface::class, PlacementRepository::class, PlacementFactory::class))
                     ->append(self::contentTypeResource('page', Page::class, PageInterface::class, PageTranslation::class, PageTranslationInterface::class))

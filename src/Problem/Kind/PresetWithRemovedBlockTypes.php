@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Problem\Kind;
 
 use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Problem\Fix;
 use Setono\SyliusCMSPlugin\Problem\PresetProblem;
 use Setono\SyliusCMSPlugin\Problem\PresetProblemKindInterface;
 use Setono\SyliusCMSPlugin\Problem\Severity;
@@ -38,6 +39,7 @@ final readonly class PresetWithRemovedBlockTypes implements PresetProblemKindInt
             Severity::Warning,
             $preset,
             new TranslatableMessage('setono_sylius_cms.problem.preset_removed_block_type', ['%types%' => implode(', ', array_map(static fn (string $type): string => sprintf('"%s"', $type), $removed))]),
+            $preset->isFromCode() ? null : Fix::onPresetsScreen($preset),
         )];
     }
 

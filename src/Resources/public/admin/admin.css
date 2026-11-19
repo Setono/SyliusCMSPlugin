@@ -12,6 +12,8 @@
     border-radius: 0.28571429rem;
     background: #fff;
     box-shadow: 1px 3px 3px 0 rgba(0, 0, 0, 0.2), 1px 3px 15px 2px rgba(0, 0, 0, 0.2);
+    /* Whatever aligns the text of the place it's opened from, such as a table's actions cell */
+    text-align: start;
 }
 
 .cms-dialog::backdrop {
@@ -182,4 +184,9 @@
 
 .cms-entry-order__status:empty {
     display: none;
+}
+
+/* The Presets screen's actions of an editor preset: its buttons, then Delete below them */
+.cms-preset-delete {
+    margin-top: 0.5rem;
 }
