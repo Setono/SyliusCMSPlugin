@@ -23,6 +23,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 final class ImportEmbedCodeTest extends KernelTestCase
 {
     use Entries;
+
     // The committed export's media files are stored as it imports them
     use MediaItems;
     use TemporaryDirectory;
