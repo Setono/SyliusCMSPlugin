@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Functional;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\EmbedCodeOffKernel;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
+use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
 use Setono\SyliusCMSPlugin\Tests\Support\TemporaryDirectory;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -22,6 +23,8 @@ use Symfony\Component\Console\Tester\CommandTester;
 final class ImportEmbedCodeTest extends KernelTestCase
 {
     use Entries;
+    // The committed export's media files are stored as it imports them
+    use MediaItems;
     use TemporaryDirectory;
 
     private const FIXTURE = __DIR__ . '/../Fixture/export';

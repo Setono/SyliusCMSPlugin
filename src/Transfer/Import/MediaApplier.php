@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Transfer\Import;
 
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 use Setono\SyliusCMSPlugin\Event\AfterCommitDispatcher;
@@ -72,6 +73,10 @@ final readonly class MediaApplier
                 $before = null;
             } else {
                 $row = $this->mediaItems->findOneByUuid($planned->uuid) ?? throw new \LogicException(sprintf('The plan updates the media item %s, which there\'s none of', $planned->uuid));
+                // Locked and read again, as a replace in the library does, so a replace there meanwhile can't make it
+                // delete a file other than the one it replaces
+                $this->manager->lock($row, LockMode::PESSIMISTIC_WRITE);
+                $this->manager->refresh($row);
                 $before = MediaItemMetadata::of($row);
                 $this->replaceFile($mediaItem, $row, $files);
             }

@@ -128,7 +128,9 @@ final class ImportMediaTest extends KernelTestCase
         self::assertSame(self::POSTER, $video->getPoster()?->getUuid());
         self::assertSame('Photo: Studio North', $video->getPoster()->getCredit());
 
-        self::assertCount(3, $this->newlyStored());
+        foreach ([self::BANNER, self::VIDEO, self::POSTER] as $uuid) {
+            self::assertFileExists(self::mediaDirectory() . '/' . self::mediaItem($uuid)?->getPath());
+        }
     }
 
     /**
@@ -187,7 +189,12 @@ final class ImportMediaTest extends KernelTestCase
         $after = self::mediaItem(self::BANNER);
         self::assertNotNull($after);
         self::assertSame([$before->getName(), $before->getPath(), $before->getChecksum(), null], [$after->getName(), $after->getPath(), $after->getChecksum(), $after->getFolder()]);
-        self::assertCount(3, $this->newlyStored(), 'The logo the test uploaded, and the video and its poster the import stored');
+        self::assertFileExists(self::mediaDirectory() . '/' . $after->getPath());
+        foreach ([self::VIDEO, self::POSTER] as $uuid) {
+            self::assertFileExists(self::mediaDirectory() . '/' . self::mediaItem($uuid)?->getPath());
+        }
+
+        self::assertDirectoryDoesNotExist(self::mediaDirectory() . '/' . self::BANNER, 'No file is stored for the media item it leaves alone');
     }
 
     /**
