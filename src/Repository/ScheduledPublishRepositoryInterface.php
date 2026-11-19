@@ -27,7 +27,9 @@ interface ScheduledPublishRepositoryInterface
      * The scheduled publishes that wait and aren't overdue at $now, earliest first, with their entries, which the
      * Overview's Coming up lists. A failed or overdue one needs attention instead
      *
+     * @param list<string> $hiddenContentTypes the codes of the content types switched off, whose entries are left out
+     *
      * @return list<ScheduledPublishInterface>
      */
-    public function findComingUp(\DateTimeImmutable $now, int $limit): array;
+    public function findComingUp(\DateTimeImmutable $now, int $limit, array $hiddenContentTypes = []): array;
 }

@@ -40,7 +40,7 @@ final class FaqItemTest extends TestCase
         self::assertNull($contentType->blocks, 'It has no block tree');
         self::assertTrue($contentType->order->byPosition);
         self::assertSame(['position' => 'ASC'], $contentType->order->fields);
-        self::assertSame(FaqCategory::class, $contentType->categoryType);
+        self::assertSame('faq_category', $contentType->categoryType);
         self::assertNull($contentType->descriptionField, 'Without a URL it has no meta description');
         self::assertTrue($contentType->isShipped());
     }

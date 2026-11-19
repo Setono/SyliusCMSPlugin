@@ -235,19 +235,19 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         return (int) $this->entries($contentType, $hiddenContentTypes)->select('COUNT(o.id)')->getQuery()->getSingleScalarResult();
     }
 
-    public function findStartingAfter(\DateTimeImmutable $now, int $limit): array
+    public function findStartingAfter(\DateTimeImmutable $now, int $limit, array $hiddenContentTypes = []): array
     {
-        return $this->findByDateWindowBoundaryAfter('showFrom', $now, $limit);
+        return $this->findByDateWindowBoundaryAfter('showFrom', $now, $limit, $hiddenContentTypes);
     }
 
-    public function findEndingAfter(\DateTimeImmutable $now, int $limit): array
+    public function findEndingAfter(\DateTimeImmutable $now, int $limit, array $hiddenContentTypes = []): array
     {
-        return $this->findByDateWindowBoundaryAfter('showUntil', $now, $limit);
+        return $this->findByDateWindowBoundaryAfter('showUntil', $now, $limit, $hiddenContentTypes);
     }
 
-    public function createNeedingAttentionPaginator(ProblemCountProviderInterface $problemCounts): Pagerfanta
+    public function createNeedingAttentionPaginator(ProblemCountProviderInterface $problemCounts, array $hiddenContentTypes = []): Pagerfanta
     {
-        $queryBuilder = $this->createListQueryBuilder();
+        $queryBuilder = $this->createListQueryBuilder(null, $hiddenContentTypes);
         $queryBuilder
             ->andWhere($problemCounts->getNeedsAttentionCondition($queryBuilder, 'o'))
             ->addOrderBy('o.lastEditedAt', 'DESC')
@@ -260,10 +260,10 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         return $paginator;
     }
 
-    public function findDraftsInProgress(int $limit): array
+    public function findDraftsInProgress(int $limit, array $hiddenContentTypes = []): array
     {
         /** @var list<EntryInterface> $entries */
-        $entries = $this->createQueryBuilder('o')
+        $entries = $this->entries(null, $hiddenContentTypes)
             ->andWhere(sprintf('o.lastPublishedAt IS NULL OR EXISTS (SELECT cms_draft.id FROM %s cms_draft WHERE cms_draft.entry = o)', DraftInterface::class))
             ->addOrderBy('o.lastEditedAt', 'DESC')
             ->addOrderBy('o.id', 'DESC')
@@ -280,12 +280,14 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
      * boundary changes what shoppers see: enabled, and published, or with a publish scheduled for it or before that
      * hasn't failed. The columns hold UTC
      *
+     * @param list<string> $hiddenContentTypes
+     *
      * @return list<EntryInterface>
      */
-    private function findByDateWindowBoundaryAfter(string $boundary, \DateTimeImmutable $now, int $limit): array
+    private function findByDateWindowBoundaryAfter(string $boundary, \DateTimeImmutable $now, int $limit, array $hiddenContentTypes): array
     {
         /** @var list<EntryInterface> $entries */
-        $entries = $this->createQueryBuilder('o')
+        $entries = $this->entries(null, $hiddenContentTypes)
             ->andWhere(sprintf('o.%s > :now', $boundary))
             ->andWhere('o.enabled = :enabled')
             ->andWhere(sprintf(
@@ -322,14 +324,7 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
             return $queryBuilder->andWhere(sprintf('o INSTANCE OF %s', $this->classOf($contentType)));
         }
 
-        foreach ($hiddenContentTypes as $hidden) {
-            $class = $this->getClassMetadata()->discriminatorMap[$hidden] ?? null;
-            if (null !== $class) {
-                $queryBuilder->andWhere(sprintf('o NOT INSTANCE OF %s', $class));
-            }
-        }
-
-        return $queryBuilder;
+        return HiddenContentTypes::exclude($queryBuilder, 'o', $this->getClassMetadata(), array_values($hiddenContentTypes));
     }
 
     /**

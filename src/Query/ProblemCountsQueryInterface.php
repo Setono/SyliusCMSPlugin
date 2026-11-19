@@ -50,6 +50,7 @@ interface ProblemCountsQueryInterface
      * time-dependent kind at $now
      *
      * @param iterable<TimeDependentProblemKindInterface> $kinds
+     * @param list<string> $hiddenContentTypes the codes of the content types switched off, whose entries are left out
      */
-    public function total(iterable $kinds, \DateTimeImmutable $now): ProblemCount;
+    public function total(iterable $kinds, \DateTimeImmutable $now, array $hiddenContentTypes = []): ProblemCount;
 }

@@ -8,7 +8,6 @@ use Knp\Menu\FactoryInterface;
 use Knp\Menu\ItemInterface;
 use Setono\SyliusCMSPlugin\Collection\Collections;
 use Setono\SyliusCMSPlugin\Model\SnippetInterface;
-use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Sylius\Bundle\UiBundle\Menu\Event\MenuBuilderEvent;
@@ -54,7 +53,7 @@ final readonly class HubMenuBuilder
             ->setLabel('setono_sylius_cms.menu.admin.hub.all_entries')
             ->setLabelAttribute('icon', 'list')
             // The entries of a content type switched off are hidden from the admin
-            ->setExtra('count', $this->entryRepository->countEntries(null, $this->disabledContentTypes()))
+            ->setExtra('count', $this->entryRepository->countEntries(null, $this->contentTypes->disabledCodes()))
         ;
 
         $entries
@@ -121,16 +120,5 @@ final readonly class HubMenuBuilder
         $this->eventDispatcher->dispatch(new MenuBuilderEvent($this->factory, $menu), self::EVENT);
 
         return $menu;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function disabledContentTypes(): array
-    {
-        return array_values(array_map(
-            static fn (ContentTypeMetadata $contentType): string => $contentType->code,
-            array_filter($this->contentTypes->all(), static fn (ContentTypeMetadata $contentType): bool => $contentType->disabled),
-        ));
     }
 }

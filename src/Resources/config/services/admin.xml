@@ -151,12 +151,14 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
 
         <!-- The Overview's Coming up, which its panel gets through cms_admin_coming_up() -->
         <service id="Setono\SyliusCMSPlugin\Admin\ComingUp" class="Setono\SyliusCMSPlugin\Admin\ComingUp">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
             <argument type="service" id="clock"/>
         </service>
 
@@ -164,6 +166,7 @@
         <service id="Setono\SyliusCMSPlugin\Admin\TranslationCompleteness" class="Setono\SyliusCMSPlugin\Admin\TranslationCompleteness">
             <argument type="service" id="sylius.repository.channel"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Query\CompletenessQueryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
 
         <!-- The locale a new entry's title and slug go into -->

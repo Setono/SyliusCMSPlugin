@@ -6,6 +6,7 @@ namespace Setono\SyliusCMSPlugin\Admin;
 
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemFinderInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 
 /**
@@ -23,12 +24,14 @@ final readonly class NeedsAttention
         private EntryRepositoryInterface $entries,
         private ProblemCountProviderInterface $problemCounts,
         private ProblemFinderInterface $problemFinder,
+        private ContentTypeRegistryInterface $contentTypes,
     ) {
     }
 
     public function find(): NeedsAttentionGroups
     {
-        $paginator = $this->entries->createNeedingAttentionPaginator($this->problemCounts);
+        // Their overview pages answer 404
+        $paginator = $this->entries->createNeedingAttentionPaginator($this->problemCounts, $this->contentTypes->disabledCodes());
         $paginator->setMaxPerPage(self::LIMIT);
 
         $entries = iterator_to_array($paginator->getCurrentPageResults(), false);

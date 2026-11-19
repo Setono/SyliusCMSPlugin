@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Admin;
 
 use Psr\Clock\ClockInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\ScheduledPublishRepositoryInterface;
 
@@ -22,6 +23,7 @@ final readonly class ComingUp
     public function __construct(
         private ScheduledPublishRepositoryInterface $scheduledPublishes,
         private EntryRepositoryInterface $entries,
+        private ContentTypeRegistryInterface $contentTypes,
         private ClockInterface $clock,
         private int $limit = self::LIMIT,
     ) {
@@ -34,20 +36,22 @@ final readonly class ComingUp
     public function events(): array
     {
         $now = $this->clock->now();
+        // Their overview pages answer 404
+        $hidden = $this->contentTypes->disabledCodes();
 
         $events = [];
-        foreach ($this->scheduledPublishes->findComingUp($now, $this->limit) as $scheduledPublish) {
+        foreach ($this->scheduledPublishes->findComingUp($now, $this->limit, $hidden) as $scheduledPublish) {
             $events[] = new ComingUpEvent(ComingUpKind::Publishes, $scheduledPublish->getPublishAt(), $scheduledPublish->getEntry());
         }
 
-        foreach ($this->entries->findStartingAfter($now, $this->limit) as $entry) {
+        foreach ($this->entries->findStartingAfter($now, $this->limit, $hidden) as $entry) {
             $from = $entry->getDateWindow()->from;
             if (null !== $from) {
                 $events[] = new ComingUpEvent(ComingUpKind::Starts, $from, $entry);
             }
         }
 
-        foreach ($this->entries->findEndingAfter($now, $this->limit) as $entry) {
+        foreach ($this->entries->findEndingAfter($now, $this->limit, $hidden) as $entry) {
             $until = $entry->getDateWindow()->until;
             if (null !== $until) {
                 $events[] = new ComingUpEvent(ComingUpKind::Ends, $until, $entry);

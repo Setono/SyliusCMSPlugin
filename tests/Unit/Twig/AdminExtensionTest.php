@@ -545,11 +545,11 @@ final class AdminExtensionTest extends IntegrationTestCase
     {
         // Prophecy binds a closure to the double, so a static one reads what a --DATA-- section sets through a reference
         $needingAttention = &$this->needingAttention;
-        $entries->createNeedingAttentionPaginator(Argument::any())->will(static function () use (&$needingAttention): Pagerfanta {
+        $entries->createNeedingAttentionPaginator(Argument::cetera())->will(static function () use (&$needingAttention): Pagerfanta {
             return self::paginator($needingAttention);
         });
         $withDraft = &$this->withDraft;
-        $entries->findDraftsInProgress(OverviewRuntime::DRAFTS_IN_PROGRESS)->will(static function () use (&$withDraft): array {
+        $entries->findDraftsInProgress(OverviewRuntime::DRAFTS_IN_PROGRESS, [])->will(static function () use (&$withDraft): array {
             return $withDraft;
         });
         $dated = &$this->dated;
@@ -593,7 +593,7 @@ final class AdminExtensionTest extends IntegrationTestCase
 
         $completeness = &$this->completeness;
         $completenessQuery = $this->prophesize(CompletenessQueryInterface::class);
-        $completenessQuery->count(['WEB' => ['en_US', 'da_DK'], 'B2B' => ['en_US']])->will(static function () use (&$completeness): array {
+        $completenessQuery->count(['WEB' => ['en_US', 'da_DK'], 'B2B' => ['en_US']], [])->will(static function () use (&$completeness): array {
             return $completeness;
         });
 
@@ -603,15 +603,18 @@ final class AdminExtensionTest extends IntegrationTestCase
             return $presetProblems;
         });
 
+        $contentTypes = new ContentTypeRegistry([]);
+
         return new OverviewRuntime(
-            new ComingUp($scheduledPublishes->reveal(), $entries->reveal(), new MockClock('2026-11-17 12:00:00 UTC')),
+            new ComingUp($scheduledPublishes->reveal(), $entries->reveal(), $contentTypes, new MockClock('2026-11-17 12:00:00 UTC')),
             $entryRows,
             $entries->reveal(),
-            new NeedsAttention($entries->reveal(), $problemCounts->reveal(), $problemFinder),
+            new NeedsAttention($entries->reveal(), $problemCounts->reveal(), $problemFinder, $contentTypes),
             $mediaItems->reveal(),
             new MediaLocales(new ChannelLocales($channels->reveal()), $translationLocaleProvider->reveal(), $this->prophesize(RepositoryInterface::class)->reveal()),
-            new TranslationCompleteness($channels->reveal(), $completenessQuery->reveal()),
+            new TranslationCompleteness($channels->reveal(), $completenessQuery->reveal(), $contentTypes),
             $presetProblemFinder->reveal(),
+            $contentTypes,
         );
     }
 

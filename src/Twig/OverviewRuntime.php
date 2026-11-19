@@ -16,6 +16,7 @@ use Setono\SyliusCMSPlugin\Media\MediaFilter;
 use Setono\SyliusCMSPlugin\Media\MediaLocales;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\PresetProblemFinderInterface;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Twig\Extension\RuntimeExtensionInterface;
@@ -40,6 +41,7 @@ final readonly class OverviewRuntime implements RuntimeExtensionInterface
         private MediaLocales $mediaLocales,
         private TranslationCompleteness $translationCompleteness,
         private PresetProblemFinderInterface $presetProblems,
+        private ContentTypeRegistryInterface $contentTypes,
     ) {
     }
 
@@ -96,7 +98,7 @@ final readonly class OverviewRuntime implements RuntimeExtensionInterface
      */
     public function draftsInProgress(): array
     {
-        $entries = $this->entries->findDraftsInProgress(self::DRAFTS_IN_PROGRESS);
+        $entries = $this->entries->findDraftsInProgress(self::DRAFTS_IN_PROGRESS, $this->contentTypes->disabledCodes());
         $this->entryRows->load($entries);
 
         return $entries;

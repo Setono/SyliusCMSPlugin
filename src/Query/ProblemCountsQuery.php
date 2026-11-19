@@ -15,6 +15,7 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCount;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Problem\TimeDependentProblemKindInterface;
+use Setono\SyliusCMSPlugin\Repository\HiddenContentTypes;
 
 /**
  * DQL on the entries' problem count columns, which MySQL and PostgreSQL both run. A list of ids is bound with the
@@ -127,12 +128,12 @@ final readonly class ProblemCountsQuery implements ProblemCountsQueryInterface
         return $counts;
     }
 
-    public function total(iterable $kinds, \DateTimeImmutable $now): ProblemCount
+    public function total(iterable $kinds, \DateTimeImmutable $now, array $hiddenContentTypes = []): ProblemCount
     {
-        $query = $this->manager()->createQueryBuilder()
+        $manager = $this->manager();
+        $query = HiddenContentTypes::exclude($manager->createQueryBuilder()
             ->select('SUM(entry.problemErrors) AS errors', 'SUM(entry.problemWarnings) AS warnings')
-            ->from(Entry::class, 'entry')
-        ;
+            ->from(Entry::class, 'entry'), 'entry', $manager->getClassMetadata(Entry::class), $hiddenContentTypes);
         $severities = $this->selectTimeDependent($query, $kinds, $now, 'SUM(CASE WHEN %s THEN 1 ELSE 0 END)');
 
         /** @var array<string, mixed> $row */

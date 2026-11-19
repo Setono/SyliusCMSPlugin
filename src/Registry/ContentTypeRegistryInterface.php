@@ -51,4 +51,12 @@ interface ContentTypeRegistryInterface
      * @return list<ContentTypeMetadata>
      */
     public function enabled(): array;
+
+    /**
+     * The codes of the content types switched off in setono_sylius_cms.disabled.content_types, whose entries the admin
+     * leaves out
+     *
+     * @return list<string>
+     */
+    public function disabledCodes(): array;
 }

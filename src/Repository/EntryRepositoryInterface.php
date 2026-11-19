@@ -101,35 +101,43 @@ interface EntryRepositoryInterface
      * those enabled, and published or with a publish that hasn't failed scheduled for their start or before, as only
      * their start changes what shoppers see
      *
+     * @param list<string> $hiddenContentTypes the codes of the content types switched off, whose entries are left out
+     *
      * @return list<EntryInterface>
      */
-    public function findStartingAfter(\DateTimeImmutable $now, int $limit): array;
+    public function findStartingAfter(\DateTimeImmutable $now, int $limit, array $hiddenContentTypes = []): array;
 
     /**
      * The entries whose date window ends after $now, the first to end first, which the Overview's Coming up lists:
      * those enabled, and published or with a publish that hasn't failed scheduled for their end or before, as only
      * their end changes what shoppers see
      *
+     * @param list<string> $hiddenContentTypes the codes of the content types switched off, whose entries are left out
+     *
      * @return list<EntryInterface>
      */
-    public function findEndingAfter(\DateTimeImmutable $now, int $limit): array;
+    public function findEndingAfter(\DateTimeImmutable $now, int $limit, array $hiddenContentTypes = []): array;
 
     /**
      * The entries a draft is in progress for: those with a draft, which are published entries with unpublished changes,
      * and those never published, which are their own working copy. The one edited last first, which the Overview's
      * Drafts in progress lists
      *
+     * @param list<string> $hiddenContentTypes the codes of the content types switched off, whose entries are left out
+     *
      * @return list<EntryInterface>
      */
-    public function findDraftsInProgress(int $limit): array;
+    public function findDraftsInProgress(int $limit, array $hiddenContentTypes = []): array;
 
     /**
      * The entries the lists' Needs attention filter finds, those with an error or a warning by the counts stored with
      * each, the one edited last first, which the Overview's Needs attention pages through
      *
+     * @param list<string> $hiddenContentTypes the codes of the content types switched off, whose entries are left out
+     *
      * @return Pagerfanta<EntryInterface>
      */
-    public function createNeedingAttentionPaginator(ProblemCountProviderInterface $problemCounts): Pagerfanta;
+    public function createNeedingAttentionPaginator(ProblemCountProviderInterface $problemCounts, array $hiddenContentTypes = []): Pagerfanta;
 
     /**
      * The entries that may name one of the customer groups in their audience or in a customer group condition, in

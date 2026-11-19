@@ -116,6 +116,17 @@ final class ContentTypeRegistryTest extends TestCase
         self::assertTrue($registry->isEnabled('page'));
         self::assertFalse($registry->isEnabled('post'));
         self::assertFalse($registry->isEnabled('recipe'), 'A code no content type has is not enabled');
+        self::assertSame(['post'], $registry->disabledCodes());
+    }
+
+    /**
+     * @test
+     */
+    public function it_tells_the_codes_of_the_content_types_switched_off_it_has(): void
+    {
+        $registry = new ContentTypeRegistry(['page' => self::PAGE], disabled: ['post']);
+
+        self::assertSame([], $registry->disabledCodes(), 'A code no content type has is left out');
     }
 
     /**

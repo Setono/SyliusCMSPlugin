@@ -70,6 +70,11 @@ final class ContentTypeRegistry implements ContentTypeRegistryInterface
         return array_map($this->get(...), array_keys($this->resources));
     }
 
+    public function disabledCodes(): array
+    {
+        return array_values(array_filter($this->disabled, $this->has(...)));
+    }
+
     public function enabled(): array
     {
         return array_values(array_filter($this->all(), static fn (ContentTypeMetadata $contentType): bool => !$contentType->disabled));

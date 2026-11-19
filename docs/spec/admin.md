@@ -26,6 +26,8 @@ The hub's home page has four panels:
 - **Translations:** completeness per channel and locale, with a link to the entries that aren't complete ([Localization](localization.md#completeness-and-outdated-flags)).
 - **Drafts in progress:** the 10 entries edited last, of those with unpublished changes and those never published, each labelled "Unpublished changes" or "Never published", with a link to all of them in All entries, filtered on both states.
 
+The panels and the Content badge leave out the entries of content types switched off in `disabled.content_types`, whose overview pages answer 404, as the lists do ([Collections](collections.md#what-ships)).
+
 ## Entry lists
 
 Every list (All entries, Pages, Snippets and each collection) has the same columns:

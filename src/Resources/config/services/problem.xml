@@ -69,6 +69,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Problem\ProblemCountUpdaterInterface"/>
             <argument type="collection"/>
             <argument type="service" id="clock"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
 
             <tag name="kernel.reset" method="reset"/>
         </service>
