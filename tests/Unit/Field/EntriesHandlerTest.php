@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Field;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Field\Entries;
 use Setono\SyliusCMSPlugin\Field\EntriesHandler;
+use Setono\SyliusCMSPlugin\Field\Entry;
 use Setono\SyliusCMSPlugin\Field\Reference;
 use Setono\SyliusCMSPlugin\Model\BlogCategory;
 use Setono\SyliusCMSPlugin\Model\BlogCategoryInterface;
@@ -142,6 +143,17 @@ final class EntriesHandlerTest extends TestCase
 
         self::assertTrue(self::handler()->fits($field, ['0193a5be-7255-7f00-8a1b-2c3d4e5f6a7b']));
         self::assertFalse(self::handler()->fits($field, '0193a5be-7255-7f00-8a1b-2c3d4e5f6a7b'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_field_of_another_field_type(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('%s handles %s fields, got %s', EntriesHandler::class, Entries::class, Entry::class));
+
+        self::handler()->fits(new Entry(label: 'Other'), []);
     }
 
     private static function handler(): EntriesHandler

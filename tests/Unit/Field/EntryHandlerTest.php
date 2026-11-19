@@ -7,6 +7,7 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Field;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Setono\SyliusCMSPlugin\Field\Entries;
 use Setono\SyliusCMSPlugin\Field\Entry;
 use Setono\SyliusCMSPlugin\Field\EntryHandler;
 use Setono\SyliusCMSPlugin\Field\Reference;
@@ -136,6 +137,17 @@ final class EntryHandlerTest extends TestCase
         $context->buildViolation('setono_sylius_cms.field.not_entry')->willReturn($builder->reveal())->shouldBeCalledOnce();
 
         self::handler()->validate(new Entry(label: 'Entry'), 'about-us', $context->reveal());
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_field_of_another_field_type(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('%s handles %s fields, got %s', EntryHandler::class, Entry::class, Entries::class));
+
+        self::handler()->schema(new Entries(label: 'Other'));
     }
 
     private static function handler(): EntryHandler
