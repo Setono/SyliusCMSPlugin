@@ -66,6 +66,9 @@ final class ExportReaderTest extends TestCase
 
     private const POSTER = '0193a5be-70ac-7c13-8e2d-1b2c3d4e5f62';
 
+    /** A UUID the export has no record of */
+    private const OTHER = '0193a5be-7fff-7fff-8fff-000000000000';
+
     /**
      * @test
      */
@@ -226,6 +229,91 @@ final class ExportReaderTest extends TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_cannot_read_a_presets_file_that_holds_another_preset(): void
+    {
+        $export = $this->copyOfFixture();
+        rename($export . '/presets/' . self::PRESET . '.json', $export . '/presets/' . self::OTHER . '.json');
+
+        $this->expectExceptionObject(new InvalidExportException(sprintf('The file presets/%s.json holds the preset %s', self::OTHER, self::PRESET)));
+        $this->reader()->read(new DirectorySource($export));
+    }
+
+    /**
+     * @test
+     */
+    public function it_cannot_read_a_media_items_file_that_holds_another_media_item(): void
+    {
+        $export = $this->copyOfFixture();
+        rename($export . '/media/' . self::VIDEO . '.json', $export . '/media/' . self::OTHER . '.json');
+
+        $this->expectExceptionObject(new InvalidExportException(sprintf('The file media/%s.json holds the media item %s', self::OTHER, self::VIDEO)));
+        $this->reader()->read(new DirectorySource($export));
+    }
+
+    /**
+     * @test
+     */
+    public function it_cannot_read_an_entry_that_is_not_in_the_entry_format(): void
+    {
+        $export = $this->copyOfFixture();
+        self::changeEntry($export, self::INNER_SNIPPET, static function (array $entry): array {
+            $entry['fields'] = ['context' => 'product'];
+
+            return $entry;
+        });
+
+        $this->expectException(InvalidExportException::class);
+        $this->expectExceptionMessage(sprintf('The entry %s isn\'t in the entry format: ', self::INNER_SNIPPET));
+        $this->reader()->read(new DirectorySource($export));
+    }
+
+    /**
+     * Before it's read, an entry is named by its title, or by its UUID when its translations can't be read
+     *
+     * @test
+     */
+    public function it_names_an_entry_whose_translations_can_not_be_read_by_its_uuid(): void
+    {
+        $export = $this->copyOfFixture();
+        self::changeEntry($export, self::INNER_SNIPPET, static function (array $entry): array {
+            $entry['contentType'] = 'recipe';
+            $entry['translations'] = 'Newsletter signup';
+
+            return $entry;
+        });
+
+        $read = $this->reader()->read(new DirectorySource($export));
+
+        self::assertSame([[self::INNER_SNIPPET, 'setono_sylius_cms.import.unknown_content_type', ['%title%' => self::INNER_SNIPPET, '%content_type%' => 'recipe']]], self::refusals($read->refusals));
+        $read->cleanUp();
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_a_starting_point_of_a_content_type_or_a_layout_the_code_does_not_have(): void
+    {
+        $export = $this->copyOfFixture();
+        $path = $export . '/presets/' . self::PRESET . '.json';
+        $preset = (string) file_get_contents($path);
+
+        file_put_contents($path, str_replace('"startingPoint": null', '"startingPoint": {"contentType": "recipe", "layout": null}', $preset));
+        $read = $this->reader()->read(new DirectorySource($export));
+
+        self::assertSame([[self::PRESET, 'setono_sylius_cms.import.unknown_content_type', ['%title%' => 'Autumn hero', '%content_type%' => 'recipe']]], self::refusals($read->refusals));
+        self::assertSame([], $read->presets);
+        $read->cleanUp();
+
+        file_put_contents($path, str_replace('"startingPoint": null', '"startingPoint": {"contentType": "page", "layout": {"code": "wide", "version": 1, "fields": {}, "translated": {}}}', $preset));
+        $read = $this->reader()->read(new DirectorySource($export));
+
+        self::assertSame([[self::PRESET, 'setono_sylius_cms.import.unknown_layout', ['%title%' => 'Autumn hero', '%layout%' => 'wide']]], self::refusals($read->refusals));
+        $read->cleanUp();
+    }
+
+    /**
      * @param array<string, class-string> $blockTypes
      * @param array<string, array<string, class-string>> $layouts
      * @param list<string> $contentTypes
@@ -249,6 +337,7 @@ final class ExportReaderTest extends TestCase
         $upgraded = static fn (array $args): Upgraded => new Upgraded((array) $args[0], null === $newer ? [] : [$newer]);
         $upgrader->upgradeEntry(Argument::type('array'))->will($upgraded);
         $upgrader->upgradeBlocks(Argument::type('array'))->will($upgraded);
+        $upgrader->upgradeTree(Argument::type('array'), Argument::type('string'))->will($upgraded);
 
         // Reads each file as a WebP image or an MP4 video, whatever its JSON says, unless it's refused
         $checker = $this->prophesize(MediaFileCheckerInterface::class);
@@ -293,6 +382,18 @@ final class ExportReaderTest extends TestCase
         }
 
         return $copy;
+    }
+
+    /**
+     * @param callable(array<string, mixed>): array<string, mixed> $change what the entry's "entry" holds, changed
+     */
+    private static function changeEntry(string $export, string $uuid, callable $change): void
+    {
+        $path = sprintf('%s/entries/%s.json', $export, $uuid);
+        /** @var array{entry: array<string, mixed>} $file */
+        $file = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
+        $file['entry'] = $change($file['entry']);
+        file_put_contents($path, json_encode($file, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT));
     }
 
     /**
