@@ -212,6 +212,21 @@ final class ShopStylesheetTest extends TestCase
     }
 
     /**
+     * The page links sit below the cards, across a grid's whole row, as a row of numbers without list bullets
+     *
+     * @test
+     */
+    public function it_puts_the_page_links_below_the_entries_across_the_grid_in_a_row_without_bullets(): void
+    {
+        self::assertSame('1 / -1', self::declarations('.cms-pagination')['grid-column'] ?? null);
+        self::assertSame('flex', self::declarations('.cms-pagination')['display'] ?? null);
+        self::assertSame('flex', self::declarations('.cms-pagination__list')['display'] ?? null);
+        self::assertSame('none', self::declarations('.cms-pagination__list')['list-style'] ?? null);
+        self::assertSame('0', self::declarations('.cms-pagination__list')['padding'] ?? null);
+        self::assertArrayHasKey('font-weight', self::declarations('.cms-pagination__link--current'), 'The current page stands out');
+    }
+
+    /**
      * @test
      */
     public function it_never_styles_html_or_body(): void

@@ -532,4 +532,44 @@
     .cms-category-header {
         margin-block-end: var(--cms-block-spacing);
     }
+
+    /* A paginated Entries block's page links, below its cards and across a grid's whole row: the previous page, the
+       numbered pages and the next page in a row, the current page in bold */
+    .cms-pagination {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-block-start: var(--cms-gap);
+    }
+
+    .cms-pagination__list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .cms-pagination__link,
+    .cms-pagination__previous,
+    .cms-pagination__next,
+    .cms-pagination__gap {
+        display: block;
+        min-width: 2.5rem;
+        padding: 0.5rem;
+        box-sizing: border-box;
+        color: inherit;
+        text-align: center;
+    }
+
+    .cms-pagination__link--current {
+        font-weight: bold;
+        text-decoration: none;
+        border: 1px solid currentColor;
+        border-radius: var(--cms-radius);
+    }
 }

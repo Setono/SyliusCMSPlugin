@@ -24,6 +24,14 @@
             <tag name="twig.runtime"/>
         </service>
 
+        <!-- cms_pagination(): the page of the entry's paginated Entries block that shows, and its links -->
+        <service id="Setono\SyliusCMSPlugin\Twig\PaginationRuntime" class="Setono\SyliusCMSPlugin\Twig\PaginationRuntime">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Twig\RenderContexts"/>
+
+            <tag name="twig.runtime"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Twig\SlotRuntime" class="Setono\SyliusCMSPlugin\Twig\SlotRuntime">
             <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\SlotRendererInterface"/>
 

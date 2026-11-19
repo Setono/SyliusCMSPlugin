@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Twig;
 
+use Setono\SyliusCMSPlugin\Collection\PageNumber;
 use Setono\SyliusCMSPlugin\Localization\Availability;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Rendering\RenderContext;
@@ -18,7 +19,8 @@ use Twig\Extension\RuntimeExtensionInterface;
 /**
  * The head tags of an entry shown at its own URL, which layout/base.html.twig prints into the shop layout's title and
  * metatags blocks: cms_meta_title(entry) gives the title, as text, and cms_head_tags(entry) prints the rest, as HTML, so
- * a layout that calls it gets a tag added later without a change. See "Head tags" in docs/spec/urls-and-seo.md
+ * a layout that calls it gets a tag added later without a change. Page 2 onwards of the entry's paginated Entries block
+ * has a canonical URL of its own, with ?page=N, and no hreflang links. See "Head tags" in docs/spec/urls-and-seo.md
  */
 final readonly class HeadTagsRuntime implements RuntimeExtensionInterface
 {
@@ -79,12 +81,16 @@ final readonly class HeadTagsRuntime implements RuntimeExtensionInterface
             throw new \LogicException(sprintf('The head tags can only be printed from a template that has the render context in "%s", such as a layout template', CMSRuntime::RENDER_CONTEXT));
         }
 
+        $canonicalUrl = $this->canonicalUrls->generate($entry, $renderContext->channel, $renderContext->localeCode);
+
         return new HeadTags(
             $this->metaValues->title($entry, $renderContext->localeCode),
             $this->metaValues->description($entry, $renderContext->localeCode),
             $entry->isNoindex(),
-            $this->canonicalUrls->generate($entry, $renderContext->channel, $renderContext->localeCode),
-            $this->alternates($entry, $renderContext->channel),
+            // Page 2 onwards of the paginated Entries block is a page of its own, and another locale's page N needn't hold
+            // the same entries
+            null === $canonicalUrl ? null : PageNumber::url($canonicalUrl, $renderContext->page),
+            $renderContext->page > 1 ? [] : $this->alternates($entry, $renderContext->channel),
         );
     }
 

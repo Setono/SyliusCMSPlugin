@@ -1,0 +1,8 @@
+--TEST--
+cms_pagination() gives nothing for a page past the end of the block's list, which the pass before rendering answers with 404 for the entry's first paginated Entries block, but not for a second one older or imported data may hold, which then shows the first items of its list
+--TEMPLATE--
+{{ cms_pagination(view) is null ? "nothing" : "a pagination" }}
+--DATA--
+return $this->onPageOfTheBlog(4, items: 12, limit: 5)
+--EXPECT--
+nothing

@@ -114,4 +114,40 @@ final class ItemListTest extends TestCase
         self::assertSame(['a', 'b', 'c'], [...$pager->getCurrentPageResults()]);
         self::assertSame(1, $pager->getNbPages());
     }
+
+    /**
+     * The pass before rendering counts the paginated Entries block's source, and its template shows the same page
+     *
+     * @test
+     */
+    public function it_counts_and_slices_a_page_once_however_often_it_is_asked_for(): void
+    {
+        $adapter = new class() implements AdapterInterface {
+            public int $counts = 0;
+
+            public int $slices = 0;
+
+            public function getNbResults(): int
+            {
+                ++$this->counts;
+
+                return 5;
+            }
+
+            public function getSlice(int $offset, int $length): iterable
+            {
+                ++$this->slices;
+
+                return array_slice(['a', 'b', 'c', 'd', 'e'], $offset, $length);
+            }
+        };
+        $list = ItemList::lazy(static fn (): AdapterInterface => $adapter, 2);
+
+        self::assertSame(3, $list->pager(2)->getNbPages());
+        self::assertSame(['c', 'd'], [...$list->pager(2)->getCurrentPageResults()]);
+        self::assertSame(['c', 'd'], [...$list->pager(2)->getCurrentPageResults()]);
+
+        self::assertSame(1, $adapter->counts);
+        self::assertSame(1, $adapter->slices);
+    }
 }

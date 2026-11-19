@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Rendering;
 
+use Setono\SyliusCMSPlugin\Collection\PaginatedBlock;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface;
@@ -45,10 +46,16 @@ final readonly class LayoutRenderer implements LayoutRendererInterface
             yield from $this->blockViewBuilder->references($tree->blocks);
         })(), $context);
 
+        $blocks = $this->blockViewBuilder->build($tree->blocks, $context, $references, $entry->getUuid());
+
+        // The page of its paginated Entries block, which is counted now, so a page that doesn't exist answers 404 before
+        // any output
+        PaginatedBlock::assertPageExists($blocks, $context);
+
         return $this->twig->render($layout->template, [
             'entry' => $entry,
             'layout' => $this->hydrator->hydrateObject($layout->class, $layout->fields, $values, $context, $references),
-            'blocks' => $this->blockViewBuilder->build($tree->blocks, $context, $references, $entry->getUuid()),
+            'blocks' => $blocks,
             'context' => $context->getHostPageContext(),
             CMSRuntime::RENDER_CONTEXT => $context,
         ]);

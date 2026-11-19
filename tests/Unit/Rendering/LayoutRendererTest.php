@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Block\Heading;
+use Setono\SyliusCMSPlugin\Collection\PageNotFoundException;
 use Setono\SyliusCMSPlugin\Field\ChoiceHandler;
 use Setono\SyliusCMSPlugin\Field\FieldHandlerLocator;
 use Setono\SyliusCMSPlugin\Field\MediaHandler;
@@ -149,6 +150,21 @@ final class LayoutRendererTest extends TestCase
         $this->expectExceptionMessage('The content type "recipe" has no layouts, so its entries have no page of their own to render');
 
         $this->renderer($recipe, new StoredTree(null, []), contentType: 'recipe')->render($recipe, $this->context());
+    }
+
+    /**
+     * The pass before rendering checks the page, so a page that doesn't exist answers 404 before any output
+     *
+     * @test
+     */
+    public function it_renders_nothing_for_a_page_the_entry_does_not_have(): void
+    {
+        $page = new Page();
+        $tree = new StoredTree(new StoredLayout('landing', 2), [new StoredBlock(self::KEY, 'heading', 1, fields: ['text' => ['en_US' => 'Hello']])]);
+
+        $this->expectException(PageNotFoundException::class);
+
+        $this->renderer($page, $tree)->render($page, $this->context(['entry' => $page])->withPage(2));
     }
 
     /**

@@ -314,6 +314,11 @@ setono_sylius_cms:
             over_limit: '%filename% is over the upload limit of %limit%.'
             too_big: '%filename% is %size%, over the upload limit of %limit%.'
             unreadable: '%filename% couldn''t be read as a %type% file.'
+    # The links to the pages of a paginated Entries block in the shop. See "The Entries block" in docs/spec/collections.md
+    pagination:
+        label: Pages
+        next: Next
+        previous: Previous
     # What the builder's preview shows editors and shoppers don't see
     preview:
         embed_code: 'Embed code runs in the shop, not in the builder''s preview.'
