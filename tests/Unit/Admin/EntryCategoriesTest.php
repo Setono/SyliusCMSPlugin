@@ -80,6 +80,40 @@ final class EntryCategoriesTest extends TestCase
     }
 
     /**
+     * A draft whose JSON can't be read holds no categories the lists can show, rather than the published ones
+     *
+     * @test
+     */
+    public function it_shows_no_categories_for_an_entry_whose_draft_is_not_valid_json(): void
+    {
+        $news = self::category(['en_US' => 'News']);
+        $post = new BlogPost();
+        $post->setCategories([$news->getUuid()]);
+        $draft = $this->prophesize(DraftInterface::class);
+        $draft->getContent()->willReturn('{"fields": {"categories": [');
+
+        $entries = $this->prophesize(EntryRepositoryInterface::class);
+        $entries->findByUuids(Argument::any())->shouldNotBeCalled();
+
+        self::assertSame([$post->getUuid() => []], self::entryCategories($entries->reveal())->titlesOf([$post], [$post->getUuid() => $draft->reveal()], ['en_US']));
+    }
+
+    /**
+     * @test
+     */
+    public function it_names_a_category_in_its_first_locale_when_it_has_none_of_the_asked_ones_and_by_its_uuid_when_it_has_no_title(): void
+    {
+        $nyheder = self::category(['da_DK' => 'Nyheder', 'fr_FR' => 'Nouvelles']);
+        $untitled = self::category(['en_US' => '']);
+        $post = new BlogPost();
+        $post->setCategories([$nyheder->getUuid(), $untitled->getUuid()]);
+
+        $titles = $this->categories([$nyheder, $untitled])->titlesOf([$post], [], ['en_US']);
+
+        self::assertSame([$post->getUuid() => ['Nyheder', $untitled->getUuid()]], $titles);
+    }
+
+    /**
      * @param list<BlogCategory> $existing
      */
     private function categories(array $existing): EntryCategories
