@@ -26,7 +26,8 @@ final class Entries extends ListField
      *                                  type, whose categories it lists, such as contentType. The builder's picker
      *                                  searches them, and clears the field when that property changes
      * @param bool $indexed whether publishing writes its UUIDs to the (entry, field, UUID) reference table, so listings
-     *                      filter on it in SQL. Only a content type's own shared field is indexed
+     *                      filter on it in SQL. Only a content type's own shared field may be: anywhere else it fails
+     *                      the container build (CheckFieldTypesPass)
      * @param bool|list<string> $sources
      */
     public function __construct(

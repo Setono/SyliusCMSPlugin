@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\DependencyInjection\Compiler;
 
 use Setono\SyliusCMSPlugin\Attribute\FieldType;
+use Setono\SyliusCMSPlugin\Field\Entries;
 use Setono\SyliusCMSPlugin\Field\Field;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Registry\BindablePropertyRegistry;
@@ -22,7 +23,9 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * layouts, content types, and the parameters of condition kinds and sources. A field type is declared by #[FieldType]
  * on its field attribute class, or a parent of it. Two field types with the same code fail the container build, as for
  * every other kind, and so does a project's own field type without a field control, which the builder couldn't show.
- * It runs after the passes that register those classes. See "Adding a field type" in docs/spec/extending.md
+ * An Entries field declared indexed anywhere but on a content type's own model fails it too, since only such a field,
+ * shared by the entry's translations, has its UUIDs written to the reference table. It runs after the passes that
+ * register those classes. See "Adding a field type" and "Field types" in docs/spec/extending.md
  */
 final class CheckFieldTypesPass implements CompilerPassInterface
 {
@@ -37,6 +40,10 @@ final class CheckFieldTypesPass implements CompilerPassInterface
     {
         /** @var array<string, class-string> $declaredBy */
         $declaredBy = [];
+
+        foreach (self::classesWithFields($container) as $where => $class) {
+            self::assertIndexedOnlyOnContentTypes($class, $where);
+        }
 
         foreach ([...self::shippedFieldAttributes(), ...self::fieldAttributes($container)] as $attribute) {
             [$class, $fieldType] = self::declaration($attribute);
@@ -70,6 +77,25 @@ final class CheckFieldTypesPass implements CompilerPassInterface
 
         if (1 !== preg_match(self::CONTROL_PATTERN, $fieldType->control)) {
             throw new \LogicException(sprintf('The field control "%s" of the field type %s must be a custom element name: lowercase, starting with a letter and with a hyphen in it, such as app-opening-hours', $fieldType->control, $class));
+        }
+    }
+
+    /**
+     * @param class-string $class
+     * @param string|null $where what the class is, or null for a content type's own model, whose fields are shared
+     */
+    private static function assertIndexedOnlyOnContentTypes(string $class, ?string $where): void
+    {
+        if (null === $where) {
+            return;
+        }
+
+        foreach ((new \ReflectionClass($class))->getProperties() as $property) {
+            foreach ($property->getAttributes(Entries::class, \ReflectionAttribute::IS_INSTANCEOF) as $attribute) {
+                if ($attribute->newInstance()->indexed) {
+                    throw new \LogicException(sprintf('The Entries field $%s of %s, %s, is declared indexed: true, but only a content type\'s own shared field is indexed, as the reference table holds a UUID by its entry and field. Remove indexed, or declare the field on the content type\'s model', $property->getName(), $class, $where));
+                }
+            }
         }
     }
 
@@ -138,30 +164,47 @@ final class CheckFieldTypesPass implements CompilerPassInterface
      * The block types, the layouts, the content types' entry and translation classes, and the parameter classes of the
      * condition kinds, sources and bindable properties, as the passes that register them leave them in their registries
      *
-     * @return iterable<string>
+     * @return iterable<string|null, class-string> each class by what it is, or by null for a content type's own model
      */
     private static function classesWithFields(ContainerBuilder $container): iterable
     {
-        yield from self::strings(self::registered($container, BlockTypeRegistry::class));
+        foreach (self::strings(self::registered($container, BlockTypeRegistry::class)) as $class) {
+            yield 'a block type' => $class;
+        }
 
         foreach (self::registered($container, LayoutRegistry::class) as $layouts) {
-            yield from self::strings(is_array($layouts) ? $layouts : []);
+            foreach (self::strings(is_array($layouts) ? $layouts : []) as $class) {
+                yield 'a layout' => $class;
+            }
         }
 
         foreach (self::registered($container, ContentTypeRegistry::class) as $contentType) {
-            yield from self::strings(is_array($contentType) ? [$contentType['model'] ?? null, $contentType['translation'] ?? null] : []);
+            foreach (self::strings(is_array($contentType) ? [$contentType['model'] ?? null] : []) as $class) {
+                yield null => $class;
+            }
+
+            foreach (self::strings(is_array($contentType) ? [$contentType['translation'] ?? null] : []) as $class) {
+                yield 'a content type\'s translation, whose fields are translatable' => $class;
+            }
         }
 
+        $parameters = 'the parameters of a source or condition kind';
         foreach (self::strings(self::registered($container, ConditionKindRegistry::class)) as $class) {
-            yield from self::strings([AttributeReader::conditionKind($class)?->params]);
+            foreach (self::strings([AttributeReader::conditionKind($class)?->params]) as $params) {
+                yield $parameters => $params;
+            }
         }
 
         foreach (self::strings(self::registered($container, SourceRegistry::class)) as $class) {
-            yield from self::strings([AttributeReader::source($class)?->params]);
+            foreach (self::strings([AttributeReader::source($class)?->params]) as $params) {
+                yield $parameters => $params;
+            }
         }
 
         foreach (self::registered($container, BindablePropertyRegistry::class) as $declaration) {
-            yield from self::strings([is_array($declaration) ? $declaration['params'] ?? null : null]);
+            foreach (self::strings([is_array($declaration) ? $declaration['params'] ?? null : null]) as $params) {
+                yield 'the parameters of a bindable property' => $params;
+            }
         }
     }
 
