@@ -144,7 +144,7 @@ final class EntriesFromCollectionSourceTest extends TestCase
 
     private function source(): EntriesFromCollectionSource
     {
-        return new EntriesFromCollectionSource($this->visibleEntries(self::MODELS), self::contentTypes(), self::indexedFields());
+        return new EntriesFromCollectionSource($this->visibleEntries(self::models()), self::contentTypes(), self::indexedFields());
     }
 
     /**

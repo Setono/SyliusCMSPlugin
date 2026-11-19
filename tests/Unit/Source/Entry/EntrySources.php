@@ -27,15 +27,22 @@ use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
  */
 trait EntrySources
 {
-    /** The model of each content type, by code */
-    private const MODELS = [
-        'page' => Page::class,
-        'blog_post' => BlogPost::class,
-        'blog_category' => BlogCategory::class,
-        'faq_item' => FaqItem::class,
-        'faq_category' => FaqCategory::class,
-        'shop' => Shop::class,
-    ];
+    /**
+     * The model of each content type, by code
+     *
+     * @return array<string, class-string>
+     */
+    private static function models(): array
+    {
+        return [
+            'page' => Page::class,
+            'blog_post' => BlogPost::class,
+            'blog_category' => BlogCategory::class,
+            'faq_item' => FaqItem::class,
+            'faq_category' => FaqCategory::class,
+            'shop' => Shop::class,
+        ];
+    }
 
     private static function contentTypes(): ContentTypeRegistry
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Setono\SyliusCMSPlugin\Controller\Admin\AddPlacementAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CancelScheduleAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\CardDisplaysAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateMediaFolderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreatePresetAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CreateShareLinkAction;
@@ -39,7 +40,6 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SlugAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SnippetBlocksAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SourceCountAction;
-use Setono\SyliusCMSPlugin\Controller\Admin\Api\CardDisplaysAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaFolderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaItemAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdatePresetAction;

@@ -121,6 +121,6 @@ final class EntriesInThisCategorySourceTest extends TestCase
 
     private function source(): EntriesInThisCategorySource
     {
-        return new EntriesInThisCategorySource($this->visibleEntries(self::MODELS), self::contentTypes(), self::collections(), self::indexedFields());
+        return new EntriesInThisCategorySource($this->visibleEntries(self::models()), self::contentTypes(), self::collections(), self::indexedFields());
     }
 }

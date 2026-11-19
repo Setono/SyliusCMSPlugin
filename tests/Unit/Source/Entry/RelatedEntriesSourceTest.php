@@ -133,6 +133,6 @@ final class RelatedEntriesSourceTest extends TestCase
 
     private function source(): RelatedEntriesSource
     {
-        return new RelatedEntriesSource($this->visibleEntries(self::MODELS), self::contentTypes(), self::collections(), self::indexedFields());
+        return new RelatedEntriesSource($this->visibleEntries(self::models()), self::contentTypes(), self::collections(), self::indexedFields());
     }
 }

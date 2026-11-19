@@ -58,7 +58,7 @@ final readonly class CardDisplays
             $offered = null === $offered ? $displays : array_values(array_intersect($offered, $displays));
         }
 
-        return $offered ?? [];
+        return $offered;
     }
 
     /**

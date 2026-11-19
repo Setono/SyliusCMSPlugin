@@ -165,11 +165,6 @@ final class RegisterContentTypesPass implements CompilerPassInterface
     }
 
     /**
-     * The order sources list the entries in is 'position', or properties of the entries, each 'ASC' or 'DESC'
-     *
-     * @param class-string $model
-     */
-    /**
      * Each display has one card, and is a code, as the Entries block prints it in its class, cms-entries--<display>
      *
      * @param list<Card> $cards
@@ -190,6 +185,11 @@ final class RegisterContentTypesPass implements CompilerPassInterface
         }
     }
 
+    /**
+     * The order sources list the entries in is 'position', or properties of the entries, each 'ASC' or 'DESC'
+     *
+     * @param class-string $model
+     */
     private static function assertOrder(string $code, string $model, mixed $order): void
     {
         try {

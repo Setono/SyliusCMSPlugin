@@ -147,7 +147,7 @@ final class PresetFitCheckTest extends TestCase
             {
                 foreach ($workingCopy->getBlockTree()->allBlocks() as $block) {
                     if ('entries' === $block->type) {
-                        yield new ContextDependency(new TranslatableMessage('app.related'), ['entry'], block: $block->key, entryContentTypes: ['blog_post']);
+                        yield new ContextDependency(new TranslatableMessage('setono_sylius_cms.block_type.entries'), ['entry'], block: $block->key, entryContentTypes: ['blog_post']);
                     }
                 }
             }
