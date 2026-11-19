@@ -327,6 +327,10 @@ setono_sylius_cms:
             needs_context: 'Needs: %context%'
             not_allowed: '%block% isn''t allowed here'
             nothing_to_insert: 'Nothing in it can be inserted'
+            # A paginated Entries block in it would break a pagination rule here. See "Pagination" in docs/spec/collections.md
+            paginate_twice: 'Splits a list into pages, which another list here already does'
+            paginate_without_source: 'Splits a list into pages that no source fills'
+            paginate_without_url: 'Splits a list into pages, which only an entry with its own URL can'
             too_many: 'At most %count% %block% blocks fit here'
             wrong_entry: 'Not for: %content_type%'
         # What setono:cms:preset:validate reports and the Presets tab marks a preset for. See "Presets with invalid blocks"
