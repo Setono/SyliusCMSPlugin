@@ -8,8 +8,8 @@ use Setono\SyliusCMSPlugin\Tests\Support\FixtureKernel;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
- * The test application with the shipped stylesheet off and the Spacer block type disabled,
- * as a project sets them in its own config
+ * The test application with the shipped stylesheet off, the Spacer block type disabled and the stock slot shop.footer
+ * switched off, as a project sets them in its own config
  */
 final class SwitchedOffKernel extends FixtureKernel
 {
@@ -26,5 +26,10 @@ final class SwitchedOffKernel extends FixtureKernel
             'assets' => false,
             'disabled' => ['block_types' => ['spacer']],
         ]);
+
+        // The stock slot shop.footer's block on its template event, by the name the plugin gives it
+        $container->loadFromExtension('sylius_ui', ['events' => [
+            'sylius.shop.layout.footer' => ['blocks' => ['setono_sylius_cms.slot.shop.footer' => ['enabled' => false]]],
+        ]]);
     }
 }
