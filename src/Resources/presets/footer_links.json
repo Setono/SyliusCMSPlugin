@@ -1,0 +1,276 @@
+{
+    "format": 1,
+    "name": {
+        "$trans": "setono_sylius_cms.preset.footer_links.name"
+    },
+    "category": {
+        "$trans": "setono_sylius_cms.preset_category.navigation"
+    },
+    "description": {
+        "$trans": "setono_sylius_cms.preset.footer_links.description"
+    },
+    "thumbnail": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "01a1f161-50b7-7af8-9dc1-47bd474ee61f",
+            "type": "columns",
+            "version": 1,
+            "style": null,
+            "fields": {},
+            "translated": {},
+            "conditions": [],
+            "children": [
+                {
+                    "key": "01a1f161-50b7-7af8-9dc1-47bd41b32f2c",
+                    "type": "column",
+                    "version": 1,
+                    "style": null,
+                    "fields": {},
+                    "translated": {},
+                    "conditions": [],
+                    "children": [
+                        {
+                            "key": "01a1f161-50b7-7af8-9dc1-47bd40c704a5",
+                            "type": "link_list",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "heading": {
+                                    "$trans": "setono_sylius_cms.preset.footer_links.shop.heading"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": [
+                                {
+                                    "key": "01a1f161-50b7-7af8-9dc1-47bd3f310bbf",
+                                    "type": "link",
+                                    "version": 1,
+                                    "style": null,
+                                    "fields": {
+                                        "link": {
+                                            "anchor": null,
+                                            "label": {
+                                                "$trans": "setono_sylius_cms.preset.footer_links.shop.new_arrivals"
+                                            },
+                                            "ref": "/",
+                                            "target": "url"
+                                        }
+                                    },
+                                    "translated": {},
+                                    "conditions": [],
+                                    "children": []
+                                },
+                                {
+                                    "key": "01a1f161-50b7-7af8-9dc1-47bd3f666d9e",
+                                    "type": "link",
+                                    "version": 1,
+                                    "style": null,
+                                    "fields": {
+                                        "link": {
+                                            "anchor": null,
+                                            "label": {
+                                                "$trans": "setono_sylius_cms.preset.footer_links.shop.bestsellers"
+                                            },
+                                            "ref": "/",
+                                            "target": "url"
+                                        }
+                                    },
+                                    "translated": {},
+                                    "conditions": [],
+                                    "children": []
+                                },
+                                {
+                                    "key": "01a1f161-50b7-7af8-9dc1-47bd400a30bd",
+                                    "type": "link",
+                                    "version": 1,
+                                    "style": null,
+                                    "fields": {
+                                        "link": {
+                                            "anchor": null,
+                                            "label": {
+                                                "$trans": "setono_sylius_cms.preset.footer_links.shop.sale"
+                                            },
+                                            "ref": "/",
+                                            "target": "url"
+                                        }
+                                    },
+                                    "translated": {},
+                                    "conditions": [],
+                                    "children": []
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "key": "01a1f161-50b7-7af8-9dc1-47bd43df5251",
+                    "type": "column",
+                    "version": 1,
+                    "style": null,
+                    "fields": {},
+                    "translated": {},
+                    "conditions": [],
+                    "children": [
+                        {
+                            "key": "01a1f161-50b7-7af8-9dc1-47bd437bbad9",
+                            "type": "link_list",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "heading": {
+                                    "$trans": "setono_sylius_cms.preset.footer_links.customer_service.heading"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": [
+                                {
+                                    "key": "01a1f161-50b7-7af8-9dc1-47bd42469f30",
+                                    "type": "link",
+                                    "version": 1,
+                                    "style": null,
+                                    "fields": {
+                                        "link": {
+                                            "anchor": null,
+                                            "label": {
+                                                "$trans": "setono_sylius_cms.preset.footer_links.customer_service.contact"
+                                            },
+                                            "ref": "/",
+                                            "target": "url"
+                                        }
+                                    },
+                                    "translated": {},
+                                    "conditions": [],
+                                    "children": []
+                                },
+                                {
+                                    "key": "01a1f161-50b7-7af8-9dc1-47bd42bec2d5",
+                                    "type": "link",
+                                    "version": 1,
+                                    "style": null,
+                                    "fields": {
+                                        "link": {
+                                            "anchor": null,
+                                            "label": {
+                                                "$trans": "setono_sylius_cms.preset.footer_links.customer_service.delivery"
+                                            },
+                                            "ref": "/",
+                                            "target": "url"
+                                        }
+                                    },
+                                    "translated": {},
+                                    "conditions": [],
+                                    "children": []
+                                },
+                                {
+                                    "key": "01a1f161-50b7-7af8-9dc1-47bd42e51c33",
+                                    "type": "link",
+                                    "version": 1,
+                                    "style": null,
+                                    "fields": {
+                                        "link": {
+                                            "anchor": null,
+                                            "label": {
+                                                "$trans": "setono_sylius_cms.preset.footer_links.customer_service.returns"
+                                            },
+                                            "ref": "/",
+                                            "target": "url"
+                                        }
+                                    },
+                                    "translated": {},
+                                    "conditions": [],
+                                    "children": []
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "key": "01a1f161-50b7-7af8-9dc1-47bd46c62b02",
+                    "type": "column",
+                    "version": 1,
+                    "style": null,
+                    "fields": {},
+                    "translated": {},
+                    "conditions": [],
+                    "children": [
+                        {
+                            "key": "01a1f161-50b7-7af8-9dc1-47bd45ce2231",
+                            "type": "link_list",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "heading": {
+                                    "$trans": "setono_sylius_cms.preset.footer_links.about.heading"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": [
+                                {
+                                    "key": "01a1f161-50b7-7af8-9dc1-47bd44bd1c9b",
+                                    "type": "link",
+                                    "version": 1,
+                                    "style": null,
+                                    "fields": {
+                                        "link": {
+                                            "anchor": null,
+                                            "label": {
+                                                "$trans": "setono_sylius_cms.preset.footer_links.about.story"
+                                            },
+                                            "ref": "/",
+                                            "target": "url"
+                                        }
+                                    },
+                                    "translated": {},
+                                    "conditions": [],
+                                    "children": []
+                                },
+                                {
+                                    "key": "01a1f161-50b7-7af8-9dc1-47bd455d1665",
+                                    "type": "link",
+                                    "version": 1,
+                                    "style": null,
+                                    "fields": {
+                                        "link": {
+                                            "anchor": null,
+                                            "label": {
+                                                "$trans": "setono_sylius_cms.preset.footer_links.about.terms"
+                                            },
+                                            "ref": "/",
+                                            "target": "url"
+                                        }
+                                    },
+                                    "translated": {},
+                                    "conditions": [],
+                                    "children": []
+                                },
+                                {
+                                    "key": "01a1f161-50b7-7af8-9dc1-47bd45c79190",
+                                    "type": "link",
+                                    "version": 1,
+                                    "style": null,
+                                    "fields": {
+                                        "link": {
+                                            "anchor": null,
+                                            "label": {
+                                                "$trans": "setono_sylius_cms.preset.footer_links.about.privacy"
+                                            },
+                                            "ref": "/",
+                                            "target": "url"
+                                        }
+                                    },
+                                    "translated": {},
+                                    "conditions": [],
+                                    "children": []
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

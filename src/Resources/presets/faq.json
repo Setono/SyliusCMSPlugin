@@ -1,0 +1,78 @@
+{
+    "format": 1,
+    "name": {
+        "$trans": "setono_sylius_cms.preset.faq.name"
+    },
+    "category": {
+        "$trans": "setono_sylius_cms.preset_category.content"
+    },
+    "description": {
+        "$trans": "setono_sylius_cms.preset.faq.description"
+    },
+    "thumbnail": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "01a1f161-50b2-71a7-b523-74eafdacd74e",
+            "type": "accordion",
+            "version": 1,
+            "style": null,
+            "fields": {},
+            "translated": {},
+            "conditions": [],
+            "children": [
+                {
+                    "key": "01a1f161-50b2-71a7-b523-74eafc2b3d87",
+                    "type": "accordion_item",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "content": {
+                            "$trans": "setono_sylius_cms.preset.faq.question_1.answer"
+                        },
+                        "title": {
+                            "$trans": "setono_sylius_cms.preset.faq.question_1.title"
+                        }
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": []
+                },
+                {
+                    "key": "01a1f161-50b2-71a7-b523-74eafc36072e",
+                    "type": "accordion_item",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "content": {
+                            "$trans": "setono_sylius_cms.preset.faq.question_2.answer"
+                        },
+                        "title": {
+                            "$trans": "setono_sylius_cms.preset.faq.question_2.title"
+                        }
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": []
+                },
+                {
+                    "key": "01a1f161-50b2-71a7-b523-74eafcae490f",
+                    "type": "accordion_item",
+                    "version": 1,
+                    "style": null,
+                    "fields": {
+                        "content": {
+                            "$trans": "setono_sylius_cms.preset.faq.question_3.answer"
+                        },
+                        "title": {
+                            "$trans": "setono_sylius_cms.preset.faq.question_3.title"
+                        }
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": []
+                }
+            ]
+        }
+    ]
+}

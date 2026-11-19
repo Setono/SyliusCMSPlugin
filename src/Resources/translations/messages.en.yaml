@@ -305,6 +305,111 @@ setono_sylius_cms:
         name_required: 'A preset needs a name.'
         newer_version: '"%type%" in the preset was saved with version %version%, but this store has version %code_version%, so the preset can''t be inserted.'
         removed_block_type: 'Blocks of the type "%type%", which the code no longer has, were left out.'
+        # The texts of the code presets the plugin ships in src/Resources/presets, by code: each one's name and
+        # description, and the text in its blocks. See "Shipped code presets" in docs/spec/layouts-and-presets.md
+        banner_carousel:
+            description: 'Three banners in a carousel, each with a heading, text and a button'
+            name: 'Banner carousel'
+            slide_1:
+                button: 'Shop new arrivals'
+                heading: 'New arrivals'
+                text: '<p>The latest additions to our range, just in.</p>'
+            slide_2:
+                button: 'See the bestsellers'
+                heading: Bestsellers
+                text: '<p>The products our customers love most.</p>'
+            slide_3:
+                button: 'Shop the sale'
+                heading: Sale
+                text: '<p>Great prices on selected products, while stocks last.</p>'
+        bestsellers_carousel:
+            description: 'The channel''s bestsellers in a carousel'
+            name: 'Bestsellers carousel'
+        campaign_with_fallback:
+            campaign:
+                button: 'Shop the sale'
+                heading: 'Our biggest sale of the year'
+                text: '<p>Save on hundreds of products, for a limited time only.</p>'
+            description: 'A campaign banner while its date window is open, and a default banner otherwise. Set the dates in the campaign banner''s conditions'
+            fallback:
+                button: 'Shop now'
+                heading: 'Welcome to our store'
+                text: '<p>Discover this season''s new arrivals and find something you''ll love.</p>'
+            name: 'Campaign with fallback'
+        content_page:
+            description: 'A heading and text under the title, for pages such as About us or Delivery'
+            heading: 'Our story'
+            name: 'Content page'
+            text: '<p>Tell your customers who you are, how you started and what you care about.</p><p>Add more headings and text to cover everything they need to know.</p>'
+        faq:
+            description: 'Three questions, each opening to its answer'
+            name: FAQ
+            question_1:
+                answer: '<p>Most orders arrive within 2 to 5 working days.</p>'
+                title: 'How long does delivery take?'
+            question_2:
+                answer: '<p>Yes. You can return unused items within 30 days for a full refund.</p>'
+                title: 'Can I return my order?'
+            question_3:
+                answer: '<p>Email or call us, and we''ll get back to you within one working day.</p>'
+                title: 'How can I contact you?'
+        footer_links:
+            about:
+                heading: 'About us'
+                privacy: 'Privacy policy'
+                story: 'Our story'
+                terms: 'Terms and conditions'
+            customer_service:
+                contact: 'Contact us'
+                delivery: Delivery
+                heading: 'Customer service'
+                returns: Returns
+            description: 'Three lists of links side by side, such as for a footer snippet'
+            name: 'Footer links'
+            shop:
+                bestsellers: Bestsellers
+                heading: Shop
+                new_arrivals: 'New arrivals'
+                sale: Sale
+        hero:
+            description: 'A full-width banner with a heading, text and two buttons, for the top of a page'
+            heading: 'Welcome to our store'
+            name: Hero
+            primary_button: 'Shop now'
+            secondary_button: 'Learn more'
+            text: '<p>Discover this season''s new arrivals and find something you''ll love.</p>'
+        image_and_text:
+            button: 'Read more'
+            description: 'An image beside a heading, text and a button'
+            heading: 'Made to last'
+            name: 'Image and text'
+            text: '<p>Tell your customers what makes your products special: how they''re made, what they''re made of and why they''re worth it.</p>'
+        landing_page:
+            description: 'A banner carousel, the bestsellers, three USPs and text, with the title hidden'
+            name: 'Landing page'
+            text: '<h2>Why shop with us</h2><p>Tell your customers who you are, what you sell and what makes your store worth coming back to.</p>'
+        related_products:
+            description: 'The products associated with the product on the page, of every association type. Offered where a product is available'
+            name: 'Related products'
+        three_usps:
+            description: 'Three columns, each with an image, a heading and text, for what sets your store apart'
+            name: 'Three USPs'
+            usp_1:
+                heading: 'Free delivery'
+                text: '<p>On every order over a set amount, straight to your door.</p>'
+            usp_2:
+                heading: 'Easy returns'
+                text: '<p>Changed your mind? Send it back within 30 days.</p>'
+            usp_3:
+                heading: 'Secure payment'
+                text: '<p>Pay safely with the method you prefer.</p>'
+    # The categories of the shipped code presets, which editors' presets can share
+    preset_category:
+        banners: Banners
+        content: Content
+        navigation: Navigation
+        pages: Pages
+        products: Products
     # What each kind of problem says. See "Problems" in docs/spec/admin.md
     problem:
         broken_entry_reference: '%field% refers to %type% that was deleted, so it isn''t shown.'

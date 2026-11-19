@@ -1,0 +1,177 @@
+{
+    "format": 1,
+    "name": {
+        "$trans": "setono_sylius_cms.preset.three_usps.name"
+    },
+    "category": {
+        "$trans": "setono_sylius_cms.preset_category.content"
+    },
+    "description": {
+        "$trans": "setono_sylius_cms.preset.three_usps.description"
+    },
+    "thumbnail": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "01a1f161-50b0-7394-b675-cdfcb545530e",
+            "type": "columns",
+            "version": 1,
+            "style": null,
+            "fields": {},
+            "translated": {},
+            "conditions": [],
+            "children": [
+                {
+                    "key": "01a1f161-50af-7042-8a2b-2833afb78a58",
+                    "type": "column",
+                    "version": 1,
+                    "style": null,
+                    "fields": {},
+                    "translated": {},
+                    "conditions": [],
+                    "children": [
+                        {
+                            "key": "01a1f161-50af-7042-8a2b-2833af1d8d7b",
+                            "type": "image",
+                            "version": 1,
+                            "style": null,
+                            "fields": {},
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        },
+                        {
+                            "key": "01a1f161-50af-7042-8a2b-2833af2cc736",
+                            "type": "heading",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "level": "h3",
+                                "text": {
+                                    "$trans": "setono_sylius_cms.preset.three_usps.usp_1.heading"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        },
+                        {
+                            "key": "01a1f161-50af-7042-8a2b-2833af7c8d7c",
+                            "type": "rich_text",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "content": {
+                                    "$trans": "setono_sylius_cms.preset.three_usps.usp_1.text"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "key": "01a1f161-50b0-7394-b675-cdfcb41e1f72",
+                    "type": "column",
+                    "version": 1,
+                    "style": null,
+                    "fields": {},
+                    "translated": {},
+                    "conditions": [],
+                    "children": [
+                        {
+                            "key": "01a1f161-50af-7042-8a2b-2833b098d5df",
+                            "type": "image",
+                            "version": 1,
+                            "style": null,
+                            "fields": {},
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        },
+                        {
+                            "key": "01a1f161-50b0-7394-b675-cdfcb335c2c5",
+                            "type": "heading",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "level": "h3",
+                                "text": {
+                                    "$trans": "setono_sylius_cms.preset.three_usps.usp_2.heading"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        },
+                        {
+                            "key": "01a1f161-50b0-7394-b675-cdfcb3534696",
+                            "type": "rich_text",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "content": {
+                                    "$trans": "setono_sylius_cms.preset.three_usps.usp_2.text"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "key": "01a1f161-50b0-7394-b675-cdfcb5092a07",
+                    "type": "column",
+                    "version": 1,
+                    "style": null,
+                    "fields": {},
+                    "translated": {},
+                    "conditions": [],
+                    "children": [
+                        {
+                            "key": "01a1f161-50b0-7394-b675-cdfcb49f68e9",
+                            "type": "image",
+                            "version": 1,
+                            "style": null,
+                            "fields": {},
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        },
+                        {
+                            "key": "01a1f161-50b0-7394-b675-cdfcb4e3d0a3",
+                            "type": "heading",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "level": "h3",
+                                "text": {
+                                    "$trans": "setono_sylius_cms.preset.three_usps.usp_3.heading"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        },
+                        {
+                            "key": "01a1f161-50b0-7394-b675-cdfcb4ef854a",
+                            "type": "rich_text",
+                            "version": 1,
+                            "style": null,
+                            "fields": {
+                                "content": {
+                                    "$trans": "setono_sylius_cms.preset.three_usps.usp_3.text"
+                                }
+                            },
+                            "translated": {},
+                            "conditions": [],
+                            "children": []
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
