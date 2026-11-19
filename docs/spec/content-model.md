@@ -133,7 +133,7 @@ Content refers to Sylius entities by code and to CMS records by UUID, never by I
 | Snippet (in a Snippet field) | its UUID | a dependency: pulled in |
 | Media item | its UUID | a dependency: pulled in |
 
-A reference that no longer resolves is a **broken reference**. Rendering skips it: the field is empty, the list leaves it out and the link isn't rendered. The admin flags it ([Admin](admin.md#problems)). A deleted customer group in a condition or an audience matches nobody ([Targeting](targeting.md)).
+A reference that no longer resolves is a **broken reference**. Rendering skips it: the field is empty, the list leaves it out and the link isn't rendered. The admin flags it ([Admin](admin.md#problems)). When a record is deleted, the entries that refer to it are counted again at once: those holding it in their tree, their draft, an indexed field, or the column of an Entry or Snippet field of their content type's own. One held only in the JSON column of an own list field that isn't indexed is flagged once that entry is counted again, as no portable query searches JSON columns. A deleted customer group in a condition or an audience matches nobody ([Targeting](targeting.md)).
 
 Every field type's handler lists the references a value holds, marked as a dependency or a link. Transfer, the media usage index and reference loading before rendering all read that list.
 

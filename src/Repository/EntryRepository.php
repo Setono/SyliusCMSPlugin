@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Repository;
 
 use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Setono\SyliusCMSPlugin\Attribute\ContentType;
 use Setono\SyliusCMSPlugin\Collection\ReferenceTable;
 use Setono\SyliusCMSPlugin\Doctrine\SearchPattern;
+use Setono\SyliusCMSPlugin\Field\Entry as EntryField;
+use Setono\SyliusCMSPlugin\Field\Snippet as SnippetField;
 use Setono\SyliusCMSPlugin\Json\CanonicalJson;
 use Setono\SyliusCMSPlugin\Model\DraftInterface;
 use Setono\SyliusCMSPlugin\Model\EntryAudienceGroupInterface;
@@ -19,6 +22,8 @@ use Setono\SyliusCMSPlugin\Model\ScheduledPublishInterface;
 use Setono\SyliusCMSPlugin\Problem\ProblemCountProviderInterface;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeModels;
+use Setono\SyliusCMSPlugin\Registry\FieldMetadata;
+use Setono\SyliusCMSPlugin\Registry\FieldReader;
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
 
 /**
@@ -147,6 +152,8 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         $conditions = $this->holdingJsonStrings($queryBuilder, $ids);
         // An indexed field's UUIDs are on the reference table, where the published ones are, such as a post's categories
         $conditions[] = ReferenceTable::holding($queryBuilder, 'o', null, $ids);
+        // A content type's own Entry or Snippet field holds one UUID in a column of its own
+        $conditions = [...$conditions, ...$this->holdingInOwnColumns($queryBuilder, $ids)];
 
         /** @var list<EntryInterface> $entries */
         $entries = $queryBuilder
@@ -157,6 +164,66 @@ class EntryRepository extends EntityRepository implements EntryRepositoryInterfa
         ;
 
         return $entries;
+    }
+
+    /**
+     * The conditions on the entry "o" that a column of one of its content type's own Entry or Snippet fields, on its row
+     * or a translation's, holds one of the UUIDs, lowercase as they're stored. A list field's column, such as a
+     * non-indexed Entries field's, holds JSON, which a portable query can't search: LIKE doesn't apply to PostgreSQL's
+     * json columns, and DQL has no cast
+     *
+     * @param list<string> $ids
+     *
+     * @return list<string> to join with OR
+     */
+    private function holdingInOwnColumns(QueryBuilder $queryBuilder, array $ids): array
+    {
+        $conditions = [];
+        $reader = new FieldReader();
+        foreach (array_values($this->getClassMetadata()->discriminatorMap) as $index => $model) {
+            $metadata = $this->getEntityManager()->getClassMetadata($model);
+            foreach (self::singleReferenceFields($reader->readContentType($model, false), $metadata) as $field) {
+                $alias = sprintf('cms_own_%d', $index);
+                $conditions[] = sprintf('o.id IN (SELECT %1$s.id FROM %2$s %1$s WHERE %1$s.%3$s IN (:cms_own_ids))', $alias, $model, $field);
+            }
+
+            $translation = $metadata->hasAssociation('translations') ? $metadata->getAssociationTargetClass('translations') : null;
+            if (null === $translation) {
+                continue;
+            }
+
+            $translationMetadata = $this->getEntityManager()->getClassMetadata($translation);
+            foreach (self::singleReferenceFields($reader->readContentType($translation, true), $translationMetadata) as $field) {
+                $alias = sprintf('cms_own_translation_%d', $index);
+                $conditions[] = sprintf('EXISTS (SELECT %1$s.id FROM %2$s %1$s WHERE %1$s.translatable = o AND %1$s.%3$s IN (:cms_own_ids))', $alias, $translation, $field);
+            }
+        }
+
+        if ([] !== $conditions) {
+            $queryBuilder->setParameter('cms_own_ids', array_values(array_unique(array_map(strtolower(...), $ids))));
+        }
+
+        return $conditions;
+    }
+
+    /**
+     * The mapped properties of the fields that hold one entry's UUID: Entry and Snippet fields
+     *
+     * @param array<string, FieldMetadata> $fields
+     * @param ClassMetadata<object> $metadata
+     *
+     * @return list<string>
+     */
+    private static function singleReferenceFields(array $fields, ClassMetadata $metadata): array
+    {
+        $properties = [];
+        foreach ($fields as $field) {
+            if (($field->field instanceof EntryField || $field->field instanceof SnippetField) && $metadata->hasField($field->name)) {
+                $properties[] = $field->name;
+            }
+        }
+
+        return $properties;
     }
 
     /**

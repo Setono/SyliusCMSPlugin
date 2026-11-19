@@ -27,6 +27,7 @@ app:
             opening_hours: Opening hours
             opening_hours_help: Days without hours are closed.
             product_note: Note
+            store_banner: Banner
             product_available:
                 product: Product
             subtitle: Subtitle

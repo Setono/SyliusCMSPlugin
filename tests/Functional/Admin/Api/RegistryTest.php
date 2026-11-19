@@ -201,7 +201,7 @@ final class RegistryTest extends BuilderApiTestCase
         self::assertIsArray($storeLocation);
         /** @var list<array{name: string, schema: array{'x-cms-translatable': bool}}> $fields */
         $fields = $storeLocation['fields'];
-        self::assertSame([null, 'stores', [['city', false], ['directions', true]]], [$storeLocation['blocks'], $storeLocation['prefix'], array_map(static fn (array $field): array => [$field['name'], $field['schema']['x-cms-translatable']], $fields)]);
+        self::assertSame([null, 'stores', [['city', false], ['banner', false], ['directions', true]]], [$storeLocation['blocks'], $storeLocation['prefix'], array_map(static fn (array $field): array => [$field['name'], $field['schema']['x-cms-translatable']], $fields)]);
         $page = $registry['contentTypes'][2];
         self::assertIsArray($page);
         self::assertSame(['page', 'Page', $all, '', true], [$page['code'], $page['label'], $page['blocks'], $page['prefix'], $page['homepage']]);
