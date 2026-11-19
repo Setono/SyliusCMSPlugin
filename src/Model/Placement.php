@@ -34,6 +34,11 @@ class Placement implements PlacementInterface
         return $this->uuid;
     }
 
+    public function setUuid(string $uuid): void
+    {
+        $this->uuid = $uuid;
+    }
+
     public function getSnippet(): SnippetInterface
     {
         return $this->snippet;
