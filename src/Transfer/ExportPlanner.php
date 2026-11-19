@@ -9,6 +9,7 @@ use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\MediaFolderInterface;
 use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Preset\EditorPresetContent;
+use Setono\SyliusCMSPlugin\Registry\ContentTypeMetadata;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
 use Setono\SyliusCMSPlugin\Repository\EditorPresetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
@@ -82,7 +83,7 @@ final readonly class ExportPlanner implements ExportPlannerInterface
      */
     private function pickedEntries(ExportSelection $selection): array
     {
-        $codes = $selection->everything ? array_map(static fn ($contentType): string => $contentType->code, $this->contentTypes->all()) : $selection->contentTypes;
+        $codes = $selection->everything ? array_map(static fn (ContentTypeMetadata $contentType): string => $contentType->code, $this->contentTypes->all()) : $selection->contentTypes;
 
         $entries = [];
         foreach ($codes as $code) {
