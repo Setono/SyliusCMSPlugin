@@ -10,6 +10,8 @@ use Setono\SyliusCMSPlugin\Event\MediaItemDeleted;
 use Setono\SyliusCMSPlugin\Preset\EditorPresetDeleterInterface;
 use Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface;
 use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Preset\StartingPoint;
+use Setono\SyliusCMSPlugin\Repository\EditorPresetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\MediaItemRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Functional\Fixture\MediaFieldsKernel;
 use Setono\SyliusCMSPlugin\Tree\StoredBlock;
@@ -156,6 +158,31 @@ final class MediaUsageTest extends MediaApiTestCase
 
         self::json($client, 'DELETE', '/admin/cms/api/media/' . $uuid, null, $config['csrfToken']);
         self::assertResponseStatusCodeSame(204);
+    }
+
+    /**
+     * The preset's content can't be read, as when a newer version of the plugin wrote it, so it's listed without a name
+     *
+     * @test
+     */
+    public function it_lists_an_editor_preset_whose_content_can_not_be_read_without_its_name(): void
+    {
+        $client = self::createClient();
+        self::openMediaLibrary($client);
+        $uuid = $this->uploadMediaItem('summer.png', self::png())->getUuid();
+        $preset = self::presetSaver()->save(new Preset('Summer banner', [self::block($uuid)], startingPoint: new StartingPoint('page', null)));
+        /** @var EditorPresetRepositoryInterface $presets */
+        $presets = self::getContainer()->get('setono_sylius_cms.repository.editor_preset');
+        $row = $presets->findOneByUuid((string) $preset->uuid);
+        self::assertNotNull($row);
+        $row->setContent('{"format": 2}');
+        /** @var ObjectManager $manager */
+        $manager = self::getContainer()->get('setono_sylius_cms.manager.editor_preset');
+        $manager->flush();
+
+        self::assertSame(['uses' => [
+            ['entry' => null, 'preset' => $preset->uuid, 'title' => null, 'contentType' => 'Preset', 'url' => sprintf('/admin/cms/presets?tab=block_presets#cms-preset-%s', (string) $preset->uuid), 'draft' => false, 'published' => false],
+        ]], self::json($client, 'GET', sprintf('/admin/cms/api/media/%s/uses', $uuid)));
     }
 
     /**
