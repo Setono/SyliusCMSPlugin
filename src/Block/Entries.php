@@ -18,7 +18,7 @@ use Setono\SyliusCMSPlugin\Value\ItemList;
  * the displays the listed entries' content type has cards for. See "The Entries block" in docs/spec/collections.md
  */
 #[BlockType(
-    code: 'entries',
+    code: self::CODE,
     label: 'setono_sylius_cms.block_type.entries',
     template: '@SetonoSyliusCMSPlugin/block/entries.html.twig',
     version: 1,
@@ -26,6 +26,8 @@ use Setono\SyliusCMSPlugin\Value\ItemList;
 )]
 final class Entries
 {
+    public const CODE = 'entries';
+
     /** @var ItemList<EntryInterface>|null */
     #[EntriesField(label: 'setono_sylius_cms.field.entries.entries', limit: 9)]
     public ?ItemList $entries = null;
@@ -38,7 +40,10 @@ final class Entries
     #[Choice(label: 'setono_sylius_cms.field.entries.display', choicesProvider: CardDisplayChoicesProvider::class)]
     public string $display = 'grid';
 
-    /** Whether the list is split into pages of its number to show, with numbered links (#269) */
+    /**
+     * Whether the list is split into pages of its number to show, with numbered ?page=N links. Only one Entries block in
+     * the tree of an entry with its own URL may, filled by a source. See "Pagination" in docs/spec/collections.md
+     */
     #[Toggle(label: 'setono_sylius_cms.field.entries.paginate', help: 'setono_sylius_cms.field.entries.paginate_help')]
     public bool $paginate = false;
 }
