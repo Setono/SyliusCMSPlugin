@@ -28,7 +28,15 @@ interface ExportSourceInterface
     public function files(string $directory): array;
 
     /**
-     * A media item's original file (#280)
+     * The paths of what it holds that doesn't resolve inside the export's root: an absolute path, a path with a ".."
+     * segment, and a link, which an import refuses. See "Media files" in docs/spec/transfer.md
+     *
+     * @return list<string>
+     */
+    public function pathsOutsideRoot(): array;
+
+    /**
+     * A media item's original file
      *
      * @return resource read it to its end; the caller closes it
      *

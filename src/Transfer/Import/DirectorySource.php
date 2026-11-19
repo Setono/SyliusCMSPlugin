@@ -7,7 +7,8 @@ namespace Setono\SyliusCMSPlugin\Transfer\Import;
 use Setono\SyliusCMSPlugin\Transfer\Format\InvalidExportException;
 
 /**
- * Reads an export from a folder on disk. A path that would leave the folder, through "..", isn't one of its files
+ * Reads an export from a folder on disk. A path that would leave the folder, through "..", isn't one of its files, and
+ * a link in it refuses an import
  */
 final readonly class DirectorySource implements ExportSourceInterface
 {
@@ -51,6 +52,31 @@ final readonly class DirectorySource implements ExportSourceInterface
         sort($files, \SORT_STRING);
 
         return $files;
+    }
+
+    /**
+     * Its links, files or folders, which it doesn't descend into. A path in a folder is never absolute and has no ".."
+     * segment
+     */
+    public function pathsOutsideRoot(): array
+    {
+        $root = rtrim($this->directory, '/');
+        if (!is_dir($root)) {
+            return [];
+        }
+
+        $paths = [];
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST);
+        foreach ($files as $file) {
+            \assert($file instanceof \SplFileInfo);
+            if ($file->isLink()) {
+                $paths[] = substr($file->getPathname(), strlen($root) + 1);
+            }
+        }
+
+        sort($paths, \SORT_STRING);
+
+        return $paths;
     }
 
     public function readStream(string $path)

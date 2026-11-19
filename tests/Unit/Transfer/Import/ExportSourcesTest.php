@@ -81,6 +81,36 @@ final class ExportSourcesTest extends TestCase
         }
     }
 
+    /**
+     * @test
+     */
+    public function it_finds_the_entries_of_a_zip_that_do_not_resolve_inside_the_exports_root(): void
+    {
+        self::assertSame([], (new ZipSource($this->zipOfFixture()))->pathsOutsideRoot());
+
+        $zip = new ZipSource($this->zipOfFixture(
+            ['../evil' => 'Escaped', '/etc/evil' => 'Absolute', 'media\\..\\..\\evil' => 'Escaped on Windows', 'media/0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60/fine.png' => 'Inside'],
+            ['media/0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60/link.png' => '/etc/passwd'],
+        ));
+
+        self::assertSame(['../evil', '/etc/evil', 'media\\..\\..\\evil', 'media/0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60/link.png'], $zip->pathsOutsideRoot());
+    }
+
+    /**
+     * @test
+     */
+    public function it_finds_the_links_in_an_export_folder(): void
+    {
+        self::assertSame([], (new DirectorySource(self::FIXTURE))->pathsOutsideRoot());
+
+        $folder = $this->temporaryDirectory() . '/export';
+        mkdir($folder . '/media/0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60', 0777, true);
+        file_put_contents($folder . '/manifest.json', '{}');
+        symlink($this->temporaryFile('outside.png', 'Outside'), $folder . '/media/0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60/autumn-banner.png');
+
+        self::assertSame(['media/0193a5be-70aa-7c11-8e2d-1b2c3d4e5f60/autumn-banner.png'], (new DirectorySource($folder))->pathsOutsideRoot());
+    }
+
     private function assertUnreadable(ExportSourceInterface $source, string $path): void
     {
         try {
@@ -91,14 +121,30 @@ final class ExportSourcesTest extends TestCase
         }
     }
 
-    private function zipOfFixture(): string
+    /**
+     * The committed export in a zip, with more files crafted in it
+     *
+     * @param array<string, string> $files more files by their names in the zip, which it keeps as they're given
+     * @param array<string, string> $links links by their names in the zip, to their targets
+     */
+    private function zipOfFixture(array $files = [], array $links = []): string
     {
-        $file = $this->temporaryDirectory() . '/export.zip';
+        $file = $this->temporaryDirectory() . '/export-' . bin2hex(random_bytes(4)) . '.zip';
         $zip = new \ZipArchive();
         self::assertTrue($zip->open($file, \ZipArchive::CREATE));
         foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(self::FIXTURE, \FilesystemIterator::SKIP_DOTS)) as $path) {
             \assert($path instanceof \SplFileInfo);
             $zip->addFile($path->getPathname(), substr($path->getPathname(), strlen(self::FIXTURE) + 1));
+        }
+
+        foreach ($files as $name => $content) {
+            $zip->addFromString($name, $content);
+        }
+
+        foreach ($links as $name => $target) {
+            $zip->addFromString($name, $target);
+            // A Unix symbolic link, as zip -y stores one
+            $zip->setExternalAttributesName($name, \ZipArchive::OPSYS_UNIX, (0120000 | 0777) << 16);
         }
 
         $zip->close();

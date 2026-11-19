@@ -8,10 +8,16 @@ use Setono\SyliusCMSPlugin\Transfer\Format\InvalidExportException;
 
 /**
  * Reads an export from a zip holding the export's folder at its root. It reads files by their names and never extracts
- * the zip. Checking that every entry of the zip resolves inside the export's root is #280's, with the media files
+ * the zip, and finds the entries that don't resolve inside the export's root, which refuse an import
  */
 final readonly class ZipSource implements ExportSourceInterface
 {
+    /** The Unix file mode's type bits (S_IFMT) */
+    private const FILE_TYPE = 0170000;
+
+    /** The type of a symbolic link (S_IFLNK) */
+    private const SYMBOLIC_LINK = 0120000;
+
     private \ZipArchive $zip;
 
     /**
@@ -63,6 +69,28 @@ final readonly class ZipSource implements ExportSourceInterface
         return $files;
     }
 
+    /**
+     * Its entries whose names are absolute or have a ".." segment, and its symbolic links, which a Unix zip stores as
+     * an entry holding the link's target, marked by its external attributes. Reading by name never follows either, but
+     * an export that holds one isn't one an import takes
+     */
+    public function pathsOutsideRoot(): array
+    {
+        $paths = [];
+        for ($index = 0; $index < $this->zip->numFiles; ++$index) {
+            $name = $this->zip->getNameIndex($index);
+            if (false === $name) {
+                continue;
+            }
+
+            if (!ExportPath::isInsideRoot($name) || $this->isLink($index)) {
+                $paths[] = $name;
+            }
+        }
+
+        return $paths;
+    }
+
     public function readStream(string $path)
     {
         $stream = $this->zip->getStream($path);
@@ -71,5 +99,16 @@ final readonly class ZipSource implements ExportSourceInterface
         }
 
         return $stream;
+    }
+
+    private function isLink(int $index): bool
+    {
+        $system = $attributes = 0;
+        if (!$this->zip->getExternalAttributesIndex($index, $system, $attributes) || \ZipArchive::OPSYS_UNIX !== $system) {
+            return false;
+        }
+
+        // The upper 16 bits hold the Unix file mode, whose type bits say a symbolic link
+        return self::SYMBOLIC_LINK === (($attributes >> 16) & self::FILE_TYPE);
     }
 }
