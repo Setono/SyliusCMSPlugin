@@ -107,7 +107,7 @@ final class CardDisplaysTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function it_refuses_a_body_that_is_not_json(): void
+    public function it_refuses_a_body_that_is_not_json_or_no_body(): void
     {
         $client = self::createClient();
         $page = self::createPage('Blog', 'blog');
@@ -115,6 +115,9 @@ final class CardDisplaysTest extends BuilderApiTestCase
 
         $client->request('POST', self::uri($page), [], [], ['CONTENT_TYPE' => 'application/json'], '{');
 
+        self::assertResponseStatusCodeSame(400);
+
+        self::assertSame(['error' => 'Request body is empty.'], self::json($client, 'POST', self::uri($page)));
         self::assertResponseStatusCodeSame(400);
     }
 

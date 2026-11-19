@@ -125,6 +125,36 @@ final class EditorPresetsTest extends BuilderApiTestCase
     }
 
     /**
+     * Saving, replacing, renaming and inserting each answer a request without a body, or whose body names no entry, with
+     * why
+     *
+     * @test
+     */
+    public function it_refuses_a_request_without_a_body_or_whose_body_names_no_entry(): void
+    {
+        $client = self::signedIn();
+        $page = self::createPageWithBlocks('About us', 'about-us', self::blocks());
+        $csrfToken = self::openBuilder($client, $page);
+        $uuid = self::savePreset($client, $csrfToken, $page->getUuid(), [self::HEADING], 'Promo');
+
+        foreach ([
+            ['POST', '/admin/cms/api/presets'],
+            ['PUT', sprintf('/admin/cms/api/presets/%s', $uuid)],
+            ['PATCH', sprintf('/admin/cms/api/presets/%s', $uuid)],
+            ['POST', sprintf('/admin/cms/api/presets/%s/insert', $uuid)],
+        ] as [$method, $uri]) {
+            self::assertSame(['error' => 'Request body is empty.'], self::json($client, $method, $uri, null, $csrfToken), sprintf('%s %s', $method, $uri));
+            self::assertResponseStatusCodeSame(400);
+        }
+
+        self::assertSame(['error' => 'The request needs the entry the blocks are in.'], self::json($client, 'POST', '/admin/cms/api/presets', ['blocks' => [self::HEADING], 'name' => 'Promo'], $csrfToken));
+        self::assertResponseStatusCodeSame(400);
+        self::assertSame(['error' => 'The request needs the entry the blocks are in.'], self::json($client, 'PUT', sprintf('/admin/cms/api/presets/%s', $uuid), ['blocks' => [self::HEADING]], $csrfToken));
+        self::assertResponseStatusCodeSame(400);
+        self::assertSame([$uuid], self::editorPresetIds($client, $page->getUuid()));
+    }
+
+    /**
      * @test
      */
     public function it_refuses_to_save_a_preset_without_the_builder_s_csrf_token(): void
