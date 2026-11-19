@@ -50,6 +50,7 @@ use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGenerator;
 use Setono\SyliusCMSPlugin\Seo\MetaValues;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Location;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\ShopTranslation;
 use Setono\SyliusCMSPlugin\Tests\Unit\Tree\Fixture\Gallery;
@@ -438,6 +439,14 @@ final class CMSExtensionTest extends IntegrationTestCase
         }
 
         return $page;
+    }
+
+    /**
+     * A recipe, an entry of a content type the code no longer has
+     */
+    public function recipe(): Recipe
+    {
+        return new Recipe();
     }
 
     /**

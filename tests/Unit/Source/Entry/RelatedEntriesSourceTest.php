@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Source\Entry\RelatedEntriesSource;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Shop;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\RecordsQueries;
 
@@ -121,7 +122,8 @@ final class RelatedEntriesSourceTest extends TestCase
      */
     public function it_lists_nothing_for_an_entry_in_no_category_or_outside_a_collection_with_categories(): void
     {
-        foreach ([[], ['entry' => new BlogPost()], ['entry' => new Page()], ['entry' => new Shop()], ['entry' => new BlogCategory()]] as $hostPageContext) {
+        // An entry of a content type the code no longer has is in no collection
+        foreach ([[], ['entry' => new BlogPost()], ['entry' => new Page()], ['entry' => new Shop()], ['entry' => new BlogCategory()], ['entry' => new Recipe()]] as $hostPageContext) {
             $adapter = $this->source()->resolve(new NoParams(), Rendering::context(hostPageContext: $hostPageContext));
 
             self::assertInstanceOf(ArrayAdapter::class, $adapter);

@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\Model\Page;
 use Setono\SyliusCMSPlugin\Registry\AttributeReader;
 use Setono\SyliusCMSPlugin\Source\Entry\EntriesInThisCategorySource;
 use Setono\SyliusCMSPlugin\Tests\Support\Rendering;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Recipe;
 use Setono\SyliusCMSPlugin\Tests\Unit\Source\RecordsQueries;
 
 /**
@@ -109,7 +110,8 @@ final class EntriesInThisCategorySourceTest extends TestCase
      */
     public function it_lists_nothing_outside_a_category(): void
     {
-        foreach ([[], ['entry' => new Page()], ['entry' => new BlogPost()]] as $hostPageContext) {
+        // An entry of a content type the code no longer has is in no collection
+        foreach ([[], ['entry' => new Page()], ['entry' => new BlogPost()], ['entry' => new Recipe()]] as $hostPageContext) {
             $adapter = $this->source()->resolve(new NoParams(), Rendering::context(hostPageContext: $hostPageContext));
 
             self::assertInstanceOf(ArrayAdapter::class, $adapter);

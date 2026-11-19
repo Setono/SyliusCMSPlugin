@@ -1,8 +1,8 @@
 --TEST--
-cms_card() prints nothing for an entry whose content type has no card for the display, or no cards at all
+cms_card() prints nothing for an entry whose content type has no card for the display, or no cards at all, or of a content type the code no longer has
 --TEMPLATE--
-[{{ cms_card(location, "carousel") }}][{{ cms_card(page, "grid") }}]
+[{{ cms_card(location, "carousel") }}][{{ cms_card(page, "grid") }}][{{ cms_card(recipe, "grid") }}]
 --DATA--
-return $this->rendering(['location' => $this->location('Aarhus'), 'page' => $this->page(['en_US' => 'About'])])
+return $this->rendering(['location' => $this->location('Aarhus'), 'page' => $this->page(['en_US' => 'About']), 'recipe' => $this->recipe()])
 --EXPECT--
-[][]
+[][][]

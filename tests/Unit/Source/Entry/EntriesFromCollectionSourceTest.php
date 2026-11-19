@@ -8,6 +8,7 @@ use Pagerfanta\Adapter\ArrayAdapter;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Setono\SyliusCMSPlugin\Attribute\NoParams;
 use Setono\SyliusCMSPlugin\Model\BlogCategory;
 use Setono\SyliusCMSPlugin\Model\BlogPost;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
@@ -140,6 +141,16 @@ final class EntriesFromCollectionSourceTest extends TestCase
         self::assertInstanceOf(ArrayAdapter::class, $adapter);
         self::assertSame(0, $adapter->getNbResults());
         self::assertSame([], $this->queries);
+    }
+
+    /**
+     * @test
+     */
+    public function it_refuses_the_parameters_of_another_source(): void
+    {
+        $this->expectExceptionObject(new \InvalidArgumentException(sprintf('The entries_from_collection source takes %s, got %s', EntriesFromCollectionParams::class, NoParams::class)));
+
+        $this->source()->resolve(new NoParams(), Rendering::context());
     }
 
     private function source(): EntriesFromCollectionSource
