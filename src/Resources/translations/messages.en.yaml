@@ -610,6 +610,7 @@ setono_sylius_cms:
             no_entries_picked: No entries picked yet. Find them by their title or slug.
             no_media_folders: There are no media folders.
             nothing_picked: Pick what to export to see what the export holds.
+            picked: Picked
             picked_entries: Picked entries
             preset_count: '%count% editor preset|%count% editor presets'
             remove_entry: 'Remove %title%'

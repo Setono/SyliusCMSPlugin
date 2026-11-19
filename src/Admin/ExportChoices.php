@@ -57,14 +57,11 @@ final readonly class ExportChoices
     }
 
     /**
-     * The entries whose title or slug contains the search, newest first, but those of a disabled content type and those
-     * left out
-     *
-     * @param list<string> $leftOut the UUIDs of entries not to list, such as those picked already
+     * The entries whose title or slug contains the search, newest first, but those of a disabled content type
      *
      * @return list<ExportChoice>
      */
-    public function search(string $search, array $leftOut, string $localeCode): array
+    public function search(string $search, string $localeCode): array
     {
         if ('' === trim($search)) {
             return [];
@@ -75,12 +72,7 @@ final readonly class ExportChoices
             array_filter($this->contentTypes->all(), static fn (ContentTypeMetadata $contentType): bool => $contentType->disabled),
         );
 
-        $found = array_filter(
-            $this->entryRepository->search($search, self::SEARCH_LIMIT + count($leftOut), array_values($disabled)),
-            static fn (EntryInterface $entry): bool => !in_array($entry->getUuid(), $leftOut, true),
-        );
-
-        return array_slice($this->ofEntries(array_values($found), $localeCode), 0, self::SEARCH_LIMIT);
+        return $this->ofEntries($this->entryRepository->search($search, self::SEARCH_LIMIT, array_values($disabled)), $localeCode);
     }
 
     /**

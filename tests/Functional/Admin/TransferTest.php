@@ -62,6 +62,29 @@ final class TransferTest extends WebTestCase
     /**
      * @test
      */
+    public function it_finds_entries_to_add_marks_those_picked_already_and_leaves_out_the_one_a_remove_names(): void
+    {
+        $client = self::createClient();
+        $client->loginUser(self::admin(), 'admin');
+        $spring = self::createPage('Spring sale', 'spring-sale');
+        $summer = self::createPage('Summer sale', 'summer-sale');
+        $winter = self::createSnippet('Winter sale banner');
+
+        $crawler = $client->request('GET', sprintf('/admin/cms/transfer?q=SALE&entries[]=%s&entries[]=%s&remove=%s', $spring->getUuid(), $summer->getUuid(), $spring->getUuid()));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['Summer sale'], $crawler->filter('[data-cms-export-picked] [data-cms-export-title]')->each(static fn (Crawler $title): string => $title->text()));
+        // Newest first, snippets too, each with an Add, but the one picked already
+        self::assertSame(
+            [['Winter sale banner', 'Add Winter sale banner'], ['Summer sale', null], ['Spring sale', 'Add Spring sale']],
+            $crawler->filter('[data-cms-export-found] tr')->each(static fn (Crawler $row): array => [$row->filter('[data-cms-export-title]')->text(), $row->filter('button')->count() > 0 ? $row->filter('button')->attr('aria-label') : null]),
+        );
+        self::assertSame($winter->getUuid(), $crawler->filter('[data-cms-export-found] button')->first()->attr('value'));
+    }
+
+    /**
+     * @test
+     */
     public function it_downloads_the_export_of_the_picked_records_as_a_zip_holding_the_export_at_its_root(): void
     {
         $client = self::createClient();

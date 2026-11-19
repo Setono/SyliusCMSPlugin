@@ -47,9 +47,13 @@
                                 <tr>
                                     <td><span data-cms-export-title>{{ entry.title }}</span> <span class="ui mini basic label">{{ entry.detail|trans }}</span></td>
                                     <td class="right aligned collapsing">
-                                        <button type="submit" class="ui mini labeled icon button" name="entries[]" value="{{ entry.uuid }}" aria-label="{{ 'setono_sylius_cms.ui.transfer.add_entry'|trans({'%title%': entry.title}) }}">
-                                            <i class="plus icon" aria-hidden="true"></i> {{ 'setono_sylius_cms.ui.transfer.add'|trans }}
-                                        </button>
+                                        {% if entry.uuid in selection.entries %}
+                                            <span class="ui mini basic label"><i class="check icon" aria-hidden="true"></i> {{ 'setono_sylius_cms.ui.transfer.picked'|trans }}</span>
+                                        {% else %}
+                                            <button type="submit" class="ui mini labeled icon button" name="entries[]" value="{{ entry.uuid }}" aria-label="{{ 'setono_sylius_cms.ui.transfer.add_entry'|trans({'%title%': entry.title}) }}">
+                                                <i class="plus icon" aria-hidden="true"></i> {{ 'setono_sylius_cms.ui.transfer.add'|trans }}
+                                            </button>
+                                        {% endif %}
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -130,14 +134,20 @@
                     }) }}</p>
                     {% if added_entries is not empty or added_media_items is not empty %}
                         <h4 class="ui header" id="cms-export-added-heading">{{ 'setono_sylius_cms.ui.transfer.added'|trans }}</h4>
-                        <ul class="ui list" aria-labelledby="cms-export-added-heading" data-cms-export-added>
+                        <div class="ui relaxed list" role="list" aria-labelledby="cms-export-added-heading" data-cms-export-added>
                             {% for entry in added_entries %}
-                                <li class="item"><i class="file outline icon" aria-hidden="true"></i> <span data-cms-export-title>{{ entry.title }}</span> <span class="ui mini basic label">{{ entry.detail|trans }}</span></li>
+                                <div class="item" role="listitem">
+                                    <i class="file outline icon" aria-hidden="true"></i>
+                                    <div class="content"><span data-cms-export-title>{{ entry.title }}</span> <span class="ui mini basic label">{{ entry.detail|trans }}</span></div>
+                                </div>
                             {% endfor %}
                             {% for media_item in added_media_items %}
-                                <li class="item"><i class="image outline icon" aria-hidden="true"></i> <span data-cms-export-title>{{ media_item.title }}</span> <span class="cms-export__muted">{{ media_item.detail }}</span></li>
+                                <div class="item" role="listitem">
+                                    <i class="image outline icon" aria-hidden="true"></i>
+                                    <div class="content"><span data-cms-export-title>{{ media_item.title }}</span> <span class="cms-export__muted">{{ media_item.detail }}</span></div>
+                                </div>
                             {% endfor %}
-                        </ul>
+                        </div>
                     {% endif %}
                 {% endif %}
             </section>

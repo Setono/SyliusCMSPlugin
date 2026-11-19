@@ -40,7 +40,7 @@ final readonly class TransferAction
             'selection' => $selection,
             'search' => $search,
             'picked_entries' => $this->choices->entries($selection->entries, $request->getLocale()),
-            'found_entries' => $this->choices->search($search, $selection->entries, $request->getLocale()),
+            'found_entries' => $this->choices->search($search, $request->getLocale()),
             'presets' => $this->choices->presets(),
             'folders' => $this->choices->folders(),
             'plan' => $plan,
