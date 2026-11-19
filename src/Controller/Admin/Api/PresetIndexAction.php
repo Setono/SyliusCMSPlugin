@@ -121,7 +121,7 @@ final readonly class PresetIndexAction
 
     private function text(string|TranslationKey|null $text): ?string
     {
-        return $text instanceof TranslationKey ? $this->translator->trans($text->key, [], $text->domain) : $text;
+        return TranslationKey::textOf($text, $this->translator);
     }
 
     private function trans(TranslatableMessage $message): string

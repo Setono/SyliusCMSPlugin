@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Preset;
 
+use Symfony\Contracts\Translation\TranslatableInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
+
 /**
  * A translation key in a code preset file, {"$trans": …, "$domain": …}, in place of a text: the preset's name, category
  * or description, or a translatable text-like field's value. Inserting the preset resolves it for each of the entry's
  * locales. See "Field values" in docs/spec/content-model.md and "Preset file format" in docs/spec/layouts-and-presets.md
  */
-final readonly class TranslationKey
+final readonly class TranslationKey implements TranslatableInterface
 {
     public const KEY = '$trans';
 
@@ -44,6 +47,22 @@ final readonly class TranslationKey
         }
 
         return new self($key, $domain);
+    }
+
+    /**
+     * A preset's name, category or description, or another text a translation key may stand in for, as the admin user
+     * reads it: the key translated, or the text as it is
+     *
+     * @return ($text is null ? null : string)
+     */
+    public static function textOf(string|self|null $text, TranslatorInterface $translator, ?string $locale = null): ?string
+    {
+        return $text instanceof self ? $text->trans($translator, $locale) : $text;
+    }
+
+    public function trans(TranslatorInterface $translator, ?string $locale = null): string
+    {
+        return $translator->trans($this->key, [], $this->domain, $locale);
     }
 
     /**

@@ -86,7 +86,7 @@ final readonly class MediaUsesAction
     {
         try {
             $content = (new EditorPresetContent())->read($preset);
-            $name = $content->name instanceof TranslationKey ? $this->translator->trans($content->name->key, [], $content->name->domain) : $content->name;
+            $name = TranslationKey::textOf($content->name, $this->translator);
             $tab = null === $content->startingPoint ? PresetsAction::TAB_BLOCK_PRESETS : PresetsAction::TAB_STARTING_POINTS;
         } catch (InvalidPresetException) {
             [$name, $tab] = [null, PresetsAction::TAB_BLOCK_PRESETS];

@@ -25,7 +25,7 @@ final class PresetAnswer
      */
     public static function of(Preset $preset, TranslatorInterface $translator): array
     {
-        $text = static fn (string|TranslationKey|null $text): ?string => $text instanceof TranslationKey ? $translator->trans($text->key, [], $text->domain) : $text;
+        $text = static fn (string|TranslationKey|null $text): ?string => TranslationKey::textOf($text, $translator);
 
         return [
             'id' => $preset->id(),

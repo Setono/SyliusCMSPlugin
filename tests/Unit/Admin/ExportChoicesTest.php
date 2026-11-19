@@ -218,8 +218,8 @@ final class ExportChoicesTest extends TestCase
     private function choices(array $disabled = []): ExportChoices
     {
         $translator = $this->prophesize(TranslatorInterface::class);
-        $translator->trans('app.preset.footer', [], 'messages')->willReturn('Footer (translated)');
-        $translator->trans('app.preset.layout', [], 'presets')->willReturn('Layout (translated from presets)');
+        $translator->trans('app.preset.footer', [], 'messages', null)->willReturn('Footer (translated)');
+        $translator->trans('app.preset.layout', [], 'presets', null)->willReturn('Layout (translated from presets)');
 
         return new ExportChoices(
             $this->entries->reveal(),

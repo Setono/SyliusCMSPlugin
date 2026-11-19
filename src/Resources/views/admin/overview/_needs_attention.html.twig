@@ -75,7 +75,7 @@
                             {% endif %}
                             <div class="content">
                                 <div class="header">
-                                    {{- name.key is defined ? name.key|trans({}, name.domain) : name -}}
+                                    {{- name.key is defined ? name|trans : name -}}
                                     {% if problem.preset.fromCode %} <span class="ui mini basic label">{{ 'setono_sylius_cms.ui.from_code'|trans }}</span>{% endif %}
                                 </div>
                                 <div class="description">{{ problem.message|trans }}</div>
