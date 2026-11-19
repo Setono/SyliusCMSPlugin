@@ -65,6 +65,6 @@ final readonly class RecordDecision
      */
     public function writes(): bool
     {
-        return ImportAction::Create === $this->action || ImportAction::Update === $this->action;
+        return $this->action->writes();
     }
 }

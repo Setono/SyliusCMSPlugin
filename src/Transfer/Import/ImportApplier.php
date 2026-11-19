@@ -72,7 +72,7 @@ final readonly class ImportApplier
     public function apply(ReadExport $export, ImportPlan $plan, ImportOptions $options): array
     {
         foreach ($plan->presets as $planned) {
-            if (ImportAction::Create === $planned->action || ImportAction::Update === $planned->action) {
+            if ($planned->writes()) {
                 $preset = $export->presets[$planned->uuid];
                 $this->presetSaver->save($preset->preset, $preset->changedAt());
             }

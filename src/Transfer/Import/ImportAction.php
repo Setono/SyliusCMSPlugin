@@ -20,4 +20,12 @@ enum ImportAction: string
 
     /** A record that only came along, which the target has: it's left as the target has it */
     case LeaveAlone = 'left_alone';
+
+    /**
+     * Whether the import writes the record: creates or updates it
+     */
+    public function writes(): bool
+    {
+        return self::Create === $this || self::Update === $this;
+    }
 }
