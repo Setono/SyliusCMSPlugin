@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Application\Cache;
 
 use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Event\EntryPublished;
 use Setono\SyliusCMSPlugin\Rendering\EntryUrlLookupInterface;
@@ -15,6 +16,8 @@ use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Cache\Adapter\TagAwareAdapter;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 /**
  * The caching cookbook's cache of URL lookups, docs/cookbook/caching.md
@@ -92,6 +95,30 @@ final class CachedEntryUrlLookupTest extends TestCase
 
         self::assertEquals($after, $lookup->lookup($web, 'en_US', 'about'));
         self::assertEquals($after, $lookup->lookup($web, 'en_US', 'about'));
+    }
+
+    /**
+     * A change the invalidator never hears of, such as one written past the plugin's services, shows within the hour
+     *
+     * @test
+     */
+    public function it_keeps_a_url_for_an_hour_at_most(): void
+    {
+        $web = self::channel('WEB');
+        $aboutUs = new EntryUrlMatch(self::ABOUT_US, 'page');
+        $decorated = $this->prophesize(EntryUrlLookupInterface::class);
+        $decorated->lookup($web, 'en_US', 'about-us')->willReturn($aboutUs);
+        $item = $this->prophesize(ItemInterface::class);
+        $item->tag(CMSCacheInvalidator::TAG)->willReturn($item->reveal())->shouldBeCalled();
+        $item->expiresAfter(3600)->willReturn($item->reveal())->shouldBeCalled();
+        $cache = $this->prophesize(TagAwareCacheInterface::class);
+        $cache->get(Argument::type('string'), Argument::type('callable'))->will(static function (array $arguments) use ($item): mixed {
+            $save = true;
+
+            return $arguments[1]($item->reveal(), $save);
+        });
+
+        self::assertSame($aboutUs, (new CachedEntryUrlLookup($decorated->reveal(), $cache->reveal()))->lookup($web, 'en_US', 'about-us'));
     }
 
     private static function channel(string $code): ChannelInterface

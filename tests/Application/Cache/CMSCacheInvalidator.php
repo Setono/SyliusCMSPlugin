@@ -26,6 +26,12 @@ final readonly class CMSCacheInvalidator implements EventSubscriberInterface
     /** The tag of every item the CMS cache holds */
     public const TAG = 'setono_sylius_cms';
 
+    /**
+     * How long, in seconds, the CMS cache keeps an item at most: what a change the invalidator never hears of can cost,
+     * such as one written past the plugin's services, or one that commits while a request reads what it replaces
+     */
+    public const LIFETIME = 3600;
+
     public function __construct(private TagAwareCacheInterface $cache)
     {
     }

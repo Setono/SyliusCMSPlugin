@@ -29,7 +29,7 @@ final readonly class CachedEntryUrlLookup implements EntryUrlLookupInterface
 
         /** @var EntryUrlMatch|null $match */
         $match = $this->cache->get($key, function (ItemInterface $item, bool &$save) use ($channel, $localeCode, $path): ?EntryUrlMatch {
-            $item->tag(CMSCacheInvalidator::TAG);
+            $item->tag(CMSCacheInvalidator::TAG)->expiresAfter(CMSCacheInvalidator::LIFETIME);
 
             $match = $this->decorated->lookup($channel, $localeCode, $path);
             $save = null !== $match;

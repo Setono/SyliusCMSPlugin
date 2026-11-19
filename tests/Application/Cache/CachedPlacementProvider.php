@@ -28,7 +28,7 @@ final readonly class CachedPlacementProvider implements PlacementProviderInterfa
         $placements = $this->cache->get(
             sprintf('setono_sylius_cms.placements.%s', hash('xxh128', (string) $channel->getCode())),
             function (ItemInterface $item) use ($channel): array {
-                $item->tag(CMSCacheInvalidator::TAG);
+                $item->tag(CMSCacheInvalidator::TAG)->expiresAfter(CMSCacheInvalidator::LIFETIME);
 
                 return $this->decorated->getPlacements($channel);
             },

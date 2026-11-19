@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Unit\Application\Cache;
 
 use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Setono\SyliusCMSPlugin\Event\PlacementsChanged;
 use Setono\SyliusCMSPlugin\Rendering\PlacementData;
@@ -15,6 +16,8 @@ use Sylius\Component\Core\Model\Channel;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Cache\Adapter\TagAwareAdapter;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 /**
  * The caching cookbook's cache of placements, docs/cookbook/caching.md
@@ -64,6 +67,29 @@ final class CachedPlacementProviderTest extends TestCase
 
         self::assertEquals($after, $provider->getPlacements($web));
         self::assertEquals($after, $provider->getPlacements($web));
+    }
+
+    /**
+     * A change the invalidator never hears of, such as one written past the plugin's services, shows within the hour
+     *
+     * @test
+     */
+    public function it_keeps_a_channel_s_placements_for_an_hour_at_most(): void
+    {
+        $web = self::channel('WEB');
+        $decorated = $this->prophesize(PlacementProviderInterface::class);
+        $decorated->getPlacements($web)->willReturn([]);
+        $item = $this->prophesize(ItemInterface::class);
+        $item->tag(CMSCacheInvalidator::TAG)->willReturn($item->reveal())->shouldBeCalled();
+        $item->expiresAfter(3600)->willReturn($item->reveal())->shouldBeCalled();
+        $cache = $this->prophesize(TagAwareCacheInterface::class);
+        $cache->get(Argument::type('string'), Argument::type('callable'))->will(static function (array $arguments) use ($item): mixed {
+            $save = true;
+
+            return $arguments[1]($item->reveal(), $save);
+        });
+
+        self::assertSame([], (new CachedPlacementProvider($decorated->reveal(), $cache->reveal()))->getPlacements($web));
     }
 
     private static function channel(string $code): ChannelInterface
