@@ -227,3 +227,9 @@ All text in the shipped presets is translation keys. No starting point for Page 
 | `related_posts` | block preset | Blog | see [Collections](collections.md#shipped-layouts-starting-points-and-presets) |
 
 The images in shipped presets are empty and show the placeholder until an editor picks one ([Blocks](blocks.md#empty-images)).
+
+- **Where they are.** The files are in the plugin's `src/Resources/presets`, which it prepends to `presets.paths`, so a project's own presets come after them. A project switches one off with `disabled.presets`. The starting points' thumbnails are `/bundles/setonosyliuscmsplugin/thumbnail/preset/<code>.svg`.
+- **Their translation keys** are in the `messages` domain: `setono_sylius_cms.preset.<code>.name` and `.description`, `setono_sylius_cms.preset.<code>.<part>` for the text in its blocks, and `setono_sylius_cms.preset_category.<category>`. The landing page uses the keys of the presets it's made of.
+- **Their links** lead to the shop's homepage, `/`, one URL for every locale, so each button and link works in any store until an editor points it elsewhere.
+- **`campaign_with_fallback`'s date window is left open**, as any date in a shipped file would one day be past, so the campaign banner shows until an editor sets its dates.
+- **`landing_page` hides the title** (`showTitle` off), as it opens with its banner carousel. `content_page` shows it, with its Heading below.
