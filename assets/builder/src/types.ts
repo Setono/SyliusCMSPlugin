@@ -344,6 +344,8 @@ export interface ContentTypeDefinition {
     blocks: AllowedBlockType[] | null;
     /** Its URL prefix, '' for URLs at the root, or null when it has no URL of its own, so no slug. */
     prefix?: string | null;
+    /** The code of its collection's category content type, such as blog_category for blog posts, or null when it has none. */
+    categoryType?: string | null;
     /** Whether its entries can be a channel's homepage, which only pages can. Without it, they can't. */
     homepage?: boolean;
     /**

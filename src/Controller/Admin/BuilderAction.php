@@ -106,6 +106,7 @@ final readonly class BuilderAction
                     'search' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_search', ['kind' => '__kind__']),
                     // How many items a source yields for a list field's parameters, under the preview's token
                     'sourceCount' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_source_count'),
+                    'cardDisplays' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_card_displays'),
                     // The blocks a Snippet block shows, which Detach copies, and the builder its Edit snippet opens,
                     // each with UUID_PLACEHOLDER for the snippet's UUID
                     'snippetBlocks' => $this->urlGenerator->generate('setono_sylius_cms_admin_api_snippet_blocks', ['uuid' => self::UUID_PLACEHOLDER]),

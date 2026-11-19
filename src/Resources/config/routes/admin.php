@@ -39,6 +39,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\ShowEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SlugAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SnippetBlocksAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\SourceCountAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\Api\CardDisplaysAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaFolderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdateMediaItemAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\UpdatePresetAction;
@@ -416,6 +417,12 @@ return static function (RoutingConfigurator $routes): void {
     // How many items a source yields for the builder's parameters, under a preview token
     $routes->add('setono_sylius_cms_admin_api_source_count', '/cms/api/sources/count')
         ->controller(SourceCountAction::class)
+        ->methods(['POST'])
+    ;
+
+    // The displays the Entries block offers for what its entries field holds, under a preview token
+    $routes->add('setono_sylius_cms_admin_api_card_displays', '/cms/api/cards/displays')
+        ->controller(CardDisplaysAction::class)
         ->methods(['POST'])
     ;
 

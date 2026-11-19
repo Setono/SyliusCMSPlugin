@@ -74,6 +74,7 @@ final class BuilderTest extends WebTestCase
             'urls' => sprintf('/admin/cms/api/entries/%s/urls', $uuid),
             'search' => '/admin/cms/api/search/__kind__',
             'sourceCount' => '/admin/cms/api/sources/count',
+            'cardDisplays' => '/admin/cms/api/cards/displays',
             'snippetBlocks' => '/admin/cms/api/snippets/00000000-0000-4000-8000-000000000000/blocks',
             'builder' => '/admin/cms/entry/00000000-0000-4000-8000-000000000000/builder',
             'previewSnippet' => '/admin/cms/api/preview/snippet',

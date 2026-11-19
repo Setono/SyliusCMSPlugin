@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import { useBuilder, useBuilderState, useValidationState } from '../context';
+import { DISPLAY_FIELD, ENTRIES_BLOCK, ENTRIES_FIELD, offeredDisplayChoices } from '../entriesBlock';
 import { FieldRow } from '../form/FieldRow';
 import formStyles from '../form/Form.module.css';
 import { useTranslator } from '../i18n';
@@ -8,9 +9,10 @@ import { canDuplicate } from '../nesting';
 import { isSnippetBlock, shownSnippet } from '../snippets';
 import { locks } from '../store';
 import { canShift, findBlock, pathTo, topmostBlocks } from '../tree';
-import type { BlockStyleDefinition, StoredBlock } from '../types';
+import type { BlockStyleDefinition, JsonValue, StoredBlock } from '../types';
 import { blockMessages, fieldMessages } from '../validation';
 import { translatedValues } from '../bindings';
+import { useOfferedDisplays } from '../sources/context';
 import { readFieldValue } from '../values';
 import { AddBlockButton } from './BlockPicker';
 import { blockHint, blockLabel } from './BlockTreePane';
@@ -38,6 +40,9 @@ export function SelectionPane({ onSavePreset }: SelectionPaneProps = {}) {
     const errors = useValidationState((state) => state.errors);
     // While a scheduled publish locks the working copy, the block is only looked at
     const locked = useBuilderState((state) => locks(state.schedule));
+    // An Entries block offers the displays the content type it lists has cards for
+    const listsEntries = block?.type === ENTRIES_BLOCK;
+    const offeredDisplays = useOfferedDisplays(listsEntries ? block?.fields[ENTRIES_FIELD] : undefined, listsEntries);
 
     if (selection.length > 1) {
         return (
@@ -72,7 +77,7 @@ export function SelectionPane({ onSavePreset }: SelectionPaneProps = {}) {
                     <FieldRow
                         key={name}
                         id={`cms-field-${block.key}-${name}`}
-                        schema={schema}
+                        schema={listsEntries && name === DISPLAY_FIELD ? offeredDisplayChoices(schema, offeredDisplays, displayOf(block.fields[name])) : schema}
                         locale={locale}
                         value={readFieldValue(block.fields, name, schema['x-cms-translatable'], locale)}
                         onChange={(value) => store.getState().setFieldValue(block.key, name, value)}
@@ -301,4 +306,9 @@ function Children({ block, label }: { block: StoredBlock; label: string }) {
             )}
         </section>
     );
+}
+
+/** The display an Entries block holds, or undefined while it holds the default. */
+function displayOf(value: JsonValue | undefined): string | undefined {
+    return typeof value === 'string' ? value : undefined;
 }

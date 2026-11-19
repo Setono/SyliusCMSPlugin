@@ -30,6 +30,13 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
         </service>
 
+        <!-- Which content types an Entries list holds, which the card_displays endpoint offers the displays of -->
+        <service id="Setono\SyliusCMSPlugin\Collection\ListedContentTypes" class="Setono\SyliusCMSPlugin\Collection\ListedContentTypes">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\SourceRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Rendering\ParamsHydrator"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+        </service>
+
         <!-- What the Entries block's display is picked from, as a Choice field's choices provider -->
         <service id="Setono\SyliusCMSPlugin\Collection\CardDisplayChoicesProvider" class="Setono\SyliusCMSPlugin\Collection\CardDisplayChoicesProvider">
             <argument type="service" id="Setono\SyliusCMSPlugin\Collection\CardDisplays"/>
