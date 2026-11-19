@@ -1,0 +1,58 @@
+{
+    "format": 1,
+    "name": {
+        "$trans": "setono_sylius_cms.preset.faq_page.name"
+    },
+    "category": {
+        "$trans": "setono_sylius_cms.preset_category.pages"
+    },
+    "description": {
+        "$trans": "setono_sylius_cms.preset.faq_page.description"
+    },
+    "thumbnail": "/bundles/setonosyliuscmsplugin/thumbnail/preset/faq_page.svg",
+    "startingPoint": {
+        "contentType": "page",
+        "layout": {
+            "code": "standard",
+            "version": 1,
+            "fields": {},
+            "translated": {}
+        },
+        "default": false
+    },
+    "blocks": [
+        {
+            "key": "01a1f1a1-c1c1-7ddb-a2c6-aac3d8401893",
+            "type": "heading",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "text": {
+                    "$trans": "setono_sylius_cms.preset.faq_page.heading"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        },
+        {
+            "key": "01a1f1a1-c1c1-7ddb-a2c6-aac3d8540b72",
+            "type": "entries",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "display": "accordion",
+                "entries": {
+                    "$limit": 50,
+                    "$params": {
+                        "contentType": "faq_item"
+                    },
+                    "$source": "entries_from_collection"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        }
+    ]
+}

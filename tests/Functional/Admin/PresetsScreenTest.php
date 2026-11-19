@@ -59,7 +59,7 @@ final class PresetsScreenTest extends WebTestCase
         // The edit dialog suggests the categories in use, those of code presets too
         $form = $crawler->filter(sprintf('form[action="/admin/cms/presets/%s"]', $promo->id()));
         self::assertSame(['Promo', 'Campaigns', 'For the winter sale'], [$form->filter('input[name="name"]')->attr('value'), $form->filter('input[name="category"]')->attr('value'), trim($form->filter('textarea[name="description"]')->text())]);
-        self::assertSame(['Banners', 'Campaigns', 'Content', 'Layout', 'Navigation', 'Pages', 'Products'], $crawler->filter(sprintf('datalist#%s option', (string) $form->filter('input[name="category"]')->attr('list')))->each(static fn (Crawler $option): string => (string) $option->attr('value')));
+        self::assertSame(['Banners', 'Blog', 'Campaigns', 'Content', 'Layout', 'Navigation', 'Pages', 'Products'], $crawler->filter(sprintf('datalist#%s option', (string) $form->filter('input[name="category"]')->attr('list')))->each(static fn (Crawler $option): string => (string) $option->attr('value')));
     }
 
     /**
@@ -74,8 +74,8 @@ final class PresetsScreenTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSame('Starting points', trim($crawler->filter('[data-preset-tabs] a.item.active')->text()));
-        self::assertSame(['content_page', 'landing_page', $landing->id()], self::presetIds($crawler));
-        self::assertSame('Page', trim($crawler->filter('[data-preset] [data-content-type]')->text()));
+        self::assertSame(['blog_category_archive', 'blog_page', 'content_page', 'faq_page', 'landing_page', $landing->id()], self::presetIds($crawler));
+        self::assertSame(['Blog category', 'Page', 'Page', 'Page', 'Page', 'Page'], $crawler->filter('[data-preset] [data-content-type]')->each(static fn (Crawler $type): string => trim($type->text())));
     }
 
     /**

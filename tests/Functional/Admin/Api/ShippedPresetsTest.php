@@ -40,7 +40,7 @@ final class ShippedPresetsTest extends BuilderApiTestCase
         $tester->execute(['paths' => [self::DIRECTORY]], ['decorated' => false]);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('[OK] 11 preset files are valid.', (string) preg_replace('/\s+/', ' ', $tester->getDisplay()));
+        self::assertStringContainsString('[OK] 16 preset files are valid.', (string) preg_replace('/\s+/', ' ', $tester->getDisplay()));
     }
 
     /**
@@ -54,7 +54,7 @@ final class ShippedPresetsTest extends BuilderApiTestCase
         $presets = self::presetsAt($client, sprintf('/admin/cms/api/presets?entry=%s', $page->getUuid()));
 
         self::assertSame(
-            ['banner_carousel', 'bestsellers_carousel', 'campaign_with_fallback', 'faq', 'footer_links', 'hero', 'image_and_text', 'related_products', 'three_usps', 'column_pair', 'product_spotlight', 'sale_hero'],
+            ['banner_carousel', 'bestsellers_carousel', 'campaign_with_fallback', 'faq', 'footer_links', 'hero', 'image_and_text', 'latest_posts', 'related_posts', 'related_products', 'three_usps', 'column_pair', 'product_spotlight', 'sale_hero'],
             array_keys($presets),
         );
         self::assertSame(['Hero', 'Banners', 'A full-width banner with a heading, text and two buttons, for the top of a page'], [$presets['hero']['name'], $presets['hero']['category'], $presets['hero']['description']]);
@@ -86,7 +86,7 @@ final class ShippedPresetsTest extends BuilderApiTestCase
      */
     public function provideBlockPresetsForPages(): iterable
     {
-        foreach (['banner_carousel', 'hero', 'campaign_with_fallback', 'image_and_text', 'three_usps', 'faq', 'bestsellers_carousel', 'footer_links'] as $code) {
+        foreach (['banner_carousel', 'hero', 'campaign_with_fallback', 'image_and_text', 'three_usps', 'faq', 'bestsellers_carousel', 'footer_links', 'latest_posts'] as $code) {
             yield $code => [$code];
         }
     }
@@ -171,6 +171,8 @@ final class ShippedPresetsTest extends BuilderApiTestCase
     {
         yield 'landing_page' => ['landing_page', 'standard'];
         yield 'content_page' => ['content_page', 'standard'];
+        yield 'blog_page' => ['blog_page', 'standard'];
+        yield 'faq_page' => ['faq_page', 'standard'];
     }
 
     /**

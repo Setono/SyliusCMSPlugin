@@ -68,7 +68,7 @@ final class EditorPresetsTest extends BuilderApiTestCase
         // Its category is suggested from now on, beside the code presets'
         $index = self::json($client, 'GET', sprintf('/admin/cms/api/presets?entry=%s', $other->getUuid()));
         self::assertIsArray($index);
-        self::assertSame(['Banners', 'Campaigns', 'Content', 'Layout', 'Navigation', 'Pages', 'Products'], $index['categories'] ?? null);
+        self::assertSame(['Banners', 'Blog', 'Campaigns', 'Content', 'Layout', 'Navigation', 'Pages', 'Products'], $index['categories'] ?? null);
 
         // The page it was saved from is left as it is
         self::assertSame([self::HEADING, self::COLUMNS, self::RICH_TEXT], array_map(static fn (StoredBlock $block): string => $block->key, self::reloadPage($page)->getBlockTree()->blocks));

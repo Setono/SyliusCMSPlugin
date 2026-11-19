@@ -66,7 +66,7 @@ A [category](../../GLOSSARY.md#entries) is an entry of the category content type
 No collection has listing routes in code. A listing is an ordinary entry that holds an [Entries block](#the-entries-block) filled by a source.
 
 - **The blog is a page** at the slug `blog`. With Page's empty prefix, it lives at `/en_US/blog`, next to posts under `/en_US/blog/…`. The usual uniqueness check covers both, and nothing ties a listing to a prefix ([URLs and SEO](urls-and-seo.md)).
-- **A category's URL is its archive.** Its block tree holds an Entries block filled by In this category. The `blog_category_archive` starting point puts that block there, and the create dialog preselects it. Editors can add an intro or a hero around it, or remove it. The admin warns when a category's tree no longer holds an Entries block ([Admin](admin.md#problems)).
+- **A category's URL is its archive.** Its block tree holds an Entries block filled by In this category. The `blog_category_archive` starting point puts that block there, and the create dialog preselects it. Editors can add an intro or a hero around it, or remove it. The admin warns when the tree of a category with its own URL holds no Entries block, wherever it would be and however it's filled ([Admin](admin.md#problems)). A category created from Blank gets the warning too, as its archive lists nothing.
 - **Listings see only what shoppers may see.** The entry sources build on the visible-entries query ([Sources](sources.md#visible-queries)), so they filter in SQL before paginating.
 
 ## The Entries block
@@ -125,11 +125,14 @@ All text in the shipped presets is translation keys ([Layouts and presets](layou
 
 | Code | For | Holds |
 | --- | --- | --- |
-| `blog_page` | Page | a Heading, and a paginated Entries grid from From a collection (`blog_post`) |
-| `faq_page` | Page | a Heading, and an Entries accordion from From a collection (`faq_item`) |
-| `blog_category_archive` | Blog category, the default | a paginated Entries grid from In this category |
+| `blog_page` | Page | a Heading, and a paginated Entries grid from From a collection (`blog_post`, `$limit: 9`) |
+| `faq_page` | Page | a Heading, and an Entries accordion from From a collection (`faq_item`, `$limit: 50`) |
+| `blog_category_archive` | Blog category, the default | a paginated Entries grid from In this category (`$limit: 9`) |
 
 Blog post has no starting point, so a new post starts from Blank.
+
+- **The listings' page size.** The blog and each category's archive show 9 posts to a page, a grid of 3 by 3. The FAQ page doesn't paginate, so it shows up to 50 questions, which is every question most FAQs have, and an editor raises it for more.
+- **Their layouts.** The Page starting points use the `standard` layout and show the title, with the Heading below it as the list's heading. The category archive uses Blog category's `standard` layout, which shows the category's title and description above the list.
 
 **Block presets:**
 

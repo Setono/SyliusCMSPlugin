@@ -365,6 +365,13 @@ setono_sylius_cms:
         bestsellers_carousel:
             description: 'The channel''s bestsellers in a carousel'
             name: 'Bestsellers carousel'
+        blog_category_archive:
+            description: 'The category''s posts, newest first, split into pages'
+            name: 'Category archive'
+        blog_page:
+            description: 'The blog''s posts, newest first, split into pages under a heading. Create it at the slug blog'
+            heading: 'Latest posts'
+            name: 'Blog page'
         campaign_with_fallback:
             campaign:
                 button: 'Shop the sale'
@@ -393,6 +400,10 @@ setono_sylius_cms:
             question_3:
                 answer: '<p>Email or call us, and we''ll get back to you within one working day.</p>'
                 title: 'How can I contact you?'
+        faq_page:
+            description: 'The questions of the FAQ under a heading, each opening to its answer'
+            heading: 'Frequently asked questions'
+            name: 'FAQ page'
         footer_links:
             about:
                 heading: 'About us'
@@ -428,6 +439,12 @@ setono_sylius_cms:
             description: 'A banner carousel, the bestsellers, three USPs and text, with the title hidden'
             name: 'Landing page'
             text: '<h2>Why shop with us</h2><p>Tell your customers who you are, what you sell and what makes your store worth coming back to.</p>'
+        latest_posts:
+            description: 'The three newest blog posts in a grid'
+            name: 'Latest posts'
+        related_posts:
+            description: 'Three posts in the categories of the post on the page, in a grid. Offered on blog posts'
+            name: 'Related posts'
         related_products:
             description: 'The products associated with the product on the page, of every association type. Offered where a product is available'
             name: 'Related products'
@@ -446,6 +463,7 @@ setono_sylius_cms:
     # The categories of the shipped code presets, which editors' presets can share
     preset_category:
         banners: Banners
+        blog: Blog
         content: Content
         navigation: Navigation
         pages: Pages
