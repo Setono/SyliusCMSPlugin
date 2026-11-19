@@ -66,7 +66,7 @@ final class FaqItemTest extends TestCase
         self::assertInstanceOf(Entries::class, $categories);
         self::assertSame(FaqCategory::class, $categories->contentType);
         self::assertTrue($categories->indexed);
-        self::assertSame(false, $categories->sources, 'Categories are hand-picked only');
+        self::assertFalse($categories->sources, 'Categories are hand-picked only');
         self::assertFalse($shared['categories']->translatable);
 
         self::assertSame('categories', (new IndexedFields(self::registry(), $fields))->categoryField(self::faqItem())?->name);

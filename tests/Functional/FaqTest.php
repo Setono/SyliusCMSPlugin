@@ -8,12 +8,12 @@ use Doctrine\Persistence\ObjectManager;
 use Setono\SyliusCMSPlugin\Model\EntryInterface;
 use Setono\SyliusCMSPlugin\Model\FaqItemInterface;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface;
-use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Seo\CanonicalUrlGeneratorInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\Faq;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
+use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -69,9 +69,9 @@ final class FaqTest extends WebTestCase
         $client->submit($crawler->selectButton('Create')->form(['setono_sylius_cms_create_entry[title]' => 'How fast do you ship?']));
 
         self::assertResponseRedirects();
-        /** @var EntryRepositoryInterface $repository */
-        $repository = self::getContainer()->get('setono_sylius_cms.repository.entry');
-        $item = $repository->findOneBy([], ['id' => 'DESC']);
+        /** @var RepositoryInterface<FaqItemInterface> $repository */
+        $repository = self::getContainer()->get('setono_sylius_cms.repository.faq_item');
+        $item = $repository->findBy([], ['id' => 'DESC'], 1)[0] ?? null;
         self::assertInstanceOf(FaqItemInterface::class, $item);
         self::assertSame('How fast do you ship?', $item->getTranslation('en_US')->getTitle());
         self::assertNull($item->getTranslation('en_US')->getSlug());
