@@ -13,6 +13,10 @@ services:
         decorates: Setono\SyliusCMSPlugin\Rendering\PlacementProviderInterface
         arguments: ['@.inner', '@app.cms_cache']
 
+    Setono\SyliusCMSPlugin\Tests\Application\Cache\CachedEntryUrlLookup:
+        decorates: Setono\SyliusCMSPlugin\Rendering\EntryUrlLookupInterface
+        arguments: ['@.inner', '@app.cms_cache']
+
     Setono\SyliusCMSPlugin\Tests\Application\Cache\CMSCacheInvalidator:
         arguments: ['@app.cms_cache']
         tags: ['kernel.event_subscriber']

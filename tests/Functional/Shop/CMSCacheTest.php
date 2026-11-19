@@ -57,6 +57,52 @@ final class CMSCacheTest extends WebTestCase
     }
 
     /**
+     * @test
+     */
+    public function it_finds_an_entry_s_url_in_the_cache_until_a_publish_changes_it(): void
+    {
+        $client = self::createClient();
+        self::clearCMSCache();
+        $page = self::createPage('About us', 'about', 'Hello', published: true);
+
+        $client->enableProfiler();
+        $client->request('GET', '/en_US/about');
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, self::queriesOf($client, 'setono_sylius_cms__old_slug'), 'The URL is looked up');
+
+        $client->enableProfiler();
+        $client->request('GET', '/en_US/about');
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, self::queriesOf($client, 'setono_sylius_cms__old_slug'), 'The URL is found in the cache');
+
+        // The publish dispatches EntryPublished, and the old URL redirects to the new one
+        $page = self::reloadPage($page);
+        self::saveChanges($page, [['op' => 'set_entry_value', 'field' => 'slug', 'locale' => 'en_US', 'value' => 'about-us']]);
+        self::publishEntry($page);
+        $client->request('GET', '/en_US/about');
+        self::assertResponseRedirects('/en_US/about-us', 301);
+    }
+
+    /**
+     * A URL no entry claims is looked up every time, so an entry created at it is found at once
+     *
+     * @test
+     */
+    public function it_looks_a_url_no_entry_claims_up_every_time(): void
+    {
+        $client = self::createClient();
+        self::clearCMSCache();
+
+        $client->request('GET', '/en_US/opening-hours');
+        self::assertResponseStatusCodeSame(404);
+
+        self::createPage('Opening hours', 'opening-hours', 'Open every day', published: true);
+        $client->request('GET', '/en_US/opening-hours');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextSame('.cms-heading', 'Open every day');
+    }
+
+    /**
      * @return list<string>
      */
     private static function footerHeadings(KernelBrowser $client): array
