@@ -58,6 +58,12 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Preset\TranslationKeyValues"/>
         </service>
 
+        <service id="Setono\SyliusCMSPlugin\Preset\StartingPointTransformer" class="Setono\SyliusCMSPlugin\Preset\StartingPointTransformer">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Preset\InsertTransformer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\LayoutRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Upgrade\StoredDataUpgraderInterface"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Preset\TranslationKeyValues" class="Setono\SyliusCMSPlugin\Preset\TranslationKeyValues">
             <argument type="service" id="Setono\SyliusCMSPlugin\RichText\RichTextSchema"/>
         </service>
