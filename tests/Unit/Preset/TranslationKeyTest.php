@@ -33,6 +33,41 @@ final class TranslationKeyTest extends TestCase
         self::assertSame('Banners', TranslationKey::textOf(new TranslationKey('app.preset_category.banners', 'app'), self::translator()));
     }
 
+    /**
+     * @test
+     */
+    public function it_reads_a_translation_key_from_a_stored_value_with_its_domain_or_the_default_one(): void
+    {
+        self::assertEquals(new TranslationKey('app.hero.heading'), TranslationKey::fromValue(['$trans' => 'app.hero.heading']));
+        self::assertEquals(new TranslationKey('app.button', 'app'), TranslationKey::fromValue((object) ['$trans' => 'app.button', '$domain' => 'app']));
+        self::assertSame(['$trans' => 'app.hero.heading'], (new TranslationKey('app.hero.heading'))->toValue());
+        self::assertSame(['$trans' => 'app.button', '$domain' => 'app'], (new TranslationKey('app.button', 'app'))->toValue());
+    }
+
+    /**
+     * @test
+     *
+     * @dataProvider notTranslationKeys
+     */
+    public function it_reads_no_translation_key_from_a_value_that_is_not_one(mixed $value): void
+    {
+        self::assertNull(TranslationKey::fromValue($value));
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function notTranslationKeys(): iterable
+    {
+        yield 'a text' => ['Winter sale'];
+        yield 'a locale map' => [['en_US' => 'Winter sale']];
+        yield 'another key beside it' => [['$trans' => 'app.hero.heading', 'en_US' => 'Winter sale']];
+        yield 'an empty key' => [['$trans' => '']];
+        yield 'a key that is not a string' => [['$trans' => ['app.hero.heading']]];
+        yield 'an empty domain' => [['$trans' => 'app.hero.heading', '$domain' => '']];
+        yield 'a domain that is not a string' => [['$trans' => 'app.hero.heading', '$domain' => 7]];
+    }
+
     private static function translator(): Translator
     {
         $translator = new Translator('en_US');

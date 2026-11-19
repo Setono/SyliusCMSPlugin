@@ -126,6 +126,55 @@ final class InsertTransformerTest extends TestCase
     }
 
     /**
+     * A bound field shows its fallback when the binding gives nothing, so the fallback keeps the entry's locales
+     *
+     * @test
+     */
+    public function it_drops_the_locales_the_entry_does_not_have_from_a_bound_field_s_fallback(): void
+    {
+        $bound = ['$bind' => 'product.attribute', '$params' => ['attribute' => 'material'], '$fallback' => ['de_DE' => 'Baumwolle', 'en_US' => 'Cotton']];
+        $heading = new StoredBlock(self::HEADING, 'heading', 1, fields: ['text' => $bound]);
+
+        $blocks = $this->transformer()->transform(new Preset('Hero', [$heading], code: 'hero'), ['en_US'])->blocks;
+
+        self::assertSame(['text' => ['$bind' => 'product.attribute', '$fallback' => ['en_US' => 'Cotton'], '$params' => ['attribute' => 'material']]], $blocks[0]->fields);
+    }
+
+    /**
+     * A translatable value that isn't a locale map, such as a translation key without a key, is a problem inserting
+     * copies as it is, and the block is flagged once inserted
+     *
+     * @test
+     */
+    public function it_copies_a_translatable_value_that_is_not_a_locale_map_as_it_is(): void
+    {
+        $heading = new StoredBlock(self::HEADING, 'heading', 1, fields: ['text' => ['$trans' => '']]);
+
+        $blocks = $this->transformer()->transform(new Preset('Hero', [$heading], code: 'hero'), ['en_US'])->blocks;
+
+        self::assertSame(['text' => ['$trans' => '']], $blocks[0]->fields);
+    }
+
+    /**
+     * @test
+     */
+    public function it_drops_translation_state_an_upgrader_left_that_is_not_per_locale(): void
+    {
+        $state = ['from' => 'en_US', 'fingerprint' => 'abc'];
+        $this->upgrader->upgradeBlocks(Argument::type('array'))->will(static function (array $arguments) use ($state): Upgraded {
+            /** @var list<array<string, mixed>> $blocks */
+            $blocks = $arguments[0];
+            $blocks[0]['translated'] = ['text' => 'en_US', 'title' => ['en_US' => $state]];
+
+            return new Upgraded($blocks);
+        });
+
+        $blocks = $this->transformer()->transform(new Preset('Hero', [new StoredBlock(self::HEADING, 'heading', 1, fields: ['text' => ['en_US' => 'Winter sale']])], code: 'hero'), ['en_US'])->blocks;
+
+        self::assertSame(['title' => ['en_US' => $state]], $blocks[0]->translated);
+    }
+
+    /**
      * @test
      */
     public function it_resolves_translation_keys_in_each_locale_of_the_entry_that_has_a_translation_leaving_the_others_empty(): void
