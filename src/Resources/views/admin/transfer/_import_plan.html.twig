@@ -1,0 +1,83 @@
+{#
+ # An import's plan, from its dry run or its result: create, update, unchanged or left alone per record, the conflicts,
+ # the reasons it refuses, the homepage changes and the references that don't resolve. See "Transfer" in
+ # docs/spec/admin.md and "What an import does" in docs/spec/transfer.md
+ #
+ # plan: Transfer\Import\ImportPlan
+ # content_types: the content types' labels by their codes
+ #}
+{% macro records(heading, records, attribute, content_types) %}
+    {% if records is not empty %}
+        <h4 class="ui header" id="cms-import-{{ attribute }}-heading">{{ heading|trans }}</h4>
+        <table class="ui very basic compact table" aria-labelledby="cms-import-{{ attribute }}-heading" data-cms-import-{{ attribute }}>
+            <tbody>
+                {% for record in records %}
+                    <tr data-cms-import-record>
+                        <td>{{ record.label }}</td>
+                        {% if record.contentType is not null %}
+                            <td class="collapsing">{{ content_types[record.contentType]|default(record.contentType)|trans }}</td>
+                        {% endif %}
+                        <td class="collapsing">{% if not record.picked %}<span class="ui mini basic label">{{ 'setono_sylius_cms.ui.import.came_along'|trans }}</span>{% endif %}</td>
+                        <td class="collapsing right aligned"><strong>{{ ('setono_sylius_cms.ui.import.action.' ~ record.action.value)|trans }}</strong></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endmacro %}
+
+{% set conflicts = plan.conflicts %}
+{% if conflicts is not empty %}
+    <div class="ui warning message" data-cms-import-conflicts>
+        <div class="header">{{ 'setono_sylius_cms.ui.import.conflicts'|trans }}</div>
+        <p>{{ 'setono_sylius_cms.ui.import.conflicts_help'|trans }}</p>
+        <ul class="list">
+            {% for conflict in conflicts %}
+                <li>{{ conflict.message|trans }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+{% if plan.refusals is not empty %}
+    <div class="ui negative message" data-cms-import-reasons>
+        <div class="header">{{ 'setono_sylius_cms.ui.import.reasons'|trans }}</div>
+        <ul class="list">
+            {% for refusal in plan.refusals %}
+                <li>{{ refusal.reason|trans }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+{{ _self.records('setono_sylius_cms.ui.import.entries', plan.entries, 'entries', content_types) }}
+{{ _self.records('setono_sylius_cms.ui.import.editor_presets', plan.presets, 'presets', content_types) }}
+{{ _self.records('setono_sylius_cms.ui.import.media_items', plan.mediaItems, 'media-items', content_types) }}
+{{ _self.records('setono_sylius_cms.ui.import.media_folders', plan.mediaFolders, 'media-folders', content_types) }}
+
+{% if plan.homepageChanges is not empty %}
+    <h4 class="ui header">{{ 'setono_sylius_cms.ui.import.homepage_changes'|trans }}</h4>
+    <ul class="ui list" data-cms-import-homepages>
+        {% for change in plan.homepageChanges %}
+            <li>
+                {%- if change.to is null -%}
+                    {{ 'setono_sylius_cms.ui.import.homepage_stops'|trans({'%channel%': change.channelCode, '%page%': change.fromTitle}) }}
+                {%- elseif change.fromTitle is null -%}
+                    {{ 'setono_sylius_cms.ui.import.homepage_becomes'|trans({'%channel%': change.channelCode, '%page%': change.toTitle}) }}
+                {%- else -%}
+                    {{ 'setono_sylius_cms.ui.import.homepage_instead_of'|trans({'%channel%': change.channelCode, '%page%': change.toTitle, '%other%': change.fromTitle}) }}
+                {%- endif -%}
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+{% if plan.unresolvedReferences is not empty %}
+    <h4 class="ui header">{{ 'setono_sylius_cms.ui.import.unresolved_references'|trans }}</h4>
+    <p class="cms-export__muted">{{ 'setono_sylius_cms.ui.import.unresolved_references_help'|trans }}</p>
+    <ul class="ui list" data-cms-import-unresolved>
+        {% for reference in plan.unresolvedReferences %}
+            <li>{{ reference.label }}: {{ reference.type|replace({'_': ' '}) }} "{{ reference.id }}"</li>
+        {% endfor %}
+    </ul>
+{% endif %}

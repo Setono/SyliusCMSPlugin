@@ -542,21 +542,6 @@ final class ImportCommandTest extends KernelTestCase
         self::assertSame(['MOBILE', 'WEB'], self::entry(self::PAGE)->getChannelCodes());
     }
 
-    /**
-     * A published page with the UUID the committed export's page has, as when environments were cloned from each other
-     */
-    private static function createPageWithUuid(string $uuid, string $title, string $slug): PageInterface
-    {
-        $page = self::createPage($title, $slug, published: true, channels: ['WEB']);
-        self::entityManager()->getConnection()->update('setono_sylius_cms__entry', ['uuid' => $uuid], ['id' => $page->getId()]);
-        self::entityManager()->clear();
-
-        $page = self::entry($uuid);
-        self::assertInstanceOf(PageInterface::class, $page);
-
-        return $page;
-    }
-
     private static function entries(): EntryRepositoryInterface
     {
         self::entityManager()->clear();

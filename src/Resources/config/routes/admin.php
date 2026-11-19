@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Setono\SyliusCMSPlugin\Controller\Admin\AbandonImportAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\AddPlacementAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CancelScheduleAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\CardDisplaysAction;
@@ -47,6 +48,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\Api\UploadMediaAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\Api\ValidateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\BuilderAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CancelScheduleAction as CancelSchedulePageAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\ConfirmImportAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\CreateShareLinkAction as CreateShareLinkPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
@@ -65,8 +67,10 @@ use Setono\SyliusCMSPlugin\Controller\Admin\RestoreRevisionAction as RestoreRevi
 use Setono\SyliusCMSPlugin\Controller\Admin\RevokeShareLinkAction as RevokeShareLinkPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\ScheduleEntryAction as ScheduleEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\SetPlacementPageScopeAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\ShowImportAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\TransferAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\UpdatePresetAction as UpdatePresetPageAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\UploadImportAction;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Routing\Requirement\Requirement;
 
@@ -274,6 +278,30 @@ return static function (RoutingConfigurator $routes): void {
     $routes->add('setono_sylius_cms_admin_transfer_export', '/cms/transfer/export')
         ->controller(ExportAction::class)
         ->methods(['GET'])
+    ;
+
+    // The Transfer screen's import: Upload, the import's page, and its Import and Cancel
+    $routes->add('setono_sylius_cms_admin_import_upload', '/cms/transfer/imports')
+        ->controller(UploadImportAction::class)
+        ->methods(['POST'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_import_show', '/cms/transfer/imports/{uuid}')
+        ->controller(ShowImportAction::class)
+        ->methods(['GET'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_import_confirm', '/cms/transfer/imports/{uuid}/confirm')
+        ->controller(ConfirmImportAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_import_abandon', '/cms/transfer/imports/{uuid}/abandon')
+        ->controller(AbandonImportAction::class)
+        ->methods(['POST'])
+        ->requirements(['uuid' => Requirement::UUID])
     ;
 
     // The builder's JSON endpoints are internal: their paths, names and bodies can change in any release (docs/spec/builder.md#json-endpoints)

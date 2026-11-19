@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Tests\Support;
 
+use Setono\SyliusCMSPlugin\Model\PageInterface;
+use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -88,6 +90,24 @@ trait Imports
         sort($files, \SORT_STRING);
 
         return $files;
+    }
+
+    /**
+     * A published page with the UUID the committed export's page has, as when environments were cloned from each other.
+     * The test case uses Entries too
+     */
+    private static function createPageWithUuid(string $uuid, string $title, string $slug): PageInterface
+    {
+        $page = self::createPage($title, $slug, published: true, channels: ['WEB']);
+        self::entityManager()->getConnection()->update('setono_sylius_cms__entry', ['uuid' => $uuid], ['id' => $page->getId()]);
+        self::entityManager()->clear();
+
+        /** @var EntryRepositoryInterface $entries */
+        $entries = self::getContainer()->get(EntryRepositoryInterface::class);
+        $page = $entries->findOneByUuid($uuid);
+        self::assertInstanceOf(PageInterface::class, $page);
+
+        return $page;
     }
 
     /**

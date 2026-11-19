@@ -1,0 +1,135 @@
+{#
+ # The page of an import started on the Transfer screen. While the Messenger worker checks or imports it, it shows its
+ # progress, and import-progress.js looks again until that changes. Once the dry run would apply, it shows the plan with
+ # the overwrite checkbox when there are conflicts, the option to publish everything imported, Import and Cancel. Once
+ # it's finished, it shows the result: what it imported, linked to review and publish it, or why it refused. See
+ # "Transfer" in docs/spec/admin.md
+ #}
+{% extends '@SetonoSyliusCMSPlugin/admin/layout.html.twig' %}
+
+{% import '@SyliusUi/Macro/headers.html.twig' as headers %}
+{% import '@SyliusAdmin/Macro/breadcrumb.html.twig' as breadcrumb %}
+
+{% block title %}{{ import.filename }} {{ parent() }}{% endblock %}
+
+{% block hub_content %}
+    {{ headers.default(import.filename, 'upload', 'setono_sylius_cms.ui.import.description'|trans) }}
+
+    {{ breadcrumb.crumble([
+        { label: 'sylius.ui.administration'|trans, url: path('sylius_admin_dashboard') },
+        { label: 'setono_sylius_cms.ui.content'|trans, url: path('setono_sylius_cms_admin_overview') },
+        { label: 'setono_sylius_cms.ui.transfer.title'|trans, url: path('setono_sylius_cms_admin_transfer') },
+        { label: import.filename },
+    ]) }}
+
+    {% set state = import.state.value %}
+    <div class="ui segment" data-cms-import-state="{{ state }}" data-cms-import-started="{{ import.startedAt is null ? '' : import.startedAt|date('c') }}">
+        {% if import.waiting %}
+            <div class="ui icon message" role="status" data-cms-import-progress>
+                <i class="notched circle loading icon" aria-hidden="true"></i>
+                <div class="content">
+                    <div class="header">
+                        {%- if import.startedAt is null -%}
+                            {{ ('setono_sylius_cms.ui.import.progress.' ~ (state == 'checking' ? 'waiting_to_check' : 'waiting_to_import'))|trans }}
+                        {%- else -%}
+                            {{ ('setono_sylius_cms.ui.import.progress.' ~ state)|trans({'%time%': import.startedAt|date('Y-m-d H:i:s')}) }}
+                        {%- endif -%}
+                    </div>
+                    <p>{{ 'setono_sylius_cms.ui.import.progress_help'|trans }}</p>
+                </div>
+            </div>
+            {% if state == 'checking' %}
+                {{ _self.abandon(import, csrf_token_id) }}
+            {% endif %}
+        {% elseif state == 'checked' and dry_run is not null and dry_run.plan is not null %}
+            <p>{{ 'setono_sylius_cms.ui.import.checked_help'|trans }}</p>
+            {{ include('@SetonoSyliusCMSPlugin/admin/transfer/_import_plan.html.twig', {plan: dry_run.plan, content_types: content_types}) }}
+
+            <div class="ui divider"></div>
+            <form class="ui form" method="post" action="{{ path('setono_sylius_cms_admin_import_confirm', {uuid: import.uuid}) }}" data-cms-import-confirm>
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token(csrf_token_id) }}">
+                {# The dry run ran as if overwriting, so every conflict it lists is one overwriting resolves #}
+                {% if dry_run.plan.conflicts is not empty %}
+                    <div class="field">
+                        <div class="ui checkbox">
+                            <input type="checkbox" id="cms-import-overwrite" name="overwrite" value="1" required>
+                            <label for="cms-import-overwrite">{{ 'setono_sylius_cms.ui.import.overwrite'|trans }}</label>
+                        </div>
+                    </div>
+                {% endif %}
+                <div class="field">
+                    <div class="ui checkbox">
+                        <input type="checkbox" id="cms-import-publish" name="publish" value="1" aria-describedby="cms-import-publish-help">
+                        <label for="cms-import-publish">{{ 'setono_sylius_cms.ui.import.publish'|trans }}</label>
+                    </div>
+                    <p class="cms-export__muted" id="cms-import-publish-help">{{ 'setono_sylius_cms.ui.import.publish_help'|trans }}</p>
+                </div>
+                <button type="submit" class="ui primary labeled icon button"><i class="upload icon" aria-hidden="true"></i> {{ 'setono_sylius_cms.ui.import.import'|trans }}</button>
+            </form>
+            {{ _self.abandon(import, csrf_token_id) }}
+        {% elseif state == 'finished' and result is not null %}
+            <div data-cms-import-result>
+                {% if result.status.value == 'invalid' %}
+                    <div class="ui negative message">{{ 'setono_sylius_cms.ui.import.invalid'|trans({'%reason%': result.invalid}) }}</div>
+                {% elseif result.status.value == 'refused' %}
+                    <div class="ui negative message">
+                        <div class="header">{{ 'setono_sylius_cms.ui.import.refused'|trans }}</div>
+                        {% if result.plan is not null and result.plan.refusedOnlyForConflictsOverwritingResolves %}
+                            <p>{{ 'setono_sylius_cms.ui.import.refused_for_conflicts'|trans }}</p>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    {# Such as "3 entries and 1 editor preset created, 1 entry updated" #}
+                    {% set kinds = [['entries', result.plan.entries], ['editor_presets', result.plan.presets], ['media_items', result.plan.mediaItems], ['media_folders', result.plan.mediaFolders]] %}
+                    {% set parts = [] %}
+                    {% for action in ['create', 'update', 'unchanged', 'left_alone'] %}
+                        {% set counts = [] %}
+                        {% for kind in kinds %}
+                            {% set count = kind[1]|filter(record => record.action.value == action)|length %}
+                            {% if count > 0 %}
+                                {% set counts = counts|merge([('setono_sylius_cms.ui.import.count.' ~ kind[0])|trans({'%count%': count})]) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if counts is not empty %}
+                            {% set parts = parts|merge([('setono_sylius_cms.ui.import.counted.' ~ action)|trans({'%records%': counts|join(', ', ' ' ~ 'setono_sylius_cms.ui.import.and'|trans ~ ' ')})]) %}
+                        {% endif %}
+                    {% endfor %}
+                    <div class="ui positive message">
+                        {{- parts is empty ? 'setono_sylius_cms.ui.import.imported_nothing'|trans : 'setono_sylius_cms.ui.import.imported'|trans({'%summary%': parts|join(', ')}) -}}
+                    </div>
+                    {% set written = result.plan.writtenEntries %}
+                    {% if written is not empty %}
+                        <p id="cms-import-written-heading">{{ (import.publish ? 'setono_sylius_cms.ui.import.written_published' : 'setono_sylius_cms.ui.import.written')|trans }}</p>
+                        <ul class="ui list" aria-labelledby="cms-import-written-heading" data-cms-import-entries-written>
+                            {% for entry in written %}
+                                <li>
+                                    <a href="{{ path('setono_sylius_cms_admin_entry_show', {uuid: entry.uuid}) }}">{{ entry.label }}</a>
+                                    <span class="ui mini basic label">{{ content_types[entry.contentType]|default(entry.contentType)|trans }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                {% endif %}
+            </div>
+            {% if result.plan is not null %}
+                {{ include('@SetonoSyliusCMSPlugin/admin/transfer/_import_plan.html.twig', {plan: result.plan, content_types: content_types}) }}
+            {% endif %}
+        {% else %}
+            <p data-cms-import-abandoned>{{ 'setono_sylius_cms.ui.import.abandoned'|trans }}</p>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% macro abandon(import, csrf_token_id) %}
+    <form method="post" action="{{ path('setono_sylius_cms_admin_import_abandon', {uuid: import.uuid}) }}" class="cms-import__abandon" data-cms-import-abandon>
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token(csrf_token_id) }}">
+        <button type="submit" class="ui labeled icon button"><i class="close icon" aria-hidden="true"></i> {{ 'setono_sylius_cms.ui.import.abandon'|trans }}</button>
+    </form>
+{% endmacro %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% if import.waiting %}
+        <script type="module" src="{{ asset('bundles/setonosyliuscmsplugin/admin/import-progress.js') }}"></script>
+    {% endif %}
+{% endblock %}

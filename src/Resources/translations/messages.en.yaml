@@ -650,6 +650,72 @@ setono_sylius_cms:
         homepage_of: Homepage of
         homepage_of_help: The page each channel shows at its root URL in place of the store's own homepage. Choose the channels in the builder's settings.
         homepage_url: 'The homepage, where its own URL redirects in the channels it''s the homepage of'
+        # The Transfer screen's import, and an import's page. See "Transfer" in docs/spec/admin.md
+        import:
+            abandon: Cancel the import
+            abandoned: This import was cancelled before it ran, and its zip deleted. Upload the export again to import it.
+            and: and
+            action:
+                create: Create
+                left_alone: Left alone
+                unchanged: Unchanged
+                update: Update
+            came_along: Came along
+            checked_help: Nothing has changed yet. Review what the import would do, then import it.
+            conflicts: Conflicts
+            conflicts_help: Records with unpublished changes or a scheduled publish here, or changed here since the export, are in the way until they're overwritten. A URL clash needs a slug changed in one of the environments.
+            count:
+                editor_presets: '%count% editor preset|%count% editor presets'
+                entries: '%count% entry|%count% entries'
+                media_folders: '%count% media folder|%count% media folders'
+                media_items: '%count% media item|%count% media items'
+            counted:
+                create: '%records% created'
+                left_alone: '%records% left alone'
+                unchanged: '%records% unchanged'
+                update: '%records% updated'
+            description: Import an export zip made by the Transfer screen or setono:cms:export
+            editor_presets: Editor presets
+            entries: Entries
+            file: Export zip
+            file_help: 'At most %limit%, the most the server takes in one upload. Import a bigger export with setono:cms:import.'
+            help: Upload an export zip to see what the import would do. Nothing changes until you confirm it. Imported entries land in their drafts, to review and publish.
+            homepage_changes: Homepage changes
+            homepage_becomes: '%channel%: %page% becomes its homepage'
+            homepage_instead_of: '%channel%: %page% becomes its homepage, instead of %other%'
+            homepage_stops: '%channel%: %page% stops being its homepage'
+            import: Import
+            imported: 'Imported: %summary%.'
+            imported_nothing: 'Imported: nothing, as this store has everything in it already.'
+            invalid: 'The export couldn''t be read, so nothing changed: %reason%'
+            latest: Latest imports
+            media_folders: Media folders
+            media_items: Media items
+            overwrite: Overwrite the records in conflict, discarding their unpublished changes and cancelling their scheduled publishes
+            progress:
+                checking: 'The Messenger worker has been checking the export since %time%.'
+                importing: 'The Messenger worker has been importing it since %time%.'
+                waiting_to_check: Waiting for the Messenger worker to check the export.
+                waiting_to_import: Waiting for the Messenger worker to import it.
+            progress_help: This page updates when it's done. If it waits for long, the Messenger worker may not be running.
+            publish: Publish everything imported
+            publish_help: Every entry the import creates or updates is published as part of it, once all of them pass publish validation.
+            reasons: Why it refused
+            refused: The import refused. Nothing changed.
+            refused_for_conflicts: Upload the export again and overwrite the records in conflict to import it.
+            state:
+                abandoned: Cancelled
+                checked: Waiting to be confirmed
+                checking: Being checked
+                finished: Finished
+                importing: Importing
+            title: Import
+            unresolved_references: References that don't resolve here
+            unresolved_references_help: They import unchanged, and are flagged as broken references.
+            uploaded_at: 'Uploaded %at%'
+            upload: Upload
+            written: 'Review and publish what it imported:'
+            written_published: 'What it imported and published:'
         language: Language
         last_edited: Last edited
         last_edited_at: 'Last edited %at%'

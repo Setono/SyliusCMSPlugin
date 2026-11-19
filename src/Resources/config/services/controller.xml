@@ -579,6 +579,7 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\ExportRequest"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Admin\ExportChoices"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\ExportPlannerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ImportRepositoryInterface"/>
             <argument type="service" id="twig"/>
 
             <tag name="controller.service_arguments"/>
@@ -591,6 +592,45 @@
             <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\ExporterInterface"/>
             <argument type="service" id="router"/>
             <argument type="service" id="clock"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <!-- The Transfer screen's import, which runs on the Messenger worker (docs/spec/admin.md#transfer) -->
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\ImportScreenRequest" class="Setono\SyliusCMSPlugin\Controller\Admin\ImportScreenRequest">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\ImportRepositoryInterface"/>
+            <argument type="service" id="security.csrf.token_manager"/>
+            <argument type="service" id="router"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\UploadImportAction" class="Setono\SyliusCMSPlugin\Controller\Admin\UploadImportAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\ImportScreenRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImportQueueInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\ShowImportAction" class="Setono\SyliusCMSPlugin\Controller\Admin\ShowImportAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\ImportScreenRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImportResultNormalizer"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="twig"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\ConfirmImportAction" class="Setono\SyliusCMSPlugin\Controller\Admin\ConfirmImportAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\ImportScreenRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImportQueueInterface"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\AbandonImportAction" class="Setono\SyliusCMSPlugin\Controller\Admin\AbandonImportAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\ImportScreenRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\Import\ImportQueueInterface"/>
 
             <tag name="controller.service_arguments"/>
         </service>
