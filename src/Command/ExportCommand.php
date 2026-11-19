@@ -116,10 +116,14 @@ final class ExportCommand extends Command
      */
     private static function added(SymfonyStyle $io, ExportPlan $plan): void
     {
-        $added = array_filter([
-            0 === count($plan->addedEntries()) ? null : self::count(count($plan->addedEntries()), 'snippet', 'snippets'),
-            0 === count($plan->addedMediaItems()) ? null : self::count(count($plan->addedMediaItems()), 'media item', 'media items'),
-        ]);
+        $added = [];
+        if ([] !== $plan->addedEntries()) {
+            $added[] = self::count(count($plan->addedEntries()), 'snippet', 'snippets');
+        }
+
+        if ([] !== $plan->addedMediaItems()) {
+            $added[] = self::count(count($plan->addedMediaItems()), 'media item', 'media items');
+        }
 
         if ([] !== $added) {
             $io->text(sprintf('%s came along because the picked records use them.', implode(' and ', $added)));

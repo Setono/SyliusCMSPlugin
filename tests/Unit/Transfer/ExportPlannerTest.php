@@ -393,7 +393,7 @@ final class ExportPlannerTest extends TestCase
 
     private static function teaser(?MediaItemInterface $image = null, ?string $readMore = null): StoredBlock
     {
-        return new StoredBlock(self::key(), 'teaser', 1, fields: array_filter(['image' => $image?->getUuid(), 'readMore' => $readMore]));
+        return new StoredBlock(self::key(), 'teaser', 1, fields: array_filter(['image' => $image?->getUuid(), 'readMore' => $readMore], static fn (?string $value): bool => null !== $value));
     }
 
     private static function snippetBlock(Snippet $snippet): StoredBlock

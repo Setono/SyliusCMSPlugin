@@ -56,6 +56,8 @@ use Setono\SyliusCMSPlugin\Controller\Admin\OrderEntriesAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OrderPlacementsAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OverviewAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PresetsAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\TransferAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\ExportAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PreviewRevisionAction as PreviewRevisionPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\PublishEntryAction as PublishEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\RemovePlacementAction;
@@ -260,6 +262,17 @@ return static function (RoutingConfigurator $routes): void {
         ->controller(DeletePresetPageAction::class)
         ->methods(['POST'])
         ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    // The Transfer screen (docs/spec/admin.md#transfer), and its Download of an export as a zip
+    $routes->add('setono_sylius_cms_admin_transfer', '/cms/transfer')
+        ->controller(TransferAction::class)
+        ->methods(['GET'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_transfer_export', '/cms/transfer/export')
+        ->controller(ExportAction::class)
+        ->methods(['GET'])
     ;
 
     // The builder's JSON endpoints are internal: their paths, names and bodies can change in any release (docs/spec/builder.md#json-endpoints)

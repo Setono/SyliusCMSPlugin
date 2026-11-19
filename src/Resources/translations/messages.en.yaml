@@ -239,6 +239,7 @@ setono_sylius_cms:
                 pages: Pages
                 presets: Presets
                 snippets: Snippets
+                transfer: Transfer
             main:
                 content:
                     content: Content
@@ -585,6 +586,35 @@ setono_sylius_cms:
         this_page: This page
         this_snippet: This snippet
         title: Title
+        transfer:
+            add: Add
+            add_entry: 'Add %title%'
+            added: Added because the picked records use them
+            counts: '%entries%, %presets% and %media_items%'
+            description: Move content between environments of the store as export files
+            download: Download
+            editor_presets: Editor presets
+            entries: Entries
+            entry_count: '%count% entry|%count% entries'
+            everything: 'Everything: every entry, editor preset and media item'
+            export: Export
+            export_help: Pick entries, editor presets and media folders, or everything. The snippets and media items they use come along.
+            find_entries: Find entries
+            find_entries_placeholder: By title or slug
+            in_the_export: In the export
+            media_folders: Media folders
+            media_folders_help: A folder brings every media item in it and in its subfolders.
+            media_item_count: '%count% media item|%count% media items'
+            no_editor_presets: There are no editor presets.
+            no_entries_found: No entries match.
+            no_entries_picked: No entries picked yet. Find them by their title or slug.
+            no_media_folders: There are no media folders.
+            nothing_picked: Pick what to export to see what the export holds.
+            picked_entries: Picked entries
+            preset_count: '%count% editor preset|%count% editor presets'
+            remove_entry: 'Remove %title%'
+            title: Transfer
+            update: Update
         translation_chip:
             complete: complete
             held_back: held back

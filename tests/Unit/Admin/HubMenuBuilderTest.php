@@ -69,11 +69,11 @@ final class HubMenuBuilderTest extends TestCase
     /**
      * @test
      */
-    public function its_library_has_the_media_library_and_the_presets(): void
+    public function its_library_has_the_media_library_the_presets_and_transfer(): void
     {
         $library = self::child($this->menu(), 'library');
 
-        self::assertSame(['media', 'presets'], array_keys($library->getChildren()));
+        self::assertSame(['media', 'presets', 'transfer'], array_keys($library->getChildren()));
 
         $media = self::child($library, 'media');
         self::assertSame('setono_sylius_cms.menu.admin.hub.media', $media->getLabel());
@@ -86,6 +86,12 @@ final class HubMenuBuilderTest extends TestCase
         self::assertSame('/admin/cms/presets', $presets->getUri());
         self::assertSame('clone outline', $presets->getLabelAttribute('icon'));
         self::assertTrue(MenuFactory::matcherOn('setono_sylius_cms_admin_preset_index')->isCurrent($presets));
+
+        $transfer = self::child($library, 'transfer');
+        self::assertSame('setono_sylius_cms.menu.admin.hub.transfer', $transfer->getLabel());
+        self::assertSame('/admin/cms/transfer', $transfer->getUri());
+        self::assertSame('exchange', $transfer->getLabelAttribute('icon'));
+        self::assertTrue(MenuFactory::matcherOn('setono_sylius_cms_admin_transfer')->isCurrent($transfer));
     }
 
     /**
@@ -178,7 +184,7 @@ final class HubMenuBuilderTest extends TestCase
             $event->getMenu()->getChild('library')?->addChild('brand_assets', ['uri' => '/brand-assets']);
         });
 
-        self::assertSame(['media', 'presets', 'brand_assets'], array_keys(self::child($this->menu(), 'library')->getChildren()));
+        self::assertSame(['media', 'presets', 'transfer', 'brand_assets'], array_keys(self::child($this->menu(), 'library')->getChildren()));
     }
 
     private function menu(): ItemInterface
