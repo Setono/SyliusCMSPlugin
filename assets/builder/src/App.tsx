@@ -228,6 +228,7 @@ export function App({ config, api, urlsApi, autosaveDelay, navigate = goTo, medi
                         urlPrefix,
                         homepage: contentType?.homepage ?? false,
                         hasBlockTree: contentType?.blocks !== null,
+                        hasOwnUrl: contentType?.prefix !== null,
                         entryFields: contentType?.fields ?? [],
                         urls: urlsStore,
                         titleChanged: (locale, before) => follower?.titleChanged(locale, before),
