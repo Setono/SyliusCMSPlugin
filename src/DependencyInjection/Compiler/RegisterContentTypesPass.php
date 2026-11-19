@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\DependencyInjection\Compiler;
 
+use Setono\SyliusCMSPlugin\Attribute\Card;
 use Setono\SyliusCMSPlugin\Doctrine\ColumnPrefixListener;
 use Setono\SyliusCMSPlugin\Doctrine\DiscriminatorMapListener;
 use Setono\SyliusCMSPlugin\Doctrine\RootAssociationsListener;
@@ -72,6 +73,7 @@ final class RegisterContentTypesPass implements CompilerPassInterface
             }
 
             self::assertOrder($code, $model, $attribute->order);
+            self::assertCards($code, $attribute->cards);
 
             if (isset($contentTypes[$code])) {
                 throw new \LogicException(sprintf('The content type code "%s" is used by both the resources "%s" and "%s"', $code, $contentTypes[$code]['resource'], $alias));
@@ -167,6 +169,27 @@ final class RegisterContentTypesPass implements CompilerPassInterface
      *
      * @param class-string $model
      */
+    /**
+     * Each display has one card, and is a code, as the Entries block prints it in its class, cms-entries--<display>
+     *
+     * @param list<Card> $cards
+     */
+    private static function assertCards(string $code, array $cards): void
+    {
+        $displays = [];
+        foreach ($cards as $card) {
+            if (!Code::isValid($card->display)) {
+                throw new \LogicException(sprintf('The content type "%s" has a card for the display "%s", which must match %s', $code, $card->display, Code::PATTERN));
+            }
+
+            if (isset($displays[$card->display])) {
+                throw new \LogicException(sprintf('The content type "%s" has more than one card for the display "%s"', $code, $card->display));
+            }
+
+            $displays[$card->display] = true;
+        }
+    }
+
     private static function assertOrder(string $code, string $model, mixed $order): void
     {
         try {

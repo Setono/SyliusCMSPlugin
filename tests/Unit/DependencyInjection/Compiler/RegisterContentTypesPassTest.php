@@ -17,6 +17,8 @@ use Setono\SyliusCMSPlugin\Model\PageTranslation;
 use Setono\SyliusCMSPlugin\Model\Snippet;
 use Setono\SyliusCMSPlugin\Registry\ContentTypeRegistry;
 use Setono\SyliusCMSPlugin\Targeting\ChannelsAndAudienceModifierInterface;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\CardedOddly;
+use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\CardedTwice;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\InvalidCode;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\Location;
 use Setono\SyliusCMSPlugin\Tests\Unit\Registry\Fixture\OrderedByMissing;
@@ -215,6 +217,34 @@ final class RegisterContentTypesPassTest extends AbstractCompilerPassTestCase
 
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('The content type "ordered_by_missing" orders its entries by "missing", which must be a property of OrderedByMissing');
+
+        $this->compile();
+    }
+
+    /**
+     * A card's display is printed in the Entries block's class, cms-entries--<display>
+     *
+     * @test
+     */
+    public function it_fails_the_build_for_a_card_whose_display_is_not_a_code(): void
+    {
+        $this->setParameter('sylius.resources', ['app.carded_oddly' => ['classes' => ['model' => CardedOddly::class]]]);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('The content type "carded_oddly" has a card for the display "Big grid", which must match /^[a-z][a-z0-9_]*$/');
+
+        $this->compile();
+    }
+
+    /**
+     * @test
+     */
+    public function it_fails_the_build_for_two_cards_for_one_display(): void
+    {
+        $this->setParameter('sylius.resources', ['app.carded_twice' => ['classes' => ['model' => CardedTwice::class]]]);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('The content type "carded_twice" has more than one card for the display "grid"');
 
         $this->compile();
     }
