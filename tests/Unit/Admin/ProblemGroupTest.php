@@ -7,6 +7,8 @@ namespace Setono\SyliusCMSPlugin\Tests\Unit\Admin;
 use PHPUnit\Framework\TestCase;
 use Setono\SyliusCMSPlugin\Admin\ProblemGroup;
 use Setono\SyliusCMSPlugin\Model\Page;
+use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Problem\PresetProblem;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 use Setono\SyliusCMSPlugin\Tests\Unit\Problem\Fixture\AnyMessage;
@@ -48,6 +50,23 @@ final class ProblemGroupTest extends TestCase
             [new ProblemGroup('project_kind', Severity::Error, [$warning, $error])],
             ProblemGroup::byKind([$warning, $error]),
         );
+    }
+
+    /**
+     * Presets aren't entries, and their problems are grouped as the entries' are, listed below them
+     *
+     * @test
+     */
+    public function it_groups_the_problems_of_presets_as_it_groups_the_entries(): void
+    {
+        $preset = new Preset('Hero', [], code: 'hero');
+        $removed = new PresetProblem('preset_removed_block_type', Severity::Warning, $preset, new AnyMessage());
+        $invalid = new PresetProblem('preset_invalid', Severity::Error, $preset, new AnyMessage());
+
+        self::assertEquals([
+            new ProblemGroup('preset_invalid', Severity::Error, [$invalid]),
+            new ProblemGroup('preset_removed_block_type', Severity::Warning, [$removed]),
+        ], ProblemGroup::byKind([$removed, $invalid]));
     }
 
     /**

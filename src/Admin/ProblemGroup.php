@@ -4,18 +4,22 @@ declare(strict_types=1);
 
 namespace Setono\SyliusCMSPlugin\Admin;
 
+use Setono\SyliusCMSPlugin\Problem\PresetProblem;
 use Setono\SyliusCMSPlugin\Problem\Problem;
 use Setono\SyliusCMSPlugin\Problem\Severity;
 
 /**
- * The problems of one kind, as the Overview's Needs attention groups them. See "Overview" in docs/spec/admin.md
+ * The problems of one kind, of entries or of presets, as the Overview's Needs attention groups them. See "Overview" in
+ * docs/spec/admin.md
+ *
+ * @template T of Problem|PresetProblem
  */
 final readonly class ProblemGroup
 {
     /**
      * @param string $kind the code of the kind
      * @param Severity $severity an error when one of its problems is, and otherwise a warning
-     * @param non-empty-list<Problem> $problems in the order they were found
+     * @param non-empty-list<T> $problems in the order they were found
      */
     public function __construct(
         public string $kind,
@@ -27,13 +31,15 @@ final readonly class ProblemGroup
     /**
      * Groups the problems by kind, in the order the kinds were first found, with the groups of errors first
      *
-     * @param iterable<Problem> $problems
+     * @template P of Problem|PresetProblem
      *
-     * @return list<self>
+     * @param iterable<P> $problems
+     *
+     * @return list<self<P>>
      */
     public static function byKind(iterable $problems): array
     {
-        /** @var array<string, non-empty-list<Problem>> $byKind */
+        /** @var array<string, non-empty-list<P>> $byKind */
         $byKind = [];
         foreach ($problems as $problem) {
             $byKind[$problem->kind][] = $problem;
@@ -41,7 +47,7 @@ final readonly class ProblemGroup
 
         $errors = $warnings = [];
         foreach ($byKind as $kind => $ofKind) {
-            $error = [] !== array_filter($ofKind, static fn (Problem $problem): bool => Severity::Error === $problem->severity);
+            $error = [] !== array_filter($ofKind, static fn (Problem|PresetProblem $problem): bool => Severity::Error === $problem->severity);
             if ($error) {
                 $errors[] = new self($kind, Severity::Error, $ofKind);
             } else {

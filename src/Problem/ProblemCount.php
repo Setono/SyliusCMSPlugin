@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Problem;
 
 /**
- * How many errors and warnings there are, of an entry or of the whole store
+ * How many errors and warnings there are, of an entry, of the presets or of the whole store
  */
 final readonly class ProblemCount
 {
@@ -16,7 +16,7 @@ final readonly class ProblemCount
     }
 
     /**
-     * @param iterable<Problem> $problems
+     * @param iterable<Problem|PresetProblem> $problems
      */
     public static function of(iterable $problems): self
     {

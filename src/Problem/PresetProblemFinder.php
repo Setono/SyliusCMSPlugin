@@ -43,32 +43,19 @@ final class PresetProblemFinder implements PresetProblemFinderInterface, ResetIn
 
     public function findIn(Preset $preset): array
     {
-        $errors = $warnings = [];
+        $problems = [];
         foreach ($this->kinds as $kind) {
             foreach ($kind->findIn($preset) as $problem) {
-                if (Severity::Error === $problem->severity) {
-                    $errors[] = $problem;
-                } else {
-                    $warnings[] = $problem;
-                }
+                $problems[] = $problem;
             }
         }
 
-        return [...$errors, ...$warnings];
+        return Severity::errorsFirst($problems);
     }
 
     public function count(): ProblemCount
     {
-        $errors = $warnings = 0;
-        foreach ($this->findAll() as $problem) {
-            if (Severity::Error === $problem->severity) {
-                ++$errors;
-            } else {
-                ++$warnings;
-            }
-        }
-
-        return new ProblemCount($errors, $warnings);
+        return ProblemCount::of($this->findAll());
     }
 
     public function reset(): void
