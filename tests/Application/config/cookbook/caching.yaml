@@ -1,0 +1,18 @@
+# The caching cookbook's config, docs/cookbook/caching.md, as a project adds it in config/packages. The test application
+# doesn't load it on its own: tests/Functional/Fixture/CMSCacheKernel does
+framework:
+    cache:
+        pools:
+            # A tag-aware pool of its own, on the application's cache adapter
+            app.cms_cache:
+                adapter: cache.app
+                tags: true
+
+services:
+    Setono\SyliusCMSPlugin\Tests\Application\Cache\CachedPlacementProvider:
+        decorates: Setono\SyliusCMSPlugin\Rendering\PlacementProviderInterface
+        arguments: ['@.inner', '@app.cms_cache']
+
+    Setono\SyliusCMSPlugin\Tests\Application\Cache\CMSCacheInvalidator:
+        arguments: ['@app.cms_cache']
+        tags: ['kernel.event_subscriber']
