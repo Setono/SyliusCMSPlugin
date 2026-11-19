@@ -48,6 +48,25 @@ interface EntryRepositoryInterface
     public function iterateAll(): iterable;
 
     /**
+     * Every entry of the content type, the one created first first
+     *
+     * @param string $contentType a content type code
+     *
+     * @return list<EntryInterface>
+     */
+    public function findByContentType(string $contentType): array;
+
+    /**
+     * The entries whose title or slug in any locale contains the search, ignoring case, of every content type but those
+     * left out, newest first
+     *
+     * @param list<string> $hiddenContentTypes the codes of content types whose entries it leaves out
+     *
+     * @return list<EntryInterface>
+     */
+    public function search(string $search, int $limit, array $hiddenContentTypes = []): array;
+
+    /**
      * The entries of an admin list: of the content type, or of every content type when it's null. Entries are "o", and
      * the grids' filters reach their translations as "translation". The translations and audience groups are fetched
      * with them, for the rows (see "Entry lists" in docs/spec/admin.md). A content type ordered by position lists its

@@ -51,6 +51,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\CreateShareLinkAction as CreateShare
 use Setono\SyliusCMSPlugin\Controller\Admin\DeleteEntryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DeletePresetAction as DeletePresetPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\DiscardEntryAction as DiscardEntryPageAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\ExportAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\MediaLibraryAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OrderEntriesAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\OrderPlacementsAction;
@@ -63,6 +64,7 @@ use Setono\SyliusCMSPlugin\Controller\Admin\RestoreRevisionAction as RestoreRevi
 use Setono\SyliusCMSPlugin\Controller\Admin\RevokeShareLinkAction as RevokeShareLinkPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\ScheduleEntryAction as ScheduleEntryPageAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\SetPlacementPageScopeAction;
+use Setono\SyliusCMSPlugin\Controller\Admin\TransferAction;
 use Setono\SyliusCMSPlugin\Controller\Admin\UpdatePresetAction as UpdatePresetPageAction;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Component\Routing\Requirement\Requirement;
@@ -260,6 +262,17 @@ return static function (RoutingConfigurator $routes): void {
         ->controller(DeletePresetPageAction::class)
         ->methods(['POST'])
         ->requirements(['uuid' => Requirement::UUID])
+    ;
+
+    // The Transfer screen (docs/spec/admin.md#transfer), and its Download of an export as a zip
+    $routes->add('setono_sylius_cms_admin_transfer', '/cms/transfer')
+        ->controller(TransferAction::class)
+        ->methods(['GET'])
+    ;
+
+    $routes->add('setono_sylius_cms_admin_transfer_export', '/cms/transfer/export')
+        ->controller(ExportAction::class)
+        ->methods(['GET'])
     ;
 
     // The builder's JSON endpoints are internal: their paths, names and bodies can change in any release (docs/spec/builder.md#json-endpoints)

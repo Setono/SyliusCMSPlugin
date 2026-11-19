@@ -42,6 +42,16 @@
             <argument type="service" id="translator"/>
         </service>
 
+        <!-- What the Transfer screen's export offers to pick, and how it names what's picked and what comes along -->
+        <service id="Setono\SyliusCMSPlugin\Admin\ExportChoices" class="Setono\SyliusCMSPlugin\Admin\ExportChoices">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.repository.editor_preset"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Localization\FallbackValues"/>
+            <argument type="service" id="translator"/>
+        </service>
+
         <!-- The rows of the entry lists, which their grids' field templates get through cms_admin_entry_row() -->
         <service id="Setono\SyliusCMSPlugin\Admin\EntryRows" class="Setono\SyliusCMSPlugin\Admin\EntryRows">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\DraftRepositoryInterface"/>

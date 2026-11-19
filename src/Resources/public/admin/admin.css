@@ -224,3 +224,19 @@
 .cms-preset-delete {
     margin-top: 0.5rem;
 }
+
+/* The Transfer screen's export form */
+.cms-export__fieldset {
+    border: 0;
+    margin: 2em 0 0;
+    padding: 0;
+    min-width: 0;
+}
+
+.cms-export__muted {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.cms-export__folder {
+    margin-left: calc(var(--cms-export-depth, 0) * 1.5em) !important;
+}

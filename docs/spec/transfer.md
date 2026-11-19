@@ -134,7 +134,7 @@ Every folder that holds an exported media item, with its parents:
 ]
 ```
 
-Parents come before their children.
+Parents come before their children, and folders with the same parent are in name order. An export without media items has an empty list.
 
 ### media/&lt;uuid&gt;.json
 
@@ -164,6 +164,7 @@ Parents come before their children.
 | --- | --- |
 | `folder` | The folder's UUID, or `null` for Unsorted. |
 | `kind` | `image`, `video` or `document`. |
+| `filename` | The original filename. When that isn't a plain basename an import takes ([Media files](#media-files)), it's the name the file is stored under. |
 | `width`, `height` | Pixels, for images. `null` otherwise. |
 | `alt` | A locale map, for images. Empty otherwise. |
 | `focalPoint` | `x` and `y` from 0 to 1, for images. `null` otherwise. |
@@ -254,7 +255,8 @@ setono:cms:export <dir> [--entry=UUID]... [--content-type=CODE]... [--media-fold
 ```
 
 - **Selection.** `--entry` picks entries, `--content-type` picks every entry of a content type, `--media-folder` picks every media item in a folder and its subfolders, and `--presets` picks every editor preset. `--all` picks every entry, editor preset and media item. Options combine, and at least one is required.
-- **Output.** It writes the folder to `<dir>`, which must be empty or missing. `--zip` writes `<dir>.zip` instead.
+- **Output.** It writes the folder to `<dir>`, which must be empty or missing. `--zip` writes `<dir>.zip` instead, which must not exist.
+- **Exit codes.** It exits with `2` (`Command::INVALID`), writing nothing, when no option is given, `<dir>` isn't empty, `<dir>.zip` exists, or an option names an entry, content type, media folder or editor preset there's none of.
 
 ```text
 setono:cms:import <path> [--dry-run] [--publish] [--overwrite]

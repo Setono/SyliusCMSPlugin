@@ -554,6 +554,34 @@
             <tag name="controller.service_arguments"/>
         </service>
 
+        <!-- The Transfer screen and its Download, which read the export form's query the same way -->
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\ExportRequest" class="Setono\SyliusCMSPlugin\Controller\Admin\ExportRequest">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface"/>
+            <argument type="service" id="setono_sylius_cms.repository.editor_preset"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Repository\MediaFolderRepositoryInterface"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\TransferAction" class="Setono\SyliusCMSPlugin\Controller\Admin\TransferAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\ExportRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Admin\ExportChoices"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\ExportPlannerInterface"/>
+            <argument type="service" id="twig"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Setono\SyliusCMSPlugin\Controller\Admin\ExportAction" class="Setono\SyliusCMSPlugin\Controller\Admin\ExportAction">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Controller\Admin\ExportRequest"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\ExportPlannerInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Transfer\ExporterInterface"/>
+            <argument type="service" id="router"/>
+            <argument type="service" id="clock"/>
+
+            <tag name="controller.service_arguments"/>
+        </service>
+
         <service id="Setono\SyliusCMSPlugin\Controller\Admin\PresetsScreenRequest" class="Setono\SyliusCMSPlugin\Controller\Admin\PresetsScreenRequest">
             <argument type="service" id="Setono\SyliusCMSPlugin\Security\AdminAccessChecker"/>
             <argument type="service" id="Setono\SyliusCMSPlugin\Preset\PresetProviderInterface"/>
