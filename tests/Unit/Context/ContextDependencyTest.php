@@ -21,15 +21,15 @@ final class ContextDependencyTest extends TestCase
      */
     public function it_fits_an_entry_of_a_content_type_it_names_any_entry_when_it_names_none_and_a_snippets(): void
     {
-        $inThisCategory = new ContextDependency(new TranslatableMessage('In this category'), ['entry'], entryContentTypes: ['blog_category', 'faq_category']);
+        $inThisCategory = new ContextDependency(new TranslatableMessage('setono_sylius_cms.source.entries_in_this_category'), ['entry'], entryContentTypes: ['blog_category', 'faq_category']);
         self::assertTrue($inThisCategory->fitsEntryOf('blog_category'));
         self::assertFalse($inThisCategory->fitsEntryOf('blog_post'));
         self::assertTrue($inThisCategory->fitsEntryOf(null), 'A snippet\'s entry can be of any content type');
 
-        $nowhere = new ContextDependency(new TranslatableMessage('In no category'), ['entry'], entryContentTypes: []);
+        $nowhere = new ContextDependency(new TranslatableMessage('setono_sylius_cms.source.related_entries'), ['entry'], entryContentTypes: []);
         self::assertFalse($nowhere->fitsEntryOf('page'));
 
-        $anywhere = new ContextDependency(new TranslatableMessage('Bestsellers'), ['entry']);
+        $anywhere = new ContextDependency(new TranslatableMessage('setono_sylius_cms.source.bestsellers'), ['entry']);
         self::assertTrue($anywhere->fitsEntryOf('page'));
         self::assertTrue($anywhere->fitsEntryOf(null));
     }
