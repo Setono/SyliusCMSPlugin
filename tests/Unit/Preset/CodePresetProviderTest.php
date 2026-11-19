@@ -68,6 +68,23 @@ final class CodePresetProviderTest extends TestCase
         self::assertNull($provider->find('broken'));
     }
 
+    /**
+     * The container build found the file, which was removed before the request that reads it
+     *
+     * @test
+     */
+    public function it_leaves_out_a_file_that_can_not_be_opened_and_logs_why(): void
+    {
+        $removed = $this->temporaryDirectory() . '/removed.json';
+        $logger = $this->prophesize(LoggerInterface::class);
+        $logger->warning(Argument::containingString('can\'t be read'), ['code' => 'removed', 'file' => $removed, 'message' => 'The file can\'t be opened'])->shouldBeCalledOnce();
+
+        $provider = new CodePresetProvider(['removed' => $removed], [], $logger->reveal());
+
+        self::assertSame([], $provider->all());
+        self::assertNull($provider->find('removed'));
+    }
+
     private function presetFile(string $code, string $name): string
     {
         return $this->temporaryFile($code . '.json', json_encode([

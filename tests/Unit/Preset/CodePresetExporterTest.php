@@ -167,6 +167,21 @@ final class CodePresetExporterTest extends TestCase
     /**
      * @test
      */
+    public function it_leaves_a_starting_point_s_layout_the_code_no_longer_has_as_it_is(): void
+    {
+        $preset = new Preset('Landing page', [], startingPoint: new StartingPoint('page', new StoredLayout('removed_layout', 1, ['image' => self::MEDIA])), uuid: self::UUID, changedAt: new \DateTimeImmutable('2026-11-10T08:00:00Z'));
+
+        $read = (new PresetSerializer())->fromJson($this->exporter()->export($preset)->contents, 'landing_page');
+
+        $layout = $read->startingPoint?->layout;
+        self::assertNotNull($layout);
+        self::assertSame('removed_layout', $layout->code);
+        self::assertSame(['image' => self::MEDIA], $layout->fields, 'The code can\'t tell which of its fields are media');
+    }
+
+    /**
+     * @test
+     */
     public function it_keeps_a_translation_key_and_names_the_file_by_it(): void
     {
         $preset = new Preset(new TranslationKey('app.preset.spring.name'), [], category: new TranslationKey('app.preset_category.campaigns'), uuid: self::UUID, changedAt: new \DateTimeImmutable('2026-11-10T08:00:00Z'));
