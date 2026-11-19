@@ -17,7 +17,7 @@ final class FaqTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_creates_three_faq_items_with_answers_in_the_builder_and_drags_them_into_a_new_order(): void
+    public function it_lets_an_admin_user_create_three_faq_items_with_answers_in_the_builder_and_drag_them_into_a_new_order(): void
     {
         $this->signInAsAdmin();
 

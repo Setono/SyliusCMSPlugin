@@ -30,7 +30,7 @@ final class PresetRegistrationTest extends TestCase
     /**
      * @test
      */
-    public function two_code_presets_with_the_same_code_in_two_directories_fail_the_container_build(): void
+    public function it_fails_the_container_build_for_two_code_presets_with_the_same_code_in_two_directories(): void
     {
         $kernel = new class('test', true, $this->cacheDir) extends Kernel {
             public function __construct(string $environment, bool $debug, private readonly string $testCacheDir)

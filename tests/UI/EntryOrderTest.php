@@ -18,7 +18,7 @@ final class EntryOrderTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_drags_two_announcements_into_a_new_order_which_the_list_keeps(): void
+    public function it_lets_an_admin_user_drag_two_announcements_into_a_new_order_which_the_list_keeps(): void
     {
         self::createAnnouncement('Free shipping');
         self::createAnnouncement('Summer sale');

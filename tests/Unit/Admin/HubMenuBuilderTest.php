@@ -69,7 +69,7 @@ final class HubMenuBuilderTest extends TestCase
     /**
      * @test
      */
-    public function its_library_has_the_media_library_the_presets_and_transfer(): void
+    public function it_has_the_media_library_the_presets_and_transfer_in_its_library(): void
     {
         $library = self::child($this->menu(), 'library');
 

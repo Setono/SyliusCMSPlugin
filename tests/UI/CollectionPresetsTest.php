@@ -21,7 +21,7 @@ final class CollectionPresetsTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_creates_the_blog_and_a_category_from_their_starting_points_and_a_shopper_browses_from_the_blog_to_the_category_s_archive(): void
+    public function it_lets_an_admin_user_create_the_blog_and_a_category_from_their_starting_points_and_a_shopper_browse_from_the_blog_to_the_category_s_archive(): void
     {
         $this->signInAsAdmin();
 

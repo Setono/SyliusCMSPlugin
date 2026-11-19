@@ -32,7 +32,7 @@ final class ShippedPresetsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function setono_cms_preset_validate_passes_on_the_shipped_directory(): void
+    public function it_passes_setono_cms_preset_validate_on_the_shipped_directory(): void
     {
         self::bootKernel();
         $tester = new CommandTester((new Application(self::$kernel))->find('setono:cms:preset:validate'));
@@ -46,7 +46,7 @@ final class ShippedPresetsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_block_picker_offers_the_shipped_presets_before_the_project_s_own_with_their_names_translated(): void
+    public function it_offers_the_shipped_presets_in_the_block_picker_before_the_project_s_own_with_their_names_translated(): void
     {
         $client = self::signedIn();
         $page = self::createPage('About us', 'about-us');
@@ -66,7 +66,7 @@ final class ShippedPresetsTest extends BuilderApiTestCase
      *
      * @dataProvider provideBlockPresetsForPages
      */
-    public function inserting_a_block_preset_into_a_new_page_gives_a_tree_that_publishes_once_its_images_are_picked(string $code): void
+    public function it_gives_a_tree_that_publishes_once_its_images_are_picked_when_a_block_preset_is_inserted_into_a_new_page(string $code): void
     {
         $client = self::signedIn();
         $page = self::createPage('Spring', 'spring');
@@ -94,7 +94,7 @@ final class ShippedPresetsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_page_with_the_images_of_an_image_preset_not_picked_does_not_publish(): void
+    public function it_does_not_publish_a_page_with_the_images_of_an_image_preset_not_picked(): void
     {
         $client = self::signedIn();
         $page = self::createPage('Spring', 'spring');
@@ -110,7 +110,7 @@ final class ShippedPresetsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function related_products_is_not_offered_in_a_page_as_it_needs_a_product(): void
+    public function it_does_not_offer_related_products_in_a_page_as_it_needs_a_product(): void
     {
         $client = self::signedIn();
         $page = self::createPage('Spring', 'spring');
@@ -125,7 +125,7 @@ final class ShippedPresetsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function related_products_is_offered_in_a_snippet_for_product_pages_and_publishes_there(): void
+    public function it_offers_related_products_in_a_snippet_for_product_pages_and_publishes_it_there(): void
     {
         $client = self::signedIn();
         $snippet = self::createSnippet('Related', context: ['product']);
@@ -145,7 +145,7 @@ final class ShippedPresetsTest extends BuilderApiTestCase
      *
      * @dataProvider provideStartingPoints
      */
-    public function a_page_created_from_a_shipped_starting_point_publishes_once_its_images_are_picked(string $code, string $layout): void
+    public function it_publishes_a_page_created_from_a_shipped_starting_point_once_its_images_are_picked(string $code, string $layout): void
     {
         $client = self::signedIn();
         $client->request('GET', '/admin/cms/entries/page/new');

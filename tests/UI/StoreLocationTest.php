@@ -16,7 +16,7 @@ final class StoreLocationTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_creates_a_store_location_fills_in_its_city_publishes_it_and_opens_it_under_its_prefix(): void
+    public function it_lets_an_admin_user_create_a_store_location_fill_in_its_city_publish_it_and_open_it_under_its_prefix(): void
     {
         $this->signInAsAdmin();
 

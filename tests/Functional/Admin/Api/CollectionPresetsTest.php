@@ -32,7 +32,7 @@ final class CollectionPresetsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function creating_a_blog_category_preselects_the_category_archive(): void
+    public function it_preselects_the_category_archive_when_creating_a_blog_category(): void
     {
         $client = self::signedIn();
 
@@ -48,7 +48,7 @@ final class CollectionPresetsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_blog_post_starts_from_blank_as_it_has_no_starting_point(): void
+    public function it_starts_a_blog_post_from_blank_as_it_has_no_starting_point(): void
     {
         $client = self::signedIn();
 
@@ -61,7 +61,7 @@ final class CollectionPresetsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function a_category_created_from_its_default_starting_point_lists_its_posts_at_its_url(): void
+    public function it_lists_its_posts_at_the_url_of_a_category_created_from_its_default_starting_point(): void
     {
         $client = self::signedIn();
         $news = self::createCategoryInDialog($client, 'News', 'news');
@@ -83,7 +83,7 @@ final class CollectionPresetsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function removing_the_entries_block_from_a_category_s_tree_raises_a_warning(): void
+    public function it_raises_a_warning_when_the_entries_block_is_removed_from_a_category_s_tree(): void
     {
         $client = self::signedIn();
         $news = self::createCategoryInDialog($client, 'News', 'news');
@@ -102,7 +102,7 @@ final class CollectionPresetsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_blog_page_lists_the_blog_s_posts_split_into_pages_under_its_heading(): void
+    public function it_lists_the_blog_s_posts_split_into_pages_under_the_blog_page_s_heading(): void
     {
         $client = self::signedIn();
         $blog = self::createPageInDialog($client, 'Blog', 'blog', 'blog_page');
@@ -120,7 +120,7 @@ final class CollectionPresetsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_faq_page_lists_the_faq_s_questions_in_an_accordion_under_its_heading(): void
+    public function it_lists_the_faq_s_questions_in_an_accordion_under_the_faq_page_s_heading(): void
     {
         $client = self::signedIn();
         $faq = self::createPageInDialog($client, 'Help', 'help', 'faq_page');
@@ -141,7 +141,7 @@ final class CollectionPresetsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function related_posts_is_offered_only_in_blog_posts_and_latest_posts_anywhere(): void
+    public function it_offers_related_posts_only_in_blog_posts_and_latest_posts_anywhere(): void
     {
         $client = self::signedIn();
         $page = self::createPage('About us', 'about-us');
@@ -165,7 +165,7 @@ final class CollectionPresetsTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_latest_posts_and_the_related_posts_publish_in_a_blog_post_and_list_its_neighbours(): void
+    public function it_publishes_the_latest_posts_and_the_related_posts_in_a_blog_post_listing_its_neighbours(): void
     {
         $client = self::signedIn();
         $news = self::createBlogCategory('News', 'news', published: true);

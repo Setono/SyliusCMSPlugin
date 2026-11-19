@@ -15,7 +15,7 @@ final class BlogTest extends UITestCase
     /**
      * @test
      */
-    public function an_admin_user_creates_a_category_and_a_post_in_it_from_the_blog_item_publishes_both_and_follows_the_posts_category_link(): void
+    public function it_lets_an_admin_user_create_a_category_and_a_post_in_it_from_the_blog_item_publish_both_and_follow_the_posts_category_link(): void
     {
         $this->signInAsAdmin();
 

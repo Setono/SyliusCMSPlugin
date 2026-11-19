@@ -85,7 +85,7 @@ final class PaginatedEntriesTest extends BuilderApiTestCase
     /**
      * @test
      */
-    public function the_block_picker_offers_a_preset_with_a_paginated_entries_block_only_where_it_may_paginate(): void
+    public function it_offers_a_preset_with_a_paginated_entries_block_in_the_block_picker_only_where_it_may_paginate(): void
     {
         $client = self::signedIn();
         $preset = self::saveBlockPreset('Paged posts', self::entries(self::FIRST))->id();

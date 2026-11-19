@@ -73,7 +73,7 @@ final class ShippedPresetsTest extends TestCase
      *
      * @dataProvider provideShippedPresets
      */
-    public function each_holds_what_the_spec_lists(string $code, ?StartingPoint $startingPoint, string $category, string $blocks): void
+    public function it_holds_in_each_file_what_the_spec_lists(string $code, ?StartingPoint $startingPoint, string $category, string $blocks): void
     {
         $preset = self::preset($code);
 
@@ -125,7 +125,7 @@ final class ShippedPresetsTest extends TestCase
     /**
      * @test
      */
-    public function its_hero_is_a_full_width_banner_that_loads_first_with_a_primary_and_a_secondary_button(): void
+    public function it_ships_a_hero_that_is_a_full_width_banner_that_loads_first_with_a_primary_and_a_secondary_button(): void
     {
         $banner = self::preset('hero')->blocks[0];
 
@@ -137,7 +137,7 @@ final class ShippedPresetsTest extends TestCase
     /**
      * @test
      */
-    public function its_campaign_with_fallback_shows_a_banner_in_a_date_window_and_otherwise_a_default_banner(): void
+    public function it_ships_a_campaign_with_fallback_that_shows_a_banner_in_a_date_window_and_otherwise_a_default_banner(): void
     {
         [$campaign, $fallback] = self::preset('campaign_with_fallback')->blocks[0]->children;
 
@@ -149,7 +149,7 @@ final class ShippedPresetsTest extends TestCase
     /**
      * @test
      */
-    public function its_products_presets_are_filled_by_the_bestsellers_in_a_carousel_and_by_every_type_of_product_association(): void
+    public function it_fills_its_products_presets_by_the_bestsellers_in_a_carousel_and_by_every_type_of_product_association(): void
     {
         $bestsellers = self::preset('bestsellers_carousel')->blocks[0];
         $related = self::preset('related_products')->blocks[0];
@@ -168,7 +168,7 @@ final class ShippedPresetsTest extends TestCase
      *
      * @param array<string, mixed> $fields
      */
-    public function its_blog_and_faq_presets_list_entries_from_the_sources_the_spec_lists(string $code, array $fields): void
+    public function it_lists_entries_in_its_blog_and_faq_presets_from_the_sources_the_spec_lists(string $code, array $fields): void
     {
         $entries = array_filter(self::preset($code)->blocks, static fn (StoredBlock $block): bool => 'entries' === $block->type);
 
@@ -204,7 +204,7 @@ final class ShippedPresetsTest extends TestCase
      *
      * @dataProvider provideFiles
      */
-    public function every_file_parses_and_is_written_in_canonical_json(string $code, string $path): void
+    public function it_parses_every_file_and_writes_it_back_byte_for_byte_in_canonical_json(string $code, string $path): void
     {
         $json = (string) file_get_contents($path);
 
@@ -216,7 +216,7 @@ final class ShippedPresetsTest extends TestCase
      *
      * @dataProvider provideFiles
      */
-    public function every_translation_key_in_a_file_has_an_english_translation(string $code, string $path): void
+    public function it_has_an_english_translation_for_every_translation_key_in_a_file(string $code, string $path): void
     {
         $keys = self::translationKeysIn(json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR));
 
@@ -233,7 +233,7 @@ final class ShippedPresetsTest extends TestCase
      *
      * @dataProvider provideFiles
      */
-    public function all_the_text_in_a_file_is_translation_keys(string $code, string $path): void
+    public function it_holds_only_translation_keys_as_the_text_in_a_file(string $code, string $path): void
     {
         $preset = self::preset($code);
 
@@ -253,7 +253,7 @@ final class ShippedPresetsTest extends TestCase
      *
      * @dataProvider provideFiles
      */
-    public function the_images_in_a_file_are_empty(string $code, string $path): void
+    public function it_leaves_the_images_in_a_file_empty(string $code, string $path): void
     {
         $blockTypes = self::blockTypes();
 
@@ -274,7 +274,7 @@ final class ShippedPresetsTest extends TestCase
      *
      * @dataProvider provideFiles
      */
-    public function the_starting_points_have_a_thumbnail_the_plugin_ships_and_the_block_presets_none(string $code, string $path): void
+    public function it_gives_the_starting_points_a_thumbnail_the_plugin_ships_and_the_block_presets_none(string $code, string $path): void
     {
         $preset = self::preset($code);
 
