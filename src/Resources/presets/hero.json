@@ -1,0 +1,74 @@
+{
+    "format": 1,
+    "name": {
+        "$trans": "setono_sylius_cms.preset.hero.name"
+    },
+    "category": {
+        "$trans": "setono_sylius_cms.preset_category.banners"
+    },
+    "description": {
+        "$trans": "setono_sylius_cms.preset.hero.description"
+    },
+    "thumbnail": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "01a1f161-50aa-7a6e-aab4-a2bd3d2f7875",
+            "type": "banner",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "fullWidth": true,
+                "heading": {
+                    "$trans": "setono_sylius_cms.preset.hero.heading"
+                },
+                "priority": true,
+                "text": {
+                    "$trans": "setono_sylius_cms.preset.hero.text"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": [
+                {
+                    "key": "01a1f161-50aa-7a6e-aab4-a2bd3ca26635",
+                    "type": "button",
+                    "version": 1,
+                    "style": "primary",
+                    "fields": {
+                        "link": {
+                            "anchor": null,
+                            "label": {
+                                "$trans": "setono_sylius_cms.preset.hero.primary_button"
+                            },
+                            "ref": "/",
+                            "target": "url"
+                        }
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": []
+                },
+                {
+                    "key": "01a1f161-50aa-7a6e-aab4-a2bd3cdb7958",
+                    "type": "button",
+                    "version": 1,
+                    "style": "secondary",
+                    "fields": {
+                        "link": {
+                            "anchor": null,
+                            "label": {
+                                "$trans": "setono_sylius_cms.preset.hero.secondary_button"
+                            },
+                            "ref": "/",
+                            "target": "url"
+                        }
+                    },
+                    "translated": {},
+                    "conditions": [],
+                    "children": []
+                }
+            ]
+        }
+    ]
+}

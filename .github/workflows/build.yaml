@@ -66,6 +66,9 @@ jobs:
             -   name: "Lint twig files"
                 run: "(cd tests/Application && bin/console lint:twig ../../src/Resources)"
 
+            -   name: "Validate the shipped presets"
+                run: "(cd tests/Application && bin/console setono:cms:preset:validate ../../src/Resources/presets)"
+
             -   name: "Symfony diagnostics"
                 run: "symfony lsp:check --format=github"
 

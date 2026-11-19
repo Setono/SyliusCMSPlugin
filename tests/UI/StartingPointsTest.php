@@ -44,7 +44,7 @@ final class StartingPointsTest extends UITestCase
 
         // It's listed on the Presets screen's Starting points tab, for pages
         $page = $this->visit('/admin/cms/presets');
-        $row = $page->locator('[data-presets] tbody tr', ['hasText' => 'Campaign page']);
+        $row = $page->locator('[data-presets] tbody tr:has-text("Campaign page")');
         Expect::locator($row->locator('[data-content-type]'))->toHaveText('Page');
 
         // Create a new page from it: Blank is picked to start with, and picking it hides the layouts, as it brings its own

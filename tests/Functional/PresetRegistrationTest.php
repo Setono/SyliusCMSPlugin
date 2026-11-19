@@ -52,7 +52,7 @@ final class PresetRegistrationTest extends TestCase
             {
                 parent::build($container);
 
-                // A second directory, as a bundle prepends its own, with a hero.json as the test application has
+                // A second directory, as a bundle prepends its own, with a sale_hero.json as the test application has
                 $container->loadFromExtension('setono_sylius_cms', ['presets' => ['paths' => [__DIR__ . '/Fixture/presets/duplicate']]]);
             }
         };
@@ -61,9 +61,9 @@ final class PresetRegistrationTest extends TestCase
             $kernel->boot();
             self::fail('The container build must fail');
         } catch (\LogicException $e) {
-            self::assertStringContainsString('The code preset code "hero" is used by both', $e->getMessage());
-            self::assertStringContainsString('tests/Application/config/cms/presets/hero.json', $e->getMessage());
-            self::assertStringContainsString('tests/Functional/Fixture/presets/duplicate/hero.json', $e->getMessage());
+            self::assertStringContainsString('The code preset code "sale_hero" is used by both', $e->getMessage());
+            self::assertStringContainsString('tests/Application/config/cms/presets/sale_hero.json', $e->getMessage());
+            self::assertStringContainsString('tests/Functional/Fixture/presets/duplicate/sale_hero.json', $e->getMessage());
         }
     }
 }

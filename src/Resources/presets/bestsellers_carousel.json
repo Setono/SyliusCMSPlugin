@@ -1,0 +1,33 @@
+{
+    "format": 1,
+    "name": {
+        "$trans": "setono_sylius_cms.preset.bestsellers_carousel.name"
+    },
+    "category": {
+        "$trans": "setono_sylius_cms.preset_category.products"
+    },
+    "description": {
+        "$trans": "setono_sylius_cms.preset.bestsellers_carousel.description"
+    },
+    "thumbnail": null,
+    "startingPoint": null,
+    "blocks": [
+        {
+            "key": "01a1f161-50b4-7cff-bc21-ee76b4baa805",
+            "type": "products",
+            "version": 1,
+            "style": null,
+            "fields": {
+                "display": "carousel",
+                "products": {
+                    "$limit": 8,
+                    "$params": [],
+                    "$source": "bestsellers"
+                }
+            },
+            "translated": {},
+            "conditions": [],
+            "children": []
+        }
+    ]
+}
