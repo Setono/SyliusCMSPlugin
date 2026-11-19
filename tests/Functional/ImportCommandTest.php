@@ -19,6 +19,7 @@ use Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface;
 use Setono\SyliusCMSPlugin\Preset\Preset;
 use Setono\SyliusCMSPlugin\Preset\PresetProviderInterface;
 use Setono\SyliusCMSPlugin\Publishing\PublishSchedulerInterface;
+use Setono\SyliusCMSPlugin\Repository\EditorPresetRepositoryInterface;
 use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\Imports;
@@ -28,6 +29,7 @@ use Setono\SyliusCMSPlugin\Tests\Support\Revisions;
 use Setono\SyliusCMSPlugin\Tests\Support\ScheduledPublishes;
 use Setono\SyliusCMSPlugin\Tests\Support\TemporaryDirectory;
 use Setono\SyliusCMSPlugin\Transfer\Format\ExportFormat;
+use Setono\SyliusCMSPlugin\Tree\StoredBlock;
 use Setono\SyliusCMSPlugin\Transfer\Import\UnresolvedReference;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -438,6 +440,33 @@ final class ImportCommandTest extends KernelTestCase
 
         self::assertSame(Command::SUCCESS, $overwritten->getStatusCode(), $overwritten->getDisplay());
         self::assertNull(self::scheduledPublishOf(self::entry(self::PAGE)));
+    }
+
+    /**
+     * The copy here can't be read, as when a newer version of the plugin wrote it, so it isn't the export's
+     *
+     * @test
+     */
+    public function it_updates_an_editor_preset_whose_copy_here_can_not_be_read(): void
+    {
+        self::bootKernel();
+        /** @var EditorPresetSaverInterface $saver */
+        $saver = self::getContainer()->get(EditorPresetSaverInterface::class);
+        $saver->save(new Preset('Autumn hero', [], uuid: self::PRESET), new \DateTimeImmutable('2026-11-05T09:00:00Z'));
+        /** @var EditorPresetRepositoryInterface $repository */
+        $repository = self::getContainer()->get('setono_sylius_cms.repository.editor_preset');
+        $row = $repository->findOneByUuid(self::PRESET);
+        self::assertNotNull($row);
+        $row->setContent('{"format": 2}');
+        self::entityManager()->flush();
+
+        $tester = self::import(['path' => self::FIXTURE]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Autumn hero: update', self::display($tester));
+        /** @var PresetProviderInterface $presets */
+        $presets = self::getContainer()->get(PresetProviderInterface::class);
+        self::assertSame(['image'], array_map(static fn (StoredBlock $block): string => $block->type, $presets->find(self::PRESET)?->blocks ?? []));
     }
 
     /**
