@@ -512,6 +512,25 @@ final class ImportCommandTest extends KernelTestCase
     }
 
     /**
+     * The export's page isn't the homepage of the channel its copy here is, which changed here after the export
+     *
+     * @test
+     */
+    public function it_lists_a_page_that_stops_being_a_homepage_and_takes_it_off(): void
+    {
+        $page = self::createPageWithUuid(self::PAGE, 'Autumn sale (old)', 'autumn-sale');
+        self::setHomepageOf($page, 'WEB');
+
+        $tester = self::import(['path' => self::FIXTURE, '--overwrite' => true]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Homepage changes ---------------- * WEB: Autumn sale stops being its homepage', self::display($tester));
+        $page = self::entry(self::PAGE);
+        self::assertInstanceOf(PageInterface::class, $page);
+        self::assertSame([], $page->getHomepageChannelCodes());
+    }
+
+    /**
      * @test
      */
     public function it_lists_the_references_that_do_not_resolve_here_and_imports_them_unchanged(): void
