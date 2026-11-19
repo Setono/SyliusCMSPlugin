@@ -13,6 +13,7 @@ use Setono\SyliusCMSPlugin\Model\MediaItemInterface;
 use Setono\SyliusCMSPlugin\Model\PlacementInterface;
 use Setono\SyliusCMSPlugin\Preset\EditorPresetSaverInterface;
 use Setono\SyliusCMSPlugin\Preset\Preset;
+use Setono\SyliusCMSPlugin\Tests\Support\CommandOutput;
 use Setono\SyliusCMSPlugin\Tests\Support\Entries;
 use Setono\SyliusCMSPlugin\Tests\Support\MediaItems;
 use Setono\SyliusCMSPlugin\Tests\Support\Placements;
@@ -32,6 +33,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 final class ExportCommandTest extends KernelTestCase
 {
     use ClockSensitiveTrait;
+    use CommandOutput;
     use Entries;
     use MediaItems;
     use Placements;
@@ -308,21 +310,5 @@ final class ExportCommandTest extends KernelTestCase
         $tester->execute($input, ['decorated' => false]);
 
         return $tester;
-    }
-
-    /**
-     * The command's output on one line, as SymfonyStyle wraps it
-     */
-    private static function display(CommandTester $tester): string
-    {
-        return (string) preg_replace('/\s+/', ' ', $tester->getDisplay());
-    }
-
-    /**
-     * The command's output without any whitespace, for messages with a path SymfonyStyle may wrap anywhere
-     */
-    private static function squashed(CommandTester $tester): string
-    {
-        return (string) preg_replace('/\s+/', '', $tester->getDisplay());
     }
 }

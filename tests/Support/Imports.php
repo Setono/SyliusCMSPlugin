@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setono\SyliusCMSPlugin\Tests\Support;
 
 use Setono\SyliusCMSPlugin\Model\PageInterface;
-use Setono\SyliusCMSPlugin\Repository\EntryRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -18,6 +17,8 @@ use Symfony\Component\Console\Tester\CommandTester;
  */
 trait Imports
 {
+    use CommandOutput;
+
     abstract private function temporaryDirectory(): string;
 
     /**
@@ -112,13 +113,8 @@ trait Imports
     private static function createPageWithUuid(string $uuid, string $title, string $slug): PageInterface
     {
         $page = self::createPage($title, $slug, published: true, channels: ['WEB']);
-        self::entityManager()->getConnection()->update('setono_sylius_cms__entry', ['uuid' => $uuid], ['id' => $page->getId()]);
-        self::entityManager()->clear();
-
-        /** @var EntryRepositoryInterface $entries */
-        $entries = self::getContainer()->get(EntryRepositoryInterface::class);
-        $page = $entries->findOneByUuid($uuid);
-        self::assertInstanceOf(PageInterface::class, $page);
+        $page->setUuid($uuid);
+        self::entityManager()->flush();
 
         return $page;
     }
@@ -138,21 +134,5 @@ trait Imports
         $tester->execute($input, ['decorated' => false]);
 
         return $tester;
-    }
-
-    /**
-     * The command's output on one line, as SymfonyStyle wraps it
-     */
-    private static function display(CommandTester $tester): string
-    {
-        return (string) preg_replace('/\s+/', ' ', $tester->getDisplay());
-    }
-
-    /**
-     * The command's output without any whitespace, for messages with a path SymfonyStyle may wrap anywhere
-     */
-    private static function squashed(CommandTester $tester): string
-    {
-        return (string) preg_replace('/\s+/', '', $tester->getDisplay());
     }
 }
