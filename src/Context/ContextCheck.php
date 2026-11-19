@@ -15,8 +15,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Asks every context dependency finder what depends on an entry's host-page context, and holds it against what the
- * entry provides, and the content types it fits against the entry's own, or against a change of what a snippet declares. A context key is named by its label, or by itself
- * when the code no longer declares it
+ * entry provides, and the content types it fits against the entry's own, or against a change of what a snippet
+ * declares. A context key is named by its label, or by itself when the code no longer declares it
  *
  * @internal
  */

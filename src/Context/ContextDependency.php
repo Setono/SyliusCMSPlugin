@@ -8,9 +8,9 @@ use Symfony\Component\Translation\TranslatableMessage;
 
 /**
  * Something in an entry, or around a snippet, that depends on the host-page context the entry provides or the snippet
- * declares: a block whose type needs keys, a condition whose kind does, a source that fits only some content types as the
- * entry, a snippet's placement in a slot. Publish refuses
- * while one doesn't fit, and a snippet's declared context can't change in a way that would break one.
+ * declares: a block whose type needs keys, a condition whose kind does, a source that fits only some content types as
+ * the entry, a snippet's placement in a slot. Publish refuses while one doesn't fit, and a snippet's declared context
+ * can't change in a way that would break one.
  * See "Snippets and their context" in docs/spec/slots.md
  */
 final readonly class ContextDependency
