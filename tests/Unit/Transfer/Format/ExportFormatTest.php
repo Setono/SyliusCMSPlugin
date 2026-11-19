@@ -70,15 +70,17 @@ final class ExportFormatTest extends TestCase
      */
     public function it_names_the_directories_that_hold_one_file_per_record_and_reads_the_uuid_back_from_a_file_in_one(): void
     {
-        self::assertSame('entries/' . self::PAGE . '.json', ExportFormat::ENTRIES . '/' . self::PAGE . '.json');
-        self::assertSame('presets/' . self::PAGE . '.json', ExportFormat::PRESETS . '/' . self::PAGE . '.json');
-        self::assertSame('media/' . self::PAGE . '.json', ExportFormat::MEDIA . '/' . self::PAGE . '.json');
-        self::assertSame('media/folders.json', ExportFormat::MEDIA_FOLDERS);
+        foreach ([
+            [ExportFormat::ENTRIES, ExportFormat::entryPath(self::PAGE)],
+            [ExportFormat::PRESETS, ExportFormat::presetPath(self::PAGE)],
+            [ExportFormat::MEDIA, ExportFormat::mediaItemPath(self::PAGE)],
+        ] as [$directory, $path]) {
+            self::assertSame($directory . '/' . basename($path), $path);
+            self::assertSame(self::PAGE, ExportFormat::recordUuid($directory, basename($path)));
+        }
 
-        self::assertSame(self::PAGE, ExportFormat::recordUuid(ExportFormat::ENTRIES, self::PAGE . '.json'));
-        self::assertSame(self::PRESET, ExportFormat::recordUuid(ExportFormat::PRESETS, self::PRESET . '.json'));
-        self::assertSame(self::IMAGE, ExportFormat::recordUuid(ExportFormat::MEDIA, self::IMAGE . '.json'));
-        self::assertNull(ExportFormat::recordUuid(ExportFormat::MEDIA, 'folders.json'), 'media/folders.json lists the folders, it is no media item');
+        self::assertSame(ExportFormat::MEDIA . '/' . basename(ExportFormat::MEDIA_FOLDERS), ExportFormat::MEDIA_FOLDERS);
+        self::assertNull(ExportFormat::recordUuid(ExportFormat::MEDIA, basename(ExportFormat::MEDIA_FOLDERS)), 'media/folders.json lists the folders, it is no media item');
         self::assertNull(ExportFormat::recordUuid(ExportFormat::ENTRIES, 'notes.txt'));
     }
 
