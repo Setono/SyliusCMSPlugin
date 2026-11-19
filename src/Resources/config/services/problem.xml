@@ -129,6 +129,17 @@
             <tag name="setono_sylius_cms.problem_kind"/>
         </service>
 
+        <!--
+        A category whose URL is its archive, but whose tree no longer holds an Entries block to list its entries: a warning
+        in the admin, as editors may remove it on purpose, so lint leaves it out
+        -->
+        <service id="Setono\SyliusCMSPlugin\Problem\Kind\CategoryArchiveWithoutEntries" class="Setono\SyliusCMSPlugin\Problem\Kind\CategoryArchiveWithoutEntries">
+            <argument type="service" id="Setono\SyliusCMSPlugin\Registry\ContentTypeRegistryInterface"/>
+            <argument type="service" id="Setono\SyliusCMSPlugin\Collection\Collections"/>
+
+            <tag name="setono_sylius_cms.problem_kind"/>
+        </service>
+
         <!-- A placement in a slot a project removed, on purpose or not: a warning in the admin, so lint leaves it out -->
         <service id="Setono\SyliusCMSPlugin\Problem\Kind\RemovedSlot" class="Setono\SyliusCMSPlugin\Problem\Kind\RemovedSlot">
             <argument type="service" id="Setono\SyliusCMSPlugin\Repository\PlacementRepositoryInterface"/>
